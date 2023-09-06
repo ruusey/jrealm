@@ -84,8 +84,8 @@ public abstract class Enemy extends Entity {
 				this.bounds.setYOffset((this.size / 2) + this.yOffset);
 
 				this.hitBounds = new AABB(this.pos, this.size, this.size);
-				this.hitBounds.setXOffset(this.size / 2);
-				this.hitBounds.setYOffset(128);
+				// this.hitBounds.setXOffset(this.size / 2);
+				// this.hitBounds.setYOffset(128);
 				// this.hitBounds.setYOffset((this.size / 2) + this.yOffset);
 
 				this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2), (this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
@@ -98,11 +98,15 @@ public abstract class Enemy extends Entity {
 				//						5f * this.getDirection(),
 				//						(this.currentDirection == this.UP) || (this.currentDirection == this.DOWN));
 
-				boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 100);
+				boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 500);
 
 				if (canShoot) {
 					this.lastShotTick = System.currentTimeMillis();
-					playState.addProjectile(this.getPos().clone(), playState.getPlayerPos().clone(), true);
+					Player target = playState.getPlayer();
+					Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
+
+					Vector2f source = this.getPos().clone(this.getSize() / 2, this.getSize() / 2);
+					playState.addProjectile(0, source, dest, (short) 8, 3.0f, 356.0f, (short) 10, true);
 
 				}
 			} else {

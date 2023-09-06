@@ -14,114 +14,118 @@ import com.jrealm.game.util.MouseHandler;
 
 public class GameStateManager {
 
-    private GameState states[];
+	private GameState states[];
 
-    public static Vector2f map;
+	public static Vector2f map;
 
-    public static final int MENU = 0;
-    public static final int PLAY = 1;
-    public static final int PAUSE = 2;
-    public static final int GAMEOVER = 3;
-    public static final int EDIT = 4;
+	public static final int MENU = 0;
+	public static final int PLAY = 1;
+	public static final int PAUSE = 2;
+	public static final int GAMEOVER = 3;
+	public static final int EDIT = 4;
 
-    public static Font font;
-    public static Fontf fontf;
-    public static SpriteSheet ui;
-    public static SpriteSheet button;
-    public static Camera cam;
-    public static Graphics2D g;
+	public static Font font;
+	public static Fontf fontf;
+	public static SpriteSheet ui;
+	public static SpriteSheet button;
+	public static Camera cam;
+	public static Graphics2D g;
 
-    public GameStateManager(Graphics2D g) {
-        GameStateManager.g = g;
-        map = new Vector2f(GamePanel.width, GamePanel.height);
-        Vector2f.setWorldVar(map.x, map.y);
+	public GameStateManager(Graphics2D g) {
+		GameStateManager.g = g;
+		GameStateManager.map = new Vector2f(GamePanel.width, GamePanel.height);
+		Vector2f.setWorldVar(GameStateManager.map.x, GameStateManager.map.y);
 
-        states = new GameState[5];
+		this.states = new GameState[5];
 
-        font = new Font("font/font.png", 10, 10);
-        fontf = new Fontf();
-        fontf.loadFont("font/Stackedpixel.ttf", "MeatMadness");
-        fontf.loadFont("font/GravityBold8.ttf", "GravityBold8");
-        SpriteSheet.currentFont = font;
+		GameStateManager.font = new Font("font/font.png", 10, 10);
+		GameStateManager.fontf = new Fontf();
+		GameStateManager.fontf.loadFont("font/Stackedpixel.ttf", "MeatMadness");
+		GameStateManager.fontf.loadFont("font/GravityBold8.ttf", "GravityBold8");
+		SpriteSheet.currentFont = GameStateManager.font;
 
-        ui = new SpriteSheet("ui/ui.png", 64, 64);
-        button = new SpriteSheet("ui/buttons.png", 122, 57);
-        
+		GameStateManager.ui = new SpriteSheet("ui/ui.png", 64, 64, 0);
+		GameStateManager.button = new SpriteSheet("ui/buttons.png", 122, 57, 0);
 
-        cam = new Camera(new AABB(new Vector2f(-64, -64), GamePanel.width + 128, GamePanel.height + 128));
 
-        states[PLAY] = new PlayState(this, cam);
-    }
+		GameStateManager.cam = new Camera(new AABB(new Vector2f(-64, -64), GamePanel.width + 128, GamePanel.height + 128));
 
-    public boolean isStateActive(int state) {
-        return states[state] != null;
-    }
+		this.states[GameStateManager.PLAY] = new PlayState(this, GameStateManager.cam);
+	}
 
-    public GameState getState(int state) {
-        return states[state];
-    }
+	public boolean isStateActive(int state) {
+		return this.states[state] != null;
+	}
 
-    public void pop(int state) {
-        states[state] = null;
-    }
+	public GameState getState(int state) {
+		return this.states[state];
+	}
 
-    public void add(int state) {
-        if (states[state] != null)
-            return;
+	public void pop(int state) {
+		this.states[state] = null;
+	}
 
-        if (state == PLAY) {
-            cam = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-            states[PLAY] = new PlayState(this, cam);
-        }
-        else if (state == MENU) {
-            states[MENU] = new MenuState(this);
-        }
-        else if (state == PAUSE) {
-            states[PAUSE] = new PauseState(this);
-        }
-        else if (state == GAMEOVER) {
-            states[GAMEOVER] = new GameOverState(this);
-        }
-        else if (state == EDIT) {
-            if(states[PLAY] != null) {
-                states[EDIT] = new EditState(this, cam);
-            }
-        }
-    }
+	public void add(int state) {
+		if (this.states[state] != null)
+			return;
 
-    public void addAndpop(int state) {
-        addAndpop(state, 0);
-    }
+		switch (state) {
+		case GameStateManager.PLAY:
+			GameStateManager.cam = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+			this.states[GameStateManager.PLAY] = new PlayState(this, GameStateManager.cam);
+			break;
+		case GameStateManager.MENU:
+			this.states[GameStateManager.MENU] = new MenuState(this);
+			break;
+		case GameStateManager.PAUSE:
+			this.states[GameStateManager.PAUSE] = new PauseState(this);
+			break;
+		case GameStateManager.GAMEOVER:
+			this.states[GameStateManager.GAMEOVER] = new GameOverState(this);
+			break;
+		case GameStateManager.EDIT:
+			if(this.states[GameStateManager.PLAY] != null) {
+				this.states[GameStateManager.EDIT] = new EditState(this, GameStateManager.cam);
+			}
+			break;
+		default:
+			break;
+		}
+	}
 
-    public void addAndpop(int state, int remove) {
-        pop(state);
-        add(state);
-    }
+	public void addAndpop(int state) {
+		this.addAndpop(state, 0);
+	}
 
-    public void update(double time) {
-        for (int i = 0; i < states.length; i++) {
-            if (states[i] != null) {
-                states[i].update(time);
-            }
-        }
-    }
+	public void addAndpop(int state, int remove) {
+		this.pop(state);
+		this.add(state);
+	}
 
-    public void input(MouseHandler mouse, KeyHandler key) {
-        
-        for (int i = 0; i < states.length; i++) {
-            if (states[i] != null) {
-                states[i].input(mouse, key);
-            }
-        }        
-    }
+	public void update(double time) {
+		for (int i = 0; i < this.states.length; i++) {
+			if (this.states[i] != null) {
+				this.states[i].update(time);
+			}
+		}
+	}
 
-    public void render(Graphics2D g) {
-        g.setFont(GameStateManager.fontf.getFont("MeatMadness"));
-        for (int i = 0; i < states.length; i++) {
-            if (states[i] != null) {
-                states[i].render(g);
-            }
-        }
-    }
+	public void input(MouseHandler mouse, KeyHandler key) {
+
+		for (int i = 0; i < this.states.length; i++) {
+			if (this.states[i] != null) {
+				this.states[i].input(mouse, key);
+			}
+		}
+	}
+
+	public void render(Graphics2D g) {
+		g.setFont(GameStateManager.fontf.getFont("MeatMadness"));
+		for (int i = 0; i < this.states.length; i++) {
+			if (this.states[i] != null) {
+				this.states[i].render(g);
+			}
+		}
+	}
 
 }

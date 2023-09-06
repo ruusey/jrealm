@@ -143,7 +143,7 @@ public class TileManager {
 
 			this.columns = tileColumns;
 			this.file = imagePath;
-			sprite = new SpriteSheet("tile/" + imagePath + ".png", tileWidth, tileHeight);
+			sprite = new SpriteSheet("tile/" + imagePath + ".png", tileWidth, tileHeight, 0);
 
 			list = doc.getElementsByTagName("layer");
 			layers = list.getLength();

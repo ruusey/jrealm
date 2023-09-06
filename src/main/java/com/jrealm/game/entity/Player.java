@@ -1,6 +1,8 @@
 package com.jrealm.game.entity;
 
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 
 import com.jrealm.game.GamePanel;
@@ -14,205 +16,201 @@ import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-
 public class Player extends Entity {
 
-    private Camera cam;
-    private ArrayList<Enemy> enemy;
-    private ArrayList<GameObject> go;
-    private TileManager tm;
+	private Camera cam;
+	private ArrayList<Enemy> enemy;
+	private ArrayList<GameObject> go;
+	private TileManager tm;
 
-    public Player(Camera cam, SpriteSheet sprite, Vector2f origin, int size, TileManager tm) {
-        super(sprite, origin, size);
-        this.cam = cam;
-        this.tm = tm;
-        
-        bounds.setWidth(32);
-        bounds.setHeight(20);
-        bounds.setXOffset(16);
-        bounds.setYOffset(40);
+	public Player(Camera cam, SpriteSheet sprite, Vector2f origin, int size, TileManager tm) {
+		super(sprite, origin, size);
+		this.cam = cam;
+		this.tm = tm;
 
-        hitBounds.setWidth(42);
-        hitBounds.setHeight(42);
+		this.bounds.setWidth(32);
+		this.bounds.setHeight(20);
+		this.bounds.setXOffset(16);
+		this.bounds.setYOffset(40);
 
-        ani.setNumFrames(4, UP);
-        ani.setNumFrames(4, DOWN);
-        ani.setNumFrames(4, ATTACK + RIGHT);
-        ani.setNumFrames(4, ATTACK + LEFT);
-        ani.setNumFrames(4, ATTACK + UP);
-        ani.setNumFrames(4, ATTACK + DOWN);
+		this.hitBounds.setWidth(42);
+		this.hitBounds.setHeight(42);
 
-        enemy = new ArrayList<Enemy>();
-        go = new ArrayList<GameObject>();
+		this.ani.setNumFrames(2, this.UP);
+		this.ani.setNumFrames(2, this.DOWN);
+		this.ani.setNumFrames(2, this.RIGHT);
+		this.ani.setNumFrames(2, this.LEFT);
+		this.ani.setNumFrames(2, this.ATTACK + this.RIGHT);
+		this.ani.setNumFrames(2, this.ATTACK + this.LEFT);
+		this.ani.setNumFrames(2, this.ATTACK + this.UP);
+		this.ani.setNumFrames(2, this.ATTACK + this.DOWN);
 
-        for(int i = 0; i < sprite.getSpriteArray2().length; i++) {
-            for(int j = 0; j < sprite.getSpriteArray2()[i].length; j++) {
-                sprite.getSpriteArray2()[i][j].setEffect(Sprite.effect.NEGATIVE);
-                sprite.getSpriteArray2()[i][j].saveColors();
-            }
-        }
+		this.enemy = new ArrayList<Enemy>();
+		this.go = new ArrayList<GameObject>();
 
-        hasIdle = false;
-        health = 500;
-		maxHealth = 500;
-		name = "player";
-    }
+		for(int i = 0; i < sprite.getSpriteArray2().length; i++) {
+			for(int j = 0; j < sprite.getSpriteArray2()[i].length; j++) {
+				sprite.getSpriteArray2()[i][j].setEffect(Sprite.effect.NEGATIVE);
+				sprite.getSpriteArray2()[i][j].saveColors();
+			}
+		}
 
-    public void setTargetEnemy(Enemy enemy) { 
-        this.enemy.add(enemy);
-    }
+		this.hasIdle = false;
+		this.health = 500;
+		this.maxHealth = 500;
+		this.name = "player";
+	}
 
-    public void setTargetGameObject(GameObject go) {
-        if(!this.go.contains(go))
-            this.go.add(go);
-    }
+	public void setTargetEnemy(Enemy enemy) {
+		this.enemy.add(enemy);
+	}
 
-    private void resetPosition() {
-        System.out.println("Reseting Player... ");
-        pos.x = GamePanel.width / 2 - 32;
-        PlayState.map.x = 0;
-        cam.getPos().x = 0;
+	public void setTargetGameObject(GameObject go) {
+		if(!this.go.contains(go)) {
+			this.go.add(go);
+		}
+	}
 
-        pos.y = GamePanel.height /2 - 32;
-        PlayState.map.y = 0;
-        cam.getPos().y = 0;
+	private void resetPosition() {
+		System.out.println("Reseting Player... ");
+		this.pos.x = (GamePanel.width / 2) - 32;
+		PlayState.map.x = 0;
+		this.cam.getPos().x = 0;
 
-        setAnimation(RIGHT, sprite.getSpriteArray(RIGHT), 10);
-    }
+		this.pos.y = (GamePanel.height /2) - 32;
+		PlayState.map.y = 0;
+		this.cam.getPos().y = 0;
+		// sprite.getSprite(spriteX, spriteY)
+		this.setAnimation(this.RIGHT, this.sprite.getSpriteArray(this.RIGHT), 10);
+	}
 
-    public void update(double time) {
-        super.update(time);
+	@Override
+	public void update(double time) {
+		super.update(time);
 
-        attacking = isAttacking(time);
-        for(int i = 0; i < enemy.size(); i++) {
-            if(attacking) {
-                enemy.get(i).setHealth(enemy.get(i).getHealth() - damage, force * getDirection(), currentDirection == UP || currentDirection == DOWN);
-                enemy.remove(i);
-            }
-        }
+		this.attacking = this.isAttacking(time);
+		for(int i = 0; i < this.enemy.size(); i++) {
+			if(this.attacking) {
+				this.enemy.get(i).setHealth(this.enemy.get(i).getHealth() - this.damage, this.force * this.getDirection(), (this.currentDirection == this.UP) || (this.currentDirection == this.DOWN));
+				this.enemy.remove(i);
+			}
+		}
 
-        if(!fallen) {
-            move();
-            if(!tc.collisionTile(dx, 0) && !bounds.collides(dx, 0, go)) {
-                //PlayState.map.x += dx;
-                pos.x += dx;
-                xCol = false;
-            } else {
-                xCol = true;
-            }
-            if(!tc.collisionTile(0, dy) && !bounds.collides(0, dy, go)) {
-                //PlayState.map.y += dy;
-                pos.y += dy;
-                yCol = false;
-            } else {
-                yCol = true;
-            }
+		if(!this.fallen) {
+			this.move();
+			if(!this.tc.collisionTile(this.dx, 0) && !this.bounds.collides(this.dx, 0, this.go)) {
+				//PlayState.map.x += dx;
+				this.pos.x += this.dx;
+				this.xCol = false;
+			} else {
+				this.xCol = true;
+			}
+			if(!this.tc.collisionTile(0, this.dy) && !this.bounds.collides(0, this.dy, this.go)) {
+				//PlayState.map.y += dy;
+				this.pos.y += this.dy;
+				this.yCol = false;
+			} else {
+				this.yCol = true;
+			}
 
-            tc.normalTile(dx, 0);
-            tc.normalTile(0, dy);
+			this.tc.normalTile(this.dx, 0);
+			this.tc.normalTile(0, this.dy);
 
-        } else {
-            xCol = true;
-            yCol = true;
-            if(ani.hasPlayedOnce()) {
-                resetPosition();
-                dx = 0;
-                dy = 0;
-                fallen = false;
-            }
-        }
+		} else {
+			this.xCol = true;
+			this.yCol = true;
+			if(this.ani.hasPlayedOnce()) {
+				this.resetPosition();
+				this.dx = 0;
+				this.dy = 0;
+				this.fallen = false;
+			}
+		}
 
-        NormBlock[] block = tm.getNormalTile(tc.getTile());
-        for(int i = 0; i < block.length; i++) {
-            if(block[i] != null)
-                block[i].getImage().restoreDefault();
-        }
-    }
+		NormBlock[] block = this.tm.getNormalTile(this.tc.getTile());
+		for(int i = 0; i < block.length; i++) {
+			if(block[i] != null) {
+				block[i].getImage().restoreDefault();
+			}
+		}
+	}
 
-    @Override
-    public void render(Graphics2D g) {
-        g.setColor(Color.green);
-        g.drawRect((int) (pos.getWorldVar().x + bounds.getXOffset()), (int) (pos.getWorldVar().y + bounds.getYOffset()), (int) bounds.getWidth(), (int) bounds.getHeight());
+	@Override
+	public void render(Graphics2D g) {
+		g.setColor(Color.green);
+		g.drawRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y + this.bounds.getYOffset()), (int) this.bounds.getWidth(), (int) this.bounds.getHeight());
 
-        if(attack) {
-            g.setColor(Color.red);
-            g.drawRect((int) (hitBounds.getPos().getWorldVar().x + hitBounds.getXOffset()), (int) (hitBounds.getPos().getWorldVar().y + hitBounds.getYOffset()), (int) hitBounds.getWidth(), (int) hitBounds.getHeight());
-        }
+		if(this.attack) {
+			g.setColor(Color.red);
+			g.drawRect((int) (this.hitBounds.getPos().getWorldVar().x + this.hitBounds.getXOffset()), (int) (this.hitBounds.getPos().getWorldVar().y + this.hitBounds.getYOffset()), (int) this.hitBounds.getWidth(), (int) this.hitBounds.getHeight());
+		}
 
-        if(isInvincible) {
-            if(GamePanel.tickCount % 30 >= 15) {
-                ani.getImage().setEffect(Sprite.effect.REDISH);
-            } else {
-                ani.getImage().restoreColors();
-            }
-        } else {
-            ani.getImage().restoreColors();
-        }
+		if(this.isInvincible && ((GamePanel.tickCount % 30) >= 15)) {
+			this.ani.getImage().setEffect(Sprite.effect.REDISH);
+		} else {
+			this.ani.getImage().restoreColors();
+		}
 
-        if(useRight && left) {
-            g.drawImage(ani.getImage().image, (int) (pos.getWorldVar().x) + size, (int) (pos.getWorldVar().y), -size, size, null);
-        } else {
-            g.drawImage(ani.getImage().image, (int) (pos.getWorldVar().x), (int) (pos.getWorldVar().y), size, size, null);
-        }
-    }
+		if(this.useRight && this.left) {
+			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x) + this.size, (int) (this.pos.getWorldVar().y), -this.size, this.size, null);
+		} else {
+			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), this.size, this.size, null);
+		}
+	}
 
-    public void input(MouseHandler mouse, KeyHandler key) {
+	public void input(MouseHandler mouse, KeyHandler key) {
 
-        if(!fallen) {
-            if(key.up.down) {
-                up = true;
-            } else {
-                up = false;
-            }
-            if(key.down.down) {
-                down = true;
-            } else {
-                down = false;
-            }
-            if(key.left.down) {
-                left = true;
-            } else {
-                left = false;
-            }
-            if(key.right.down) {
-                right = true;
-            } else {
-                right = false;
-            }
+		if(!this.fallen) {
+			if(key.up.down) {
+				this.up = true;
+			} else {
+				this.up = false;
+			}
+			if(key.down.down) {
+				this.down = true;
+			} else {
+				this.down = false;
+			}
+			if(key.left.down) {
+				this.left = true;
+			} else {
+				this.left = false;
+			}
+			if(key.right.down) {
+				this.right = true;
+			} else {
+				this.right = false;
+			}
 
-            if(key.attack.down && canAttack) {
-                attack = true;
-                attacktime = System.nanoTime();
-            } else {
-                if(!attacking) {
-                    attack = false;
-                }
-            }
+			if(key.attack.down && this.canAttack) {
+				this.attack = true;
+				this.attacktime = System.nanoTime();
+			} else if(!this.attacking) {
+				this.attack = false;
+			}
 
-            if(key.shift.down) {
-                maxSpeed = 8;
-                cam.setMaxSpeed(7);
-            } else {
-                maxSpeed = 4;
-                cam.setMaxSpeed(4);
-            }
+			if(key.shift.down) {
+				this.maxSpeed = 8;
+				this.cam.setMaxSpeed(7);
+			} else {
+				this.maxSpeed = 4;
+				this.cam.setMaxSpeed(4);
+			}
 
-            if(up && down) {
-                up = false;
-                down = false;
-            }
+			if(this.up && this.down) {
+				this.up = false;
+				this.down = false;
+			}
 
-            if(right && left) {
-                right = false;
-                left = false;
-            }
-        } else {
-            up = false;
-            down = false;
-            right = false;
-            left = false;
-        }
-    }
+			if(this.right && this.left) {
+				this.right = false;
+				this.left = false;
+			}
+		} else {
+			this.up = false;
+			this.down = false;
+			this.right = false;
+			this.left = false;
+		}
+	}
 }

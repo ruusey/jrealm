@@ -42,7 +42,7 @@ public abstract class GameObject {
 	}
 
 	private GameObject(Vector2f origin, int size) {
-		this.bounds = new AABB(origin, size / 2, size / 2);
+		this.bounds = new AABB(origin, size, size);
 		this.pos = origin;
 		this.size = size;
 	}
@@ -51,7 +51,7 @@ public abstract class GameObject {
 		this.pos = pos;
 		// pos.clone(this.size / 2, this.size / 2)
 		//pos.addX(this.size / 2)
-		this.bounds = new AABB(pos, this.size / 2, this.size / 2);
+		this.bounds = new AABB(pos, this.size, this.size);
 		this.teleported = true;
 	}
 

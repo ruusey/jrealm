@@ -17,6 +17,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.enemy.TinyMon;
 import com.jrealm.game.entity.material.Material;
 import com.jrealm.game.entity.material.MaterialManager;
+import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
@@ -68,13 +69,14 @@ public class PlayState extends GameState {
 		//gameObject.addAll(mm.list);
 		this.aabbTree = new AABBTree();
 
-		this.player = new Player(cam, new SpriteSheet("entity/wizardPlayer.png", 64, 64), new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 64, this.tm);
+		this.player = new Player(cam, new SpriteSheet("entity/rotmg-classes.png", 8, 8, 4),
+				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 64, this.tm);
 		this.pui = new PlayerUI(this.player);
 		this.aabbTree.insert(this.player);
 
 		cam.target(this.player);
 
-		SpriteSheet enemySheet = new SpriteSheet("entity/enemy/minimonsters.png", 16, 16);
+		SpriteSheet enemySheet = new SpriteSheet("entity/enemy/minimonsters.png", 16, 16, 4);
 
 
 		Random r = new Random(System.currentTimeMillis());
@@ -86,7 +88,8 @@ public class PlayState extends GameState {
 				if (doSpawn > 46) {
 					switch (r.nextInt(2)) {
 					case 1:
-						go = new TinyMon(cam, new SpriteSheet(enemySheet.getSprite(0, 1, 128, 32), "tiny boar", 16, 16),
+						go = new TinyMon(cam,
+								new SpriteSheet(enemySheet.getSprite(0, 1, 128, 32), "tiny boar", 16, 16, 0),
 								new Vector2f(((GamePanel.width / 2) - 32) + 150,
 										((0 + (GamePanel.height / 2)) - 32) + 150),
 								32);
@@ -95,7 +98,7 @@ public class PlayState extends GameState {
 						break;
 					case 0:
 						go = new TinyMon(cam,
-								new SpriteSheet(enemySheet.getSprite(0, 0, 128, 32), "tiny monster", 16, 16),
+								new SpriteSheet(enemySheet.getSprite(0, 0, 128, 32), "tiny monster", 16, 16, 0),
 								new Vector2f(((GamePanel.width / 2) - 32) + 150,
 										((0 + (GamePanel.height / 2)) - 32) + 150),
 								32);
@@ -147,7 +150,11 @@ public class PlayState extends GameState {
 					dest.addX(PlayState.map.x);
 					dest.addY(PlayState.map.y);
 					Vector2f source = this.getPlayerPos().clone(this.player.getSize() / 2, this.player.getSize() / 2);
-					this.addProjectile(source, dest, false);
+					float angle = Bullet.getAngle(source, dest);
+					this.addProjectile(0, source, angle + ((float) (Math.PI / 4)), (short) 8, 4.0f, 256.0f, (short) 30,
+							false);
+					this.addProjectile(1, source, angle - ((float) (Math.PI / 4)), (short) 8, 4.0f, 256.0f, (short) 30,
+							false);
 
 				}
 
@@ -205,11 +212,20 @@ public class PlayState extends GameState {
 		}
 	}
 
-	public void addProjectile(Vector2f src, Vector2f dest, boolean isEnemy) {
+	public void addProjectile(int index, Vector2f src, Vector2f dest, short size, float magnitude, float range, short damage,
+			boolean isEnemy) {
 		Bullet b = new Bullet(null,
 				src,
-				dest, 8, 4, 216, 24, isEnemy);
-		this.getGameObjects().add(b.getBounds().distance(this.getPlayerPos()), b);
+				dest, size, magnitude, range, damage, isEnemy);
+		this.getGameObjects().add(b.getBounds().distance(this.getPlayerPos()) + index, b);
+		this.aabbTree.insert(b);
+	}
+
+	public void addProjectile(int index, Vector2f src, float angle, short size, float magnitude, float range,
+			short damage,
+			boolean isEnemy) {
+		Bullet b = new Bullet(null, src, angle, size, magnitude, range, damage, isEnemy);
+		this.getGameObjects().add(b.getBounds().distance(this.getPlayerPos()) + index, b);
 		this.aabbTree.insert(b);
 	}
 
@@ -226,8 +242,8 @@ public class PlayState extends GameState {
 			if (this.gameObject.get(i).go instanceof Enemy) {
 				Enemy enemy = ((Enemy) this.gameObject.get(i).go);
 				for (Bullet b : results) {
-					if (b.getBounds().intersect(enemy.getBounds()) && !b.isEnemy()) {
-						enemy.setHealth(enemy.getHealth() - 15, 0, false);
+					if (b.getBounds().collides(0, 0, enemy.getHitBounds()) && !b.isEnemy()) {
+						enemy.setHealth(enemy.getHealth() - b.getDamage(), 0, false);
 						this.aabbTree.removeObject(b);
 						this.gameObject.remove(b);
 						if (enemy.getDeath()) {
@@ -235,8 +251,10 @@ public class PlayState extends GameState {
 							this.gameObject.remove(enemy);
 						}
 					}
-					if (b.getBounds().intersect(this.player.getBounds()) && b.isEnemy()) {
-						this.player.setHealth(this.player.getHealth() - 15, 0, false);
+					if (b.getBounds().collides(0, 0, this.player.getBounds()) && b.isEnemy()) {
+						this.player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
+
+						this.player.setHealth(this.player.getHealth() - b.getDamage(), 0, false);
 						this.aabbTree.removeObject(b);
 						this.gameObject.remove(b);
 					}

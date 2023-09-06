@@ -17,9 +17,9 @@ public abstract class Entity extends GameObject {
 	public int IDLE = 6;
 	public int ATTACK = 5;
 	public int FALLEN = 4;
-	public int UP = 3;
-	public int DOWN = 2;
-	public int LEFT = 1;
+	public int UP = 2;
+	public int DOWN = 1;
+	public int LEFT = 3;
 	public int RIGHT = 0;
 
 	protected boolean hasIdle = false;
@@ -77,7 +77,7 @@ public abstract class Entity extends GameObject {
 	public void setFallen(boolean b) { this.fallen = b; }
 
 	public void setHealth(int i, float f, boolean dir) {
-		if(!this.isInvincible) {
+		if (!this.isInvincible) {
 			this.health = i;
 			this.isInvincible = true;
 			this.invincibletime = System.nanoTime();
@@ -117,31 +117,33 @@ public abstract class Entity extends GameObject {
 			}
 		} else if (this.up) {
 			if (((this.currentAnimation != this.UP) || (this.ani.getDelay() == -1))) {
-				this.setAnimation(this.UP, this.sprite.getSpriteArray(this.UP), 5);
+				this.setAnimation(this.UP, this.sprite.getSpriteArray(this.UP + this.sprite.getRowOffset(), 1), 5);
 			}
 		} else if (this.down) {
 			if (((this.currentAnimation != this.DOWN) || (this.ani.getDelay() == -1))) {
-				this.setAnimation(this.DOWN, this.sprite.getSpriteArray(this.DOWN), 5);
+				this.setAnimation(this.DOWN, this.sprite.getSpriteArray(this.DOWN + this.sprite.getRowOffset(), 1), 5);
 			}
 		} else if (this.left) {
 			if (((this.currentAnimation != this.LEFT) || (this.ani.getDelay() == -1))) {
-				this.setAnimation(this.LEFT, this.sprite.getSpriteArray(this.LEFT), 5);
+				this.setAnimation(this.LEFT, this.sprite.getSpriteArray(this.LEFT + this.sprite.getRowOffset()), 5);
 			}
 		} else if (this.right) {
 			if (((this.currentAnimation != this.RIGHT) || (this.ani.getDelay() == -1))) {
-				this.setAnimation(this.RIGHT, this.sprite.getSpriteArray(this.RIGHT), 5);
+				this.setAnimation(this.RIGHT, this.sprite.getSpriteArray(this.RIGHT + this.sprite.getRowOffset()), 5);
 			}
 		} else if (this.fallen) {
 			if ((this.currentAnimation != this.FALLEN) || (this.ani.getDelay() == -1)) {
-				this.setAnimation(this.FALLEN, this.sprite.getSpriteArray(this.FALLEN), 15);
+				this.setAnimation(this.FALLEN, this.sprite.getSpriteArray(this.FALLEN + this.sprite.getRowOffset()),
+						15);
 			}
 		} else if(!this.attacking && (this.currentAnimation > 4)) {
 			this.setAnimation(this.currentAnimation - this.ATTACK, this.sprite.getSpriteArray(this.currentAnimation - this.ATTACK), -1);
 		} else if(!this.attacking) {
 			if(this.hasIdle && (this.currentAnimation != this.IDLE)) {
-				this.setAnimation(this.IDLE, this.sprite.getSpriteArray(this.IDLE), 10);
+				this.setAnimation(this.IDLE, this.sprite.getSpriteArray(this.IDLE + this.sprite.getRowOffset()), 10);
 			} else if(!this.hasIdle) {
-				this.setAnimation(this.currentAnimation, this.sprite.getSpriteArray(this.currentAnimation), -1);
+				this.setAnimation(this.currentAnimation,
+						this.sprite.getSpriteArray(this.currentAnimation + this.sprite.getRowOffset()), -1);
 			}
 		}
 	}

@@ -81,7 +81,7 @@
                 <configuration>
                     <archive>
                     <manifest>
-                        <mainClass>com.zerulus.game.GameLauncher</mainClass>
+                        <mainClass>com.jrealm.game.GameLauncher</mainClass>
                     </manifest>
                     </archive>
                 </configuration>

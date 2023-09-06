@@ -12,47 +12,65 @@ import lombok.Data;
 
 @Data
 public class Bullet extends GameObject {
-	private double angle;
-	private double magnitude;
-	private double range;
-	private double damage;
+	private float angle;
+	private float magnitude;
+	private float range;
+	private short damage;
 	private boolean isEnemy;
 	public Bullet(Sprite image, Vector2f origin, int size) {
 		super(image, origin, size);
 		// TODO Auto-generated constructor stub
 	}
 
-	public Bullet(Sprite image, Vector2f origin, Vector2f dest, int size, double magnitude, double range, double damage,
+	public Bullet(Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range, short damage,
 			boolean isEnemy) {
 		super(image, origin, size);
 		this.magnitude = magnitude;
 		this.range = range;
+		this.damage = damage;
 		this.angle = -Bullet.getAngle(origin, dest);
 		this.isEnemy = isEnemy;
 
 	}
 
-	public static double getAngle(Vector2f source, Vector2f target) {
+	public Bullet(Sprite image, Vector2f origin, float angle, short size, float magnitude, float range, short damage,
+			boolean isEnemy) {
+		super(image, origin, size);
+		this.magnitude = magnitude;
+		this.range = range;
+		this.damage = damage;
+
+		this.angle = -angle;
+		this.isEnemy = isEnemy;
+
+	}
+
+	public static float getAngle(Vector2f source, Vector2f target) {
 		double angle = (Math.atan2(target.y - source.y, target.x - source.x));
 
 		angle -= Math.PI / 2;
 
-		return angle;
+		return (float) angle;
 	}
 
 	public boolean isEnemy() {
 		return this.isEnemy;
 	}
-	public double getAngle() {
+
+	public float getAngle() {
 		return this.angle;
 	}
 
-	public double getMagnitude() {
+	public float getMagnitude() {
 		return this.magnitude;
 	}
 
 	public boolean remove() {
 		return this.range <= 0.0;
+	}
+
+	public short getDamage() {
+		return this.damage;
 	}
 
 	@Override
@@ -71,8 +89,8 @@ public class Bullet extends GameObject {
 		AffineTransform original = g.getTransform();
 
 		AffineTransform t = new AffineTransform();
-
 		t.setToRotation(this.angle);
+		// g.setTransform(t);
 		g.setColor(Color.RED);
 		g.fillOval((int) this.pos.getWorldVar().x, (int) this.pos.getWorldVar().y, this.size, this.size);
 
