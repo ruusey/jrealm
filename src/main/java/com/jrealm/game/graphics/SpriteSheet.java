@@ -136,10 +136,14 @@ public class SpriteSheet {
 	}
 
 	public Sprite[] getSpriteArray(int i) {
+		if ((this.spriteArray != null) && (this.spriteArray.length == 1))
+			return this.spriteArray[0];
 		return this.spriteArray[i];
 	}
 
 	public Sprite[] getSpriteArray(int i, int offset) {
+		if ((this.spriteArray != null) && (this.spriteArray.length == 1))
+			return this.spriteArray[0];
 		return Arrays.copyOfRange(this.spriteArray[i], 0 + offset, this.spriteArray[i].length);
 	}
 

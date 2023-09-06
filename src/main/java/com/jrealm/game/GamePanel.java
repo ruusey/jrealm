@@ -10,6 +10,7 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.JPanel;
 
+import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.states.GameStateManager;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
@@ -17,160 +18,162 @@ import com.jrealm.game.util.MouseHandler;
 
 public class GamePanel extends JPanel implements Runnable {
 
-    public static final long serialVersionUID = 1L;
+	public static final long serialVersionUID = 1L;
 
-    public static int width;
-    public static int height;
-    public static int oldFrameCount;
-    public static int oldTickCount;
-    public static int tickCount;
+	public static int width;
+	public static int height;
+	public static int oldFrameCount;
+	public static int oldTickCount;
+	public static int tickCount;
 
-    private Thread thread;
-    private boolean running = false;
+	private Thread thread;
+	private boolean running = false;
 
-    private BufferStrategy bs;
-    private BufferedImage img;
-    private Graphics2D g;
+	private BufferStrategy bs;
+	private BufferedImage img;
+	private Graphics2D g;
 
-    private MouseHandler mouse;
-    private KeyHandler key;
+	private MouseHandler mouse;
+	private KeyHandler key;
 
-    private GameStateManager gsm;
+	private GameStateManager gsm;
 
-    public GamePanel(BufferStrategy bs, int width, int height) {
-        GamePanel.width = width;
-        GamePanel.height = height;
-        this.bs = bs;
-        setPreferredSize(new Dimension(width, height));
-        setFocusable(true);
-        requestFocus();
-    }
+	public GamePanel(BufferStrategy bs, int width, int height) {
+		GamePanel.width = width;
+		GamePanel.height = height;
+		this.bs = bs;
+		this.setPreferredSize(new Dimension(width, height));
+		this.setFocusable(true);
+		this.requestFocus();
+	}
 
-    public void addNotify() {
-        super.addNotify();
+	@Override
+	public void addNotify() {
+		super.addNotify();
 
-        if (thread == null) {
-            thread = new Thread(this, "GameThread");
-            thread.start();
-        }
-    }
+		if (this.thread == null) {
+			this.thread = new Thread(this, "GameThread");
+			this.thread.start();
+		}
+	}
 
-    public void initGraphics() {
-        img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        g = (Graphics2D) img.getGraphics();
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-    }
+	public void initGraphics() {
+		this.img = new BufferedImage(GamePanel.width, GamePanel.height, BufferedImage.TYPE_INT_ARGB);
+		this.g = (Graphics2D) this.img.getGraphics();
+		this.g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+	}
 
-    public void init() {
-        running = true;
+	public void init() {
+		this.running = true;
+		GameDataManager.loadGameData();
+		this.initGraphics();
 
-        initGraphics();
+		this.mouse = new MouseHandler(this);
+		this.key = new KeyHandler(this);
 
-        mouse = new MouseHandler(this);
-        key = new KeyHandler(this);
+		this.gsm = new GameStateManager(this.g);
+	}
 
-        gsm = new GameStateManager(g);
-    }
+	@Override
+	public void run() {
+		this.init();
 
-    public void run() {
-        init();
+		final double GAME_HERTZ = 64.0;
+		final double TBU = 1000000000 / GAME_HERTZ; // Time Before Update
 
-        final double GAME_HERTZ = 64.0;
-        final double TBU = 1000000000 / GAME_HERTZ; // Time Before Update
+		final int MUBR = 3; // Must Update before render
 
-        final int MUBR = 3; // Must Update before render
+		double lastUpdateTime = System.nanoTime();
+		double lastRenderTime;
 
-        double lastUpdateTime = System.nanoTime();
-        double lastRenderTime;
+		final double TARGET_FPS = 1000;
+		final double TTBR = 1000000000 / TARGET_FPS; // Total time before render
 
-        final double TARGET_FPS = 1000;
-        final double TTBR = 1000000000 / TARGET_FPS; // Total time before render
+		int frameCount = 0;
+		int lastSecondTime = (int) (lastUpdateTime / 1000000000);
+		GamePanel.oldFrameCount = 0;
 
-        int frameCount = 0;
-        int lastSecondTime = (int) (lastUpdateTime / 1000000000);
-        oldFrameCount = 0;
+		GamePanel.tickCount = 0;
+		GamePanel.oldTickCount = 0;
 
-        tickCount = 0;
-        oldTickCount = 0;
+		while (this.running) {
 
-        while (running) {
+			double now = System.nanoTime();
+			int updateCount = 0;
+			while (((now - lastUpdateTime) > TBU) && (updateCount < MUBR)) {
+				this.update(now);
+				this.input(this.mouse, this.key);
+				lastUpdateTime += TBU;
+				updateCount++;
+				GamePanel.tickCount++;
+				// (^^^^) We use this varible for the soul purpose of displaying it
+			}
 
-            double now = System.nanoTime();
-            int updateCount = 0;
-            while (((now - lastUpdateTime) > TBU) && (updateCount < MUBR)) {
-                update(now);
-                input(mouse, key);
-                lastUpdateTime += TBU;
-                updateCount++;
-                tickCount++;
-                // (^^^^) We use this varible for the soul purpose of displaying it
-            }
+			if ((now - lastUpdateTime) > TBU) {
+				lastUpdateTime = now - TBU;
+			}
 
-            if ((now - lastUpdateTime) > TBU) {
-                lastUpdateTime = now - TBU;
-            }
+			this.input(this.mouse, this.key);
+			this.render();
+			this.draw();
+			lastRenderTime = now;
+			frameCount++;
 
-            input(mouse, key);
-            render();
-            draw();
-            lastRenderTime = now;
-            frameCount++;
+			int thisSecond = (int) (lastUpdateTime / 1000000000);
+			if (thisSecond > lastSecondTime) {
+				if (frameCount != GamePanel.oldFrameCount) {
+					System.out.println("NEW SECOND " + thisSecond + " " + frameCount);
+					GamePanel.oldFrameCount = frameCount;
+				}
 
-            int thisSecond = (int) (lastUpdateTime / 1000000000);
-            if (thisSecond > lastSecondTime) {
-                if (frameCount != oldFrameCount) {
-                    System.out.println("NEW SECOND " + thisSecond + " " + frameCount);
-                    oldFrameCount = frameCount;
-                }
+				if (GamePanel.tickCount != GamePanel.oldTickCount) {
+					System.out.println("NEW SECOND (T) " + thisSecond + " " + GamePanel.tickCount);
+					GamePanel.oldTickCount = GamePanel.tickCount;
+				}
+				GamePanel.tickCount = 0;
+				frameCount = 0;
+				lastSecondTime = thisSecond;
+			}
 
-                if (tickCount != oldTickCount) {
-                    System.out.println("NEW SECOND (T) " + thisSecond + " " + tickCount);
-                    oldTickCount = tickCount;
-                }
-                tickCount = 0;
-                frameCount = 0;
-                lastSecondTime = thisSecond;
-            }
+			while (((now - lastRenderTime) < TTBR) && ((now - lastUpdateTime) < TBU)) {
+				Thread.yield();
 
-            while (now - lastRenderTime < TTBR && now - lastUpdateTime < TBU) {
-                Thread.yield();
+				try {
+					Thread.sleep(1);
+				} catch (Exception e) {
+					System.out.println("ERROR: yielding thread");
+				}
 
-                try {
-                    Thread.sleep(1);
-                } catch (Exception e) {
-                    System.out.println("ERROR: yielding thread");
-                }
+				now = System.nanoTime();
+			}
 
-                now = System.nanoTime();
-            }
+		}
+	}
 
-        }
-    }
+	public void update(double time) {
+		this.gsm.update(time);
+	}
 
-    public void update(double time) {
-        gsm.update(time);
-    }
+	public void input(MouseHandler mouse, KeyHandler key) {
+		this.gsm.input(mouse, key);
+	}
 
-    public void input(MouseHandler mouse, KeyHandler key) {
-        gsm.input(mouse, key);
-    }
+	public void render() {
+		if (this.g != null) {
+			this.g.setColor(new Color(33, 30, 39));
+			this.g.fillRect(0, 0, GamePanel.width, GamePanel.height);
+			this.gsm.render(this.g);
+		}
+	}
 
-    public void render() {
-        if (g != null) {
-            g.setColor(new Color(33, 30, 39));
-            g.fillRect(0, 0, width, height);
-            gsm.render(g);
-        }
-    }
+	public void draw() {
+		do {
+			Graphics g2 = (Graphics) this.bs.getDrawGraphics();
+			g2.drawImage(this.img, 3, 26, GamePanel.width + 10, GamePanel.height + 10, null); // true 8, 31
+			g2.dispose();
+			this.bs.show();
+		} while(this.bs.contentsLost());
 
-    public void draw() {
-        do {
-            Graphics g2 = (Graphics) bs.getDrawGraphics();
-            g2.drawImage(img, 3, 26, width + 10, height + 10, null); // true 8, 31
-            g2.dispose();
-            bs.show();
-        } while(bs.contentsLost());
-        
-    }
+	}
 
 }

@@ -61,12 +61,12 @@ public abstract class Entity extends GameObject {
 
 	protected AABB hitBounds;
 
-	public Entity(SpriteSheet sprite, Vector2f origin, int size) {
-		super(sprite, origin, 0, 0, size);
+	public Entity(int id, SpriteSheet sprite, Vector2f origin, int size) {
+		super(id, sprite, origin, 0, 0, size);
 		this.hitsize = size;
 
 		this.hitBounds = new AABB(origin, size, size);
-		this.hitBounds.setXOffset(size / 2);
+		// this.hitBounds.setXOffset(size / 2);
 
 		this.ani = new Animation();
 		this.setAnimation(this.RIGHT, sprite.getSpriteArray(this.RIGHT), 10);
@@ -79,7 +79,7 @@ public abstract class Entity extends GameObject {
 	public void setHealth(int i, float f, boolean dir) {
 		if (!this.isInvincible) {
 			this.health = i;
-			this.isInvincible = true;
+			// this.isInvincible = true;
 			this.invincibletime = System.nanoTime();
 			if(this.health <= 0) {
 				this.die = true;

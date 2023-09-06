@@ -23,15 +23,15 @@ public class Player extends Entity {
 	private ArrayList<GameObject> go;
 	private TileManager tm;
 
-	public Player(Camera cam, SpriteSheet sprite, Vector2f origin, int size, TileManager tm) {
-		super(sprite, origin, size);
+	public Player(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, TileManager tm) {
+		super(id, sprite, origin, size);
 		this.cam = cam;
 		this.tm = tm;
 
-		this.bounds.setWidth(32);
-		this.bounds.setHeight(20);
-		this.bounds.setXOffset(16);
-		this.bounds.setYOffset(40);
+		this.bounds.setWidth(64);
+		this.bounds.setHeight(64);
+		// this.bounds.setXOffset(16);
+		// this.bounds.setYOffset(40);
 
 		this.hitBounds.setWidth(42);
 		this.hitBounds.setHeight(42);

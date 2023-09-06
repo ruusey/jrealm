@@ -27,8 +27,8 @@ public abstract class Enemy extends Entity {
 
 	public long lastShotTick = 0;
 
-	public Enemy(Camera cam, SpriteSheet sprite, Vector2f origin, int size) {
-		super(sprite, origin, size);
+	public Enemy(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size) {
+		super(id, sprite, origin, size);
 		this.cam = cam;
 
 
@@ -78,10 +78,10 @@ public abstract class Enemy extends Entity {
 			if(this.teleported) {
 				this.teleported = false;
 
-				this.bounds.setWidth(this.size / 2);
-				this.bounds.setHeight((this.size / 2) - this.yOffset);
-				this.bounds.setXOffset((this.size / 2) - this.xOffset);
-				this.bounds.setYOffset((this.size / 2) + this.yOffset);
+				//				this.bounds.setWidth(this.size / 2);
+				//				this.bounds.setHeight((this.size / 2) - this.yOffset);
+				//				this.bounds.setXOffset((this.size / 2) - this.xOffset);
+				//				this.bounds.setYOffset((this.size / 2) + this.yOffset);
 
 				this.hitBounds = new AABB(this.pos, this.size, this.size);
 				// this.hitBounds.setXOffset(this.size / 2);
@@ -106,7 +106,13 @@ public abstract class Enemy extends Entity {
 					Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
 
 					Vector2f source = this.getPos().clone(this.getSize() / 2, this.getSize() / 2);
-					playState.addProjectile(0, source, dest, (short) 8, 3.0f, 356.0f, (short) 10, true);
+					float angle = Bullet.getAngle(source, dest);
+
+					playState.addProjectile(source.clone(), angle - 0.2f, (short) 8, 3.0f, 356.0f, (short) 10, true);
+					playState.addProjectile(source.clone(), angle - 0.1f, (short) 8, 3.0f, 356.0f, (short) 10, true);
+					playState.addProjectile(source.clone(), angle, (short) 8, 3.0f, 356.0f, (short) 10, true);
+					playState.addProjectile(source.clone(), angle + 0.1f, (short) 8, 3.0f, 356.0f, (short) 10, true);
+					playState.addProjectile(source.clone(), angle + 0.2f, (short) 8, 3.0f, 356.0f, (short) 10, true);
 
 				}
 			} else {

@@ -1,0 +1,35 @@
+
+[
+	{
+		"projectileGroupId": 0,
+		"projectiles": [
+			{
+				"projectileId": 0,
+				"positionMode": 0,
+				"damage": 100,
+				"angle": -0.15,
+				"range": 216.0,
+				"size": 8,
+				"magnitude": 4.0,
+				"flags": [
+					0,
+					10
+				]
+			},
+			{
+				"projectileId": 1,
+				"positionMode": 0,
+				"damage": 100,
+				"angle": 0.15,
+				"range": 216.0,
+				"size": 8,
+				"magnitude": 4.0,
+				"flags": [
+					0,
+					10
+				]
+			}
+		]
+	}
+]
+

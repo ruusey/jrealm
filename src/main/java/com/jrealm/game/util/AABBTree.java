@@ -23,7 +23,7 @@ public class AABBTree {
 
 	public void insert(GameObject go) {
 
-		System.out.println("Adding: game object to tree...");
+		// System.out.println("Adding: game object to tree...");
 		this.nodeList.add(go.getBounds());
 
 	}

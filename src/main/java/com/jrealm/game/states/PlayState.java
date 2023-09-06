@@ -2,14 +2,12 @@ package com.jrealm.game.states;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.PointerInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
@@ -21,6 +19,8 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.Projectile;
+import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.ui.PlayerUI;
 import com.jrealm.game.util.AABBTree;
@@ -47,6 +47,7 @@ public class PlayState extends GameState {
 	private List<Vector2f> shotDestQueue;
 	public long lastShotTick = 0;
 
+	private int weaponId = 0;
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 
@@ -54,29 +55,29 @@ public class PlayState extends GameState {
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		this.cam = cam;
 
-		this.tm = new TileManager("tile/tilemap.xml", cam);
+		// this.tm = new TileManager("tile/tilemap.xml", cam);
 
-		//		SpriteSheet tileset = new SpriteSheet("tile/overworldOP.png", 32, 32);
-		//		SpriteSheet treeset = new SpriteSheet("material/trees.png", 64, 96);
-		//
-		//		this.mm = new MaterialManager(64, 150);
-		//		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
-		//		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
-		//
-		//		this.tm = new TileManager(tileset, 150, cam, this.mm);
+		SpriteSheet tileset = new SpriteSheet("tile/overworldOP.png", 32, 32, 0);
+		SpriteSheet treeset = new SpriteSheet("material/trees.png", 64, 96, 0);
+
+		this.mm = new MaterialManager(64, 150);
+		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
+		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
+
+		this.tm = new TileManager(tileset, 150, cam, this.mm);
 		this.shotDestQueue = new ArrayList<>();
 		this.gameObject = new GameObjectHeap();
 		//gameObject.addAll(mm.list);
 		this.aabbTree = new AABBTree();
 
-		this.player = new Player(cam, new SpriteSheet("entity/rotmg-classes.png", 8, 8, 4),
+		this.player = new Player(1, cam, new SpriteSheet("entity/rotmg-classes.png", 8, 8, 20),
 				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 64, this.tm);
 		this.pui = new PlayerUI(this.player);
 		this.aabbTree.insert(this.player);
 
 		cam.target(this.player);
 
-		SpriteSheet enemySheet = new SpriteSheet("entity/enemy/minimonsters.png", 16, 16, 4);
+		SpriteSheet enemySheet = new SpriteSheet("entity/rotmg-bosses.png", 16, 16, 0);
 
 
 		Random r = new Random(System.currentTimeMillis());
@@ -84,36 +85,35 @@ public class PlayState extends GameState {
 		for (int i = 0; i < this.tm.getHeight(); i++) {
 			for (int j = 0; j < this.tm.getWidth(); j++) {
 				GameObject go = null;
-				int doSpawn = r.nextInt(50);
-				if (doSpawn > 46) {
-					switch (r.nextInt(2)) {
-					case 1:
-						go = new TinyMon(cam,
-								new SpriteSheet(enemySheet.getSprite(0, 1, 128, 32), "tiny boar", 16, 16, 0),
-								new Vector2f(((GamePanel.width / 2) - 32) + 150,
-										((0 + (GamePanel.height / 2)) - 32) + 150),
-								32);
-						go.setPos(new Vector2f(j * 64, i * 64));
-
-						break;
+				int doSpawn = r.nextInt(100);
+				if (doSpawn > 95) {
+					switch (r.nextInt(3)) {
 					case 0:
-						go = new TinyMon(cam,
-								new SpriteSheet(enemySheet.getSprite(0, 0, 128, 32), "tiny monster", 16, 16, 0),
-								new Vector2f(((GamePanel.width / 2) - 32) + 150,
-										((0 + (GamePanel.height / 2)) - 32) + 150),
-								32);
+						go = new TinyMon(0, cam,
+								new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0),
+								new Vector2f(j * 64, i * 64),
+								64);
 						go.setPos(new Vector2f(j * 64, i * 64));
-
+						break;
+					case 1:
+						go = new TinyMon(1, cam,
+								new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
+								new Vector2f(j * 64, i * 64),
+								64);
+						go.setPos(new Vector2f(j * 64, i * 64));
+						break;
+					case 2:
+						go = new TinyMon(2, cam,
+								new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
+								new Vector2f(j * 64, i * 64), 64);
+						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					}
-					this.getGameObjects().add(0.5f, go);
+					this.getGameObjects().add(go.getBounds().distance(this.getPlayerPos()), go);
 					this.getAABBObjects().insert(go);
 				}
-
 			}
 		}
-
-
 	}
 
 	public GameObjectHeap getGameObjects() { return this.gameObject; }
@@ -135,29 +135,26 @@ public class PlayState extends GameState {
 		if(!this.gsm.isStateActive(GameStateManager.PAUSE)) {
 			if(!this.gsm.isStateActive(GameStateManager.EDIT)) {
 
-
-				//aabbTree.update(player);
-
 				if(this.player.getDeath()) {
 					this.gsm.add(GameStateManager.GAMEOVER);
 					this.gsm.pop(GameStateManager.PLAY);
 				}
 
-				// System.out.println("Player shooting, adding " + this.shotDestinations.size()
-				// + " bullets.");
 				for (int i = 0; i < this.shotDestQueue.size(); i++) {
 					Vector2f dest = this.shotDestQueue.remove(i);
 					dest.addX(PlayState.map.x);
 					dest.addY(PlayState.map.y);
 					Vector2f source = this.getPlayerPos().clone(this.player.getSize() / 2, this.player.getSize() / 2);
+					ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
 					float angle = Bullet.getAngle(source, dest);
-					this.addProjectile(0, source, angle + ((float) (Math.PI / 4)), (short) 8, 4.0f, 256.0f, (short) 30,
-							false);
-					this.addProjectile(1, source, angle - ((float) (Math.PI / 4)), (short) 8, 4.0f, 256.0f, (short) 30,
-							false);
+
+					for (Projectile p : group.getProjectiles()) {
+						this.addProjectile(source.clone(), angle + p.getAngle(), p.getSize(), p.getMagnitude(),
+								p.getRange(),
+								p.getDamage(), false);
+					}
 
 				}
-
 
 				for(int i = 0; i < this.gameObject.size(); i++) {
 					if(this.gameObject.get(i).go instanceof Enemy) {
@@ -212,52 +209,31 @@ public class PlayState extends GameState {
 		}
 	}
 
-	public void addProjectile(int index, Vector2f src, Vector2f dest, short size, float magnitude, float range, short damage,
+	public void addProjectile(Vector2f src, Vector2f dest, short size, float magnitude, float range, short damage,
 			boolean isEnemy) {
-		Bullet b = new Bullet(null,
+		Bullet b = new Bullet(1, null,
 				src,
 				dest, size, magnitude, range, damage, isEnemy);
-		this.getGameObjects().add(b.getBounds().distance(this.getPlayerPos()) + index, b);
+		this.getGameObjects().add(b.getBounds().distance(this.getPlayerPos()), b);
 		this.aabbTree.insert(b);
 	}
 
-	public void addProjectile(int index, Vector2f src, float angle, short size, float magnitude, float range,
-			short damage,
+	public void addProjectile(Vector2f src, float angle, short size, float magnitude, float range, short damage,
 			boolean isEnemy) {
-		Bullet b = new Bullet(null, src, angle, size, magnitude, range, damage, isEnemy);
-		this.getGameObjects().add(b.getBounds().distance(this.getPlayerPos()) + index, b);
+		Bullet b = new Bullet(1, null, src, angle, size, magnitude, range, damage, isEnemy);
+		this.getGameObjects().add(b.getBounds().distance(this.getPlayerPos()), b);
 		this.aabbTree.insert(b);
 	}
 
 	public void processBulletHit() {
-		List<Bullet> results = new ArrayList<>();
+		List<Bullet> results = this.getBullets();
 
-		for (int i = 0; i < this.gameObject.size(); i++) {
-			if (this.gameObject.get(i).go instanceof Bullet) {
-
-				results.add((Bullet) this.gameObject.get(i).go);
-			}
-		}
 		for (int i = 0; i < this.gameObject.size(); i++) {
 			if (this.gameObject.get(i).go instanceof Enemy) {
 				Enemy enemy = ((Enemy) this.gameObject.get(i).go);
 				for (Bullet b : results) {
-					if (b.getBounds().collides(0, 0, enemy.getHitBounds()) && !b.isEnemy()) {
-						enemy.setHealth(enemy.getHealth() - b.getDamage(), 0, false);
-						this.aabbTree.removeObject(b);
-						this.gameObject.remove(b);
-						if (enemy.getDeath()) {
-							this.aabbTree.removeObject(enemy);
-							this.gameObject.remove(enemy);
-						}
-					}
-					if (b.getBounds().collides(0, 0, this.player.getBounds()) && b.isEnemy()) {
-						this.player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
-
-						this.player.setHealth(this.player.getHealth() - b.getDamage(), 0, false);
-						this.aabbTree.removeObject(b);
-						this.gameObject.remove(b);
-					}
+					this.processPlayerHit(b, this.getPlayer());
+					this.proccessEnemyHit(b, enemy);
 				}
 			}
 
@@ -271,6 +247,39 @@ public class PlayState extends GameState {
 				}
 			}
 		}
+	}
+
+	private void processPlayerHit(Bullet b, Player p) {
+		if (b.getBounds().collides(0, 0, this.player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
+			b.setPlayerHit(true);
+			this.player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
+
+			this.player.setHealth(this.player.getHealth() - b.getDamage(), 0, false);
+			this.aabbTree.removeObject(b);
+			this.gameObject.remove(b);
+		}
+	}
+
+	private void proccessEnemyHit(Bullet b, Enemy e) {
+		if (b.getBounds().collides(0, 0, e.getHitBounds()) && !b.isEnemy()) {
+			e.setHealth(e.getHealth() - b.getDamage(), 0, false);
+			this.aabbTree.removeObject(b);
+			this.gameObject.remove(b);
+			if (e.getDeath()) {
+				this.aabbTree.removeObject(e);
+				this.gameObject.remove(e);
+			}
+		}
+	}
+
+	private List<Bullet> getBullets() {
+		List<Bullet> results = new ArrayList<>();
+		for (int i = 0; i < this.gameObject.size(); i++) {
+			if (this.gameObject.get(i).go instanceof Bullet) {
+				results.add((Bullet) this.gameObject.get(i).go);
+			}
+		}
+		return results;
 	}
 
 
@@ -319,15 +328,8 @@ public class PlayState extends GameState {
 
 		if ((mouse.getButton() == 1) && canShoot) {
 			this.lastShotTick = System.currentTimeMillis();
-			PointerInfo a = MouseInfo.getPointerInfo();
-			Point b = a.getLocation();
-			int x = (int) b.getX();
-			int y = (int) b.getY();
 			Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
-			Vector2f source = new Vector2f(x, y);
 			this.shotDestQueue.add(dest);
-
-
 		}
 	}
 
@@ -346,6 +348,9 @@ public class PlayState extends GameState {
 		}
 
 		for (AABB node : this.aabbTree.getAllNodes()) {
+			if (node.getHeight() == 20.0f) {
+				System.out.println();
+			}
 			g.setColor(Color.BLUE);
 			Vector2f pos = node.getPos().getWorldVar();
 			pos.addX(node.getXOffset());

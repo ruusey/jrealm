@@ -8,8 +8,11 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.TileCollision;
 
-public abstract class GameObject {
+import lombok.Data;
 
+@Data
+public abstract class GameObject {
+	protected int id;
 	protected SpriteSheet sprite;
 	protected Sprite image;
 	protected AABB bounds;
@@ -31,17 +34,17 @@ public abstract class GameObject {
 	protected TileCollision tc;
 	protected String name = "";
 
-	public GameObject(SpriteSheet sprite, Vector2f origin, int spriteX, int spriteY, int size) {
-		this(origin, size);
+	public GameObject(int id, SpriteSheet sprite, Vector2f origin, int spriteX, int spriteY, int size) {
+		this(id, origin, size);
 		this.sprite = sprite;
 	}
 
-	public GameObject(Sprite image, Vector2f origin, int size) {
-		this(origin, size);
+	public GameObject(int id, Sprite image, Vector2f origin, int size) {
+		this(id, origin, size);
 		this.image = image;
 	}
 
-	private GameObject(Vector2f origin, int size) {
+	private GameObject(int id, Vector2f origin, int size) {
 		this.bounds = new AABB(origin, size, size);
 		this.pos = origin;
 		this.size = size;
@@ -55,24 +58,6 @@ public abstract class GameObject {
 		this.teleported = true;
 	}
 
-
-	public Sprite getImage() { return this.image; }
-
-	public void setName(String name) { this.name = name; }
-	public void setSprite(SpriteSheet sprite) { this.sprite = sprite; }
-	public void setSize(int i) { this.size = i; }
-	public void setMaxSpeed(float f) { this.maxSpeed = f; }
-	public void setAcc(float f) { this.acc = f; }
-	public void setDeacc(float f) { this.deacc = f; }
-
-	public float getDeacc() { return this.deacc; }
-	public float getAcc() { return this.acc; }
-	public float getMaxSpeed() { return this.maxSpeed; }
-	public float getDx() { return this.dx; }
-	public float getDy() { return this.dy; }
-	public AABB getBounds() { return this.bounds; }
-	public Vector2f getPos() { return this.pos; }
-	public int getSize() { return this.size; }
 
 	public void addForce(float a, boolean vertical) {
 		if(!vertical) {

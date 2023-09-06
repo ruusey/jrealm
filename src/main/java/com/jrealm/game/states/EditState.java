@@ -42,7 +42,7 @@ public class EditState extends GameState {
 		this.btnEnemy1 = new Button("TinyMon", new Vector2f(64 + 24, 64 + 24), 32, 24, this.imgButton, new Vector2f(64, 64), 220, 75);
 		this.btnEnemy1.addEvent(e -> {
 			this.selection = 1;
-			this.entityList[1] = new TinyMon(cam,
+			this.entityList[1] = new TinyMon(1, cam,
 					new SpriteSheet(enemySheet.getSprite(0, 0, 128, 32), "tiny monster", 16, 16, 0),
 					new Vector2f(((GamePanel.width / 2) - 32) + 150, ((0 + (GamePanel.height / 2)) - 32) + 150), 64);
 		});
@@ -50,7 +50,7 @@ public class EditState extends GameState {
 		this.btnEnemy2 = new Button("TinyBoar", new Vector2f(64 + 24, (64 + 24) * 2), 32, 24, this.imgButton, new Vector2f(64, 64 + 85), 235, 75);
 		this.btnEnemy2.addEvent(e -> {
 			this.selection = 2;
-			this.entityList[2] = new TinyMon(cam,
+			this.entityList[2] = new TinyMon(1, cam,
 					new SpriteSheet(enemySheet.getSprite(0, 1, 128, 32), "tiny boar", 16, 16, 0),
 					new Vector2f(((GamePanel.width / 2) - 32) + 150, ((0 + (GamePanel.height / 2)) - 32) + 150), 64);
 		});

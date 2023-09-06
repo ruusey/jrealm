@@ -17,14 +17,17 @@ public class Bullet extends GameObject {
 	private float range;
 	private short damage;
 	private boolean isEnemy;
-	public Bullet(Sprite image, Vector2f origin, int size) {
-		super(image, origin, size);
+	private boolean playerHit;
+
+	public Bullet(int id, Sprite image, Vector2f origin, int size) {
+		super(id, image, origin, size);
 		// TODO Auto-generated constructor stub
 	}
 
-	public Bullet(Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range, short damage,
+	public Bullet(int id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
+			short damage,
 			boolean isEnemy) {
-		super(image, origin, size);
+		super(id, image, origin, size);
 		this.magnitude = magnitude;
 		this.range = range;
 		this.damage = damage;
@@ -33,9 +36,10 @@ public class Bullet extends GameObject {
 
 	}
 
-	public Bullet(Sprite image, Vector2f origin, float angle, short size, float magnitude, float range, short damage,
+	public Bullet(int id, Sprite image, Vector2f origin, float angle, short size, float magnitude, float range,
+			short damage,
 			boolean isEnemy) {
-		super(image, origin, size);
+		super(id, image, origin, size);
 		this.magnitude = magnitude;
 		this.range = range;
 		this.damage = damage;
