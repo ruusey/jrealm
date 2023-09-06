@@ -181,11 +181,11 @@ public class TileManager {
 		if(TileManager.tm.size() < 2) {
 			normMap = 0;
 		}
-		NormBlock[] block = new NormBlock[9];
+		NormBlock[] block = new NormBlock[16];
 
 		int i = 0;
-		for(int x = 1; x > -2; x--) {
-			for(int y = 1; y > -2; y--) {
+		for (int x = 2; x > -2; x--) {
+			for (int y = 2; y > -2; y--) {
 				if(((id + (y + (x * this.height))) < 0) || ((id + (y + (x * this.height))) > ((this.width * this.height) - 2))) {
 					continue;
 				}

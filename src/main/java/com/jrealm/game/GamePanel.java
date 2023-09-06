@@ -14,6 +14,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.states.GameStateManager;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
+import com.jrealm.game.util.WorkerThread;
 
 
 public class GamePanel extends JPanel implements Runnable {
@@ -112,10 +113,16 @@ public class GamePanel extends JPanel implements Runnable {
 			if ((now - lastUpdateTime) > TBU) {
 				lastUpdateTime = now - TBU;
 			}
+			Runnable input = ()->{
+				this.input(this.mouse, this.key);
+			};
 
-			this.input(this.mouse, this.key);
-			this.render();
-			this.draw();
+			Runnable renderAndDraw = () -> {
+				this.render();
+				this.draw();
+			};
+
+			WorkerThread.submitAndRun(input, renderAndDraw);
 			lastRenderTime = now;
 			frameCount++;
 

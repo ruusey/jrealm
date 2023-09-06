@@ -4,9 +4,12 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 
+import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.Projectile;
+import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
 
@@ -26,6 +29,8 @@ public abstract class Enemy extends Entity {
 	protected ArrayList<GameObject> collisions;
 
 	public long lastShotTick = 0;
+
+	private int weaponId = 1;
 
 	public Enemy(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size) {
 		super(id, sprite, origin, size);
@@ -107,12 +112,12 @@ public abstract class Enemy extends Entity {
 
 					Vector2f source = this.getPos().clone(this.getSize() / 2, this.getSize() / 2);
 					float angle = Bullet.getAngle(source, dest);
+					ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
 
-					playState.addProjectile(source.clone(), angle - 0.2f, (short) 8, 3.0f, 356.0f, (short) 10, true);
-					playState.addProjectile(source.clone(), angle - 0.1f, (short) 8, 3.0f, 356.0f, (short) 10, true);
-					playState.addProjectile(source.clone(), angle, (short) 8, 3.0f, 356.0f, (short) 10, true);
-					playState.addProjectile(source.clone(), angle + 0.1f, (short) 8, 3.0f, 356.0f, (short) 10, true);
-					playState.addProjectile(source.clone(), angle + 0.2f, (short) 8, 3.0f, 356.0f, (short) 10, true);
+					for (Projectile p : group.getProjectiles()) {
+						playState.addProjectile(source.clone(), angle + p.getAngle(), p.getSize(), p.getMagnitude(),
+								p.getRange(), p.getDamage(), true);
+					}
 
 				}
 			} else {

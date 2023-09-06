@@ -28,6 +28,7 @@ import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectHeap;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
+import com.jrealm.game.util.WorkerThread;
 
 import lombok.Data;
 
@@ -139,71 +140,77 @@ public class PlayState extends GameState {
 					this.gsm.add(GameStateManager.GAMEOVER);
 					this.gsm.pop(GameStateManager.PLAY);
 				}
+				Runnable playerShootDequeue = () -> {
+					for (int i = 0; i < this.shotDestQueue.size(); i++) {
+						Vector2f dest = this.shotDestQueue.remove(i);
+						dest.addX(PlayState.map.x);
+						dest.addY(PlayState.map.y);
+						Vector2f source = this.getPlayerPos().clone(this.player.getSize() / 2,
+								this.player.getSize() / 2);
+						ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
+						float angle = Bullet.getAngle(source, dest);
 
-				for (int i = 0; i < this.shotDestQueue.size(); i++) {
-					Vector2f dest = this.shotDestQueue.remove(i);
-					dest.addX(PlayState.map.x);
-					dest.addY(PlayState.map.y);
-					Vector2f source = this.getPlayerPos().clone(this.player.getSize() / 2, this.player.getSize() / 2);
-					ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
-					float angle = Bullet.getAngle(source, dest);
+						for (Projectile p : group.getProjectiles()) {
+							this.addProjectile(source.clone(), angle + p.getAngle(), p.getSize(), p.getMagnitude(),
+									p.getRange(), p.getDamage(), false);
+						}
 
-					for (Projectile p : group.getProjectiles()) {
-						this.addProjectile(source.clone(), angle + p.getAngle(), p.getSize(), p.getMagnitude(),
-								p.getRange(),
-								p.getDamage(), false);
+					}
+				};
+
+				Runnable processGameObjects = () -> {
+					for (int i = 0; i < this.gameObject.size(); i++) {
+						if (this.gameObject.get(i).go instanceof Enemy) {
+							Enemy enemy = ((Enemy) this.gameObject.get(i).go);
+							if (this.player.getHitBounds().collides(enemy.getBounds())) {
+								this.player.setTargetEnemy(enemy);
+							}
+
+							if (enemy.getDeath()) {
+								this.gameObject.remove(enemy);
+							} else {
+								enemy.update(this, time);
+							}
+
+							if (this.canBuildHeap(2500, 1000000, time)) {
+								this.gameObject.get(i).value = enemy.getBounds().distance(this.player.getPos());
+							}
+
+							continue;
+						}
+
+						if (this.gameObject.get(i).go instanceof Material) {
+							Material mat = ((Material) this.gameObject.get(i).go);
+							if (this.player.getHitBounds().collides(mat.getBounds())) {
+								this.player.setTargetGameObject(mat);
+							}
+						}
+
+						if (this.gameObject.get(i).go instanceof Bullet) {
+							Bullet bullet = ((Bullet) this.gameObject.get(i).go);
+							if (bullet.remove()) {
+								this.gameObject.remove(bullet);
+								this.aabbTree.removeObject(bullet);
+
+							} else {
+								bullet.update();
+							}
+						}
+					}
+				};
+
+				Runnable render = () -> {
+					if (this.canBuildHeap(3, 1000000000, time)) {
+						this.heaptime = System.nanoTime();
+						this.gameObject.buildHeap();
 					}
 
-				}
+					this.player.update(time);
+					this.pui.update(time);
+					this.processBulletHit();
+				};
+				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, render);
 
-				for(int i = 0; i < this.gameObject.size(); i++) {
-					if(this.gameObject.get(i).go instanceof Enemy) {
-						Enemy enemy = ((Enemy) this.gameObject.get(i).go);
-						if(this.player.getHitBounds().collides(enemy.getBounds())) {
-							this.player.setTargetEnemy(enemy);
-						}
-
-						if(enemy.getDeath()) {
-							this.gameObject.remove(enemy);
-						} else {
-							enemy.update(this, time);
-						}
-
-						if(this.canBuildHeap(2500, 1000000, time)) {
-							this.gameObject.get(i).value = enemy.getBounds().distance(this.player.getPos());
-						}
-
-						continue;
-					}
-
-					if(this.gameObject.get(i).go instanceof Material) {
-						Material mat = ((Material) this.gameObject.get(i).go);
-						if(this.player.getHitBounds().collides(mat.getBounds())) {
-							this.player.setTargetGameObject(mat);
-						}
-					}
-
-					if(this.gameObject.get(i).go instanceof Bullet) {
-						Bullet bullet = ((Bullet) this.gameObject.get(i).go);
-						if (bullet.remove()) {
-							this.gameObject.remove(bullet);
-							this.aabbTree.removeObject(bullet);
-
-						} else {
-							bullet.update();
-						}
-					}
-				}
-
-				if(this.canBuildHeap(3, 1000000000, time)) {
-					this.heaptime = System.nanoTime();
-					this.gameObject.buildHeap();
-					//System.out.println(gameObject);
-				}
-
-				this.player.update(time);
-				this.pui.update(time);
-				this.processBulletHit();
 			}
 			this.cam.update();
 		}
@@ -269,6 +276,13 @@ public class PlayState extends GameState {
 				this.aabbTree.removeObject(e);
 				this.gameObject.remove(e);
 			}
+		}
+	}
+
+	private void processTerrainHit(Bullet b, Material m) {
+		if (b.getBounds().intersect(m.getBounds())) {
+			this.aabbTree.removeObject(b);
+			this.gameObject.remove(b);
 		}
 	}
 
@@ -341,9 +355,6 @@ public class PlayState extends GameState {
 		for(int i = 0; i < this.gameObject.size(); i++) {
 			if(this.cam.getBounds().collides(this.gameObject.get(i).getBounds())) {
 				this.gameObject.get(i).go.render(g);
-			} else if (this.gameObject.get(i).go instanceof Bullet) {
-				Bullet bullet = ((Bullet) this.gameObject.get(i).go);
-				this.gameObject.remove(bullet);
 			}
 		}
 
