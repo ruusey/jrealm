@@ -8,11 +8,11 @@ public class WorkerThread extends Thread {
 
 	private static final ExecutorService executor = Executors.newFixedThreadPool(10);
 
-	public static CompletableFuture submit(Runnable runnable) {
+	public static CompletableFuture<?> submit(Runnable runnable) {
 		return CompletableFuture.runAsync(runnable, WorkerThread.executor);
 	}
 
-	public static void allOf(CompletableFuture... futures) {
+	public static void allOf(CompletableFuture<?>... futures) {
 
 		CompletableFuture<Void> cf = CompletableFuture.allOf(futures);
 		try {
@@ -24,7 +24,7 @@ public class WorkerThread extends Thread {
 	}
 
 	public static void submitAndRun(Runnable... runnables) {
-		CompletableFuture[] futures = new CompletableFuture[runnables.length];
+		CompletableFuture<?>[] futures = new CompletableFuture[runnables.length];
 		for (int i = 0; i < runnables.length; i++) {
 			futures[i] = WorkerThread.submit(runnables[i]);
 		}

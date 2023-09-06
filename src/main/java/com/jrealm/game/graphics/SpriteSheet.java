@@ -41,7 +41,6 @@ public class SpriteSheet {
 		this.w = w;
 		this.h = h;
 
-		System.out.println("Loading: " + name + "...");
 		this.SPRITESHEET = sprite;
 
 		this.wSprite = this.SPRITESHEET.image.getWidth() / w;

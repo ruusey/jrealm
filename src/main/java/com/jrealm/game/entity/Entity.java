@@ -12,6 +12,9 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.TileCollision;
 
+import lombok.Data;
+
+@Data
 public abstract class Entity extends GameObject {
 
 	public int IDLE = 6;
@@ -72,6 +75,10 @@ public abstract class Entity extends GameObject {
 		this.setAnimation(this.RIGHT, sprite.getSpriteArray(this.RIGHT), 10);
 
 		this.tc = new TileCollision(this);
+	}
+
+	public void setIsInvincible(boolean invincible) {
+		this.isInvincible = invincible;
 	}
 
 	public void setFallen(boolean b) { this.fallen = b; }

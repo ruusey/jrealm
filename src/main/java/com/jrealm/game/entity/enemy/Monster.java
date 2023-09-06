@@ -5,9 +5,9 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.Camera;
 
-public class TinyMon extends Enemy {
+public class Monster extends Enemy {
 
-	public TinyMon(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size) {
+	public Monster(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size) {
 		super(id, cam, sprite, origin, size);
 		//		this.xOffset = size / 4;
 		//		this.yOffset = size / 4;

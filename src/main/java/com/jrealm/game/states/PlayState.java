@@ -12,7 +12,7 @@ import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.entity.enemy.TinyMon;
+import com.jrealm.game.entity.enemy.Monster;
 import com.jrealm.game.entity.material.Material;
 import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.graphics.Sprite;
@@ -31,8 +31,10 @@ import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.WorkerThread;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class PlayState extends GameState {
 
 	public Player player;
@@ -57,9 +59,9 @@ public class PlayState extends GameState {
 		this.cam = cam;
 
 		// this.tm = new TileManager("tile/tilemap.xml", cam);
-
-		SpriteSheet tileset = new SpriteSheet("tile/overworldOP.png", 32, 32, 0);
-		SpriteSheet treeset = new SpriteSheet("material/trees.png", 64, 96, 0);
+		GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png");
+		SpriteSheet tileset = GameDataManager.SPRITE_SHEETS.get("tile/overworldOP.png");
+		SpriteSheet treeset = GameDataManager.SPRITE_SHEETS.get("material/trees.png");
 
 		this.mm = new MaterialManager(64, 150);
 		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
@@ -71,14 +73,21 @@ public class PlayState extends GameState {
 		//gameObject.addAll(mm.list);
 		this.aabbTree = new AABBTree();
 
-		this.player = new Player(1, cam, new SpriteSheet("entity/rotmg-classes.png", 8, 8, 20),
+		this.player = new Player(1, cam, GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png"),
 				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 64, this.tm);
+		this.player.setIsInvincible(true);
+		this.spawnRandomEnemies();
+
 		this.pui = new PlayerUI(this.player);
 		this.aabbTree.insert(this.player);
 
 		cam.target(this.player);
+		this.player.setIsInvincible(false);
 
-		SpriteSheet enemySheet = new SpriteSheet("entity/rotmg-bosses.png", 16, 16, 0);
+	}
+
+	private void spawnRandomEnemies() {
+		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 
 
 		Random r = new Random(System.currentTimeMillis());
@@ -90,21 +99,21 @@ public class PlayState extends GameState {
 				if (doSpawn > 95) {
 					switch (r.nextInt(3)) {
 					case 0:
-						go = new TinyMon(0, cam,
+						go = new Monster(0, this.cam,
 								new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0),
 								new Vector2f(j * 64, i * 64),
 								64);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					case 1:
-						go = new TinyMon(1, cam,
+						go = new Monster(1, this.cam,
 								new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
 								new Vector2f(j * 64, i * 64),
 								64);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					case 2:
-						go = new TinyMon(2, cam,
+						go = new Monster(2, this.cam,
 								new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
 								new Vector2f(j * 64, i * 64), 64);
 						go.setPos(new Vector2f(j * 64, i * 64));
