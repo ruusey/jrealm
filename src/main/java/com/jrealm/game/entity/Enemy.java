@@ -10,11 +10,14 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
+import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
 
-public abstract class Enemy extends Entity {
+import lombok.Data;
 
+@Data
+public abstract class Enemy extends Entity {
 	protected AABB sense;
 	protected int r_sense;
 
@@ -35,8 +38,7 @@ public abstract class Enemy extends Entity {
 	public Enemy(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size) {
 		super(id, sprite, origin, size);
 		this.cam = cam;
-
-
+		this.weaponId = id;
 		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2), (origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);
 		this.attackrange = new AABB(new Vector2f((origin.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2) , (origin.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2) ), this.r_attackrange);
 	}
@@ -115,8 +117,15 @@ public abstract class Enemy extends Entity {
 					ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
 
 					for (Projectile p : group.getProjectiles()) {
-						playState.addProjectile(source.clone(), angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
-								p.getRange(), p.getDamage(), true);
+						if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
+							playState.addProjectile(source.clone(), angle + Float.parseFloat(p.getAngle()), p.getSize(),
+									p.getMagnitude(), p.getRange(), p.getDamage(), true);
+						} else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
+							playState.addProjectile(source.clone(), Float.parseFloat(p.getAngle()), p.getSize(),
+									p.getMagnitude(),
+									p.getRange(), p.getDamage(), true);
+						}
+
 					}
 
 				}

@@ -95,8 +95,8 @@ public class PlayState extends GameState {
 		for (int i = 0; i < this.tm.getHeight(); i++) {
 			for (int j = 0; j < this.tm.getWidth(); j++) {
 				GameObject go = null;
-				int doSpawn = r.nextInt(100);
-				if (doSpawn > 95) {
+				int doSpawn = r.nextInt(200);
+				if (doSpawn > 195) {
 					switch (r.nextInt(3)) {
 					case 0:
 						go = new Monster(0, this.cam,
@@ -106,14 +106,14 @@ public class PlayState extends GameState {
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					case 1:
-						go = new Monster(1, this.cam,
+						go = new Monster(2, this.cam,
 								new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
 								new Vector2f(j * 64, i * 64),
 								64);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					case 2:
-						go = new Monster(2, this.cam,
+						go = new Monster(1, this.cam,
 								new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
 								new Vector2f(j * 64, i * 64), 64);
 						go.setPos(new Vector2f(j * 64, i * 64));
@@ -171,15 +171,7 @@ public class PlayState extends GameState {
 					for (int i = 0; i < this.gameObject.size(); i++) {
 						if (this.gameObject.get(i).go instanceof Enemy) {
 							Enemy enemy = ((Enemy) this.gameObject.get(i).go);
-							if (this.player.getHitBounds().collides(enemy.getBounds())) {
-								this.player.setTargetEnemy(enemy);
-							}
-
-							if (enemy.getDeath()) {
-								this.gameObject.remove(enemy);
-							} else {
-								enemy.update(this, time);
-							}
+							enemy.update(this, time);
 
 							if (this.canBuildHeap(2500, 1000000, time)) {
 								this.gameObject.get(i).value = enemy.getBounds().distance(this.player.getPos());
@@ -200,7 +192,6 @@ public class PlayState extends GameState {
 							if (bullet.remove()) {
 								this.gameObject.remove(bullet);
 								this.aabbTree.removeObject(bullet);
-
 							} else {
 								bullet.update();
 							}

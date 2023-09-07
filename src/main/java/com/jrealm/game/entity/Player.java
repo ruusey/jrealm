@@ -19,7 +19,6 @@ import com.jrealm.game.util.MouseHandler;
 public class Player extends Entity {
 
 	private Camera cam;
-	private ArrayList<Enemy> enemy;
 	private ArrayList<GameObject> go;
 	private TileManager tm;
 
@@ -45,7 +44,6 @@ public class Player extends Entity {
 		this.ani.setNumFrames(2, this.ATTACK + this.UP);
 		this.ani.setNumFrames(2, this.ATTACK + this.DOWN);
 
-		this.enemy = new ArrayList<Enemy>();
 		this.go = new ArrayList<GameObject>();
 
 		for(int i = 0; i < sprite.getSpriteArray2().length; i++) {
@@ -59,10 +57,6 @@ public class Player extends Entity {
 		this.health = 500;
 		this.maxHealth = 500;
 		this.name = "player";
-	}
-
-	public void setTargetEnemy(Enemy enemy) {
-		this.enemy.add(enemy);
 	}
 
 	public void setTargetGameObject(GameObject go) {
@@ -89,12 +83,7 @@ public class Player extends Entity {
 		super.update(time);
 
 		this.attacking = this.isAttacking(time);
-		for(int i = 0; i < this.enemy.size(); i++) {
-			if(this.attacking) {
-				this.enemy.get(i).setHealth(this.enemy.get(i).getHealth() - this.damage, this.force * this.getDirection(), (this.currentDirection == this.UP) || (this.currentDirection == this.DOWN));
-				this.enemy.remove(i);
-			}
-		}
+
 
 		if(!this.fallen) {
 			this.move();

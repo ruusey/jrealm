@@ -1,11 +1,17 @@
 package com.jrealm.game.entity.enemy;
 
+import java.util.UUID;
+
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.Camera;
 
+import lombok.Data;
+
+@Data
 public class Monster extends Enemy {
+	private String uuid;
 
 	public Monster(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size) {
 		super(id, cam, sprite, origin, size);
@@ -35,6 +41,7 @@ public class Monster extends Enemy {
 
 		this.currentAnimation = this.IDLE;
 		this.right = true;
+		this.uuid = UUID.randomUUID().toString();
 	}
 
 }
