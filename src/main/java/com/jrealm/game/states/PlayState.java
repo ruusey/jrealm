@@ -160,7 +160,7 @@ public class PlayState extends GameState {
 						float angle = Bullet.getAngle(source, dest);
 
 						for (Projectile p : group.getProjectiles()) {
-							this.addProjectile(source.clone(), angle + p.getAngle(), p.getSize(), p.getMagnitude(),
+							this.addProjectile(source.clone(), angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
 									p.getRange(), p.getDamage(), false);
 						}
 

@@ -4,9 +4,12 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jrealm.game.graphics.SpriteSheet;
+import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 
 public class GameDataManager {
@@ -27,10 +30,16 @@ public class GameDataManager {
 		InputStream inputStream = GameDataManager.class.getClassLoader()
 				.getResourceAsStream("data/projectile-groups.json");
 		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-
+		
+		//replaceInjectVariables(text);
 		ProjectileGroup[] projectileGroups = GameDataManager.mapper.readValue(text, ProjectileGroup[].class);
 
 		for (ProjectileGroup group : projectileGroups) {
+			for(Projectile p : group.getProjectiles()) {
+				if(p.getAngle().contains("{{")) {
+					p.setAngle(replaceInjectVariables(p.getAngle()));
+				}
+			}
 			GameDataManager.PROJECTILE_GROUPS.put(group.getProjectileGroupId(), group);
 		}
 		System.out.println("Projectile Groups... DONE");
@@ -66,6 +75,33 @@ public class GameDataManager {
 
 		System.out.println("Sprite Sheets... DONE");
 
+	}
+	
+	private static String replaceInjectVariables(String input) {
+		String randomizeRegex = "\\{\\{(.*?)}}";
+		Pattern pattern = Pattern.compile(randomizeRegex);
+		Matcher matcher = pattern.matcher(input);
+		while (matcher.find()) {
+			String match = matcher.group(1);
+			if(match.contains("PI/")) {
+				String[] split = match.split("/");
+				float angle =(float) (Math.PI/Float.parseFloat(split[1]));
+				input = replaceGen(input, match, angle+"");
+				
+			} else	if(match.contains("-PI/")) {
+				String[] split = match.split("/");
+				float angle =(float) -(Math.PI/Float.parseFloat(split[1]));
+				input = replaceGen(input, match, angle+"");
+				
+			}
+		}
+		return input;
+			
+	}
+	
+	public static String replaceGen(String source, String variable, String value) {
+		String text = source.replace("{{" + variable + "}}", value);
+		return text;
 	}
 
 	public static void loadGameData() {

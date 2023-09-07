@@ -115,7 +115,7 @@ public abstract class Enemy extends Entity {
 					ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
 
 					for (Projectile p : group.getProjectiles()) {
-						playState.addProjectile(source.clone(), angle + p.getAngle(), p.getSize(), p.getMagnitude(),
+						playState.addProjectile(source.clone(), angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
 								p.getRange(), p.getDamage(), true);
 					}
 

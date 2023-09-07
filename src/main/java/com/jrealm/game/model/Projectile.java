@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class Projectile {
 	private int projectileId;
 	private ProjectilePositionMode positionMode;
-	private float angle;
+	private String angle;
 	private short range;
 	private float magnitude;
 	private short size;
