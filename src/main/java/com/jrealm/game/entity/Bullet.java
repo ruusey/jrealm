@@ -1,6 +1,5 @@
 package com.jrealm.game.entity;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 
@@ -18,6 +17,7 @@ public class Bullet extends GameObject {
 	private short damage;
 	private boolean isEnemy;
 	private boolean playerHit;
+	private float tfAngle = (float) (Math.PI / 2);
 
 	public Bullet(int id, Sprite image, Vector2f origin, int size) {
 		super(id, image, origin, size);
@@ -91,12 +91,16 @@ public class Bullet extends GameObject {
 	@Override
 	public void render(Graphics2D g) {
 		AffineTransform original = g.getTransform();
-
 		AffineTransform t = new AffineTransform();
-		t.setToRotation(this.angle);
-		// g.setTransform(t);
-		g.setColor(Color.RED);
-		g.fillOval((int) this.pos.getWorldVar().x, (int) this.pos.getWorldVar().y, this.size, this.size);
+		t.rotate(-this.getAngle() + this.tfAngle, this.pos.getWorldVar().x + (this.size / 2),
+				this.pos.getWorldVar().y + (this.size / 2));
+		g.setTransform(t);
+		// g.setColor(Color.RED);
+		g.drawImage(this.image.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), this.size,
+				this.size, null);
+
+		// g.fillOval((int) this.pos.getWorldVar().x, (int) this.pos.getWorldVar().y,
+		// this.size, this.size);
 
 		g.setTransform(original);
 	}

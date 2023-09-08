@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ProjectileGroup {
+public class ProjectileGroup extends SpriteModel {
 	private int projectileGroupId;
 
 	private List<Projectile> projectiles;

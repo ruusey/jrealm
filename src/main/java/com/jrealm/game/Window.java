@@ -3,33 +3,35 @@ package com.jrealm.game;
 import java.awt.image.BufferStrategy;
 
 import javax.swing.JFrame;
+import javax.swing.WindowConstants;
 
 public class Window extends JFrame {
-    public static final long serialVersionUID = 1L;
+	public static final long serialVersionUID = 1L;
 
-    private BufferStrategy bs;
-    private GamePanel gp;
+	private BufferStrategy bs;
+	private GamePanel gp;
 
-    public Window() {
-        setTitle("Decay");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setIgnoreRepaint(true);
-        pack();
-        setLocationRelativeTo(null);
-        setResizable(false);
-        setVisible(true);
-    }
+	public Window() {
+		this.setTitle("JRealm");
+		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		this.setIgnoreRepaint(true);
+		this.pack();
+		this.setLocationRelativeTo(null);
+		this.setResizable(false);
+		this.setVisible(true);
+	}
 
-    public void addNotify() {
-        super.addNotify();
+	@Override
+	public void addNotify() {
+		super.addNotify();
 
-        createBufferStrategy(2);
-        bs = getBufferStrategy();
+		this.createBufferStrategy(2);
+		this.bs = this.getBufferStrategy();
 
-        gp = new GamePanel(bs, 1280, 720);
-        //add(gp);
-        setContentPane(gp);
-        
-    }
+		this.gp = new GamePanel(this.bs, 1280, 720);
+		//add(gp);
+		this.setContentPane(this.gp);
+
+	}
 
 }

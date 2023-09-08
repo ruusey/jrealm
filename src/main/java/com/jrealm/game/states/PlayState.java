@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.data.GameDataManager;
@@ -50,7 +51,7 @@ public class PlayState extends GameState {
 	private List<Vector2f> shotDestQueue;
 	public long lastShotTick = 0;
 
-	private int weaponId = 0;
+	private Semaphore gameObjectLock = new Semaphore(1);
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 
@@ -73,7 +74,7 @@ public class PlayState extends GameState {
 		//gameObject.addAll(mm.list);
 		this.aabbTree = new AABBTree();
 
-		this.player = new Player(1, cam, GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png"),
+		this.player = new Player(4, cam, GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png"),
 				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 64, this.tm);
 		this.player.setIsInvincible(true);
 		this.spawnRandomEnemies();
@@ -156,11 +157,13 @@ public class PlayState extends GameState {
 						dest.addY(PlayState.map.y);
 						Vector2f source = this.getPlayerPos().clone(this.player.getSize() / 2,
 								this.player.getSize() / 2);
-						ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
+						ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.getPlayer().getWeaponId());
 						float angle = Bullet.getAngle(source, dest);
 
 						for (Projectile p : group.getProjectiles()) {
-							this.addProjectile(source.clone(), angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
+							short offset = (short) (p.getSize() / (short) 2);
+							this.addProjectile(this.player.getWeaponId(), source.clone(-offset, -offset),
+									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
 									p.getRange(), p.getDamage(), false);
 						}
 
@@ -168,6 +171,7 @@ public class PlayState extends GameState {
 				};
 
 				Runnable processGameObjects = () -> {
+					this.acquireGameObjectLock();
 					for (int i = 0; i < this.gameObject.size(); i++) {
 						if (this.gameObject.get(i).go instanceof Enemy) {
 							Enemy enemy = ((Enemy) this.gameObject.get(i).go);
@@ -189,25 +193,32 @@ public class PlayState extends GameState {
 
 						if (this.gameObject.get(i).go instanceof Bullet) {
 							Bullet bullet = ((Bullet) this.gameObject.get(i).go);
-							if (bullet.remove()) {
-								this.gameObject.remove(bullet);
-								this.aabbTree.removeObject(bullet);
-							} else {
-								bullet.update();
+							if (bullet != null) {
+								if (bullet.remove()) {
+									this.gameObject.remove(bullet);
+									this.aabbTree.removeObject(bullet);
+								} else {
+									bullet.update();
+								}
 							}
 						}
 					}
+					this.releaseGameObjectLock();
 				};
 
 				Runnable render = () -> {
+					this.acquireGameObjectLock();
+
 					if (this.canBuildHeap(3, 1000000000, time)) {
 						this.heaptime = System.nanoTime();
 						this.gameObject.buildHeap();
 					}
+					this.processBulletHit();
 
 					this.player.update(time);
 					this.pui.update(time);
-					this.processBulletHit();
+					this.releaseGameObjectLock();
+
 				};
 				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, render);
 
@@ -216,18 +227,25 @@ public class PlayState extends GameState {
 		}
 	}
 
-	public void addProjectile(Vector2f src, Vector2f dest, short size, float magnitude, float range, short damage,
+	public void addProjectile(int projectileGroupId, Vector2f src, Vector2f dest, short size, float magnitude, float range, short damage,
 			boolean isEnemy) {
-		Bullet b = new Bullet(1, null,
+		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
+		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
+		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
+		Bullet b = new Bullet(projectileGroupId, bulletImage,
 				src,
 				dest, size, magnitude, range, damage, isEnemy);
 		this.getGameObjects().add(b.getBounds().distance(this.getPlayerPos()), b);
 		this.aabbTree.insert(b);
 	}
 
-	public void addProjectile(Vector2f src, float angle, short size, float magnitude, float range, short damage,
+	public void addProjectile(int projectileGroupId, Vector2f src, float angle, short size, float magnitude,
+			float range, short damage,
 			boolean isEnemy) {
-		Bullet b = new Bullet(1, null, src, angle, size, magnitude, range, damage, isEnemy);
+		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
+		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
+		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
+		Bullet b = new Bullet(projectileGroupId, bulletImage, src, angle, size, magnitude, range, damage, isEnemy);
 		this.getGameObjects().add(b.getBounds().distance(this.getPlayerPos()), b);
 		this.aabbTree.insert(b);
 	}
@@ -268,7 +286,7 @@ public class PlayState extends GameState {
 	}
 
 	private void proccessEnemyHit(Bullet b, Enemy e) {
-		if (b.getBounds().collides(0, 0, e.getHitBounds()) && !b.isEnemy()) {
+		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			e.setHealth(e.getHealth() - b.getDamage(), 0, false);
 			this.aabbTree.removeObject(b);
 			this.gameObject.remove(b);
@@ -347,6 +365,22 @@ public class PlayState extends GameState {
 		}
 	}
 
+	private void acquireGameObjectLock() {
+		try {
+			this.gameObjectLock.acquire();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void releaseGameObjectLock() {
+		try {
+			this.gameObjectLock.release();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	@Override
 	public void render(Graphics2D g) {
 		this.tm.render(g);
@@ -358,6 +392,22 @@ public class PlayState extends GameState {
 			}
 		}
 
+		// this.renderCollisionBoxes(g);
+
+		g.setColor(Color.white);
+
+		String fps = GamePanel.oldFrameCount + " FPS";
+		g.drawString(fps, GamePanel.width - (6 * 32), 32);
+
+		String tps = GamePanel.oldTickCount + " TPS";
+		g.drawString(tps, GamePanel.width - (6 * 32), 64);
+
+		this.pui.render(g);
+
+		this.cam.render(g);
+	}
+
+	private void renderCollisionBoxes(Graphics2D g) {
 		for (AABB node : this.aabbTree.getAllNodes()) {
 			if (node.getHeight() == 20.0f) {
 				System.out.println();
@@ -378,17 +428,5 @@ public class PlayState extends GameState {
 
 			g.drawLine((int) pos.x, (int) pos.y, (int) pos.x, (int) pos.y + (int) node.getHeight());
 		}
-
-		g.setColor(Color.white);
-
-		String fps = GamePanel.oldFrameCount + " FPS";
-		g.drawString(fps, GamePanel.width - (6 * 32), 32);
-
-		String tps = GamePanel.oldTickCount + " TPS";
-		g.drawString(tps, GamePanel.width - (6 * 32), 64);
-
-		this.pui.render(g);
-
-		this.cam.render(g);
 	}
 }

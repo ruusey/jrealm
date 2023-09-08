@@ -118,10 +118,12 @@ public abstract class Enemy extends Entity {
 
 					for (Projectile p : group.getProjectiles()) {
 						if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
-							playState.addProjectile(source.clone(), angle + Float.parseFloat(p.getAngle()), p.getSize(),
+							playState.addProjectile(this.getWeaponId(), source.clone(),
+									angle + Float.parseFloat(p.getAngle()), p.getSize(),
 									p.getMagnitude(), p.getRange(), p.getDamage(), true);
 						} else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
-							playState.addProjectile(source.clone(), Float.parseFloat(p.getAngle()), p.getSize(),
+							playState.addProjectile(this.getWeaponId(), source.clone(), Float.parseFloat(p.getAngle()),
+									p.getSize(),
 									p.getMagnitude(),
 									p.getRange(), p.getDamage(), true);
 						}

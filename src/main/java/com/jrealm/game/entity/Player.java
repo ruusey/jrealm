@@ -13,15 +13,21 @@ import com.jrealm.game.states.PlayState;
 import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.tiles.blocks.NormBlock;
 import com.jrealm.game.util.Camera;
+import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 
+import lombok.Data;
+
+@Data
 public class Player extends Entity {
 
 	private Camera cam;
 	private ArrayList<GameObject> go;
 	private TileManager tm;
 
+	private Cardinality cardinality = Cardinality.EAST;
+	private int weaponId;
 	public Player(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, TileManager tm) {
 		super(id, sprite, origin, size);
 		this.cam = cam;
@@ -32,8 +38,8 @@ public class Player extends Entity {
 		// this.bounds.setXOffset(16);
 		// this.bounds.setYOffset(40);
 
-		this.hitBounds.setWidth(42);
-		this.hitBounds.setHeight(42);
+		this.hitBounds.setWidth(64);
+		this.hitBounds.setHeight(64);
 
 		this.ani.setNumFrames(2, this.UP);
 		this.ani.setNumFrames(2, this.DOWN);
@@ -57,6 +63,15 @@ public class Player extends Entity {
 		this.health = 500;
 		this.maxHealth = 500;
 		this.name = "player";
+		this.weaponId = id;
+	}
+
+	public int getWeaponId() {
+		return this.weaponId;
+	}
+
+	public Cardinality getCardinality() {
+		return this.cardinality;
 	}
 
 	public void setTargetGameObject(GameObject go) {
