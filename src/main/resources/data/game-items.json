@@ -1,0 +1,175 @@
+[
+	{
+		"itemId": 0,
+		"row": 4,
+		"col": 0,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"name": "Short Bow",
+		"description": "A super low tier bow.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 60,
+			"max": 120
+		},
+		"consumable": false,
+		"tier": 0,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 1,
+		"row": 3,
+		"col": 3,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"name": "Gold Shield",
+		"description": "A golden shield.",
+		"damage": {
+			"projectileGroupId": 3,
+			"min": 200,
+			"max": 250
+		},
+		"stats": {
+			"def": 6
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 3,
+		"targetClass": 4,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 2,
+		"row": 3,
+		"col": 7,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"name": "Gold Sword",
+		"description": "A golden sword.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 200,
+			"max": 250
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 0,
+		"targetClass": 3,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 3,
+		"row": 2,
+		"col": 7,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"name": "Superior Ring of Attack",
+		"description": "A ring that increases attack.",
+		"stats": {
+			"att": 4
+		},
+		"consumable": false,
+		"tier": 2,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 4,
+		"row": 4,
+		"col": 1,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"name": "Black Bow",
+		"description": "A mid low tier bow.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 100,
+			"max": 150
+		},
+		"consumable": false,
+		"tier": 1,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 5,
+		"row": 4,
+		"col": 2,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"name": "Superior Bow",
+		"description": "A mid tier bow.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 150,
+			"max": 200
+		},
+		"consumable": false,
+		"tier": 2,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 6,
+		"row": 0,
+		"col": 9,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"name": "Potion of Defense",
+		"description": "A potion that permenently increases defense.",
+		"stats": {
+			"def": 1
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 7,
+		"row": 0,
+		"col": 10,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"name": "Potion of Attack",
+		"description": "A potion that permenently increases attack.",
+		"stats": {
+			"att": 1
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 8,
+		"row": 0,
+		"col": 11,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"name": "Potion of Speed",
+		"description": "A potion that permenently increases speed.",
+		"stats": {
+			"spd": 1
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 9,
+		"row": 0,
+		"col": 12,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"name": "Potion of Vitality",
+		"description": "A potion that permenently increases vitality.",
+		"stats": {
+			"spd": 1
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	}
+]

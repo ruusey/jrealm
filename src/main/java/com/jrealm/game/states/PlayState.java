@@ -14,6 +14,8 @@ import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.enemy.Monster;
+import com.jrealm.game.entity.item.GameItem;
+import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.material.Material;
 import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.graphics.Sprite;
@@ -40,6 +42,7 @@ public class PlayState extends GameState {
 
 	public Player player;
 	private GameObjectHeap gameObject;
+	private List<LootContainer> loot;
 	private AABBTree aabbTree;
 	private TileManager tm;
 	private MaterialManager mm;
@@ -73,7 +76,7 @@ public class PlayState extends GameState {
 		this.gameObject = new GameObjectHeap();
 		//gameObject.addAll(mm.list);
 		this.aabbTree = new AABBTree();
-
+		this.loot = new ArrayList<>();
 		this.player = new Player(4, cam, GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png"),
 				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 64, this.tm);
 		this.player.setIsInvincible(true);
@@ -84,6 +87,7 @@ public class PlayState extends GameState {
 
 		cam.target(this.player);
 		this.player.setIsInvincible(false);
+		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(0));
 
 	}
 
@@ -162,9 +166,10 @@ public class PlayState extends GameState {
 
 						for (Projectile p : group.getProjectiles()) {
 							short offset = (short) (p.getSize() / (short) 2);
+							short rolledDamage = this.player.getEquipment()[0].getDamage().getInRange();
 							this.addProjectile(this.player.getWeaponId(), source.clone(-offset, -offset),
 									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
-									p.getRange(), p.getDamage(), false);
+									p.getRange(), rolledDamage, false);
 						}
 
 					}
@@ -204,6 +209,7 @@ public class PlayState extends GameState {
 						}
 					}
 					this.releaseGameObjectLock();
+
 				};
 
 				Runnable render = () -> {
@@ -293,6 +299,9 @@ public class PlayState extends GameState {
 			if (e.getDeath()) {
 				this.aabbTree.removeObject(e);
 				this.gameObject.remove(e);
+				this.loot.add(new LootContainer(
+						GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(8, 0, 8, 8),
+						e.getPos()));
 			}
 		}
 	}
@@ -391,6 +400,20 @@ public class PlayState extends GameState {
 				this.gameObject.get(i).go.render(g);
 			}
 		}
+		boolean closeLoot = false;
+		for (LootContainer lc : this.loot) {
+			if (this.getPlayer().getBounds().distance(lc.getPos()) < 64) {
+				closeLoot = true;
+				this.getPui().setGroundLoot(lc.getItems());
+			}
+			lc.render(g);
+		}
+
+		if (!closeLoot && !this.getPui().isEquipmentEmpty()) {
+			this.getPui().setGroundLoot(new GameItem[4]);
+		}
+
+		this.getPui().setEquipment(new GameItem[] { this.getPlayer().getEquipment()[0] });
 
 		// this.renderCollisionBoxes(g);
 

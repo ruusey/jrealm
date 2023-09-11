@@ -1,4 +1,4 @@
-package com.jrealm.game.entity;
+package com.jrealm.game.entity.item;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

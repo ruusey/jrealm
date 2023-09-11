@@ -6,6 +6,9 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.entity.item.GameItem;
+import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
@@ -28,6 +31,12 @@ public class Player extends Entity {
 
 	private Cardinality cardinality = Cardinality.EAST;
 	private int weaponId;
+
+	private GameItem[] equipment;
+	private GameItem[] inventory;
+
+	private Stats stats;
+
 	public Player(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, TileManager tm) {
 		super(id, sprite, origin, size);
 		this.cam = cam;
@@ -64,6 +73,27 @@ public class Player extends Entity {
 		this.maxHealth = 500;
 		this.name = "player";
 		this.weaponId = id;
+
+		this.resetInventory();
+
+		this.equipSlot(0, GameDataManager.GAME_ITEMS.get(0));
+	}
+
+	private void resetInventory() {
+		this.equipment = new GameItem[4];
+		this.inventory = new GameItem[16];
+	}
+
+	public boolean equipSlot(int slot, GameItem item) {
+		if (item.isConsumable() || (item.getTargetSlot() != slot))
+			return false;
+		this.equipment[slot] = item;
+
+		return true;
+	}
+
+	private GameItem getSlot(int slot) {
+		return this.equipment[slot];
 	}
 
 	public int getWeaponId() {

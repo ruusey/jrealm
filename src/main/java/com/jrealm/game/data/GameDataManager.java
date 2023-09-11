@@ -8,9 +8,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jrealm.game.entity.item.GameItem;
+import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
+import com.jrealm.game.model.SpriteModel;
 
 public class GameDataManager {
 	private static final transient ObjectMapper mapper = new ObjectMapper();
@@ -18,11 +21,13 @@ public class GameDataManager {
 	public static SpriteSheet PLAYER_SPRITESHEET = null;
 
 	public static Map<Integer, ProjectileGroup> PROJECTILE_GROUPS = null;
+	public static Map<Integer, GameItem> GAME_ITEMS = null;
 	public static Map<String, SpriteSheet> SPRITE_SHEETS = null;
 
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "material/trees.png", "tile/overworldOP.png",
 			"entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 	"entity/rotmg-bosses.png" };
+
 	private static void loadProjectileGroups() throws Exception {
 		System.out.println("Loading Projectile Groups...");
 
@@ -43,6 +48,23 @@ public class GameDataManager {
 			GameDataManager.PROJECTILE_GROUPS.put(group.getProjectileGroupId(), group);
 		}
 		System.out.println("Projectile Groups... DONE");
+
+	}
+
+	private static void loadGameItems() throws Exception {
+		System.out.println("Loading Game Items...");
+
+		GameDataManager.GAME_ITEMS = new HashMap<>();
+		InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/game-items.json");
+		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+		// replaceInjectVariables(text);
+		GameItem[] gameItems = GameDataManager.mapper.readValue(text, GameItem[].class);
+
+		for (GameItem item : gameItems) {
+			GameDataManager.GAME_ITEMS.put(item.getItemId(), item);
+		}
+		System.out.println("Game Items... DONE");
 
 	}
 
@@ -107,6 +129,14 @@ public class GameDataManager {
 
 	}
 
+	public static Sprite getSubSprite(String spriteKey, int col, int row, int size) {
+		return GameDataManager.SPRITE_SHEETS.get(spriteKey).getSprite(col, row, size, size);
+	}
+
+	public static Sprite getSubSprite(SpriteModel model, int size) {
+		return GameDataManager.getSubSprite(model.getSpriteKey(), model.getCol(), model.getRow(), size);
+	}
+
 	public static String replaceGen(String source, String variable, String value) {
 		String text = source.replace("{{" + variable + "}}", value);
 		return text;
@@ -116,6 +146,7 @@ public class GameDataManager {
 		System.out.println("Loading Game Data...");
 		try {
 			GameDataManager.loadProjectileGroups();
+			GameDataManager.loadGameItems();
 			GameDataManager.loadSpriteSheets();
 		}catch(Exception e) {
 			System.err.println("Failed to load game data. Reason: " + e.getMessage());
