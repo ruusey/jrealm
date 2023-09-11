@@ -18,9 +18,11 @@ public class Stats {
 	private short dex;
 	private short vit;
 	private short wis;
-	
+
 	//Stat calculation chaining
 	public Stats concat(Stats other) {
+		if (other == null)
+			return this;
 		return Stats.builder()
 				.hp((short)(this.hp+other.getHp()))
 				.mp((short)(this.mp+other.getMp()))
@@ -31,5 +33,12 @@ public class Stats {
 				.vit((short)(this.vit+other.getVit()))
 				.wis((short)(this.wis+other.getWis()))
 				.build();
+	}
+
+	@Override
+	public Stats clone() {
+		return Stats.builder().hp((short) (this.hp)).mp((short) (this.mp)).def((short) (this.def))
+				.att((short) (this.att)).spd((short) (this.spd)).dex((short) (this.dex)).vit((short) (this.vit))
+				.wis((short) (this.wis)).build();
 	}
 }

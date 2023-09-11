@@ -77,6 +77,7 @@ public class Player extends Entity {
 		this.resetInventory();
 
 		this.equipSlot(0, GameDataManager.GAME_ITEMS.get(0));
+		this.stats = new Stats();
 	}
 
 	private void resetInventory() {
@@ -92,7 +93,7 @@ public class Player extends Entity {
 		return true;
 	}
 
-	private GameItem getSlot(int slot) {
+	public GameItem getSlot(int slot) {
 		return this.equipment[slot];
 	}
 
@@ -128,6 +129,7 @@ public class Player extends Entity {
 		super.update(time);
 
 		this.attacking = this.isAttacking(time);
+
 
 
 		if(!this.fallen) {

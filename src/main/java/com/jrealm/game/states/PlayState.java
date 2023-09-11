@@ -87,7 +87,10 @@ public class PlayState extends GameState {
 
 		cam.target(this.player);
 		this.player.setIsInvincible(false);
-		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(0));
+
+		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(5));
+		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(19));
+		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(3));
 
 	}
 
@@ -408,22 +411,24 @@ public class PlayState extends GameState {
 			}
 			lc.render(g);
 		}
+		this.getPui().setEquipment(this.player.getEquipment());
 
 		if (!closeLoot && !this.getPui().isEquipmentEmpty()) {
 			this.getPui().setGroundLoot(new GameItem[4]);
 		}
 
-		this.getPui().setEquipment(new GameItem[] { this.getPlayer().getEquipment()[0] });
+		// this.getPui().setEquipment(new GameItem[] {
+		// this.getPlayer().getEquipment()[0] });
 
 		// this.renderCollisionBoxes(g);
 
 		g.setColor(Color.white);
 
 		String fps = GamePanel.oldFrameCount + " FPS";
-		g.drawString(fps, GamePanel.width - (6 * 32), 32);
+		g.drawString(fps, 0 + (6 * 32), 32);
 
 		String tps = GamePanel.oldTickCount + " TPS";
-		g.drawString(tps, GamePanel.width - (6 * 32), 64);
+		g.drawString(tps, 0 + (6 * 32), 64);
 
 		this.pui.render(g);
 

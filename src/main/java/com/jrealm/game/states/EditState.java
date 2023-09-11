@@ -3,9 +3,7 @@ package com.jrealm.game.states;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
-import com.jrealm.game.GamePanel;
 import com.jrealm.game.entity.GameObject;
-import com.jrealm.game.entity.enemy.Monster;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.ui.Button;
@@ -39,21 +37,21 @@ public class EditState extends GameState {
 
 		SpriteSheet enemySheet = new SpriteSheet("entity/enemy/minimonsters.png", 16, 16, 0);
 
-		this.btnEnemy1 = new Button("TinyMon", new Vector2f(64 + 24, 64 + 24), 32, 24, this.imgButton, new Vector2f(64, 64), 220, 75);
-		this.btnEnemy1.addEvent(e -> {
-			this.selection = 1;
-			this.entityList[1] = new Monster(1, cam,
-					new SpriteSheet(enemySheet.getSprite(0, 0, 128, 32), "tiny monster", 16, 16, 0),
-					new Vector2f(((GamePanel.width / 2) - 32) + 150, ((0 + (GamePanel.height / 2)) - 32) + 150), 64);
-		});
-
-		this.btnEnemy2 = new Button("TinyBoar", new Vector2f(64 + 24, (64 + 24) * 2), 32, 24, this.imgButton, new Vector2f(64, 64 + 85), 235, 75);
-		this.btnEnemy2.addEvent(e -> {
-			this.selection = 2;
-			this.entityList[2] = new Monster(1, cam,
-					new SpriteSheet(enemySheet.getSprite(0, 1, 128, 32), "tiny boar", 16, 16, 0),
-					new Vector2f(((GamePanel.width / 2) - 32) + 150, ((0 + (GamePanel.height / 2)) - 32) + 150), 64);
-		});
+		//		this.btnEnemy1 = new Button("TinyMon", new Vector2f(64 + 24, 64 + 24), 32, 24, this.imgButton, new Vector2f(64, 64), 220, 75);
+		//		this.btnEnemy1.addEvent(e -> {
+		//			this.selection = 1;
+		//			this.entityList[1] = new Monster(1, cam,
+		//					new SpriteSheet(enemySheet.getSprite(0, 0, 128, 32), "tiny monster", 16, 16, 0),
+		//					new Vector2f(((GamePanel.width / 2) - 32) + 150, ((0 + (GamePanel.height / 2)) - 32) + 150), 64);
+		//		});
+		//
+		//		this.btnEnemy2 = new Button("TinyBoar", new Vector2f(64 + 24, (64 + 24) * 2), 32, 24, this.imgButton, new Vector2f(64, 64 + 85), 235, 75);
+		//		this.btnEnemy2.addEvent(e -> {
+		//			this.selection = 2;
+		//			this.entityList[2] = new Monster(1, cam,
+		//					new SpriteSheet(enemySheet.getSprite(0, 1, 128, 32), "tiny boar", 16, 16, 0),
+		//					new Vector2f(((GamePanel.width / 2) - 32) + 150, ((0 + (GamePanel.height / 2)) - 32) + 150), 64);
+		//		});
 	}
 
 	@Override

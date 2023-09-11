@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
+import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.KeyHandler;
@@ -25,8 +26,9 @@ public class PlayerUI {
 
 	private Slots[] groundLoot;
 
+	private Player player;
 	public PlayerUI(Player p) {
-
+		this.player = p;
 		SpriteSheet bars = new SpriteSheet("ui/fillbars.png", 0);
 		BufferedImage[] barSpritesHp = {
 				bars.getSubimage(12, 2, 7, 16),
@@ -47,20 +49,29 @@ public class PlayerUI {
 		this.equipment = new Slots[4];
 		this.groundLoot = new Slots[8];
 		this.inventory = new Slots[16];
+
 	}
 
 	public void setEquipment(GameItem[] loot) {
-		int lootLength = 0;
+		int panelWidth = (GamePanel.width / 5);
 
-		for (GameItem item : loot) {
+		int startX = GamePanel.width - panelWidth;
+
+
+		this.equipment = new Slots[4];
+
+		for (int i = 0; i < loot.length; i++) {
+			GameItem item = loot[i];
 			if (item != null) {
-				lootLength++;
-			}
-		}
-		this.equipment = new Slots[lootLength];
+				int actualIdx = (int) item.getTargetSlot();
+				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
+				b.addEvent(event -> {
 
-		for (int i = 0; i < lootLength; i++) {
-			this.equipment[i] = new Slots(null, loot[i]);
+					System.out.println("clicked");
+				});
+				this.equipment[actualIdx] = new Slots(b, item);
+			}
+
 			// this.equipment[i].setItem(loot[i]);
 		}
 	}
@@ -114,6 +125,33 @@ public class PlayerUI {
 		return true;
 	}
 
+	private void renderStats(Graphics2D g) {
+		if (this.player != null) {
+			int panelWidth = (GamePanel.width / 5);
+			int startX = (GamePanel.width - panelWidth) + 8;
+
+			Stats stats = this.player.getStats().clone();
+			for (Slots item : this.equipment) {
+				if ((item != null) && (item.getItem() != null)) {
+					stats = stats.concat(item.getItem().getStats());
+				}
+			}
+			g.setColor(Color.WHITE);
+
+			int xOffset = 128;
+			int yOffset = 42;
+			int startY = 350;
+			g.drawString("att :" + stats.getAtt(), startX, startY);
+			g.drawString("spd :" + stats.getSpd(), startX, startY+(1*yOffset));
+			g.drawString("vit :" + stats.getVit(), startX, startY + (2 * yOffset));
+
+			g.drawString("def :" + stats.getDef(), startX + xOffset, startY);
+			g.drawString("dex :" + stats.getDex(), startX + xOffset, startY + (1 * yOffset));
+			g.drawString("wis :" + stats.getWis(), startX + xOffset, startY + (2 * yOffset));
+
+		}
+	}
+
 	public void render(Graphics2D g) {
 		int panelWidth = (GamePanel.width / 5);
 
@@ -123,6 +161,7 @@ public class PlayerUI {
 		// System.out.println(59);
 
 		g.fillRect(startX, 0, panelWidth, GamePanel.height);
+		this.renderStats(g);
 
 		this.hp.render(g);
 		this.mp.render(g);
@@ -136,7 +175,7 @@ public class PlayerUI {
 		for (int i = 0; i < this.groundLoot.length; i++) {
 			Slots curr = this.groundLoot[i];
 			if (curr != null) {
-				this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 412));
+				this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 450));
 			}
 		}
 	}

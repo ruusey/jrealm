@@ -1,9 +1,9 @@
 [
 	{
 		"itemId": 0,
-		"row": 4,
+		"row": 5,
 		"col": 0,
-		"spriteKey": "entity/rotmg-projectiles.png",
+		"spriteKey": "entity/rotmg-items.png",
 		"name": "Short Bow",
 		"description": "A super low tier bow.",
 		"damage": {
@@ -42,7 +42,7 @@
 		"itemId": 2,
 		"row": 3,
 		"col": 7,
-		"spriteKey": "entity/rotmg-projectiles.png",
+		"spriteKey": "entity/rotmg-items.png",
 		"name": "Gold Sword",
 		"description": "A golden sword.",
 		"damage": {
@@ -58,25 +58,25 @@
 	},
 	{
 		"itemId": 3,
-		"row": 2,
-		"col": 7,
-		"spriteKey": "entity/rotmg-projectiles.png",
-		"name": "Superior Ring of Attack",
-		"description": "A ring that increases attack.",
+		"row": 12,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Exalted Ring of Defense",
+		"description": "A huge ring that increases defense.",
 		"stats": {
-			"att": 4
+			"def": 9
 		},
 		"consumable": false,
-		"tier": 2,
+		"tier": 4,
 		"targetSlot": 3,
 		"targetClass": -1,
 		"fameBonus": 0
 	},
 	{
 		"itemId": 4,
-		"row": 4,
-		"col": 1,
-		"spriteKey": "entity/rotmg-projectiles.png",
+		"row": 5,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items.png",
 		"name": "Black Bow",
 		"description": "A mid low tier bow.",
 		"damage": {
@@ -92,9 +92,9 @@
 	},
 	{
 		"itemId": 5,
-		"row": 4,
-		"col": 2,
-		"spriteKey": "entity/rotmg-projectiles.png",
+		"row": 5,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items.png",
 		"name": "Superior Bow",
 		"description": "A mid tier bow.",
 		"damage": {
@@ -169,6 +169,170 @@
 		"consumable": true,
 		"tier": 0,
 		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId":10,
+		"row": 12,
+		"col": 0,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Exalted Ring of Attack",
+		"description": "A huge ring that increases attack.",
+		"stats": {
+			"att": 9
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId":11,
+		"row": 12,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Exalted Ring of Speed",
+		"description": "A huge ring that increases speed.",
+		"stats": {
+			"spd": 9
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId":12,
+		"row": 12,
+		"col": 3,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Exalted Ring of Vitality",
+		"description": "A huge ring that increases vitality.",
+		"stats": {
+			"vit": 9
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId":13,
+		"row": 12,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Exalted Ring of Wisdom",
+		"description": "A huge ring that increases widsom.",
+		"stats": {
+			"wis": 9
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId":14,
+		"row": 12,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Exalted Ring of Dexterity",
+		"description": "A huge ring that increases dexterity.",
+		"stats": {
+			"dex": 9
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId":15,
+		"row": 12,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Exalted Ring of Health",
+		"description": "A huge ring that increases health.",
+		"stats": {
+			"hp": 200
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId":16,
+		"row": 12,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Exalted Ring of Mana",
+		"description": "A huge ring that increases mana.",
+		"stats": {
+			"mp": 120
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 17,
+		"row": 3,
+		"col": 9,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Sky Sword",
+		"description": "A sky sword.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 300,
+			"max": 350
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 0,
+		"targetClass": 3,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 18,
+		"row": 0,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Drake Hide Armor",
+		"description": "Drake skin light armor.",
+		"stats": {
+			"def": 10,
+			"dex": 4
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 19,
+		"row": 0,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Hippogriff Hide Armor",
+		"description": "Drake skin light armor.",
+		"stats": {
+			"def": 12,
+			"dex": 7
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 2,
 		"targetClass": -1,
 		"fameBonus": 0
 	}
