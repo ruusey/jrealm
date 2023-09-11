@@ -29,11 +29,11 @@ public class PauseState extends GameState {
         btnResume.addHoverImage(btnResume.createButton("RESUME", imgHover, font, btnResume.getWidth(), btnResume.getHeight(), 32, 20));
         btnExit.addHoverImage(btnExit.createButton("EXIT", imgHover, font, btnExit.getWidth(), btnExit.getHeight(), 32, 20));
         
-        btnResume.addEvent(e -> {
+        btnResume.onMouseDown(e -> {
             gsm.pop(GameStateManager.PAUSE);
         });
 
-        btnExit.addEvent(e -> {
+        btnExit.onMouseDown(e -> {
             System.exit(0);
         });
     }

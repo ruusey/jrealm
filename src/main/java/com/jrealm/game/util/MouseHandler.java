@@ -9,62 +9,64 @@ import com.jrealm.game.GamePanel;
 
 public class MouseHandler implements MouseListener, MouseMotionListener {
 
-    private static int mouseX = -1;
-    private static int mouseY = -1;
-    private static int mouseB = -1;
+	private static volatile int mouseX = -1;
+	private static volatile int mouseY = -1;
+	private static volatile int mouseB = -1;
 
-    public MouseHandler(GamePanel game) {
-        game.addMouseListener(this);
-        game.addMouseMotionListener(this);
-    }
+	public MouseHandler(GamePanel game) {
+		game.addMouseListener(this);
+		game.addMouseMotionListener(this);
+	}
 
-    public int getX() {
-        return mouseX;
-    }
+	public int getX() {
+		return MouseHandler.mouseX;
+	}
 
-    public int getY() {
-        return mouseY;
-    }
+	public int getY() {
+		return MouseHandler.mouseY;
+	}
 
-    public int getButton() {
-        return mouseB;
-    }
+	public int getButton() {
+		return MouseHandler.mouseB;
+	}
 
 
-    @Override
-    public void mouseClicked(MouseEvent e) {
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		MouseHandler.mouseB = -1;
 
-    }
+	}
 
-    @Override
-    public void mousePressed(MouseEvent e) {
-        mouseB = e.getButton();
-    }
+	@Override
+	public void mousePressed(MouseEvent e) {
+		MouseHandler.mouseB = 1;
 
-    @Override
-    public void mouseReleased(MouseEvent e) {
-        mouseB = -1;
-    }
+	}
 
-    @Override
-    public void mouseEntered(MouseEvent e) {
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		MouseHandler.mouseB = -1;
+	}
 
-    }
+	@Override
+	public void mouseEntered(MouseEvent e) {
 
-    @Override
-    public void mouseExited(MouseEvent e) {
+	}
 
-    }
+	@Override
+	public void mouseExited(MouseEvent e) {
 
-    @Override
-    public void mouseDragged(MouseEvent e) {
-        mouseX = e.getX();
-        mouseY = e.getY();
-    }
+	}
 
-    @Override
-    public void mouseMoved(MouseEvent e) {
-        mouseX = e.getX();
-        mouseY = e.getY();
-    }
+	@Override
+	public void mouseDragged(MouseEvent e) {
+		MouseHandler.mouseX = e.getX();
+		MouseHandler.mouseY = e.getY();
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent e) {
+		MouseHandler.mouseX = e.getX();
+		MouseHandler.mouseY = e.getY();
+	}
 }

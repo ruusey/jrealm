@@ -230,6 +230,8 @@ public class PlayState extends GameState {
 					this.releaseGameObjectLock();
 
 				};
+
+
 				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, render);
 
 			}
@@ -404,22 +406,22 @@ public class PlayState extends GameState {
 				this.gameObject.get(i).go.render(g);
 			}
 		}
-		boolean closeLoot = false;
+
+		LootContainer closeLoot = null;
 		for (LootContainer lc : this.loot) {
 			if ((this.getPlayer().getBounds().distance(lc.getPos()) < 64)) {
-				closeLoot = true;
-				this.getPui().setGroundLoot(lc.getItems());
+				closeLoot = lc;
 			}
 			lc.render(g);
 		}
+		if (this.getPui().isGroundLootEmpty() && (closeLoot != null)) {
+			this.getPui().setGroundLoot(closeLoot.getItems());
 
-		if (!closeLoot) {
-			this.getPui().setGroundLoot(new GameItem[4]);
-			// this.setLoot = false;
+		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
+			this.getPui().setGroundLoot(new GameItem[8]);
+
 		}
 
-		// this.getPui().setEquipment(new GameItem[] {
-		// this.getPlayer().getEquipment()[0] });
 
 		// this.renderCollisionBoxes(g);
 

@@ -17,7 +17,7 @@ import lombok.Data;
 
 @Data
 public class PlayerUI {
-
+	public static boolean DRAGGING_ITEM = false;
 	private FillBars hp;
 	private FillBars mp;
 	private Slots[] equipment;
@@ -65,8 +65,13 @@ public class PlayerUI {
 			if (item != null) {
 				final int actualIdx = (int) item.getTargetSlot();
 				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
-				b.addEvent(event -> {
+				b.onMouseDown(event -> {
+					PlayerUI.DRAGGING_ITEM = true;
 					System.out.println("Clicked Equipment SLOT " + actualIdx);
+				});
+				b.onMouseUp(event -> {
+					PlayerUI.DRAGGING_ITEM = false;
+					System.out.println("Released Equipment SLOT " + actualIdx);
 				});
 				this.equipment[actualIdx] = new Slots(b, item);
 			}
@@ -85,9 +90,13 @@ public class PlayerUI {
 			if (item != null) {
 				final int actualIdx = i;
 				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 450), 64);
-				b.addEvent(event -> {
-
+				b.onMouseDown(event -> {
+					PlayerUI.DRAGGING_ITEM = true;
 					System.out.println("Clicked GroundLoot SLOT " + actualIdx);
+				});
+				b.onMouseUp(event -> {
+					PlayerUI.DRAGGING_ITEM = false;
+					System.out.println("Released GroundLoot SLOT " + actualIdx);
 				});
 				this.groundLoot[actualIdx] = new Slots(b, item);
 			}
@@ -108,7 +117,14 @@ public class PlayerUI {
 		for (int i = 0; i < this.equipment.length; i++) {
 			Slots curr = this.equipment[i];
 			if (curr != null) {
-				this.equipment[i].input(mouse, key);
+				curr.input(mouse, key);
+			}
+		}
+
+		for (int i = 0; i < this.groundLoot.length; i++) {
+			Slots curr = this.groundLoot[i];
+			if (curr != null) {
+				curr.input(mouse, key);
 			}
 		}
 	}
@@ -117,6 +133,20 @@ public class PlayerUI {
 
 		for (int i = 0; i < this.equipment.length; i++) {
 			Slots curr = this.equipment[i];
+			if (curr == null) {
+				continue;
+			}
+			if (curr.getItem() != null)
+				return false;
+		}
+
+		return true;
+	}
+
+	public boolean isGroundLootEmpty() {
+
+		for (int i = 0; i < this.groundLoot.length; i++) {
+			Slots curr = this.groundLoot[i];
 			if (curr == null) {
 				continue;
 			}
@@ -170,7 +200,7 @@ public class PlayerUI {
 		for (int i = 0; i < this.equipment.length; i++) {
 			Slots curr = this.equipment[i];
 			if (curr != null) {
-				if (curr.getDragPos() == null) {
+				if ((curr.getDragPos() == null)) {
 					this.equipment[i].render(g, new Vector2f(startX + (i * 64), 256));
 				} else {
 					this.equipment[i].render(g, curr.getDragPos());
@@ -182,7 +212,12 @@ public class PlayerUI {
 		for (int i = 0; i < this.groundLoot.length; i++) {
 			Slots curr = this.groundLoot[i];
 			if (curr != null) {
-				this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 450));
+				if ((curr.getDragPos() == null)) {
+					this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 450));
+				} else {
+					this.groundLoot[i].render(g, curr.getDragPos());
+
+				}
 			}
 		}
 	}
