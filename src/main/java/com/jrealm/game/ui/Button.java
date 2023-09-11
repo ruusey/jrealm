@@ -15,6 +15,9 @@ import com.jrealm.game.states.GameStateManager;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 
+import lombok.Data;
+
+@Data
 public class Button {
 
 	private String label;
@@ -26,10 +29,8 @@ public class Button {
 	private BufferedImage pressedImage;
 
 	private Vector2f pos;
-	private Vector2f dragPos;
 
 	private AABB bounds;
-	private AABB dragBounds;
 	private boolean hovering = false;
 	private int hoverSize;
 	private ArrayList<ClickedEvent> events;
@@ -45,10 +46,8 @@ public class Button {
 	// ******************************************** ICON CUSTOM POS *******************************************
 	public Button(Vector2f pos, int size) {
 		this.pos = pos;
-		this.dragPos = this.pos.clone();
 
 		this.bounds = new AABB(this.pos, size, size);
-		this.dragBounds = new AABB(this.dragPos, size, size);
 		this.canHover = true;
 		this.drawString = false;
 
@@ -59,7 +58,6 @@ public class Button {
 
 	public Button(BufferedImage icon, BufferedImage image, Vector2f pos, int width, int height, int iconsize) {
 		this.pos = pos;
-		this.dragPos = this.pos.clone();
 		this.image = this.createIconButton(icon, image, width + iconsize, height + iconsize, iconsize);
 		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
 
@@ -113,7 +111,6 @@ public class Button {
 
 		this.image = this.createButton(label, image, font, width + buttonWidth, height + buttonHeight, buttonWidth, buttonHeight);
 		this.pos = pos;
-		this.dragPos = this.pos.clone();
 
 		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
 
@@ -201,7 +198,7 @@ public class Button {
 			if(this.canHover && !this.hovering) {
 				this.hover(this.hoverSize);
 			}
-			if((mouse.getButton() == 1) && !this.clicked) {
+			if ((mouse.getButton() == 1) && !this.clicked) {
 				this.clicked = true;
 				this.pressed = true;
 
@@ -214,7 +211,7 @@ public class Button {
 				for(int i = 0; i < this.slotevents.size(); i++) {
 					this.slotevents.get(i).action(this.slot);
 				}
-			} else if(mouse.getButton() == -1) {
+			} else if (((mouse.getButton() == -1) && this.clicked)) {
 				this.clicked = false;
 			}
 		} else if(this.canHover && this.hovering) {

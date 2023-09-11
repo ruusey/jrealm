@@ -63,32 +63,34 @@ public class PlayerUI {
 		for (int i = 0; i < loot.length; i++) {
 			GameItem item = loot[i];
 			if (item != null) {
-				int actualIdx = (int) item.getTargetSlot();
+				final int actualIdx = (int) item.getTargetSlot();
 				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
 				b.addEvent(event -> {
-
-					System.out.println("clicked");
+					System.out.println("Clicked Equipment SLOT " + actualIdx);
 				});
 				this.equipment[actualIdx] = new Slots(b, item);
 			}
-
-			// this.equipment[i].setItem(loot[i]);
 		}
 	}
 
 	public void setGroundLoot(GameItem[] loot) {
-		int lootLength = 0;
+		int panelWidth = (GamePanel.width / 5);
 
-		for (GameItem item : loot) {
+		int startX = GamePanel.width - panelWidth;
+
+		this.groundLoot = new Slots[8];
+
+		for (int i = 0; i < loot.length; i++) {
+			GameItem item = loot[i];
 			if (item != null) {
-				lootLength++;
-			}
-		}
-		this.groundLoot = new Slots[lootLength];
+				final int actualIdx = i;
+				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 450), 64);
+				b.addEvent(event -> {
 
-		for (int i = 0; i < lootLength; i++) {
-			this.groundLoot[i] = new Slots(null, loot[i]);
-			// this.equipment[i].setItem(loot[i]);
+					System.out.println("Clicked GroundLoot SLOT " + actualIdx);
+				});
+				this.groundLoot[actualIdx] = new Slots(b, item);
+			}
 		}
 	}
 
@@ -168,7 +170,12 @@ public class PlayerUI {
 		for (int i = 0; i < this.equipment.length; i++) {
 			Slots curr = this.equipment[i];
 			if (curr != null) {
-				this.equipment[i].render(g, new Vector2f(startX + (i * 64), 256));
+				if (curr.getDragPos() == null) {
+					this.equipment[i].render(g, new Vector2f(startX + (i * 64), 256));
+				} else {
+					this.equipment[i].render(g, curr.getDragPos());
+
+				}
 			}
 		}
 

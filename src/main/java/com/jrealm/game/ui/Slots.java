@@ -17,6 +17,7 @@ public class Slots {
 	private GameItem item;
 	private Button button;
 
+	private Vector2f dragPos;
 	// Once we have items we will create an items and inventory class
 	public Slots(Button button, GameItem item) {
 		this.item = item;
@@ -37,6 +38,13 @@ public class Slots {
 		if (this.button != null) {
 			this.button.input(mouse, key);
 		}
+
+		if (this.button.isClicked()) {
+			this.dragPos = new Vector2f(mouse.getX(), mouse.getY());
+		} else {
+			this.dragPos = null;
+		}
+
 	}
 
 	public void render(Graphics2D g, Vector2f pos) {

@@ -53,7 +53,6 @@ public class PlayState extends GameState {
 
 	private List<Vector2f> shotDestQueue;
 	public long lastShotTick = 0;
-
 	private Semaphore gameObjectLock = new Semaphore(1);
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
@@ -91,6 +90,8 @@ public class PlayState extends GameState {
 		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(5));
 		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(19));
 		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(3));
+
+		this.getPui().setEquipment(this.player.getEquipment());
 
 	}
 
@@ -405,16 +406,16 @@ public class PlayState extends GameState {
 		}
 		boolean closeLoot = false;
 		for (LootContainer lc : this.loot) {
-			if (this.getPlayer().getBounds().distance(lc.getPos()) < 64) {
+			if ((this.getPlayer().getBounds().distance(lc.getPos()) < 64)) {
 				closeLoot = true;
 				this.getPui().setGroundLoot(lc.getItems());
 			}
 			lc.render(g);
 		}
-		this.getPui().setEquipment(this.player.getEquipment());
 
-		if (!closeLoot && !this.getPui().isEquipmentEmpty()) {
+		if (!closeLoot) {
 			this.getPui().setGroundLoot(new GameItem[4]);
+			// this.setLoot = false;
 		}
 
 		// this.getPui().setEquipment(new GameItem[] {
