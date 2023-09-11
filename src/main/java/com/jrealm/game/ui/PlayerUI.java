@@ -97,6 +97,10 @@ public class PlayerUI {
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
 					System.out.println("Released GroundLoot SLOT " + actualIdx);
+					Slots currentEquip = this.equipment[item.getTargetSlot()];
+					this.groundLoot[actualIdx].setItem(currentEquip.getItem());
+					this.equipment[item.getTargetSlot()].setItem(item);
+
 				});
 				this.groundLoot[actualIdx] = new Slots(b, item);
 			}

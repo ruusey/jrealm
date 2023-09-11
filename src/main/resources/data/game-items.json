@@ -305,13 +305,13 @@
 	{
 		"itemId": 18,
 		"row": 0,
-		"col": 7,
+		"col": 8,
 		"spriteKey": "entity/rotmg-items.png",
 		"name": "Drake Hide Armor",
 		"description": "Drake skin light armor.",
 		"stats": {
 			"def": 10,
-			"dex": 4
+			"dex": 2
 		},
 		"consumable": false,
 		"tier": 3,
@@ -322,18 +322,70 @@
 	{
 		"itemId": 19,
 		"row": 0,
-		"col": 8,
+		"col": 9,
 		"spriteKey": "entity/rotmg-items.png",
 		"name": "Hippogriff Hide Armor",
 		"description": "Drake skin light armor.",
 		"stats": {
-			"def": 12,
-			"dex": 7
+			"def": 11,
+			"dex": 3
 		},
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 2,
 		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 20,
+		"row": 0,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Griffon Hide Armor",
+		"description": "Griffon skin light armor.",
+		"stats": {
+			"def": 12,
+			"dex": 4
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 21,
+		"row": 0,
+		"col": 11,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Hydra Skin Armor",
+		"description": "Hydra skin light armor.",
+		"stats": {
+			"def": 13,
+			"dex": 5
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 22,
+		"row": 5,
+		"col": 12,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Godly Bow",
+		"description": "A god tier bow.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 200,
+			"max": 230
+		},
+		"consumable": false,
+		"tier": 2,
+		"targetSlot": 0,
+		"targetClass": 1,
 		"fameBonus": 0
 	}
 ]
