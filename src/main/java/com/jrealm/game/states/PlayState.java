@@ -89,7 +89,7 @@ public class PlayState extends GameState {
 		cam.target(this.player);
 		this.player.setIsInvincible(false);
 
-		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(17));
+		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(47));
 		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(32));
 		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(12));
 

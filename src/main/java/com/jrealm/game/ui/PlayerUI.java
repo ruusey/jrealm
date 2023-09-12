@@ -59,9 +59,43 @@ public class PlayerUI {
 
 	}
 
+	public void setInventory(GameItem[] inventory) {
+		int panelWidth = (GamePanel.width / 5);
+
+		int startX = GamePanel.width - panelWidth;
+
+		this.inventory = new Slots[4];
+
+		for (int i = 0; i < inventory.length; i++) {
+			GameItem item = inventory[i];
+			if (item != null) {
+				final int actualIdx = (int) item.getTargetSlot();
+				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
+				b.onHoverIn(event -> {
+					System.out.println("Hovered IN Equipment SLOT " + actualIdx);
+					this.tooltips.put(item.getUid(),
+							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
+				});
+
+				b.onHoverOut(event -> {
+					System.out.println("Hovered OUT Equipment SLOT " + actualIdx);
+					this.tooltips.remove(item.getUid());
+				});
+				b.onMouseDown(event -> {
+					PlayerUI.DRAGGING_ITEM = true;
+					System.out.println("Clicked Equipment SLOT " + actualIdx);
+				});
+				b.onMouseUp(event -> {
+					PlayerUI.DRAGGING_ITEM = false;
+					System.out.println("Released Equipment SLOT " + actualIdx);
+				});
+				this.equipment[actualIdx] = new Slots(b, item);
+			}
+		}
+	}
+
 	public void setEquipment(GameItem[] loot) {
 		int panelWidth = (GamePanel.width / 5);
-		int panelWidth2 = (GamePanel.width / 4);
 
 		int startX = GamePanel.width - panelWidth;
 
@@ -138,7 +172,7 @@ public class PlayerUI {
 						}
 						this.tooltips.remove(item.getUid());
 
-					}else {
+					} else if(this.overlapsEquipment(event)) {
 						Slots currentEquip = this.equipment[item.getTargetSlot()];
 						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
 						this.equipment[item.getTargetSlot()].setItem(item);
@@ -151,6 +185,27 @@ public class PlayerUI {
 				this.groundLoot[actualIdx] = new Slots(b, item);
 			}
 		}
+	}
+
+	private boolean overlapsEquipment(Vector2f pos) {
+		for (Slots s : this.getEquipment()) {
+			if ((s == null) || (s.getButton() == null)) {
+				continue;
+			}
+			if (s.getButton().getBounds().inside((int) pos.x, (int) pos.y))
+				return true;
+		}
+		return false;
+
+	}
+
+	private boolean overlapsInventory(Vector2f pos) {
+		for (Slots s : this.getInventory()) {
+			if (s.getButton().getBounds().inside((int) pos.x, (int) pos.y))
+				return true;
+		}
+		return false;
+
 	}
 
 	private void removeGroundLootItemByUid(String uid) {
@@ -270,6 +325,18 @@ public class PlayerUI {
 					this.equipment[i].render(g, new Vector2f(startX + (i * 64), 256));
 				} else {
 					this.equipment[i].render(g, curr.getDragPos());
+				}
+			}
+		}
+
+		for (int i = 0; i < this.inventory.length; i++) {
+			Slots curr = this.inventory[i];
+			if (curr != null) {
+				if ((curr.getDragPos() == null)) {
+					this.inventory[i].render(g, new Vector2f(startX + (i * 64), 450));
+				} else {
+					this.inventory[i].render(g, curr.getDragPos());
+
 				}
 			}
 		}

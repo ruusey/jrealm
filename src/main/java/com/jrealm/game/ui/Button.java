@@ -228,7 +228,7 @@ public class Button {
 			else if ((mouse.getButton() == -1) && this.clicked) {
 				this.clicked = false;
 				for (int i = 0; i < this.mouseUpEvents.size(); i++) {
-					this.mouseUpEvents.get(i).action(1);
+					this.mouseUpEvents.get(i).action(new Vector2f(mouse.getX(), mouse.getY()));
 				}
 			}
 		} else if (this.hovering && !this.bounds.inside(mouse.getX(), mouse.getY())) {
@@ -241,7 +241,7 @@ public class Button {
 			this.clicked = false;
 			PlayerUI.DRAGGING_ITEM = false;
 			for (int i = 0; i < this.mouseUpEvents.size(); i++) {
-				this.mouseUpEvents.get(i).action(1);
+				this.mouseUpEvents.get(i).action(new Vector2f(mouse.getX(), mouse.getY()));
 			}
 		}
 
@@ -274,7 +274,7 @@ public class Button {
 	}
 
 	public interface MouseUpEvent {
-		void action(int mouseButton);
+		void action(Vector2f mousePos);
 	}
 
 	public interface HoverInEvent {

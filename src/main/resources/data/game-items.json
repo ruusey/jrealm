@@ -777,5 +777,23 @@
 		"targetSlot": 2,
 		"targetClass": -1,
 		"fameBonus": 8
+	},
+	{
+		"itemId": 47,
+		"row": 6,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Doom Bow",
+		"description": "The Doom Bow (tm)",
+		"damage": {
+			"projectileGroupId": 6,
+			"min": 400,
+			"max": 500
+		},
+		"consumable": false,
+		"tier": -1,
+		"targetSlot": 0,
+		"targetClass": -1,
+		"fameBonus": 8
 	}
 ]
