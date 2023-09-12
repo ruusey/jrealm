@@ -31,7 +31,6 @@ public class Player extends Entity {
 	private Cardinality cardinality = Cardinality.EAST;
 	private int weaponId;
 
-	private GameItem[] equipment;
 	private GameItem[] inventory;
 
 	private Stats stats;
@@ -83,21 +82,31 @@ public class Player extends Entity {
 	}
 
 	private void resetInventory() {
-		this.equipment = new GameItem[4];
-		this.inventory = new GameItem[16];
+		this.inventory = new GameItem[20];
 	}
 
 	public boolean equipSlot(int slot, GameItem item) {
 		if (item.isConsumable() || (item.getTargetSlot() != slot))
 			return false;
-		this.equipment[slot] = item;
+		this.inventory[slot] = item;
 
 		return true;
 	}
 
 
 	public GameItem getSlot(int slot) {
-		return this.equipment[slot];
+		return this.inventory[slot];
+	}
+
+	public GameItem[] getSlots(int start, int end) {
+		int size = end-start;
+		int idx = 0;
+		GameItem[] items = new GameItem[size];
+		for(int i = start; i< end; i++) {
+			items[idx++] = this.inventory[i];
+		}
+
+		return items;
 	}
 
 	public int getWeaponId() {
@@ -208,7 +217,8 @@ public class Player extends Entity {
 
 	public Stats getComputedStats() {
 		Stats stats = this.stats.clone();
-		for (GameItem item : this.equipment) {
+		GameItem[] equipment = this.getSlots(0, 4);
+		for (GameItem item : equipment) {
 			if (item != null) {
 				stats = stats.concat(item.getStats());
 			}

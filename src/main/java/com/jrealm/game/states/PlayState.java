@@ -93,7 +93,7 @@ public class PlayState extends GameState {
 		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(32));
 		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(12));
 
-		this.getPui().setEquipment(this.player.getEquipment());
+		this.getPui().setEquipment(this.player.getInventory());
 	}
 
 	private void spawnRandomEnemies() {
@@ -170,7 +170,7 @@ public class PlayState extends GameState {
 
 						for (Projectile p : group.getProjectiles()) {
 							short offset = (short) (p.getSize() / (short) 2);
-							short rolledDamage = this.player.getEquipment()[0].getDamage().getInRange();
+							short rolledDamage = this.player.getInventory()[0].getDamage().getInRange();
 							this.addProjectile(this.player.getWeaponId(), source.clone(-offset, -offset),
 									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
 									p.getRange(), rolledDamage, false);

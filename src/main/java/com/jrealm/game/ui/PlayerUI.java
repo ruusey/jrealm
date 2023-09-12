@@ -23,7 +23,6 @@ public class PlayerUI {
 	public static boolean DRAGGING_ITEM = false;
 	private FillBars hp;
 	private FillBars mp;
-	private Slots[] equipment;
 
 	private Slots[] inventory;
 
@@ -51,9 +50,8 @@ public class PlayerUI {
 		this.mp = new FillBars(p.getPlayer(), barSpritesMp, posMp, 16, 16, true);
 
 		// BuildOptionUI boUI = new BuildOptionUI();
-		this.equipment = new Slots[4];
 		this.groundLoot = new Slots[8];
-		this.inventory = new Slots[16];
+		this.inventory = new Slots[20];
 
 		this.tooltips = new HashMap<>();
 
@@ -89,7 +87,7 @@ public class PlayerUI {
 					PlayerUI.DRAGGING_ITEM = false;
 					System.out.println("Released Equipment SLOT " + actualIdx);
 				});
-				this.equipment[actualIdx] = new Slots(b, item);
+				this.inventory[actualIdx] = new Slots(b, item);
 			}
 		}
 	}
@@ -100,7 +98,7 @@ public class PlayerUI {
 		int startX = GamePanel.width - panelWidth;
 
 
-		this.equipment = new Slots[4];
+		this.inventory = new Slots[20];
 
 		for (int i = 0; i < loot.length; i++) {
 			GameItem item = loot[i];
@@ -125,7 +123,7 @@ public class PlayerUI {
 					PlayerUI.DRAGGING_ITEM = false;
 					System.out.println("Released Equipment SLOT " + actualIdx);
 				});
-				this.equipment[actualIdx] = new Slots(b, item);
+				this.inventory[actualIdx] = new Slots(b, item);
 			}
 		}
 	}
@@ -172,14 +170,14 @@ public class PlayerUI {
 						}
 						this.tooltips.remove(item.getUid());
 
-					} else if(this.overlapsEquipment(event)) {
-						Slots currentEquip = this.equipment[item.getTargetSlot()];
+					} else if (this.overlapsInventory(event)) {
+						Slots currentEquip = this.inventory[item.getTargetSlot()];
 						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
-						this.equipment[item.getTargetSlot()].setItem(item);
+						this.inventory[item.getTargetSlot()].setItem(item);
 						this.playState.replaceLootContainerItemByUid(item.getUid(), this.groundLoot[actualIdx].getItem());
-						this.getPlayState().getPlayer().getEquipment()[item.getTargetSlot()] = item;
+						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
 
-						this.setEquipment(this.getPlayState().getPlayer().getEquipment());
+						this.setEquipment(this.getPlayState().getPlayer().getInventory());
 					}
 				});
 				this.groundLoot[actualIdx] = new Slots(b, item);
@@ -187,20 +185,11 @@ public class PlayerUI {
 		}
 	}
 
-	private boolean overlapsEquipment(Vector2f pos) {
-		for (Slots s : this.getEquipment()) {
+	private boolean overlapsInventory(Vector2f pos) {
+		for (Slots s : this.getInventory()) {
 			if ((s == null) || (s.getButton() == null)) {
 				continue;
 			}
-			if (s.getButton().getBounds().inside((int) pos.x, (int) pos.y))
-				return true;
-		}
-		return false;
-
-	}
-
-	private boolean overlapsInventory(Vector2f pos) {
-		for (Slots s : this.getInventory()) {
 			if (s.getButton().getBounds().inside((int) pos.x, (int) pos.y))
 				return true;
 		}
@@ -223,8 +212,8 @@ public class PlayerUI {
 
 
 	public void update(double time) {
-		for (int i = 0; i < this.equipment.length; i++) {
-			Slots curr = this.equipment[i];
+		for (int i = 0; i < this.inventory.length; i++) {
+			Slots curr = this.inventory[i];
 			if (curr != null) {
 				curr.update(time);
 			}
@@ -232,8 +221,8 @@ public class PlayerUI {
 	}
 
 	public void input(MouseHandler mouse, KeyHandler key) {
-		for (int i = 0; i < this.equipment.length; i++) {
-			Slots curr = this.equipment[i];
+		for (int i = 0; i < this.inventory.length; i++) {
+			Slots curr = this.inventory[i];
 			if (curr != null) {
 				curr.input(mouse, key);
 			}
@@ -249,8 +238,8 @@ public class PlayerUI {
 
 	public boolean isEquipmentEmpty() {
 
-		for (int i = 0; i < this.equipment.length; i++) {
-			Slots curr = this.equipment[i];
+		for (int i = 0; i < this.inventory.length; i++) {
+			Slots curr = this.inventory[i];
 			if (curr == null) {
 				continue;
 			}
@@ -318,28 +307,28 @@ public class PlayerUI {
 
 		this.hp.render(g);
 		this.mp.render(g);
-		for (int i = 0; i < this.equipment.length; i++) {
-			Slots curr = this.equipment[i];
-			if (curr != null) {
-				if ((curr.getDragPos() == null)) {
-					this.equipment[i].render(g, new Vector2f(startX + (i * 64), 256));
-				} else {
-					this.equipment[i].render(g, curr.getDragPos());
-				}
-			}
-		}
-
 		for (int i = 0; i < this.inventory.length; i++) {
 			Slots curr = this.inventory[i];
 			if (curr != null) {
 				if ((curr.getDragPos() == null)) {
-					this.inventory[i].render(g, new Vector2f(startX + (i * 64), 450));
+					this.inventory[i].render(g, new Vector2f(startX + (i * 64), 256));
 				} else {
 					this.inventory[i].render(g, curr.getDragPos());
-
 				}
 			}
 		}
+
+		//		for (int i = 0; i < this.inventory.length; i++) {
+		//			Slots curr = this.inventory[i];
+		//			if (curr != null) {
+		//				if ((curr.getDragPos() == null)) {
+		//					this.inventory[i].render(g, new Vector2f(startX + (i * 64), 450));
+		//				} else {
+		//					this.inventory[i].render(g, curr.getDragPos());
+		//
+		//				}
+		//			}
+		//		}
 
 		for (int i = 0; i < this.groundLoot.length; i++) {
 			Slots curr = this.groundLoot[i];
