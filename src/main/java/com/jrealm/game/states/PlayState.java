@@ -55,6 +55,7 @@ public class PlayState extends GameState {
 	private List<Vector2f> shotDestQueue;
 	public long lastShotTick = 0;
 	private Semaphore gameObjectLock = new Semaphore(1);
+
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 
@@ -93,15 +94,11 @@ public class PlayState extends GameState {
 		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(12));
 
 		this.getPui().setEquipment(this.player.getEquipment());
-
 	}
 
 	private void spawnRandomEnemies() {
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
-
-
 		Random r = new Random(System.currentTimeMillis());
-
 		for (int i = 0; i < this.tm.getHeight(); i++) {
 			for (int j = 0; j < this.tm.getWidth(); j++) {
 				GameObject go = null;
@@ -145,10 +142,8 @@ public class PlayState extends GameState {
 	public Vector2f getPlayerPos() { return this.player.getPos(); }
 
 	private boolean canBuildHeap(int offset, int si, double time) {
-
 		if((this.gameObject.size() > 3) && (((this.heaptime / si) + offset) < (time / si)))
 			return true;
-
 		return false;
 	}
 
@@ -180,7 +175,6 @@ public class PlayState extends GameState {
 									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
 									p.getRange(), rolledDamage, false);
 						}
-
 					}
 				};
 
@@ -194,7 +188,6 @@ public class PlayState extends GameState {
 							if (this.canBuildHeap(2500, 1000000, time)) {
 								this.gameObject.get(i).value = enemy.getBounds().distance(this.player.getPos());
 							}
-
 							continue;
 						}
 
@@ -217,28 +210,20 @@ public class PlayState extends GameState {
 							}
 						}
 					}
+					this.processBulletHit();
 					this.releaseGameObjectLock();
-
 				};
 
-				Runnable render = () -> {
-					this.acquireGameObjectLock();
-
+				Runnable updatePlayerAndUi = () -> {
 					if (this.canBuildHeap(3, 1000000000, time)) {
 						this.heaptime = System.nanoTime();
 						this.gameObject.buildHeap();
 					}
-					this.processBulletHit();
 
 					this.player.update(time);
 					this.pui.update(time);
-					this.releaseGameObjectLock();
-
 				};
-
-
-				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, render);
-
+				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi);
 			}
 			this.cam.update();
 		}
@@ -514,9 +499,7 @@ public class PlayState extends GameState {
 
 	private void renderCollisionBoxes(Graphics2D g) {
 		for (AABB node : this.aabbTree.getAllNodes()) {
-			if (node.getHeight() == 20.0f) {
-				System.out.println();
-			}
+
 			g.setColor(Color.BLUE);
 			Vector2f pos = node.getPos().getWorldVar();
 			pos.addX(node.getXOffset());
