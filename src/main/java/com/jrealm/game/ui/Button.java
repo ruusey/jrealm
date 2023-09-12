@@ -32,15 +32,15 @@ public class Button {
 
 	private AABB bounds;
 	private boolean hovering = false;
-	private int hoverSize;
+	private boolean canHover = true;
 	private ArrayList<MouseDownEvent> mouseDownEvents;
 	private ArrayList<MouseUpEvent> mouseUpEvents;
-	private ArrayList<HoverEvent> hoverEvents;
+	private ArrayList<HoverInEvent> hoverInEvents;
+	private ArrayList<HoverOutEvent> hoverOutEvents;
 
 	private ArrayList<SlotEvent> slotevents;
 	private boolean clicked = false;
 	private boolean pressed = false;
-	private boolean canHover = true;
 	private boolean drawString = true;
 
 	private float pressedtime;
@@ -51,9 +51,10 @@ public class Button {
 		this.pos = pos;
 
 		this.bounds = new AABB(this.pos, size, size);
-		this.canHover = true;
 		this.drawString = false;
-		this.hoverEvents = new ArrayList<HoverEvent>();
+		this.hoverInEvents = new ArrayList<HoverInEvent>();
+		this.hoverOutEvents = new ArrayList<HoverOutEvent>();
+
 		this.mouseDownEvents = new ArrayList<MouseDownEvent>();
 		this.mouseUpEvents = new ArrayList<MouseUpEvent>();
 		this.slotevents = new ArrayList<SlotEvent>();
@@ -65,11 +66,12 @@ public class Button {
 		this.image = this.createIconButton(icon, image, width + iconsize, height + iconsize, iconsize);
 		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
 
-		this.hoverEvents = new ArrayList<HoverEvent>();
+		this.hoverInEvents = new ArrayList<HoverInEvent>();
+		this.hoverOutEvents = new ArrayList<HoverOutEvent>();
+
 		this.mouseDownEvents = new ArrayList<MouseDownEvent>();
 		this.mouseUpEvents = new ArrayList<MouseUpEvent>();
 		this.slotevents = new ArrayList<SlotEvent>();
-		this.canHover = false;
 		this.drawString = false;
 	}
 
@@ -120,11 +122,12 @@ public class Button {
 
 		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
 
-		this.hoverEvents = new ArrayList<HoverEvent>();
+		this.hoverInEvents = new ArrayList<HoverInEvent>();
+		this.hoverOutEvents = new ArrayList<HoverOutEvent>();
+
 		this.mouseDownEvents = new ArrayList<MouseDownEvent>();
 		this.mouseUpEvents = new ArrayList<MouseUpEvent>();
 
-		this.canHover = false;
 		this.drawString = false;
 	}
 
@@ -159,16 +162,13 @@ public class Button {
 
 	public void addHoverImage(BufferedImage image) {
 		this.hoverImage = image;
-		this.canHover = true;
 	}
 
 	public void addPressedImage(BufferedImage image) {
 		this.pressedImage = image;
 	}
 
-	public void setHoverSize(int size) { this.hoverSize = size; }
 	public boolean getHovering() { return this.hovering; }
-	public void setHover(boolean b) { this.canHover = b; }
 
 	public void onMouseDown(MouseDownEvent e) {
 		this.mouseDownEvents.add(e);
@@ -178,8 +178,12 @@ public class Button {
 		this.mouseUpEvents.add(e);
 	}
 
-	public void onHover(HoverEvent e) {
-		this.hoverEvents.add(e);
+	public void onHoverIn(HoverInEvent e) {
+		this.hoverInEvents.add(e);
+	}
+
+	public void onHoverOut(HoverOutEvent e) {
+		this.hoverOutEvents.add(e);
 	}
 
 	public void addSlotEvent(SlotEvent e) { this.slotevents.add(e); }
@@ -195,31 +199,18 @@ public class Button {
 		}
 	}
 
-	private void hover(int value) {
-		if(this.hoverImage == null) {
-			this.pos.x -= value / 2;
-			this.pos.y -= value / 2;
-			float iWidth = value + this.bounds.getWidth();
-			float iHeight = value + this.bounds.getHeight();
-			this.bounds = new AABB(this.pos, (int) iWidth, (int) iHeight);
-
-			this.pos.x -= value / 2;
-			this.pos.y -= value / 2;
-			this.lbWidth += value / 3;
-			this.lbHeight += value / 3;
-
-		}
-
-		this.hovering = true;
-	}
-
 	public void input(MouseHandler mouse, KeyHandler key) {
 		if (this.bounds.inside(mouse.getX(), mouse.getY()) && !PlayerUI.DRAGGING_ITEM) {
-			if(this.canHover && !this.hovering) {
-				//				for (int i = 0; i < this.hoverEvents.size(); i++) {
-				//					this.hoverEvents.get(i).action(1);
-				//				}
+			this.hovering = true;
+
+			if (this.hovering && this.canHover) {
+				for (int i = 0; i < this.hoverInEvents.size(); i++) {
+					this.hoverInEvents.get(i).action(1);
+				}
 			}
+
+			this.canHover = false;
+
 			if ((mouse.getButton() == 1) && !this.clicked) {
 				this.clicked = true;
 				this.pressed = true;
@@ -240,15 +231,23 @@ public class Button {
 					this.mouseUpEvents.get(i).action(1);
 				}
 			}
-		} else if(this.canHover && this.hovering) {
-			this.hover(-this.hoverSize);
+		} else if (this.hovering && !this.bounds.inside(mouse.getX(), mouse.getY())) {
 			this.hovering = false;
+			this.canHover = true;
+			for (int i = 0; i < this.hoverOutEvents.size(); i++) {
+				this.hoverOutEvents.get(i).action(1);
+			}
 		} else if ((mouse.getButton() == -1) && this.clicked && PlayerUI.DRAGGING_ITEM) {
 			this.clicked = false;
 			PlayerUI.DRAGGING_ITEM = false;
 			for (int i = 0; i < this.mouseUpEvents.size(); i++) {
 				this.mouseUpEvents.get(i).action(1);
 			}
+		}
+
+		if (!this.bounds.inside(mouse.getX(), mouse.getY())) {
+			this.hovering = false;
+			this.canHover = true;
 		}
 	}
 
@@ -257,7 +256,7 @@ public class Button {
 			SpriteSheet.drawArray(g, this.label, this.pos, this.lbWidth, this.lbHeight);
 		}
 
-		if(this.canHover && (this.hoverImage != null) && this.hovering) {
+		if ((this.hoverImage != null) && this.hovering) {
 			g.drawImage(this.hoverImage, (int) this.pos.x, (int) this.pos.y, (int) this.bounds.getWidth(),
 					(int) this.bounds.getHeight(), null);
 		} else if((this.pressedImage != null) && this.pressed) {
@@ -278,7 +277,11 @@ public class Button {
 		void action(int mouseButton);
 	}
 
-	public interface HoverEvent {
+	public interface HoverInEvent {
+		void action(int mouseButton);
+	}
+
+	public interface HoverOutEvent {
 		void action(int mouseButton);
 	}
 

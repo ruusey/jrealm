@@ -3,12 +3,15 @@ package com.jrealm.game.ui;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.ItemTooltip;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
@@ -28,6 +31,7 @@ public class PlayerUI {
 
 	private PlayState playState;
 
+	private Map<String, ItemTooltip> tooltips;
 	public PlayerUI(PlayState p) {
 		this.playState = p;
 		SpriteSheet bars = new SpriteSheet("ui/fillbars.png", 0);
@@ -51,10 +55,13 @@ public class PlayerUI {
 		this.groundLoot = new Slots[8];
 		this.inventory = new Slots[16];
 
+		this.tooltips = new HashMap<>();
+
 	}
 
 	public void setEquipment(GameItem[] loot) {
 		int panelWidth = (GamePanel.width / 5);
+		int panelWidth2 = (GamePanel.width / 4);
 
 		int startX = GamePanel.width - panelWidth;
 
@@ -66,6 +73,15 @@ public class PlayerUI {
 			if (item != null) {
 				final int actualIdx = (int) item.getTargetSlot();
 				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
+				b.onHoverIn(event -> {
+					System.out.println("Hovered IN Equipment SLOT " + actualIdx);
+					this.tooltips.put(item.getUid(), new ItemTooltip(item, b.getPos(), panelWidth2, 400));
+				});
+
+				b.onHoverOut(event -> {
+					System.out.println("Hovered OUT Equipment SLOT " + actualIdx);
+					this.tooltips.remove(item.getUid());
+				});
 				b.onMouseDown(event -> {
 					PlayerUI.DRAGGING_ITEM = true;
 					System.out.println("Clicked Equipment SLOT " + actualIdx);
@@ -92,13 +108,18 @@ public class PlayerUI {
 			if (item != null) {
 				final int actualIdx = i;
 				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 450 + yOffset), 64);
-				b.onHover(event -> {
-					System.out.println("Hovered GroundLoot SLOT " + actualIdx);
-					item.drawTooltip(b.getPos(), panelWidth, 500, g);
+				b.onHoverIn(event -> {
+					System.out.println("Hovered IN GroundLoot SLOT " + actualIdx);
+					this.tooltips.put(item.getUid(), new ItemTooltip(item, b.getPos(), panelWidth, 400));
+				});
+				b.onHoverOut(event -> {
+					System.out.println("Hovered OUT GroundLoot SLOT " + actualIdx);
+					this.tooltips.remove(item.getUid());
 				});
 				b.onMouseDown(event -> {
 					PlayerUI.DRAGGING_ITEM = true;
 					System.out.println("Clicked GroundLoot SLOT " + actualIdx);
+
 				});
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
@@ -120,6 +141,8 @@ public class PlayerUI {
 						this.equipment[item.getTargetSlot()].setItem(item);
 						this.playState.replaceLootContainerItemByUid(item.getUid(), this.groundLoot[actualIdx].getItem());
 						this.getPlayState().getPlayer().getEquipment()[item.getTargetSlot()] = item;
+
+						this.setEquipment(this.getPlayState().getPlayer().getEquipment());
 					}
 				});
 				this.groundLoot[actualIdx] = new Slots(b, item);
@@ -244,7 +267,6 @@ public class PlayerUI {
 					this.equipment[i].render(g, new Vector2f(startX + (i * 64), 256));
 				} else {
 					this.equipment[i].render(g, curr.getDragPos());
-
 				}
 			}
 		}
@@ -259,6 +281,10 @@ public class PlayerUI {
 
 				}
 			}
+		}
+
+		for (ItemTooltip tip : this.tooltips.values()) {
+			tip.render(g);
 		}
 	}
 
