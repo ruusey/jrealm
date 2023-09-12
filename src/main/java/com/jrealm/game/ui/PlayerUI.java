@@ -75,7 +75,8 @@ public class PlayerUI {
 				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
 				b.onHoverIn(event -> {
 					System.out.println("Hovered IN Equipment SLOT " + actualIdx);
-					this.tooltips.put(item.getUid(), new ItemTooltip(item, b.getPos(), panelWidth2, 400));
+					this.tooltips.put(item.getUid(),
+							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
 				});
 
 				b.onHoverOut(event -> {
@@ -110,7 +111,8 @@ public class PlayerUI {
 				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 450 + yOffset), 64);
 				b.onHoverIn(event -> {
 					System.out.println("Hovered IN GroundLoot SLOT " + actualIdx);
-					this.tooltips.put(item.getUid(), new ItemTooltip(item, b.getPos(), panelWidth, 400));
+					this.tooltips.put(item.getUid(),
+							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
 				});
 				b.onHoverOut(event -> {
 					System.out.println("Hovered OUT GroundLoot SLOT " + actualIdx);
@@ -134,6 +136,7 @@ public class PlayerUI {
 						} else if (item.getStats().getMp() > 0) {
 							this.playState.getPlayer().drinkMp();
 						}
+						this.tooltips.remove(item.getUid());
 
 					}else {
 						Slots currentEquip = this.equipment[item.getTargetSlot()];
