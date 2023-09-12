@@ -71,7 +71,6 @@ public class Player extends Entity {
 		this.health = this.maxHealth = this.defaultMaxHealth = 500;
 		this.mana = this.maxMana = this.defaultMaxMana = 100;
 		this.name = "player";
-		this.weaponId = id;
 
 		this.resetInventory();
 
@@ -96,12 +95,14 @@ public class Player extends Entity {
 		return true;
 	}
 
+
 	public GameItem getSlot(int slot) {
 		return this.equipment[slot];
 	}
 
 	public int getWeaponId() {
-		return this.weaponId;
+		GameItem weapon = this.getSlot(0);
+		return weapon == null ? -1 : weapon.getDamage().getProjectileGroupId();
 	}
 
 	public Cardinality getCardinality() {
@@ -213,6 +214,14 @@ public class Player extends Entity {
 			}
 		}
 		return stats;
+	}
+
+	public void drinkHp() {
+		this.maxHealth += 5;
+	}
+
+	public void drinkMp() {
+		this.maxMana += 5;
 	}
 
 	@Override

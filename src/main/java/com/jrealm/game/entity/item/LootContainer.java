@@ -23,17 +23,30 @@ public class LootContainer {
 	private GameItem[] items;
 	private Vector2f pos;
 
+	private long spawnedTime;
 	public LootContainer(Sprite sprite, Vector2f pos) {
 		this.sprite = sprite;
 		this.uid = UUID.randomUUID().toString();
 		this.items = new GameItem[8];
 		this.pos = pos;
 		Random r = new Random(System.currentTimeMillis());
-		for (int i = 0; i < (r.nextInt(4) + 1); i++) {
+		this.items[0] = GameDataManager.GAME_ITEMS.get(r.nextInt(8));
+		for (int i = 1; i < (r.nextInt(4) + 1); i++) {
 			this.items[i] = GameDataManager.GAME_ITEMS.get(r.nextInt(46) + 1);
 		}
-		// this.items[1] = GameDataManager.GAME_ITEMS.get(9);
+		this.spawnedTime = System.currentTimeMillis();
 
+	}
+
+	public boolean isExpired() {
+		return (System.currentTimeMillis() - this.spawnedTime) > 60000;
+	}
+	public boolean isEmpty() {
+		for (GameItem item : this.items) {
+			if (item != null)
+				return false;
+		}
+		return true;
 	}
 
 	public void setItem(int idx, GameItem replacement) {

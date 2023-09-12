@@ -79,7 +79,7 @@ public class PlayerUI {
 		}
 	}
 
-	public void setGroundLoot(GameItem[] loot) {
+	public void setGroundLoot(GameItem[] loot, Graphics2D g) {
 		int panelWidth = (GamePanel.width / 5);
 
 		int startX = GamePanel.width - panelWidth;
@@ -92,6 +92,10 @@ public class PlayerUI {
 			if (item != null) {
 				final int actualIdx = i;
 				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 450 + yOffset), 64);
+				b.onHover(event -> {
+					System.out.println("Hovered GroundLoot SLOT " + actualIdx);
+					item.drawTooltip(b.getPos(), panelWidth, 500, g);
+				});
 				b.onMouseDown(event -> {
 					PlayerUI.DRAGGING_ITEM = true;
 					System.out.println("Clicked GroundLoot SLOT " + actualIdx);
@@ -104,10 +108,12 @@ public class PlayerUI {
 						this.playState.getPlayer().setStats(newStats);
 						this.playState.removeLootContainerItemByUid(item.getUid());
 						this.removeGroundLootItemByUid(item.getUid());
-						//						if (item.getStats().getHp() > 0) {
-						//							this.playState.getPlayer()
-						//									.setMaxHealth(this.playState.getPlayer().getMaxHealth() + item.getStats().getHp());
-						//						}
+						if (item.getStats().getHp() > 0) {
+							this.playState.getPlayer().drinkHp();
+						} else if (item.getStats().getMp() > 0) {
+							this.playState.getPlayer().drinkMp();
+						}
+
 					}else {
 						Slots currentEquip = this.equipment[item.getTargetSlot()];
 						this.groundLoot[actualIdx].setItem(currentEquip.getItem());

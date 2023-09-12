@@ -263,7 +263,7 @@
 		"name": "Short Bow",
 		"description": "A well-made shortbow.",
 		"damage": {
-			"projectileGroupId": 4,
+			"projectileGroupId": 5,
 			"min": 15,
 			"max": 20
 		},

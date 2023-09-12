@@ -325,7 +325,7 @@ public class PlayState extends GameState {
 				this.aabbTree.removeObject(e);
 				this.gameObject.remove(e);
 				this.loot.add(new LootContainer(
-						GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(8, 0, 8, 8),
+						GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8),
 						e.getPos()));
 			}
 		}
@@ -474,18 +474,27 @@ public class PlayState extends GameState {
 			}
 		}
 
+		List<LootContainer> toRemove = new ArrayList<>();
 		LootContainer closeLoot = null;
 		for (LootContainer lc : this.loot) {
 			if ((this.getPlayer().getBounds().distance(lc.getPos()) < 64)) {
 				closeLoot = lc;
 			}
-			lc.render(g);
+			if (!lc.isEmpty()) {
+				lc.render(g);
+
+			}
+			if (lc.isEmpty() || lc.isExpired()) {
+				toRemove.add(lc);
+			}
 		}
+		this.loot.removeAll(toRemove);
+
 		if (this.getPui().isGroundLootEmpty() && (closeLoot != null)) {
-			this.getPui().setGroundLoot(closeLoot.getItems());
+			this.getPui().setGroundLoot(closeLoot.getItems(), g);
 
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
-			this.getPui().setGroundLoot(new GameItem[8]);
+			this.getPui().setGroundLoot(new GameItem[8], g);
 
 		}
 		// this.renderCollisionBoxes(g);

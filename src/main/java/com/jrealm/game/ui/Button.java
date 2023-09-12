@@ -35,6 +35,7 @@ public class Button {
 	private int hoverSize;
 	private ArrayList<MouseDownEvent> mouseDownEvents;
 	private ArrayList<MouseUpEvent> mouseUpEvents;
+	private ArrayList<HoverEvent> hoverEvents;
 
 	private ArrayList<SlotEvent> slotevents;
 	private boolean clicked = false;
@@ -52,7 +53,7 @@ public class Button {
 		this.bounds = new AABB(this.pos, size, size);
 		this.canHover = true;
 		this.drawString = false;
-
+		this.hoverEvents = new ArrayList<HoverEvent>();
 		this.mouseDownEvents = new ArrayList<MouseDownEvent>();
 		this.mouseUpEvents = new ArrayList<MouseUpEvent>();
 		this.slotevents = new ArrayList<SlotEvent>();
@@ -64,6 +65,7 @@ public class Button {
 		this.image = this.createIconButton(icon, image, width + iconsize, height + iconsize, iconsize);
 		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
 
+		this.hoverEvents = new ArrayList<HoverEvent>();
 		this.mouseDownEvents = new ArrayList<MouseDownEvent>();
 		this.mouseUpEvents = new ArrayList<MouseUpEvent>();
 		this.slotevents = new ArrayList<SlotEvent>();
@@ -118,7 +120,7 @@ public class Button {
 
 		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
 
-
+		this.hoverEvents = new ArrayList<HoverEvent>();
 		this.mouseDownEvents = new ArrayList<MouseDownEvent>();
 		this.mouseUpEvents = new ArrayList<MouseUpEvent>();
 
@@ -176,6 +178,10 @@ public class Button {
 		this.mouseUpEvents.add(e);
 	}
 
+	public void onHover(HoverEvent e) {
+		this.hoverEvents.add(e);
+	}
+
 	public void addSlotEvent(SlotEvent e) { this.slotevents.add(e); }
 	public void setSlot(Slots slot) { this.slot = slot;} // temp fix
 
@@ -210,7 +216,9 @@ public class Button {
 	public void input(MouseHandler mouse, KeyHandler key) {
 		if (this.bounds.inside(mouse.getX(), mouse.getY()) && !PlayerUI.DRAGGING_ITEM) {
 			if(this.canHover && !this.hovering) {
-				this.hover(this.hoverSize);
+				//				for (int i = 0; i < this.hoverEvents.size(); i++) {
+				//					this.hoverEvents.get(i).action(1);
+				//				}
 			}
 			if ((mouse.getButton() == 1) && !this.clicked) {
 				this.clicked = true;
@@ -267,6 +275,10 @@ public class Button {
 	}
 
 	public interface MouseUpEvent {
+		void action(int mouseButton);
+	}
+
+	public interface HoverEvent {
 		void action(int mouseButton);
 	}
 
