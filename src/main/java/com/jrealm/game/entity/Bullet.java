@@ -92,8 +92,14 @@ public class Bullet extends GameObject {
 	public void render(Graphics2D g) {
 		AffineTransform original = g.getTransform();
 		AffineTransform t = new AffineTransform();
-		t.rotate(-this.getAngle() + this.tfAngle, this.pos.getWorldVar().x + (this.size / 2),
-				this.pos.getWorldVar().y + (this.size / 2));
+		if (this.image.getAngleOffset() > 0.0f) {
+			t.rotate(-this.getAngle() + (this.tfAngle + this.image.getAngleOffset()),
+					this.pos.getWorldVar().x + (this.size / 2), this.pos.getWorldVar().y + (this.size / 2));
+		} else {
+			t.rotate(-this.getAngle() + this.tfAngle, this.pos.getWorldVar().x + (this.size / 2),
+					this.pos.getWorldVar().y + (this.size / 2));
+		}
+
 		g.setTransform(t);
 		// g.setColor(Color.RED);
 		g.drawImage(this.image.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), this.size,

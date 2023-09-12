@@ -10,215 +10,209 @@ import com.jrealm.game.states.PlayState;
 
 public class Camera {
 
-    private AABB collisionCam;
+	private AABB collisionCam;
 
-    private boolean up;
-    private boolean down;
-    private boolean left;
-    private boolean right;
+	private boolean up;
+	private boolean down;
+	private boolean left;
+	private boolean right;
 
-    private float dx;
-    private float dy;
-    private float maxSpeed = 8f;
-    private float acc = 3f;
-    private float deacc = 0.3f;
+	private float dx;
+	private float dy;
+	private float maxSpeed = 8f;
+	private float acc = 3f;
+	private float deacc = 0.3f;
 
-    private int widthLimit;
-    private int heightLimit;
+	private int widthLimit;
+	private int heightLimit;
 
-    private int tileSize = 64;
+	private int tileSize = 64;
 
-    private Entity e;
+	private Entity e;
 
-    public Camera(AABB collisionCam) {
-        this.collisionCam = collisionCam;
-    }
+	public Camera(AABB collisionCam) {
+		this.collisionCam = collisionCam;
+	}
 
-    public void setLimit(int widthLimit, int heightLimit) {
-        this.widthLimit = widthLimit;
-        this.heightLimit = heightLimit;
-    }
+	public void setLimit(int widthLimit, int heightLimit) {
+		this.widthLimit = widthLimit;
+		this.heightLimit = heightLimit;
+	}
 
-    public void setTileSize(int tileSize) {
-        this.tileSize = tileSize;
-    }
+	public void setTileSize(int tileSize) {
+		this.tileSize = tileSize;
+	}
 
-    public Entity getTarget() { return e; }
+	public Entity getTarget() { return this.e; }
 
-    public Vector2f getPos() {
-        return collisionCam.getPos();
-    }
-    public AABB getBounds() {
-        return collisionCam;
-    }
+	public Vector2f getPos() {
+		return this.collisionCam.getPos();
+	}
+	public AABB getBounds() {
+		return this.collisionCam;
+	}
 
-    public void update() {
-        move();
-        if(e != null) {
-            if (!e.xCol) {
-                if ((e.getPos().getWorldVar().x + dy) < Vector2f.getWorldVarX(widthLimit - collisionCam.getWidth() / 2) + tileSize
-                    && (e.getPos().getWorldVar().x + dy) > Vector2f.getWorldVarX(GamePanel.width / 2 - tileSize * 2)) {
-                    PlayState.map.x += dx;
-                    collisionCam.getPos().x += dx;
-                    //bounds.getPos().x += dx;
-                }
-            }
-            if (!e.yCol) {
-                if ((e.getPos().getWorldVar().y + dy) < Vector2f.getWorldVarY(heightLimit - collisionCam.getHeight() / 2) + tileSize
-                    && (e.getPos().getWorldVar().y + dy) > Vector2f.getWorldVarY(GamePanel.height / 2 - tileSize * 2)) {
-                    PlayState.map.y += dy;
-                    collisionCam.getPos().y += dy;
-                //bounds.getPos().y += dy;
-                }
-            }
-        } else {
-            if(collisionCam.getPos().x + dx > 0
-            && collisionCam.getPos().getWorldVar().x + dx < Vector2f.getWorldVarX(widthLimit - collisionCam.getWidth()) - tileSize) {
-                PlayState.map.x += dx;
-                collisionCam.getPos().x += dx;
-            }
+	public void update() {
+		this.move();
+		if(this.e != null) {
+			if (!this.e.xCol) {
+				if (((this.e.getPos().getWorldVar().x + this.dy) < (Vector2f.getWorldVarX(this.widthLimit - (this.collisionCam.getWidth() / 2)) + this.tileSize))
+						&& ((this.e.getPos().getWorldVar().x + this.dy) > Vector2f.getWorldVarX((GamePanel.width / 2) - (this.tileSize * 2)))) {
+					PlayState.map.x += this.dx;
+					this.collisionCam.getPos().x += this.dx;
+					//bounds.getPos().x += dx;
+				}
+			}
+			if (!this.e.yCol) {
+				if (((this.e.getPos().getWorldVar().y + this.dy) < (Vector2f.getWorldVarY(this.heightLimit - (this.collisionCam.getHeight() / 2)) + this.tileSize))
+						&& ((this.e.getPos().getWorldVar().y + this.dy) > Vector2f.getWorldVarY((GamePanel.height / 2) - (this.tileSize * 2)))) {
+					PlayState.map.y += this.dy;
+					this.collisionCam.getPos().y += this.dy;
+					//bounds.getPos().y += dy;
+				}
+			}
+		} else {
+			if(((this.collisionCam.getPos().x + this.dx) > 0)
+					&& ((this.collisionCam.getPos().getWorldVar().x + this.dx) < (Vector2f.getWorldVarX(this.widthLimit - this.collisionCam.getWidth()) - this.tileSize))) {
+				PlayState.map.x += this.dx;
+				this.collisionCam.getPos().x += this.dx;
+			}
 
-            if(collisionCam.getPos().y + dy > 0 
-            && collisionCam.getPos().getWorldVar().y + dy < Vector2f.getWorldVarY(heightLimit - collisionCam.getHeight()) - tileSize) {
-                PlayState.map.y += dy;
-                collisionCam.getPos().y += dy;
-            }
-        }
-    }
+			if(((this.collisionCam.getPos().y + this.dy) > 0)
+					&& ((this.collisionCam.getPos().getWorldVar().y + this.dy) < (Vector2f.getWorldVarY(this.heightLimit - this.collisionCam.getHeight()) - this.tileSize))) {
+				PlayState.map.y += this.dy;
+				this.collisionCam.getPos().y += this.dy;
+			}
+		}
+	}
 
-    private void move() {
-        if (up) {
-            dy -= acc;
-            if (dy < -maxSpeed) {
-                dy = -maxSpeed;
-            }
-        } else {
-            if (dy < 0) {
-                dy += deacc;
-                if (dy > 0) {
-                    dy = 0;
-                }
-            }
-        }
-        if (down) {
-            dy += acc;
-            if (dy > maxSpeed) {
-                dy = maxSpeed;
-            }
-        } else {
-            if (dy > 0) {
-                dy -= deacc;
-                if (dy < 0) {
-                    dy = 0;
-                }
-            }
-        }
-        if (left) {
-            dx -= acc;
-            if (dx < -maxSpeed) {
-                dx = -maxSpeed;
-            }
-        } else {
-            if (dx < 0) {
-                dx += deacc;
-                if (dx > 0) {
-                    dx = 0;
-                }
-            }
-        }
-        if (right) {
-            dx += acc;
-            if (dx > maxSpeed) {
-                dx = maxSpeed;
-            }
-        } else {
-            if (dx > 0) {
-                dx -= deacc;
-                if (dx < 0) {
-                    dx = 0;
-                }
-            }
-        }
-    }
+	private void move() {
+		if (this.up) {
+			this.dy -= this.acc;
+			if (this.dy < -this.maxSpeed) {
+				this.dy = -this.maxSpeed;
+			}
+		} else if (this.dy < 0) {
+			this.dy += this.deacc;
+			if (this.dy > 0) {
+				this.dy = 0;
+			}
+		}
+		if (this.down) {
+			this.dy += this.acc;
+			if (this.dy > this.maxSpeed) {
+				this.dy = this.maxSpeed;
+			}
+		} else if (this.dy > 0) {
+			this.dy -= this.deacc;
+			if (this.dy < 0) {
+				this.dy = 0;
+			}
+		}
+		if (this.left) {
+			this.dx -= this.acc;
+			if (this.dx < -this.maxSpeed) {
+				this.dx = -this.maxSpeed;
+			}
+		} else if (this.dx < 0) {
+			this.dx += this.deacc;
+			if (this.dx > 0) {
+				this.dx = 0;
+			}
+		}
+		if (this.right) {
+			this.dx += this.acc;
+			if (this.dx > this.maxSpeed) {
+				this.dx = this.maxSpeed;
+			}
+		} else if (this.dx > 0) {
+			this.dx -= this.deacc;
+			if (this.dx < 0) {
+				this.dx = 0;
+			}
+		}
+	}
 
-    public void target(Entity e) {
-        this.e = e;
-        if(e != null) {
-            acc = e.getAcc();
-            deacc = e.getDeacc();
-            maxSpeed = e.getMaxSpeed();
-        } else {
-            acc = 3;
-            deacc = 0.3f;
-            maxSpeed = 8;
-        }
-    }
+	public void target(Entity e) {
+		this.e = e;
+		if(e != null) {
+			this.acc = e.getAcc();
+			this.deacc = e.getDeacc();
+			this.maxSpeed = e.getMaxSpeed();
+		} else {
+			this.acc = 3;
+			this.deacc = 0.3f;
+			this.maxSpeed = 8;
+		}
+	}
 
-    public void setMaxSpeed(int maxSpeed) {this.maxSpeed = maxSpeed; }
+	public void setMaxSpeed(float maxSpeed) {
+		this.maxSpeed = maxSpeed;
+	}
 
-    public void input(MouseHandler mouse, KeyHandler key) {
+	public void input(MouseHandler mouse, KeyHandler key) {
 
-        if (e == null) {
-            if (key.up.down) {
-                up = true;
-            } else {
-                up = false;
-            }
-            if (key.down.down) {
-                down = true;
-            } else {
-                down = false;
-            }
-            if (key.left.down) {
-                left = true;
-            } else {
-                left = false;
-            }
-            if (key.right.down) {
-                right = true;
-            } else {
-                right = false;
-            }
-        } else {
-            if (!e.yCol) {
-                if (collisionCam.getPos().y + collisionCam.getHeight() / 2 + dy > e.getPos().y + e.getSize() / 2 + e.getDy() + 2) {
-                    up = true;
-                    down = false;
-                } else if (collisionCam.getPos().y + collisionCam.getHeight() / 2 + dy < e.getPos().y + e.getSize() / 2 + e.getDy() - 2) {
-                    down = true;
-                    up = false;
-                } else {
-                    dy = 0;
-                    up = false;
-                    down = false;
-                }
-            }
+		if (this.e == null) {
+			if (key.up.down) {
+				this.up = true;
+			} else {
+				this.up = false;
+			}
+			if (key.down.down) {
+				this.down = true;
+			} else {
+				this.down = false;
+			}
+			if (key.left.down) {
+				this.left = true;
+			} else {
+				this.left = false;
+			}
+			if (key.right.down) {
+				this.right = true;
+			} else {
+				this.right = false;
+			}
+		} else {
+			if (!this.e.yCol) {
+				if ((this.collisionCam.getPos().y + (this.collisionCam.getHeight() / 2) + this.dy) > (this.e.getPos().y + (this.e.getSize() / 2) + this.e.getDy() + 2)) {
+					this.up = true;
+					this.down = false;
+				} else if ((this.collisionCam.getPos().y + (this.collisionCam.getHeight() / 2) + this.dy) < ((this.e.getPos().y + (this.e.getSize() / 2) + this.e.getDy()) - 2)) {
+					this.down = true;
+					this.up = false;
+				} else {
+					this.dy = 0;
+					this.up = false;
+					this.down = false;
+				}
+			}
 
-            if (!e.xCol) {
-                if (collisionCam.getPos().x + collisionCam.getWidth() / 2  + dx > e.getPos().x + e.getSize() / 2 + e.getDx() + 2) {
-                    left = true;
-                    right = false;
-                } else if (collisionCam.getPos().x + collisionCam.getWidth() / 2 + dx < e.getPos().x + e.getSize() / 2 + e.getDx() - 2) {
-                    right = true;
-                    left = false;
-                } else {
-                    dx = 0;
-                    right = false;
-                    left = false;
-                }
-            }
-        }
-    }
+			if (!this.e.xCol) {
+				if ((this.collisionCam.getPos().x + (this.collisionCam.getWidth() / 2)  + this.dx) > (this.e.getPos().x + (this.e.getSize() / 2) + this.e.getDx() + 2)) {
+					this.left = true;
+					this.right = false;
+				} else if ((this.collisionCam.getPos().x + (this.collisionCam.getWidth() / 2) + this.dx) < ((this.e.getPos().x + (this.e.getSize() / 2) + this.e.getDx()) - 2)) {
+					this.right = true;
+					this.left = false;
+				} else {
+					this.dx = 0;
+					this.right = false;
+					this.left = false;
+				}
+			}
+		}
+	}
 
-    public void render(Graphics g) {
-        /* g.setColor(Color.blue);
+	public void render(Graphics g) {
+		/* g.setColor(Color.blue);
         g.drawRect((int) collisionCam.getPos().getWorldVar().x, (int) collisionCam.getPos().getWorldVar().y, (int) collisionCam.getWidth(),
                 (int) collisionCam.getHeight()); */
 
-        
-         /* g.setColor(Color.magenta); 
-         g.drawLine(GamePanel.width / 2, 0, GamePanel.width / 2, GamePanel.height); 
+
+		/* g.setColor(Color.magenta);
+         g.drawLine(GamePanel.width / 2, 0, GamePanel.width / 2, GamePanel.height);
          g.drawLine(0, GamePanel.height / 2, GamePanel.width,GamePanel.height / 2); */
-        
-    }
+
+	}
 }

@@ -7,6 +7,9 @@ import java.awt.image.BufferedImage;
 
 import com.jrealm.game.math.Matrix;
 
+import lombok.Data;
+
+@Data
 public class Sprite {
 
 	public BufferedImage image;
@@ -16,6 +19,8 @@ public class Sprite {
 
 	private int w;
 	private int h;
+
+	private float angleOffset;
 
 	public static enum effect {NORMAL, SEPIA, REDISH, GRAYSCALE, NEGATIVE, DECAY}
 

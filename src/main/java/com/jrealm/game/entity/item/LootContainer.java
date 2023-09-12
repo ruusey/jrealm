@@ -29,8 +29,8 @@ public class LootContainer {
 		this.items = new GameItem[8];
 		this.pos = pos;
 		Random r = new Random(System.currentTimeMillis());
-		for (int i = 0; i < r.nextInt(4); i++) {
-			this.items[i] = GameDataManager.GAME_ITEMS.get(r.nextInt(21));
+		for (int i = 0; i < (r.nextInt(4) + 1); i++) {
+			this.items[i] = GameDataManager.GAME_ITEMS.get(r.nextInt(46) + 1);
 		}
 		// this.items[1] = GameDataManager.GAME_ITEMS.get(9);
 

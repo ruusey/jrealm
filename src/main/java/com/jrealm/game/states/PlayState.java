@@ -16,6 +16,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.enemy.Monster;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
+import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.entity.material.Material;
 import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.graphics.Sprite;
@@ -87,9 +88,9 @@ public class PlayState extends GameState {
 		cam.target(this.player);
 		this.player.setIsInvincible(false);
 
-		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(8));
-		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(20));
-		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(13));
+		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(17));
+		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(32));
+		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(12));
 
 		this.getPui().setEquipment(this.player.getEquipment());
 
@@ -106,20 +107,24 @@ public class PlayState extends GameState {
 				GameObject go = null;
 				int doSpawn = r.nextInt(200);
 				if (doSpawn > 195) {
+					Vector2f spawnPos = new Vector2f(j * 64, i * 64);
+					if (this.getPlayer().getBounds().distance(spawnPos) < 300) {
+						continue;
+					}
 					switch (r.nextInt(3)) {
 					case 0:
 						go = new Monster(0, this.cam,
 								new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0),
-								new Vector2f(j * 64, i * 64),
+								spawnPos,
 								64);
-						go.setPos(new Vector2f(j * 64, i * 64));
+						go.setPos(spawnPos);
 						break;
 					case 1:
 						go = new Monster(2, this.cam,
 								new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
-								new Vector2f(j * 64, i * 64),
+								spawnPos,
 								64);
-						go.setPos(new Vector2f(j * 64, i * 64));
+						go.setPos(spawnPos);
 						break;
 					case 2:
 						go = new Monster(1, this.cam,
@@ -244,6 +249,12 @@ public class PlayState extends GameState {
 		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
 		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
 		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
+		if (pg.getAngleOffset() != null) {
+			bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
+		}
+		if (!isEnemy) {
+			damage = (short) (damage + this.getPlayer().getStats().getAtt());
+		}
 		Bullet b = new Bullet(projectileGroupId, bulletImage,
 				src,
 				dest, size, magnitude, range, damage, isEnemy);
@@ -257,6 +268,12 @@ public class PlayState extends GameState {
 		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
 		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
 		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
+		if (pg.getAngleOffset() != null) {
+			bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
+		}
+		if (!isEnemy) {
+			damage = (short) (damage + this.getPlayer().getStats().getAtt());
+		}
 		Bullet b = new Bullet(projectileGroupId, bulletImage, src, angle, size, magnitude, range, damage, isEnemy);
 		this.getGameObjects().add(b.getBounds().distance(this.getPlayerPos()), b);
 		this.aabbTree.insert(b);
@@ -288,11 +305,12 @@ public class PlayState extends GameState {
 
 	private void processPlayerHit(Bullet b, Player p) {
 		if (b.getBounds().collides(0, 0, this.player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
+			Stats stats = this.getPlayer().getComputedStats();
+
 			b.setPlayerHit(true);
 			this.player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
-
-			this.player.setHealth(this.player.getHealth() - (b.getDamage() - this.player.getStats().getDef()), 0,
-					false);
+			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
+			this.player.setHealth(this.player.getHealth() - dmgToInflict, 0, false);
 			this.aabbTree.removeObject(b);
 			this.gameObject.remove(b);
 		}
@@ -371,8 +389,9 @@ public class PlayState extends GameState {
 				this.gsm.add(GameStateManager.PAUSE);
 			}
 		}
-		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (500
-				- (this.player.getStats().getDex() * 10)))
+		Stats stats = this.getPlayer().getComputedStats();
+		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (400
+				- (stats.getDex() * 10)))
 				&& !this.gsm.isStateActive(GameStateManager.EDIT);
 
 		if ((mouse.getButton() == 1) && canShoot) {

@@ -13,4 +13,5 @@ public abstract class SpriteModel {
 	private int row;
 	private int col;
 
+	private String angleOffset;
 }

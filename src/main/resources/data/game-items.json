@@ -128,61 +128,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 8,
-		"row": 5,
-		"col": 0,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Short Bow",
-		"description": "A super low tier bow.",
-		"damage": {
-			"projectileGroupId": 4,
-			"min": 60,
-			"max": 120
-		},
-		"consumable": false,
-		"tier": 0,
-		"targetSlot": 0,
-		"targetClass": 1,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 9,
-		"row": 5,
-		"col": 8,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Black Bow",
-		"description": "A mid low tier bow.",
-		"damage": {
-			"projectileGroupId": 4,
-			"min": 100,
-			"max": 150
-		},
-		"consumable": false,
-		"tier": 1,
-		"targetSlot": 0,
-		"targetClass": 1,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 10,
-		"row": 5,
-		"col": 10,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Superior Bow",
-		"description": "A mid tier bow.",
-		"damage": {
-			"projectileGroupId": 4,
-			"min": 150,
-			"max": 200
-		},
-		"consumable": false,
-		"tier": 2,
-		"targetSlot": 0,
-		"targetClass": 1,
-		"fameBonus": 0
-	},
-	{
-		"itemId":11,
+		"itemId":8,
 		"row": 12,
 		"col": 0,
 		"spriteKey": "entity/rotmg-items.png",
@@ -198,7 +144,7 @@
 		"fameBonus": 0
 	},
 		{
-		"itemId": 12,
+		"itemId": 9,
 		"row": 12,
 		"col": 1,
 		"spriteKey": "entity/rotmg-items.png",
@@ -214,7 +160,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":13,
+		"itemId":10,
 		"row": 12,
 		"col": 2,
 		"spriteKey": "entity/rotmg-items.png",
@@ -230,7 +176,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":14,
+		"itemId":11,
 		"row": 12,
 		"col": 3,
 		"spriteKey": "entity/rotmg-items.png",
@@ -246,7 +192,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":15,
+		"itemId":12,
 		"row": 12,
 		"col": 4,
 		"spriteKey": "entity/rotmg-items.png",
@@ -262,7 +208,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":16,
+		"itemId":13,
 		"row": 12,
 		"col": 5,
 		"spriteKey": "entity/rotmg-items.png",
@@ -278,7 +224,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":17,
+		"itemId":14,
 		"row": 12,
 		"col": 6,
 		"spriteKey": "entity/rotmg-items.png",
@@ -294,7 +240,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":18,
+		"itemId":15,
 		"row": 12,
 		"col": 7,
 		"spriteKey": "entity/rotmg-items.png",
@@ -310,107 +256,526 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 19,
-		"row": 3,
-		"col": 9,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Sky Sword",
-		"description": "A sky sword.",
-		"damage": {
-			"projectileGroupId": 4,
-			"min": 300,
-			"max": 350
-		},
-		"consumable": false,
-		"tier": 3,
-		"targetSlot": 0,
-		"targetClass": 3,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 20,
-		"row": 0,
-		"col": 8,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Drake Hide Armor",
-		"description": "Drake skin light armor.",
-		"stats": {
-			"def": 10,
-			"dex": 2
-		},
-		"consumable": false,
-		"tier": 3,
-		"targetSlot": 2,
-		"targetClass": -1,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 21,
-		"row": 0,
-		"col": 9,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Hippogriff Hide Armor",
-		"description": "Hippogriff hide light armor.",
-		"stats": {
-			"def": 11,
-			"dex": 3
-		},
-		"consumable": false,
-		"tier": 3,
-		"targetSlot": 2,
-		"targetClass": -1,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 22,
-		"row": 0,
-		"col": 10,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Griffon Hide Armor",
-		"description": "Griffon skin light armor.",
-		"stats": {
-			"def": 12,
-			"dex": 4
-		},
-		"consumable": false,
-		"tier": 3,
-		"targetSlot": 2,
-		"targetClass": -1,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 23,
-		"row": 0,
-		"col": 11,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Hydra Skin Armor",
-		"description": "Hydra skin light armor.",
-		"stats": {
-			"def": 13,
-			"dex": 5
-		},
-		"consumable": false,
-		"tier": 3,
-		"targetSlot": 2,
-		"targetClass": -1,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 24,
+		"itemId": 17,
 		"row": 5,
-		"col": 12,
+		"col": 0,
 		"spriteKey": "entity/rotmg-items.png",
-		"name": "Godly Bow",
-		"description": "A god tier bow.",
+		"name": "Short Bow",
+		"description": "A well-made shortbow.",
 		"damage": {
 			"projectileGroupId": 4,
-			"min": 200,
-			"max": 230
+			"min": 15,
+			"max": 20
+		},
+		"consumable": false,
+		"tier": 0,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 18,
+		"row": 5,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Reinforced Bow",
+		"description": "An iron-reinforced bow.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 20,
+			"max": 25
+		},
+		"consumable": false,
+		"tier": 1,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 19,
+		"row": 5,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Hardwood Bow",
+		"description": "A bow made from sturdy hardwood.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 25,
+			"max": 30
 		},
 		"consumable": false,
 		"tier": 2,
 		"targetSlot": 0,
 		"targetClass": 1,
 		"fameBonus": 0
+	},
+	{
+		"itemId": 20,
+		"row": 5,
+		"col": 3,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Greywood Bow",
+		"description": "A bow made from the rare greywood tree.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 30,
+			"max": 35
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 21,
+		"row": 5,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Ironwood Bow",
+		"description": "A high-quality bow made of magical ironwood.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 35,
+			"max": 45
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 22,
+		"row": 5,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Fire Bow",
+		"description": "A bow that shoots arrows that burn with an unholy fire.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 45,
+			"max": 55
+		},
+		"consumable": false,
+		"tier": 5,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 23,
+		"row": 5,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Sharpshooter Bow",
+		"description": "A well-crafted bow carried by master marksmen.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 55,
+			"max": 65
+		},
+		"consumable": false,
+		"tier": 6,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 24,
+		"row": 5,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Redwood Bow",
+		"description": "An elven enchanted bow that originates from the elusive redwood forests.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 65,
+			"max": 75
+		},
+		"consumable": false,
+		"tier": 7,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 1
+	},
+	{
+		"itemId": 25,
+		"row": 5,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Golden Bow",
+		"description": "A gilded bow gifted to mortals from the gods themselves.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 85,
+			"max": 95
+		},
+		"consumable": false,
+		"tier": 8,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 2
+	},
+	{
+		"itemId": 26,
+		"row": 5,
+		"col": 9,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Verdant Bow",
+		"description": "A highly effective bow fashioned of still-living magical springwood.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 95,
+			"max": 105
+		},
+		"consumable": false,
+		"tier": 9,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 3
+	},
+	{
+		"itemId": 27,
+		"row": 5,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Bow of Fey Magic",
+		"description": "A powerful bow crafted by dryads and blessed by the spirits of the woodlands.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 105,
+			"max": 115
+		},
+		"consumable": false,
+		"tier": 10,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 4
+	},
+	{
+		"itemId": 28,
+		"row": 5,
+		"col": 11,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Bow of Innocent Blood",
+		"description": "A runed bow steeped in the dark power of ancient injustice.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 115,
+			"max": 125
+		},
+		"consumable": false,
+		"tier": 11,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 5
+	},
+	{
+		"itemId": 29,
+		"row": 5,
+		"col": 12,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Bow of Covert Havens",
+		"description": "A diamondwire bow used by guardians of the unseen ethereal shrines.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 125,
+			"max": 135
+		},
+		"consumable": false,
+		"tier": 12,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 6
+	},
+	{
+		"itemId": 30,
+		"row": 5,
+		"col": 13,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Bow of Mystical Energy",
+		"description": "A superlative bow of sunsteel and diamondwire, created by a secretive race of star-dwelling entities.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 135,
+			"max": 145
+		},
+		"consumable": false,
+		"tier": 13,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 7
+	},
+	{
+		"itemId": 31,
+		"row": 5,
+		"col": 14,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Bow of Deep Enchantment",
+		"description": "A peerless triple bow crafted of nightmatter and diamondwire by the exalted bowyers of the primeval overgods.",
+		"damage": {
+			"projectileGroupId": 4,
+			"min": 145,
+			"max": 155
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 32,
+		"row": 0,
+		"col": 0,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wolfskin Armor",
+		"description": "Leather armor fashioned from wolf pelts.",
+		"stats": {
+			"def": 5
+		},
+		"consumable": false,
+		"tier": 1,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 33,
+		"row": 0,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Leather Armor",
+		"description": "Armor made of hardened leather.",
+		"stats": {
+			"def": 6
+		},
+		"consumable": false,
+		"tier": 2,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 34,
+		"row": 0,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Basilisk Hide Armor",
+		"description": "Leather armor made from the skin of a magical lizard.",
+		"stats": {
+			"def": 7
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 35,
+		"row": 0,
+		"col": 3,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Minotaur Hide Armor",
+		"description": "Leather armor made from the tough hide of a minotaur.",
+		"stats": {
+			"def": 8,
+			"dex": 2
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 36,
+		"row": 0,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Bearskin Armor",
+		"description": "Armor made from the thick leather of a dire bear.",
+		"stats": {
+			"def": 9,
+			"dex": 2
+		},
+		"consumable": false,
+		"tier": 5,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 37,
+		"row": 0,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Chimera Hide Armor",
+		"description": "Magically protective leather armor made from chimera hides.",
+		"stats": {
+			"def": 10,
+			"dex": 2
+		},
+		"consumable": false,
+		"tier": 6,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 38,
+		"row": 0,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wyvern Skin Armor",
+		"description": "Tough, durable armor made from wyvern leather.",
+		"stats": {
+			"def": 12,
+			"dex": 2
+		},
+		"consumable": false,
+		"tier": 7,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 39,
+		"row": 0,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Studded Leather Armor",
+		"description": "Leather armor studded with metal rivets that provide extra protection.",
+		"stats": {
+			"def": 13,
+			"dex": 3
+		},
+		"consumable": false,
+		"tier": 8,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 1
+	},
+	{
+		"itemId": 40,
+		"row": 0,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Drake Hide Armor",
+		"description": "Leather armor fashioned from the scaly skin of a firebreathing drake.",
+		"stats": {
+			"def": 14,
+			"dex": 3
+		},
+		"consumable": false,
+		"tier": 9,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 2
+	},
+
+	{
+		"itemId": 41,
+		"row": 0,
+		"col": 9,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Roc Leather Armor",
+		"description": "Leather armor made from the durable hide of a roc.",
+		"stats": {
+			"def": 15,
+			"dex": 4
+		},
+		"consumable": false,
+		"tier": 10,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 3
+	},
+	{
+		"itemId": 42,
+		"row": 0,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Hippogriff Hide Armor",
+		"description": "Leather armor made from the protective skin of hippogriffs.",
+		"stats": {
+			"def": 16,
+			"dex": 4
+		},
+		"consumable": false,
+		"tier": 11,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 4
+	},
+	{
+		"itemId": 43,
+		"row": 0,
+		"col": 11,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Griffon Hide Armor",
+		"description": "Superior leather armor made from the magical hide of a griffon.",
+		"stats": {
+			"def": 17,
+			"dex": 4
+		},
+		"consumable": false,
+		"tier": 12,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 5
+	},	
+	{
+		"itemId": 44,
+		"row": 0,
+		"col": 12,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Hydra Skin Armor",
+		"description": "Superlative leather armor fashioned from the skin of a twelve-headed swamp hydra.",
+		"stats": {
+			"def": 17,
+			"dex": 5
+		},
+		"consumable": false,
+		"tier": 13,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 6
+	},
+	{
+		"itemId": 45,
+		"row": 0,
+		"col": 13,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wyrmhide Armor",
+		"description": "Outstanding leather armor made from the virtually impregnable hide of a great desert wyrm.",
+		"stats": {
+			"def": 19,
+			"dex": 6
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 7
+	},	
+	{
+		"itemId": 46,
+		"row": 0,
+		"col": 14,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Leviathan Armor",
+		"description": "Magnificent leather armor made from the hide of the great leviathan, slain hundreds of years ago in a savage battle in the vast deeps.",
+		"stats": {
+			"def": 21,
+			"dex": 7
+		},
+		"consumable": false,
+		"tier": 15,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 8
 	}
 ]

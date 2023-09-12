@@ -339,9 +339,10 @@
 		},
 		{
 		"projectileGroupId": 4,
-		"row": 5,
-		"col": 12,
-		"spriteKey": "entity/rotmg-projectiles.png",
+		"row": 6,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"angleOffset": "{{PI/4}}",
 		"projectiles": [
 			{
 				"projectileId": 4,

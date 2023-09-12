@@ -43,6 +43,8 @@ public class GameDataManager {
 			for(Projectile p : group.getProjectiles()) {
 				if(p.getAngle().contains("{{")) {
 					p.setAngle(GameDataManager.replaceInjectVariables(p.getAngle()));
+				} else if ((group.getAngleOffset() != null) && group.getAngleOffset().contains("{{")) {
+					group.setAngleOffset(GameDataManager.replaceInjectVariables(group.getAngleOffset()));
 				}
 			}
 			GameDataManager.PROJECTILE_GROUPS.put(group.getProjectileGroupId(), group);

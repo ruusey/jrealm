@@ -68,16 +68,19 @@ public class Player extends Entity {
 		}
 
 		this.hasIdle = false;
-		this.health = 500;
-		this.maxHealth = 500;
+		this.health = this.maxHealth = this.defaultMaxHealth = 500;
+		this.mana = this.maxMana = this.defaultMaxMana = 100;
 		this.name = "player";
 		this.weaponId = id;
 
 		this.resetInventory();
 
 		this.stats = new Stats();
-		this.stats.setVit((short) 3);
-		this.stats.setHp((short) this.health);
+		this.stats.setVit((short) 5);
+		this.stats.setDex((short) 5);
+		this.stats.setSpd((short) 5);
+		this.stats.setAtt((short) 5);
+		this.stats.setWis((short) 5);
 	}
 
 	private void resetInventory() {
@@ -127,10 +130,21 @@ public class Player extends Entity {
 	@Override
 	public void update(double time) {
 		super.update(time);
+		Stats stats = this.getComputedStats();
 
 		this.attacking = this.isAttacking(time);
 
+		if ((stats.getHp() > 0) && (this.getMaxHealth() == this.getDefaultMaxHealth())) {
+			this.setMaxHealth(this.getMaxHealth() + stats.getHp());
+		} else if (stats.getHp() == 0) {
+			this.setMaxHealth(this.getDefaultMaxHealth());
+		}
 
+		if ((stats.getMp() > 0) && (this.getMaxMana() == this.getDefaultMaxMana())) {
+			this.setMaxMana(this.getMaxMana() + stats.getMp());
+		} else if (stats.getHp() == 0) {
+			this.setMaxMana(this.getDefaultMaxMana());
+		}
 
 		if(!this.fallen) {
 			this.move();
@@ -163,14 +177,24 @@ public class Player extends Entity {
 			}
 		}
 
-		Stats stats = this.getComputedStats();
 		if (((System.currentTimeMillis() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
 
 			if (this.getHealth() < this.getMaxHealth()) {
-				this.setHealth(this.getHealth() + stats.getVit(), 0f, false);
+				int targetHealth = this.getHealth() + stats.getVit();
+				if (targetHealth > this.getMaxHealth()) {
+					targetHealth = this.getMaxHealth();
+				}
+				this.setHealth(targetHealth, 0f, false);
 			}
 
+			if (this.getMana() < this.getMaxMana()) {
+				int targetMana = this.getMana() + stats.getWis();
+				if (targetMana > this.getMaxMana()) {
+					targetMana = this.getMaxMana();
+				}
+				this.setMana(targetMana);
+			}
 		}
 
 		NormBlock[] block = this.tm.getNormalTile(this.tc.getTile());
@@ -250,8 +274,9 @@ public class Player extends Entity {
 				this.maxSpeed = 8;
 				this.cam.setMaxSpeed(7);
 			} else {
-				this.maxSpeed = 4 + (stats.getSpd() * 0.1f);
-				this.cam.setMaxSpeed(5);
+				float maxSpeed = 3.0f + (stats.getSpd() * 0.05f);
+				this.maxSpeed = maxSpeed;
+				this.cam.setMaxSpeed(maxSpeed);
 			}
 
 			if(this.up && this.down) {

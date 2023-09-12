@@ -79,7 +79,6 @@ public abstract class GameObject {
 
 	public void render(Graphics2D g) {
 		// Top Left -> Top Right
-
 		g.drawImage(this.image.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), this.size, this.size, null);
 	}
 

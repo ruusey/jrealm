@@ -104,17 +104,17 @@ public class PlayerUI {
 						this.playState.getPlayer().setStats(newStats);
 						this.playState.removeLootContainerItemByUid(item.getUid());
 						this.removeGroundLootItemByUid(item.getUid());
-
+						//						if (item.getStats().getHp() > 0) {
+						//							this.playState.getPlayer()
+						//									.setMaxHealth(this.playState.getPlayer().getMaxHealth() + item.getStats().getHp());
+						//						}
 					}else {
 						Slots currentEquip = this.equipment[item.getTargetSlot()];
 						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
 						this.equipment[item.getTargetSlot()].setItem(item);
 						this.playState.replaceLootContainerItemByUid(item.getUid(), this.groundLoot[actualIdx].getItem());
 						this.getPlayState().getPlayer().getEquipment()[item.getTargetSlot()] = item;
-
 					}
-
-
 				});
 				this.groundLoot[actualIdx] = new Slots(b, item);
 			}
@@ -193,12 +193,8 @@ public class PlayerUI {
 			int panelWidth = (GamePanel.width / 5);
 			int startX = (GamePanel.width - panelWidth) + 8;
 
-			Stats stats = this.playState.getPlayer().getStats().clone();
-			for (Slots item : this.equipment) {
-				if ((item != null) && (item.getItem() != null)) {
-					stats = stats.concat(item.getItem().getStats());
-				}
-			}
+			Stats stats = this.playState.getPlayer().getComputedStats();
+
 			g.setColor(Color.WHITE);
 
 			int xOffset = 128;

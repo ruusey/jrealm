@@ -32,8 +32,8 @@ public class Monster extends Enemy {
 		this.DOWN = 1;
 		this.LEFT = 1;
 		this.RIGHT = 1;
-		this.health = 1000;
-		this.maxHealth = 1000;
+		this.health = 400;
+		this.maxHealth = 400;
 		this.hasIdle = true;
 		this.useRight = true;
 
