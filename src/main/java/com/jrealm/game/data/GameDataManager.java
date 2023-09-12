@@ -26,7 +26,7 @@ public class GameDataManager {
 
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "material/trees.png", "tile/overworldOP.png",
 			"entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
-			"entity/rotmg-bosses.png", "entity/rotmg-items.png" };
+			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png" };
 
 	private static void loadProjectileGroups() throws Exception {
 		System.out.println("Loading Projectile Groups...");
@@ -94,6 +94,10 @@ public class GameDataManager {
 			case "entity/rotmg-items.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-items.png",
 						new SpriteSheet("entity/rotmg-items.png", 8, 8, 0));
+				break;
+			case "entity/rotmg-items-1.png":
+				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-items-1.png",
+						new SpriteSheet("entity/rotmg-items-1.png", 8, 8, 0));
 				break;
 			case "entity/rotmg-bosses.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-bosses.png",

@@ -58,7 +58,10 @@ public abstract class Entity extends GameObject {
 
 	protected int maxHealth = 100;
 	protected int health = 100;
+	protected int maxMana = 100;
+	protected int mana = 100;
 	protected float healthpercent = 1;
+	protected float manapercent = 1;
 	protected int defense = 100;
 	protected int damage = 25;
 
@@ -96,6 +99,11 @@ public abstract class Entity extends GameObject {
 
 			this.healthpercent = (float) this.health / (float) this.maxHealth;
 		}
+	}
+
+	public void setMana(int mana) {
+		this.mana = mana;
+		this.manapercent = (float) this.mana / (float) this.maxMana;
 	}
 
 	public boolean getDeath() { return this.die; }

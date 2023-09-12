@@ -6,7 +6,6 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 
 import com.jrealm.game.GamePanel;
-import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
@@ -36,7 +35,7 @@ public class Player extends Entity {
 	private GameItem[] inventory;
 
 	private Stats stats;
-
+	private long lastStatsTime = 0l;
 	public Player(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, TileManager tm) {
 		super(id, sprite, origin, size);
 		this.cam = cam;
@@ -76,8 +75,9 @@ public class Player extends Entity {
 
 		this.resetInventory();
 
-		this.equipSlot(0, GameDataManager.GAME_ITEMS.get(0));
 		this.stats = new Stats();
+		this.stats.setVit((short) 3);
+		this.stats.setHp((short) this.health);
 	}
 
 	private void resetInventory() {
@@ -163,12 +163,32 @@ public class Player extends Entity {
 			}
 		}
 
+		Stats stats = this.getComputedStats();
+		if (((System.currentTimeMillis() - this.lastStatsTime) >= 1000)) {
+			this.lastStatsTime = System.currentTimeMillis();
+
+			if (this.getHealth() < this.getMaxHealth()) {
+				this.setHealth(this.getHealth() + stats.getVit(), 0f, false);
+			}
+
+		}
+
 		NormBlock[] block = this.tm.getNormalTile(this.tc.getTile());
 		for(int i = 0; i < block.length; i++) {
 			if(block[i] != null) {
 				block[i].getImage().restoreDefault();
 			}
 		}
+	}
+
+	public Stats getComputedStats() {
+		Stats stats = this.stats.clone();
+		for (GameItem item : this.equipment) {
+			if (item != null) {
+				stats = stats.concat(item.getStats());
+			}
+		}
+		return stats;
 	}
 
 	@Override
@@ -195,6 +215,7 @@ public class Player extends Entity {
 	}
 
 	public void input(MouseHandler mouse, KeyHandler key) {
+		Stats stats = this.getComputedStats();
 
 		if(!this.fallen) {
 			if(key.up.down) {
@@ -229,8 +250,8 @@ public class Player extends Entity {
 				this.maxSpeed = 8;
 				this.cam.setMaxSpeed(7);
 			} else {
-				this.maxSpeed = 4;
-				this.cam.setMaxSpeed(4);
+				this.maxSpeed = 4 + (stats.getSpd() * 0.1f);
+				this.cam.setMaxSpeed(5);
 			}
 
 			if(this.up && this.down) {

@@ -81,15 +81,15 @@ public class PlayState extends GameState {
 		this.player.setIsInvincible(true);
 		this.spawnRandomEnemies();
 
-		this.pui = new PlayerUI(this.player);
+		this.pui = new PlayerUI(this);
 		this.aabbTree.insert(this.player);
 
 		cam.target(this.player);
 		this.player.setIsInvincible(false);
 
-		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(5));
-		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(19));
-		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(3));
+		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(8));
+		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(20));
+		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(13));
 
 		this.getPui().setEquipment(this.player.getEquipment());
 
@@ -291,7 +291,8 @@ public class PlayState extends GameState {
 			b.setPlayerHit(true);
 			this.player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
 
-			this.player.setHealth(this.player.getHealth() - b.getDamage(), 0, false);
+			this.player.setHealth(this.player.getHealth() - (b.getDamage() - this.player.getStats().getDef()), 0,
+					false);
 			this.aabbTree.removeObject(b);
 			this.gameObject.remove(b);
 		}
@@ -370,7 +371,8 @@ public class PlayState extends GameState {
 				this.gsm.add(GameStateManager.PAUSE);
 			}
 		}
-		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 100)
+		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (500
+				- (this.player.getStats().getDex() * 10)))
 				&& !this.gsm.isStateActive(GameStateManager.EDIT);
 
 		if ((mouse.getButton() == 1) && canShoot) {
@@ -393,6 +395,52 @@ public class PlayState extends GameState {
 			this.gameObjectLock.release();
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	//	public GameItem replacePlayerEquipmentByUid(String uid, GameItem replacement) {
+	//		GameItem found = null;
+	//		for (GameItem item : this.getPlayer().getEquipment()) {
+	//			if (item.getUid().equals(uid)) {
+	//				found= item;
+	//			}
+	//		}
+	//	}
+
+
+	public void getPlayerEquipmentItemByUid(String uid) {
+		this.replaceLootContainerItemByUid(uid, null);
+	}
+
+	public GameItem getLootContainerItemByUid(String uid) {
+		for (LootContainer lc : this.loot) {
+			for (GameItem item : lc.getItems()) {
+				if (item.getUid().equals(uid))
+					return item;
+			}
+		}
+		return null;
+	}
+
+	public void removeLootContainerItemByUid(String uid) {
+		this.replaceLootContainerItemByUid(uid, null);
+	}
+
+	public void replaceLootContainerItemByUid(String uid, GameItem replacement) {
+		for (LootContainer lc : this.loot) {
+			int foundIdx = -1;
+			for (int i = 0; i < lc.getItems().length; i++) {
+				GameItem item = lc.getItems()[i];
+				if (item == null) {
+					continue;
+				}
+				if (item.getUid().equals(uid)) {
+					foundIdx = i;
+				}
+			}
+			if (foundIdx > -1) {
+				lc.setItem(foundIdx, replacement);
+			}
 		}
 	}
 
@@ -421,8 +469,6 @@ public class PlayState extends GameState {
 			this.getPui().setGroundLoot(new GameItem[8]);
 
 		}
-
-
 		// this.renderCollisionBoxes(g);
 
 		g.setColor(Color.white);

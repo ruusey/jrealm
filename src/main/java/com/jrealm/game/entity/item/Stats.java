@@ -19,20 +19,23 @@ public class Stats {
 	private short vit;
 	private short wis;
 
-	//Stat calculation chaining
+	// Stat calculation chaining
 	public Stats concat(Stats other) {
 		if (other == null)
 			return this;
-		return Stats.builder()
-				.hp((short)(this.hp+other.getHp()))
-				.mp((short)(this.mp+other.getMp()))
-				.def((short)(this.def+other.getDef()))
-				.att((short)(this.att+other.getAtt()))
-				.spd((short)(this.spd+other.getSpd()))
-				.dex((short)(this.dex+other.getDex()))
-				.vit((short)(this.vit+other.getVit()))
-				.wis((short)(this.wis+other.getWis()))
-				.build();
+		return Stats.builder().hp((short) (this.hp + other.getHp())).mp((short) (this.mp + other.getMp()))
+				.def((short) (this.def + other.getDef())).att((short) (this.att + other.getAtt()))
+				.spd((short) (this.spd + other.getSpd())).dex((short) (this.dex + other.getDex()))
+				.vit((short) (this.vit + other.getVit())).wis((short) (this.wis + other.getWis())).build();
+	}
+
+	public Stats subtract(Stats other) {
+		if (other == null)
+			return this;
+		return Stats.builder().hp((short) (this.hp - other.getHp())).mp((short) (this.mp - other.getMp()))
+				.def((short) (this.def - other.getDef())).att((short) (this.att - other.getAtt()))
+				.spd((short) (this.spd - other.getSpd())).dex((short) (this.dex - other.getDex()))
+				.vit((short) (this.vit - other.getVit())).wis((short) (this.wis - other.getWis())).build();
 	}
 
 	@Override

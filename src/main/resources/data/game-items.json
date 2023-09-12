@@ -1,6 +1,134 @@
 [
 	{
 		"itemId": 0,
+		"row": 3,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Potion of Defense",
+		"description": "A potion that permenently increases defense.",
+		"stats": {
+			"def": 1
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 1,
+		"row": 3,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Potion of Attack",
+		"description": "A potion that permenently increases attack.",
+		"stats": {
+			"att": 1
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+		{
+		"itemId": 2,
+		"row": 3,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Potion of Dexterity",
+		"description": "A potion that permenently increases dexterity.",
+		"stats": {
+			"dex": 1
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 3,
+		"row": 3,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Potion of Speed",
+		"description": "A potion that permenently increases speed.",
+		"stats": {
+			"spd": 1
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 4,
+		"row": 3,
+		"col": 0,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Potion of Vitality",
+		"description": "A potion that permenently increases vitality.",
+		"stats": {
+			"vit": 1
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 5,
+		"row": 3,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Potion of Wisdom",
+		"description": "A potion that permenently increases widsom.",
+		"stats": {
+			"wis": 1
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 6,
+		"row": 2,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Potion of Mana",
+		"description": "A potion that permenently increases mana points.",
+		"stats": {
+			"mp": 5
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 7,
+		"row": 2,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Potion of Life",
+		"description": "A potion that permenently increases life points.",
+		"stats": {
+			"hp": 5
+		},
+		"consumable": true,
+		"tier": 0,
+		"targetSlot": -1,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 8,
 		"row": 5,
 		"col": 0,
 		"spriteKey": "entity/rotmg-items.png",
@@ -18,62 +146,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 1,
-		"row": 3,
-		"col": 3,
-		"spriteKey": "entity/rotmg-projectiles.png",
-		"name": "Gold Shield",
-		"description": "A golden shield.",
-		"damage": {
-			"projectileGroupId": 3,
-			"min": 200,
-			"max": 250
-		},
-		"stats": {
-			"def": 6
-		},
-		"consumable": false,
-		"tier": 3,
-		"targetSlot": 3,
-		"targetClass": 4,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 2,
-		"row": 3,
-		"col": 7,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Gold Sword",
-		"description": "A golden sword.",
-		"damage": {
-			"projectileGroupId": 4,
-			"min": 200,
-			"max": 250
-		},
-		"consumable": false,
-		"tier": 3,
-		"targetSlot": 0,
-		"targetClass": 3,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 3,
-		"row": 12,
-		"col": 1,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Exalted Ring of Defense",
-		"description": "A huge ring that increases defense.",
-		"stats": {
-			"def": 9
-		},
-		"consumable": false,
-		"tier": 4,
-		"targetSlot": 3,
-		"targetClass": -1,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 4,
+		"itemId": 9,
 		"row": 5,
 		"col": 8,
 		"spriteKey": "entity/rotmg-items.png",
@@ -91,7 +164,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 5,
+		"itemId": 10,
 		"row": 5,
 		"col": 10,
 		"spriteKey": "entity/rotmg-items.png",
@@ -109,71 +182,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 6,
-		"row": 0,
-		"col": 9,
-		"spriteKey": "entity/rotmg-projectiles.png",
-		"name": "Potion of Defense",
-		"description": "A potion that permenently increases defense.",
-		"stats": {
-			"def": 1
-		},
-		"consumable": true,
-		"tier": 0,
-		"targetSlot": -1,
-		"targetClass": -1,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 7,
-		"row": 0,
-		"col": 10,
-		"spriteKey": "entity/rotmg-projectiles.png",
-		"name": "Potion of Attack",
-		"description": "A potion that permenently increases attack.",
-		"stats": {
-			"att": 1
-		},
-		"consumable": true,
-		"tier": 0,
-		"targetSlot": -1,
-		"targetClass": -1,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 8,
-		"row": 0,
-		"col": 11,
-		"spriteKey": "entity/rotmg-projectiles.png",
-		"name": "Potion of Speed",
-		"description": "A potion that permenently increases speed.",
-		"stats": {
-			"spd": 1
-		},
-		"consumable": true,
-		"tier": 0,
-		"targetSlot": -1,
-		"targetClass": -1,
-		"fameBonus": 0
-	},
-	{
-		"itemId": 9,
-		"row": 0,
-		"col": 12,
-		"spriteKey": "entity/rotmg-projectiles.png",
-		"name": "Potion of Vitality",
-		"description": "A potion that permenently increases vitality.",
-		"stats": {
-			"spd": 1
-		},
-		"consumable": true,
-		"tier": 0,
-		"targetSlot": -1,
-		"targetClass": -1,
-		"fameBonus": 0
-	},
-	{
-		"itemId":10,
+		"itemId":11,
 		"row": 12,
 		"col": 0,
 		"spriteKey": "entity/rotmg-items.png",
@@ -188,8 +197,24 @@
 		"targetClass": -1,
 		"fameBonus": 0
 	},
+		{
+		"itemId": 12,
+		"row": 12,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Exalted Ring of Defense",
+		"description": "A huge ring that increases defense.",
+		"stats": {
+			"def": 9
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
 	{
-		"itemId":11,
+		"itemId":13,
 		"row": 12,
 		"col": 2,
 		"spriteKey": "entity/rotmg-items.png",
@@ -205,7 +230,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":12,
+		"itemId":14,
 		"row": 12,
 		"col": 3,
 		"spriteKey": "entity/rotmg-items.png",
@@ -221,7 +246,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":13,
+		"itemId":15,
 		"row": 12,
 		"col": 4,
 		"spriteKey": "entity/rotmg-items.png",
@@ -237,7 +262,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":14,
+		"itemId":16,
 		"row": 12,
 		"col": 5,
 		"spriteKey": "entity/rotmg-items.png",
@@ -253,7 +278,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":15,
+		"itemId":17,
 		"row": 12,
 		"col": 6,
 		"spriteKey": "entity/rotmg-items.png",
@@ -269,7 +294,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":16,
+		"itemId":18,
 		"row": 12,
 		"col": 7,
 		"spriteKey": "entity/rotmg-items.png",
@@ -285,7 +310,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 17,
+		"itemId": 19,
 		"row": 3,
 		"col": 9,
 		"spriteKey": "entity/rotmg-items.png",
@@ -303,7 +328,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 18,
+		"itemId": 20,
 		"row": 0,
 		"col": 8,
 		"spriteKey": "entity/rotmg-items.png",
@@ -320,12 +345,12 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 19,
+		"itemId": 21,
 		"row": 0,
 		"col": 9,
 		"spriteKey": "entity/rotmg-items.png",
 		"name": "Hippogriff Hide Armor",
-		"description": "Drake skin light armor.",
+		"description": "Hippogriff hide light armor.",
 		"stats": {
 			"def": 11,
 			"dex": 3
@@ -337,7 +362,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 20,
+		"itemId": 22,
 		"row": 0,
 		"col": 10,
 		"spriteKey": "entity/rotmg-items.png",
@@ -354,7 +379,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 21,
+		"itemId": 23,
 		"row": 0,
 		"col": 11,
 		"spriteKey": "entity/rotmg-items.png",
@@ -371,7 +396,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId": 22,
+		"itemId": 24,
 		"row": 5,
 		"col": 12,
 		"spriteKey": "entity/rotmg-items.png",
