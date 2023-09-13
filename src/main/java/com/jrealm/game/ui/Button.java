@@ -33,31 +33,29 @@ public class Button {
 	private AABB bounds;
 	private boolean hovering = false;
 	private boolean canHover = true;
+	private ArrayList<DoubleClickEvent> doubleClickEvents;
+
 	private ArrayList<MouseDownEvent> mouseDownEvents;
 	private ArrayList<MouseUpEvent> mouseUpEvents;
 	private ArrayList<HoverInEvent> hoverInEvents;
 	private ArrayList<HoverOutEvent> hoverOutEvents;
 
-	private ArrayList<SlotEvent> slotevents;
 	private boolean clicked = false;
 	private boolean pressed = false;
 	private boolean drawString = true;
 
 	private float pressedtime;
-	private Slots slot; // temp fix
 
-	// ******************************************** ICON CUSTOM POS *******************************************
 	public Button(Vector2f pos, int size) {
 		this.pos = pos;
 
 		this.bounds = new AABB(this.pos, size, size);
 		this.drawString = false;
+		this.doubleClickEvents = new ArrayList<DoubleClickEvent>();
 		this.hoverInEvents = new ArrayList<HoverInEvent>();
 		this.hoverOutEvents = new ArrayList<HoverOutEvent>();
-
 		this.mouseDownEvents = new ArrayList<MouseDownEvent>();
 		this.mouseUpEvents = new ArrayList<MouseUpEvent>();
-		this.slotevents = new ArrayList<SlotEvent>();
 
 	}
 
@@ -65,13 +63,13 @@ public class Button {
 		this.pos = pos;
 		this.image = this.createIconButton(icon, image, width + iconsize, height + iconsize, iconsize);
 		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
+		this.doubleClickEvents = new ArrayList<DoubleClickEvent>();
 
 		this.hoverInEvents = new ArrayList<HoverInEvent>();
 		this.hoverOutEvents = new ArrayList<HoverOutEvent>();
 
 		this.mouseDownEvents = new ArrayList<MouseDownEvent>();
 		this.mouseUpEvents = new ArrayList<MouseUpEvent>();
-		this.slotevents = new ArrayList<SlotEvent>();
 		this.drawString = false;
 	}
 
@@ -121,6 +119,7 @@ public class Button {
 		this.pos = pos;
 
 		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
+		this.doubleClickEvents = new ArrayList<DoubleClickEvent>();
 
 		this.hoverInEvents = new ArrayList<HoverInEvent>();
 		this.hoverOutEvents = new ArrayList<HoverOutEvent>();
@@ -170,6 +169,10 @@ public class Button {
 
 	public boolean getHovering() { return this.hovering; }
 
+	public void onDoubleClick(DoubleClickEvent e) {
+		this.doubleClickEvents.add(e);
+	}
+
 	public void onMouseDown(MouseDownEvent e) {
 		this.mouseDownEvents.add(e);
 	}
@@ -185,9 +188,6 @@ public class Button {
 	public void onHoverOut(HoverOutEvent e) {
 		this.hoverOutEvents.add(e);
 	}
-
-	public void addSlotEvent(SlotEvent e) { this.slotevents.add(e); }
-	public void setSlot(Slots slot) { this.slot = slot;} // temp fix
 
 	public int getWidth() { return (int) this.bounds.getWidth(); }
 	public int getHeight() { return (int) this.bounds.getHeight(); }
@@ -208,21 +208,19 @@ public class Button {
 					this.hoverInEvents.get(i).action(1);
 				}
 			}
-
 			this.canHover = false;
-
 			if ((mouse.getButton() == 1) && !this.clicked) {
 				this.clicked = true;
 				this.pressed = true;
-
+				if (key.shift.down) {
+					System.out.println("Double Click");
+					for (int i = 0; i < this.doubleClickEvents.size(); i++) {
+						this.doubleClickEvents.get(i).action(1);
+					}
+				}
 				this.pressedtime = System.nanoTime() / 1000000;
-
 				for (int i = 0; i < this.mouseDownEvents.size(); i++) {
 					this.mouseDownEvents.get(i).action(1);
-				}
-				if(this.slotevents == null) return;
-				for(int i = 0; i < this.slotevents.size(); i++) {
-					this.slotevents.get(i).action(this.slot);
 				}
 			}
 			else if ((mouse.getButton() == -1) && this.clicked) {
@@ -269,6 +267,10 @@ public class Button {
 
 	}
 
+	public interface DoubleClickEvent {
+		void action(int mouseButton);
+	}
+
 	public interface MouseDownEvent {
 		void action(int mouseButton);
 	}
@@ -284,9 +286,4 @@ public class Button {
 	public interface HoverOutEvent {
 		void action(int mouseButton);
 	}
-
-	public interface SlotEvent {
-		void action(Slots slot);
-	}
-
 }

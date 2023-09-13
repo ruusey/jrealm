@@ -101,12 +101,8 @@ public class Bullet extends GameObject {
 		}
 
 		g.setTransform(t);
-		// g.setColor(Color.RED);
 		g.drawImage(this.image.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), this.size,
 				this.size, null);
-
-		// g.fillOval((int) this.pos.getWorldVar().x, (int) this.pos.getWorldVar().y,
-		// this.size, this.size);
 
 		g.setTransform(original);
 	}

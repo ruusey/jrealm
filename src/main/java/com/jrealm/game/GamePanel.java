@@ -134,7 +134,8 @@ public class GamePanel extends JPanel implements Runnable {
 				}
 
 				if (GamePanel.tickCount != GamePanel.oldTickCount) {
-					System.out.println("NEW SECOND (T) " + thisSecond + " " + GamePanel.tickCount);
+					// System.out.println("NEW SECOND (T) " + thisSecond + " " +
+					// GamePanel.tickCount);
 					GamePanel.oldTickCount = GamePanel.tickCount;
 				}
 				GamePanel.tickCount = 0;

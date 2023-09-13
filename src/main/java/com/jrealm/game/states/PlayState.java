@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.data.GameDataManager;
@@ -89,7 +90,7 @@ public class PlayState extends GameState {
 		cam.target(this.player);
 		this.player.setIsInvincible(false);
 
-		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(47));
+		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(17));
 		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(32));
 		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(12));
 
@@ -110,7 +111,7 @@ public class PlayState extends GameState {
 					if (this.getPlayer().getBounds().distance(spawnPos) < 300) {
 						continue;
 					}
-					switch (r.nextInt(3)) {
+					switch (r.nextInt(5)) {
 					case 0:
 						go = new Monster(0, this.cam,
 								new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0),
@@ -131,6 +132,19 @@ public class PlayState extends GameState {
 								new Vector2f(j * 64, i * 64), 64);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
+					case 3:
+						go = new Monster(7, this.cam,
+								new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0),
+								new Vector2f(j * 64, i * 64), 64);
+						go.setPos(new Vector2f(j * 64, i * 64));
+						break;
+					case 4:
+						go = new Monster(8, this.cam,
+								new SpriteSheet(enemySheet.getSprite(0, 1, 16, 16), "Red Demon", 16, 16, 0),
+								new Vector2f(j * 64, i * 64), 64);
+						go.setPos(new Vector2f(j * 64, i * 64));
+						break;
+
 					}
 					this.getGameObjects().add(go.getBounds().distance(this.getPlayerPos()), go);
 					this.getAABBObjects().insert(go);
@@ -390,7 +404,7 @@ public class PlayState extends GameState {
 
 	private void acquireGameObjectLock() {
 		try {
-			this.gameObjectLock.acquire();
+			this.gameObjectLock.tryAcquire(250, TimeUnit.MILLISECONDS);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

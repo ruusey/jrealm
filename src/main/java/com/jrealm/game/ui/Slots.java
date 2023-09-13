@@ -19,18 +19,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Slots {
-
 	private GameItem item;
 	private Button button;
 
 	private Vector2f dragPos;
-	// Once we have items we will create an items and inventory class
+
 	public Slots(Button button, GameItem item) {
 		this.item = item;
 		this.button = button;
-		if (button != null) {
-			this.button.setSlot(this);
-		}
 	}
 
 
@@ -50,11 +46,9 @@ public class Slots {
 		} else {
 			this.dragPos = null;
 		}
-
 	}
 
 	public void render(Graphics2D g, Vector2f pos) {
-
 		Sprite itemSprite = GameDataManager.getSubSprite(this.item, 8);
 
 		if(this.button != null) {
@@ -63,7 +57,5 @@ public class Slots {
 			g.drawImage(itemSprite.image, (int) pos.x, (int) pos.y, 64, 64, null);
 		}
 		g.drawImage(itemSprite.image, (int) pos.x, (int) pos.y, 64, 64, null);
-
 	}
-
 }

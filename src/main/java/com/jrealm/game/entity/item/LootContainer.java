@@ -35,7 +35,15 @@ public class LootContainer {
 			this.items[i] = GameDataManager.GAME_ITEMS.get(r.nextInt(46) + 1);
 		}
 		this.spawnedTime = System.currentTimeMillis();
+	}
 
+	public LootContainer(Vector2f pos, GameItem loot) {
+		this.sprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8);
+		this.pos = pos;
+		this.uid = UUID.randomUUID().toString();
+		this.items = new GameItem[8];
+		this.items[0] = loot;
+		this.spawnedTime = System.currentTimeMillis();
 	}
 
 	public boolean isExpired() {

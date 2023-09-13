@@ -401,6 +401,153 @@
 				]
 			}
 		]
+	},
+	{
+		"projectileGroupId": 7,
+		"row": 10,
+		"col": 10,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"angleOffset": "{{PI/4}}",
+		"projectiles": [
+			{
+				"projectileId": 7,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": 0.0,
+				"range": 300.0,
+				"size": 24,
+				"magnitude": 7.5,
+				"flags": [
+					0,
+					10
+				]
+			},
+			{
+				"projectileId": 7,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": -0.1,
+				"range": 300.0,
+				"size": 24,
+				"magnitude": 7.5,
+				"flags": [
+					0,
+					10
+				]
+			},
+			{
+				"projectileId": 7,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": -0.2,
+				"range": 300.0,
+				"size": 24,
+				"magnitude": 7.5,
+				"flags": [
+					0,
+					10
+				]
+			},
+			{
+				"projectileId": 7,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": 0.2,
+				"range": 300.0,
+				"size": 24,
+				"magnitude": 7.5,
+				"flags": [
+					0,
+					10
+				]
+			},
+			{
+				"projectileId": 7,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": 0.1,
+				"range": 300.0,
+				"size": 24,
+				"magnitude": 7.5,
+				"flags": [
+					0,
+					10
+				]
+			}
+		]
+	},
+	{
+		"projectileGroupId": 8,
+		"row": 8,
+		"col": 1,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"projectiles": [
+			{
+				"projectileId": 8,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": 0.0,
+				"range": 300.0,
+				"size": 24,
+				"magnitude": 4.5,
+				"flags": [
+					0,
+					10
+				]
+			},
+			{
+				"projectileId": 8,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": -0.1,
+				"range": 300.0,
+				"size": 24,
+				"magnitude": 4.5,
+				"flags": [
+					0,
+					10
+				]
+			},
+			{
+				"projectileId": 8,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": -0.2,
+				"range": 300.0,
+				"size": 24,
+				"magnitude": 4.5,
+				"flags": [
+					0,
+					10
+				]
+			},
+			{
+				"projectileId": 8,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": 0.2,
+				"range": 300.0,
+				"size": 24,
+				"magnitude": 4.5,
+				"flags": [
+					0,
+					10
+				]
+			},
+			{
+				"projectileId": 8,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": 0.1,
+				"range": 300.0,
+				"size": 24,
+				"magnitude": 4.5,
+				"flags": [
+					0,
+					10
+				]
+			}
+		]
 	}
 ]
 
