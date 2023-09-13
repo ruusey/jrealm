@@ -3,6 +3,7 @@ package com.jrealm.game.ui;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,6 +11,7 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.SpriteSheet;
+import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ItemTooltip;
 import com.jrealm.game.states.PlayState;
@@ -57,75 +59,37 @@ public class PlayerUI {
 
 	}
 
-	public void setInventory(GameItem[] inventory) {
-		int panelWidth = (GamePanel.width / 5);
+	public Slots getSlot(int slot) {
+		return this.inventory[slot];
+	}
 
-		int startX = GamePanel.width - panelWidth;
-
-		this.inventory = new Slots[4];
-
-		for (int i = 0; i < inventory.length; i++) {
-			GameItem item = inventory[i];
-			if (item != null) {
-				final int actualIdx = (int) item.getTargetSlot();
-				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
-				b.onHoverIn(event -> {
-					System.out.println("Hovered IN Equipment SLOT " + actualIdx);
-					this.tooltips.put(item.getUid(),
-							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
-				});
-
-				b.onHoverOut(event -> {
-					System.out.println("Hovered OUT Equipment SLOT " + actualIdx);
-					this.tooltips.remove(item.getUid());
-				});
-				b.onMouseDown(event -> {
-					PlayerUI.DRAGGING_ITEM = true;
-					System.out.println("Clicked Equipment SLOT " + actualIdx);
-				});
-				b.onMouseUp(event -> {
-					PlayerUI.DRAGGING_ITEM = false;
-					System.out.println("Released Equipment SLOT " + actualIdx);
-				});
-				this.inventory[actualIdx] = new Slots(b, item);
-			}
+	public Slots[] getSlots(int start, int end) {
+		int size = end-start;
+		int idx = 0;
+		Slots[] items = new Slots[size];
+		for(int i = start; i< end; i++) {
+			items[idx++] = this.inventory[i];
 		}
+
+		return items;
+	}
+
+	public int firstNullIdx(Object[] objs) {
+		for (int i = 0; i < objs.length; i++) {
+			if (objs[i] == null)
+				return i;
+		}
+		return -1;
 	}
 
 	public void setEquipment(GameItem[] loot) {
-		int panelWidth = (GamePanel.width / 5);
-
-		int startX = GamePanel.width - panelWidth;
-
-
 		this.inventory = new Slots[20];
 
-		for (int i = 0; i < loot.length; i++) {
-			GameItem item = loot[i];
-			if (item != null) {
-				final int actualIdx = (int) item.getTargetSlot();
-				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
-				b.onHoverIn(event -> {
-					System.out.println("Hovered IN Equipment SLOT " + actualIdx);
-					this.tooltips.put(item.getUid(),
-							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
-				});
+		GameItem[] equipmentArr = Arrays.copyOfRange(loot, 0, 4);
+		GameItem[] inventoryArr = Arrays.copyOfRange(loot, 4, 12);
 
-				b.onHoverOut(event -> {
-					System.out.println("Hovered OUT Equipment SLOT " + actualIdx);
-					this.tooltips.remove(item.getUid());
-				});
-				b.onMouseDown(event -> {
-					PlayerUI.DRAGGING_ITEM = true;
-					System.out.println("Clicked Equipment SLOT " + actualIdx);
-				});
-				b.onMouseUp(event -> {
-					PlayerUI.DRAGGING_ITEM = false;
-					System.out.println("Released Equipment SLOT " + actualIdx);
-				});
-				this.inventory[actualIdx] = new Slots(b, item);
-			}
-		}
+		this.buildEquipmentSlots(equipmentArr);
+		this.buildInventorySlots(inventoryArr);
 	}
 
 	public void setGroundLoot(GameItem[] loot, Graphics2D g) {
@@ -140,7 +104,8 @@ public class PlayerUI {
 			int yOffset = i > 3 ? 64 : 0;
 			if (item != null) {
 				final int actualIdx = i;
-				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 450 + yOffset), 64);
+
+				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 650 + yOffset), 64);
 				b.onHoverIn(event -> {
 					System.out.println("Hovered IN GroundLoot SLOT " + actualIdx);
 					this.tooltips.put(item.getUid(),
@@ -170,13 +135,26 @@ public class PlayerUI {
 						}
 						this.tooltips.remove(item.getUid());
 
-					} else if (this.overlapsInventory(event)) {
+					} else if (this.overlapsEquipment(event)) {
 						Slots currentEquip = this.inventory[item.getTargetSlot()];
 						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
 						this.inventory[item.getTargetSlot()].setItem(item);
 						this.playState.replaceLootContainerItemByUid(item.getUid(), this.groundLoot[actualIdx].getItem());
 						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
 
+						this.setEquipment(this.getPlayState().getPlayer().getInventory());
+					}else if(this.overlapsInventory(event)) {
+						GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
+						Slots groundLoot = this.groundLoot[actualIdx];
+						int idx = this.firstNullIdx(currentInv);
+						Slots currentEquip = this.inventory[idx + 4];
+						if ((currentEquip == null) && (idx > -1)) {
+							this.inventory[idx + 4] = groundLoot;
+							this.groundLoot[actualIdx] = null;
+							this.playState.replaceLootContainerItemByUid(item.getUid(),
+									null);
+							this.getPlayState().getPlayer().getInventory()[idx + 4] = item;
+						}
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
 					}
 				});
@@ -185,8 +163,81 @@ public class PlayerUI {
 		}
 	}
 
-	private boolean overlapsInventory(Vector2f pos) {
-		for (Slots s : this.getInventory()) {
+	private void buildEquipmentSlots(GameItem[] equipment) {
+		final int panelWidth = (GamePanel.width / 5);
+		final int startX = GamePanel.width - panelWidth;
+
+		for (int i = 0; i < equipment.length; i++) {
+			GameItem item = equipment[i];
+			if (item != null) {
+				int actualIdx = (int) item.getTargetSlot();
+				if (actualIdx == -1) {
+					actualIdx = i;
+				}
+				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
+				b.onHoverIn(event -> {
+					this.tooltips.put(item.getUid(),
+							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
+				});
+
+				b.onHoverOut(event -> {
+					this.tooltips.remove(item.getUid());
+				});
+				b.onMouseDown(event -> {
+					PlayerUI.DRAGGING_ITEM = true;
+				});
+				b.onMouseUp(event -> {
+					PlayerUI.DRAGGING_ITEM = false;
+				});
+				this.inventory[actualIdx] = new Slots(b, item);
+			}
+		}
+	}
+
+	private void buildInventorySlots(GameItem[] inventory) {
+		final int inventoryOffset = 4;
+		final int panelWidth = (GamePanel.width / 5);
+		final int startX = GamePanel.width - panelWidth;
+
+		for (int i = 0; i < (inventory.length); i++) {
+			GameItem item = inventory[i];
+			if (item != null) {
+				final int actualIdx = i + inventoryOffset;
+				//				if (actualIdx == -1) {
+				//					actualIdx = i + inventoryOffset;
+				//				}
+				Button b = new Button(new Vector2f(startX + (i * 64), 450), 64);
+				b.onHoverIn(event -> {
+					System.out.println("Hovered IN Equipment SLOT ");
+					this.tooltips.put(item.getUid(),
+							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
+				});
+
+				b.onHoverOut(event -> {
+					this.tooltips.remove(item.getUid());
+				});
+				b.onMouseDown(event -> {
+					PlayerUI.DRAGGING_ITEM = true;
+				});
+				b.onMouseUp(event -> {
+					PlayerUI.DRAGGING_ITEM = false;
+					if (this.overlapsEquipment(event)) {
+						Slots currentEquip = this.inventory[item.getTargetSlot()];
+						GameItem itemClone = currentEquip.getItem().clone();
+						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
+						this.getPlayState().getPlayer().getInventory()[actualIdx] = itemClone;
+
+						this.setEquipment(this.getPlayState().getPlayer().getInventory());
+					}
+				});
+				this.inventory[actualIdx] = new Slots(b, item);
+			}
+		}
+	}
+
+	private boolean overlapsEquipment(Vector2f pos) {
+		Slots[] equipSlots = this.getSlots(0, 4);
+		for (Slots s : equipSlots) {
 			if ((s == null) || (s.getButton() == null)) {
 				continue;
 			}
@@ -194,6 +245,16 @@ public class PlayerUI {
 				return true;
 		}
 		return false;
+
+	}
+
+	private boolean overlapsInventory(Vector2f pos) {
+		Slots invSlots = this.getSlot(4);
+		AABB currBounds = invSlots.getButton().getBounds();
+		AABB bounds = new AABB(currBounds.getPos().clone(), (int) currBounds.getWidth() * 4,
+				(int) currBounds.getHeight() * 4);
+
+		return bounds.inside((int) pos.x, (int) pos.y);
 
 	}
 
@@ -307,34 +368,38 @@ public class PlayerUI {
 
 		this.hp.render(g);
 		this.mp.render(g);
-		for (int i = 0; i < this.inventory.length; i++) {
-			Slots curr = this.inventory[i];
+
+		Slots[] equips = this.getSlots(0, 4);
+		Slots[] inv1 = this.getSlots(4, 12);
+
+		for (int i = 0; i < equips.length; i++) {
+			Slots curr = equips[i];
 			if (curr != null) {
 				if ((curr.getDragPos() == null)) {
-					this.inventory[i].render(g, new Vector2f(startX + (i * 64), 256));
+					curr.render(g, new Vector2f(startX + (i * 64), 256));
 				} else {
-					this.inventory[i].render(g, curr.getDragPos());
+					curr.render(g, curr.getDragPos());
 				}
 			}
 		}
 
-		//		for (int i = 0; i < this.inventory.length; i++) {
-		//			Slots curr = this.inventory[i];
-		//			if (curr != null) {
-		//				if ((curr.getDragPos() == null)) {
-		//					this.inventory[i].render(g, new Vector2f(startX + (i * 64), 450));
-		//				} else {
-		//					this.inventory[i].render(g, curr.getDragPos());
-		//
-		//				}
-		//			}
-		//		}
+		for (int i = 0; i < inv1.length; i++) {
+			Slots curr = inv1[i];
+			if (curr != null) {
+				if ((curr.getDragPos() == null)) {
+					curr.render(g, new Vector2f(startX + (i * 64), 450));
+				} else {
+					curr.render(g, curr.getDragPos());
+
+				}
+			}
+		}
 
 		for (int i = 0; i < this.groundLoot.length; i++) {
 			Slots curr = this.groundLoot[i];
 			if (curr != null) {
 				if ((curr.getDragPos() == null)) {
-					this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 450));
+					this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 650));
 				} else {
 					this.groundLoot[i].render(g, curr.getDragPos());
 

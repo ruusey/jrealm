@@ -93,6 +93,8 @@ public class PlayState extends GameState {
 		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(32));
 		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(12));
 
+		this.player.equipSlot(4, GameDataManager.GAME_ITEMS.get(0));
+
 		this.getPui().setEquipment(this.player.getInventory());
 	}
 

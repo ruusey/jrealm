@@ -7,10 +7,8 @@ import com.jrealm.game.model.SpriteModel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class GameItem extends SpriteModel {
@@ -26,4 +24,31 @@ public class GameItem extends SpriteModel {
 	private byte targetSlot;
 	private byte targetClass;
 	private byte fameBonus;
+
+	public GameItem() {
+		this.uid = UUID.randomUUID().toString();
+	}
+
+	@Override
+	public GameItem clone() {
+		GameItem.GameItemBuilder builder = GameItem.builder().itemId(this.itemId).uid(this.uid).name(this.name)
+				.description(this.description).consumable(this.consumable).tier(this.tier).targetSlot(this.targetSlot)
+				.targetClass(this.targetClass).fameBonus(this.fameBonus);
+
+		if (this.damage != null) {
+			builder = builder.damage(this.damage.clone());
+		}
+
+		if (this.stats != null) {
+			builder = builder.stats(this.stats.clone());
+		}
+
+		GameItem itemFinal = builder.build();
+		itemFinal.setAngleOffset(this.getAngleOffset());
+		itemFinal.setRow(this.getRow());
+		itemFinal.setCol(this.getCol());
+		itemFinal.setSpriteKey(this.getSpriteKey());
+
+		return itemFinal;
+	}
 }

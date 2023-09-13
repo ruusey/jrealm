@@ -27,4 +27,9 @@ public class Damage {
 		Random r = new Random(System.currentTimeMillis());
 		return (short) (r.nextInt(d.getMax() - d.getMin()) + d.getMin());
 	}
+
+	@Override
+	public Damage clone() {
+		return Damage.builder().projectileGroupId(this.projectileGroupId).min(this.min).max(this.max).build();
+	}
 }

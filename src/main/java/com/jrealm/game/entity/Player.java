@@ -86,8 +86,8 @@ public class Player extends Entity {
 	}
 
 	public boolean equipSlot(int slot, GameItem item) {
-		if (item.isConsumable() || (item.getTargetSlot() != slot))
-			return false;
+		//		if (item.isConsumable() || (item.getTargetSlot() != slot))
+		//			return false;
 		this.inventory[slot] = item;
 
 		return true;
