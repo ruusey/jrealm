@@ -41,7 +41,12 @@ public class GameObjectHeap extends ArrayList<GameObjectKey> {
 	}
 
 	public void remove(GameObject go) {
+		if (go == null)
+			return;
 		for(int i = 0; i < this.size(); i++) {
+			if (this.get(i) == null) {
+				continue;
+			}
 			if (go.equals(this.get(i).go)) {
 				super.remove(i);
 			}

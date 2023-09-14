@@ -106,7 +106,7 @@ public class PlayState extends GameState {
 			for (int j = 0; j < this.tm.getWidth(); j++) {
 				GameObject go = null;
 				int doSpawn = r.nextInt(200);
-				if (doSpawn > 195) {
+				if ((doSpawn > 195) && (i > 0) && (j > 0)) {
 					Vector2f spawnPos = new Vector2f(j * 64, i * 64);
 					if (this.getPlayer().getBounds().distance(spawnPos) < 300) {
 						continue;

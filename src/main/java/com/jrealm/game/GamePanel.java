@@ -103,7 +103,7 @@ public class GamePanel extends JPanel implements Runnable {
 			int updateCount = 0;
 			while (((now - lastUpdateTime) > TBU) && (updateCount < MUBR)) {
 				this.update(now);
-				this.input(this.mouse, this.key);
+				// this.input(this.mouse, this.key);
 				lastUpdateTime += TBU;
 				updateCount++;
 				GamePanel.tickCount++;
@@ -134,8 +134,6 @@ public class GamePanel extends JPanel implements Runnable {
 				}
 
 				if (GamePanel.tickCount != GamePanel.oldTickCount) {
-					// System.out.println("NEW SECOND (T) " + thisSecond + " " +
-					// GamePanel.tickCount);
 					GamePanel.oldTickCount = GamePanel.tickCount;
 				}
 				GamePanel.tickCount = 0;
@@ -144,17 +142,14 @@ public class GamePanel extends JPanel implements Runnable {
 			}
 
 			while (((now - lastRenderTime) < TTBR) && ((now - lastUpdateTime) < TBU)) {
-				Thread.yield();
 
 				try {
-					Thread.sleep(1);
 				} catch (Exception e) {
 					System.out.println("ERROR: yielding thread");
 				}
 
 				now = System.nanoTime();
 			}
-
 		}
 	}
 

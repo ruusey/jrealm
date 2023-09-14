@@ -85,15 +85,7 @@ public abstract class Enemy extends Entity {
 			if(this.teleported) {
 				this.teleported = false;
 
-				//				this.bounds.setWidth(this.size / 2);
-				//				this.bounds.setHeight((this.size / 2) - this.yOffset);
-				//				this.bounds.setXOffset((this.size / 2) - this.xOffset);
-				//				this.bounds.setYOffset((this.size / 2) + this.yOffset);
-
 				this.hitBounds = new AABB(this.pos, this.size, this.size);
-				// this.hitBounds.setXOffset(this.size / 2);
-				// this.hitBounds.setYOffset(128);
-				// this.hitBounds.setYOffset((this.size / 2) + this.yOffset);
 
 				this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2), (this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
 				this.attackrange = new AABB(new Vector2f((this.pos.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2) , (this.pos.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2) ), this.r_attackrange);
@@ -101,9 +93,6 @@ public abstract class Enemy extends Entity {
 
 			if (this.attackrange.colCircleBox(playState.getPlayer().getBounds()) && !this.isInvincible) {
 				this.attack = true;
-				//				playState.getPlayer().setHealth(playState.getPlayer().getHealth() - this.damage,
-				//						5f * this.getDirection(),
-				//						(this.currentDirection == this.UP) || (this.currentDirection == this.DOWN));
 
 				boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 500);
 
@@ -129,7 +118,6 @@ public abstract class Enemy extends Entity {
 						}
 
 					}
-
 				}
 			} else {
 				this.attack = false;
