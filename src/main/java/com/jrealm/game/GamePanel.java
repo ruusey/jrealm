@@ -142,12 +142,10 @@ public class GamePanel extends JPanel implements Runnable {
 			}
 
 			while (((now - lastRenderTime) < TTBR) && ((now - lastUpdateTime) < TBU)) {
-
 				try {
 				} catch (Exception e) {
 					System.out.println("ERROR: yielding thread");
 				}
-
 				now = System.nanoTime();
 			}
 		}
@@ -176,7 +174,5 @@ public class GamePanel extends JPanel implements Runnable {
 			g2.dispose();
 			this.bs.show();
 		} while(this.bs.contentsLost());
-
 	}
-
 }
