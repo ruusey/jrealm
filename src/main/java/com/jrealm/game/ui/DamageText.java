@@ -23,11 +23,11 @@ public class DamageText {
 	@Builder.Default
 	private boolean remove = false;
 	@Builder.Default
-	private float animationDistance = 64.0f;
+	private float animationDistance = 32.0f;
 
 	public void update() {
 		this.animationDistance += DamageText.velY;
-		this.sourcePos.y += DamageText.velY;
+		// this.sourcePos.y += DamageText.velY;
 
 		if (this.animationDistance <= 0.0f) {
 			this.remove = true;
@@ -47,7 +47,8 @@ public class DamageText {
 			break;
 
 		}
-		g.drawString(this.damage, this.sourcePos.x, this.sourcePos.y);
+		g.drawString(this.damage, this.sourcePos.x - (Vector2f.worldX),
+				this.sourcePos.y - (Vector2f.worldY) - (64 - this.animationDistance));
 
 	}
 

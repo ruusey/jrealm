@@ -322,7 +322,10 @@ public class PlayState extends GameState {
 	private void processPlayerHit(Bullet b, Player p) {
 		if (b.getBounds().collides(0, 0, this.player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
 			Stats stats = this.getPlayer().getComputedStats();
-
+			Vector2f sourcePos = p.getPos();
+			DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
+					.sourcePos(sourcePos).build();
+			this.damageText.add(hitText);
 			b.setPlayerHit(true);
 			this.player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
 			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
@@ -335,9 +338,7 @@ public class PlayState extends GameState {
 	private void proccessEnemyHit(Bullet b, Enemy e) {
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			e.setHealth(e.getHealth() - b.getDamage(), 0, false);
-			Vector2f sourcePos = e.getBounds().getPos().clone(0, -64);
-			sourcePos.addX(PlayState.map.x);
-			sourcePos.addY(PlayState.map.y);
+			Vector2f sourcePos = e.getPos();
 			DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
 					.sourcePos(sourcePos).build();
 			this.damageText.add(hitText);
