@@ -27,7 +27,9 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.tiles.TileManager;
+import com.jrealm.game.ui.DamageText;
 import com.jrealm.game.ui.PlayerUI;
+import com.jrealm.game.ui.TextEffect;
 import com.jrealm.game.util.AABBTree;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectHeap;
@@ -45,6 +47,8 @@ public class PlayState extends GameState {
 	public Player player;
 	private GameObjectHeap gameObject;
 	private List<LootContainer> loot;
+
+	private List<DamageText> damageText;
 	private AABBTree aabbTree;
 	private TileManager tm;
 	private MaterialManager mm;
@@ -75,12 +79,13 @@ public class PlayState extends GameState {
 
 		this.tm = new TileManager(tileset, 150, cam, this.mm);
 		this.shotDestQueue = new ArrayList<>();
+		this.damageText = new ArrayList<>();
 		this.gameObject = new GameObjectHeap();
 		//gameObject.addAll(mm.list);
 		this.aabbTree = new AABBTree();
 		this.loot = new ArrayList<>();
-		this.player = new Player(4, cam, GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png"),
-				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 64, this.tm);
+		this.player = new Player(1, cam, GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png"),
+				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32, this.tm);
 		this.player.setIsInvincible(true);
 		this.spawnRandomEnemies();
 
@@ -92,8 +97,9 @@ public class PlayState extends GameState {
 
 		this.player.equipSlot(0, GameDataManager.GAME_ITEMS.get(17));
 		this.player.equipSlot(2, GameDataManager.GAME_ITEMS.get(32));
-		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(12));
+		this.player.equipSlot(3, GameDataManager.GAME_ITEMS.get(54));
 
+		// this.player.equipSlot(4, GameDataManager.GAME_ITEMS.get(49));
 		this.player.equipSlot(4, GameDataManager.GAME_ITEMS.get(0));
 
 		this.getPui().setEquipment(this.player.getInventory());
@@ -140,7 +146,7 @@ public class PlayState extends GameState {
 						break;
 					case 4:
 						go = new Monster(8, this.cam,
-								new SpriteSheet(enemySheet.getSprite(0, 1, 16, 16), "Red Demon", 16, 16, 0),
+								new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0),
 								new Vector2f(j * 64, i * 64), 64);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
@@ -192,6 +198,16 @@ public class PlayState extends GameState {
 									p.getRange(), rolledDamage, false);
 						}
 					}
+					List<DamageText> toRemove = new ArrayList<>();
+
+					for (DamageText text : this.getDamageText()) {
+						text.update();
+						if (text.getRemove()) {
+							toRemove.add(text);
+						}
+
+					}
+					this.damageText.removeAll(toRemove);
 				};
 
 				Runnable processGameObjects = () -> {
@@ -204,7 +220,6 @@ public class PlayState extends GameState {
 							if (this.canBuildHeap(2500, 1000000, time)) {
 								this.gameObject.get(i).value = enemy.getBounds().distance(this.player.getPos());
 							}
-							continue;
 						}
 
 						if (this.gameObject.get(i).go instanceof Material) {
@@ -320,6 +335,12 @@ public class PlayState extends GameState {
 	private void proccessEnemyHit(Bullet b, Enemy e) {
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			e.setHealth(e.getHealth() - b.getDamage(), 0, false);
+			Vector2f sourcePos = e.getBounds().getPos().clone(0, -64);
+			sourcePos.addX(PlayState.map.x);
+			sourcePos.addY(PlayState.map.y);
+			DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
+					.sourcePos(sourcePos).build();
+			this.damageText.add(hitText);
 			this.aabbTree.removeObject(b);
 			this.gameObject.remove(b);
 			if (e.getDeath()) {
@@ -490,6 +511,12 @@ public class PlayState extends GameState {
 			}
 		}
 		this.loot.removeAll(toRemove);
+
+		List<DamageText> dtToRemove = new ArrayList<>();
+
+		for (DamageText text : this.getDamageText()) {
+			text.render(g);
+		}
 
 		if (this.getPui().isGroundLootEmpty() && (closeLoot != null)) {
 			this.getPui().setGroundLoot(closeLoot.getItems(), g);

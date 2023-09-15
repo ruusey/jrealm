@@ -416,7 +416,7 @@
 				"angle": 0.0,
 				"range": 300.0,
 				"size": 24,
-				"magnitude": 7.5,
+				"magnitude": 5.5,
 				"flags": [
 					0,
 					10
@@ -429,7 +429,7 @@
 				"angle": -0.1,
 				"range": 300.0,
 				"size": 24,
-				"magnitude": 7.5,
+				"magnitude": 5.5,
 				"flags": [
 					0,
 					10
@@ -442,7 +442,7 @@
 				"angle": -0.2,
 				"range": 300.0,
 				"size": 24,
-				"magnitude": 7.5,
+				"magnitude": 5.5,
 				"flags": [
 					0,
 					10
@@ -455,7 +455,7 @@
 				"angle": 0.2,
 				"range": 300.0,
 				"size": 24,
-				"magnitude": 7.5,
+				"magnitude": 5.5,
 				"flags": [
 					0,
 					10
@@ -468,7 +468,7 @@
 				"angle": 0.1,
 				"range": 300.0,
 				"size": 24,
-				"magnitude": 7.5,
+				"magnitude": 5.5,
 				"flags": [
 					0,
 					10
@@ -489,7 +489,7 @@
 				"angle": 0.0,
 				"range": 300.0,
 				"size": 24,
-				"magnitude": 4.5,
+				"magnitude": 2.5,
 				"flags": [
 					0,
 					10
@@ -502,7 +502,7 @@
 				"angle": -0.1,
 				"range": 300.0,
 				"size": 24,
-				"magnitude": 4.5,
+				"magnitude": 2.5,
 				"flags": [
 					0,
 					10
@@ -515,7 +515,7 @@
 				"angle": -0.2,
 				"range": 300.0,
 				"size": 24,
-				"magnitude": 4.5,
+				"magnitude": 2.5,
 				"flags": [
 					0,
 					10
@@ -528,7 +528,7 @@
 				"angle": 0.2,
 				"range": 300.0,
 				"size": 24,
-				"magnitude": 4.5,
+				"magnitude": 2.5,
 				"flags": [
 					0,
 					10
@@ -541,7 +541,7 @@
 				"angle": 0.1,
 				"range": 300.0,
 				"size": 24,
-				"magnitude": 4.5,
+				"magnitude": 2.5,
 				"flags": [
 					0,
 					10

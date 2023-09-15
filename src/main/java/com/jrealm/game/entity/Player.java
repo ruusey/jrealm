@@ -39,14 +39,14 @@ public class Player extends Entity {
 		super(id, sprite, origin, size);
 		this.cam = cam;
 		this.tm = tm;
-
-		this.bounds.setWidth(64);
-		this.bounds.setHeight(64);
+		this.size = size;
+		this.bounds.setWidth(this.size);
+		this.bounds.setHeight(this.size);
 		// this.bounds.setXOffset(16);
 		// this.bounds.setYOffset(40);
 
-		this.hitBounds.setWidth(64);
-		this.hitBounds.setHeight(64);
+		this.hitBounds.setWidth(this.size);
+		this.hitBounds.setHeight(this.size);
 
 		this.ani.setNumFrames(2, this.UP);
 		this.ani.setNumFrames(2, this.DOWN);
@@ -126,11 +126,11 @@ public class Player extends Entity {
 
 	private void resetPosition() {
 		System.out.println("Reseting Player... ");
-		this.pos.x = (GamePanel.width / 2) - 32;
+		this.pos.x = (GamePanel.width / 2) - (this.size / 2);
 		PlayState.map.x = 0;
 		this.cam.getPos().x = 0;
 
-		this.pos.y = (GamePanel.height /2) - 32;
+		this.pos.y = (GamePanel.height / 2) - (this.size / 2);
 		PlayState.map.y = 0;
 		this.cam.getPos().y = 0;
 		// sprite.getSprite(spriteX, spriteY)
@@ -148,12 +148,18 @@ public class Player extends Entity {
 			this.setMaxHealth(this.getMaxHealth() + stats.getHp());
 		} else if (stats.getHp() == 0) {
 			this.setMaxHealth(this.getDefaultMaxHealth());
+			if (this.getHealth() > this.getMaxHealth()) {
+				this.setHealth(this.getMaxHealth(), 0, false);
+			}
 		}
 
 		if ((stats.getMp() > 0) && (this.getMaxMana() == this.getDefaultMaxMana())) {
 			this.setMaxMana(this.getMaxMana() + stats.getMp());
 		} else if (stats.getHp() == 0) {
 			this.setMaxMana(this.getDefaultMaxMana());
+			if (this.getMana() > this.getMaxMana()) {
+				this.setMana(this.getMaxMana());
+			}
 		}
 
 		if(!this.fallen) {
@@ -227,10 +233,12 @@ public class Player extends Entity {
 	}
 
 	public void drinkHp() {
+		this.defaultMaxHealth += 5;
 		this.maxHealth += 5;
 	}
 
 	public void drinkMp() {
+		this.defaultMaxMana += 5;
 		this.maxMana += 5;
 	}
 

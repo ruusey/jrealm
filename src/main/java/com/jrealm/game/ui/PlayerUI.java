@@ -132,6 +132,7 @@ public class PlayerUI {
 						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
 
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
+						this.setGroundLoot(this.groundLoot);
 					}else if(this.overlapsInventory(event)) {
 						GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
 						Slots groundLoot = this.groundLoot[actualIdx];
@@ -145,6 +146,7 @@ public class PlayerUI {
 							this.getPlayState().getPlayer().getInventory()[idx + 4] = item;
 						}
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
+						this.setGroundLoot(this.groundLoot);
 					}
 				});
 				this.groundLoot[actualIdx] = new Slots(b, item);
@@ -236,7 +238,16 @@ public class PlayerUI {
 
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
 					} else if (this.overlapsInventory(event)) {
-						// Swap Items
+						Slots dropped = this.getOverlapping(event);
+						if (dropped != null) {
+							int idx = this.getOverlapIdx(event);
+							GameItem swap = dropped.getItem().clone();
+							this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
+							this.getPlayState().getPlayer().getInventory()[idx] = item;
+
+							this.setEquipment(this.getPlayState().getPlayer().getInventory());
+						}
+
 					}
 					else if (this.overlapsGround(event)) {
 						GameItem toDrop = item.clone();
@@ -249,6 +260,22 @@ public class PlayerUI {
 				this.inventory[actualIdx] = new Slots(b, item);
 			}
 		}
+	}
+
+	private int getOverlapIdx(Vector2f pos) {
+		Slots[] equipSlots = this.getSlots(4, 12);
+		int returnIdx = -1;
+		for (int i = 0; i < equipSlots.length; i++) {
+			Slots s = equipSlots[i];
+			if ((s == null) || (s.getButton() == null)) {
+				continue;
+			}
+			if (s.getButton().getBounds().inside((int) pos.x, (int) pos.y)) {
+				returnIdx = i;
+			}
+		}
+		return returnIdx + 4;
+
 	}
 
 	private boolean overlapsEquipment(Vector2f pos) {
@@ -269,6 +296,18 @@ public class PlayerUI {
 		AABB currBounds = new AABB(new Vector2f(0, 0), GamePanel.width - panelWidth, GamePanel.height);
 
 		return currBounds.inside((int) pos.x, (int) pos.y);
+	}
+
+	private Slots getOverlapping(Vector2f pos) {
+		Slots[] equipSlots = this.getSlots(4, 12);
+		for (Slots s : equipSlots) {
+			if ((s == null) || (s.getButton() == null)) {
+				continue;
+			}
+			if (s.getButton().getBounds().inside((int) pos.x, (int) pos.y))
+				return s;
+		}
+		return null;
 	}
 
 	private boolean overlapsInventory(Vector2f pos) {
@@ -365,7 +404,7 @@ public class PlayerUI {
 			int yOffset = 42;
 			int startY = 350;
 
-			Vector2f posHp = new Vector2f(GamePanel.width - 400, 128 + 32);
+			Vector2f posHp = new Vector2f(GamePanel.width - 64, 128 + 32);
 			Vector2f posMp = posHp.clone(0, 64);
 			g.drawString("" + this.playState.getPlayer().getHealth(), posHp.x, posHp.y);
 
@@ -384,17 +423,10 @@ public class PlayerUI {
 
 	public void render(Graphics2D g) {
 		int panelWidth = (GamePanel.width / 5);
-
 		int startX = GamePanel.width - panelWidth;
-
 		g.setColor(Color.GRAY);
-		// System.out.println(59);
 
 		g.fillRect(startX, 0, panelWidth, GamePanel.height);
-		this.renderStats(g);
-
-		this.hp.render(g);
-		this.mp.render(g);
 
 		Slots[] equips = this.getSlots(0, 4);
 
@@ -450,6 +482,9 @@ public class PlayerUI {
 		for (ItemTooltip tip : this.tooltips.values()) {
 			tip.render(g);
 		}
-	}
 
+		this.hp.render(g);
+		this.mp.render(g);
+		this.renderStats(g);
+	}
 }

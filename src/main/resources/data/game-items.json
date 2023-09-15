@@ -31,7 +31,7 @@
 		"targetClass": -1,
 		"fameBonus": 0
 	},
-		{
+	{
 		"itemId": 2,
 		"row": 3,
 		"col": 7,
@@ -128,7 +128,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":8,
+		"itemId": 8,
 		"row": 12,
 		"col": 0,
 		"spriteKey": "entity/rotmg-items.png",
@@ -143,7 +143,7 @@
 		"targetClass": -1,
 		"fameBonus": 0
 	},
-		{
+	{
 		"itemId": 9,
 		"row": 12,
 		"col": 1,
@@ -160,7 +160,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":10,
+		"itemId": 10,
 		"row": 12,
 		"col": 2,
 		"spriteKey": "entity/rotmg-items.png",
@@ -176,7 +176,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":11,
+		"itemId": 11,
 		"row": 12,
 		"col": 3,
 		"spriteKey": "entity/rotmg-items.png",
@@ -192,7 +192,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":12,
+		"itemId": 12,
 		"row": 12,
 		"col": 4,
 		"spriteKey": "entity/rotmg-items.png",
@@ -208,7 +208,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":13,
+		"itemId": 13,
 		"row": 12,
 		"col": 5,
 		"spriteKey": "entity/rotmg-items.png",
@@ -224,7 +224,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":14,
+		"itemId": 14,
 		"row": 12,
 		"col": 6,
 		"spriteKey": "entity/rotmg-items.png",
@@ -240,7 +240,7 @@
 		"fameBonus": 0
 	},
 	{
-		"itemId":15,
+		"itemId": 15,
 		"row": 12,
 		"col": 7,
 		"spriteKey": "entity/rotmg-items.png",
@@ -675,7 +675,6 @@
 		"targetClass": -1,
 		"fameBonus": 2
 	},
-
 	{
 		"itemId": 41,
 		"row": 0,
@@ -726,7 +725,7 @@
 		"targetSlot": 2,
 		"targetClass": -1,
 		"fameBonus": 5
-	},	
+	},
 	{
 		"itemId": 44,
 		"row": 0,
@@ -760,7 +759,7 @@
 		"targetSlot": 2,
 		"targetClass": -1,
 		"fameBonus": 7
-	},	
+	},
 	{
 		"itemId": 46,
 		"row": 0,
@@ -795,5 +794,172 @@
 		"targetSlot": 0,
 		"targetClass": -1,
 		"fameBonus": 8
+	},
+	{
+		"itemId": 48,
+		"row": 5,
+		"col": 0,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Amulet of Ressurection",
+		"description": "An Amulet that when worn, prevents death.",
+		"stats": {
+			"spd": 10,
+			"att": 10,
+			"dex": 10,
+			"wis": 10,
+			"vit": 10,
+			"def": 10,
+			"hp": 100,
+			"mp": 100
+		},
+		"consumable": false,
+		"tier": 15,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 49,
+		"row": 5,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Dirk of Cronus",
+		"description": "Commisioned by me",
+		"stats": {
+			"wis": 5
+		},
+		"consumable": false,
+		"tier": 15,
+		"targetSlot": 1,
+		"targetClass": -1,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 50,
+		"row": 10,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Superior Ring of Defense",
+		"description": "A medium ring that increases defense.",
+		"stats": {
+			"def": 6
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 51,
+		"row": 10,
+		"col": 0,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Superior Ring of Attack",
+		"description": "A medium ring that increases attack.",
+		"stats": {
+			"att": 6
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 52,
+		"row": 10,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Superior Ring of Speed",
+		"description": "A medium ring that increases speed.",
+		"stats": {
+			"spd": 6
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 53,
+		"row": 10,
+		"col": 3,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Superior Ring of Vit",
+		"description": "A medium ring that increases vitality.",
+		"stats": {
+			"vit": 6
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 54,
+		"row": 10,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Superior Ring of Wisdom",
+		"description": "A medium ring that increases wisdom.",
+		"stats": {
+			"wis": 6
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 55,
+		"row": 10,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Superior Ring of Deterity",
+		"description": "A medium ring that increases wisdom.",
+		"stats": {
+			"wis": 6
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 56,
+		"row": 10,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Superior Ring of Health",
+		"description": "A medium ring that increases health.",
+		"stats": {
+			"hp": 100
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 57,
+		"row": 10,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Superior Ring of Mana",
+		"description": "A medium ring that increases mana.",
+		"stats": {
+			"spd": 100
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 3,
+		"targetClass": -1,
+		"fameBonus": 0
 	}
 ]
