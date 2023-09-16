@@ -81,7 +81,7 @@ public class PlayState extends GameState {
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ArrayList<>();
 		this.gameObject = new GameObjectHeap();
-		//gameObject.addAll(mm.list);
+		// this.gameObject.addAll(this.mm.list);
 		this.aabbTree = new AABBTree();
 		this.loot = new ArrayList<>();
 		this.player = new Player(1, cam, GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png"),

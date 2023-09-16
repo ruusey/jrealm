@@ -21,8 +21,8 @@ public class Monster extends Enemy {
 		this.damage = 10;
 		this.acc = 1f;
 		this.deacc = 2f;
-		this.maxSpeed = 1.5f;
-		this.r_sense = 800;
+		this.maxSpeed = 1.4f;
+		this.r_sense = 600;
 		this.r_attackrange = 400;
 
 		this.ATTACK = 0;
