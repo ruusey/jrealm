@@ -107,7 +107,6 @@ public class GamePanel extends JPanel implements Runnable {
 				lastUpdateTime += TBU;
 				updateCount++;
 				GamePanel.tickCount++;
-				// (^^^^) We use this varible for the soul purpose of displaying it
 			}
 
 			if ((now - lastUpdateTime) > TBU) {
@@ -129,7 +128,7 @@ public class GamePanel extends JPanel implements Runnable {
 			int thisSecond = (int) (lastUpdateTime / 1000000000);
 			if (thisSecond > lastSecondTime) {
 				if (frameCount != GamePanel.oldFrameCount) {
-					System.out.println("NEW SECOND " + thisSecond + " " + frameCount);
+					// System.out.println("NEW SECOND " + thisSecond + " " + frameCount);
 					GamePanel.oldFrameCount = frameCount;
 				}
 

@@ -2,6 +2,7 @@ package com.jrealm.game.entity;
 
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
+import java.util.List;
 
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
@@ -18,7 +19,10 @@ public class Bullet extends GameObject {
 	private short damage;
 	private boolean isEnemy;
 	private boolean playerHit;
+	private boolean enemyHit;
 	private float tfAngle = (float) (Math.PI / 2);
+
+	private List<Short> flags;
 
 	public Bullet(int id, Sprite image, Vector2f origin, int size) {
 		super(id, image, origin, size);
@@ -56,6 +60,10 @@ public class Bullet extends GameObject {
 		angle -= Math.PI / 2;
 
 		return (float) angle;
+	}
+
+	public boolean hasFlag(short flag) {
+		return (this.flags != null) && (this.flags.contains(flag));
 	}
 
 	public boolean isEnemy() {

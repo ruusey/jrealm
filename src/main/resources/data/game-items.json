@@ -263,9 +263,9 @@
 		"name": "Short Bow",
 		"description": "A well-made shortbow.",
 		"damage": {
-			"projectileGroupId": 5,
-			"min": 15,
-			"max": 20
+			"projectileGroupId": 9,
+			"min": 10,
+			"max": 15
 		},
 		"consumable": false,
 		"tier": 0,
@@ -281,7 +281,7 @@
 		"name": "Reinforced Bow",
 		"description": "An iron-reinforced bow.",
 		"damage": {
-			"projectileGroupId": 4,
+			"projectileGroupId": 9,
 			"min": 20,
 			"max": 25
 		},
@@ -299,7 +299,7 @@
 		"name": "Hardwood Bow",
 		"description": "A bow made from sturdy hardwood.",
 		"damage": {
-			"projectileGroupId": 4,
+			"projectileGroupId": 9,
 			"min": 25,
 			"max": 30
 		},
@@ -317,7 +317,7 @@
 		"name": "Greywood Bow",
 		"description": "A bow made from the rare greywood tree.",
 		"damage": {
-			"projectileGroupId": 4,
+			"projectileGroupId": 9,
 			"min": 30,
 			"max": 35
 		},
@@ -335,7 +335,7 @@
 		"name": "Ironwood Bow",
 		"description": "A high-quality bow made of magical ironwood.",
 		"damage": {
-			"projectileGroupId": 4,
+			"projectileGroupId": 9,
 			"min": 35,
 			"max": 45
 		},
@@ -353,7 +353,7 @@
 		"name": "Fire Bow",
 		"description": "A bow that shoots arrows that burn with an unholy fire.",
 		"damage": {
-			"projectileGroupId": 4,
+			"projectileGroupId": 9,
 			"min": 45,
 			"max": 55
 		},
@@ -371,7 +371,7 @@
 		"name": "Sharpshooter Bow",
 		"description": "A well-crafted bow carried by master marksmen.",
 		"damage": {
-			"projectileGroupId": 4,
+			"projectileGroupId": 9,
 			"min": 55,
 			"max": 65
 		},
@@ -389,7 +389,7 @@
 		"name": "Redwood Bow",
 		"description": "An elven enchanted bow that originates from the elusive redwood forests.",
 		"damage": {
-			"projectileGroupId": 4,
+			"projectileGroupId": 9,
 			"min": 65,
 			"max": 75
 		},
@@ -407,9 +407,9 @@
 		"name": "Golden Bow",
 		"description": "A gilded bow gifted to mortals from the gods themselves.",
 		"damage": {
-			"projectileGroupId": 4,
-			"min": 85,
-			"max": 95
+			"projectileGroupId": 9,
+			"min": 75,
+			"max": 85
 		},
 		"consumable": false,
 		"tier": 8,
@@ -426,8 +426,8 @@
 		"description": "A highly effective bow fashioned of still-living magical springwood.",
 		"damage": {
 			"projectileGroupId": 4,
-			"min": 95,
-			"max": 105
+			"min": 85,
+			"max": 95
 		},
 		"consumable": false,
 		"tier": 9,
@@ -443,9 +443,9 @@
 		"name": "Bow of Fey Magic",
 		"description": "A powerful bow crafted by dryads and blessed by the spirits of the woodlands.",
 		"damage": {
-			"projectileGroupId": 4,
-			"min": 105,
-			"max": 115
+			"projectileGroupId": 9,
+			"min": 95,
+			"max": 105
 		},
 		"consumable": false,
 		"tier": 10,
@@ -461,9 +461,9 @@
 		"name": "Bow of Innocent Blood",
 		"description": "A runed bow steeped in the dark power of ancient injustice.",
 		"damage": {
-			"projectileGroupId": 4,
-			"min": 115,
-			"max": 125
+			"projectileGroupId": 9,
+			"min": 105,
+			"max": 115
 		},
 		"consumable": false,
 		"tier": 11,
@@ -479,9 +479,9 @@
 		"name": "Bow of Covert Havens",
 		"description": "A diamondwire bow used by guardians of the unseen ethereal shrines.",
 		"damage": {
-			"projectileGroupId": 4,
-			"min": 125,
-			"max": 135
+			"projectileGroupId": 9,
+			"min": 115,
+			"max": 120
 		},
 		"consumable": false,
 		"tier": 12,
@@ -497,9 +497,9 @@
 		"name": "Bow of Mystical Energy",
 		"description": "A superlative bow of sunsteel and diamondwire, created by a secretive race of star-dwelling entities.",
 		"damage": {
-			"projectileGroupId": 4,
-			"min": 135,
-			"max": 145
+			"projectileGroupId": 9,
+			"min": 120,
+			"max": 130
 		},
 		"consumable": false,
 		"tier": 13,
@@ -515,9 +515,9 @@
 		"name": "Bow of Deep Enchantment",
 		"description": "A peerless triple bow crafted of nightmatter and diamondwire by the exalted bowyers of the primeval overgods.",
 		"damage": {
-			"projectileGroupId": 4,
-			"min": 145,
-			"max": 155
+			"projectileGroupId": 9,
+			"min": 130,
+			"max": 140
 		},
 		"consumable": false,
 		"tier": 14,

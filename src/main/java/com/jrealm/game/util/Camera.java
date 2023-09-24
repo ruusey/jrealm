@@ -19,7 +19,7 @@ public class Camera {
 
 	private float dx;
 	private float dy;
-	private float maxSpeed = 8f;
+	private float maxSpeed = 4f;
 	private float acc = 3f;
 	private float deacc = 0.3f;
 

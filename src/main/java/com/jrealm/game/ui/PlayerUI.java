@@ -34,12 +34,12 @@ public class PlayerUI {
 	private PlayState playState;
 
 	private Map<String, ItemTooltip> tooltips;
+
 	public PlayerUI(PlayState p) {
 		this.playState = p;
 		SpriteSheet bars = new SpriteSheet("ui/fillbars.png", 0);
-		BufferedImage[] barSpritesHp = {
-				bars.getSubimage(12, 2, 7, 16),
-				bars.getSubimage(39, 0, 7, 14), // red health bar
+		BufferedImage[] barSpritesHp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 0, 7, 14), // red health
+				// bar
 				bars.getSubimage(0, 0, 12, 20) };
 
 		BufferedImage[] barSpritesMp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 16, 7, 14),
@@ -56,16 +56,15 @@ public class PlayerUI {
 		this.tooltips = new HashMap<>();
 	}
 
-
 	public Slots getSlot(int slot) {
 		return this.inventory[slot];
 	}
 
 	public Slots[] getSlots(int start, int end) {
-		int size = end-start;
+		int size = end - start;
 		int idx = 0;
 		Slots[] items = new Slots[size];
-		for(int i = start; i< end; i++) {
+		for (int i = start; i < end; i++) {
 			items[idx++] = this.inventory[i];
 		}
 
@@ -125,12 +124,13 @@ public class PlayerUI {
 						Slots currentEquip = this.inventory[item.getTargetSlot()];
 						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
 						this.inventory[item.getTargetSlot()].setItem(item);
-						this.playState.replaceLootContainerItemByUid(item.getUid(), this.groundLoot[actualIdx].getItem());
+						this.playState.replaceLootContainerItemByUid(item.getUid(),
+								this.groundLoot[actualIdx].getItem());
 						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
 
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
 						this.setGroundLoot(this.groundLoot);
-					}else if(this.overlapsInventory(event)) {
+					} else if (this.overlapsInventory(event)) {
 						GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
 						Slots groundLoot = this.groundLoot[actualIdx];
 						int idx = this.firstNullIdx(currentInv);
@@ -138,8 +138,7 @@ public class PlayerUI {
 						if ((currentEquip == null) && (idx > -1)) {
 							this.inventory[idx + 4] = groundLoot;
 							this.groundLoot[actualIdx] = null;
-							this.playState.replaceLootContainerItemByUid(item.getUid(),
-									null);
+							this.playState.replaceLootContainerItemByUid(item.getUid(), null);
 							this.getPlayState().getPlayer().getInventory()[idx + 4] = item;
 						}
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
@@ -194,9 +193,9 @@ public class PlayerUI {
 			if (item != null) {
 				final int actualIdx = i + inventoryOffset;
 				Button b = null;
-				if(i>3) {
+				if (i > 3) {
 					b = new Button(new Vector2f(startX + ((i - 4) * 64), 516), 64);
-				}else {
+				} else {
 					b = new Button(new Vector2f(startX + (i * 64), 450), 64);
 				}
 				b.onHoverIn(event -> {
@@ -247,12 +246,11 @@ public class PlayerUI {
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
 						}
 
-					}
-					else if (this.overlapsGround(event)) {
+					} else if (this.overlapsGround(event)) {
 						GameItem toDrop = item.clone();
 						this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
-						this.playState.getLoot()
-						.add(new LootContainer(this.playState.getPlayer().getPos().clone(), toDrop));
+						this.playState.getRealm().addLootContainer(
+								new LootContainer(this.playState.getPlayer().getPos().clone(), toDrop));
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
 					}
 				});
@@ -335,7 +333,6 @@ public class PlayerUI {
 			this.groundLoot[foundIdx] = null;
 		}
 	}
-
 
 	public void update(double time) {
 		for (int i = 0; i < this.inventory.length; i++) {

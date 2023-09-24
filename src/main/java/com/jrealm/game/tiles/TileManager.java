@@ -23,7 +23,6 @@ import lombok.Data;
 public class TileManager {
 
 	public static ArrayList<TileMap> tm;
-	public Camera cam;
 	private SpriteSheet spritesheet;
 	private int blockWidth;
 	private int blockHeight;
@@ -41,25 +40,25 @@ public class TileManager {
 		TileManager.tm = new ArrayList<TileMap>();
 	}
 
-	public TileManager(String path, Camera cam) {
+	public TileManager(String path) {
 		this();
-		this.addTileMap(path, 64, 64, cam);
+		this.addTileMap(path, 64, 64);
 	}
 
-	public TileManager(String path, int blockWidth, int blockHeight, Camera cam) {
+	public TileManager(String path, int blockWidth, int blockHeight) {
 		this();
-		this.addTileMap(path, blockWidth, blockHeight, cam);
+		this.addTileMap(path, blockWidth, blockHeight);
 	}
 
-	public TileManager(SpriteSheet spritesheet, int chuckSize, Camera cam, MaterialManager mm) {
+	public TileManager(SpriteSheet spritesheet, int chuckSize, MaterialManager mm) {
 		this();
-		this.addTileMap(spritesheet, 64, 64, chuckSize, cam, mm);
+		this.addTileMap(spritesheet, 64, 64, chuckSize, mm);
 
 	}
 
-	public TileManager(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize, Camera cam, MaterialManager mm) {
+	public TileManager(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize, MaterialManager mm) {
 		this();
-		this.addTileMap(spritesheet, blockWidth, blockHeight, chuckSize, cam, mm);
+		this.addTileMap(spritesheet, blockWidth, blockHeight, chuckSize, mm);
 		System.gc();
 	}
 
@@ -72,12 +71,12 @@ public class TileManager {
 	public int getColumns() { return this.columns; }
 
 	public void generateTileMap(int chuckSize) {
-		this.addTileMap(this.spritesheet, this.blockWidth, this.blockHeight, chuckSize, this.cam, this.mm);
+		this.addTileMap(this.spritesheet, this.blockWidth, this.blockHeight, chuckSize, this.mm);
 	}
 
 
-	private void addTileMap(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize, Camera cam, MaterialManager mm) {
-		this.cam = cam;
+	private void addTileMap(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize,
+			MaterialManager mm) {
 		this.mm = mm;
 		this.spritesheet = spritesheet;
 		this.blockWidth =  blockWidth;
@@ -87,7 +86,6 @@ public class TileManager {
 		this.file = spritesheet.getFilename();
 		this.columns = spritesheet.getCols();
 
-		cam.setTileSize(blockWidth);
 		String[] data = new String[3];
 		TileMapGenerator tmg = new TileMapGenerator(chuckSize, blockWidth, mm);
 
@@ -105,15 +103,12 @@ public class TileManager {
 		TileManager.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight, spritesheet.getCols()));
 		//tm.add(new TileMapNorm(tmg.onTop, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight, spritesheet.getCols()));
 
-		cam.setLimit(chuckSize * blockWidth, chuckSize * blockHeight);
 
 		this.solid = data[0];
 		this.genMap = tmg.base;
 	}
 
-	private void addTileMap(String path, int blockWidth, int blockHeight, Camera cam) {
-		this.cam = cam;
-		cam.setTileSize(blockWidth);
+	private void addTileMap(String path, int blockWidth, int blockHeight) {
 		String imagePath;
 
 		int width = 0;
@@ -164,8 +159,6 @@ public class TileManager {
 					TileManager.tm.add(new TileMapObj(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
 				}
 			}
-
-			cam.setLimit(width * blockWidth, height * blockHeight);
 		} catch(Exception e) {
 			System.out.println("ERROR - TILEMANAGER: can not read tilemap:");
 			e.printStackTrace();
@@ -197,12 +190,13 @@ public class TileManager {
 		return block;
 	}
 
-	public void render(Graphics2D g) {
-		if(this.cam == null)
-			return;
+	public void render(Graphics2D g, Camera bounds) {
+		bounds.setTileSize(this.blockWidth);
 
-		for(int i = 0; i < TileManager.tm.size(); i++) {
-			TileManager.tm.get(i).render(g, this.cam.getBounds());
+		bounds.setLimit(this.width * this.blockWidth, this.height * this.blockHeight);
+
+		for (int i = 0; i < TileManager.tm.size(); i++) {
+			TileManager.tm.get(i).render(g, bounds.getBounds());
 		}
 	}
 }

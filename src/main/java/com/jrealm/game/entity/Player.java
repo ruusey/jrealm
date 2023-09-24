@@ -306,7 +306,7 @@ public class Player extends Entity {
 				this.maxSpeed = 8;
 				this.cam.setMaxSpeed(7);
 			} else {
-				float maxSpeed = 3.0f + (stats.getSpd() * 0.05f);
+				float maxSpeed = 2.1f + (stats.getSpd() * 0.05f);
 				this.maxSpeed = maxSpeed;
 				this.cam.setMaxSpeed(maxSpeed);
 			}

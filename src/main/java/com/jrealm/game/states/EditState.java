@@ -69,12 +69,12 @@ public class EditState extends GameState {
 			go.setPos(new Vector2f((mouse.getX() - (go.getSize() / 2)) + this.cam.getPos().x + 64,
 					(mouse.getY() - (go.getSize() / 2)) + this.cam.getPos().y + 64));
 
-			if(!this.ps.getGameObjects().contains(go)) {
-				this.count++;
-				go.setName("enemy: " + Integer.toString(this.selection) + " count: " + Integer.toString(this.count));
-				this.ps.getGameObjects().add(go.getBounds().distance(this.ps.getPlayerPos()), go);
-				this.ps.getAABBObjects().insert(go);
-			}
+			//			if(!this.ps.getGameObjects().contains(go)) {
+			//				this.count++;
+			//				go.setName("enemy: " + Integer.toString(this.selection) + " count: " + Integer.toString(this.count));
+			//				this.ps.getGameObjects().add(go.getBounds().distance(this.ps.getPlayerPos()), go);
+			//				this.ps.getAABBObjects().insert(go);
+			//			}
 
 			this.clicked = true;
 		} else if(mouse.getButton() == -1) {

@@ -1,11 +1,11 @@
 package com.jrealm.game.entity.enemy;
 
+import java.util.Random;
 import java.util.UUID;
 
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.util.Camera;
 
 import lombok.Data;
 
@@ -13,17 +13,17 @@ import lombok.Data;
 public class Monster extends Enemy {
 	private String uuid;
 
-	public Monster(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size) {
-		super(id, cam, sprite, origin, size);
+	public Monster(int id, SpriteSheet sprite, Vector2f origin, int size) {
+		super(id, sprite, origin, size);
 		//		this.xOffset = size / 4;
 		//		this.yOffset = size / 4;
-
+		Random r = new Random(System.currentTimeMillis());
 		this.damage = 10;
 		this.acc = 1f;
 		this.deacc = 2f;
 		this.maxSpeed = 1.4f;
-		this.r_sense = 600;
-		this.r_attackrange = 400;
+		this.r_sense = 650;
+		this.r_attackrange = 450;
 
 		this.ATTACK = 0;
 		this.IDLE = 0;
@@ -32,8 +32,8 @@ public class Monster extends Enemy {
 		this.DOWN = 1;
 		this.LEFT = 1;
 		this.RIGHT = 1;
-		this.health = 500;
-		this.maxHealth = 500;
+		this.health = r.nextInt(1000) + 1000;
+		this.maxHealth = this.health;
 		this.hasIdle = true;
 		this.useRight = true;
 
