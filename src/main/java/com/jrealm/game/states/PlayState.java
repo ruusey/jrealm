@@ -275,12 +275,6 @@ public class PlayState extends GameState {
 		}
 	}
 
-	private void processTerrainHit(Bullet b, Material m) {
-		if (b.getBounds().intersect(m.getBounds())) {
-			this.realm.removeBullet(b);
-		}
-	}
-
 	private List<Bullet> getBullets() {
 
 		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.cam.getBounds());

@@ -116,6 +116,7 @@ public class PlayerUI {
 				});
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
+					this.tooltips.clear();
 					if (this.overlapsEquipment(event)) {
 						Slots currentEquip = this.inventory[item.getTargetSlot()];
 						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
@@ -165,14 +166,14 @@ public class PlayerUI {
 
 				b.onHoverOut(event -> {
 					this.tooltips.clear();
-
-					// this.tooltips.remove(item.getUid());
 				});
 				b.onMouseDown(event -> {
 					PlayerUI.DRAGGING_ITEM = true;
 				});
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
+					this.tooltips.clear();
+
 				});
 				this.inventory[actualIdx] = new Slots(b, item);
 			}
