@@ -20,8 +20,10 @@ import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class Player extends Entity {
 	private long playerId;
 	private Camera cam;
@@ -182,8 +184,6 @@ public class Player extends Entity {
 			this.tc.normalTile(this.dx, 0);
 			this.tc.normalTile(0, this.dy);
 
-			this.tc.collisionTile(this.dx, 0);
-			this.tc.collisionTile(0, this.dy);
 
 		} else {
 			this.xCol = true;
@@ -303,8 +303,7 @@ public class Player extends Entity {
 			}
 
 			if(key.shift.down) {
-				this.maxSpeed = 8;
-				this.cam.setMaxSpeed(7);
+				//
 			} else {
 				float maxSpeed = 2.1f + (stats.getSpd() * 0.05f);
 				this.maxSpeed = maxSpeed;

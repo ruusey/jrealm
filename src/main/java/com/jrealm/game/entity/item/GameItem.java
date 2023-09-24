@@ -11,6 +11,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 @Builder
+
 public class GameItem extends SpriteModel {
 	private int itemId;
 	@Builder.Default

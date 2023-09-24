@@ -8,15 +8,17 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class Monster extends Enemy {
 	private String uuid;
 
 	public Monster(int id, SpriteSheet sprite, Vector2f origin, int size) {
 		super(id, sprite, origin, size);
-		//		this.xOffset = size / 4;
-		//		this.yOffset = size / 4;
+		// this.xOffset = size / 4;
+		// this.yOffset = size / 4;
 		Random r = new Random(System.currentTimeMillis());
 		this.damage = 10;
 		this.acc = 1f;

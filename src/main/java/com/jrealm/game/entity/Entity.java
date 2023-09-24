@@ -1,9 +1,6 @@
 package com.jrealm.game.entity;
 
 import java.awt.Graphics2D;
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.PointerInfo;
 
 import com.jrealm.game.graphics.Animation;
 import com.jrealm.game.graphics.Sprite;
@@ -13,8 +10,10 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.TileCollision;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public abstract class Entity extends GameObject {
 
 	public int IDLE = 6;
@@ -165,10 +164,6 @@ public abstract class Entity extends GameObject {
 	}
 
 	private void setHitBoxDirection() {
-		PointerInfo a = MouseInfo.getPointerInfo();
-		Point b = a.getLocation();
-		int x = (int) b.getX();
-		int y = (int) b.getY();
 		if (this.up && !this.attacking) {
 			this.hitBounds.setXOffset((this.size - this.hitBounds.getWidth()) / 2);
 			this.hitBounds.setYOffset((-this.hitBounds.getHeight() / 2) + this.hitBounds.getXOffset());
