@@ -81,7 +81,7 @@ public class PlayState extends GameState {
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ArrayList<>();
 		this.gameObject = new GameObjectHeap();
-		// this.gameObject.addAll(this.mm.list);
+		this.gameObject.addAll(this.mm.list);
 		this.aabbTree = new AABBTree();
 		this.loot = new ArrayList<>();
 		this.player = new Player(1, cam, GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png"),
@@ -224,7 +224,7 @@ public class PlayState extends GameState {
 
 						if (this.gameObject.get(i).go instanceof Material) {
 							Material mat = ((Material) this.gameObject.get(i).go);
-							if (this.player.getHitBounds().collides(mat.getBounds())) {
+							if (this.player.getBounds().collides(mat.getBounds())) {
 								this.player.setTargetGameObject(mat);
 							}
 						}
@@ -310,7 +310,7 @@ public class PlayState extends GameState {
 			else if (this.gameObject.get(i).go instanceof Material) {
 				Material mat = ((Material) this.gameObject.get(i).go);
 				for (Bullet b : results) {
-					if (b.getBounds().intersect(mat.getBounds())) {
+					if (b.getBounds().collides(0, 0, mat.getBounds())) {
 						this.aabbTree.removeObject(b);
 						this.gameObject.remove(b);
 					}
@@ -526,7 +526,7 @@ public class PlayState extends GameState {
 			this.getPui().setGroundLoot(new GameItem[8], g);
 
 		}
-		// this.renderCollisionBoxes(g);
+		this.renderCollisionBoxes(g);
 
 		g.setColor(Color.white);
 
@@ -542,6 +542,24 @@ public class PlayState extends GameState {
 	}
 
 	private void renderCollisionBoxes(Graphics2D g) {
+		this.gameObject.forEach(key->{
+			AABB node = key.getGo().getBounds();
+
+			g.setColor(Color.BLUE);
+			Vector2f pos = node.getPos().getWorldVar();
+			pos.addX(node.getXOffset());
+			pos.addY(node.getYOffset());
+
+			g.drawLine((int) pos.x, (int) pos.y, (int) pos.x + (int) node.getWidth(), (int) pos.y);
+			// Top Right-> Bottom Right
+			g.drawLine((int) pos.x + (int) node.getWidth(), (int) pos.y, (int) pos.x + (int) node.getWidth(),
+					(int) pos.y + (int) node.getHeight());
+			// Bottom Left -> Bottom Right
+			g.drawLine((int) pos.x, (int) pos.y + (int) node.getHeight(), (int) pos.x + (int) node.getWidth(),
+					(int) pos.y + (int) node.getHeight());
+
+			g.drawLine((int) pos.x, (int) pos.y, (int) pos.x, (int) pos.y + (int) node.getHeight());
+		});
 		for (AABB node : this.aabbTree.getAllNodes()) {
 
 			g.setColor(Color.BLUE);
