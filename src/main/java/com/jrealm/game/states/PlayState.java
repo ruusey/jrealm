@@ -3,7 +3,9 @@ package com.jrealm.game.states;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.data.GameDataManager;
@@ -62,25 +64,38 @@ public class PlayState extends GameState {
 
 		Player player = new Player(1, cam, GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png"),
 				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
-				this.realm.getTm());
-		player.equipSlot(0, GameDataManager.GAME_ITEMS.get(17));
-		player.equipSlot(2, GameDataManager.GAME_ITEMS.get(32));
-		player.equipSlot(3, GameDataManager.GAME_ITEMS.get(54));
-
-		player.equipSlot(4, GameDataManager.GAME_ITEMS.get(48));
-		player.equipSlot(5, GameDataManager.GAME_ITEMS.get(0));
+				this.realm.getTileManager());
+		player.equipSlots(this.getStartingEquipment(player.getId()));
 		player.setIsInvincible(true);
-
 
 		cam.target(player);
 		player.setIsInvincible(false);
-
 
 		this.playerId = this.realm.addPlayer(player);
 		this.pui = new PlayerUI(this);
 
 		this.getPui().setEquipment(player.getInventory());
+	}
 
+	public Map<Integer, GameItem> getStartingEquipment(int characterClass) {
+		Map<Integer, GameItem> result = new HashMap<>();
+
+		switch(characterClass) {
+		case 0:
+			break;
+		case 1:
+			result.put(0, GameDataManager.GAME_ITEMS.get(17));
+			result.put(2, GameDataManager.GAME_ITEMS.get(32));
+			result.put(3, GameDataManager.GAME_ITEMS.get(54));
+			result.put(4, GameDataManager.GAME_ITEMS.get(48));
+			result.put(5, GameDataManager.GAME_ITEMS.get(0));
+
+			break;
+		case 3:
+			break;
+		}
+
+		return result;
 	}
 
 	public long getPlayerId() {
@@ -102,6 +117,17 @@ public class PlayState extends GameState {
 					this.gsm.add(GameStateManager.GAMEOVER);
 					this.gsm.pop(GameStateManager.PLAY);
 				}
+				Runnable monitorPlayerDeath = () ->{
+					List<DamageText> toRemove = new ArrayList<>();
+
+					for (DamageText text : this.getDamageText()) {
+						text.update();
+						if (text.getRemove()) {
+							toRemove.add(text);
+						}
+					}
+					this.damageText.removeAll(toRemove);
+				};
 				Runnable playerShootDequeue = () -> {
 					for (int i = 0; i < this.shotDestQueue.size(); i++) {
 						Vector2f dest = this.shotDestQueue.remove(i);
@@ -120,15 +146,7 @@ public class PlayState extends GameState {
 									rolledDamage, false, p.getFlags());
 						}
 					}
-					List<DamageText> toRemove = new ArrayList<>();
 
-					for (DamageText text : this.getDamageText()) {
-						text.update();
-						if (text.getRemove()) {
-							toRemove.add(text);
-						}
-					}
-					this.damageText.removeAll(toRemove);
 				};
 
 				Runnable processGameObjects = () -> {
@@ -142,6 +160,15 @@ public class PlayState extends GameState {
 
 						if (gameObject[i] instanceof Material) {
 							Material mat = ((Material) gameObject[i]);
+							AABB test = this.realm.getTileManager().getRenderViewPort();
+							if (!mat.discovered
+									&& this.realm.getTileManager().getRenderViewPort().inside(
+											(int) mat.getPos().getWorldVar().x,
+											(int) mat.getPos().getWorldVar().y)) {
+								mat.getImage().restoreDefault();
+								mat.setDiscovered(true);
+							}
+
 							if (player.getBounds().intersect(mat.getBounds())) {
 								player.setTargetGameObject(mat);
 							}
@@ -374,7 +401,7 @@ public class PlayState extends GameState {
 
 	@Override
 	public void render(Graphics2D g) {
-		this.realm.getTm().render(g, this.getCam());
+		this.realm.getTileManager().render(g, this.getCam());
 		Player player = this.realm.getPlayer(this.playerId);
 		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.cam.getBounds());
 

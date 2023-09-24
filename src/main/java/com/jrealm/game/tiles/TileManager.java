@@ -3,6 +3,8 @@ package com.jrealm.game.tiles;
 import java.awt.Graphics2D;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -14,6 +16,8 @@ import org.w3c.dom.NodeList;
 
 import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.graphics.SpriteSheet;
+import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.tiles.blocks.NormTile;
 import com.jrealm.game.util.Camera;
 
@@ -26,6 +30,8 @@ public class TileManager {
 	private SpriteSheet spritesheet;
 	private int blockWidth;
 	private int blockHeight;
+
+	private List<MaterialManager> materialManagers;
 	private MaterialManager mm;
 	private int width;
 	private int height;
@@ -38,6 +44,7 @@ public class TileManager {
 
 	public TileManager() {
 		TileManager.tm = new ArrayList<TileMap>();
+		this.materialManagers = new ArrayList<>();
 	}
 
 	public TileManager(String path) {
@@ -50,36 +57,55 @@ public class TileManager {
 		this.addTileMap(path, blockWidth, blockHeight);
 	}
 
-	public TileManager(SpriteSheet spritesheet, int chuckSize, MaterialManager mm) {
+	public TileManager(SpriteSheet spritesheet, int chuckSize, MaterialManager... mm) {
 		this();
 		this.addTileMap(spritesheet, 64, 64, chuckSize, mm);
 
 	}
 
-	public TileManager(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize, MaterialManager mm) {
+	public TileManager(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize, MaterialManager... mm) {
 		this();
 		this.addTileMap(spritesheet, blockWidth, blockHeight, chuckSize, mm);
 		System.gc();
 	}
 
-	public String getGenMap() { return this.genMap; }
-	public String getSolid() { return this.solid; }
-	public int getChunkSize() { return this.chuckSize; }
-	public int getBlockWidth() { return this.blockWidth; }
-	public int getBlockHeight() { return this.blockHeight; }
-	public String getFilename() { return this.file; }
-	public int getColumns() { return this.columns; }
+	public String getGenMap() {
+		return this.genMap;
+	}
+
+	public String getSolid() {
+		return this.solid;
+	}
+
+	public int getChunkSize() {
+		return this.chuckSize;
+	}
+
+	public int getBlockWidth() {
+		return this.blockWidth;
+	}
+
+	public int getBlockHeight() {
+		return this.blockHeight;
+	}
+
+	public String getFilename() {
+		return this.file;
+	}
+
+	public int getColumns() {
+		return this.columns;
+	}
 
 	public void generateTileMap(int chuckSize) {
 		this.addTileMap(this.spritesheet, this.blockWidth, this.blockHeight, chuckSize, this.mm);
 	}
 
-
 	private void addTileMap(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize,
-			MaterialManager mm) {
-		this.mm = mm;
+			MaterialManager... mm) {
+		this.materialManagers = Arrays.asList(mm);
 		this.spritesheet = spritesheet;
-		this.blockWidth =  blockWidth;
+		this.blockWidth = blockWidth;
 		this.blockHeight = blockHeight;
 		this.width = chuckSize;
 		this.height = chuckSize;
@@ -92,17 +118,19 @@ public class TileManager {
 		// For now
 		data[0] = "";
 
-		for(int i = 0; i < chuckSize; i++){
-			for(int j = 0; j < chuckSize; j++){
+		for (int i = 0; i < chuckSize; i++) {
+			for (int j = 0; j < chuckSize; j++) {
 				data[0] += "0,";
 			}
 		}
 
-		TileManager.tm.add(new TileMapObj(data[0], spritesheet, chuckSize, chuckSize, blockWidth, blockHeight, spritesheet.getCols()));
+		TileManager.tm.add(new TileMapObj(data[0], spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,
+				spritesheet.getCols()));
 
-		TileManager.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight, spritesheet.getCols()));
-		//tm.add(new TileMapNorm(tmg.onTop, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight, spritesheet.getCols()));
-
+		TileManager.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,
+				spritesheet.getCols()));
+		// tm.add(new TileMapNorm(tmg.onTop, spritesheet, chuckSize, chuckSize,
+		// blockWidth, blockHeight, spritesheet.getCols()));
 
 		this.solid = data[0];
 		this.genMap = tmg.base;
@@ -134,7 +162,7 @@ public class TileManager {
 			imagePath = eElement.getAttribute("name");
 			tileWidth = Integer.parseInt(eElement.getAttribute("tilewidth"));
 			tileHeight = Integer.parseInt(eElement.getAttribute("tileheight"));
-			tileColumns =  Integer.parseInt(eElement.getAttribute("columns"));
+			tileColumns = Integer.parseInt(eElement.getAttribute("columns"));
 
 			this.columns = tileColumns;
 			this.file = imagePath;
@@ -143,23 +171,25 @@ public class TileManager {
 			list = doc.getElementsByTagName("layer");
 			layers = list.getLength();
 
-			for(int i = 0; i < layers; i++) {
+			for (int i = 0; i < layers; i++) {
 				node = list.item(i);
 				eElement = (Element) node;
-				if(i <= 0) {
+				if (i <= 0) {
 					width = Integer.parseInt(eElement.getAttribute("width"));
 					height = Integer.parseInt(eElement.getAttribute("height"));
 				}
 
 				data[i] = eElement.getElementsByTagName("data").item(0).getTextContent();
 
-				if(i >= 1) {
-					TileManager.tm.add(new TileMapNorm(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
+				if (i >= 1) {
+					TileManager.tm
+					.add(new TileMapNorm(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
 				} else {
-					TileManager.tm.add(new TileMapObj(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
+					TileManager.tm
+					.add(new TileMapObj(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
 				}
 			}
-		} catch(Exception e) {
+		} catch (Exception e) {
 			System.out.println("ERROR - TILEMANAGER: can not read tilemap:");
 			e.printStackTrace();
 			System.exit(0);
@@ -171,7 +201,7 @@ public class TileManager {
 
 	public NormTile[] getNormalTile(int id) {
 		int normMap = 1;
-		if(TileManager.tm.size() < 2) {
+		if (TileManager.tm.size() < 2) {
 			normMap = 0;
 		}
 		NormTile[] block = new NormTile[64];
@@ -179,7 +209,8 @@ public class TileManager {
 		int i = 0;
 		for (int x = 4; x > -4; x--) {
 			for (int y = 4; y > -4; y--) {
-				if(((id + (y + (x * this.height))) < 0) || ((id + (y + (x * this.height))) > ((this.width * this.height) - 2))) {
+				if (((id + (y + (x * this.height))) < 0)
+						|| ((id + (y + (x * this.height))) > ((this.width * this.height) - 2))) {
 					continue;
 				}
 				block[i] = (NormTile) TileManager.tm.get(normMap).getBlocks()[id + (y + (x * this.height))];
@@ -188,6 +219,20 @@ public class TileManager {
 		}
 
 		return block;
+	}
+
+	public AABB getRenderViewPort() {
+		NormTile[] tiles = this.getNormalTile(909);
+		NormTile first = tiles[0];
+		NormTile last = tiles[tiles.length - 1];
+
+		Vector2f pos = last.getPos();
+		float width = first.getPos().x - pos.x;
+		float height = first.getPos().y - pos.y;
+
+		AABB viewPort = new AABB(pos.clone(), (int) width, (int) height);
+
+		return viewPort;
 	}
 
 	public void render(Graphics2D g, Camera bounds) {

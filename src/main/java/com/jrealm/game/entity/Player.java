@@ -4,6 +4,7 @@ package com.jrealm.game.entity;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+import java.util.Map;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.entity.item.GameItem;
@@ -88,13 +89,15 @@ public class Player extends Entity {
 	}
 
 	public boolean equipSlot(int slot, GameItem item) {
-		//		if (item.isConsumable() || (item.getTargetSlot() != slot))
-		//			return false;
 		this.inventory[slot] = item;
-
 		return true;
 	}
 
+	public void equipSlots(Map<Integer, GameItem> items) {
+		for (Map.Entry<Integer, GameItem> entry : items.entrySet()) {
+			this.equipSlot(entry.getKey(), entry.getValue());
+		}
+	}
 
 	public GameItem getSlot(int slot) {
 		return this.inventory[slot];

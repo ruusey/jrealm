@@ -1,6 +1,7 @@
 package com.jrealm.game.ui;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 
 import com.jrealm.game.math.Vector2f;
@@ -23,7 +24,7 @@ public class DamageText {
 	@Builder.Default
 	private boolean remove = false;
 	@Builder.Default
-	private float animationDistance = 128.0f;
+	private float animationDistance = 50.0f;
 
 	public void update() {
 		this.animationDistance += DamageText.velY;
@@ -48,8 +49,15 @@ public class DamageText {
 
 		}
 
+		Font originalFont = g.getFont();
+		Font newFont = originalFont.deriveFont(originalFont.getSize() * 0.75F);
+		g.setFont(newFont);
+		g.setFont(null);
+
 		g.drawString(this.damage, this.sourcePos.x - (Vector2f.worldX),
 				this.sourcePos.y - (Vector2f.worldY) - (64 - this.animationDistance));
+
+		g.setFont(originalFont);
 
 	}
 

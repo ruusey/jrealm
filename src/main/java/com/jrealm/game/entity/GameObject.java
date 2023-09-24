@@ -34,6 +34,7 @@ public abstract class GameObject {
 	protected TileCollision tc;
 	protected String name = "";
 
+	public boolean discovered;
 	public GameObject(int id, SpriteSheet sprite, Vector2f origin, int spriteX, int spriteY, int size) {
 		this(id, origin, size);
 		this.sprite = sprite;
@@ -45,6 +46,7 @@ public abstract class GameObject {
 	}
 
 	private GameObject(int id, Vector2f origin, int size) {
+		this.id = id;
 		this.bounds = new AABB(origin, size, size);
 		this.pos = origin;
 		this.size = size;

@@ -29,7 +29,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class Realm {
-	private static final SecureRandom RANDOM = new SecureRandom();
+	public static final transient SecureRandom RANDOM = new SecureRandom();
 
 	private Map<Long, Player> players;
 
@@ -41,8 +41,9 @@ public class Realm {
 
 	private Map<Long, Material> materials;
 
-	private TileManager tm;
-	private MaterialManager mm;
+	private TileManager tileManager;
+
+	private Map<Integer, MaterialManager> materialManagers;
 
 	public Realm() {
 		this.players = new ConcurrentHashMap<>();
@@ -50,22 +51,29 @@ public class Realm {
 		this.enemies = new ConcurrentHashMap<>();
 		this.loot = new ConcurrentHashMap<>();
 		this.materials = new ConcurrentHashMap<>();
+		this.materialManagers = new ConcurrentHashMap<>();
 
 		SpriteSheet tileset = GameDataManager.SPRITE_SHEETS.get("tile/overworldOP.png");
 		SpriteSheet treeset = GameDataManager.SPRITE_SHEETS.get("material/trees.png");
 		SpriteSheet rockset = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png");
 
-		this.mm = new MaterialManager(64, 150);
-		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
-		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
-		this.mm.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
+		MaterialManager treeMgr = new MaterialManager(64, 150);
+		treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
+		treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
 
-		this.tm = new TileManager(tileset, 150, this.mm);
-		for (GameObjectKey m : this.mm.list) {
-			if (m.go instanceof Material) {
-				this.addMaterial((Material) m.go);
+		MaterialManager rockMgr = new MaterialManager(32, 150);
+		rockMgr.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
+
+		this.tileManager = new TileManager(tileset, 150, treeMgr, rockMgr);
+
+		for (MaterialManager mm : this.tileManager.getMaterialManagers()) {
+			for (GameObjectKey go : mm.list) {
+				if (go.go instanceof Material) {
+					this.addMaterial((Material) go.go);
+				}
 			}
 		}
+
 		this.spawnRandomEnemies();
 	}
 
@@ -192,8 +200,8 @@ public class Realm {
 		SpriteSheet enemySheet1 = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses-1.png");
 
 		Random r = new Random(System.currentTimeMillis());
-		for (int i = 0; i < this.tm.getHeight(); i++) {
-			for (int j = 0; j < this.tm.getWidth(); j++) {
+		for (int i = 0; i < this.tileManager.getHeight(); i++) {
+			for (int j = 0; j < this.tileManager.getWidth(); j++) {
 				Enemy go = null;
 				int doSpawn = r.nextInt(200);
 				if ((doSpawn > 195) && (i > 0) && (j > 0)) {

@@ -6,29 +6,40 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 
+import lombok.Data;
+
+@Data
+
 public class NormTile extends Tile {
 
-    public NormTile(Sprite img, Vector2f pos, int w, int h) {
-        super(img, pos, w, h);
+	public NormTile(Sprite img, Vector2f pos, int w, int h) {
+		super(img, pos, w, h);
 
-        img.setEffect(Sprite.effect.DECAY);
-    }
+		img.setEffect(Sprite.effect.DECAY);
+	}
 
-    public boolean update(AABB p) {
-        return false;
-    }
+	@Override
+	public boolean update(AABB p) {
+		return false;
+	}
 
-    public Sprite getImage() { return img; }
+	@Override
+	public Sprite getImage() {
+		return this.img;
+	}
 
-    public boolean isInside(AABB p) {
-        return false;
-    }
+	@Override
+	public boolean isInside(AABB p) {
+		return false;
+	}
 
-    public void render(Graphics2D g){
-        super.render(g);
-    }
+	@Override
+	public void render(Graphics2D g) {
+		super.render(g);
+	}
 
-    public String toString() {
-        return "position: " + pos;
-    }
+	@Override
+	public String toString() {
+		return "position: " + this.pos;
+	}
 }

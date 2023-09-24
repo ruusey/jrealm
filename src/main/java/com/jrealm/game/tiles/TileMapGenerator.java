@@ -1,5 +1,7 @@
 package com.jrealm.game.tiles;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 import com.jrealm.game.entity.material.MaterialManager;
@@ -15,7 +17,7 @@ public class TileMapGenerator {
 
 	private int chuckSize;
 
-	private MaterialManager mm;
+	private List<MaterialManager> materialManagers;
 
 	// could set this as enum however that seems a little too much.
 	// could have a class with all the different types of tiles but that also seems a little too much.
@@ -28,8 +30,8 @@ public class TileMapGenerator {
 
 	private Tile[] tiles = { new Tile(0.6f, 35, this.grass), new Tile(1f, 29, this.dirt) }; // change this later?
 
-	public TileMapGenerator(int chuckSize, int tileSize, MaterialManager mm) {
-		this.mm = mm;
+	public TileMapGenerator(int chuckSize, int tileSize, MaterialManager... mm) {
+		this.materialManagers = Arrays.asList(mm);
 		this.chuckSize = chuckSize;
 		this.layer = new int[chuckSize * chuckSize];
 		this.base = "";
@@ -89,8 +91,9 @@ public class TileMapGenerator {
 
 				for(int k = 0; k < this.tiles.length; k++) {
 					if(result[i][j] < this.tiles[k].rarity) {
-						if((k == 0) && (result[i][j] < (Math.random() * 0.52))) {
-							this.mm.add(MaterialManager.TYPE.TREE, j + (i * this.chuckSize));
+						if ((k == 0) && (result[i][j] < (Math.random() * 0.10))) {
+							int rInt = r.nextInt(this.materialManagers.size());
+							this.materialManagers.get(rInt).add(MaterialManager.TYPE.TREE, j + (i * this.chuckSize));
 						}
 						data[j + (i * this.chuckSize)] = this.tiles[k].generate();
 						break;
