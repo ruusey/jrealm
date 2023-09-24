@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class DamageText {
-	private static final float velY = -1f;
+	private static final float velY = -1.5f;
 
 	private Vector2f sourcePos;
 	private TextEffect effect;
@@ -23,7 +23,7 @@ public class DamageText {
 	@Builder.Default
 	private boolean remove = false;
 	@Builder.Default
-	private float animationDistance = 40.0f;
+	private float animationDistance = 64.0f;
 
 	public void update() {
 		this.animationDistance += DamageText.velY;

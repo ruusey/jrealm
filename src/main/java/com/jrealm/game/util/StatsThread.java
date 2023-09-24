@@ -1,7 +1,8 @@
 package com.jrealm.game.util;
 
 import com.jrealm.game.realm.Realm;
-public class StatsThread extends Thread {
+
+public class StatsThread implements Runnable {
 	private Realm toMonitor;
 
 	public StatsThread(Realm realm) {

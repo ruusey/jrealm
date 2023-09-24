@@ -6,8 +6,10 @@ import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
 
+import lombok.Data;
+@Data
 public class Material extends GameObject {
-
+	private long materialId;
 	protected int maxHealth = 100;
 	protected int health = 100;
 	protected int damage = 10;

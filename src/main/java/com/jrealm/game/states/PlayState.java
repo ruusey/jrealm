@@ -70,7 +70,6 @@ public class PlayState extends GameState {
 		player.equipSlot(4, GameDataManager.GAME_ITEMS.get(48));
 		player.equipSlot(5, GameDataManager.GAME_ITEMS.get(0));
 		player.setIsInvincible(true);
-		this.realm.spawnRandomEnemies();
 
 
 		cam.target(player);
@@ -78,7 +77,6 @@ public class PlayState extends GameState {
 
 
 		this.playerId = this.realm.addPlayer(player);
-
 		this.pui = new PlayerUI(this);
 
 		this.getPui().setEquipment(player.getInventory());
@@ -251,7 +249,6 @@ public class PlayState extends GameState {
 			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
 			player.setHealth(player.getHealth() - dmgToInflict, 0, false);
 			this.realm.removeBullet(b);
-
 		}
 	}
 
@@ -334,7 +331,7 @@ public class PlayState extends GameState {
 			}
 		}
 		Stats stats = player.getComputedStats();
-		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (400 - (stats.getDex() * 10)))
+		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (400 - (stats.getDex() * 12)))
 				&& !this.gsm.isStateActive(GameStateManager.EDIT);
 
 		if ((mouse.getButton() == 1) && canShoot) {

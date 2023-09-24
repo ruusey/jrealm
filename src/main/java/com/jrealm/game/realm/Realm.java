@@ -15,12 +15,13 @@ import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.enemy.Monster;
 import com.jrealm.game.entity.item.LootContainer;
+import com.jrealm.game.entity.material.Material;
 import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.tiles.TileManager;
-import com.jrealm.game.util.StatsThread;
+import com.jrealm.game.util.GameObjectKey;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,6 +39,8 @@ public class Realm {
 
 	private Map<Long, LootContainer> loot;
 
+	private Map<Long, Material> materials;
+
 	private TileManager tm;
 	private MaterialManager mm;
 
@@ -46,6 +49,7 @@ public class Realm {
 		this.bullets = new ConcurrentHashMap<>();
 		this.enemies = new ConcurrentHashMap<>();
 		this.loot = new ConcurrentHashMap<>();
+		this.materials = new ConcurrentHashMap<>();
 
 		SpriteSheet tileset = GameDataManager.SPRITE_SHEETS.get("tile/overworldOP.png");
 		SpriteSheet treeset = GameDataManager.SPRITE_SHEETS.get("material/trees.png");
@@ -53,16 +57,26 @@ public class Realm {
 
 		this.mm = new MaterialManager(64, 150);
 		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
-		// this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
+		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
 		this.mm.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
 
 		this.tm = new TileManager(tileset, 150, this.mm);
-
+		for (GameObjectKey m : this.mm.list) {
+			if (m.go instanceof Material) {
+				this.addMaterial((Material) m.go);
+			}
+		}
 		this.spawnRandomEnemies();
-
-		new StatsThread(this).start();
 	}
 
+	public long addMaterial(Material m) {
+		long randomId = Realm.RANDOM.nextLong();
+		m.setMaterialId(randomId);
+		this.materials.put(randomId, m);
+
+		return randomId;
+
+	}
 
 	public long addPlayer(Player player) {
 		long randomId = Realm.RANDOM.nextLong();
@@ -145,6 +159,12 @@ public class Realm {
 		}
 
 		for (Enemy e : this.enemies.values()) {
+			if (e.getBounds().intersect(cam)) {
+				objs.add(e);
+			}
+		}
+
+		for (Material e : this.materials.values()) {
 			if (e.getBounds().intersect(cam)) {
 				objs.add(e);
 			}

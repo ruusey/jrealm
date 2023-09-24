@@ -104,22 +104,18 @@ public class PlayerUI {
 
 				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 650 + yOffset), 64);
 				b.onHoverIn(event -> {
-					System.out.println("Hovered IN GroundLoot SLOT " + actualIdx);
 					this.tooltips.put(item.getUid(),
 							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
 				});
 				b.onHoverOut(event -> {
-					System.out.println("Hovered OUT GroundLoot SLOT " + actualIdx);
 					this.tooltips.remove(item.getUid());
 				});
 				b.onMouseDown(event -> {
 					PlayerUI.DRAGGING_ITEM = true;
-					System.out.println("Clicked GroundLoot SLOT " + actualIdx);
 
 				});
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
-					System.out.println("Released GroundLoot SLOT " + actualIdx);
 					if (this.overlapsEquipment(event)) {
 						Slots currentEquip = this.inventory[item.getTargetSlot()];
 						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
@@ -199,14 +195,12 @@ public class PlayerUI {
 					b = new Button(new Vector2f(startX + (i * 64), 450), 64);
 				}
 				b.onHoverIn(event -> {
-					System.out.println("Hovered IN Equipment SLOT ");
 					this.tooltips.put(item.getUid(),
 							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
 				});
 
 				b.onHoverOut(event -> {
 					this.tooltips.clear();
-					// this.tooltips.remove(item.getUid());
 				});
 				b.onMouseDown(event -> {
 					PlayerUI.DRAGGING_ITEM = true;
@@ -222,9 +216,8 @@ public class PlayerUI {
 						this.tooltips.remove(item.getUid());
 						this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
 						this.inventory[actualIdx] = null;
-						// this.setEquipment(this.getPlayState().getPlayer().getInventory());
 						PlayerUI.DRAGGING_ITEM = false;
-
+						this.tooltips.clear();
 					}
 				});
 				b.onMouseUp(event -> {
