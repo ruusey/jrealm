@@ -6,7 +6,7 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 
-public class HoleBlock extends Block {
+public class HoleBlock extends Tile {
 
     public HoleBlock(Sprite img, Vector2f pos, int w, int h) {
         super(img, pos, w, h);

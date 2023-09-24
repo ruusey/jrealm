@@ -13,7 +13,7 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.tiles.TileManager;
-import com.jrealm.game.tiles.blocks.NormBlock;
+import com.jrealm.game.tiles.blocks.NormTile;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
@@ -23,7 +23,7 @@ import lombok.Data;
 
 @Data
 public class Player extends Entity {
-
+	private long playerId;
 	private Camera cam;
 	private ArrayList<GameObject> go;
 	private TileManager tm;
@@ -182,6 +182,9 @@ public class Player extends Entity {
 			this.tc.normalTile(this.dx, 0);
 			this.tc.normalTile(0, this.dy);
 
+			this.tc.collisionTile(this.dx, 0);
+			this.tc.collisionTile(0, this.dy);
+
 		} else {
 			this.xCol = true;
 			this.yCol = true;
@@ -213,7 +216,7 @@ public class Player extends Entity {
 			}
 		}
 
-		NormBlock[] block = this.tm.getNormalTile(this.tc.getTile());
+		NormTile[] block = this.tm.getNormalTile(this.tc.getTile());
 		for(int i = 0; i < block.length; i++) {
 			if(block[i] != null) {
 				block[i].getImage().restoreDefault();
@@ -246,7 +249,9 @@ public class Player extends Entity {
 	public void render(Graphics2D g) {
 		g.setColor(Color.green);
 		g.drawRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y + this.bounds.getYOffset()), (int) this.bounds.getWidth(), (int) this.bounds.getHeight());
-
+		Color c = new Color(0f, 0f, 0f, .4f);
+		g.setColor(c);
+		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 24, this.size, this.size / 2);
 		if(this.attack) {
 			g.setColor(Color.red);
 			g.drawRect((int) (this.hitBounds.getPos().getWorldVar().x + this.hitBounds.getXOffset()), (int) (this.hitBounds.getPos().getWorldVar().y + this.hitBounds.getYOffset()), (int) this.hitBounds.getWidth(), (int) this.hitBounds.getHeight());

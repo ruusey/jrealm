@@ -47,18 +47,15 @@ public class PlayerUI {
 		Vector2f posHp = new Vector2f(GamePanel.width - 356, 128);
 		Vector2f posMp = posHp.clone(0, 64);
 
-		// Vector2f pos = new Vector2f(GamePanel.width - 128, 128);
-
 		this.hp = new FillBars(p.getPlayer(), barSpritesHp, posHp, 16, 16, false);
 		this.mp = new FillBars(p.getPlayer(), barSpritesMp, posMp, 16, 16, true);
 
-		// BuildOptionUI boUI = new BuildOptionUI();
 		this.groundLoot = new Slots[8];
 		this.inventory = new Slots[20];
 
 		this.tooltips = new HashMap<>();
-
 	}
+
 
 	public Slots getSlot(int slot) {
 		return this.inventory[slot];
@@ -172,7 +169,9 @@ public class PlayerUI {
 				});
 
 				b.onHoverOut(event -> {
-					this.tooltips.remove(item.getUid());
+					this.tooltips.clear();
+
+					// this.tooltips.remove(item.getUid());
 				});
 				b.onMouseDown(event -> {
 					PlayerUI.DRAGGING_ITEM = true;
@@ -207,7 +206,8 @@ public class PlayerUI {
 				});
 
 				b.onHoverOut(event -> {
-					this.tooltips.remove(item.getUid());
+					this.tooltips.clear();
+					// this.tooltips.remove(item.getUid());
 				});
 				b.onMouseDown(event -> {
 					PlayerUI.DRAGGING_ITEM = true;
@@ -244,7 +244,6 @@ public class PlayerUI {
 							GameItem swap = dropped.getItem().clone();
 							this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
 							this.getPlayState().getPlayer().getInventory()[idx] = item;
-
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
 						}
 

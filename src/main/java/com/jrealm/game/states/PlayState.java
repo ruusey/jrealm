@@ -72,10 +72,12 @@ public class PlayState extends GameState {
 		GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png");
 		SpriteSheet tileset = GameDataManager.SPRITE_SHEETS.get("tile/overworldOP.png");
 		SpriteSheet treeset = GameDataManager.SPRITE_SHEETS.get("material/trees.png");
+		SpriteSheet rockset = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png");
 
 		this.mm = new MaterialManager(64, 150);
 		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
-		this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
+		// this.mm.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
+		this.mm.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
 
 		this.tm = new TileManager(tileset, 150, cam, this.mm);
 		this.shotDestQueue = new ArrayList<>();
@@ -205,7 +207,6 @@ public class PlayState extends GameState {
 						if (text.getRemove()) {
 							toRemove.add(text);
 						}
-
 					}
 					this.damageText.removeAll(toRemove);
 				};
@@ -224,7 +225,7 @@ public class PlayState extends GameState {
 
 						if (this.gameObject.get(i).go instanceof Material) {
 							Material mat = ((Material) this.gameObject.get(i).go);
-							if (this.player.getBounds().collides(mat.getBounds())) {
+							if (this.player.getBounds().intersect(mat.getBounds())) {
 								this.player.setTargetGameObject(mat);
 							}
 						}
@@ -511,13 +512,6 @@ public class PlayState extends GameState {
 				toRemove.add(lc);
 			}
 		}
-		this.loot.removeAll(toRemove);
-
-		List<DamageText> dtToRemove = new ArrayList<>();
-
-		for (DamageText text : this.getDamageText()) {
-			text.render(g);
-		}
 
 		if (this.getPui().isGroundLootEmpty() && (closeLoot != null)) {
 			this.getPui().setGroundLoot(closeLoot.getItems(), g);
@@ -526,7 +520,14 @@ public class PlayState extends GameState {
 			this.getPui().setGroundLoot(new GameItem[8], g);
 
 		}
-		this.renderCollisionBoxes(g);
+		this.loot.removeAll(toRemove);
+
+		for (DamageText text : this.getDamageText()) {
+			text.render(g);
+		}
+
+
+		// this.renderCollisionBoxes(g);
 
 		g.setColor(Color.white);
 

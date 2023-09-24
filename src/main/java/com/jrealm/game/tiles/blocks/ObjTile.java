@@ -6,9 +6,9 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 
-public class ObjBlock extends Block {
+public class ObjTile extends Tile {
     
-    public ObjBlock(Sprite img, Vector2f pos, int w, int h) {
+    public ObjTile(Sprite img, Vector2f pos, int w, int h) {
         super(img, pos, w, h);
     }
 

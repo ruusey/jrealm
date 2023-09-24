@@ -6,14 +6,14 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 
-public abstract class Block {
+public abstract class Tile {
     protected int w;
     protected int h;
 
     public Sprite img;
     public Vector2f pos;
 
-    public Block(Sprite img, Vector2f pos, int w, int h) {
+    public Tile(Sprite img, Vector2f pos, int w, int h) {
         this.img = img;
         this.pos = pos;
         this.w = w;

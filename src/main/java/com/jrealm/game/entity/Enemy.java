@@ -18,6 +18,8 @@ import lombok.Data;
 
 @Data
 public abstract class Enemy extends Entity {
+
+	private long enemyId;
 	protected AABB sense;
 	protected int r_sense;
 
@@ -144,7 +146,10 @@ public abstract class Enemy extends Entity {
 	public void render(Graphics2D g) {
 		if(this.cam.getBounds().collides(this.bounds)) {
 
-			//if(isInvincible)
+			Color c = new Color(0f, 0f, 0f, .4f);
+			g.setColor(c);
+			g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 45, this.size,
+					this.size / 2);
 			if(this.useRight && this.left) {
 				g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x) + this.size, (int) (this.pos.getWorldVar().y), -this.size, this.size, null);
 			} else {

@@ -11,6 +11,7 @@ import lombok.Data;
 
 @Data
 public class Bullet extends GameObject {
+	private long bulletId;
 	private float angle;
 	private float magnitude;
 	private float range;

@@ -2,7 +2,7 @@ package com.jrealm.game.util;
 
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.tiles.TileMapObj;
-import com.jrealm.game.tiles.blocks.Block;
+import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.tiles.blocks.HoleBlock;
 
 public class TileCollision {
@@ -41,8 +41,8 @@ public class TileCollision {
                     return true;
                 } 
                 
-                if(TileMapObj.event_blocks[xt + (yt * TileMapObj.height)] instanceof Block) {
-                    Block block = TileMapObj.event_blocks[xt + (yt * TileMapObj.height)];
+                if(TileMapObj.event_blocks[xt + (yt * TileMapObj.height)] instanceof Tile) {
+                    Tile block = TileMapObj.event_blocks[xt + (yt * TileMapObj.height)];
                     if(block instanceof HoleBlock) {
                         return collisionHole(ax, ay, xt, yt, block);
                     }
@@ -56,7 +56,7 @@ public class TileCollision {
 
     public int getTile() { return tileId; }
 
-    private boolean collisionHole(float ax, float ay, float xt, float yt, Block block) {
+    private boolean collisionHole(float ax, float ay, float xt, float yt, Tile block) {
         int nextXt = (int) ((( (e.getPos().x + ax) + e.getBounds().getXOffset()) / 64) + e.getBounds().getWidth() / 64);
         int nextYt = (int) ((( (e.getPos().y + ay) + e.getBounds().getYOffset()) / 64) + e.getBounds().getHeight() / 64);
 
@@ -66,7 +66,7 @@ public class TileCollision {
         }
         else if((nextXt == yt + 1) || (nextXt == xt + 1) || (nextYt == yt - 1) || (nextXt == xt - 1)) {
             if(TileMapObj.event_blocks[nextXt + (nextYt * TileMapObj.height)] instanceof HoleBlock){
-                Block nextblock = TileMapObj.event_blocks[nextXt + (nextYt * TileMapObj.height)];
+                Tile nextblock = TileMapObj.event_blocks[nextXt + (nextYt * TileMapObj.height)];
 
                 if(e.getPos().x + e.getBounds().getXOffset() > block.getPos().x 
                 && e.getPos().y + e.getBounds().getYOffset() > block.getPos().y

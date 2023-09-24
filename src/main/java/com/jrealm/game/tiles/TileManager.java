@@ -14,7 +14,7 @@ import org.w3c.dom.NodeList;
 
 import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.tiles.blocks.NormBlock;
+import com.jrealm.game.tiles.blocks.NormTile;
 import com.jrealm.game.util.Camera;
 
 import lombok.Data;
@@ -176,20 +176,20 @@ public class TileManager {
 		this.height = height;
 	}
 
-	public NormBlock[] getNormalTile(int id) {
+	public NormTile[] getNormalTile(int id) {
 		int normMap = 1;
 		if(TileManager.tm.size() < 2) {
 			normMap = 0;
 		}
-		NormBlock[] block = new NormBlock[36];
+		NormTile[] block = new NormTile[64];
 
 		int i = 0;
-		for (int x = 3; x > -3; x--) {
-			for (int y = 3; y > -3; y--) {
+		for (int x = 4; x > -4; x--) {
+			for (int y = 4; y > -4; y--) {
 				if(((id + (y + (x * this.height))) < 0) || ((id + (y + (x * this.height))) > ((this.width * this.height) - 2))) {
 					continue;
 				}
-				block[i] = (NormBlock) TileManager.tm.get(normMap).getBlocks()[id + (y + (x * this.height))];
+				block[i] = (NormTile) TileManager.tm.get(normMap).getBlocks()[id + (y + (x * this.height))];
 				i++;
 			}
 		}

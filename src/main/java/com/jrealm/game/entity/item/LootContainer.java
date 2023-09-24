@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class LootContainer {
+	private long lootContainerId;
 	private Sprite sprite;
 	private String uid;
 	private GameItem[] items;

@@ -5,13 +5,13 @@ import java.awt.Graphics2D;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.tiles.blocks.Block;
+import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.tiles.blocks.HoleBlock;
-import com.jrealm.game.tiles.blocks.ObjBlock;
+import com.jrealm.game.tiles.blocks.ObjTile;
 
 public class TileMapObj extends TileMap {
 
-    public static Block[] event_blocks;
+    public static Tile[] event_blocks;
 
     private int tileWidth;
     private int tileHeight;
@@ -20,8 +20,8 @@ public class TileMapObj extends TileMap {
     public static int height;
 
     public TileMapObj(String data, SpriteSheet sprite, int width, int height, int tileWidth, int tileHeight, int tileColumns) {
-        Block tempBlock;
-        event_blocks = new Block[width * height];
+        Tile tempBlock;
+        event_blocks = new Tile[width * height];
 
         this.tileWidth = tileWidth;
         this.tileHeight = tileHeight;
@@ -37,14 +37,14 @@ public class TileMapObj extends TileMap {
                      // TODO: find edge and connect them to form one polygon
                      tempBlock = new HoleBlock(sprite.getSprite((int) ((temp - 1) % tileColumns), (int) ((temp - 1) / tileColumns) ), new Vector2f((int) (i % width) * tileWidth, (int) (i / height) * tileHeight), tileWidth, tileHeight);
                  } else {
-                     tempBlock = new ObjBlock(sprite.getSprite((int) ((temp - 1) % tileColumns), (int) ((temp - 1) / tileColumns) ), new Vector2f((int) (i % width) * tileWidth, (int) (i / height) * tileHeight), tileWidth, tileHeight);
+                     tempBlock = new ObjTile(sprite.getSprite((int) ((temp - 1) % tileColumns), (int) ((temp - 1) / tileColumns) ), new Vector2f((int) (i % width) * tileWidth, (int) (i / height) * tileHeight), tileWidth, tileHeight);
                  }
                  event_blocks[i] = tempBlock;
              }
         }
     }
 
-    public Block[] getBlocks() { return event_blocks; }
+    public Tile[] getBlocks() { return event_blocks; }
 
     public void render(Graphics2D g, AABB cam) {
         int x = (int) ((cam.getPos().x) / tileWidth);
