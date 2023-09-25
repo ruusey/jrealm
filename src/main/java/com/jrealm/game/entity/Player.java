@@ -32,7 +32,6 @@ public class Player extends Entity {
 	private TileManager tm;
 
 	private Cardinality cardinality = Cardinality.EAST;
-	private int weaponId;
 
 	private GameItem[] inventory;
 

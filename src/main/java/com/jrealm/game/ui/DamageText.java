@@ -56,7 +56,7 @@ public class DamageText {
 
 		g.drawString(this.damage, this.sourcePos.x - (Vector2f.worldX),
 				this.sourcePos.y - (Vector2f.worldY) - (64 - this.animationDistance));
-
+		
 		g.setFont(originalFont);
 
 	}

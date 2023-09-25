@@ -961,5 +961,26 @@
 		"targetSlot": 3,
 		"targetClass": -1,
 		"fameBonus": 0
+	},
+	{
+		"itemId": 58,
+		"row": 7,
+		"col": 14,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Da Staff",
+		"description": "A great staff",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 80,
+			"max": 100
+		},
+		"stats": {
+			"hp": 20
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 0,
+		"targetClass": -1,
+		"fameBonus": 8
 	}
 ]

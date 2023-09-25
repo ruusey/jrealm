@@ -113,6 +113,11 @@ public class GameDataManager {
 
 	}
 
+	public static SpriteSheet loadClassSprites(int classId) {
+		SpriteSheet sheet = new SpriteSheet("entity/rotmg-classes.png", 8, 8, 4 * classId);
+		return sheet;
+	}
+
 	private static String replaceInjectVariables(String input) {
 		String randomizeRegex = "\\{\\{(.*?)}}";
 		Pattern pattern = Pattern.compile(randomizeRegex);

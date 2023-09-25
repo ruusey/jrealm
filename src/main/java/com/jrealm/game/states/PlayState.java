@@ -62,7 +62,7 @@ public class PlayState extends GameState {
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ArrayList<>();
 
-		Player player = new Player(1, cam, GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png"),
+		Player player = new Player(2, cam, GameDataManager.loadClassSprites(2),
 				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
 				this.realm.getTileManager());
 		player.equipSlots(this.getStartingEquipment(player.getId()));
@@ -81,7 +81,12 @@ public class PlayState extends GameState {
 		Map<Integer, GameItem> result = new HashMap<>();
 
 		switch(characterClass) {
-		case 0:
+		case 2:
+			result.put(0, GameDataManager.GAME_ITEMS.get(58));
+			result.put(2, GameDataManager.GAME_ITEMS.get(32));
+			result.put(3, GameDataManager.GAME_ITEMS.get(54));
+			result.put(4, GameDataManager.GAME_ITEMS.get(47));
+			result.put(5, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case 1:
 			result.put(0, GameDataManager.GAME_ITEMS.get(17));
@@ -117,7 +122,7 @@ public class PlayState extends GameState {
 					this.gsm.add(GameStateManager.GAMEOVER);
 					this.gsm.pop(GameStateManager.PLAY);
 				}
-				Runnable monitorPlayerDeath = () ->{
+				Runnable monitorDamageText = () ->{
 					List<DamageText> toRemove = new ArrayList<>();
 
 					for (DamageText text : this.getDamageText()) {
@@ -136,8 +141,9 @@ public class PlayState extends GameState {
 						Vector2f source = this.getPlayerPos().clone(player.getSize() / 2, player.getSize() / 2);
 						ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
 						float angle = Bullet.getAngle(source, dest);
-
 						for (Projectile p : group.getProjectiles()) {
+
+
 							short offset = (short) (p.getSize() / (short) 2);
 							short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 							rolledDamage += player.getComputedStats().getAtt();
@@ -161,7 +167,7 @@ public class PlayState extends GameState {
 						if (gameObject[i] instanceof Material) {
 							Material mat = ((Material) gameObject[i]);
 							AABB test = this.realm.getTileManager().getRenderViewPort();
-							if (!mat.discovered
+							if (!mat.isDiscovered()
 									&& this.realm.getTileManager().getRenderViewPort().inside(
 											(int) mat.getPos().getWorldVar().x,
 											(int) mat.getPos().getWorldVar().y)) {
@@ -169,9 +175,9 @@ public class PlayState extends GameState {
 								mat.setDiscovered(true);
 							}
 
-							if (player.getBounds().intersect(mat.getBounds())) {
-								player.setTargetGameObject(mat);
-							}
+							//							if (player.getBounds().intersect(mat.getBounds())) {
+							//								player.setTargetGameObject(mat);
+							//							}
 						}
 
 						if (gameObject[i] instanceof Bullet) {
@@ -179,8 +185,11 @@ public class PlayState extends GameState {
 							if (bullet != null) {
 								if (bullet.remove()) {
 									this.realm.removeBullet(bullet);
-								} else {
+								} else if (bullet.isEnemy()) {
 									bullet.update();
+								} else {
+									bullet.update(1);
+
 								}
 							}
 						}
@@ -192,7 +201,7 @@ public class PlayState extends GameState {
 					player.update(time);
 					this.pui.update(time);
 				};
-				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi);
+				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText);
 			}
 			this.cam.update();
 		}
@@ -272,7 +281,7 @@ public class PlayState extends GameState {
 					.sourcePos(sourcePos).build();
 			this.damageText.add(hitText);
 			b.setPlayerHit(true);
-			player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
+			// player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
 			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
 			player.setHealth(player.getHealth() - dmgToInflict, 0, false);
 			this.realm.removeBullet(b);
@@ -406,10 +415,10 @@ public class PlayState extends GameState {
 		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.cam.getBounds());
 
 		player.render(g);
+
 		for (int i = 0; i < gameObject.length; i++) {
-			if (this.cam.getBounds().collides(gameObject[i].getBounds())) {
-				gameObject[i].render(g);
-			}
+			gameObject[i].render(g);
+
 		}
 
 		List<LootContainer> toRemove = new ArrayList<>();
@@ -454,7 +463,6 @@ public class PlayState extends GameState {
 		g.drawString(tps, 0 + (6 * 32), 64);
 
 		this.pui.render(g);
-
 		this.cam.render(g);
 	}
 
