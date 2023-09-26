@@ -5,7 +5,6 @@ import java.awt.geom.AffineTransform;
 import java.util.List;
 
 import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.math.Matrix;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.Data;
@@ -26,6 +25,11 @@ public class Bullet extends GameObject {
 	private List<Short> flags;
 
 	public boolean invert = false;
+
+	public long timeStep = 0;
+	public int amplitude = 3;
+	public int increment = 30;
+
 	public Bullet(int id, Sprite image, Vector2f origin, int size) {
 		super(id, image, origin, size);
 		// TODO Auto-generated constructor stub
@@ -90,31 +94,43 @@ public class Bullet extends GameObject {
 
 	@Override
 	public void update() {
+		if (this.hasFlag((short) 12)) {
+			this.update(1);
+		} else {
+			Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
+					(float) (Math.cos(this.angle) * this.magnitude));
+			double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
+			this.range -= dist;
+			this.pos.addX(vel.x);
+			this.pos.addY(vel.y);
+		}
 
-		Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
-				(float) (Math.cos(this.angle) * this.magnitude));
-		double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
-		this.range -= dist;
-		this.pos.addX(vel.x);
-		this.pos.addY(vel.y);
 	}
 
 	public void update(int i) {
-		float[][] bulletMatrix = new float[2][2];
-		bulletMatrix[0][0] = (float) Math.cos(this.angle);
-		bulletMatrix[0][1] = (float) Math.sin(this.angle);
-		bulletMatrix[1][0] = (float) -Math.sin(this.angle);
-		bulletMatrix[1][1] = (float) Math.cos(this.angle);
-		Matrix.print(bulletMatrix);
-		double vX = this.magnitude * Math.cos(this.angle);
-		double vY = this.magnitude * Math.sin(this.angle);
+
+
+		this.timeStep = (this.timeStep + this.increment) % 360;
+
 
 		Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
 				(float) (Math.cos(this.angle) * this.magnitude));
 		double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
 		this.range -= dist;
-		this.pos.addX((float) Math.sin(vel.x));
-		this.pos.addY((float) Math.sin(vel.y));
+		if (this.hasFlag((short) 13)) {
+			double shift = this.amplitude * Math.cos(Math.toRadians(this.timeStep));
+			double shift2 = this.amplitude * Math.sin(Math.toRadians(this.timeStep));
+			this.pos.addX((float) (vel.x + shift2));
+			this.pos.addY((float) (vel.y + shift));
+		} else {
+			double shift = this.amplitude * Math.sin(Math.toRadians(this.timeStep));
+			double shift2 = this.amplitude * Math.cos(Math.toRadians(this.timeStep));
+			this.pos.addX((float) (vel.x + shift2));
+			this.pos.addY((float) (vel.y + shift));
+		}
+
+
+
 
 	}
 

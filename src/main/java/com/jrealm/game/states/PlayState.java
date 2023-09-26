@@ -188,7 +188,7 @@ public class PlayState extends GameState {
 								} else if (bullet.isEnemy()) {
 									bullet.update();
 								} else {
-									bullet.update(1);
+									bullet.update();
 
 								}
 							}
