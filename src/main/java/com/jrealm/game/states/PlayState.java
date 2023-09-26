@@ -185,8 +185,6 @@ public class PlayState extends GameState {
 							if (bullet != null) {
 								if (bullet.remove()) {
 									this.realm.removeBullet(bullet);
-								} else if (bullet.isEnemy()) {
-									bullet.update();
 								} else {
 									bullet.update();
 

@@ -1,6 +1,5 @@
 package com.jrealm.game.math;
 
-
 public class Vector2f {
 
 	public float x;
@@ -50,6 +49,19 @@ public class Vector2f {
 
 	public static float getWorldVarY(float y) {
 		return y - Vector2f.worldY;
+	}
+
+	public Vector2f rotateRad(float radians) {
+		float cos = (float) Math.cos(radians);
+		float sin = (float) Math.sin(radians);
+
+		float newX = (this.x * cos) - (this.y * sin);
+		float newY = (this.x * sin) + (this.y * cos);
+
+		this.x = newX;
+		this.y = newY;
+
+		return this;
 	}
 
 	@Override

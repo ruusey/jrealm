@@ -27,8 +27,8 @@ public class Bullet extends GameObject {
 	public boolean invert = false;
 
 	public long timeStep = 0;
-	public int amplitude = 3;
-	public int increment = 30;
+	public int amplitude = 4;
+	public int increment = 25;
 
 	public Bullet(int id, Sprite image, Vector2f origin, int size) {
 		super(id, image, origin, size);
@@ -118,8 +118,8 @@ public class Bullet extends GameObject {
 		double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
 		this.range -= dist;
 		if (this.hasFlag((short) 13)) {
-			double shift = this.amplitude * Math.cos(Math.toRadians(this.timeStep));
-			double shift2 = this.amplitude * Math.sin(Math.toRadians(this.timeStep));
+			double shift = -this.amplitude * Math.sin(Math.toRadians(this.timeStep));
+			double shift2 = -this.amplitude * Math.cos(Math.toRadians(this.timeStep));
 			this.pos.addX((float) (vel.x + shift2));
 			this.pos.addY((float) (vel.y + shift));
 		} else {

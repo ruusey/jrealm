@@ -15,6 +15,9 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.SpriteModel;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class GameDataManager {
 	private static final transient ObjectMapper mapper = new ObjectMapper();
 
@@ -29,7 +32,7 @@ public class GameDataManager {
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png" };
 
 	private static void loadProjectileGroups() throws Exception {
-		System.out.println("Loading Projectile Groups...");
+		GameDataManager.log.info("Loading Projectile Groups...");
 
 		GameDataManager.PROJECTILE_GROUPS = new HashMap<>();
 		InputStream inputStream = GameDataManager.class.getClassLoader()
@@ -49,12 +52,12 @@ public class GameDataManager {
 			}
 			GameDataManager.PROJECTILE_GROUPS.put(group.getProjectileGroupId(), group);
 		}
-		System.out.println("Projectile Groups... DONE");
+		GameDataManager.log.info("Loading Projectile Groups... DONE");
 
 	}
 
 	private static void loadGameItems() throws Exception {
-		System.out.println("Loading Game Items...");
+		GameDataManager.log.info("Loading Game Items...");
 
 		GameDataManager.GAME_ITEMS = new HashMap<>();
 		InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/game-items.json");
@@ -66,12 +69,12 @@ public class GameDataManager {
 		for (GameItem item : gameItems) {
 			GameDataManager.GAME_ITEMS.put(item.getItemId(), item);
 		}
-		System.out.println("Game Items... DONE");
+		GameDataManager.log.info("Loading Game Items... DONE");
 
 	}
 
 	private static void loadSpriteSheets() throws Exception {
-		System.out.println("Loading Sprite Sheets...");
+		GameDataManager.log.info("Loading Sprite Sheets...");
 
 		GameDataManager.SPRITE_SHEETS = new HashMap<>();
 		for (String loc : GameDataManager.SPRITE_SHEET_LOCATIONS) {
@@ -109,7 +112,7 @@ public class GameDataManager {
 
 		}
 
-		System.out.println("Sprite Sheets... DONE");
+		GameDataManager.log.info("Loading Sprite Sheets... DONE");
 
 	}
 
@@ -158,13 +161,13 @@ public class GameDataManager {
 	}
 
 	public static void loadGameData() {
-		System.out.println("Loading Game Data...");
+		GameDataManager.log.info("Loading Game Data...");
 		try {
 			GameDataManager.loadProjectileGroups();
 			GameDataManager.loadGameItems();
 			GameDataManager.loadSpriteSheets();
 		}catch(Exception e) {
-			System.err.println("Failed to load game data. Reason: " + e.getMessage());
+			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}
 	}
 }
