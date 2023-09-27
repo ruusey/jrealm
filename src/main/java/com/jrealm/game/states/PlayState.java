@@ -102,7 +102,7 @@ public class PlayState extends GameState {
 			result.put(0, GameDataManager.GAME_ITEMS.get(59));
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(47));
+			result.put(4, GameDataManager.GAME_ITEMS.get(75));
 			result.put(5, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		}

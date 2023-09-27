@@ -1240,5 +1240,23 @@
 		"targetSlot": 2,
 		"targetClass": -1,
 		"fameBonus": 8
+	},
+	{
+		"itemId": 75,
+		"row": 3,
+		"col": 12,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Archon Sword",
+		"description": "A well-made sword.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 350,
+			"max": 400
+		},
+		"consumable": false,
+		"tier": 0,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 7
 	}
 ]

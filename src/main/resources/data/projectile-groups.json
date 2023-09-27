@@ -654,6 +654,28 @@
 				]
 			}
 		]
+	},
+	{
+		"projectileGroupId": 12,
+		"row": 7,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"angleOffset": "{{PI/4}}",
+		"projectiles": [
+			{
+				"projectileId": 12,
+				"positionMode": 0,
+				"damage": 125,
+				"angle": 0,
+				"range": 150,
+				"size": 24,
+				"magnitude": 5.0,
+				"flags": [
+					0,
+					10
+				]
+			}
+		]
 	}
 ]
 
