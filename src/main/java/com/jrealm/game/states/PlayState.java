@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -57,12 +58,11 @@ public class PlayState extends GameState {
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		this.cam = cam;
 
-		GameDataManager.SPRITE_SHEETS.get("entity/rotmg-classes.png");
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ArrayList<>();
-
-		Player player = new Player(2, cam, GameDataManager.loadClassSprites(2),
+		CharacterClass playerClass = CharacterClass.PALLADIN;
+		Player player = new Player(playerClass.classId, cam, GameDataManager.loadClassSprites(playerClass.classId),
 				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
 				this.realm.getTileManager());
 		player.equipSlots(this.getStartingEquipment(player.getId()));
@@ -84,19 +84,26 @@ public class PlayState extends GameState {
 		case 2:
 			result.put(0, GameDataManager.GAME_ITEMS.get(58));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
-			result.put(3, GameDataManager.GAME_ITEMS.get(54));
+			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(47));
 			result.put(5, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case 1:
 			result.put(0, GameDataManager.GAME_ITEMS.get(17));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
-			result.put(3, GameDataManager.GAME_ITEMS.get(54));
+			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(48));
 			result.put(5, GameDataManager.GAME_ITEMS.get(0));
 
 			break;
 		case 3:
+			break;
+		default:
+			result.put(0, GameDataManager.GAME_ITEMS.get(59));
+			result.put(2, GameDataManager.GAME_ITEMS.get(60));
+			result.put(3, GameDataManager.GAME_ITEMS.get(56));
+			result.put(4, GameDataManager.GAME_ITEMS.get(47));
+			result.put(5, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		}
 

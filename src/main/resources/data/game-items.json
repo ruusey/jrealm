@@ -792,7 +792,7 @@
 		"consumable": false,
 		"tier": -1,
 		"targetSlot": 0,
-		"targetClass": -1,
+		"targetClass": 1,
 		"fameBonus": 8
 	},
 	{
@@ -980,6 +980,264 @@
 		"consumable": false,
 		"tier": 14,
 		"targetSlot": 0,
+		"targetClass": -1,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 59,
+		"row": 6,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Crystal Sword",
+		"description": "A Sword made of a crystaline substance",
+		"damage": {
+			"projectileGroupId": 11,
+			"min": 200,
+			"max": 250
+		},
+		"consumable": false,
+		"tier": -1,
+		"targetSlot": 0,
+		"targetClass": -1,
+		"fameBonus": 6
+	},
+	{
+		"itemId": 60,
+		"row": 2,
+		"col": 0,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Iron Mail",
+		"description": "Armor made from interlocking iron links.",
+		"stats": {
+			"def": 5
+		},
+		"consumable": false,
+		"tier": 1,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 61,
+		"row": 2,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Chainmail",
+		"description": "Armor made from interlocking links of metal.",
+		"stats": {
+			"def": 6
+		},
+		"consumable": false,
+		"tier": 2,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 62,
+		"row": 2,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Blue Steel Mail",
+		"description": "Mail made from blued steel.",
+		"stats": {
+			"def": 7
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 63,
+		"row": 2,
+		"col": 3,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Silver Chainmail",
+		"description": "Well-made chainmail plated with silver.",
+		"stats": {
+			"def": 8
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 64,
+		"row": 2,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Golden Chainmail",
+		"description": "Well-made chainmail plated with gold, clearly intended for the use of a great lord.",
+		"stats": {
+			"def": 10
+		},
+		"consumable": false,
+		"tier": 5,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 65,
+		"row": 2,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Plate Mail",
+		"description": "Armor made from overlapping plates of metal.",
+		"stats": {
+			"def": 12
+		},
+		"consumable": false,
+		"tier": 6,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 66,
+		"row": 2,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Mithril Chainmail",
+		"description": "Chainmail made with reinforcing mithril ribs.",
+		"stats": {
+			"def": 13
+		},
+		"consumable": false,
+		"tier": 7,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 67,
+		"row": 2,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Mithril Armor",
+		"description": "Armor made from the strongest and most desirable of all metals.",
+		"stats": {
+			"def": 15
+		},
+		"consumable": false,
+		"tier": 8,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 1
+	},
+	{
+		"itemId": 68,
+		"row": 2,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Dragonscale Armor",
+		"description": "Armor made from the scales of a full grown dragon.",
+		"stats": {
+			"def": 20
+		},
+		"consumable": false,
+		"tier": 9,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 2
+	},
+	{
+		"itemId": 69,
+		"row": 2,
+		"col": 9,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Desolation Armor",
+		"description": "Magical cold plate armor inscribed with tales of destruction and murder.",
+		"stats": {
+			"def": 21
+		},
+		"consumable": false,
+		"tier": 10,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 3
+	},
+	{
+		"itemId": 70,
+		"row": 2,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Vengeance Armor",
+		"description": "Tremendously strong plate armor shrouded by an aura of demonic revenge.",
+		"stats": {
+			"def": 22
+		},
+		"consumable": false,
+		"tier": 11,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 4
+	},
+	{
+		"itemId": 71,
+		"row": 2,
+		"col": 11,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Abyssal Armor",
+		"description": "Mighty felplate armor designed for the most powerful of demon lords.",
+		"stats": {
+			"def": 23
+		},
+		"consumable": false,
+		"tier": 12,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 5
+	},
+	{
+		"itemId": 72,
+		"row": 2,
+		"col": 12,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Acropolis Armor",
+		"description": "Indestructible magical armor made for the elite stoneborn champions of the eastern citadels.",
+		"stats": {
+			"def": 24
+		},
+		"consumable": false,
+		"tier": 13,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 6
+	},
+	{
+		"itemId": 73,
+		"row": 2,
+		"col": 13,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Dominion Armor",
+		"description": "Exquisitely decorated adamantine armor smithed by underdeep dwarves for the wardens of the demonclefts.",
+		"stats": {
+			"def": 26
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 7
+	},
+	{
+		"itemId": 74,
+		"row": 2,
+		"col": 14,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Annihilation Armor",
+		"description": "Impenetrable forceplate armor worn by the blackguard conquerors of the necromantic uprising.",
+		"stats": {
+			"def": 28
+		},
+		"consumable": false,
+		"tier": 15,
+		"targetSlot": 2,
 		"targetClass": -1,
 		"fameBonus": 8
 	}

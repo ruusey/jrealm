@@ -249,8 +249,8 @@ public class Player extends Entity {
 
 	@Override
 	public void render(Graphics2D g) {
-		g.setColor(Color.green);
-		g.drawRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y + this.bounds.getYOffset()), (int) this.bounds.getWidth(), (int) this.bounds.getHeight());
+		//		g.setColor(Color.green);
+		//		g.drawRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y + this.bounds.getYOffset()), (int) this.bounds.getWidth(), (int) this.bounds.getHeight());
 		Color c = new Color(0f, 0f, 0f, .4f);
 		g.setColor(c);
 		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 24, this.size, this.size / 2);
@@ -307,7 +307,7 @@ public class Player extends Entity {
 			if(key.shift.down) {
 				//
 			} else {
-				float maxSpeed = 2.1f + (stats.getSpd() * 0.05f);
+				float maxSpeed = 2.2f + (stats.getSpd() * 0.05f);
 				this.maxSpeed = maxSpeed;
 				this.cam.setMaxSpeed(maxSpeed);
 			}

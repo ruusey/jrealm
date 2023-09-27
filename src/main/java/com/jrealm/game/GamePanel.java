@@ -16,7 +16,11 @@ import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.WorkerThread;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@Data
+@EqualsAndHashCode(callSuper = false)
 public class GamePanel extends JPanel implements Runnable {
 
 	public static final long serialVersionUID = 1L;
@@ -39,6 +43,12 @@ public class GamePanel extends JPanel implements Runnable {
 
 	private GameStateManager gsm;
 
+	private long lastUpdateTime;
+	private long now;
+	private long lastRenderTime;
+
+	private long lastSecondTime;
+
 	public GamePanel(BufferStrategy bs, int width, int height) {
 		GamePanel.width = width;
 		GamePanel.height = height;
@@ -55,6 +65,8 @@ public class GamePanel extends JPanel implements Runnable {
 		if (this.thread == null) {
 			this.thread = new Thread(this, "GameThread");
 			this.thread.start();
+			// WorkerThread.submit(this.thread);
+
 		}
 	}
 
@@ -65,8 +77,9 @@ public class GamePanel extends JPanel implements Runnable {
 	}
 
 	public void init() {
-		this.running = true;
 		GameDataManager.loadGameData();
+		this.running = true;
+
 		this.initGraphics();
 
 		this.mouse = new MouseHandler(this);
@@ -84,34 +97,35 @@ public class GamePanel extends JPanel implements Runnable {
 
 		final int MUBR = 3; // Must Update before render
 
-		double lastUpdateTime = System.nanoTime();
-		double lastRenderTime;
+		this.lastUpdateTime = System.nanoTime();
 
-		final double TARGET_FPS = 1000;
+		final double TARGET_FPS = 200;
 		final double TTBR = 1000000000 / TARGET_FPS; // Total time before render
 
 		int frameCount = 0;
-		int lastSecondTime = (int) (lastUpdateTime / 1000000000);
+		this.lastSecondTime = (long) (this.lastUpdateTime / 1000000000);
 		GamePanel.oldFrameCount = 0;
 
 		GamePanel.tickCount = 0;
 		GamePanel.oldTickCount = 0;
 
 		while (this.running) {
+			this.now = System.nanoTime();
+			Runnable up = () -> {
 
-			double now = System.nanoTime();
-			int updateCount = 0;
-			while (((now - lastUpdateTime) > TBU) && (updateCount < MUBR)) {
-				this.update(now);
-				// this.input(this.mouse, this.key);
-				lastUpdateTime += TBU;
-				updateCount++;
-				GamePanel.tickCount++;
-			}
+				int updateCount = 0;
+				while (((this.now - this.lastUpdateTime) > TBU) && (updateCount < MUBR)) {
+					this.update(this.now);
+					// this.input(this.mouse, this.key);
+					this.lastUpdateTime += TBU;
+					updateCount++;
+					GamePanel.tickCount++;
+				}
 
-			if ((now - lastUpdateTime) > TBU) {
-				lastUpdateTime = now - TBU;
-			}
+				if ((this.now - this.lastUpdateTime) > TBU) {
+					this.lastUpdateTime = (long) (this.now - TBU);
+				}
+			};
 			Runnable input = ()->{
 				this.input(this.mouse, this.key);
 			};
@@ -119,14 +133,15 @@ public class GamePanel extends JPanel implements Runnable {
 			Runnable renderAndDraw = () -> {
 				this.render();
 				this.draw();
+
 			};
 
-			WorkerThread.submitAndRun(input, renderAndDraw);
-			lastRenderTime = now;
+
+			WorkerThread.submitAndRun(up, input, renderAndDraw);
 			frameCount++;
 
-			int thisSecond = (int) (lastUpdateTime / 1000000000);
-			if (thisSecond > lastSecondTime) {
+			int thisSecond = (int) (this.lastUpdateTime / 1000000000);
+			if (thisSecond > this.lastSecondTime) {
 				if (frameCount != GamePanel.oldFrameCount) {
 					// System.out.println("NEW SECOND " + thisSecond + " " + frameCount);
 					GamePanel.oldFrameCount = frameCount;
@@ -137,17 +152,21 @@ public class GamePanel extends JPanel implements Runnable {
 				}
 				GamePanel.tickCount = 0;
 				frameCount = 0;
-				lastSecondTime = thisSecond;
+				this.lastSecondTime = thisSecond;
 			}
 
-			while (((now - lastRenderTime) < TTBR) && ((now - lastUpdateTime) < TBU)) {
+			while (((this.now - this.lastRenderTime) < TTBR) && ((this.now - this.lastUpdateTime) < TBU)) {
 				try {
 				} catch (Exception e) {
 					System.out.println("ERROR: yielding thread");
 				}
-				now = System.nanoTime();
+				this.now = System.nanoTime();
 			}
 		}
+	}
+
+	public long getLastSecond() {
+		return this.lastSecondTime;
 	}
 
 	public void update(double time) {
@@ -163,6 +182,7 @@ public class GamePanel extends JPanel implements Runnable {
 			this.g.setColor(new Color(33, 30, 39));
 			this.g.fillRect(0, 0, GamePanel.width, GamePanel.height);
 			this.gsm.render(this.g);
+
 		}
 	}
 

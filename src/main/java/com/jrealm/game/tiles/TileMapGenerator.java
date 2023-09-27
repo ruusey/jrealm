@@ -91,7 +91,7 @@ public class TileMapGenerator {
 
 				for(int k = 0; k < this.tiles.length; k++) {
 					if(result[i][j] < this.tiles[k].rarity) {
-						if ((k == 0) && (result[i][j] < (Math.random() * 0.10))) {
+						if ((k == 0) && (result[i][j] < (Math.random() * 0.35))) {
 							int rInt = r.nextInt(this.materialManagers.size());
 							this.materialManagers.get(rInt).add(MaterialManager.TYPE.TREE, j + (i * this.chuckSize));
 						}

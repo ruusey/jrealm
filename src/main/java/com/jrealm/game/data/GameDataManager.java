@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
@@ -90,7 +91,7 @@ public class GameDataManager {
 				break;
 			case "entity/rotmg-classes.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-classes.png",
-						new SpriteSheet("entity/rotmg-classes.png", 8, 8, 4));
+						GameDataManager.loadClassSprites(CharacterClass.ARCHER.classId));
 				break;
 			case "entity/rotmg-projectiles.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-projectiles.png",
@@ -109,11 +110,8 @@ public class GameDataManager {
 						new SpriteSheet("entity/rotmg-bosses.png", 16, 16, 0));
 				break;
 			}
-
 		}
-
 		GameDataManager.log.info("Loading Sprite Sheets... DONE");
-
 	}
 
 	public static SpriteSheet loadClassSprites(int classId) {

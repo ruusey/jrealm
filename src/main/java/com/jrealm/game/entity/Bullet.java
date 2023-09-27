@@ -32,7 +32,6 @@ public class Bullet extends GameObject {
 
 	public Bullet(int id, Sprite image, Vector2f origin, int size) {
 		super(id, image, origin, size);
-		// TODO Auto-generated constructor stub
 	}
 
 	public Bullet(int id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
@@ -44,7 +43,6 @@ public class Bullet extends GameObject {
 		this.damage = damage;
 		this.angle = -Bullet.getAngle(origin, dest);
 		this.isEnemy = isEnemy;
-
 	}
 
 	public Bullet(int id, Sprite image, Vector2f origin, float angle, short size, float magnitude, float range,
@@ -54,17 +52,13 @@ public class Bullet extends GameObject {
 		this.magnitude = magnitude;
 		this.range = range;
 		this.damage = damage;
-
 		this.angle = -angle;
 		this.isEnemy = isEnemy;
-
 	}
 
 	public static float getAngle(Vector2f source, Vector2f target) {
 		double angle = (Math.atan2(target.y - source.y, target.x - source.x));
-
 		angle -= Math.PI / 2;
-
 		return (float) angle;
 	}
 
@@ -104,14 +98,11 @@ public class Bullet extends GameObject {
 			this.pos.addX(vel.x);
 			this.pos.addY(vel.y);
 		}
-
 	}
 
 	public void update(int i) {
 
-
 		this.timeStep = (this.timeStep + this.increment) % 360;
-
 
 		Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
 				(float) (Math.cos(this.angle) * this.magnitude));
@@ -128,10 +119,6 @@ public class Bullet extends GameObject {
 			this.pos.addX((float) (vel.x + shift2));
 			this.pos.addY((float) (vel.y + shift));
 		}
-
-
-
-
 	}
 
 	@Override

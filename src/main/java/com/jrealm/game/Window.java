@@ -19,17 +19,17 @@ public class Window extends JFrame {
 		this.setLocationRelativeTo(null);
 		this.setResizable(false);
 		this.setVisible(true);
+
 	}
 
 	@Override
 	public void addNotify() {
 		super.addNotify();
-
 		this.createBufferStrategy(2);
 		this.bs = this.getBufferStrategy();
 
 		this.gp = new GamePanel(this.bs, 1280, 900);
-		//add(gp);
+		// add(gp);
 		this.setContentPane(this.gp);
 
 	}

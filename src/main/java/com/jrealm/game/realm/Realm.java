@@ -61,7 +61,7 @@ public class Realm {
 		treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
 		// treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
 
-		MaterialManager rockMgr = new MaterialManager(32, 150);
+		MaterialManager rockMgr = new MaterialManager(64, 150);
 		rockMgr.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
 
 		this.tileManager = new TileManager(tileset, 150, treeMgr, rockMgr);

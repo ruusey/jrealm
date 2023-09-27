@@ -9,6 +9,9 @@ import javax.imageio.ImageIO;
 
 import com.jrealm.game.math.Vector2f;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class SpriteSheet {
 
 	private Sprite SPRITESHEET = null;
@@ -28,7 +31,7 @@ public class SpriteSheet {
 		this.w = this.TILE_SIZE;
 		this.h = this.TILE_SIZE;
 
-		System.out.println("Loading: " + file + "...");
+		SpriteSheet.log.info("Loading Sprite File {}", file);
 		this.SPRITESHEET = new Sprite(this.loadSprite(file));
 
 		this.wSprite = this.SPRITESHEET.image.getWidth() / this.w;
@@ -55,7 +58,7 @@ public class SpriteSheet {
 		this.h = h;
 		this.file = file;
 
-		System.out.println("Loading: " + file + "...");
+		SpriteSheet.log.info("Loading Sprite File {}", file);
 		this.SPRITESHEET = new Sprite(this.loadSprite(file));
 
 		this.wSprite = this.SPRITESHEET.image.getWidth() / w;
@@ -80,22 +83,40 @@ public class SpriteSheet {
 		this.hSprite = this.SPRITESHEET.image.getHeight() / this.h;
 	}
 
-	public int getWidth() { return this.w; }
-	public int getHeight() { return this.h; }
-	public int getRows() { return this.hSprite; }
-	public int getCols() { return this.wSprite; }
-	public int getTotalTiles() { return this.wSprite * this.hSprite; }
-	public String getFilename() { return this.file; }
+	public int getWidth() {
+		return this.w;
+	}
+
+	public int getHeight() {
+		return this.h;
+	}
+
+	public int getRows() {
+		return this.hSprite;
+	}
+
+	public int getCols() {
+		return this.wSprite;
+	}
+
+	public int getTotalTiles() {
+		return this.wSprite * this.hSprite;
+	}
+
+	public String getFilename() {
+		return this.file;
+	}
 
 	public int getRowOffset() {
 		return this.rowOffset;
 	}
+
 	private BufferedImage loadSprite(String file) {
 		BufferedImage sprite = null;
 		try {
 			sprite = ImageIO.read(this.getClass().getClassLoader().getResourceAsStream(file));
 		} catch (Exception e) {
-			System.out.println("ERROR: could not load file: " + file);
+			SpriteSheet.log.error("ERROR: could not load file: {}", file);
 		}
 		return sprite;
 	}
@@ -150,7 +171,8 @@ public class SpriteSheet {
 		return this.spriteArray;
 	}
 
-	public static void drawArray(Graphics2D g, ArrayList<Sprite> img, Vector2f pos, int width, int height, int xOffset, int yOffset) {
+	public static void drawArray(Graphics2D g, ArrayList<Sprite> img, Vector2f pos, int width, int height, int xOffset,
+			int yOffset) {
 		float x = pos.x;
 		float y = pos.y;
 
@@ -180,7 +202,8 @@ public class SpriteSheet {
 		SpriteSheet.drawArray(g, f, word, pos, size, size, xOffset, 0);
 	}
 
-	public static void drawArray(Graphics2D g, Font f, String word, Vector2f pos, int width, int height, int xOffset, int yOffset) {
+	public static void drawArray(Graphics2D g, Font f, String word, Vector2f pos, int width, int height, int xOffset,
+			int yOffset) {
 		float x = pos.x;
 		float y = pos.y;
 
@@ -194,7 +217,5 @@ public class SpriteSheet {
 			x += xOffset;
 			y += yOffset;
 		}
-
 	}
-
 }
