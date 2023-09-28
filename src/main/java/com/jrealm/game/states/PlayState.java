@@ -61,7 +61,7 @@ public class PlayState extends GameState {
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ArrayList<>();
-		CharacterClass playerClass = CharacterClass.PALLADIN;
+		CharacterClass playerClass = CharacterClass.WIZARD;
 		Player player = new Player(playerClass.classId, cam, GameDataManager.loadClassSprites(playerClass.classId),
 				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
 				this.realm.getTileManager());
@@ -282,7 +282,9 @@ public class PlayState extends GameState {
 		if (b.getBounds().collides(0, 0, player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
 			Stats stats = player.getComputedStats();
 			Vector2f sourcePos = p.getPos();
-			DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
+			int computedDamage = b.getDamage() - p.getComputedStats().getDef();
+			DamageText hitText = DamageText.builder().damage(computedDamage + "")
+					.effect(TextEffect.DAMAGE)
 					.sourcePos(sourcePos).build();
 			this.damageText.add(hitText);
 			b.setPlayerHit(true);

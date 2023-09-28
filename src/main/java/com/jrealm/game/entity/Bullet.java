@@ -87,10 +87,13 @@ public class Bullet extends GameObject {
 	}
 
 	@Override
+	// Update for regular non Parametric bullets
 	public void update() {
+		// if is flagged to be rendered as a parametric projectile
 		if (this.hasFlag((short) 12)) {
 			this.update(1);
 		} else {
+			//Regular straight line projectile
 			Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
 					(float) (Math.cos(this.angle) * this.magnitude));
 			double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
@@ -108,9 +111,10 @@ public class Bullet extends GameObject {
 				(float) (Math.cos(this.angle) * this.magnitude));
 		double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
 		this.range -= dist;
+		// 'invert'
 		if (this.hasFlag((short) 13)) {
 			double shift = -this.amplitude * Math.sin(Math.toRadians(this.timeStep));
-			double shift2 = -this.amplitude * Math.cos(Math.toRadians(this.timeStep));
+			double shift2 = this.amplitude * Math.cos(Math.toRadians(this.timeStep));
 			this.pos.addX((float) (vel.x + shift2));
 			this.pos.addY((float) (vel.y + shift));
 		} else {

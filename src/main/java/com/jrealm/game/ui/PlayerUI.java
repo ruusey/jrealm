@@ -238,11 +238,12 @@ public class PlayerUI {
 							this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
 							this.getPlayState().getPlayer().getInventory()[idx] = item;
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
-						} else {
-							int idx = this.getOverlapIdx(event);
-							this.getPlayState().getPlayer().getInventory()[idx] = item;
-							this.setEquipment(this.getPlayState().getPlayer().getInventory());
 						}
+						//						else {
+						// int idx = this.getOverlapIdx(event);
+						// this.getPlayState().getPlayer().getInventory()[idx] = item;
+						// this.setEquipment(this.getPlayState().getPlayer().getInventory());
+						// }
 
 					} else if (this.overlapsGround(event)) {
 						GameItem toDrop = item.clone();
