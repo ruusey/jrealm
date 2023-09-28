@@ -159,6 +159,8 @@ public class PlayState extends GameState {
 	public void update(double time) {
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		Player player = this.realm.getPlayer(this.playerId);
+		if (player == null)
+			return;
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
 			if (!this.gsm.isStateActive(GameStateManager.EDIT)) {
 
@@ -210,7 +212,6 @@ public class PlayState extends GameState {
 
 						if (gameObject[i] instanceof Material) {
 							Material mat = ((Material) gameObject[i]);
-							AABB test = this.realm.getTileManager().getRenderViewPort();
 							if (!mat.isDiscovered()
 									&& this.realm.getTileManager().getRenderViewPort().inside(
 											(int) mat.getPos().getWorldVar().x,
@@ -219,9 +220,6 @@ public class PlayState extends GameState {
 								mat.setDiscovered(true);
 							}
 
-							//							if (player.getBounds().intersect(mat.getBounds())) {
-							//								player.setTargetGameObject(mat);
-							//							}
 						}
 
 						if (gameObject[i] instanceof Bullet) {
@@ -253,7 +251,8 @@ public class PlayState extends GameState {
 			float magnitude,
 			float range, short damage, boolean isEnemy, List<Short> flags) {
 		Player player = this.realm.getPlayer(this.playerId);
-
+		if (player == null)
+			return;
 		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
 		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
 		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
@@ -273,7 +272,8 @@ public class PlayState extends GameState {
 			float magnitude,
 			float range, short damage, boolean isEnemy, List<Short> flags, short amplitude, short frequency) {
 		Player player = this.realm.getPlayer(this.playerId);
-
+		if (player == null)
+			return;
 		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
 		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
 		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
@@ -318,7 +318,8 @@ public class PlayState extends GameState {
 
 	private synchronized void processPlayerHit(Bullet b, Player p) {
 		Player player = this.realm.getPlayer(this.playerId);
-
+		if (player == null)
+			return;
 		if (b.getBounds().collides(0, 0, player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
 			Stats stats = player.getComputedStats();
 			Vector2f sourcePos = p.getPos();
@@ -399,6 +400,15 @@ public class PlayState extends GameState {
 			if (key.one.down) {
 				this.loadClass(CharacterClass.ARCHER);
 			}
+			if (key.zero.down) {
+				this.loadClass(CharacterClass.ROGUE);
+			}
+			if (key.two.down) {
+				this.loadClass(CharacterClass.WIZARD);
+			}
+			if (key.three.down) {
+				this.loadClass(CharacterClass.PALLADIN);
+			}
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);
 			this.cam.target(player);
@@ -472,6 +482,8 @@ public class PlayState extends GameState {
 	public void render(Graphics2D g) {
 		this.realm.getTileManager().render(g, this.getCam());
 		Player player = this.realm.getPlayer(this.playerId);
+		if (player == null)
+			return;
 		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.cam.getBounds());
 
 		player.render(g);

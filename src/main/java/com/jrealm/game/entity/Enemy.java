@@ -82,6 +82,8 @@ public abstract class Enemy extends Entity {
 	public void update(PlayState playState, double time) {
 		super.update(time);
 		Player player = playState.getRealm().getPlayer(playState.getPlayerId());
+		if (player == null)
+			return;
 		this.chase(player);
 		this.move();
 
