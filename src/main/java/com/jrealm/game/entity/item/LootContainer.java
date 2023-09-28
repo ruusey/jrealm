@@ -32,8 +32,8 @@ public class LootContainer {
 		this.pos = pos;
 		Random r = new Random(System.currentTimeMillis());
 		this.items[0] = GameDataManager.GAME_ITEMS.get(r.nextInt(8));
-		for (int i = 1; i < (r.nextInt(4) + 1); i++) {
-			this.items[i] = GameDataManager.GAME_ITEMS.get(r.nextInt(74) + 1);
+		for (int i = 1; i < (r.nextInt(7) + 1); i++) {
+			this.items[i] = GameDataManager.GAME_ITEMS.get(r.nextInt(104) + 1);
 		}
 		this.spawnedTime = System.currentTimeMillis();
 	}

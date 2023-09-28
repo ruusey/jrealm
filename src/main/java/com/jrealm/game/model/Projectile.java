@@ -20,6 +20,9 @@ public class Projectile {
 	private short size;
 	private short damage;
 
+	private short amplitude;
+	private short frequency;
+
 	private List<Short> flags;
 
 	public boolean hasFlag(short flag) {

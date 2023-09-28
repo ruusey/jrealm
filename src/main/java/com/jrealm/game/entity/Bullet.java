@@ -27,8 +27,8 @@ public class Bullet extends GameObject {
 	public boolean invert = false;
 
 	public long timeStep = 0;
-	public int amplitude = 4;
-	public int increment = 25;
+	public short amplitude = 4;
+	public short frequency = 25;
 
 	public Bullet(int id, Sprite image, Vector2f origin, int size) {
 		super(id, image, origin, size);
@@ -42,6 +42,18 @@ public class Bullet extends GameObject {
 		this.range = range;
 		this.damage = damage;
 		this.angle = -Bullet.getAngle(origin, dest);
+		this.isEnemy = isEnemy;
+	}
+
+	public Bullet(int id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
+			short damage, short amplitude, short frequency, boolean isEnemy) {
+		super(id, image, origin, size);
+		this.magnitude = magnitude;
+		this.range = range;
+		this.damage = damage;
+		this.angle = -Bullet.getAngle(origin, dest);
+		this.amplitude = amplitude;
+		this.frequency = frequency;
 		this.isEnemy = isEnemy;
 	}
 
@@ -105,7 +117,7 @@ public class Bullet extends GameObject {
 
 	public void update(int i) {
 
-		this.timeStep = (this.timeStep + this.increment) % 360;
+		this.timeStep = (this.timeStep + this.frequency) % 360;
 
 		Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
 				(float) (Math.cos(this.angle) * this.magnitude));

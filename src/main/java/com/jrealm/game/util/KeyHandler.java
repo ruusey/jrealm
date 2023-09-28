@@ -49,6 +49,14 @@ public class KeyHandler implements KeyListener{
 	public Key shift = new Key();
 	public Key f1 = new Key();
 
+	public Key one = new Key();
+	public Key two = new Key();
+	public Key three = new Key();
+	public Key four = new Key();
+	public Key five = new Key();
+	public Key six = new Key();
+	public Key zero = new Key();
+
 	public KeyHandler(GamePanel game) {
 		game.addKeyListener(this);
 	}
@@ -95,6 +103,28 @@ public class KeyHandler implements KeyListener{
 		}
 		if(e.getKeyCode() == KeyEvent.VK_SHIFT) {
 			this.shift.toggle(pressed);
+		}
+
+		if (e.getKeyCode() == KeyEvent.VK_1) {
+			this.one.toggle(pressed);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_2) {
+			this.two.toggle(pressed);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_3) {
+			this.three.toggle(pressed);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_4) {
+			this.four.toggle(pressed);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_5) {
+			this.five.toggle(pressed);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_6) {
+			this.six.toggle(pressed);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_0) {
+			this.zero.toggle(pressed);
 		}
 	}
 

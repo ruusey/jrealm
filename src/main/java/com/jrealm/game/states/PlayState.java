@@ -14,6 +14,7 @@ import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
+import com.jrealm.game.entity.item.Chest;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
@@ -61,31 +62,55 @@ public class PlayState extends GameState {
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ArrayList<>();
-		CharacterClass playerClass = CharacterClass.WIZARD;
-		Player player = new Player(playerClass.classId, cam, GameDataManager.loadClassSprites(playerClass.classId),
-				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
-				this.realm.getTileManager());
-		player.equipSlots(this.getStartingEquipment(player.getId()));
-		player.setIsInvincible(true);
+		this.loadClass(CharacterClass.ROGUE);
+		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
+		this.realm.addLootContainer(new Chest(chestLoc));
+	}
 
-		cam.target(player);
-		player.setIsInvincible(false);
+	private void loadClass(CharacterClass cls) {
+		if (this.realm.getPlayer(this.playerId) == null) {
+			Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls.classId),
+					new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
+					this.realm.getTileManager());
+			player.equipSlots(this.getStartingEquipment(player.getId()));
+			player.setIsInvincible(true);
 
-		this.playerId = this.realm.addPlayer(player);
-		this.pui = new PlayerUI(this);
+			this.cam.target(player);
+			player.setIsInvincible(false);
 
-		this.getPui().setEquipment(player.getInventory());
+			this.playerId = this.realm.addPlayer(player);
+			this.pui = new PlayerUI(this);
+
+			this.getPui().setEquipment(player.getInventory());
+		} else {
+			this.realm.removePlayer(this.playerId);
+			Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls.classId),
+					new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
+					this.realm.getTileManager());
+			player.equipSlots(this.getStartingEquipment(player.getId()));
+			player.setIsInvincible(true);
+
+			this.cam.target(player);
+			player.setIsInvincible(false);
+
+			this.playerId = this.realm.addPlayer(player);
+			this.pui = new PlayerUI(this);
+
+			this.getPui().setEquipment(player.getInventory());
+		}
+
 	}
 
 	public Map<Integer, GameItem> getStartingEquipment(int characterClass) {
 		Map<Integer, GameItem> result = new HashMap<>();
 
 		switch(characterClass) {
-		case 2:
-			result.put(0, GameDataManager.GAME_ITEMS.get(58));
+		case 0:
+			result.put(0, GameDataManager.GAME_ITEMS.get(91));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(47));
+			result.put(4, GameDataManager.GAME_ITEMS.get(75));
+
 			result.put(5, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case 1:
@@ -96,15 +121,27 @@ public class PlayState extends GameState {
 			result.put(5, GameDataManager.GAME_ITEMS.get(0));
 
 			break;
-		case 3:
-			break;
-		default:
-			result.put(0, GameDataManager.GAME_ITEMS.get(59));
-			result.put(2, GameDataManager.GAME_ITEMS.get(60));
+		case 2:
+			result.put(0, GameDataManager.GAME_ITEMS.get(58));
+			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(75));
+			result.put(4, GameDataManager.GAME_ITEMS.get(47));
 			result.put(5, GameDataManager.GAME_ITEMS.get(2));
 			break;
+		case 6:
+			result.put(0, GameDataManager.GAME_ITEMS.get(75));
+			result.put(2, GameDataManager.GAME_ITEMS.get(60));
+			result.put(3, GameDataManager.GAME_ITEMS.get(56));
+			// result.put(4, GameDataManager.GAME_ITEMS.get(75));
+			result.put(4, GameDataManager.GAME_ITEMS.get(2));
+			break;
+			//		default:
+			//			result.put(0, GameDataManager.GAME_ITEMS.get(75));
+			//			result.put(2, GameDataManager.GAME_ITEMS.get(60));
+			//			result.put(3, GameDataManager.GAME_ITEMS.get(56));
+			//			// result.put(4, GameDataManager.GAME_ITEMS.get(75));
+			//			result.put(4, GameDataManager.GAME_ITEMS.get(2));
+			//			break;
 		}
 
 		return result;
@@ -156,7 +193,7 @@ public class PlayState extends GameState {
 							rolledDamage += player.getComputedStats().getAtt();
 							this.addProjectile(player.getWeaponId(), source.clone(-offset, -offset),
 									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
-									rolledDamage, false, p.getFlags());
+									rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
 						}
 					}
 
@@ -234,7 +271,7 @@ public class PlayState extends GameState {
 
 	public synchronized void addProjectile(int projectileGroupId, Vector2f src, float angle, short size,
 			float magnitude,
-			float range, short damage, boolean isEnemy, List<Short> flags) {
+			float range, short damage, boolean isEnemy, List<Short> flags, short amplitude, short frequency) {
 		Player player = this.realm.getPlayer(this.playerId);
 
 		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
@@ -247,6 +284,9 @@ public class PlayState extends GameState {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
 		Bullet b = new Bullet(projectileGroupId, bulletImage, src, angle, size, magnitude, range, damage, isEnemy);
+		b.setAmplitude(amplitude);
+		b.setFrequency(frequency);
+
 		b.setFlags(flags);
 		this.realm.addBullet(b);
 	}
@@ -355,6 +395,10 @@ public class PlayState extends GameState {
 			}
 
 			this.pui.input(mouse, key);
+
+			if (key.one.down) {
+				this.loadClass(CharacterClass.ARCHER);
+			}
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);
 			this.cam.target(player);
@@ -393,6 +437,7 @@ public class PlayState extends GameState {
 		return null;
 	}
 
+
 	public void removeLootContainerItemByUid(String uid) {
 		this.replaceLootContainerItemByUid(uid, null);
 	}
@@ -413,6 +458,14 @@ public class PlayState extends GameState {
 				lc.setItem(foundIdx, replacement);
 			}
 		}
+	}
+
+	public Chest getNearestChest() {
+		for (LootContainer lc : this.realm.getLoot().values()) {
+			if ((this.realm.getPlayer(this.playerId).getBounds().distance(lc.getPos()) < 48) && (lc instanceof Chest))
+				return (Chest) lc;
+		}
+		return null;
 	}
 
 	@Override

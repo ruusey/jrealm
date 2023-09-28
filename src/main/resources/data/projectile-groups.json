@@ -487,12 +487,14 @@
 				"positionMode": 0,
 				"damage": 40,
 				"angle": 0.0,
-				"range": 300.0,
+				"range": 400.0,
 				"size": 24,
+				"amplitude": 7,
+				"frequency": 7,
 				"magnitude": 2.5,
 				"flags": [
 					0,
-					10
+					12
 				]
 			},
 			{
@@ -500,12 +502,14 @@
 				"positionMode": 0,
 				"damage": 40,
 				"angle": -0.1,
-				"range": 300.0,
+				"range": 400.0,
 				"size": 24,
+				"amplitude": -7,
+				"frequency": 7,
 				"magnitude": 2.5,
 				"flags": [
 					0,
-					10
+					12
 				]
 			},
 			{
@@ -513,12 +517,14 @@
 				"positionMode": 0,
 				"damage": 40,
 				"angle": -0.2,
-				"range": 300.0,
+				"range": 400.0,
 				"size": 24,
+				"amplitude": -7,
+				"frequency": 7,
 				"magnitude": 2.5,
 				"flags": [
 					0,
-					10
+					12
 				]
 			},
 			{
@@ -526,12 +532,14 @@
 				"positionMode": 0,
 				"damage": 40,
 				"angle": 0.2,
-				"range": 300.0,
+				"range": 400.0,
 				"size": 24,
+				"amplitude": 7,
+				"frequency": 7,
 				"magnitude": 2.5,
 				"flags": [
 					0,
-					10
+					12
 				]
 			},
 			{
@@ -539,12 +547,29 @@
 				"positionMode": 0,
 				"damage": 40,
 				"angle": 0.1,
-				"range": 300.0,
+				"range": 400.0,
 				"size": 24,
+				"amplitude": 7,
+				"frequency": 7,
 				"magnitude": 2.5,
 				"flags": [
 					0,
-					10
+					12
+				]
+			},
+			{
+				"projectileId": 8,
+				"positionMode": 0,
+				"damage": 40,
+				"angle": 0,
+				"range": 400.0,
+				"size": 24,
+				"amplitude": -7,
+				"frequency": 7,
+				"magnitude": 2.5,
+				"flags": [
+					0,
+					12
 				]
 			}
 		]
@@ -611,7 +636,9 @@
 				"angle": 0,
 				"range": 216.0,
 				"size": 24,
-				"magnitude": 3.0,
+				"amplitude": 4,
+				"frequency": 25,
+				"magnitude": 5.0,
 				"flags": [
 					0,
 					12
@@ -624,11 +651,12 @@
 				"angle": 0,
 				"range": 216.0,
 				"size": 24,
-				"magnitude": 3.0,
+				"amplitude": -4,
+				"frequency": 25,
+				"magnitude": 5.0,
 				"flags": [
 					0,
-					12,
-					13
+					12
 				]
 			}
 		]
@@ -668,6 +696,27 @@
 				"damage": 125,
 				"angle": 0,
 				"range": 150,
+				"size": 24,
+				"magnitude": 5.0,
+				"flags": [
+					0,
+					10
+				]
+			}
+		]
+	},
+		{
+		"projectileGroupId": 13,
+		"row": 13,
+		"col": 14,
+		"spriteKey": "entity/rotmg-projectiles.png",
+		"projectiles": [
+			{
+				"projectileId": 13,
+				"positionMode": 0,
+				"damage": 125,
+				"angle": 0,
+				"range": 250,
 				"size": 24,
 				"magnitude": 5.0,
 				"flags": [

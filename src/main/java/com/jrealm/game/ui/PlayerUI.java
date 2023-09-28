@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.entity.item.Chest;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
@@ -99,10 +100,16 @@ public class PlayerUI {
 		for (int i = 0; i < loot.length; i++) {
 			GameItem item = loot[i];
 			int yOffset = i > 3 ? 64 : 0;
+
 			if (item != null) {
 				final int actualIdx = i;
+				Button b = null;
+				if (i > 3) {
+					b = new Button(new Vector2f(startX + ((actualIdx - 4) * 64), 650 + yOffset), 64);
+				} else {
+					b = new Button(new Vector2f(startX + (actualIdx * 64), 650 + yOffset), 64);
+				}
 
-				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 650 + yOffset), 64);
 				b.onHoverIn(event -> {
 					this.tooltips.put(item.getUid(),
 							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
@@ -238,6 +245,14 @@ public class PlayerUI {
 							this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
 							this.getPlayState().getPlayer().getInventory()[idx] = item;
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
+						}else if(this.playState.getNearestChest() != null) {
+							Chest c = this.playState.getNearestChest();
+							c.addItemAtFirtIdx(item);
+
+							this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
+
+							this.setEquipment(this.getPlayState().getPlayer().getInventory());
+							this.setGroundLoot(this.groundLoot);
 						}
 						//						else {
 						// int idx = this.getOverlapIdx(event);
@@ -461,18 +476,42 @@ public class PlayerUI {
 				}
 			}
 		}
+		Slots[] gl1 = Arrays.copyOfRange(this.groundLoot, 0, 4);
+		Slots[] gl2 = Arrays.copyOfRange(this.groundLoot, 4, 8);
 
-		for (int i = 0; i < this.groundLoot.length; i++) {
-			Slots curr = this.groundLoot[i];
+		for (int i = 0; i < gl1.length; i++) {
+			Slots curr = gl1[i];
 			if (curr != null) {
 				if ((curr.getDragPos() == null)) {
-					this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 650));
+					gl1[i].render(g, new Vector2f(startX + (i * 64), 650));
 				} else {
-					this.groundLoot[i].render(g, curr.getDragPos());
+					gl1[i].render(g, curr.getDragPos());
 
 				}
 			}
 		}
+		for (int i = 0; i < gl2.length; i++) {
+			Slots curr = gl2[i];
+			if (curr != null) {
+				if ((curr.getDragPos() == null)) {
+					gl2[i].render(g, new Vector2f(startX + (i * 64), 714));
+				} else {
+					gl2[i].render(g, curr.getDragPos());
+
+				}
+			}
+		}
+		//		for (int i = 0; i < this.groundLoot.length; i++) {
+		//			Slots curr = this.groundLoot[i];
+		//			if (curr != null) {
+		//				if ((curr.getDragPos() == null)) {
+		//					this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 650));
+		//				} else {
+		//					this.groundLoot[i].render(g, curr.getDragPos());
+		//
+		//				}
+		//			}
+		//		}
 
 		for (ItemTooltip tip : this.tooltips.values()) {
 			tip.render(g);

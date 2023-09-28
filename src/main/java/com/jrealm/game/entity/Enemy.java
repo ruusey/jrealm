@@ -46,6 +46,8 @@ public abstract class Enemy extends Entity {
 	}
 
 	public void chase(Player player) {
+		if (player == null)
+			return;
 		AABB playerBounds = player.getBounds();
 		if (this.sense.colCircleBox(playerBounds) && !this.attackrange.colCircleBox(playerBounds)) {
 			if (this.pos.y > (player.pos.y + 1)) {
@@ -114,10 +116,11 @@ public abstract class Enemy extends Entity {
 					if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
 						playState.addProjectile(this.getWeaponId(), source.clone(),
 								angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
-								p.getDamage(), true, p.getFlags());
+								p.getDamage(), true, p.getFlags(), p.getAmplitude(), p.getFrequency());
 					} else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
 						playState.addProjectile(this.getWeaponId(), source.clone(), Float.parseFloat(p.getAngle()),
-								p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags());
+								p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
+								p.getAmplitude(), p.getFrequency());
 					}
 
 				}

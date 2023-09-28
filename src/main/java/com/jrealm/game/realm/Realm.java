@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.data.GameDataManager;
@@ -25,10 +26,13 @@ import com.jrealm.game.util.GameObjectKey;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @AllArgsConstructor
+@Slf4j
 public class Realm {
+	private Semaphore playerLock = new Semaphore(1);
 	public static final transient SecureRandom RANDOM = new SecureRandom();
 
 	private Map<Long, Player> players;
@@ -87,18 +91,34 @@ public class Realm {
 	}
 
 	public long addPlayer(Player player) {
+		this.acquirePlayerLock();
 		long randomId = Realm.RANDOM.nextLong();
 		player.setPlayerId(randomId);
 		this.players.put(randomId, player);
+		this.releasePlayerLock();
 		return randomId;
 	}
 
 	public boolean removePlayer(Player player) {
+		this.acquirePlayerLock();
+
 		Player p = this.players.remove(player.getPlayerId());
+		this.releasePlayerLock();
+
+		return p != null;
+	}
+
+	public boolean removePlayer(long playerId) {
+		this.acquirePlayerLock();
+
+		Player p = this.players.remove(playerId);
+		this.releasePlayerLock();
+
 		return p != null;
 	}
 
 	public Player getPlayer(long playerId) {
+
 		return this.players.get(playerId);
 	}
 
@@ -246,6 +266,22 @@ public class Realm {
 					this.addEnemy(go);
 				}
 			}
+		}
+	}
+
+	private void acquirePlayerLock() {
+		try {
+			this.playerLock.acquire();
+		} catch (Exception e) {
+
+		}
+	}
+
+	private void releasePlayerLock() {
+		try {
+			this.playerLock.release();
+		} catch (Exception e) {
+			Realm.log.error(e.getMessage());
 		}
 	}
 }

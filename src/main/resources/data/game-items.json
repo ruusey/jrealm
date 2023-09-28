@@ -975,7 +975,7 @@
 			"max": 100
 		},
 		"stats": {
-			"hp": 20
+			"dex": 8
 		},
 		"consumable": false,
 		"tier": 14,
@@ -1244,19 +1244,559 @@
 	{
 		"itemId": 75,
 		"row": 3,
-		"col": 12,
+		"col": 0,
 		"spriteKey": "entity/rotmg-items.png",
-		"name": "Archon Sword",
-		"description": "A well-made sword.",
+		"name": "Short Sword",
+		"description": "A steel short sword.",
 		"damage": {
 			"projectileGroupId": 12,
-			"min": 350,
-			"max": 400
+			"min": 45,
+			"max": 90
 		},
 		"consumable": false,
 		"tier": 0,
 		"targetSlot": 0,
 		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 76,
+		"row": 3,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Broad Sword",
+		"description": "A broad-bladed steel sword.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 60,
+			"max": 105
+		},
+		"consumable": false,
+		"tier": 1,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 77,
+		"row": 3,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Saber",
+		"description": "A single-edged light sword.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 75,
+			"max": 105
+		},
+		"consumable": false,
+		"tier": 2,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 78,
+		"row": 3,
+		"col": 3,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Long Sword",
+		"description": "A well-made sword with a double edged blade.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 75,
+			"max": 120
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 79,
+		"row": 3,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Falchion",
+		"description": "A single-edged broad-bladed sword.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 75,
+			"max": 135
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 80,
+		"row": 3,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Fire Sword",
+		"description": "A fiery blade capable of burning flesh and bone.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 90,
+			"max": 135
+		},
+		"consumable": false,
+		"tier": 5,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 81,
+		"row": 3,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Glass Sword",
+		"description": "A sword formed from a single shard of unbreakable glass.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 110,
+			"max": 160
+		},
+		"consumable": false,
+		"tier": 6,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 82,
+		"row": 3,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Golden Sword",
+		"description": "A sharp sword plated with gold, clearly intended for the use of a great lord.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 150,
+			"max": 180
+		},
+		"consumable": false,
+		"tier": 7,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 1
+	},
+	{
+		"itemId": 83,
+		"row": 3,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Ravenheart Sword",
+		"description": "A powerful sword infused with the spirit of dark rituals.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 180,
+			"max": 255
+		},
+		"consumable": false,
+		"tier": 8,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 2
+	},
+	{
+		"itemId": 84,
+		"row": 3,
+		"col": 9,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Dragonsoul Sword",
+		"description": "A sword forged in a great volcano and consecrated with dragon magic.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 195,
+			"max": 255
+		},
+		"consumable": false,
+		"tier": 9,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 3
+	},
+	{
+		"itemId": 85,
+		"row": 3,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Archon Sword",
+		"description": "A sword pulsing with the powerful magic of ancient beings.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 210,
+			"max": 255
+		},
+		"consumable": false,
+		"tier": 10,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 4
+	},
+	{
+		"itemId": 86,
+		"row": 3,
+		"col": 11,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Skysplitter Sword",
+		"description": "An unfathomably powerful sword wielded by titanic air elementals in their great war of revolution.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 210,
+			"max": 270
+		},
+		"consumable": false,
+		"tier": 11,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 5
+	},
+	{
+		"itemId": 87,
+		"row": 3,
+		"col": 12,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Sword of Acclaim",
+		"description": "A great sword of recognition, forged by the gods for the champions of humankind.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 220,
+			"max": 275
+		},
+		"consumable": false,
+		"tier": 12,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 6
+	},
+	{
+		"itemId": 88,
+		"row": 3,
+		"col": 13,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Sword of Splendor",
+		"description": "An exalted weapon of the august kings of old, hallowed with the spirit of nations and yearning to grant power anew.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 235,
+			"max": 290
+		},
+		"consumable": false,
+		"tier": 13,
+		"targetSlot": 0,
+		"targetClass": 1,
 		"fameBonus": 7
+	},
+	{
+		"itemId": 89,
+		"row": 3,
+		"col": 13,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Sword of Splendor",
+		"description": "An exalted weapon of the august kings of old, hallowed with the spirit of nations and yearning to grant power anew.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 235,
+			"max": 290
+		},
+		"consumable": false,
+		"tier": 13,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 7
+	},
+	{
+		"itemId": 90,
+		"row": 3,
+		"col": 14,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Sword of Majesty",
+		"description": "A gleaming obsidian sword of imperial power, fashioned by enslaved demons for the personal use of a world-conquering leader of mortals.",
+		"damage": {
+			"projectileGroupId": 12,
+			"min": 250,
+			"max": 305
+		},
+		"consumable": false,
+		"tier": 0,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 91,
+		"row": 6,
+		"col": 0,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Steel Dagger",
+		"description": "A sharp dagger made of steel.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 20,
+			"max": 75
+		},
+		"consumable": false,
+		"tier": 0,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 92,
+		"row": 6,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Dirk",
+		"description": "A short sword blade mounted on a dagger hilt.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 25,
+			"max": 80
+		},
+		"consumable": false,
+		"tier": 1,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 93,
+		"row": 6,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Blue Steel Dagger",
+		"description": "A dagger made of blued steel.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 30,
+			"max": 85
+		},
+		"consumable": false,
+		"tier": 2,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 94,
+		"row": 6,
+		"col": 3,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Dusky Rose Dagger",
+		"description": "A dagger made of rose tinted steel.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 40,
+			"max": 90
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 95,
+		"row": 6,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Silver Dagger",
+		"description": "A silver-plated steel dagger.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 45,
+			"max": 100
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 96,
+		"row": 6,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Golden Dagger",
+		"description": "A well-made dagger plated with gold and inscribed with evil runes.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 50,
+			"max": 110
+		},
+		"consumable": false,
+		"tier": 5,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 97,
+		"row": 6,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Obsidian Dagger",
+		"description": "A dagger with a blade made of volcanic glass.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 60,
+			"max": 125
+		},
+		"consumable": false,
+		"tier": 6,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 98,
+		"row": 6,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Mithril Dagger",
+		"description": "An extremely sharp dagger made from the strongest and most desirable of all metals.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 70,
+			"max": 140
+		},
+		"consumable": false,
+		"tier": 7,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 1
+	},
+	{
+		"itemId": 99,
+		"row": 6,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Fire Dagger",
+		"description": "A dagger with a blade that burns with an unholy magic.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 85,
+			"max": 155
+		},
+		"consumable": false,
+		"tier": 8,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 2
+	},
+	{
+		"itemId": 100,
+		"row": 6,
+		"col": 9,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Ragetalon Dagger",
+		"description": "A sharp druidic dagger vibrating with primal energies.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 95,
+			"max": 165
+		},
+		"consumable": false,
+		"tier": 9,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 3
+	},
+	{
+		"itemId": 101,
+		"row": 6,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Emeraldshard Dagger",
+		"description": "A deadly dagger of glittering magical emerald.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 100,
+			"max": 175
+		},
+		"consumable": false,
+		"tier": 10,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 4
+	},
+	{
+		"itemId": 102,
+		"row": 6,
+		"col": 11,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Agateclaw Dagger",
+		"description": "A dagger of rare purple agate, infused with powerful dark magics.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 105,
+			"max": 190
+		},
+		"consumable": false,
+		"tier": 11,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 5
+	},
+	{
+		"itemId": 103,
+		"row": 6,
+		"col": 12,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Dagger of Foul Malevolence",
+		"description": "A crimson felsteel dagger saturated with evil deeds and the hatred of the gods.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 115,
+			"max": 200
+		},
+		"consumable": false,
+		"tier": 12,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 6
+	},
+	{
+		"itemId": 104,
+		"row": 6,
+		"col": 13,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Dagger of Sinister Deeds",
+		"description": "A moonsteel dagger of the underworld, corrupted by loathsome enchantments and profane spells.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 125,
+			"max": 220
+		},
+		"consumable": false,
+		"tier": 13,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 7
+	},
+	{
+		"itemId": 105,
+		"row": 6,
+		"col": 14,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Dagger of Dire Hatred",
+		"description": "A jagged, wickedly barbed blade of evil, charged with the unreasoning rage of ancestral vendettas.",
+		"damage": {
+			"projectileGroupId": 13,
+			"min": 140,
+			"max": 235
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 8
 	}
 ]
