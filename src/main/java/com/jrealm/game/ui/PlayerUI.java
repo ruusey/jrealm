@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.entity.item.Chest;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
@@ -124,7 +125,8 @@ public class PlayerUI {
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
 					this.tooltips.clear();
-					if (this.overlapsEquipment(event)) {
+					if (this.overlapsEquipment(event)
+							&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
 						Slots currentEquip = this.inventory[item.getTargetSlot()];
 						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
 						this.inventory[item.getTargetSlot()].setItem(item);
@@ -230,7 +232,8 @@ public class PlayerUI {
 				});
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
-					if (this.overlapsEquipment(event)) {
+					if (this.overlapsEquipment(event)
+							&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
 						Slots currentEquip = this.inventory[item.getTargetSlot()];
 						GameItem itemClone = currentEquip.getItem().clone();
 						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;

@@ -209,7 +209,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{5PI/6}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -222,7 +222,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{PI}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -777,7 +777,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{PI/6}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -790,7 +790,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{PI/4}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -803,7 +803,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{PI/3}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -816,7 +816,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{PI/2}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -829,7 +829,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{2PI/3}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -842,7 +842,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{3PI/4}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -855,7 +855,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{5PI/6}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -868,7 +868,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{PI}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -881,7 +881,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{7PI/6}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -894,7 +894,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{5PI/4}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -907,7 +907,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{4PI/3}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -920,7 +920,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{3PI/2}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -933,7 +933,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{5PI/3}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [
@@ -946,7 +946,7 @@
 				"positionMode": 2,
 				"damage": 50,
 				"angle": "{{7PI/4}}",
-				"range": 512.0,
+				"range": 250.0,
 				"size": 16,
 				"magnitude": 3.0,
 				"flags": [

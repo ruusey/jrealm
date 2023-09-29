@@ -68,9 +68,9 @@ public class PlayState extends GameState {
 		this.await(100);
 		this.realm.addLootContainer(new Chest(chestLoc));
 		this.await(100);
-		this.realm.addLootContainer(new Chest(chestLoc.clone(64, 0)));
-		this.await(100);
 		this.realm.addLootContainer(new Chest(chestLoc.clone(128, 0)));
+		this.await(100);
+		this.realm.addLootContainer(new Chest(chestLoc.clone(256, 0)));
 
 	}
 
@@ -439,7 +439,11 @@ public class PlayState extends GameState {
 
 
 			if (key.q.down && ((System.currentTimeMillis() - this.lastAbilityTick) > 1000)) {
-				this.useAbility(mouse);
+				if (this.getPlayer().getMana() > 25) {
+					this.useAbility(mouse);
+					this.getPlayer().setMana(this.getPlayer().getMana() - 25);
+
+				}
 			}
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);

@@ -12,7 +12,7 @@
 		"consumable": true,
 		"tier": 0,
 		"targetSlot": -1,
-		"targetClass": -1,
+		"targetClass": -5,
 		"fameBonus": 0
 	},
 	{
@@ -28,7 +28,7 @@
 		"consumable": true,
 		"tier": 0,
 		"targetSlot": -1,
-		"targetClass": -1,
+		"targetClass": -5,
 		"fameBonus": 0
 	},
 	{
@@ -252,7 +252,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -538,7 +538,7 @@
 		"consumable": false,
 		"tier": 1,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 0
 	},
 	{
@@ -554,7 +554,7 @@
 		"consumable": false,
 		"tier": 2,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 0
 	},
 	{
@@ -570,7 +570,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 0
 	},
 	{
@@ -587,7 +587,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 0
 	},
 	{
@@ -604,7 +604,7 @@
 		"consumable": false,
 		"tier": 5,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 0
 	},
 	{
@@ -621,7 +621,7 @@
 		"consumable": false,
 		"tier": 6,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 0
 	},
 	{
@@ -638,7 +638,7 @@
 		"consumable": false,
 		"tier": 7,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 0
 	},
 	{
@@ -655,7 +655,7 @@
 		"consumable": false,
 		"tier": 8,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 1
 	},
 	{
@@ -672,7 +672,7 @@
 		"consumable": false,
 		"tier": 9,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 2
 	},
 	{
@@ -689,7 +689,7 @@
 		"consumable": false,
 		"tier": 10,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 3
 	},
 	{
@@ -706,7 +706,7 @@
 		"consumable": false,
 		"tier": 11,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 4
 	},
 	{
@@ -723,7 +723,7 @@
 		"consumable": false,
 		"tier": 12,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 5
 	},
 	{
@@ -740,7 +740,7 @@
 		"consumable": false,
 		"tier": 13,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 6
 	},
 	{
@@ -757,7 +757,7 @@
 		"consumable": false,
 		"tier": 14,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 7
 	},
 	{
@@ -774,7 +774,7 @@
 		"consumable": false,
 		"tier": 15,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -2,
 		"fameBonus": 8
 	},
 	{
@@ -815,7 +815,7 @@
 		"consumable": false,
 		"tier": 15,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 8
 	},
 	{
@@ -828,10 +828,15 @@
 		"stats": {
 			"wis": 5
 		},
+		"damage": {
+			"projectileGroupId": 6,
+			"min": 300,
+			"max": 400
+		},
 		"consumable": false,
 		"tier": 15,
-		"targetSlot": 1,
-		"targetClass": -1,
+		"targetSlot": 0,
+		"targetClass": 0,
 		"fameBonus": 8
 	},
 	{
@@ -847,7 +852,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -863,7 +868,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -879,7 +884,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -895,7 +900,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -911,7 +916,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -927,7 +932,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -943,7 +948,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -959,7 +964,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -980,7 +985,7 @@
 		"consumable": false,
 		"tier": 14,
 		"targetSlot": 0,
-		"targetClass": -1,
+		"targetClass": 2,
 		"fameBonus": 8
 	},
 	{
@@ -998,7 +1003,7 @@
 		"consumable": false,
 		"tier": -1,
 		"targetSlot": 0,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 6
 	},
 	{
@@ -1014,7 +1019,7 @@
 		"consumable": false,
 		"tier": 1,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1030,7 +1035,7 @@
 		"consumable": false,
 		"tier": 2,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1046,7 +1051,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1062,7 +1067,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1078,7 +1083,7 @@
 		"consumable": false,
 		"tier": 5,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1094,7 +1099,7 @@
 		"consumable": false,
 		"tier": 6,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1110,7 +1115,7 @@
 		"consumable": false,
 		"tier": 7,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1126,7 +1131,7 @@
 		"consumable": false,
 		"tier": 8,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 1
 	},
 	{
@@ -1142,7 +1147,7 @@
 		"consumable": false,
 		"tier": 9,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 2
 	},
 	{
@@ -1158,7 +1163,7 @@
 		"consumable": false,
 		"tier": 10,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 3
 	},
 	{
@@ -1174,7 +1179,7 @@
 		"consumable": false,
 		"tier": 11,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 4
 	},
 	{
@@ -1190,7 +1195,7 @@
 		"consumable": false,
 		"tier": 12,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 5
 	},
 	{
@@ -1206,7 +1211,7 @@
 		"consumable": false,
 		"tier": 13,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 6
 	},
 	{
@@ -1222,7 +1227,7 @@
 		"consumable": false,
 		"tier": 14,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 7
 	},
 	{
@@ -1238,7 +1243,7 @@
 		"consumable": false,
 		"tier": 15,
 		"targetSlot": 2,
-		"targetClass": -1,
+		"targetClass": -3,
 		"fameBonus": 8
 	},
 	{
@@ -1256,7 +1261,7 @@
 		"consumable": false,
 		"tier": 0,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1274,7 +1279,7 @@
 		"consumable": false,
 		"tier": 1,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1292,7 +1297,7 @@
 		"consumable": false,
 		"tier": 2,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1310,7 +1315,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1328,7 +1333,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1346,7 +1351,7 @@
 		"consumable": false,
 		"tier": 5,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1364,7 +1369,7 @@
 		"consumable": false,
 		"tier": 6,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 0
 	},
 	{
@@ -1382,7 +1387,7 @@
 		"consumable": false,
 		"tier": 7,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 1
 	},
 	{
@@ -1400,7 +1405,7 @@
 		"consumable": false,
 		"tier": 8,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 2
 	},
 	{
@@ -1418,7 +1423,7 @@
 		"consumable": false,
 		"tier": 9,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 3
 	},
 	{
@@ -1436,7 +1441,7 @@
 		"consumable": false,
 		"tier": 10,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 4
 	},
 	{
@@ -1454,7 +1459,7 @@
 		"consumable": false,
 		"tier": 11,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 5
 	},
 	{
@@ -1472,7 +1477,7 @@
 		"consumable": false,
 		"tier": 12,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 6
 	},
 	{
@@ -1490,7 +1495,7 @@
 		"consumable": false,
 		"tier": 13,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 7
 	},
 	{
@@ -1508,7 +1513,7 @@
 		"consumable": false,
 		"tier": 13,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 7
 	},
 	{
@@ -1526,7 +1531,7 @@
 		"consumable": false,
 		"tier": 0,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": -3,
 		"fameBonus": 8
 	},
 	{
@@ -1544,7 +1549,7 @@
 		"consumable": false,
 		"tier": 0,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 0
 	},
 	{
@@ -1562,7 +1567,7 @@
 		"consumable": false,
 		"tier": 1,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 0
 	},
 	{
@@ -1580,7 +1585,7 @@
 		"consumable": false,
 		"tier": 2,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 0
 	},
 	{
@@ -1598,7 +1603,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 0
 	},
 	{
@@ -1616,7 +1621,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 0
 	},
 	{
@@ -1634,7 +1639,7 @@
 		"consumable": false,
 		"tier": 5,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 0
 	},
 	{
@@ -1652,7 +1657,7 @@
 		"consumable": false,
 		"tier": 6,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 0
 	},
 	{
@@ -1670,7 +1675,7 @@
 		"consumable": false,
 		"tier": 7,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 1
 	},
 	{
@@ -1688,7 +1693,7 @@
 		"consumable": false,
 		"tier": 8,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 2
 	},
 	{
@@ -1706,7 +1711,7 @@
 		"consumable": false,
 		"tier": 9,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 3
 	},
 	{
@@ -1724,7 +1729,7 @@
 		"consumable": false,
 		"tier": 10,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 4
 	},
 	{
@@ -1742,7 +1747,7 @@
 		"consumable": false,
 		"tier": 11,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 5
 	},
 	{
@@ -1760,7 +1765,7 @@
 		"consumable": false,
 		"tier": 12,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 6
 	},
 	{
@@ -1778,7 +1783,7 @@
 		"consumable": false,
 		"tier": 13,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 7
 	},
 	{
@@ -1796,7 +1801,7 @@
 		"consumable": false,
 		"tier": 14,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 0,
 		"fameBonus": 8
 	},
 		{
@@ -2089,7 +2094,7 @@
 		"consumable": false,
 		"tier": 0,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 0
 	},
 	{
@@ -2107,7 +2112,7 @@
 		"consumable": false,
 		"tier": 1,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 0
 	},
 	{
@@ -2125,7 +2130,7 @@
 		"consumable": false,
 		"tier": 2,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 0
 	},
 	{
@@ -2143,7 +2148,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 0
 	},
 	{
@@ -2161,7 +2166,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 0
 	},
 	{
@@ -2179,7 +2184,7 @@
 		"consumable": false,
 		"tier": 5,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 0
 	},
 	{
@@ -2197,7 +2202,7 @@
 		"consumable": false,
 		"tier": 6,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 0
 	},
 	{
@@ -2215,7 +2220,7 @@
 		"consumable": false,
 		"tier": 7,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 1
 	},
 	{
@@ -2233,7 +2238,7 @@
 		"consumable": false,
 		"tier": 8,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 2
 	},
 	{
@@ -2251,7 +2256,7 @@
 		"consumable": false,
 		"tier": 9,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 3
 	},
 	{
@@ -2269,7 +2274,7 @@
 		"consumable": false,
 		"tier": 10,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 4
 	},
 	{
@@ -2287,7 +2292,7 @@
 		"consumable": false,
 		"tier": 11,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 5
 	},
 	{
@@ -2305,7 +2310,7 @@
 		"consumable": false,
 		"tier": 12,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 6
 	},
 	{
@@ -2323,7 +2328,7 @@
 		"consumable": false,
 		"tier": 13,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 7
 	},
 	{
@@ -2341,10 +2346,10 @@
 		"consumable": false,
 		"tier": 14,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 8
 	},
-	
+
 	{
 		"itemId": 136,
 		"row": 5,
@@ -2360,7 +2365,7 @@
 		"consumable": false,
 		"tier": 14,
 		"targetSlot": 1,
-		"targetClass": 1,
+		"targetClass": 2,
 		"fameBonus": 8
 	},
 	{
@@ -2378,7 +2383,7 @@
 		"consumable": false,
 		"tier": 0,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 0
 	},
 	{
@@ -2396,7 +2401,7 @@
 		"consumable": false,
 		"tier": 1,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 0
 	},
 	{
@@ -2414,7 +2419,7 @@
 		"consumable": false,
 		"tier": 2,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 0
 	},
 	{
@@ -2432,7 +2437,7 @@
 		"consumable": false,
 		"tier": 3,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 0
 	},
 	{
@@ -2450,7 +2455,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 0
 	},
 	{
@@ -2468,7 +2473,7 @@
 		"consumable": false,
 		"tier": 5,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 0
 	},
 	{
@@ -2486,7 +2491,7 @@
 		"consumable": false,
 		"tier": 6,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 0
 	},
 	{
@@ -2504,7 +2509,7 @@
 		"consumable": false,
 		"tier": 7,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 1
 	},
 	{
@@ -2522,7 +2527,7 @@
 		"consumable": false,
 		"tier": 8,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 2
 	},
 	{
@@ -2540,7 +2545,7 @@
 		"consumable": false,
 		"tier": 9,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 3
 	},
 	{
@@ -2558,7 +2563,7 @@
 		"consumable": false,
 		"tier": 10,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 4
 	},
 	{
@@ -2576,7 +2581,7 @@
 		"consumable": false,
 		"tier": 11,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 5
 	},
 	{
@@ -2594,7 +2599,7 @@
 		"consumable": false,
 		"tier": 12,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 6
 	},
 	{
@@ -2612,7 +2617,7 @@
 		"consumable": false,
 		"tier": 13,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 7
 	},
 	{
@@ -2630,7 +2635,7 @@
 		"consumable": false,
 		"tier": 14,
 		"targetSlot": 0,
-		"targetClass": 1,
+		"targetClass": 3,
 		"fameBonus": 8
 	}
 ]
