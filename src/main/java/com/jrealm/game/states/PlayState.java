@@ -49,6 +49,7 @@ public class PlayState extends GameState {
 	public static Vector2f map;
 	private List<Vector2f> shotDestQueue;
 	public long lastShotTick = 0;
+	public long lastAbilityTick = 0;
 
 	public long playerId;
 
@@ -62,9 +63,15 @@ public class PlayState extends GameState {
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ArrayList<>();
-		this.loadClass(CharacterClass.ROGUE);
+		this.loadClass(CharacterClass.WIZARD);
 		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
+		this.await(100);
 		this.realm.addLootContainer(new Chest(chestLoc));
+		this.await(100);
+		this.realm.addLootContainer(new Chest(chestLoc.clone(64, 0)));
+		this.await(100);
+		this.realm.addLootContainer(new Chest(chestLoc.clone(128, 0)));
+
 	}
 
 	private void loadClass(CharacterClass cls) {
@@ -109,24 +116,42 @@ public class PlayState extends GameState {
 			result.put(0, GameDataManager.GAME_ITEMS.get(91));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(75));
-
 			result.put(5, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case 1:
 			result.put(0, GameDataManager.GAME_ITEMS.get(17));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(48));
 			result.put(5, GameDataManager.GAME_ITEMS.get(0));
 
 			break;
 		case 2:
-			result.put(0, GameDataManager.GAME_ITEMS.get(58));
-			result.put(2, GameDataManager.GAME_ITEMS.get(32));
+			result.put(0, GameDataManager.GAME_ITEMS.get(121));
+			result.put(1, GameDataManager.GAME_ITEMS.get(136));
+			result.put(2, GameDataManager.GAME_ITEMS.get(106));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(47));
-			result.put(5, GameDataManager.GAME_ITEMS.get(2));
+			result.put(4, GameDataManager.GAME_ITEMS.get(2));
+			break;
+			// priest
+		case 3:
+			result.put(0, GameDataManager.GAME_ITEMS.get(137));
+			result.put(2, GameDataManager.GAME_ITEMS.get(106));
+			result.put(3, GameDataManager.GAME_ITEMS.get(56));
+			result.put(4, GameDataManager.GAME_ITEMS.get(2));
+			break;
+			// warr
+		case 4:
+			result.put(0, GameDataManager.GAME_ITEMS.get(75));
+			result.put(2, GameDataManager.GAME_ITEMS.get(60));
+			result.put(3, GameDataManager.GAME_ITEMS.get(56));
+			result.put(4, GameDataManager.GAME_ITEMS.get(2));
+			break;
+			// knight
+		case 5:
+			result.put(0, GameDataManager.GAME_ITEMS.get(75));
+			result.put(2, GameDataManager.GAME_ITEMS.get(60));
+			result.put(3, GameDataManager.GAME_ITEMS.get(56));
+			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case 6:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
@@ -135,13 +160,6 @@ public class PlayState extends GameState {
 			// result.put(4, GameDataManager.GAME_ITEMS.get(75));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
-			//		default:
-			//			result.put(0, GameDataManager.GAME_ITEMS.get(75));
-			//			result.put(2, GameDataManager.GAME_ITEMS.get(60));
-			//			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			//			// result.put(4, GameDataManager.GAME_ITEMS.get(75));
-			//			result.put(4, GameDataManager.GAME_ITEMS.get(2));
-			//			break;
 		}
 
 		return result;
@@ -407,7 +425,21 @@ public class PlayState extends GameState {
 				this.loadClass(CharacterClass.WIZARD);
 			}
 			if (key.three.down) {
+				this.loadClass(CharacterClass.PRIEST);
+			}
+			if (key.four.down) {
+				this.loadClass(CharacterClass.WARRIOR);
+			}
+			if (key.five.down) {
+				this.loadClass(CharacterClass.KNIGHT);
+			}
+			if (key.six.down) {
 				this.loadClass(CharacterClass.PALLADIN);
+			}
+
+
+			if (key.q.down && ((System.currentTimeMillis() - this.lastAbilityTick) > 1000)) {
+				this.useAbility(mouse);
 			}
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);
@@ -431,6 +463,25 @@ public class PlayState extends GameState {
 			this.shotDestQueue.add(dest);
 		}
 
+	}
+
+	private void useAbility(MouseHandler mouse) {
+		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(15);
+		Player player = this.realm.getPlayer(this.playerId);
+		Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
+		dest.addX(PlayState.map.x);
+		dest.addY(PlayState.map.y);
+		for (Projectile p : group.getProjectiles()) {
+
+			short offset = (short) (p.getSize() / (short) 2);
+			short rolledDamage = player.getInventory()[0].getDamage().getInRange();
+			rolledDamage += player.getComputedStats().getAtt();
+			this.addProjectile(15, dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
+					p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
+					p.getFrequency());
+		}
+
+		this.lastAbilityTick = System.currentTimeMillis();
 	}
 
 	public void getPlayerEquipmentItemByUid(String uid) {
@@ -496,7 +547,7 @@ public class PlayState extends GameState {
 		List<LootContainer> toRemove = new ArrayList<>();
 		LootContainer closeLoot = null;
 		for (LootContainer lc : this.realm.getLoot().values()) {
-			if ((player.getBounds().distance(lc.getPos()) < 48)) {
+			if ((player.getBounds().distance(lc.getPos()) < 32)) {
 				closeLoot = lc;
 			}
 			if (!lc.isEmpty()) {
@@ -508,7 +559,7 @@ public class PlayState extends GameState {
 			}
 		}
 
-		if (this.getPui().isGroundLootEmpty() && (closeLoot != null)) {
+		if ((this.getPui().isGroundLootEmpty() && (closeLoot != null))) {
 			this.getPui().setGroundLoot(closeLoot.getItems(), g);
 
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
@@ -581,6 +632,14 @@ public class PlayState extends GameState {
 					(int) pos.y + (int) node.getHeight());
 
 			g.drawLine((int) pos.x, (int) pos.y, (int) pos.x, (int) pos.y + (int) node.getHeight());
+		}
+	}
+
+	private void await(long ms) {
+		try {
+			Thread.sleep(ms);
+		} catch (Exception e) {
+
 		}
 	}
 }

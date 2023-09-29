@@ -964,9 +964,9 @@
 	},
 	{
 		"itemId": 58,
-		"row": 7,
-		"col": 14,
-		"spriteKey": "entity/rotmg-items.png",
+		"row": 5,
+		"col": 13,
+		"spriteKey": "entity/rotmg-items-1.png",
 		"name": "Da Staff",
 		"description": "A great staff",
 		"damage": {
@@ -1495,15 +1495,15 @@
 	},
 	{
 		"itemId": 89,
-		"row": 3,
-		"col": 13,
-		"spriteKey": "entity/rotmg-items.png",
-		"name": "Sword of Splendor",
+		"row": 6,
+		"col": 9,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Demon Blade",
 		"description": "An exalted weapon of the august kings of old, hallowed with the spirit of nations and yearning to grant power anew.",
 		"damage": {
-			"projectileGroupId": 12,
-			"min": 235,
-			"max": 290
+			"projectileGroupId": 14,
+			"min": 100,
+			"max": 150
 		},
 		"consumable": false,
 		"tier": 13,
@@ -1792,6 +1792,840 @@
 			"projectileGroupId": 13,
 			"min": 140,
 			"max": 235
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 8
+	},
+		{
+		"itemId": 106,
+		"row": 1,
+		"col": 0,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Neophyte",
+		"description": "A long woolen robe favored by students of magic.",
+		"stats": {
+			"def": 2
+		},
+		"consumable": false,
+		"tier": 1,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 107,
+		"row": 1,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Apprentice",
+		"description": "A robe woven of rare yellow silk.",
+		"stats": {
+			"def": 3,
+			"wis": 1
+		},
+		"consumable": false,
+		"tier": 2,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 108,
+		"row": 1,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Acolyte",
+		"description": "A well-made robe of enchanted blue silk.",
+		"stats": {
+			"def": 4,
+			"wis": 1,
+			"mp": 10
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 109,
+		"row": 1,
+		"col": 3,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Student",
+		"description": "A magical robe of faintly glowing wizardcloth.",
+		"stats": {
+			"def": 4,
+			"wis": 2,
+			"mp": 15
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 110,
+		"row": 1,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Conjurer",
+		"description": "A magical robe of gray moonsilk.",
+		"stats": {
+			"def": 6,
+			"wis": 2,
+			"mp": 20
+		},
+		"consumable": false,
+		"tier": 5,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 111,
+		"row": 1,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Adept",
+		"description": "An enchanted robe of dark moonweave.",
+		"stats": {
+			"def": 7,
+			"wis": 3,
+			"mp": 25
+		},
+		"consumable": false,
+		"tier": 6,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 112,
+		"row": 1,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Invoker",
+		"description": "A powerful robe of delicately embroidered red feythread.",
+		"stats": {
+			"def": 8,
+			"wis": 3,
+			"mp": 30
+		},
+		"consumable": false,
+		"tier": 7,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 113,
+		"row": 1,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Illusionist",
+		"description": "A silversilk robe masterfully sewn with morningdew spider threads.",
+		"stats": {
+			"def": 8,
+			"wis": 4,
+			"mp": 35,
+			"att": 1
+		},
+		"consumable": false,
+		"tier": 8,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 1
+	},
+	{
+		"itemId": 114,
+		"row": 1,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Master",
+		"description": "A beautiful and versatile robe of the lightest magethread.",
+		"stats": {
+			"def": 9,
+			"wis": 5,
+			"mp": 40,
+			"att": 2
+		},
+		"consumable": false,
+		"tier": 9,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 2
+	},
+	{
+		"itemId": 115,
+		"row": 1,
+		"col": 9,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Shadow Magus",
+		"description": "A highly decorated robe of purple wizardcloth, imbued with powers of sorcery and darkness.",
+		"stats": {
+			"def": 10,
+			"wis": 5,
+			"mp": 45,
+			"att": 2
+		},
+		"consumable": false,
+		"tier": 10,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 3
+	},
+	{
+		"itemId": 116,
+		"row": 1,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Moon Wizard",
+		"description": "A robe of rarest moonsilk, enhanced long ago with deep nocturnal enchantments.",
+		"stats": {
+			"def": 11,
+			"wis": 6,
+			"mp": 50,
+			"att": 3
+		},
+		"consumable": false,
+		"tier": 11,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 4
+	},
+	{
+		"itemId": 117,
+		"row": 1,
+		"col": 11,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Elder Warlock",
+		"description": "A brightly colored robe of metallic threads, woven in the ancient elvish style and steeped in fey auras.",
+		"stats": {
+			"def": 12,
+			"wis": 6,
+			"mp": 50,
+			"att": 3
+		},
+		"consumable": false,
+		"tier": 12,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 5
+	},
+	{
+		"itemId": 118,
+		"row": 1,
+		"col": 12,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Grand Sorcerer",
+		"description": "A bloodweft robe adorned with rubies and firegarnets, worn by an ancient sect of masterful wizards.",
+		"stats": {
+			"def": 13,
+			"wis": 6,
+			"mp": 55,
+			"att": 4
+		},
+		"consumable": false,
+		"tier": 13,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 6
+	},
+	{
+		"itemId": 119,
+		"row": 1,
+		"col": 13,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Star Mother",
+		"description": "A robe of gossamer glowthread, used by the sorceress matriarchs of the western kingdoms.",
+		"stats": {
+			"def": 15,
+			"wis": 7,
+			"mp": 65,
+			"att": 5
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 7
+	},
+	{
+		"itemId": 120,
+		"row": 1,
+		"col": 14,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Robe of the Ancient Intellect",
+		"description": "A phenomenal robe magically woven from fibers of sapphire, topaz and lapis lazuli, created for the archwizard of the seraphic realms.",
+		"stats": {
+			"def": 17,
+			"wis": 8,
+			"mp": 75,
+			"att": 6
+		},
+		"consumable": false,
+		"tier": 15,
+		"targetSlot": 2,
+		"targetClass": -1,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 121,
+		"row": 7,
+		"col": 0,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Energy Staff",
+		"description": "A magical wooden staff topped with a white crystal.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 10,
+			"max": 25
+		},
+		"consumable": false,
+		"tier": 0,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 122,
+		"row": 7,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Firebrand Staff",
+		"description": "A staff imbued with potent magical fire.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 10,
+			"max": 30
+		},
+		"consumable": false,
+		"tier": 1,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 123,
+		"row": 7,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Comet Staff",
+		"description": "A staff charged with the icy powers of the heavens.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 15,
+			"max": 35
+		},
+		"consumable": false,
+		"tier": 2,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 124,
+		"row": 7,
+		"col": 3,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Serpentine Staff",
+		"description": "A staff powered by the magic of Stheno’s minions.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 20,
+			"max": 40
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 125,
+		"row": 7,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Meteor Staff",
+		"description": "A staff that harnesses the energy of shooting stars.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 25,
+			"max": 45
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 126,
+		"row": 7,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Slayer Staff",
+		"description": "A powerful staff crafted by demons for waging war on mortals.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 35,
+			"max": 55
+		},
+		"consumable": false,
+		"tier": 5,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 127,
+		"row": 7,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Avenger Staff",
+		"description": "A slender felwood staff pulsing with auras of vengeance and justice.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 40,
+			"max": 70
+		},
+		"consumable": false,
+		"tier": 6,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 128,
+		"row": 7,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Staff of Destruction",
+		"description": "An ancient knurlwood staff crackling with power and exuding thin gray vapors.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 45,
+			"max": 85
+		},
+		"consumable": false,
+		"tier": 7,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 1
+	},
+	{
+		"itemId": 129,
+		"row": 7,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Staff of Horror",
+		"description": "A mysterious runewood staff decorated with horrific figures.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 50,
+			"max": 90
+		},
+		"consumable": false,
+		"tier": 8,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 2
+	},
+	{
+		"itemId": 130,
+		"row": 7,
+		"col": 9,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Staff of Necrotic Arcana",
+		"description": "A golden staff imbued with the powers of death magic.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 50,
+			"max": 95
+		},
+		"consumable": false,
+		"tier": 9,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 3
+	},
+	{
+		"itemId": 131,
+		"row": 7,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Staff of Diabolic Secrets",
+		"description": "An imposing golden staff of tremendous otherworldly power.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 55,
+			"max": 95
+		},
+		"consumable": false,
+		"tier": 10,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 4
+	},
+	{
+		"itemId": 132,
+		"row": 7,
+		"col": 11,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Staff of Astral Knowledge",
+		"description": "A splendid golden staff of astonishing power, bathed in light and brimming with magical energy.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 55,
+			"max": 100
+		},
+		"consumable": false,
+		"tier": 11,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 5
+	},
+	{
+		"itemId": 133,
+		"row": 7,
+		"col": 12,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Staff of the Cosmic Whole",
+		"description": "A golden staff of transcendent understanding, made from crystals present at the formation of the universe.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 60,
+			"max": 100
+		},
+		"consumable": false,
+		"tier": 12,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 6
+	},
+	{
+		"itemId": 134,
+		"row": 7,
+		"col": 13,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Staff of the Vital Unity",
+		"description": "A golden staff of elysian consciousness, shining with the base power of empyrean truths.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 65,
+			"max": 110
+		},
+		"consumable": false,
+		"tier": 13,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 7
+	},
+	{
+		"itemId": 135,
+		"row": 7,
+		"col": 14,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Staff of the Fundamental Core",
+		"description": "An otherworldly staff of omnipresent elation, embodied of cardinal essence and the power of deathless peace.",
+		"damage": {
+			"projectileGroupId": 10,
+			"min": 75,
+			"max": 115
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 8
+	},
+	
+	{
+		"itemId": 136,
+		"row": 5,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items-1.png",
+		"name": "Penetrating Blast Spell",
+		"description": "A super powerful spell",
+		"damage": {
+			"projectileGroupId": 15,
+			"min": 50,
+			"max": 75
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 1,
+		"targetClass": 1,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 137,
+		"row": 4,
+		"col": 0,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Fire Wand",
+		"description": "A wand that casts a simple fire spell.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 30,
+			"max": 55
+		},
+		"consumable": false,
+		"tier": 0,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 138,
+		"row": 4,
+		"col": 1,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Force Wand",
+		"description": "A wand that emits bolts of pure force.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 40,
+			"max": 70
+		},
+		"consumable": false,
+		"tier": 1,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 139,
+		"row": 4,
+		"col": 2,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Power Wand",
+		"description": "A wand that fires power bolts.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 45,
+			"max": 80
+		},
+		"consumable": false,
+		"tier": 2,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 140,
+		"row": 4,
+		"col": 3,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Missile Wand",
+		"description": "A wand that casts a strong missile.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 50,
+			"max": 85
+		},
+		"consumable": false,
+		"tier": 3,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 141,
+		"row": 4,
+		"col": 4,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Eldritch Wand",
+		"description": "A wand that shoots dark eldritch energy.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 65,
+			"max": 95
+		},
+		"consumable": false,
+		"tier": 4,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 142,
+		"row": 4,
+		"col": 5,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Hell's Fire Wand",
+		"description": "A wand that casts a strong fire spell.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 80,
+			"max": 110
+		},
+		"consumable": false,
+		"tier": 5,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 143,
+		"row": 4,
+		"col": 6,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wand of Dark Magic",
+		"description": "A wand that casts a bolt of pure magic force.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 94,
+			"max": 125
+		},
+		"consumable": false,
+		"tier": 6,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 0
+	},
+	{
+		"itemId": 144,
+		"row": 4,
+		"col": 7,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wand of Arcane Flame",
+		"description": "A deadly wand that channels magefire from the nether planes.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 110,
+			"max": 140
+		},
+		"consumable": false,
+		"tier": 7,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 1
+	},
+	{
+		"itemId": 145,
+		"row": 4,
+		"col": 8,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wand of Death",
+		"description": "A fearsome wand that fires bolts of penetrating death magic.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 115,
+			"max": 155
+		},
+		"consumable": false,
+		"tier": 8,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 2
+	},
+	{
+		"itemId": 146,
+		"row": 4,
+		"col": 9,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wand of Deep Sorcery",
+		"description": "A mysterious wand of otherworldly origin, imbued with the purest of arcane energies.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 120,
+			"max": 160
+		},
+		"consumable": false,
+		"tier": 9,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 3
+	},
+	{
+		"itemId": 147,
+		"row": 4,
+		"col": 10,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wand of Shadow",
+		"description": "A wand of demonic enigmas, cloaked in darkness and crackling with dark enchantments.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 125,
+			"max": 165
+		},
+		"consumable": false,
+		"tier": 10,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 4
+	},
+	{
+		"itemId": 148,
+		"row": 4,
+		"col": 11,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wand of Ancient Warning",
+		"description": "A centuries-old wand of great power, heralding long-destined destruction.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 125,
+			"max": 170
+		},
+		"consumable": false,
+		"tier": 11,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 5
+	},
+	{
+		"itemId": 149,
+		"row": 4,
+		"col": 12,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wand of Recompense",
+		"description": "A great golden wand of the heavens, created by angels to wreak justice on the slayers of the innocent.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 130,
+			"max": 175
+		},
+		"consumable": false,
+		"tier": 12,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 6
+	},
+	{
+		"itemId": 150,
+		"row": 4,
+		"col": 13,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wand of Evocation",
+		"description": "A shining gold wand of force, built by a diabolic archmagus to channel vast corrupting energies into the material plane.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 145,
+			"max": 180
+		},
+		"consumable": false,
+		"tier": 13,
+		"targetSlot": 0,
+		"targetClass": 1,
+		"fameBonus": 7
+	},
+	{
+		"itemId": 151,
+		"row": 4,
+		"col": 14,
+		"spriteKey": "entity/rotmg-items.png",
+		"name": "Wand of Retribution",
+		"description": "A golden wand of breathtaking power, created by elemental forces from the realms of ice and flame to unleash revenge on their enemies.",
+		"damage": {
+			"projectileGroupId": 16,
+			"min": 150,
+			"max": 195
 		},
 		"consumable": false,
 		"tier": 14,
