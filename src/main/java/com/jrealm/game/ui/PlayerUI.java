@@ -9,7 +9,6 @@ import java.util.Map;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
-import com.jrealm.game.entity.item.Chest;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
@@ -37,6 +36,7 @@ public class PlayerUI {
 
 	private Map<String, ItemTooltip> tooltips;
 
+	private Graphics2D tempGraphics;
 	public PlayerUI(PlayState p) {
 		this.playState = p;
 		SpriteSheet bars = new SpriteSheet("ui/fillbars.png", 0);
@@ -93,7 +93,6 @@ public class PlayerUI {
 
 	public void setGroundLoot(GameItem[] loot, Graphics2D g) {
 		int panelWidth = (GamePanel.width / 5);
-
 		int startX = GamePanel.width - panelWidth;
 
 		this.groundLoot = new Slots[8];
@@ -245,12 +244,13 @@ public class PlayerUI {
 						if (dropped != null) {
 							int idx = this.getOverlapIdx(event);
 							GameItem swap = dropped.getItem().clone();
+							dropped = null;
 							this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
 							this.getPlayState().getPlayer().getInventory()[idx] = item;
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
-						}else if(this.playState.getNearestChest() != null) {
-							Chest c = this.playState.getNearestChest();
-							c.addItemAtFirtIdx(item);
+						} else if (this.playState.getNearestChest() != null) {
+							LootContainer c = this.playState.getNearestChest();
+							c.setItem(c.getFirstNullIdx(), item);
 
 							this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
 

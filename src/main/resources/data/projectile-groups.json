@@ -987,7 +987,6 @@
 		"row": 10,
 		"col": 2,
 		"spriteKey": "entity/rotmg-items-1.png",
-		"angleOffset": "{{PI/4}}",
 		"projectiles": [
 			{
 				"projectileId": 16,

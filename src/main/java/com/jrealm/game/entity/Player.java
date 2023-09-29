@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.entity.item.GameItem;
+import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
@@ -37,6 +38,8 @@ public class Player extends Entity {
 
 	private Stats stats;
 	private long lastStatsTime = 0l;
+
+	private LootContainer currentLootContainer;
 	public Player(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, TileManager tm) {
 		super(id, sprite, origin, size);
 		this.cam = cam;
@@ -116,6 +119,11 @@ public class Player extends Entity {
 	public int getWeaponId() {
 		GameItem weapon = this.getSlot(0);
 		return weapon == null ? -1 : weapon.getDamage().getProjectileGroupId();
+	}
+
+	public GameItem getAbility() {
+		GameItem weapon = this.getSlot(1);
+		return weapon;
 	}
 
 	public Cardinality getCardinality() {

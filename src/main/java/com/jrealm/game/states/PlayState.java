@@ -470,6 +470,7 @@ public class PlayState extends GameState {
 	}
 
 	private void useAbility(MouseHandler mouse) {
+		GameItem abilityItem = this.getPlayer().getAbility();
 		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(15);
 		Player player = this.realm.getPlayer(this.playerId);
 		Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
@@ -527,8 +528,16 @@ public class PlayState extends GameState {
 
 	public Chest getNearestChest() {
 		for (LootContainer lc : this.realm.getLoot().values()) {
-			if ((this.realm.getPlayer(this.playerId).getBounds().distance(lc.getPos()) < 48) && (lc instanceof Chest))
+			if ((this.realm.getPlayer(this.playerId).getBounds().distance(lc.getPos()) < 31) && (lc instanceof Chest))
 				return (Chest) lc;
+		}
+		return null;
+	}
+
+	public LootContainer getNearestLootContainer() {
+		for (LootContainer lc : this.realm.getLoot().values()) {
+			if ((this.realm.getPlayer(this.playerId).getBounds().distance(lc.getPos()) < 31))
+				return lc;
 		}
 		return null;
 	}
@@ -548,7 +557,30 @@ public class PlayState extends GameState {
 
 		}
 
+		this.renderCloseLoot(g);
+
+		for (DamageText text : this.getDamageText()) {
+			text.render(g);
+		}
+
+		// this.renderCollisionBoxes(g);
+
+		g.setColor(Color.white);
+
+		String fps = GamePanel.oldFrameCount + " FPS";
+		g.drawString(fps, 0 + (6 * 32), 32);
+
+		String tps = GamePanel.oldTickCount + " TPS";
+		g.drawString(tps, 0 + (6 * 32), 64);
+
+		this.pui.render(g);
+		this.cam.render(g);
+	}
+
+	public void renderCloseLoot(Graphics2D g) {
 		List<LootContainer> toRemove = new ArrayList<>();
+		Player player = this.realm.getPlayer(this.playerId);
+
 		LootContainer closeLoot = null;
 		for (LootContainer lc : this.realm.getLoot().values()) {
 			if ((player.getBounds().distance(lc.getPos()) < 32)) {
@@ -574,23 +606,6 @@ public class PlayState extends GameState {
 		for (LootContainer tr : toRemove) {
 			this.realm.removeLootContainer(tr);
 		}
-
-		for (DamageText text : this.getDamageText()) {
-			text.render(g);
-		}
-
-		// this.renderCollisionBoxes(g);
-
-		g.setColor(Color.white);
-
-		String fps = GamePanel.oldFrameCount + " FPS";
-		g.drawString(fps, 0 + (6 * 32), 32);
-
-		String tps = GamePanel.oldTickCount + " TPS";
-		g.drawString(tps, 0 + (6 * 32), 64);
-
-		this.pui.render(g);
-		this.cam.render(g);
 	}
 
 	public Player getPlayer() {

@@ -1,5 +1,6 @@
 package com.jrealm.game.entity.item;
 
+import java.awt.Graphics2D;
 import java.util.UUID;
 
 import com.jrealm.game.data.GameDataManager;
@@ -44,5 +45,9 @@ public class Chest extends LootContainer {
 		return false;
 	}
 
+	@Override
+	public void render(Graphics2D g) {
+		super.render(g);
+	}
 
 }

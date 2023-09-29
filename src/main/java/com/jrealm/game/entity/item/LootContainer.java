@@ -25,6 +25,8 @@ public class LootContainer {
 	private Vector2f pos;
 
 	private long spawnedTime;
+
+	private boolean contentsChanged;
 	public LootContainer(Sprite sprite, Vector2f pos) {
 		this.sprite = sprite;
 		this.uid = UUID.randomUUID().toString();
@@ -36,6 +38,10 @@ public class LootContainer {
 			this.items[i] = GameDataManager.GAME_ITEMS.get(r.nextInt(151) + 1);
 		}
 		this.spawnedTime = System.currentTimeMillis();
+	}
+
+	public boolean getContentsChanged() {
+		return this.contentsChanged;
 	}
 
 	public LootContainer(Vector2f pos, GameItem loot) {
@@ -61,6 +67,18 @@ public class LootContainer {
 
 	public void setItem(int idx, GameItem replacement) {
 		this.items[idx] = replacement;
+		this.contentsChanged = true;
+	}
+
+	public int getFirstNullIdx() {
+		int idx = -1;
+		for (int i = 0; i < this.items.length; i++) {
+			if (this.items[i] == null) {
+				idx = i;
+				return idx;
+			}
+		}
+		return idx;
 	}
 
 	public void render(Graphics2D g) {
