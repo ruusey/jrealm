@@ -19,7 +19,6 @@ public class TileMapObj extends TileMap {
 	public static int height;
 
 	public TileMapObj(String data, SpriteSheet sprite, int width, int height, int tileWidth, int tileHeight, int tileColumns) {
-		Tile tempBlock;
 		this.blocks = new Tile[width * height];
 
 		this.tileWidth = tileWidth;

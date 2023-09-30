@@ -26,6 +26,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
+import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.ui.DamageText;
 import com.jrealm.game.ui.PlayerUI;
 import com.jrealm.game.ui.TextEffect;
@@ -68,9 +69,9 @@ public class PlayState extends GameState {
 		this.await(100);
 		this.realm.addLootContainer(new Chest(chestLoc));
 		this.await(100);
-		this.realm.addLootContainer(new Chest(chestLoc.clone(128, 0)));
+		this.realm.addLootContainer(new Chest(chestLoc.clone(-128, 0)));
 		this.await(100);
-		this.realm.addLootContainer(new Chest(chestLoc.clone(256, 0)));
+		this.realm.addLootContainer(new Chest(chestLoc.clone(-256, 0)));
 
 	}
 
@@ -333,6 +334,25 @@ public class PlayState extends GameState {
 				}
 			}
 		}
+		this.test();
+	}
+
+	private void test() {
+		List<Bullet> toRemove = new ArrayList<>();
+		for(Bullet b : this.getBullets()) {
+			for(Tile tile : this.realm.getTileManager().getTm().get(1).getBlocks()) {
+				if (tile == null) {
+					continue;
+				}
+				if (b.getBounds().inside((int) tile.pos.x, (int) tile.pos.y)) {
+					toRemove.add(b);
+				}
+			}
+		}
+		toRemove.forEach(bullet -> {
+			this.realm.removeBullet(bullet);
+
+		});
 	}
 
 	private synchronized void processPlayerHit(Bullet b, Player p) {
@@ -370,6 +390,7 @@ public class PlayState extends GameState {
 			}
 
 			if (e.getDeath()) {
+				this.realm.spawnRandomEnemy();
 				this.realm.removeEnemy(e);
 				this.realm.addLootContainer(new LootContainer(
 						GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8),
@@ -472,19 +493,22 @@ public class PlayState extends GameState {
 
 	private void useAbility(MouseHandler mouse) {
 		GameItem abilityItem = this.getPlayer().getAbility();
-		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(15);
-		Player player = this.realm.getPlayer(this.playerId);
-		Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
-		dest.addX(PlayState.map.x);
-		dest.addY(PlayState.map.y);
-		for (Projectile p : group.getProjectiles()) {
+		if ((abilityItem != null) && (abilityItem.getDamage() != null)) {
+			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(abilityItem.getDamage().getProjectileGroupId());
+			Player player = this.realm.getPlayer(this.playerId);
+			Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
+			dest.addX(PlayState.map.x);
+			dest.addY(PlayState.map.y);
+			for (Projectile p : group.getProjectiles()) {
 
-			short offset = (short) (p.getSize() / (short) 2);
-			short rolledDamage = player.getInventory()[0].getDamage().getInRange();
-			rolledDamage += player.getComputedStats().getAtt();
-			this.addProjectile(15, dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
-					p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
-					p.getFrequency());
+				short offset = (short) (p.getSize() / (short) 2);
+				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
+				rolledDamage += player.getComputedStats().getAtt();
+				this.addProjectile(15, dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
+						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
+						p.getFrequency());
+			}
+
 		}
 
 		this.lastAbilityTick = System.currentTimeMillis();
@@ -550,10 +574,9 @@ public class PlayState extends GameState {
 		if (player != null) {
 			player.render(g);
 		}
-		this.pui.render(g);
 
 
-		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.cam.getBounds());
+		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getRealmCamera().getBounds());
 
 
 		for (int i = 0; i < gameObject.length; i++) {
@@ -562,6 +585,7 @@ public class PlayState extends GameState {
 				toRender.render(g);
 			}
 		}
+		this.pui.render(g);
 
 		this.renderCloseLoot(g);
 

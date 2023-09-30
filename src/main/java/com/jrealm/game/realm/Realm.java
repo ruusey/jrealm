@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -269,6 +270,50 @@ public class Realm {
 			}
 		}
 	}
+
+	public void spawnRandomEnemy() {
+		Vector2f v = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
+		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
+
+		SpriteSheet enemySheet1 = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses-1.png");
+
+		Random r = new Random(System.currentTimeMillis());
+		Enemy go = null;
+		Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getWidth()),
+				GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getHeight()));
+		AABB bounds = new AABB(spawnPos, 64, 64);
+
+		switch (r.nextInt(5)) {
+		case 0:
+			go = new Monster(0, new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0), spawnPos,
+					64);
+			go.setPos(spawnPos);
+			break;
+		case 1:
+			go = new Monster(2, new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
+					spawnPos, 64);
+			go.setPos(spawnPos);
+			break;
+		case 2:
+			go = new Monster(1, new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
+					spawnPos, 64);
+			go.setPos(spawnPos);
+			break;
+		case 3:
+			go = new Monster(7, new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0),
+					spawnPos, 64);
+			go.setPos(spawnPos);
+			break;
+		case 4:
+			go = new Monster(8, new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0),
+					spawnPos, 64);
+			go.setPos(spawnPos);
+			break;
+
+		}
+		this.addEnemy(go);
+	}
+
 
 	private void acquirePlayerLock() {
 		try {

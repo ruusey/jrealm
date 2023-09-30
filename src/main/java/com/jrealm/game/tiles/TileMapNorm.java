@@ -40,11 +40,11 @@ public class TileMapNorm extends TileMap {
 		// if (TileManager.tm.size() < 2) {
 		// normMap = 0;
 		// }
-		NormTile[] block = new NormTile[64];
+		NormTile[] block = new NormTile[100];
 
 		int i = 0;
-		for (int x = 4; x > -4; x--) {
-			for (int y = 4; y > -4; y--) {
+		for (int x = 5; x > -5; x--) {
+			for (int y = 5; y > -5; y--) {
 				if (((id + (y + (x * this.tileHeight))) < 0)
 						|| ((id + (y + (x * this.tileHeight))) > ((this.tileWidth * this.tileHeight) - 2))) {
 					continue;

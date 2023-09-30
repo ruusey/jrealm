@@ -14,6 +14,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
@@ -48,7 +49,7 @@ public class TileManager {
 	}
 
 	public TileManager(String path, Camera playerCam) {
-		this(path, 32, 32, playerCam);
+		this(path, GlobalConstants.BASE_SIZE, GlobalConstants.BASE_SIZE, playerCam);
 	}
 
 	public TileManager(String path, int blockWidth, int blockHeight, Camera playerCam) {
@@ -61,7 +62,7 @@ public class TileManager {
 	}
 
 	public TileManager(SpriteSheet spritesheet, int chuckSize, Camera playerCam, MaterialManager... mm) {
-		this(spritesheet, 32, 32, chuckSize, playerCam, mm);
+		this(spritesheet, GlobalConstants.BASE_SIZE, GlobalConstants.BASE_SIZE, chuckSize, playerCam, mm);
 	}
 
 	public TileManager(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize, Camera playerCam,

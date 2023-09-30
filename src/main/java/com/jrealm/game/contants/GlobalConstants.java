@@ -1,7 +1,8 @@
 package com.jrealm.game.contants;
 
-abstract class GlobalConstants {
+public class GlobalConstants {
 
+	public static final int BASE_SIZE = 32;
 
 
 }

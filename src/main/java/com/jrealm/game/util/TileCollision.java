@@ -1,9 +1,11 @@
 package com.jrealm.game.util;
 
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.tiles.TileMapObj;
 import com.jrealm.game.tiles.blocks.HoleBlock;
 import com.jrealm.game.tiles.blocks.Tile;
+
 
 public class TileCollision {
 
@@ -18,8 +20,8 @@ public class TileCollision {
 		int xt;
 		int yt;
 
-		xt = (int) ( (this.e.getPos().x + ax) + this.e.getBounds().getXOffset()) / 64;
-		yt = (int) ( (this.e.getPos().y + ay) + this.e.getBounds().getYOffset()) / 64;
+		xt = (int) ((this.e.getPos().x + ax) + this.e.getBounds().getXOffset()) / GlobalConstants.BASE_SIZE;
+		yt = (int) ((this.e.getPos().y + ay) + this.e.getBounds().getYOffset()) / GlobalConstants.BASE_SIZE;
 		this.tileId = (xt + (yt * TileMapObj.height));
 
 		if(this.tileId > (TileMapObj.height * TileMapObj.width)) {
@@ -36,16 +38,17 @@ public class TileCollision {
 
 			for(int c = 0; c < 4; c++) {
 
-				xt = (int) ( (this.e.getPos().x + ax) + ((c % 2) * this.e.getBounds().getWidth()) + this.e.getBounds().getXOffset()) / 64;
-				yt = (int) ( (this.e.getPos().y + ay) + ((c / 2) * this.e.getBounds().getHeight()) + this.e.getBounds().getYOffset()) / 64;
+				xt = (int) ((this.e.getPos().x + ax) + ((c % 2) * this.e.getBounds().getWidth())
+						+ this.e.getBounds().getXOffset()) / GlobalConstants.BASE_SIZE;
+				yt = (int) ((this.e.getPos().y + ay) + ((c / 2) * this.e.getBounds().getHeight())
+						+ this.e.getBounds().getYOffset()) / GlobalConstants.BASE_SIZE;
 
 				if((xt <= 0) || (yt <= 0) || ((xt + (yt * TileMapObj.height)) < 0) || ((xt + (yt * TileMapObj.height)) > ((TileMapObj.height * TileMapObj.width) - 2)))
 					return true;
 
 				if(tiles[xt + (yt * TileMapObj.height)] instanceof Tile) {
 					Tile block = tiles[xt + (yt * TileMapObj.height)];
-					if(block instanceof HoleBlock)
-						return this.collisionHole(tiles, ax, ay, xt, yt, block);
+
 					return block.update(this.e.getBounds());
 				}
 			}
@@ -57,8 +60,10 @@ public class TileCollision {
 	public int getTile() { return this.tileId; }
 
 	private boolean collisionHole(Tile[] tiles, float ax, float ay, float xt, float yt, Tile block) {
-		int nextXt = (int) ((( (this.e.getPos().x + ax) + this.e.getBounds().getXOffset()) / 64) + (this.e.getBounds().getWidth() / 64));
-		int nextYt = (int) ((( (this.e.getPos().y + ay) + this.e.getBounds().getYOffset()) / 64) + (this.e.getBounds().getHeight() / 64));
+		int nextXt = (int) ((((this.e.getPos().x + ax) + this.e.getBounds().getXOffset()) / GlobalConstants.BASE_SIZE)
+				+ (this.e.getBounds().getWidth() / GlobalConstants.BASE_SIZE));
+		int nextYt = (int) ((((this.e.getPos().y + ay) + this.e.getBounds().getYOffset()) / GlobalConstants.BASE_SIZE)
+				+ (this.e.getBounds().getHeight() / GlobalConstants.BASE_SIZE));
 
 		if(block.isInside(this.e.getBounds())) {
 			this.e.setFallen(true);
