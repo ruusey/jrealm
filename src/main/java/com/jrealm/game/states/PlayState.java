@@ -585,7 +585,8 @@ public class PlayState extends GameState {
 	public void renderCloseLoot(Graphics2D g) {
 		List<LootContainer> toRemove = new ArrayList<>();
 		Player player = this.realm.getPlayer(this.playerId);
-
+		if (player == null)
+			return;
 		LootContainer closeLoot = null;
 		for (LootContainer lc : this.realm.getLoot().values()) {
 			if ((player.getBounds().distance(lc.getPos()) < 32)) {

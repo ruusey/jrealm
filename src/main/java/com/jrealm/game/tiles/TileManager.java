@@ -191,7 +191,7 @@ public class TileManager {
 
 				data[i] = eElement.getElementsByTagName("data").item(0).getTextContent();
 
-				if (i <= 2) {
+				if (i == 0) {
 					this.tm
 					.add(new TileMapNorm(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
 				} else {

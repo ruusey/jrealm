@@ -176,14 +176,16 @@ public class Player extends Entity {
 
 		if(!this.fallen) {
 			this.move();
-			if(!this.tc.collisionTile(this.dx, 0) && !this.bounds.collides(this.dx, 0, this.go)) {
+			if (!this.tc.collisionTile(this.tm.getTm().get(1).getBlocks(), this.dx, 0)
+					&& !this.bounds.collides(this.dx, 0, this.go)) {
 				//PlayState.map.x += dx;
 				this.pos.x += this.dx;
 				this.xCol = false;
 			} else {
 				this.xCol = true;
 			}
-			if(!this.tc.collisionTile(0, this.dy) && !this.bounds.collides(0, this.dy, this.go)) {
+			if (!this.tc.collisionTile(this.tm.getTm().get(1).getBlocks(), 0, this.dy)
+					&& !this.bounds.collides(0, this.dy, this.go)) {
 				//PlayState.map.y += dy;
 				this.pos.y += this.dy;
 				this.yCol = false;

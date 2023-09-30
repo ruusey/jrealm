@@ -2,83 +2,83 @@ package com.jrealm.game.util;
 
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.tiles.TileMapObj;
-import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.tiles.blocks.HoleBlock;
+import com.jrealm.game.tiles.blocks.Tile;
 
 public class TileCollision {
 
-    private Entity e;
-    private int tileId;
+	private Entity e;
+	private int tileId;
 
-    public TileCollision(Entity e) {
-        this.e = e;
-    }
+	public TileCollision(Entity e) {
+		this.e = e;
+	}
 
-    public boolean normalTile(float ax, float ay) {
-        int xt;
-        int yt;
+	public boolean normalTile(float ax, float ay) {
+		int xt;
+		int yt;
 
-        xt = (int) ( (e.getPos().x + ax) + e.getBounds().getXOffset()) / 64;
-        yt = (int) ( (e.getPos().y + ay) + e.getBounds().getYOffset()) / 64;
-        tileId = (xt + (yt * TileMapObj.height));
+		xt = (int) ( (this.e.getPos().x + ax) + this.e.getBounds().getXOffset()) / 64;
+		yt = (int) ( (this.e.getPos().y + ay) + this.e.getBounds().getYOffset()) / 64;
+		this.tileId = (xt + (yt * TileMapObj.height));
 
-        if(tileId > TileMapObj.height * TileMapObj.width) tileId = (TileMapObj.height * TileMapObj.width) - 2;
+		if(this.tileId > (TileMapObj.height * TileMapObj.width)) {
+			this.tileId = (TileMapObj.height * TileMapObj.width) - 2;
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    public boolean collisionTile(float ax, float ay) {
-        if(TileMapObj.event_blocks != null) {
-            int xt;
-            int yt;
+	public boolean collisionTile(Tile[] tiles, float ax, float ay) {
+		if(tiles != null) {
+			int xt;
+			int yt;
 
-            for(int c = 0; c < 4; c++) {
-                
-                xt = (int) ( (e.getPos().x + ax) + (c % 2) * e.getBounds().getWidth() + e.getBounds().getXOffset()) / 64;
-                yt = (int) ( (e.getPos().y + ay) + (c / 2) * e.getBounds().getHeight() + e.getBounds().getYOffset()) / 64;
+			for(int c = 0; c < 4; c++) {
 
-                if(xt <= 0 || yt <= 0 || xt + (yt * TileMapObj.height) < 0 || xt + (yt * TileMapObj.height) > (TileMapObj.height * TileMapObj.width) - 2) {
-                    return true;
-                } 
-                
-                if(TileMapObj.event_blocks[xt + (yt * TileMapObj.height)] instanceof Tile) {
-                    Tile block = TileMapObj.event_blocks[xt + (yt * TileMapObj.height)];
-                    if(block instanceof HoleBlock) {
-                        return collisionHole(ax, ay, xt, yt, block);
-                    }
-                    return block.update(e.getBounds());
-                }
-            }
-        }
+				xt = (int) ( (this.e.getPos().x + ax) + ((c % 2) * this.e.getBounds().getWidth()) + this.e.getBounds().getXOffset()) / 64;
+				yt = (int) ( (this.e.getPos().y + ay) + ((c / 2) * this.e.getBounds().getHeight()) + this.e.getBounds().getYOffset()) / 64;
 
-        return false;
-    }
+				if((xt <= 0) || (yt <= 0) || ((xt + (yt * TileMapObj.height)) < 0) || ((xt + (yt * TileMapObj.height)) > ((TileMapObj.height * TileMapObj.width) - 2)))
+					return true;
 
-    public int getTile() { return tileId; }
+				if(tiles[xt + (yt * TileMapObj.height)] instanceof Tile) {
+					Tile block = tiles[xt + (yt * TileMapObj.height)];
+					if(block instanceof HoleBlock)
+						return this.collisionHole(tiles, ax, ay, xt, yt, block);
+					return block.update(this.e.getBounds());
+				}
+			}
+		}
 
-    private boolean collisionHole(float ax, float ay, float xt, float yt, Tile block) {
-        int nextXt = (int) ((( (e.getPos().x + ax) + e.getBounds().getXOffset()) / 64) + e.getBounds().getWidth() / 64);
-        int nextYt = (int) ((( (e.getPos().y + ay) + e.getBounds().getYOffset()) / 64) + e.getBounds().getHeight() / 64);
+		return false;
+	}
 
-        if(block.isInside(e.getBounds())) {
-            e.setFallen(true);
-            return false;
-        }
-        else if((nextXt == yt + 1) || (nextXt == xt + 1) || (nextYt == yt - 1) || (nextXt == xt - 1)) {
-            if(TileMapObj.event_blocks[nextXt + (nextYt * TileMapObj.height)] instanceof HoleBlock){
-                Tile nextblock = TileMapObj.event_blocks[nextXt + (nextYt * TileMapObj.height)];
+	public int getTile() { return this.tileId; }
 
-                if(e.getPos().x + e.getBounds().getXOffset() > block.getPos().x 
-                && e.getPos().y + e.getBounds().getYOffset() > block.getPos().y
-                && nextblock.getWidth() + nextblock.getPos().x > e.getBounds().getWidth() + (e.getPos().x + e.getBounds().getXOffset())
-                && nextblock.getHeight() + nextblock.getPos().y > e.getBounds().getHeight() + (e.getPos().y + e.getBounds().getYOffset())) {
-                    e.setFallen(true);
-                }
-                return false;
-            }
-        }
+	private boolean collisionHole(Tile[] tiles, float ax, float ay, float xt, float yt, Tile block) {
+		int nextXt = (int) ((( (this.e.getPos().x + ax) + this.e.getBounds().getXOffset()) / 64) + (this.e.getBounds().getWidth() / 64));
+		int nextYt = (int) ((( (this.e.getPos().y + ay) + this.e.getBounds().getYOffset()) / 64) + (this.e.getBounds().getHeight() / 64));
 
-        e.setFallen(false);
-        return false;
-    }
+		if(block.isInside(this.e.getBounds())) {
+			this.e.setFallen(true);
+			return false;
+		}
+		if((nextXt == (yt + 1)) || (nextXt == (xt + 1)) || (nextYt == (yt - 1)) || (nextXt == (xt - 1))) {
+			if (tiles[nextXt + (nextYt * TileMapObj.height)] instanceof HoleBlock) {
+				Tile nextblock = tiles[nextXt + (nextYt * TileMapObj.height)];
+
+				if(((this.e.getPos().x + this.e.getBounds().getXOffset()) > block.getPos().x)
+						&& ((this.e.getPos().y + this.e.getBounds().getYOffset()) > block.getPos().y)
+						&& ((nextblock.getWidth() + nextblock.getPos().x) > (this.e.getBounds().getWidth() + (this.e.getPos().x + this.e.getBounds().getXOffset())))
+						&& ((nextblock.getHeight() + nextblock.getPos().y) > (this.e.getBounds().getHeight() + (this.e.getPos().y + this.e.getBounds().getYOffset())))) {
+					this.e.setFallen(true);
+				}
+				return false;
+			}
+		}
+
+		this.e.setFallen(false);
+		return false;
+	}
 }

@@ -50,6 +50,7 @@ public class Realm {
 	private Map<Integer, MaterialManager> materialManagers;
 
 	private Camera realmCamera = null;
+
 	public Realm(Camera cam) {
 		this.players = new ConcurrentHashMap<>();
 		this.bullets = new ConcurrentHashMap<>();
@@ -72,13 +73,13 @@ public class Realm {
 		this.tileManager = new TileManager("tile/nexus2.xml", this.realmCamera);
 		// this.tileManager.setMaterialManagers(Arrays.asList(treeMgr, rockMgr));
 
-		//		for (MaterialManager mm : this.tileManager.getMaterialManagers()) {
-		//			for (GameObjectKey go : mm.list) {
-		//				if (go.go instanceof Material) {
-		//					this.addMaterial((Material) go.go);
-		//				}
-		//			}
-		//		}
+		// for (MaterialManager mm : this.tileManager.getMaterialManagers()) {
+		// for (GameObjectKey go : mm.list) {
+		// if (go.go instanceof Material) {
+		// this.addMaterial((Material) go.go);
+		// }
+		// }
+		// }
 
 		this.spawnRandomEnemies();
 	}
@@ -120,8 +121,10 @@ public class Realm {
 	}
 
 	public Player getPlayer(long playerId) {
-
-		return this.players.get(playerId);
+		this.acquirePlayerLock();
+		Player p = this.players.get(playerId);
+		this.releasePlayerLock();
+		return p;
 	}
 
 	public long addBullet(Bullet b) {
@@ -234,9 +237,8 @@ public class Realm {
 					}
 					switch (r.nextInt(5)) {
 					case 0:
-						go = new Monster(0,
-								new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0), spawnPos,
-								64);
+						go = new Monster(0, new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0),
+								spawnPos, 64);
 						go.setPos(spawnPos);
 						break;
 					case 1:
@@ -246,20 +248,17 @@ public class Realm {
 						go.setPos(spawnPos);
 						break;
 					case 2:
-						go = new Monster(1,
-								new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
+						go = new Monster(1, new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
 								new Vector2f(j * 64, i * 64), 64);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					case 3:
-						go = new Monster(7,
-								new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0),
+						go = new Monster(7, new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0),
 								new Vector2f(j * 64, i * 64), 64);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					case 4:
-						go = new Monster(8,
-								new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0),
+						go = new Monster(8, new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0),
 								new Vector2f(j * 64, i * 64), 64);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;

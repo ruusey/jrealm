@@ -132,12 +132,15 @@ public abstract class Enemy extends Entity {
 		}
 
 		if (!this.fallen) {
-			if (!this.tc.collisionTile(this.dx, 0)) {
+			if (!this.tc.collisionTile(playState.getRealm().getTileManager().getTm().get(1).getBlocks(),
+					this.dx,
+					0)) {
 				this.sense.getPos().x += this.dx;
 				this.attackrange.getPos().x += this.dx;
 				this.pos.x += this.dx;
 			}
-			if (!this.tc.collisionTile(0, this.dy)) {
+			if (!this.tc.collisionTile(playState.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
+					this.dy)) {
 				this.sense.getPos().y += this.dy;
 				this.attackrange.getPos().y += this.dy;
 				this.pos.y += this.dy;
