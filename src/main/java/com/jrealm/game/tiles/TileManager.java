@@ -26,13 +26,12 @@ import lombok.Data;
 @Data
 public class TileManager {
 
-	public static ArrayList<TileMap> tm;
+	public volatile ArrayList<TileMap> tm;
 	private SpriteSheet spritesheet;
 	private int blockWidth;
 	private int blockHeight;
 
 	private List<MaterialManager> materialManagers;
-	private MaterialManager mm;
 	private int width;
 	private int height;
 
@@ -42,30 +41,39 @@ public class TileManager {
 	private String file;
 	private int columns;
 
+	private Camera playerCam;
+
 	public TileManager() {
-		TileManager.tm = new ArrayList<TileMap>();
-		this.materialManagers = new ArrayList<>();
+		this.tm = new ArrayList<>();
 	}
 
-	public TileManager(String path) {
-		this();
-		this.addTileMap(path, 64, 64);
+	public TileManager(String path, Camera playerCam) {
+		this(path, 32, 32, playerCam);
 	}
 
-	public TileManager(String path, int blockWidth, int blockHeight) {
-		this();
+	public TileManager(String path, int blockWidth, int blockHeight, Camera playerCam) {
+		this.tm = new ArrayList<>();
+
+		this.playerCam = playerCam;
+		this.blockWidth = blockWidth;
+		this.blockHeight = blockHeight;
 		this.addTileMap(path, blockWidth, blockHeight);
 	}
 
-	public TileManager(SpriteSheet spritesheet, int chuckSize, MaterialManager... mm) {
-		this();
-		this.addTileMap(spritesheet, 64, 64, chuckSize, mm);
-
+	public TileManager(SpriteSheet spritesheet, int chuckSize, Camera playerCam, MaterialManager... mm) {
+		this(spritesheet, 32, 32, chuckSize, playerCam, mm);
 	}
 
-	public TileManager(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize, MaterialManager... mm) {
-		this();
-		this.addTileMap(spritesheet, blockWidth, blockHeight, chuckSize, mm);
+	public TileManager(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize, Camera playerCam,
+			MaterialManager... mm) {
+		this.tm = new ArrayList<>();
+		this.playerCam = playerCam;
+		this.blockWidth = blockWidth;
+		this.blockHeight = blockHeight;
+		this.chuckSize = chuckSize;
+		this.spritesheet = spritesheet;
+		this.materialManagers = Arrays.asList(mm);
+		this.addTileMap(spritesheet, blockWidth, blockHeight, chuckSize, Arrays.asList(mm));
 		System.gc();
 	}
 
@@ -98,12 +106,12 @@ public class TileManager {
 	}
 
 	public void generateTileMap(int chuckSize) {
-		this.addTileMap(this.spritesheet, this.blockWidth, this.blockHeight, chuckSize, this.mm);
+		this.addTileMap(this.spritesheet, this.blockWidth, this.blockHeight, chuckSize, this.materialManagers);
 	}
 
 	private void addTileMap(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize,
-			MaterialManager... mm) {
-		this.materialManagers = Arrays.asList(mm);
+			List<MaterialManager> matManagers) {
+		this.materialManagers = matManagers;
 		this.spritesheet = spritesheet;
 		this.blockWidth = blockWidth;
 		this.blockHeight = blockHeight;
@@ -111,9 +119,10 @@ public class TileManager {
 		this.height = chuckSize;
 		this.file = spritesheet.getFilename();
 		this.columns = spritesheet.getCols();
+		this.playerCam.setTileSize(blockWidth);
 
 		String[] data = new String[3];
-		TileMapGenerator tmg = new TileMapGenerator(chuckSize, blockWidth, mm);
+		TileMapGenerator tmg = new TileMapGenerator(chuckSize, blockWidth, this.materialManagers.get(0));
 
 		// For now
 		data[0] = "";
@@ -124,13 +133,14 @@ public class TileManager {
 			}
 		}
 
-		TileManager.tm.add(new TileMapObj(data[0], spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,
+		this.tm.add(new TileMapObj(data[0], spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,
 				spritesheet.getCols()));
 
-		TileManager.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,
+		this.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,
 				spritesheet.getCols()));
 		// tm.add(new TileMapNorm(tmg.onTop, spritesheet, chuckSize, chuckSize,
 		// blockWidth, blockHeight, spritesheet.getCols()));
+		this.playerCam.setLimit(chuckSize * blockWidth, chuckSize * blockHeight);
 
 		this.solid = data[0];
 		this.genMap = tmg.base;
@@ -138,7 +148,7 @@ public class TileManager {
 
 	private void addTileMap(String path, int blockWidth, int blockHeight) {
 		String imagePath;
-
+		this.playerCam.setTileSize(blockWidth);
 		int width = 0;
 		int height = 0;
 		int tileWidth;
@@ -181,14 +191,16 @@ public class TileManager {
 
 				data[i] = eElement.getElementsByTagName("data").item(0).getTextContent();
 
-				if (i >= 1) {
-					TileManager.tm
+				if (i == 0) {
+					this.tm
 					.add(new TileMapNorm(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
-				} else {
-					TileManager.tm
+				} else if (i == 2) {
+					this.tm
 					.add(new TileMapObj(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
 				}
 			}
+			this.playerCam.setLimit(width * blockWidth, height * blockHeight);
+
 		} catch (Exception e) {
 			System.out.println("ERROR - TILEMANAGER: can not read tilemap:");
 			e.printStackTrace();
@@ -199,11 +211,11 @@ public class TileManager {
 		this.height = height;
 	}
 
-	public NormTile[] getNormalTile(int id) {
-		int normMap = 1;
-		if (TileManager.tm.size() < 2) {
-			normMap = 0;
-		}
+	public synchronized NormTile[] getNormalTile(int id) {
+		int normMap = 0;
+		//		if (TileManager.tm.size() < 2) {
+		//			normMap = 0;
+		//		}
 		NormTile[] block = new NormTile[64];
 
 		int i = 0;
@@ -213,8 +225,10 @@ public class TileManager {
 						|| ((id + (y + (x * this.height))) > ((this.width * this.height) - 2))) {
 					continue;
 				}
-				block[i] = (NormTile) TileManager.tm.get(normMap).getBlocks()[id + (y + (x * this.height))];
+
+				block[i] = (NormTile) this.tm.get(normMap).getBlocks()[id + (y + (x * this.height))];
 				i++;
+
 			}
 		}
 
@@ -222,9 +236,9 @@ public class TileManager {
 	}
 
 	public AABB getRenderViewPort() {
-		NormTile[] tiles = this.getNormalTile(909);
-		NormTile first = tiles[0];
-		NormTile last = tiles[tiles.length - 1];
+		com.jrealm.game.tiles.blocks.Tile[] tiles = this.getNormalTile(0);
+		com.jrealm.game.tiles.blocks.Tile first = tiles[0];
+		com.jrealm.game.tiles.blocks.Tile last = tiles[tiles.length - 1];
 
 		Vector2f pos = last.getPos();
 		float width = first.getPos().x - pos.x;
@@ -235,13 +249,12 @@ public class TileManager {
 		return viewPort;
 	}
 
-	public void render(Graphics2D g, Camera bounds) {
-		bounds.setTileSize(this.blockWidth);
+	public void render(Graphics2D g) {
+		if (this.playerCam == null)
+			return;
 
-		bounds.setLimit(this.width * this.blockWidth, this.height * this.blockHeight);
-
-		for (int i = 0; i < TileManager.tm.size(); i++) {
-			TileManager.tm.get(i).render(g, bounds.getBounds());
+		for (int i = 0; i < this.tm.size(); i++) {
+			this.tm.get(i).render(g, this.playerCam.getBounds());
 		}
 	}
 }

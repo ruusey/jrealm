@@ -55,10 +55,10 @@ public class PlayState extends GameState {
 
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
-		this.realm = new Realm();
 		PlayState.map = new Vector2f();
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		this.cam = cam;
+		this.realm = new Realm(cam);
 
 
 		this.shotDestQueue = new ArrayList<>();
@@ -261,6 +261,7 @@ public class PlayState extends GameState {
 				};
 				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText);
 			}
+			this.cam.target(player);
 			this.cam.update();
 		}
 	}
@@ -544,17 +545,22 @@ public class PlayState extends GameState {
 
 	@Override
 	public void render(Graphics2D g) {
-		this.realm.getTileManager().render(g, this.getCam());
+		this.realm.getTileManager().render(g);
 		Player player = this.realm.getPlayer(this.playerId);
-		if (player == null)
-			return;
+		if (player != null) {
+			player.render(g);
+		}
+		this.pui.render(g);
+
+
 		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.cam.getBounds());
 
-		player.render(g);
 
 		for (int i = 0; i < gameObject.length; i++) {
-			gameObject[i].render(g);
-
+			GameObject toRender = gameObject[i];
+			if (toRender != null) {
+				toRender.render(g);
+			}
 		}
 
 		this.renderCloseLoot(g);
@@ -573,7 +579,6 @@ public class PlayState extends GameState {
 		String tps = GamePanel.oldTickCount + " TPS";
 		g.drawString(tps, 0 + (6 * 32), 64);
 
-		this.pui.render(g);
 		this.cam.render(g);
 	}
 

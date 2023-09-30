@@ -22,7 +22,7 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.tiles.TileManager;
-import com.jrealm.game.util.GameObjectKey;
+import com.jrealm.game.util.Camera;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -49,7 +49,7 @@ public class Realm {
 
 	private Map<Integer, MaterialManager> materialManagers;
 
-	public Realm() {
+	public Realm(Camera cam) {
 		this.players = new ConcurrentHashMap<>();
 		this.bullets = new ConcurrentHashMap<>();
 		this.enemies = new ConcurrentHashMap<>();
@@ -68,15 +68,16 @@ public class Realm {
 		MaterialManager rockMgr = new MaterialManager(64, 150);
 		rockMgr.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
 
-		this.tileManager = new TileManager(tileset, 150, treeMgr, rockMgr);
+		this.tileManager = new TileManager("tile/nexus.xml", cam);
+		// this.tileManager.setMaterialManagers(Arrays.asList(treeMgr, rockMgr));
 
-		for (MaterialManager mm : this.tileManager.getMaterialManagers()) {
-			for (GameObjectKey go : mm.list) {
-				if (go.go instanceof Material) {
-					this.addMaterial((Material) go.go);
-				}
-			}
-		}
+		//		for (MaterialManager mm : this.tileManager.getMaterialManagers()) {
+		//			for (GameObjectKey go : mm.list) {
+		//				if (go.go instanceof Material) {
+		//					this.addMaterial((Material) go.go);
+		//				}
+		//			}
+		//		}
 
 		this.spawnRandomEnemies();
 	}
