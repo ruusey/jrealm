@@ -69,7 +69,7 @@ public class Realm {
 		MaterialManager rockMgr = new MaterialManager(64, 150);
 		rockMgr.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
 
-		this.tileManager = new TileManager("tile/nexus.xml", this.realmCamera);
+		this.tileManager = new TileManager("tile/nexus2.xml", this.realmCamera);
 		// this.tileManager.setMaterialManagers(Arrays.asList(treeMgr, rockMgr));
 
 		//		for (MaterialManager mm : this.tileManager.getMaterialManagers()) {

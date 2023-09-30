@@ -191,7 +191,7 @@ public class TileManager {
 
 				data[i] = eElement.getElementsByTagName("data").item(0).getTextContent();
 
-				if (i >= 0) {
+				if (i <= 2) {
 					this.tm
 					.add(new TileMapNorm(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
 				} else {
@@ -249,7 +249,7 @@ public class TileManager {
 	public void render(Graphics2D g) {
 		if (this.playerCam == null)
 			return;
-		AABB bounds = new AABB(this.playerCam.getTarget().getPos().clone(-128, -128), 256, 256);
+		AABB bounds = new AABB(this.playerCam.getTarget().getPos().clone(-132, -132), 312, 312);
 		for (int i = 0; i < this.tm.size(); i++) {
 			this.tm.get(i).render(g, bounds);
 		}
