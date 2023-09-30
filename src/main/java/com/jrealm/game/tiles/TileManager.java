@@ -191,10 +191,10 @@ public class TileManager {
 
 				data[i] = eElement.getElementsByTagName("data").item(0).getTextContent();
 
-				if (i == 0) {
+				if (i >= 0) {
 					this.tm
 					.add(new TileMapNorm(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
-				} else if (i == 2) {
+				} else {
 					this.tm
 					.add(new TileMapObj(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
 				}
@@ -211,23 +211,20 @@ public class TileManager {
 		this.height = height;
 	}
 
-	public synchronized NormTile[] getNormalTile(int id) {
+	public synchronized NormTile[] getNormalTile(Vector2f pos) {
 		int normMap = 0;
-		//		if (TileManager.tm.size() < 2) {
-		//			normMap = 0;
-		//		}
+
 		NormTile[] block = new NormTile[64];
 
 		int i = 0;
-		for (int x = 4; x > -4; x--) {
-			for (int y = 4; y > -4; y--) {
-				if (((id + (y + (x * this.height))) < 0)
-						|| ((id + (y + (x * this.height))) > ((this.width * this.height) - 2))) {
-					continue;
+		for (int x = (int) (pos.x - 4); x > (pos.x + 4); x++) {
+			for (int y = (int) (pos.y - 4); y > (int) (pos.y + 4); y++) {
+				if ((x != pos.x) || (y != pos.y)) {
+
+					block[i] = (NormTile) this.tm.get(normMap).getBlocks()[(y + (x * this.height))];
+					i++;
 				}
 
-				block[i] = (NormTile) this.tm.get(normMap).getBlocks()[id + (y + (x * this.height))];
-				i++;
 
 			}
 		}
@@ -236,7 +233,7 @@ public class TileManager {
 	}
 
 	public AABB getRenderViewPort() {
-		com.jrealm.game.tiles.blocks.Tile[] tiles = this.getNormalTile(0);
+		com.jrealm.game.tiles.blocks.Tile[] tiles = this.getNormalTile(this.getPlayerCam().getPos());
 		com.jrealm.game.tiles.blocks.Tile first = tiles[0];
 		com.jrealm.game.tiles.blocks.Tile last = tiles[tiles.length - 1];
 
@@ -252,9 +249,9 @@ public class TileManager {
 	public void render(Graphics2D g) {
 		if (this.playerCam == null)
 			return;
-
+		AABB bounds = new AABB(this.playerCam.getTarget().getPos().clone(-128, -128), 256, 256);
 		for (int i = 0; i < this.tm.size(); i++) {
-			this.tm.get(i).render(g, this.playerCam.getBounds());
+			this.tm.get(i).render(g, bounds);
 		}
 	}
 }

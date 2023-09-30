@@ -58,7 +58,7 @@ public class PlayState extends GameState {
 		PlayState.map = new Vector2f();
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		this.cam = cam;
-		this.realm = new Realm(cam);
+		this.realm = new Realm(this.cam);
 
 
 		this.shotDestQueue = new ArrayList<>();

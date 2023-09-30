@@ -49,6 +49,7 @@ public class Realm {
 
 	private Map<Integer, MaterialManager> materialManagers;
 
+	private Camera realmCamera = null;
 	public Realm(Camera cam) {
 		this.players = new ConcurrentHashMap<>();
 		this.bullets = new ConcurrentHashMap<>();
@@ -56,7 +57,7 @@ public class Realm {
 		this.loot = new ConcurrentHashMap<>();
 		this.materials = new ConcurrentHashMap<>();
 		this.materialManagers = new ConcurrentHashMap<>();
-
+		this.realmCamera = cam;
 		SpriteSheet tileset = GameDataManager.SPRITE_SHEETS.get("tile/overworldOP.png");
 		SpriteSheet treeset = GameDataManager.SPRITE_SHEETS.get("material/trees.png");
 		SpriteSheet rockset = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png");
@@ -68,7 +69,7 @@ public class Realm {
 		MaterialManager rockMgr = new MaterialManager(64, 150);
 		rockMgr.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
 
-		this.tileManager = new TileManager("tile/nexus.xml", cam);
+		this.tileManager = new TileManager("tile/nexus.xml", this.realmCamera);
 		// this.tileManager.setMaterialManagers(Arrays.asList(treeMgr, rockMgr));
 
 		//		for (MaterialManager mm : this.tileManager.getMaterialManagers()) {

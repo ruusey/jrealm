@@ -226,7 +226,7 @@ public class Player extends Entity {
 			}
 		}
 
-		NormTile[] block = this.tm.getNormalTile(this.tc.getTile());
+		NormTile[] block = this.tm.getNormalTile(this.getPos());
 		for(int i = 0; i < block.length; i++) {
 			if(block[i] != null) {
 				block[i].getImage().restoreDefault();
