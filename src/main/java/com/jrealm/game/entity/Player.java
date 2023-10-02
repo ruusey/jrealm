@@ -37,11 +37,15 @@ public class Player extends Entity {
 	private GameItem[] inventory;
 
 	private Stats stats;
+
+	private short[] effectIds;
+
 	private long lastStatsTime = 0l;
 
 	private LootContainer currentLootContainer;
 	public Player(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, TileManager tm) {
 		super(id, sprite, origin, size);
+		this.resetEffects();
 		this.cam = cam;
 		this.tm = tm;
 		this.size = size;
@@ -84,6 +88,35 @@ public class Player extends Entity {
 		this.stats.setSpd((short) 5);
 		this.stats.setAtt((short) 5);
 		this.stats.setWis((short) 5);
+	}
+
+	public void removeEffect(short effectId) {
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if (this.effectIds[i] == effectId) {
+				this.effectIds[i] = -1;
+			}
+		}
+	}
+
+	public boolean hasEffect(short effectId) {
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if (this.effectIds[i] == effectId)
+				return true;
+		}
+		return false;
+	}
+
+	public void resetEffects() {
+		this.effectIds = new short[] { -1, -1, -1, -1, -1, -1, -1, -1 };
+
+	}
+
+	public void addEffect(short effectId) {
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if (this.effectIds[i] == -1) {
+				this.effectIds[i] = effectId;
+			}
+		}
 	}
 
 	private void resetInventory() {

@@ -1,6 +1,8 @@
 package com.jrealm.game.tiles;
 
 import java.awt.Graphics2D;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
@@ -44,18 +46,26 @@ public class TileMapObj extends TileMap {
 		return this.blocks;
 	}
 
-	@Override
-	public void render(Graphics2D g, AABB cam) {
+	public Tile[] getBlocksInBounds(AABB cam) {
 		int x = (int) ((cam.getPos().x) / this.tileWidth);
 		int y = (int) ((cam.getPos().y) / this.tileHeight);
-
-		for(int i = x; i < (x + (cam.getWidth() / this.tileWidth)); i++) {
-			for(int j = y; j < (y + (cam.getHeight() / this.tileHeight)); j++) {
+		List<Tile> results = new ArrayList<>();
+		for (int i = x; i < (x + (cam.getWidth() / this.tileWidth)); i++) {
+			for (int j = y; j < (y + (cam.getHeight() / this.tileHeight)); j++) {
 				if (((i + (j * TileMapObj.height)) > -1) && ((i + (j * TileMapObj.height)) < this.blocks.length)
 						&& (this.blocks[i + (j * TileMapObj.height)] != null)) {
-					this.blocks[i + (j * TileMapObj.height)].render(g);
+					Tile toAdd = this.blocks[i + (j * TileMapObj.height)];
+					results.add(toAdd);
 				}
 			}
+		}
+		return results.toArray(new Tile[0]);
+	}
+
+	@Override
+	public void render(Graphics2D g, AABB cam) {
+		for (Tile t : this.getBlocksInBounds(cam)) {
+			t.render(g);
 		}
 	}
 }

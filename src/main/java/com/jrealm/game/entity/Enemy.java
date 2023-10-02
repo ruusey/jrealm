@@ -46,8 +46,14 @@ public abstract class Enemy extends Entity {
 	}
 
 	public void chase(Player player) {
-		if (player == null)
+		if ((player == null) || player.hasEffect((short) 0)) {
+			this.up = false;
+			this.down = false;
+			this.right = false;
+			this.left = false;
 			return;
+		}
+
 		AABB playerBounds = player.getBounds();
 		if (this.sense.colCircleBox(playerBounds) && !this.attackrange.colCircleBox(playerBounds)) {
 			if (this.pos.y > (player.pos.y + 1)) {
@@ -100,7 +106,8 @@ public abstract class Enemy extends Entity {
 					this.r_attackrange);
 		}
 
-		if (this.attackrange.colCircleBox(player.getBounds()) && !this.isInvincible) {
+		if (this.attackrange.colCircleBox(player.getBounds()) && !this.isInvincible
+				&& !playState.getPlayer().hasEffect((short) 0)) {
 			this.attack = true;
 
 			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 500);

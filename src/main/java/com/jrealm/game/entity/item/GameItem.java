@@ -20,6 +20,7 @@ public class GameItem extends SpriteModel {
 	private String description;
 	private Stats stats;
 	private Damage damage;
+	private Effect effect;
 	private boolean consumable;
 	private byte tier;
 	private byte targetSlot;

@@ -15,10 +15,10 @@ import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.Chest;
+import com.jrealm.game.entity.item.Effect;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
-import com.jrealm.game.entity.material.Material;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
@@ -65,7 +65,7 @@ public class PlayState extends GameState {
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ArrayList<>();
 		this.loadClass(CharacterClass.WIZARD);
-		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
+		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 96);
 		this.await(100);
 		this.realm.addLootContainer(new Chest(chestLoc));
 		this.await(100);
@@ -115,6 +115,8 @@ public class PlayState extends GameState {
 		switch(characterClass) {
 		case 0:
 			result.put(0, GameDataManager.GAME_ITEMS.get(91));
+			result.put(1, GameDataManager.GAME_ITEMS.get(152));
+
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(5, GameDataManager.GAME_ITEMS.get(2));
@@ -229,18 +231,6 @@ public class PlayState extends GameState {
 
 						}
 
-						if (gameObject[i] instanceof Material) {
-							Material mat = ((Material) gameObject[i]);
-							if (!mat.isDiscovered()
-									&& this.realm.getTileManager().getRenderViewPort().inside(
-											(int) mat.getPos().getWorldVar().x,
-											(int) mat.getPos().getWorldVar().y)) {
-								mat.getImage().restoreDefault();
-								mat.setDiscovered(true);
-							}
-
-						}
-
 						if (gameObject[i] instanceof Bullet) {
 							Bullet bullet = ((Bullet) gameObject[i]);
 							if (bullet != null) {
@@ -256,11 +246,23 @@ public class PlayState extends GameState {
 					this.processBulletHit();
 				};
 
+				Runnable checkAbilityUsage = () -> {
+					if (this.getPlayer() == null)
+						return;
+					GameItem playerAbility = this.getPlayer().getAbility();
+					if ((playerAbility != null) && (playerAbility.getEffect() != null)) {
+						if ((System.currentTimeMillis() - this.getLastAbilityTick()) > playerAbility.getEffect()
+								.getDuration()) {
+							player.resetEffects();
+						}
+					}
+				};
 				Runnable updatePlayerAndUi = () -> {
 					player.update(time);
 					this.pui.update(time);
 				};
-				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText);
+				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText,
+						checkAbilityUsage);
 			}
 			this.cam.target(player);
 			this.cam.update();
@@ -324,15 +326,6 @@ public class PlayState extends GameState {
 					this.proccessEnemyHit(b, enemy);
 				}
 			}
-
-			else if (gameObject[i] instanceof Material) {
-				Material mat = ((Material) gameObject[i]);
-				for (Bullet b : results) {
-					if (b.getBounds().collides(0, 0, mat.getBounds())) {
-						this.realm.removeBullet(b);
-					}
-				}
-			}
 		}
 		this.test();
 	}
@@ -340,11 +333,11 @@ public class PlayState extends GameState {
 	private void test() {
 		List<Bullet> toRemove = new ArrayList<>();
 		for(Bullet b : this.getBullets()) {
-			for(Tile tile : this.realm.getTileManager().getTm().get(1).getBlocks()) {
+			for (Tile tile : this.realm.getTileManager().getTm().get(1).getBlocksInBounds(this.getCam().getBounds())) {
 				if (tile == null) {
 					continue;
 				}
-				if (b.getBounds().inside((int) tile.pos.x, (int) tile.pos.y)) {
+				if (b.getBounds().intersect(new AABB(tile.getPos(), tile.getWidth(), tile.getHeight()))) {
 					toRemove.add(b);
 				}
 			}
@@ -509,9 +502,12 @@ public class PlayState extends GameState {
 						p.getFrequency());
 			}
 
+		} else if (abilityItem.getEffect() != null) {
+			Effect effect = abilityItem.getEffect();
+			this.getPlayer().setMana(this.getPlayer().getMana() - effect.getMpCost());
+			this.getPlayer().addEffect(effect.getEffectId());
+			this.lastAbilityTick = System.currentTimeMillis();
 		}
-
-		this.lastAbilityTick = System.currentTimeMillis();
 	}
 
 	public void getPlayerEquipmentItemByUid(String uid) {

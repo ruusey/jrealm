@@ -1804,7 +1804,7 @@
 		"targetClass": 0,
 		"fameBonus": 8
 	},
-		{
+	{
 		"itemId": 106,
 		"row": 1,
 		"col": 0,
@@ -2349,7 +2349,6 @@
 		"targetClass": 2,
 		"fameBonus": 8
 	},
-
 	{
 		"itemId": 136,
 		"row": 5,
@@ -2636,6 +2635,29 @@
 		"tier": 14,
 		"targetSlot": 0,
 		"targetClass": 3,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 152,
+		"row": 2,
+		"col": 6,
+		"spriteKey": "entity/rotmg-abilities.png",
+		"name": "Test Cloak",
+		"description": "A cloak for testing",
+		"stats": {
+			"def": 2,
+			"wis": 10
+		},
+		"effect": {
+			"self": true,
+			"effectId": 0,
+			"duration": 5000,
+			"mpCost": 100
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 1,
+		"targetClass": 0,
 		"fameBonus": 8
 	}
 ]
