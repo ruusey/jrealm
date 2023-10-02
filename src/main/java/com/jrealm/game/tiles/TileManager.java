@@ -1,7 +1,9 @@
 package com.jrealm.game.tiles;
 
 import java.awt.Graphics2D;
-import java.io.File;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,6 +15,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.material.MaterialManager;
@@ -161,9 +164,12 @@ public class TileManager {
 		String[] data = new String[10];
 
 		try {
-			DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = builderFactory.newDocumentBuilder();
-			Document doc = builder.parse(new File(this.getClass().getClassLoader().getResource(path).toURI()));
+
+			InputStream inputStream = TileManager.class.getClassLoader().getResourceAsStream(path);
+			String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+			DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+
+			Document doc = db.parse(new InputSource(new StringReader(text)));
 			doc.getDocumentElement().normalize();
 
 			NodeList list = doc.getElementsByTagName("tileset");
