@@ -39,6 +39,7 @@ public class Player extends Entity {
 	private Stats stats;
 
 	private short[] effectIds;
+	private long[] effectTimes;
 
 	private long lastStatsTime = 0l;
 
@@ -94,6 +95,18 @@ public class Player extends Entity {
 		for (int i = 0; i < this.effectIds.length; i++) {
 			if (this.effectIds[i] == effectId) {
 				this.effectIds[i] = -1;
+				this.effectTimes[i] = -1;
+			}
+		}
+	}
+
+	public void removeExpiredEffects() {
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if (this.effectIds[i] != -1) {
+				if (System.currentTimeMillis() > this.effectTimes[i]) {
+					this.effectIds[i] = -1;
+					this.effectTimes[i] = -1;
+				}
 			}
 		}
 	}
@@ -108,13 +121,14 @@ public class Player extends Entity {
 
 	public void resetEffects() {
 		this.effectIds = new short[] { -1, -1, -1, -1, -1, -1, -1, -1 };
-
+		this.effectTimes = new long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
 	}
 
-	public void addEffect(short effectId) {
+	public void addEffect(short effectId, long duration) {
 		for (int i = 0; i < this.effectIds.length; i++) {
 			if (this.effectIds[i] == -1) {
 				this.effectIds[i] = effectId;
+				this.effectTimes[i] = System.currentTimeMillis() + duration;
 			}
 		}
 	}
@@ -170,7 +184,6 @@ public class Player extends Entity {
 	}
 
 	private void resetPosition() {
-		System.out.println("Reseting Player... ");
 		this.pos.x = (GamePanel.width / 2) - (this.size / 2);
 		PlayState.map.x = 0;
 		this.cam.getPos().x = 0;

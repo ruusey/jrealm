@@ -26,6 +26,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
+import com.jrealm.game.tiles.TileMap;
 import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.ui.DamageText;
 import com.jrealm.game.ui.PlayerUI;
@@ -44,15 +45,15 @@ public class PlayState extends GameState {
 	public Realm realm;
 
 	private List<DamageText> damageText;
+	private List<Vector2f> shotDestQueue;
 
 	private Camera cam;
 	private PlayerUI pui;
 	public static Vector2f map;
-	private List<Vector2f> shotDestQueue;
 	public long lastShotTick = 0;
 	public long lastAbilityTick = 0;
 
-	public long playerId;
+	public long playerId = -1l;
 
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
@@ -64,7 +65,7 @@ public class PlayState extends GameState {
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ArrayList<>();
-		this.loadClass(CharacterClass.WIZARD);
+		this.loadClass(CharacterClass.ROGUE);
 		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 96);
 		this.await(100);
 		this.realm.addLootContainer(new Chest(chestLoc));
@@ -76,36 +77,21 @@ public class PlayState extends GameState {
 	}
 
 	private void loadClass(CharacterClass cls) {
-		if (this.realm.getPlayer(this.playerId) == null) {
-			Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls.classId),
-					new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
-					this.realm.getTileManager());
-			player.equipSlots(this.getStartingEquipment(player.getId()));
-			player.setIsInvincible(true);
 
-			this.cam.target(player);
-			player.setIsInvincible(false);
+		Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls.classId),
+				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
+				this.realm.getTileManager());
+		player.equipSlots(this.getStartingEquipment(player.getId()));
+		this.cam.target(player);
 
-			this.playerId = this.realm.addPlayer(player);
-			this.pui = new PlayerUI(this);
-
-			this.getPui().setEquipment(player.getInventory());
-		} else {
+		if ((this.playerId != -1) || (this.realm.getPlayer(this.playerId) != null)) {
 			this.realm.removePlayer(this.playerId);
-			Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls.classId),
-					new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
-					this.realm.getTileManager());
-			player.equipSlots(this.getStartingEquipment(player.getId()));
-			player.setIsInvincible(true);
-
-			this.cam.target(player);
-			player.setIsInvincible(false);
-
-			this.playerId = this.realm.addPlayer(player);
-			this.pui = new PlayerUI(this);
-
-			this.getPui().setEquipment(player.getInventory());
 		}
+
+		this.playerId = this.realm.addPlayer(player);
+		this.pui = new PlayerUI(this);
+
+		this.getPui().setEquipment(player.getInventory());
 
 	}
 
@@ -200,6 +186,7 @@ public class PlayState extends GameState {
 					}
 					this.damageText.removeAll(toRemove);
 				};
+
 				Runnable playerShootDequeue = () -> {
 					for (int i = 0; i < this.shotDestQueue.size(); i++) {
 						Vector2f dest = this.shotDestQueue.remove(i);
@@ -209,8 +196,6 @@ public class PlayState extends GameState {
 						ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
 						float angle = Bullet.getAngle(source, dest);
 						for (Projectile p : group.getProjectiles()) {
-
-
 							short offset = (short) (p.getSize() / (short) 2);
 							short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 							rolledDamage += player.getComputedStats().getAtt();
@@ -228,7 +213,6 @@ public class PlayState extends GameState {
 						if (gameObject[i] instanceof Enemy) {
 							Enemy enemy = ((Enemy) gameObject[i]);
 							enemy.update(this, time);
-
 						}
 
 						if (gameObject[i] instanceof Bullet) {
@@ -245,16 +229,13 @@ public class PlayState extends GameState {
 					}
 					this.processBulletHit();
 				};
-
+				// Rewrite this asap
 				Runnable checkAbilityUsage = () -> {
 					if (this.getPlayer() == null)
 						return;
 					GameItem playerAbility = this.getPlayer().getAbility();
 					if ((playerAbility != null) && (playerAbility.getEffect() != null)) {
-						if ((System.currentTimeMillis() - this.getLastAbilityTick()) > playerAbility.getEffect()
-								.getDuration()) {
-							player.resetEffects();
-						}
+						this.getPlayer().removeExpiredEffects();
 					}
 				};
 				Runnable updatePlayerAndUi = () -> {
@@ -327,13 +308,18 @@ public class PlayState extends GameState {
 				}
 			}
 		}
-		this.test();
+		this.proccessTerrainHit();
 	}
 
-	private void test() {
+	private void proccessTerrainHit() {
 		List<Bullet> toRemove = new ArrayList<>();
+		TileMap currentMap = this.realm.getTileManager().getTm().get(1);
+		Tile[] viewportTiles = null;
+		if(currentMap == null)
+			return;
+		viewportTiles = currentMap.getBlocksInBounds(this.getCam().getBounds());
 		for(Bullet b : this.getBullets()) {
-			for (Tile tile : this.realm.getTileManager().getTm().get(1).getBlocksInBounds(this.getCam().getBounds())) {
+			for (Tile tile : viewportTiles) {
 				if (tile == null) {
 					continue;
 				}
@@ -497,16 +483,20 @@ public class PlayState extends GameState {
 				short offset = (short) (p.getSize() / (short) 2);
 				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
-				this.addProjectile(15, dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
+				this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), dest.clone(-offset, -offset),
+						Float.parseFloat(p.getAngle()), p.getSize(),
 						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
 						p.getFrequency());
 			}
 
 		} else if (abilityItem.getEffect() != null) {
 			Effect effect = abilityItem.getEffect();
-			this.getPlayer().setMana(this.getPlayer().getMana() - effect.getMpCost());
-			this.getPlayer().addEffect(effect.getEffectId());
-			this.lastAbilityTick = System.currentTimeMillis();
+			if (this.getPlayer().getMana() >= effect.getMpCost()) {
+				this.getPlayer().setMana(this.getPlayer().getMana() - effect.getMpCost());
+				this.getPlayer().addEffect(effect.getEffectId(), effect.getDuration());
+				this.lastAbilityTick = System.currentTimeMillis();
+				// this.getPlayer().getSprite().getSpriteSheet().setEffect(Sprite.effect.DECAY);
+			}
 		}
 	}
 
