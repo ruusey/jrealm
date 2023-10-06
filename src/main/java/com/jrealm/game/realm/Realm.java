@@ -81,7 +81,7 @@ public class Realm {
 		// }
 		// }
 		// }
-		this.loadMap("tile/nexus.xml");
+		this.loadMap("tile/vault.xml");
 		WorkerThread.submit(this.getStatsThread());
 	}
 
