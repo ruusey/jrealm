@@ -2,6 +2,7 @@ package com.jrealm.game.entity;
 
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.jrealm.game.graphics.Sprite;
@@ -32,6 +33,8 @@ public class Bullet extends GameObject {
 
 	public Bullet(int id, Sprite image, Vector2f origin, int size) {
 		super(id, image, origin, size);
+		this.flags = new ArrayList<>();
+
 	}
 
 	public Bullet(int id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
@@ -43,6 +46,7 @@ public class Bullet extends GameObject {
 		this.damage = damage;
 		this.angle = -Bullet.getAngle(origin, dest);
 		this.isEnemy = isEnemy;
+		this.flags = new ArrayList<>();
 	}
 
 	public Bullet(int id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
@@ -55,6 +59,8 @@ public class Bullet extends GameObject {
 		this.amplitude = amplitude;
 		this.frequency = frequency;
 		this.isEnemy = isEnemy;
+		this.flags = new ArrayList<>();
+
 	}
 
 	public Bullet(int id, Sprite image, Vector2f origin, float angle, short size, float magnitude, float range,
@@ -66,6 +72,8 @@ public class Bullet extends GameObject {
 		this.damage = damage;
 		this.angle = -angle;
 		this.isEnemy = isEnemy;
+		this.flags = new ArrayList<>();
+
 	}
 
 	public static float getAngle(Vector2f source, Vector2f target) {

@@ -183,7 +183,7 @@ public class Player extends Entity {
 		}
 	}
 
-	private void resetPosition() {
+	public void resetPosition() {
 		this.pos.x = (GamePanel.width / 2) - (this.size / 2);
 		PlayState.map.x = 0;
 		this.cam.getPos().x = 0;

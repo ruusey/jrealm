@@ -3,6 +3,7 @@ package com.jrealm.game.util;
 import java.awt.Graphics;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
@@ -26,7 +27,7 @@ public class Camera {
 	private int widthLimit;
 	private int heightLimit;
 
-	private int tileSize = 64;
+	private int tileSize = GlobalConstants.BASE_TILE_SIZE;
 
 	private Entity e;
 
@@ -56,16 +57,22 @@ public class Camera {
 		this.move();
 		if(this.e != null) {
 			if (!this.e.xCol) {
-				if (((this.e.getPos().getWorldVar().x + this.dy) < (Vector2f.getWorldVarX(this.widthLimit - (this.collisionCam.getWidth() / 2)) + this.tileSize))
-						&& ((this.e.getPos().getWorldVar().x + this.dy) > Vector2f.getWorldVarX((GamePanel.width / 2) - (this.tileSize * 2)))) {
+				if (((this.e.getPos().getWorldVar().x
+						+ this.dy) < (Vector2f.getWorldVarX(this.widthLimit - (this.collisionCam.getWidth() / 2))
+								+ this.tileSize))
+						&& ((this.e.getPos().getWorldVar().x + this.dy) > Vector2f
+								.getWorldVarX((GamePanel.width / 2) - (this.tileSize * 2)))) {
 					PlayState.map.x += this.dx;
 					this.collisionCam.getPos().x += this.dx;
 					//bounds.getPos().x += dx;
 				}
 			}
 			if (!this.e.yCol) {
-				if (((this.e.getPos().getWorldVar().y + this.dy) < (Vector2f.getWorldVarY(this.heightLimit - (this.collisionCam.getHeight() / 2)) + this.tileSize))
-						&& ((this.e.getPos().getWorldVar().y + this.dy) > Vector2f.getWorldVarY((GamePanel.height / 2) - (this.tileSize * 2)))) {
+				if (((this.e.getPos().getWorldVar().y
+						+ this.dy) < (Vector2f.getWorldVarY(this.heightLimit - (this.collisionCam.getHeight() / 2))
+								+ this.tileSize))
+						&& ((this.e.getPos().getWorldVar().y + this.dy) > Vector2f
+								.getWorldVarY((GamePanel.height / 2) - (this.tileSize * 2)))) {
 					PlayState.map.y += this.dy;
 					this.collisionCam.getPos().y += this.dy;
 					//bounds.getPos().y += dy;
@@ -73,13 +80,17 @@ public class Camera {
 			}
 		} else {
 			if(((this.collisionCam.getPos().x + this.dx) > 0)
-					&& ((this.collisionCam.getPos().getWorldVar().x + this.dx) < (Vector2f.getWorldVarX(this.widthLimit - this.collisionCam.getWidth()) - this.tileSize))) {
+					&& ((this.collisionCam.getPos().getWorldVar().x
+							+ this.dx) < (Vector2f.getWorldVarX(this.widthLimit - this.collisionCam.getWidth())
+									- this.tileSize))) {
 				PlayState.map.x += this.dx;
 				this.collisionCam.getPos().x += this.dx;
 			}
 
 			if(((this.collisionCam.getPos().y + this.dy) > 0)
-					&& ((this.collisionCam.getPos().getWorldVar().y + this.dy) < (Vector2f.getWorldVarY(this.heightLimit - this.collisionCam.getHeight()) - this.tileSize))) {
+					&& ((this.collisionCam.getPos().getWorldVar().y
+							+ this.dy) < (Vector2f.getWorldVarY(this.heightLimit - this.collisionCam.getHeight())
+									- this.tileSize))) {
 				PlayState.map.y += this.dy;
 				this.collisionCam.getPos().y += this.dy;
 			}
@@ -175,10 +186,12 @@ public class Camera {
 			}
 		} else {
 			if (!this.e.yCol) {
-				if ((this.collisionCam.getPos().y + (this.collisionCam.getHeight() / 2) + this.dy) > (this.e.getPos().y + (this.e.getSize() / 2) + this.e.getDy() + 2)) {
+				if ((this.collisionCam.getPos().y + (this.collisionCam.getHeight() / 2) + this.dy) > (this.e.getPos().y
+						+ (this.e.getSize() / 2) + this.e.getDy() + 2)) {
 					this.up = true;
 					this.down = false;
-				} else if ((this.collisionCam.getPos().y + (this.collisionCam.getHeight() / 2) + this.dy) < ((this.e.getPos().y + (this.e.getSize() / 2) + this.e.getDy()) - 2)) {
+				} else if ((this.collisionCam.getPos().y + (this.collisionCam.getHeight() / 2)
+						+ this.dy) < ((this.e.getPos().y + (this.e.getSize() / 2) + this.e.getDy()) - 2)) {
 					this.down = true;
 					this.up = false;
 				} else {
@@ -189,10 +202,12 @@ public class Camera {
 			}
 
 			if (!this.e.xCol) {
-				if ((this.collisionCam.getPos().x + (this.collisionCam.getWidth() / 2)  + this.dx) > (this.e.getPos().x + (this.e.getSize() / 2) + this.e.getDx() + 2)) {
+				if ((this.collisionCam.getPos().x + (this.collisionCam.getWidth() / 2) + this.dx) > (this.e.getPos().x
+						+ (this.e.getSize() / 2) + this.e.getDx() + 2)) {
 					this.left = true;
 					this.right = false;
-				} else if ((this.collisionCam.getPos().x + (this.collisionCam.getWidth() / 2) + this.dx) < ((this.e.getPos().x + (this.e.getSize() / 2) + this.e.getDx()) - 2)) {
+				} else if ((this.collisionCam.getPos().x + (this.collisionCam.getWidth() / 2)
+						+ this.dx) < ((this.e.getPos().x + (this.e.getSize() / 2) + this.e.getDx()) - 2)) {
 					this.right = true;
 					this.left = false;
 				} else {

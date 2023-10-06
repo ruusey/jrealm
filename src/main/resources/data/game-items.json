@@ -140,7 +140,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -156,7 +156,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -172,7 +172,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -188,7 +188,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -204,7 +204,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -220,7 +220,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -236,7 +236,7 @@
 		"consumable": false,
 		"tier": 4,
 		"targetSlot": 3,
-		"targetClass": -1,
+		"targetClass": -4,
 		"fameBonus": 0
 	},
 	{
@@ -425,7 +425,7 @@
 		"name": "Verdant Bow",
 		"description": "A highly effective bow fashioned of still-living magical springwood.",
 		"damage": {
-			"projectileGroupId": 4,
+			"projectileGroupId": 9,
 			"min": 85,
 			"max": 95
 		},

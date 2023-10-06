@@ -2,6 +2,7 @@ package com.jrealm.game.realm;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -24,6 +25,7 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
+import com.jrealm.game.util.WorkerThread;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -40,6 +42,8 @@ public class Realm {
 
 	private Map<Long, Bullet> bullets;
 
+	private Map<Long, List<Long>> bulletHits;
+
 	private Map<Long, Enemy> enemies;
 
 	private Map<Long, LootContainer> loot;
@@ -54,24 +58,20 @@ public class Realm {
 
 	public Realm(Camera cam) {
 		this.players = new ConcurrentHashMap<>();
-		this.bullets = new ConcurrentHashMap<>();
-		this.enemies = new ConcurrentHashMap<>();
-		this.loot = new ConcurrentHashMap<>();
-		this.materials = new ConcurrentHashMap<>();
-		this.materialManagers = new ConcurrentHashMap<>();
+
 		this.realmCamera = cam;
-		SpriteSheet tileset = GameDataManager.SPRITE_SHEETS.get("tile/overworldOP.png");
-		SpriteSheet treeset = GameDataManager.SPRITE_SHEETS.get("material/trees.png");
-		SpriteSheet rockset = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png");
+		//		SpriteSheet tileset = GameDataManager.SPRITE_SHEETS.get("tile/overworldOP.png");
+		//		SpriteSheet treeset = GameDataManager.SPRITE_SHEETS.get("material/trees.png");
+		//		SpriteSheet rockset = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png");
+		//
+		//		MaterialManager treeMgr = new MaterialManager(64, 150);
+		//		treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
+		//		// treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
+		//
+		//		MaterialManager rockMgr = new MaterialManager(64, 150);
+		//		rockMgr.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
 
-		MaterialManager treeMgr = new MaterialManager(64, 150);
-		treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
-		// treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
-
-		MaterialManager rockMgr = new MaterialManager(64, 150);
-		rockMgr.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
-
-		this.tileManager = new TileManager("tile/nexus2.xml", this.realmCamera);
+		// this.tileManager = new TileManager("tile/nexus.xml", this.realmCamera);
 		// this.tileManager.setMaterialManagers(Arrays.asList(treeMgr, rockMgr));
 
 		// for (MaterialManager mm : this.tileManager.getMaterialManagers()) {
@@ -81,8 +81,21 @@ public class Realm {
 		// }
 		// }
 		// }
+		this.loadMap("tile/nexus.xml");
+		WorkerThread.submit(this.getStatsThread());
+	}
+
+	public void loadMap(String path) {
+		this.bullets = new ConcurrentHashMap<>();
+		this.enemies = new ConcurrentHashMap<>();
+		this.loot = new ConcurrentHashMap<>();
+		this.bulletHits = new ConcurrentHashMap<>();
+		this.materials = new ConcurrentHashMap<>();
+		this.materialManagers = new ConcurrentHashMap<>();
+		this.tileManager = new TileManager(path, this.realmCamera);
 
 		this.spawnRandomEnemies();
+
 	}
 
 	public long addMaterial(Material m) {
@@ -112,6 +125,27 @@ public class Realm {
 		return p != null;
 	}
 
+	public boolean hasHitEnemy(long bulletId, long enemyId) {
+
+		return (this.bulletHits.get(bulletId) != null) && this.bulletHits.get(bulletId).contains(enemyId);
+	}
+
+	public void clearHitMap() {
+		this.bulletHits.clear();
+	}
+
+	public void hitEnemy(long bulletId, long enemyId) {
+		if (this.bulletHits.get(bulletId) == null) {
+			List<Long> hits = new ArrayList<>();
+			hits.add(enemyId);
+			this.bulletHits.put(bulletId, hits);
+		} else {
+			List<Long> curr = this.bulletHits.get(bulletId);
+			curr.add(enemyId);
+			this.bulletHits.put(bulletId, curr);
+		}
+	}
+
 	public boolean removePlayer(long playerId) {
 		this.acquirePlayerLock();
 
@@ -137,7 +171,16 @@ public class Realm {
 
 	public boolean removeBullet(Bullet b) {
 		Bullet bullet = this.bullets.remove(b.getBulletId());
+		this.bulletHits.remove(b.getBulletId());
 		return bullet != null;
+	}
+
+	public boolean removeBullet(Collection<Long> b) {
+		for(Long l : b) {
+			this.bullets.remove(l);
+			this.bulletHits.remove(l);
+		}
+		return true;
 	}
 
 	public long addEnemy(Enemy enemy) {
@@ -312,6 +355,24 @@ public class Realm {
 
 		}
 		this.addEnemy(go);
+	}
+
+	private Thread getStatsThread() {
+		Runnable r = ()->{
+			while(true) {
+				Realm.log.info("Enemies: {}",this.enemies.size());
+				Realm.log.info("Players: {}",this.players.size());
+				Realm.log.info("Loot: {}",this.loot.size());
+				Realm.log.info("Bullets: {}",this.bullets.size());
+				Realm.log.info("BulletHits: {}",this.bulletHits.size());
+				try {
+					Thread.sleep(10000);
+				}catch(Exception e) {
+
+				}
+			}
+		};
+		return new Thread(r);
 	}
 
 

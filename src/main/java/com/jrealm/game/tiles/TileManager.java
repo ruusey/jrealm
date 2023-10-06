@@ -52,7 +52,7 @@ public class TileManager {
 	}
 
 	public TileManager(String path, Camera playerCam) {
-		this(path, GlobalConstants.BASE_SIZE, GlobalConstants.BASE_SIZE, playerCam);
+		this(path, GlobalConstants.BASE_TILE_SIZE, GlobalConstants.BASE_TILE_SIZE, playerCam);
 	}
 
 	public TileManager(String path, int blockWidth, int blockHeight, Camera playerCam) {
@@ -65,7 +65,7 @@ public class TileManager {
 	}
 
 	public TileManager(SpriteSheet spritesheet, int chuckSize, Camera playerCam, MaterialManager... mm) {
-		this(spritesheet, GlobalConstants.BASE_SIZE, GlobalConstants.BASE_SIZE, chuckSize, playerCam, mm);
+		this(spritesheet, GlobalConstants.BASE_TILE_SIZE, GlobalConstants.BASE_TILE_SIZE, chuckSize, playerCam, mm);
 	}
 
 	public TileManager(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize, Camera playerCam,
@@ -173,6 +173,12 @@ public class TileManager {
 			doc.getDocumentElement().normalize();
 
 			NodeList list = doc.getElementsByTagName("tileset");
+			for(int i = 0; i<list.getLength();i++) {
+				Node node = list.item(i);
+				Element eElement = (Element) node;
+
+				// System.out.print(node);
+			}
 			Node node = list.item(0);
 			Element eElement = (Element) node;
 

@@ -2,7 +2,6 @@ package com.jrealm.game.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.util.ArrayList;
 
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.SpriteSheet;
@@ -27,8 +26,6 @@ public abstract class Enemy extends Entity {
 
 	protected int xOffset;
 	protected int yOffset;
-
-	protected ArrayList<GameObject> collisions;
 
 	public long lastShotTick = 0;
 

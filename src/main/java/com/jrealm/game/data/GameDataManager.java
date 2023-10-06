@@ -31,7 +31,7 @@ public class GameDataManager {
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "material/trees.png", "tile/overworldOP.png",
 			"entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png",
-			"entity/rotmg-abilities.png" };
+			"entity/rotmg-abilities.png", "tile/rotmg-tiles.png" };
 
 	private static void loadProjectileGroups() throws Exception {
 		GameDataManager.log.info("Loading Projectile Groups...");
@@ -92,7 +92,7 @@ public class GameDataManager {
 				break;
 			case "entity/rotmg-classes.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-classes.png",
-						GameDataManager.loadClassSprites(CharacterClass.ARCHER.classId));
+						GameDataManager.loadClassSprites(CharacterClass.ARCHER));
 				break;
 			case "entity/rotmg-projectiles.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-projectiles.png",
@@ -101,6 +101,10 @@ public class GameDataManager {
 			case "entity/rotmg-items.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-items.png",
 						new SpriteSheet("entity/rotmg-items.png", 8, 8, 0));
+				break;
+			case "tile/rotmg-tiles.png":
+				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles.png",
+						new SpriteSheet("tile/rotmg-tiles.png", 8, 8, 0));
 				break;
 			case "entity/rotmg-abilities.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-abilities.png",
@@ -119,8 +123,8 @@ public class GameDataManager {
 		GameDataManager.log.info("Loading Sprite Sheets... DONE");
 	}
 
-	public static SpriteSheet loadClassSprites(int classId) {
-		SpriteSheet sheet = new SpriteSheet("entity/rotmg-classes.png", 8, 8, 4 * classId);
+	public static SpriteSheet loadClassSprites(CharacterClass cls) {
+		SpriteSheet sheet = new SpriteSheet("entity/rotmg-classes.png", 8, 8, 4 * cls.classId);
 		return sheet;
 	}
 

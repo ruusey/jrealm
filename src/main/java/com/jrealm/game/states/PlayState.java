@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
@@ -44,7 +46,7 @@ import lombok.EqualsAndHashCode;
 public class PlayState extends GameState {
 	public Realm realm;
 
-	private List<DamageText> damageText;
+	private Queue<DamageText> damageText;
 	private List<Vector2f> shotDestQueue;
 
 	private Camera cam;
@@ -55,6 +57,7 @@ public class PlayState extends GameState {
 
 	public long playerId = -1l;
 
+
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 		PlayState.map = new Vector2f();
@@ -64,8 +67,13 @@ public class PlayState extends GameState {
 
 
 		this.shotDestQueue = new ArrayList<>();
-		this.damageText = new ArrayList<>();
-		this.loadClass(CharacterClass.ROGUE);
+		this.damageText = new ConcurrentLinkedQueue<>();
+		this.loadClass(CharacterClass.ARCHER, true);
+		this.setupChests();
+
+	}
+
+	private void setupChests() {
 		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 96);
 		this.await(100);
 		this.realm.addLootContainer(new Chest(chestLoc));
@@ -73,15 +81,19 @@ public class PlayState extends GameState {
 		this.realm.addLootContainer(new Chest(chestLoc.clone(-128, 0)));
 		this.await(100);
 		this.realm.addLootContainer(new Chest(chestLoc.clone(-256, 0)));
-
 	}
 
-	private void loadClass(CharacterClass cls) {
+	private void loadClass(CharacterClass cls, boolean setEquipment) {
 
-		Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls.classId),
-				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 32,
+		Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls),
+				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 30,
 				this.realm.getTileManager());
-		player.equipSlots(this.getStartingEquipment(player.getId()));
+		if (setEquipment || (this.playerId == -1l)) {
+			player.equipSlots(this.getStartingEquipment(cls));
+		} else {
+			GameItem[] existing = this.getPlayer().getInventory();
+			player.setInventory(existing);
+		}
 		this.cam.target(player);
 
 		if ((this.playerId != -1) || (this.realm.getPlayer(this.playerId) != null)) {
@@ -95,26 +107,26 @@ public class PlayState extends GameState {
 
 	}
 
-	public Map<Integer, GameItem> getStartingEquipment(int characterClass) {
+	public Map<Integer, GameItem> getStartingEquipment(CharacterClass characterClass) {
 		Map<Integer, GameItem> result = new HashMap<>();
 
 		switch(characterClass) {
-		case 0:
-			result.put(0, GameDataManager.GAME_ITEMS.get(91));
+		case ROGUE:
+			result.put(0, GameDataManager.GAME_ITEMS.get(49));
 			result.put(1, GameDataManager.GAME_ITEMS.get(152));
 
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(5, GameDataManager.GAME_ITEMS.get(2));
 			break;
-		case 1:
+		case ARCHER:
 			result.put(0, GameDataManager.GAME_ITEMS.get(17));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(5, GameDataManager.GAME_ITEMS.get(0));
 
 			break;
-		case 2:
+		case WIZARD:
 			result.put(0, GameDataManager.GAME_ITEMS.get(121));
 			result.put(1, GameDataManager.GAME_ITEMS.get(136));
 			result.put(2, GameDataManager.GAME_ITEMS.get(106));
@@ -122,27 +134,27 @@ public class PlayState extends GameState {
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 			// priest
-		case 3:
+		case PRIEST:
 			result.put(0, GameDataManager.GAME_ITEMS.get(137));
 			result.put(2, GameDataManager.GAME_ITEMS.get(106));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 			// warr
-		case 4:
+		case WARRIOR:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 			// knight
-		case 5:
+		case KNIGHT:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
-		case 6:
+		case PALLADIN:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
@@ -177,7 +189,6 @@ public class PlayState extends GameState {
 				}
 				Runnable monitorDamageText = () ->{
 					List<DamageText> toRemove = new ArrayList<>();
-
 					for (DamageText text : this.getDamageText()) {
 						text.update();
 						if (text.getRemove()) {
@@ -218,15 +229,15 @@ public class PlayState extends GameState {
 						if (gameObject[i] instanceof Bullet) {
 							Bullet bullet = ((Bullet) gameObject[i]);
 							if (bullet != null) {
-								if (bullet.remove()) {
-									this.realm.removeBullet(bullet);
-								} else {
-									bullet.update();
-
-								}
+								//								if (bullet.remove()) {
+								//									toRemove.add(bullet.getBulletId());
+								//								} else {
+								bullet.update();
+								// }
 							}
 						}
 					}
+					// this.realm.removeBullet(toRemove);
 					this.processBulletHit();
 				};
 				// Rewrite this asap
@@ -319,6 +330,10 @@ public class PlayState extends GameState {
 			return;
 		viewportTiles = currentMap.getBlocksInBounds(this.getCam().getBounds());
 		for(Bullet b : this.getBullets()) {
+			if (b.remove()) {
+				toRemove.add(b);
+				continue;
+			}
 			for (Tile tile : viewportTiles) {
 				if (tile == null) {
 					continue;
@@ -355,7 +370,11 @@ public class PlayState extends GameState {
 	}
 
 	private synchronized void proccessEnemyHit(Bullet b, Enemy e) {
+		if (this.realm.hasHitEnemy(b.getBulletId(), e.getEnemyId()))
+			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
+			this.realm.hitEnemy(b.getBulletId(), e.getEnemyId());
+
 			e.setHealth(e.getHealth() - b.getDamage(), 0, false);
 			Vector2f sourcePos = e.getPos();
 			DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
@@ -363,12 +382,12 @@ public class PlayState extends GameState {
 			this.damageText.add(hitText);
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
-			} else {
+			} else if (b.remove()) {
 				this.realm.removeBullet(b);
-
 			}
 
 			if (e.getDeath()) {
+				this.realm.clearHitMap();
 				this.realm.spawnRandomEnemy();
 				this.realm.removeEnemy(e);
 				this.realm.addLootContainer(new LootContainer(
@@ -405,46 +424,39 @@ public class PlayState extends GameState {
 			this.cam.input(mouse, key);
 
 			if (key.f1.clicked) {
-				if (this.gsm.isStateActive(GameStateManager.EDIT)) {
-					this.gsm.pop(GameStateManager.EDIT);
-					this.cam.target(player);
-				} else {
-					this.gsm.add(GameStateManager.EDIT);
-					this.cam.target(null);
-				}
+
+				this.realm.loadMap("tile/vault.xml");
+				this.loadClass(CharacterClass.valueOf(this.getPlayer().getId()), false);
+				this.setupChests();
 			}
 
 			this.pui.input(mouse, key);
 
 			if (key.one.down) {
-				this.loadClass(CharacterClass.ARCHER);
+				this.loadClass(CharacterClass.ARCHER, true);
 			}
 			if (key.zero.down) {
-				this.loadClass(CharacterClass.ROGUE);
+				this.loadClass(CharacterClass.ROGUE, true);
 			}
 			if (key.two.down) {
-				this.loadClass(CharacterClass.WIZARD);
+				this.loadClass(CharacterClass.WIZARD, true);
 			}
 			if (key.three.down) {
-				this.loadClass(CharacterClass.PRIEST);
+				this.loadClass(CharacterClass.PRIEST, true);
 			}
 			if (key.four.down) {
-				this.loadClass(CharacterClass.WARRIOR);
+				this.loadClass(CharacterClass.WARRIOR, true);
 			}
 			if (key.five.down) {
-				this.loadClass(CharacterClass.KNIGHT);
+				this.loadClass(CharacterClass.KNIGHT, true);
 			}
 			if (key.six.down) {
-				this.loadClass(CharacterClass.PALLADIN);
+				this.loadClass(CharacterClass.PALLADIN, true);
 			}
 
 
 			if (key.q.down && ((System.currentTimeMillis() - this.lastAbilityTick) > 1000)) {
-				if (this.getPlayer().getMana() > 25) {
-					this.useAbility(mouse);
-					this.getPlayer().setMana(this.getPlayer().getMana() - 25);
-
-				}
+				this.useAbility(mouse);
 			}
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);
@@ -472,6 +484,8 @@ public class PlayState extends GameState {
 
 	private void useAbility(MouseHandler mouse) {
 		GameItem abilityItem = this.getPlayer().getAbility();
+		if (abilityItem == null)
+			return;
 		if ((abilityItem != null) && (abilityItem.getDamage() != null)) {
 			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(abilityItem.getDamage().getProjectileGroupId());
 			Player player = this.realm.getPlayer(this.playerId);
@@ -669,6 +683,7 @@ public class PlayState extends GameState {
 			g.drawLine((int) pos.x, (int) pos.y, (int) pos.x, (int) pos.y + (int) node.getHeight());
 		}
 	}
+
 
 	private void await(long ms) {
 		try {
