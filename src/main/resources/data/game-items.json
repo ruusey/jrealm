@@ -1780,6 +1780,7 @@
 			"min": 125,
 			"max": 220
 		},
+
 		"consumable": false,
 		"tier": 13,
 		"targetSlot": 0,
@@ -2360,6 +2361,9 @@
 			"projectileGroupId": 15,
 			"min": 50,
 			"max": 75
+		},
+		"effect": {
+			"mpCost": 75
 		},
 		"consumable": false,
 		"tier": 14,

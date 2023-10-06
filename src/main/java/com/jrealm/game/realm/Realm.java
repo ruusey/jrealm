@@ -17,6 +17,7 @@ import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.enemy.Monster;
+import com.jrealm.game.entity.item.Chest;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.material.Material;
 import com.jrealm.game.entity.material.MaterialManager;
@@ -81,20 +82,28 @@ public class Realm {
 		// }
 		// }
 		// }
-		this.loadMap("tile/vault.xml");
+		this.loadMap("tile/nexus2.xml");
 		WorkerThread.submit(this.getStatsThread());
 	}
 
 	public void loadMap(String path) {
+		List<Chest> curr = this.getChests();
+
 		this.bullets = new ConcurrentHashMap<>();
 		this.enemies = new ConcurrentHashMap<>();
 		this.loot = new ConcurrentHashMap<>();
+		if (curr.size() > 0) {
+			curr.forEach(chest -> {
+				this.addLootContainer(chest);
+			});
+		}
 		this.bulletHits = new ConcurrentHashMap<>();
 		this.materials = new ConcurrentHashMap<>();
 		this.materialManagers = new ConcurrentHashMap<>();
 		this.tileManager = new TileManager(path, this.realmCamera);
-
-		this.spawnRandomEnemies();
+		if (!path.toLowerCase().contains("vault")) {
+			this.spawnRandomEnemies();
+		}
 
 	}
 
@@ -211,6 +220,18 @@ public class Realm {
 		return lootContainer != null;
 	}
 
+	public List<Chest> getChests() {
+		List<Chest> objs = new ArrayList<>();
+		if (this.loot == null)
+			return objs;
+		for (LootContainer lc : this.loot.values()) {
+			if (lc instanceof Chest) {
+				objs.add((Chest) lc);
+			}
+		}
+		return objs;
+	}
+
 	public AABB[] getCollisionBoxesInBounds(AABB cam) {
 		List<AABB> colBoxes = new ArrayList<>();
 		GameObject[] go = this.getGameObjectsInBounds(cam);
@@ -315,16 +336,13 @@ public class Realm {
 	}
 
 	public void spawnRandomEnemy() {
-		Vector2f v = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 
-		SpriteSheet enemySheet1 = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses-1.png");
 
 		Random r = new Random(System.currentTimeMillis());
 		Enemy go = null;
 		Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getWidth()),
 				GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getHeight()));
-		AABB bounds = new AABB(spawnPos, 64, 64);
 
 		switch (r.nextInt(5)) {
 		case 0:
@@ -360,11 +378,15 @@ public class Realm {
 	private Thread getStatsThread() {
 		Runnable r = ()->{
 			while(true) {
+				double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
+
 				Realm.log.info("Enemies: {}",this.enemies.size());
 				Realm.log.info("Players: {}",this.players.size());
 				Realm.log.info("Loot: {}",this.loot.size());
 				Realm.log.info("Bullets: {}",this.bullets.size());
 				Realm.log.info("BulletHits: {}",this.bulletHits.size());
+				Realm.log.info("Heap Mem: {}", heapSize);
+
 				try {
 					Thread.sleep(10000);
 				}catch(Exception e) {
@@ -380,7 +402,7 @@ public class Realm {
 		try {
 			this.playerLock.acquire();
 		} catch (Exception e) {
-
+			Realm.log.error(e.getMessage());
 		}
 	}
 

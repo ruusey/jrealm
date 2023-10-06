@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class WorkerThread extends Thread {
-	private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10,
+	private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(25,
 			Executors.privilegedThreadFactory());
 
 	public static CompletableFuture<?> submit(Runnable runnable) {

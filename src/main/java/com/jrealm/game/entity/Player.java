@@ -353,20 +353,9 @@ public class Player extends Entity {
 				this.right = false;
 			}
 
-			if(key.attack.down && this.canAttack) {
-				this.attack = true;
-				this.attacktime = System.nanoTime();
-			} else if(!this.attacking) {
-				this.attack = false;
-			}
-
-			if(key.shift.down) {
-				//
-			} else {
-				float maxSpeed = 2.2f + (stats.getSpd() * 0.05f);
-				this.maxSpeed = maxSpeed;
-				this.cam.setMaxSpeed(maxSpeed);
-			}
+			float maxSpeed = 2.2f + (stats.getSpd() * 0.05f);
+			this.maxSpeed = maxSpeed;
+			this.cam.setMaxSpeed(maxSpeed);
 
 			if(this.up && this.down) {
 				this.up = false;

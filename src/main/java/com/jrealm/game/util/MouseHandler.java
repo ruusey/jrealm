@@ -39,12 +39,19 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		MouseHandler.mouseB = 1;
+		if (e.getButton() == MouseEvent.BUTTON1) {
+			MouseHandler.mouseB = 1;
+
+		} else {
+			MouseHandler.mouseB = 2;
+
+		}
 
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
+
 		MouseHandler.mouseB = -1;
 	}
 

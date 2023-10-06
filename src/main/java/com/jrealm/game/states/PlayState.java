@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -68,25 +69,30 @@ public class PlayState extends GameState {
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
-		this.loadClass(CharacterClass.ARCHER, true);
+		this.loadClass(CharacterClass.WIZARD, true);
 		this.setupChests();
 
 	}
 
 	private void setupChests() {
 		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 96);
-		this.await(100);
-		this.realm.addLootContainer(new Chest(chestLoc));
-		this.await(100);
-		this.realm.addLootContainer(new Chest(chestLoc.clone(-128, 0)));
-		this.await(100);
-		this.realm.addLootContainer(new Chest(chestLoc.clone(-256, 0)));
+		if (this.realm.getChests().size() == 0) {
+			this.await(100);
+			this.realm.addLootContainer(new Chest(chestLoc));
+			this.await(100);
+			this.realm.addLootContainer(new Chest(chestLoc.clone(-128, 0)));
+			this.await(100);
+			this.realm.addLootContainer(new Chest(chestLoc.clone(-256, 0)));
+		}
+
 	}
 
 	private void loadClass(CharacterClass cls, boolean setEquipment) {
 
 		Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32), 30,
+				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE,
+						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+				GlobalConstants.PLAYER_SIZE,
 				this.realm.getTileManager());
 		if (setEquipment || (this.playerId == -1l)) {
 			player.equipSlots(this.getStartingEquipment(cls));
@@ -229,15 +235,10 @@ public class PlayState extends GameState {
 						if (gameObject[i] instanceof Bullet) {
 							Bullet bullet = ((Bullet) gameObject[i]);
 							if (bullet != null) {
-								//								if (bullet.remove()) {
-								//									toRemove.add(bullet.getBulletId());
-								//								} else {
 								bullet.update();
-								// }
 							}
 						}
 					}
-					// this.realm.removeBullet(toRemove);
 					this.processBulletHit();
 				};
 				// Rewrite this asap
@@ -455,8 +456,8 @@ public class PlayState extends GameState {
 			}
 
 
-			if (key.q.down && ((System.currentTimeMillis() - this.lastAbilityTick) > 1000)) {
-				this.useAbility(mouse);
+			if (key.shift.down) {
+				this.realm.loadMap("tile/vault.xml");
 			}
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);
@@ -473,22 +474,30 @@ public class PlayState extends GameState {
 		Stats stats = player.getComputedStats();
 		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (400 - (stats.getDex() * 12)))
 				&& !this.gsm.isStateActive(GameStateManager.EDIT);
-
+		boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
 		if ((mouse.getButton() == 1) && canShoot) {
 			this.lastShotTick = System.currentTimeMillis();
 			Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
 			this.shotDestQueue.add(dest);
 		}
-
+		if ((mouse.getButton() == 2) && canUseAbility) {
+			this.useAbility(mouse);
+		}
 	}
 
 	private void useAbility(MouseHandler mouse) {
 		GameItem abilityItem = this.getPlayer().getAbility();
-		if (abilityItem == null)
+		if ((abilityItem == null) || (abilityItem.getEffect() == null))
 			return;
-		if ((abilityItem != null) && (abilityItem.getDamage() != null)) {
+		Effect effect = abilityItem.getEffect();
+		if (this.getPlayer().getMana() < effect.getMpCost())
+			return;
+		this.getPlayer().setMana(this.getPlayer().getMana() - effect.getMpCost());
+		// this.getPlayer().addEffect(effect.getEffectId(), effect.getDuration());
+		// this.getPlayer().getSprite().getSpriteSheet().setEffect(Sprite.effect.DECAY);
+		if ((abilityItem.getDamage() != null)) {
 			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(abilityItem.getDamage().getProjectileGroupId());
-			Player player = this.realm.getPlayer(this.playerId);
+			Player player = this.getPlayer();
 			Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
 			dest.addX(PlayState.map.x);
 			dest.addY(PlayState.map.y);
@@ -504,18 +513,9 @@ public class PlayState extends GameState {
 			}
 
 		} else if (abilityItem.getEffect() != null) {
-			Effect effect = abilityItem.getEffect();
-			if (this.getPlayer().getMana() >= effect.getMpCost()) {
-				this.getPlayer().setMana(this.getPlayer().getMana() - effect.getMpCost());
-				this.getPlayer().addEffect(effect.getEffectId(), effect.getDuration());
-				this.lastAbilityTick = System.currentTimeMillis();
-				// this.getPlayer().getSprite().getSpriteSheet().setEffect(Sprite.effect.DECAY);
-			}
+			this.getPlayer().addEffect(effect.getEffectId(), effect.getDuration());
 		}
-	}
-
-	public void getPlayerEquipmentItemByUid(String uid) {
-		this.replaceLootContainerItemByUid(uid, null);
+		this.lastAbilityTick = System.currentTimeMillis();
 	}
 
 	public GameItem getLootContainerItemByUid(String uid) {
@@ -527,7 +527,6 @@ public class PlayState extends GameState {
 		}
 		return null;
 	}
-
 
 	public void removeLootContainerItemByUid(String uid) {
 		this.replaceLootContainerItemByUid(uid, null);
@@ -553,7 +552,8 @@ public class PlayState extends GameState {
 
 	public Chest getNearestChest() {
 		for (LootContainer lc : this.realm.getLoot().values()) {
-			if ((this.realm.getPlayer(this.playerId).getBounds().distance(lc.getPos()) < 31) && (lc instanceof Chest))
+			if ((this.realm.getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= GlobalConstants.PLAYER_SIZE)
+					&& (lc instanceof Chest))
 				return (Chest) lc;
 		}
 		return null;
@@ -561,7 +561,7 @@ public class PlayState extends GameState {
 
 	public LootContainer getNearestLootContainer() {
 		for (LootContainer lc : this.realm.getLoot().values()) {
-			if ((this.realm.getPlayer(this.playerId).getBounds().distance(lc.getPos()) < 31))
+			if ((this.realm.getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= GlobalConstants.PLAYER_SIZE))
 				return lc;
 		}
 		return null;
@@ -613,7 +613,7 @@ public class PlayState extends GameState {
 			return;
 		LootContainer closeLoot = null;
 		for (LootContainer lc : this.realm.getLoot().values()) {
-			if ((player.getBounds().distance(lc.getPos()) < 32)) {
+			if ((player.getBounds().distance(lc.getPos()) < GlobalConstants.PLAYER_SIZE)) {
 				closeLoot = lc;
 			}
 			if (!lc.isEmpty()) {
