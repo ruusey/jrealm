@@ -32,6 +32,7 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
+import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.tiles.TileMap;
 import com.jrealm.game.tiles.blocks.Tile;
@@ -73,7 +74,7 @@ public class PlayState extends GameState {
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
-		this.loadClass(CharacterClass.WARRIOR, true);
+		this.loadClass(CharacterClass.ROGUE, true);
 	}
 
 	private void loadClass(CharacterClass cls, boolean setEquipment) {
@@ -487,28 +488,30 @@ public class PlayState extends GameState {
 			}
 
 			this.pui.input(mouse, key);
+			if (!this.playerLocation.equals(PlayerLocation.REALM)) {
+				if (key.one.down) {
+					this.loadClass(CharacterClass.ARCHER, true);
+				}
+				if (key.zero.down) {
+					this.loadClass(CharacterClass.ROGUE, true);
+				}
+				if (key.two.down) {
+					this.loadClass(CharacterClass.WIZARD, true);
+				}
+				if (key.three.down) {
+					this.loadClass(CharacterClass.PRIEST, true);
+				}
+				if (key.four.down) {
+					this.loadClass(CharacterClass.WARRIOR, true);
+				}
+				if (key.five.down) {
+					this.loadClass(CharacterClass.KNIGHT, true);
+				}
+				if (key.six.down) {
+					this.loadClass(CharacterClass.PALLADIN, true);
+				}
+			}
 
-			if (key.one.down) {
-				this.loadClass(CharacterClass.ARCHER, true);
-			}
-			if (key.zero.down) {
-				this.loadClass(CharacterClass.ROGUE, true);
-			}
-			if (key.two.down) {
-				this.loadClass(CharacterClass.WIZARD, true);
-			}
-			if (key.three.down) {
-				this.loadClass(CharacterClass.PRIEST, true);
-			}
-			if (key.four.down) {
-				this.loadClass(CharacterClass.WARRIOR, true);
-			}
-			if (key.five.down) {
-				this.loadClass(CharacterClass.KNIGHT, true);
-			}
-			if (key.six.down) {
-				this.loadClass(CharacterClass.PALLADIN, true);
-			}
 
 
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
@@ -563,9 +566,17 @@ public class PlayState extends GameState {
 				short offset = (short) (p.getSize() / (short) 2);
 				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
-				this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), source.clone(-offset, -offset),
-						angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
-						rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
+				if (p.getPositionMode() == ProjectilePositionMode.TARGET_PLAYER) {
+					this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), source.clone(-offset, -offset),
+							angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
+							rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
+				} else {
+					source = dest;
+					this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), source.clone(-offset, -offset),
+							Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage,
+							false, p.getFlags(), p.getAmplitude(), p.getFrequency());
+				}
+
 			}
 
 		}
