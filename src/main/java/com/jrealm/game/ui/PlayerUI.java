@@ -37,6 +37,7 @@ public class PlayerUI {
 	private Map<String, ItemTooltip> tooltips;
 
 	private Graphics2D tempGraphics;
+
 	public PlayerUI(PlayState p) {
 		this.playState = p;
 		SpriteSheet bars = new SpriteSheet("ui/fillbars.png", 0);
@@ -263,7 +264,7 @@ public class PlayerUI {
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
 							this.setGroundLoot(this.groundLoot);
 						}
-						//						else {
+						// else {
 						// int idx = this.getOverlapIdx(event);
 						// this.getPlayState().getPlayer().getInventory()[idx] = item;
 						// this.setEquipment(this.getPlayState().getPlayer().getInventory());
@@ -382,7 +383,6 @@ public class PlayerUI {
 	}
 
 	public boolean isEquipmentEmpty() {
-
 		for (int i = 0; i < this.inventory.length; i++) {
 			Slots curr = this.inventory[i];
 			if (curr == null) {
@@ -396,7 +396,6 @@ public class PlayerUI {
 	}
 
 	public boolean isGroundLootEmpty() {
-
 		for (int i = 0; i < this.groundLoot.length; i++) {
 			Slots curr = this.groundLoot[i];
 			if (curr == null) {
@@ -435,7 +434,6 @@ public class PlayerUI {
 			g.drawString("def :" + stats.getDef(), startX + xOffset, startY);
 			g.drawString("dex :" + stats.getDex(), startX + xOffset, startY + (1 * yOffset));
 			g.drawString("wis :" + stats.getWis(), startX + xOffset, startY + (2 * yOffset));
-
 		}
 	}
 
@@ -509,17 +507,17 @@ public class PlayerUI {
 				}
 			}
 		}
-		//		for (int i = 0; i < this.groundLoot.length; i++) {
-		//			Slots curr = this.groundLoot[i];
-		//			if (curr != null) {
-		//				if ((curr.getDragPos() == null)) {
-		//					this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 650));
-		//				} else {
-		//					this.groundLoot[i].render(g, curr.getDragPos());
+		// for (int i = 0; i < this.groundLoot.length; i++) {
+		// Slots curr = this.groundLoot[i];
+		// if (curr != null) {
+		// if ((curr.getDragPos() == null)) {
+		// this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 650));
+		// } else {
+		// this.groundLoot[i].render(g, curr.getDragPos());
 		//
-		//				}
-		//			}
-		//		}
+		// }
+		// }
+		// }
 
 		for (ItemTooltip tip : this.tooltips.values()) {
 			tip.render(g);
