@@ -454,12 +454,12 @@ public class PlayState extends GameState {
 			this.cam.input(mouse, key);
 			if (key.f2.clicked) {
 				this.playerLocation = PlayerLocation.VAULT;
-				this.realm.loadMap("tile/vault.xml");
+				this.realm.loadMap("tile/vault.xml", this.getPlayer());
 				this.loadClass(this.currentPlayerCharacterClass(), false);
 			}
 			if (key.f1.clicked) {
 				this.playerLocation = PlayerLocation.REALM;
-				this.realm.loadMap("tile/nexus2.xml");
+				this.realm.loadMap("tile/nexus2.xml", this.getPlayer());
 				this.loadClass(this.currentPlayerCharacterClass(), false);
 			}
 
@@ -644,12 +644,14 @@ public class PlayState extends GameState {
 		Player player = this.realm.getPlayer(this.playerId);
 		if (player == null)
 			return;
+		AABB renderBounds = this.realm.getTileManager().getRenderViewPort();
 		LootContainer closeLoot = null;
 		for (LootContainer lc : this.realm.getLoot().values()) {
 			if ((player.getBounds().distance(lc.getPos()) < GlobalConstants.PLAYER_SIZE)) {
 				closeLoot = lc;
 			}
-			if (!lc.isEmpty()) {
+			AABB lcBounds = new AABB(lc.getPos(), 32,32);
+			if (!lc.isEmpty() && lcBounds.intersect(renderBounds)) {
 				lc.render(g);
 
 			}

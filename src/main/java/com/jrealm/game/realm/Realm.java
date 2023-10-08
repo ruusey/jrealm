@@ -63,7 +63,7 @@ public class Realm {
 
 		this.realmCamera = cam;
 
-		this.loadMap("tile/vault.xml");
+		this.loadMap("tile/vault.xml", null);
 		this.setupChests();
 		WorkerThread.submit(this.getStatsThread());
 	}
@@ -119,7 +119,7 @@ public class Realm {
 		this.spawnRandomEnemies();
 	}
 
-	public void loadMap(String path) {
+	public void loadMap(String path, Player player) {
 		List<Chest> curr = this.getChests();
 
 		this.bullets = new ConcurrentHashMap<>();
@@ -136,6 +136,10 @@ public class Realm {
 		this.tileManager = new TileManager(path, this.realmCamera);
 		if (!path.toLowerCase().contains("vault")) {
 			this.spawnRandomEnemies();
+		}
+
+		if (player != null) {
+			player.resetPosition();
 		}
 
 	}

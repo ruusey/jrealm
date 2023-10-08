@@ -239,8 +239,8 @@ public class TileManager {
 
 	public AABB getRenderViewPort() {
 		return new AABB(
-				this.playerCam.getTarget().getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
-						-(6 * GlobalConstants.BASE_TILE_SIZE)),
+				this.playerCam.getTarget().getPos().clone(-(2 * GlobalConstants.BASE_TILE_SIZE),
+						-(2 * GlobalConstants.BASE_TILE_SIZE)),
 				(10 * GlobalConstants.BASE_TILE_SIZE), (10 * GlobalConstants.BASE_TILE_SIZE));
 
 	}
