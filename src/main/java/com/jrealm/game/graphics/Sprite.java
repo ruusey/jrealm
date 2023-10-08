@@ -22,7 +22,7 @@ public class Sprite {
 
 	private float angleOffset;
 
-	public static enum effect {NORMAL, SEPIA, REDISH, GRAYSCALE, NEGATIVE, DECAY}
+	public static enum EffectEnum {NORMAL, SEPIA, REDISH, GRAYSCALE, NEGATIVE, DECAY}
 
 	private float[][] id = {{1.0f, 0.0f, 0.0f},
 			{0.0f, 1.0f, 0.0f},
@@ -55,6 +55,8 @@ public class Sprite {
 			{0.000f, 0.000f, 0.000f}};
 
 	private float[][] currentEffect = this.id;
+
+	private EffectEnum currentEffectEnum = EffectEnum.NORMAL;
 
 	public Sprite(BufferedImage image) {
 		this.image = image;
@@ -122,25 +124,50 @@ public class Sprite {
 		return newImage;
 	}
 
-	public void setEffect(effect e) {
+	public void setEffect(EffectEnum e) {
 		float[][] effect;
 		switch (e) {
-		case SEPIA: effect = this.sepia;
-		break;
-		case REDISH: effect = this.redish;
-		break;
-		case GRAYSCALE: effect = this.grayscale;
-		break;
-		case NEGATIVE: effect = this.negative;
-		break;
-		case DECAY: effect = this.decay;
-		break;
-		default: effect = this.id;
+		case SEPIA:
+			effect = this.sepia;
+			this.currentEffectEnum = EffectEnum.SEPIA;
+			break;
+		case REDISH:
+			effect = this.redish;
+			this.currentEffectEnum = EffectEnum.REDISH;
+
+			break;
+		case GRAYSCALE:
+			effect = this.grayscale;
+			this.currentEffectEnum = EffectEnum.GRAYSCALE;
+
+			break;
+		case NEGATIVE:
+			effect = this.negative;
+			this.currentEffectEnum = EffectEnum.NEGATIVE;
+
+			break;
+		case DECAY:
+			effect = this.decay;
+			this.currentEffectEnum = EffectEnum.DECAY;
+
+			break;
+		default:
+			effect = this.id;
+			this.currentEffectEnum = EffectEnum.NORMAL;
+
 		}
 
 		if(effect != this.currentEffect) {
 			this.addEffect(effect);
 		}
+	}
+
+	public Sprite.EffectEnum getEffect() {
+		return this.currentEffectEnum;
+	}
+
+	public boolean hasEffect(Sprite.EffectEnum effect) {
+		return (effect != null) && (this.currentEffectEnum != null) && this.currentEffectEnum.equals(effect);
 	}
 
 	private void addEffect(float[][] effect) {

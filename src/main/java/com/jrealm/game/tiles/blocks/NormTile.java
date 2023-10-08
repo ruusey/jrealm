@@ -15,7 +15,7 @@ public class NormTile extends Tile {
 	public NormTile(Sprite img, Vector2f pos, int w, int h) {
 		super(img, pos, w, h);
 
-		img.setEffect(Sprite.effect.DECAY);
+		img.setEffect(Sprite.EffectEnum.NORMAL);
 	}
 
 	@Override

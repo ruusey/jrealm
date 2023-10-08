@@ -59,12 +59,6 @@ public class Player extends Entity {
 		this.ani.setNumFrames(2, this.ATTACK + this.UP);
 		this.ani.setNumFrames(2, this.ATTACK + this.DOWN);
 
-		for(int i = 0; i < sprite.getSpriteArray2().length; i++) {
-			for(int j = 0; j < sprite.getSpriteArray2()[i].length; j++) {
-				sprite.getSpriteArray2()[i][j].setEffect(Sprite.effect.NEGATIVE);
-				sprite.getSpriteArray2()[i][j].saveColors();
-			}
-		}
 
 		this.hasIdle = false;
 		this.health = this.maxHealth = this.defaultMaxHealth = 500;
@@ -95,6 +89,8 @@ public class Player extends Entity {
 			this.equipSlot(entry.getKey(), entry.getValue());
 		}
 	}
+
+
 
 	public GameItem getSlot(int slot) {
 		return this.inventory[slot];
@@ -163,6 +159,7 @@ public class Player extends Entity {
 
 		if (((System.currentTimeMillis() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
+
 			if (this.hasEffect(EffectType.HEALING)) {
 				stats.setVit((short) (stats.getVit() * 2));
 			}
@@ -212,21 +209,38 @@ public class Player extends Entity {
 		Color c = new Color(0f, 0f, 0f, .4f);
 		g.setColor(c);
 		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 24, this.size, this.size / 2);
-		if(this.attack) {
-			g.setColor(Color.red);
-			g.drawRect((int) (this.hitBounds.getPos().getWorldVar().x + this.hitBounds.getXOffset()), (int) (this.hitBounds.getPos().getWorldVar().y + this.hitBounds.getYOffset()), (int) this.hitBounds.getWidth(), (int) this.hitBounds.getHeight());
+
+
+		if (this.hasEffect(EffectType.INVISIBLE)) {
+			if (!this.getSprite().hasEffect(Sprite.EffectEnum.SEPIA)) {
+				this.getSprite().setEffect(Sprite.EffectEnum.SEPIA);
+			}
 		}
 
-		if(this.isInvincible && ((GamePanel.tickCount % 30) >= 15)) {
-			this.ani.getImage().setEffect(Sprite.effect.REDISH);
-		} else {
-			this.ani.getImage().restoreColors();
+		if (this.hasEffect(EffectType.HEALING)) {
+			if (!this.getSprite().hasEffect(Sprite.EffectEnum.REDISH)) {
+				this.getSprite().setEffect(Sprite.EffectEnum.REDISH);
+			}
 		}
 
-		if(this.useRight && this.left) {
-			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x) + this.size, (int) (this.pos.getWorldVar().y), -this.size, this.size, null);
+		if (this.hasEffect(EffectType.SPEEDY)) {
+			if (!this.getSprite().hasEffect(Sprite.EffectEnum.DECAY)) {
+				this.getSprite().setEffect(Sprite.EffectEnum.DECAY);
+			}
+		}
+
+		if (this.hasNoEffects()) {
+			if (!this.getSprite().hasEffect(Sprite.EffectEnum.NORMAL)) {
+				this.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
+			}
+		}
+
+		if (this.useRight && this.left) {
+			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x) + this.size,
+					(int) (this.pos.getWorldVar().y), -this.size, this.size, null);
 		} else {
-			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), this.size, this.size, null);
+			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y),
+					this.size, this.size, null);
 		}
 	}
 
@@ -256,6 +270,9 @@ public class Player extends Entity {
 			}
 
 			float maxSpeed = 2.2f + (stats.getSpd() * 0.05f);
+			if (this.hasEffect(EffectType.SPEEDY)) {
+				maxSpeed *= 1.5;
+			}
 			this.maxSpeed = maxSpeed;
 			this.cam.setMaxSpeed(maxSpeed);
 

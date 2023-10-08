@@ -68,7 +68,6 @@ public class Realm {
 		WorkerThread.submit(this.getStatsThread());
 	}
 
-
 	private void setupChests() {
 		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 450, (0 + (GamePanel.height / 2)) - 200);
 		if (this.getChests().size() == 0) {
@@ -317,7 +316,8 @@ public class Realm {
 		Vector2f v = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 
-		SpriteSheet enemySheet1 = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses-1.png");
+		// SpriteSheet enemySheet1 =
+		// GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses-1.png");
 
 		Random r = new Random(System.nanoTime());
 		for (int i = 0; i < this.tileManager.getHeight(); i++) {
@@ -357,7 +357,6 @@ public class Realm {
 								new Vector2f(j * 64, i * 64), 64);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
-
 					}
 					this.addEnemy(go);
 				}

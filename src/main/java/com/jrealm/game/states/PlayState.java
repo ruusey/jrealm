@@ -12,11 +12,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
+import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.PlayerLocation;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
+import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.Chest;
@@ -60,7 +62,7 @@ public class PlayState extends GameState {
 
 	public long playerId = -1l;
 
-	private PlayerLocation playerLocation = PlayerLocation.NEXUS;
+	private PlayerLocation playerLocation = PlayerLocation.VAULT;
 
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
@@ -71,7 +73,7 @@ public class PlayState extends GameState {
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
-		this.loadClass(CharacterClass.PALLADIN, true);
+		this.loadClass(CharacterClass.WARRIOR, true);
 	}
 
 	private void loadClass(CharacterClass cls, boolean setEquipment) {
@@ -106,13 +108,13 @@ public class PlayState extends GameState {
 		case ROGUE:
 			result.put(0, GameDataManager.GAME_ITEMS.get(49));
 			result.put(1, GameDataManager.GAME_ITEMS.get(152));
-
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(5, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case ARCHER:
 			result.put(0, GameDataManager.GAME_ITEMS.get(17));
+			result.put(1, GameDataManager.GAME_ITEMS.get(154));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(5, GameDataManager.GAME_ITEMS.get(0));
@@ -128,6 +130,7 @@ public class PlayState extends GameState {
 			// priest
 		case PRIEST:
 			result.put(0, GameDataManager.GAME_ITEMS.get(137));
+			result.put(1, GameDataManager.GAME_ITEMS.get(157));
 			result.put(2, GameDataManager.GAME_ITEMS.get(106));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
@@ -135,6 +138,7 @@ public class PlayState extends GameState {
 			// warr
 		case WARRIOR:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
+			result.put(1, GameDataManager.GAME_ITEMS.get(156));
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
@@ -142,6 +146,8 @@ public class PlayState extends GameState {
 			// knight
 		case KNIGHT:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
+			result.put(1, GameDataManager.GAME_ITEMS.get(155));
+
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
@@ -153,6 +159,8 @@ public class PlayState extends GameState {
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
+			break;
+		default:
 			break;
 		}
 
@@ -271,9 +279,11 @@ public class PlayState extends GameState {
 				Runnable checkAbilityUsage = () -> {
 					if (this.getPlayer() == null)
 						return;
-					GameItem playerAbility = this.getPlayer().getAbility();
-					if ((playerAbility != null) && (playerAbility.getEffect() != null)) {
-						this.getPlayer().removeExpiredEffects();
+					for(GameObject e : this.realm.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort())){
+						if ((e instanceof Entity) || (e instanceof Enemy)) {
+							Entity entCast = (Entity)e;
+							entCast.removeExpiredEffects();
+						}
 					}
 				};
 				Runnable updatePlayerAndUi = () -> {
@@ -413,6 +423,19 @@ public class PlayState extends GameState {
 				this.realm.removeBullet(b);
 			}
 
+			if (b.hasFlag((short) 2)) {
+				if (!e.hasEffect(EffectType.PARALYZED)) {
+					e.addEffect(EffectType.PARALYZED, 5000);
+
+				}
+			}
+
+			if (b.hasFlag((short) 3)) {
+				if (!e.hasEffect(EffectType.STUNNED)) {
+					e.addEffect(EffectType.STUNNED, 5000);
+
+				}
+			}
 			if (e.getDeath()) {
 				this.realm.clearHitMap();
 				this.realm.spawnRandomEnemy();
@@ -452,12 +475,12 @@ public class PlayState extends GameState {
 				player.input(mouse, key);
 			}
 			this.cam.input(mouse, key);
-			if (key.f2.clicked) {
+			if (key.f2.clicked && !this.playerLocation.equals(PlayerLocation.VAULT)) {
 				this.playerLocation = PlayerLocation.VAULT;
 				this.realm.loadMap("tile/vault.xml", this.getPlayer());
 				this.loadClass(this.currentPlayerCharacterClass(), false);
 			}
-			if (key.f1.clicked) {
+			if (key.f1.clicked && !this.playerLocation.equals(PlayerLocation.REALM)) {
 				this.playerLocation = PlayerLocation.REALM;
 				this.realm.loadMap("tile/nexus2.xml", this.getPlayer());
 				this.loadClass(this.currentPlayerCharacterClass(), false);
@@ -501,7 +524,10 @@ public class PlayState extends GameState {
 			}
 		}
 		Stats stats = player.getComputedStats();
-		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (400 - (stats.getDex() * 12)))
+		if (this.getPlayer().hasEffect(EffectType.SPEEDY)) {
+			stats.setDex((short) (stats.getDex() * 2));
+		}
+		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (400 - (stats.getDex() * 15)))
 				&& !this.gsm.isStateActive(GameStateManager.EDIT);
 		boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
 		if ((mouse.isPressed(MouseEvent.BUTTON1)) && canShoot) {
@@ -523,7 +549,27 @@ public class PlayState extends GameState {
 			return;
 		this.getPlayer().setMana(this.getPlayer().getMana() - effect.getMpCost());
 
-		if ((abilityItem.getDamage() != null)) {
+		if (((abilityItem.getDamage() != null) && (abilityItem.getEffect() != null))) {
+			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
+					.get(abilityItem.getDamage().getProjectileGroupId());
+			Player player = this.getPlayer();
+			Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
+			dest.addX(PlayState.map.x);
+			dest.addY(PlayState.map.y);
+			Vector2f source = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+			float angle = Bullet.getAngle(source, dest);
+
+			for (Projectile p : group.getProjectiles()) {
+				short offset = (short) (p.getSize() / (short) 2);
+				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
+				rolledDamage += player.getComputedStats().getAtt();
+				this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), source.clone(-offset, -offset),
+						angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
+						rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
+			}
+
+		}
+		else if ((abilityItem.getDamage() != null)) {
 			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
 					.get(abilityItem.getDamage().getProjectileGroupId());
 			Player player = this.getPlayer();
@@ -533,7 +579,7 @@ public class PlayState extends GameState {
 			for (Projectile p : group.getProjectiles()) {
 
 				short offset = (short) (p.getSize() / (short) 2);
-				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
+				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
 				this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), dest.clone(-offset, -offset),
 						Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage,
@@ -542,6 +588,9 @@ public class PlayState extends GameState {
 
 		} else if (abilityItem.getEffect() != null) {
 			this.getPlayer().addEffect(effect.getEffectId(), effect.getDuration());
+			if (abilityItem.getEffect().getEffectId().equals(EffectType.HEAL)) {
+				this.getPlayer().addHealth(50);
+			}
 		}
 		this.lastAbilityTick = System.currentTimeMillis();
 	}
@@ -677,6 +726,7 @@ public class PlayState extends GameState {
 		return this.realm.getPlayer(this.playerId);
 	}
 
+	@SuppressWarnings("unused")
 	private void renderCollisionBoxes(Graphics2D g) {
 
 		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.cam.getBounds());

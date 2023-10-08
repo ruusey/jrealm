@@ -2656,7 +2656,7 @@
 			"self": true,
 			"effectId": 0,
 			"duration": 5000,
-			"mpCost": 100
+			"mpCost": 50
 		},
 		"consumable": false,
 		"tier": 14,
@@ -2680,7 +2680,7 @@
 			"self": true,
 			"effectId": 1,
 			"duration": 5000,
-			"mpCost": 100
+			"mpCost": 50
 		},
 		"consumable": false,
 		"tier": 14,
@@ -2688,7 +2688,7 @@
 		"targetClass": 6,
 		"fameBonus": 8
 	},
-		{
+	{
 		"itemId": 154,
 		"row": 3,
 		"col": 6,
@@ -2698,13 +2698,95 @@
 		"stats": {
 			"dex": 10,
 			"spd": 10,
-			"vit": 10
+			"wis": 10
 		},
 		"effect": {
 			"self": false,
 			"effectId": 2,
 			"duration": 5000,
-			"mpCost": 100
+			"mpCost": 50
+		},
+		"damage": {
+			"projectileGroupId": 17,
+			"min": 300,
+			"max": 400
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 1,
+		"targetClass": 1,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 155,
+		"row": 7,
+		"col": 6,
+		"spriteKey": "entity/rotmg-abilities.png",
+		"name": "Test Shield",
+		"description": "A knight shield for testing",
+		"stats": {
+			"def": 10,
+			"att": 10,
+			"wis": 10
+		},
+		"effect": {
+			"self": false,
+			"effectId": 3,
+			"duration": 5000,
+			"mpCost": 50
+		},
+		"damage": {
+			"projectileGroupId": 18,
+			"min": 300,
+			"max": 400
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 1,
+		"targetClass": 1,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 156,
+		"row": 6,
+		"col": 6,
+		"spriteKey": "entity/rotmg-abilities.png",
+		"name": "Test Helmet",
+		"description": "A warrior helmet for testing",
+		"stats": {
+			"def": 10,
+			"att": 10,
+			"wis": 10
+		},
+		"effect": {
+			"self": true,
+			"effectId": 4,
+			"duration": 5000,
+			"mpCost": 50
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 1,
+		"targetClass": 1,
+		"fameBonus": 8
+	},
+	{
+		"itemId": 157,
+		"row": 5,
+		"col": 6,
+		"spriteKey": "entity/rotmg-abilities.png",
+		"name": "Test Tome",
+		"description": "A priest tome for testing",
+		"stats": {
+			"def": 10,
+			"att": 10,
+			"wis": 10
+		},
+		"effect": {
+			"self": true,
+			"effectId": 5,
+			"duration": 5000,
+			"mpCost": 50
 		},
 		"consumable": false,
 		"tier": 14,

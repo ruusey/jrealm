@@ -4,7 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum EffectType {
-	INVISIBLE((short) 0), HEALING((short) 1), PARALYZED((short) 2);
+	INVISIBLE((short) 0), HEALING((short) 1), PARALYZED((short) 2), STUNNED((short) 3), SPEEDY((short) 4),
+	HEAL((short) 5);
 
 	public static Map<Short, EffectType> map = new HashMap<>();
 	static {

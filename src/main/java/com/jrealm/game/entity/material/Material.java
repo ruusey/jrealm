@@ -27,7 +27,7 @@ public class Material extends GameObject {
 		this.bounds.setWidth(32);
 		this.bounds.setHeight(16);
 
-		image.setEffect(Sprite.effect.DECAY);
+		image.setEffect(Sprite.EffectEnum.NORMAL);
 	}
 
 	@Override

@@ -131,8 +131,12 @@ public class SpriteSheet {
 		}
 	}
 
-	public void setEffect(Sprite.effect e) {
+	public void setEffect(Sprite.EffectEnum e) {
 		this.SPRITESHEET.setEffect(e);
+	}
+
+	public boolean hasEffect(Sprite.EffectEnum e) {
+		return this.SPRITESHEET.hasEffect(e);
 	}
 
 	public Sprite getSpriteSheet() {

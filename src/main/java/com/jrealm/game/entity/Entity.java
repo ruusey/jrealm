@@ -84,6 +84,7 @@ public abstract class Entity extends GameObject {
 		this.setAnimation(this.RIGHT, sprite.getSpriteArray(this.RIGHT), 10);
 
 		this.tc = new TileCollision(this);
+		this.resetEffects();
 	}
 
 	public void removeEffect(short effectId) {
@@ -107,11 +108,21 @@ public abstract class Entity extends GameObject {
 	}
 
 	public boolean hasEffect(EffectType effect) {
+		if (this.effectIds == null)
+			return false;
 		for (int i = 0; i < this.effectIds.length; i++) {
 			if (this.effectIds[i] == effect.effectId)
 				return true;
 		}
 		return false;
+	}
+
+	public boolean hasNoEffects() {
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if (this.effectIds[i] > -1)
+				return false;
+		}
+		return true;
 	}
 
 	public void resetEffects() {
@@ -124,6 +135,7 @@ public abstract class Entity extends GameObject {
 			if (this.effectIds[i] == -1) {
 				this.effectIds[i] = effect.effectId;
 				this.effectTimes[i] = System.currentTimeMillis() + duration;
+				return;
 			}
 		}
 	}
@@ -146,6 +158,18 @@ public abstract class Entity extends GameObject {
 
 			this.addForce(f, dir);
 			this.healthpercent = (float) this.health / (float) this.maxHealth;
+		}
+	}
+
+	public void addHealth(int health) {
+		if (this.health < this.maxHealth) {
+			int diff = this.maxHealth - this.health;
+			int diff2 = (this.getHealth() + health) - this.maxHealth;
+			if (diff > health) {
+				this.setHealth(this.getHealth() + health);
+			} else {
+				this.setHealth(this.getHealth() + (health - diff2));
+			}
 		}
 	}
 
@@ -248,6 +272,13 @@ public abstract class Entity extends GameObject {
 	}
 
 	public void move() {
+		if (this.hasEffect(EffectType.PARALYZED)) {
+			this.up = false;
+			this.down = false;
+			this.right = false;
+			this.left = false;
+			return;
+		}
 		if (this.up) {
 			this.currentDirection = this.UP;
 			this.dy -= this.acc;

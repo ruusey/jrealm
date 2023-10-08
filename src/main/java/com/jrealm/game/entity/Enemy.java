@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
@@ -46,6 +47,7 @@ public abstract class Enemy extends Entity {
 	}
 
 	public void chase(Player player) {
+
 		if ((player == null) || player.hasEffect(EffectType.INVISIBLE)) {
 			this.up = false;
 			this.down = false;
@@ -86,6 +88,7 @@ public abstract class Enemy extends Entity {
 	}
 
 	public void update(PlayState playState, double time) {
+
 		super.update(time);
 		Player player = playState.getRealm().getPlayer(playState.getPlayerId());
 		if (player == null)
@@ -110,7 +113,8 @@ public abstract class Enemy extends Entity {
 				&& !playState.getPlayer().hasEffect(EffectType.INVISIBLE)) {
 			this.attack = true;
 
-			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 500);
+			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 500)
+					&& !this.hasEffect(EffectType.STUNNED);
 
 			if (canShoot) {
 				this.lastShotTick = System.currentTimeMillis();
@@ -137,7 +141,13 @@ public abstract class Enemy extends Entity {
 		} else {
 			this.attack = false;
 		}
-
+		if (this.hasEffect(EffectType.PARALYZED)) {
+			this.up = false;
+			this.down = false;
+			this.right = false;
+			this.left = false;
+			return;
+		}
 		if (!this.isFallen()) {
 			if (!this.tc.collisionTile(playState.getRealm().getTileManager().getTm().get(1).getBlocks(),
 					this.dx,
@@ -170,6 +180,26 @@ public abstract class Enemy extends Entity {
 			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y),
 					this.size, this.size, null);
 		}
+
+		if (this.hasEffect(EffectType.PARALYZED)) {
+			if (!this.getSprite().hasEffect(Sprite.EffectEnum.GRAYSCALE)) {
+				this.getSprite().setEffect(Sprite.EffectEnum.GRAYSCALE);
+			}
+		}
+
+		if (this.hasEffect(EffectType.STUNNED)) {
+			if (!this.getSprite().hasEffect(Sprite.EffectEnum.DECAY)) {
+				this.getSprite().setEffect(Sprite.EffectEnum.DECAY);
+			}
+		}
+
+		if (this.hasNoEffects()) {
+			if (!this.getSprite().hasEffect(Sprite.EffectEnum.NORMAL)) {
+				this.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
+			}
+		}
+
+
 
 		// Health Bar UI
 		g.setColor(Color.red);
