@@ -9,6 +9,9 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.states.PlayState;
 
+import lombok.Data;
+
+@Data
 public class Camera {
 
 	private AABB collisionCam;

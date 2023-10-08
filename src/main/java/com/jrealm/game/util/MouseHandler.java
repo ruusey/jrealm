@@ -11,7 +11,8 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
 
 	private static volatile int mouseX = -1;
 	private static volatile int mouseY = -1;
-	private static volatile int mouseB = -1;
+
+	private static volatile int[] mouseButtonStates = new int[] { -1, -1, -1 };
 
 	public MouseHandler(GamePanel game) {
 		game.addMouseListener(this);
@@ -26,33 +27,53 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
 		return MouseHandler.mouseY;
 	}
 
-	public int getButton() {
-		return MouseHandler.mouseB;
+
+	public boolean isPressed(int mouseButton) {
+		if ((mouseButton - 1) < 0)
+			return false;
+		return MouseHandler.mouseButtonStates[mouseButton-1]>-1;
 	}
 
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		MouseHandler.mouseB = -1;
+		//		if (e.getButton() == MouseEvent.BUTTON1) {
+		//			MouseHandler.mouseButtonStates[0] = 1;
+		//		}
+		//		if (e.getButton() == MouseEvent.BUTTON2) {
+		//			MouseHandler.mouseButtonStates[1] = 1;
+		//		}
+		//		if (e.getButton() == MouseEvent.BUTTON3) {
+		//			MouseHandler.mouseButtonStates[2] = 1;
+		//		}
 
 	}
 
 	@Override
 	public void mousePressed(MouseEvent e) {
 		if (e.getButton() == MouseEvent.BUTTON1) {
-			MouseHandler.mouseB = 1;
-
-		} else {
-			MouseHandler.mouseB = 2;
-
+			MouseHandler.mouseButtonStates[0] = 1;
+		}
+		if (e.getButton() == MouseEvent.BUTTON2) {
+			MouseHandler.mouseButtonStates[1] = 1;
+		}
+		if (e.getButton() == MouseEvent.BUTTON3) {
+			MouseHandler.mouseButtonStates[2] = 1;
 		}
 
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-
-		MouseHandler.mouseB = -1;
+		if (e.getButton() == MouseEvent.BUTTON1) {
+			MouseHandler.mouseButtonStates[0] = -1;
+		}
+		if (e.getButton() == MouseEvent.BUTTON2) {
+			MouseHandler.mouseButtonStates[1] = -1;
+		}
+		if (e.getButton() == MouseEvent.BUTTON3) {
+			MouseHandler.mouseButtonStates[2] = -1;
+		}
 	}
 
 	@Override

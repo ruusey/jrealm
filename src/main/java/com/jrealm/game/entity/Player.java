@@ -3,10 +3,10 @@ package com.jrealm.game.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.util.ArrayList;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
@@ -14,8 +14,6 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.states.PlayState;
-import com.jrealm.game.tiles.TileManager;
-import com.jrealm.game.tiles.blocks.NormTile;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
@@ -29,8 +27,6 @@ import lombok.EqualsAndHashCode;
 public class Player extends Entity {
 	private long playerId;
 	private Camera cam;
-	private ArrayList<GameObject> go;
-	private TileManager tm;
 
 	private Cardinality cardinality = Cardinality.EAST;
 
@@ -38,17 +34,13 @@ public class Player extends Entity {
 
 	private Stats stats;
 
-	private short[] effectIds;
-	private long[] effectTimes;
-
 	private long lastStatsTime = 0l;
-
 	private LootContainer currentLootContainer;
-	public Player(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, TileManager tm) {
+
+	public Player(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size) {
 		super(id, sprite, origin, size);
 		this.resetEffects();
 		this.cam = cam;
-		this.tm = tm;
 		this.size = size;
 		this.bounds.setWidth(this.size);
 		this.bounds.setHeight(this.size);
@@ -66,8 +58,6 @@ public class Player extends Entity {
 		this.ani.setNumFrames(2, this.ATTACK + this.LEFT);
 		this.ani.setNumFrames(2, this.ATTACK + this.UP);
 		this.ani.setNumFrames(2, this.ATTACK + this.DOWN);
-
-		this.go = new ArrayList<GameObject>();
 
 		for(int i = 0; i < sprite.getSpriteArray2().length; i++) {
 			for(int j = 0; j < sprite.getSpriteArray2()[i].length; j++) {
@@ -89,48 +79,6 @@ public class Player extends Entity {
 		this.stats.setSpd((short) 5);
 		this.stats.setAtt((short) 5);
 		this.stats.setWis((short) 5);
-	}
-
-	public void removeEffect(short effectId) {
-		for (int i = 0; i < this.effectIds.length; i++) {
-			if (this.effectIds[i] == effectId) {
-				this.effectIds[i] = -1;
-				this.effectTimes[i] = -1;
-			}
-		}
-	}
-
-	public void removeExpiredEffects() {
-		for (int i = 0; i < this.effectIds.length; i++) {
-			if (this.effectIds[i] != -1) {
-				if (System.currentTimeMillis() > this.effectTimes[i]) {
-					this.effectIds[i] = -1;
-					this.effectTimes[i] = -1;
-				}
-			}
-		}
-	}
-
-	public boolean hasEffect(short effectId) {
-		for (int i = 0; i < this.effectIds.length; i++) {
-			if (this.effectIds[i] == effectId)
-				return true;
-		}
-		return false;
-	}
-
-	public void resetEffects() {
-		this.effectIds = new short[] { -1, -1, -1, -1, -1, -1, -1, -1 };
-		this.effectTimes = new long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
-	}
-
-	public void addEffect(short effectId, long duration) {
-		for (int i = 0; i < this.effectIds.length; i++) {
-			if (this.effectIds[i] == -1) {
-				this.effectIds[i] = effectId;
-				this.effectTimes[i] = System.currentTimeMillis() + duration;
-			}
-		}
 	}
 
 	private void resetInventory() {
@@ -177,12 +125,6 @@ public class Player extends Entity {
 		return this.cardinality;
 	}
 
-	public void setTargetGameObject(GameObject go) {
-		if(!this.go.contains(go)) {
-			this.go.add(go);
-		}
-	}
-
 	public void resetPosition() {
 		this.pos.x = (GamePanel.width / 2) - (this.size / 2);
 		PlayState.map.x = 0;
@@ -199,8 +141,6 @@ public class Player extends Entity {
 	public void update(double time) {
 		super.update(time);
 		Stats stats = this.getComputedStats();
-
-		this.attacking = this.isAttacking(time);
 
 		if ((stats.getHp() > 0) && (this.getMaxHealth() == this.getDefaultMaxHealth())) {
 			this.setMaxHealth(this.getMaxHealth() + stats.getHp());
@@ -220,43 +160,12 @@ public class Player extends Entity {
 			}
 		}
 
-		if(!this.fallen) {
-			this.move();
-			if (!this.tc.collisionTile(this.tm.getTm().get(1).getBlocks(), this.dx, 0)
-					&& !this.bounds.collides(this.dx, 0, this.go)) {
-				//PlayState.map.x += dx;
-				this.pos.x += this.dx;
-				this.xCol = false;
-			} else {
-				this.xCol = true;
-			}
-			if (!this.tc.collisionTile(this.tm.getTm().get(1).getBlocks(), 0, this.dy)
-					&& !this.bounds.collides(0, this.dy, this.go)) {
-				//PlayState.map.y += dy;
-				this.pos.y += this.dy;
-				this.yCol = false;
-			} else {
-				this.yCol = true;
-			}
-
-			this.tc.normalTile(this.dx, 0);
-			this.tc.normalTile(0, this.dy);
-
-
-		} else {
-			this.xCol = true;
-			this.yCol = true;
-			if(this.ani.hasPlayedOnce()) {
-				this.resetPosition();
-				this.dx = 0;
-				this.dy = 0;
-				this.fallen = false;
-			}
-		}
 
 		if (((System.currentTimeMillis() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
-
+			if (this.hasEffect(EffectType.HEALING)) {
+				stats.setVit((short) (stats.getVit() * 2));
+			}
 			if (this.getHealth() < this.getMaxHealth()) {
 				int targetHealth = this.getHealth() + stats.getVit();
 				if (targetHealth > this.getMaxHealth()) {
@@ -271,13 +180,6 @@ public class Player extends Entity {
 					targetMana = this.getMaxMana();
 				}
 				this.setMana(targetMana);
-			}
-		}
-
-		NormTile[] block = this.tm.getNormalTile(this.getPos());
-		for(int i = 0; i < block.length; i++) {
-			if(block[i] != null) {
-				block[i].getImage().restoreDefault();
 			}
 		}
 	}
@@ -331,7 +233,7 @@ public class Player extends Entity {
 	public void input(MouseHandler mouse, KeyHandler key) {
 		Stats stats = this.getComputedStats();
 
-		if(!this.fallen) {
+		if(!this.isFallen()) {
 			if(key.up.down) {
 				this.up = true;
 			} else {

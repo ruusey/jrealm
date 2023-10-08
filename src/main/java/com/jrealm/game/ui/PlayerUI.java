@@ -143,8 +143,9 @@ public class PlayerUI {
 						if ((currentEquip == null) && (idx > -1)) {
 							this.inventory[idx + 4] = groundLoot;
 							this.groundLoot[actualIdx] = null;
-							this.playState.replaceLootContainerItemByUid(item.getUid(), null);
 							this.getPlayState().getPlayer().getInventory()[idx + 4] = item;
+							this.playState.replaceLootContainerItemByUid(item.getUid(), null);
+
 						}
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
 						this.setGroundLoot(this.groundLoot);
@@ -212,6 +213,7 @@ public class PlayerUI {
 					this.tooltips.clear();
 				});
 				b.onMouseDown(event -> {
+
 					PlayerUI.DRAGGING_ITEM = true;
 					if (item.isConsumable()) {
 						Stats newStats = this.playState.getPlayer().getStats().concat(item.getStats());
@@ -229,6 +231,7 @@ public class PlayerUI {
 						this.tooltips.clear();
 					}
 				});
+				final Button slotButton = b;
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
 					if (this.overlapsEquipment(event)
@@ -248,11 +251,14 @@ public class PlayerUI {
 							this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
 							this.getPlayState().getPlayer().getInventory()[idx] = item;
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
-						} else if (this.playState.getNearestChest() != null) {
-							LootContainer c = this.playState.getNearestChest();
-							c.setItem(c.getFirstNullIdx(), item);
-
+						}
+						if (this.playState.getNearestChest() != null) {
+							LootContainer nearestChest = this.playState.getNearestChest();
+							int idxToPlace = nearestChest.getFirstNullIdx();
+							nearestChest.setItem(idxToPlace, item);
 							this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
+
+							this.groundLoot[idxToPlace] = new Slots(slotButton, item);
 
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
 							this.setGroundLoot(this.groundLoot);
@@ -325,7 +331,6 @@ public class PlayerUI {
 	}
 
 	private boolean overlapsInventory(Vector2f pos) {
-		Slots invSlots = this.getSlot(4);
 		final int panelWidth = (GamePanel.width / 5);
 
 		final int startX = GamePanel.width - panelWidth;

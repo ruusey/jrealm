@@ -79,7 +79,7 @@ public class TileMapGenerator {
 
 	private int[] simplexTiles(int xStart, int xEnd, int yStart, int yEnd) {
 		int[] data = new int[this.chuckSize * this.chuckSize];
-		Random r = new Random(System.currentTimeMillis());
+		Random r = new Random(System.nanoTime());
 		SimplexNoise simplexNoise = new SimplexNoise(300, 0.4, r.nextInt(10000));
 		double[][] result = new double[this.chuckSize][this.chuckSize];
 

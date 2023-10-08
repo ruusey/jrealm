@@ -26,6 +26,7 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
+import com.jrealm.game.util.GameObjectKey;
 import com.jrealm.game.util.WorkerThread;
 
 import lombok.AllArgsConstructor;
@@ -61,29 +62,61 @@ public class Realm {
 		this.players = new ConcurrentHashMap<>();
 
 		this.realmCamera = cam;
-		//		SpriteSheet tileset = GameDataManager.SPRITE_SHEETS.get("tile/overworldOP.png");
-		//		SpriteSheet treeset = GameDataManager.SPRITE_SHEETS.get("material/trees.png");
-		//		SpriteSheet rockset = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png");
-		//
-		//		MaterialManager treeMgr = new MaterialManager(64, 150);
-		//		treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
-		//		// treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
-		//
-		//		MaterialManager rockMgr = new MaterialManager(64, 150);
-		//		rockMgr.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
 
-		// this.tileManager = new TileManager("tile/nexus.xml", this.realmCamera);
-		// this.tileManager.setMaterialManagers(Arrays.asList(treeMgr, rockMgr));
-
-		// for (MaterialManager mm : this.tileManager.getMaterialManagers()) {
-		// for (GameObjectKey go : mm.list) {
-		// if (go.go instanceof Material) {
-		// this.addMaterial((Material) go.go);
-		// }
-		// }
-		// }
-		this.loadMap("tile/nexus2.xml");
+		this.loadMap("tile/vault.xml");
+		this.setupChests();
 		WorkerThread.submit(this.getStatsThread());
+	}
+
+
+	private void setupChests() {
+		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 450, (0 + (GamePanel.height / 2)) - 200);
+		if (this.getChests().size() == 0) {
+			this.await(100);
+			this.addLootContainer(new Chest(chestLoc));
+			this.await(100);
+			this.addLootContainer(new Chest(chestLoc.clone(-128, 0)));
+			this.await(100);
+			this.addLootContainer(new Chest(chestLoc.clone(-256, 0)));
+		}
+	}
+
+	public void loadRandomTerrain() {
+		List<Chest> curr = this.getChests();
+
+		this.bullets = new ConcurrentHashMap<>();
+		this.enemies = new ConcurrentHashMap<>();
+		this.loot = new ConcurrentHashMap<>();
+		if (curr.size() > 0) {
+			curr.forEach(chest -> {
+				this.addLootContainer(chest);
+			});
+		}
+		this.bulletHits = new ConcurrentHashMap<>();
+		this.materials = new ConcurrentHashMap<>();
+		this.materialManagers = new ConcurrentHashMap<>();
+
+		SpriteSheet tileset = GameDataManager.SPRITE_SHEETS.get("tile/overworldOP.png");
+		SpriteSheet treeset = GameDataManager.SPRITE_SHEETS.get("material/trees.png");
+		SpriteSheet rockset = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png");
+
+		MaterialManager treeMgr = new MaterialManager(64, 150);
+		treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
+		// treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
+
+		MaterialManager rockMgr = new MaterialManager(32, 150);
+		rockMgr.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
+
+		this.tileManager = new TileManager(tileset, 150, this.realmCamera, treeMgr, rockMgr);
+
+		for (MaterialManager mm : this.tileManager.getMaterialManagers()) {
+			for (GameObjectKey go : mm.list) {
+				if (go.go instanceof Material) {
+					this.addMaterial((Material) go.go);
+				}
+			}
+		}
+		this.spawnRandomEnemies();
 	}
 
 	public void loadMap(String path) {
@@ -127,15 +160,12 @@ public class Realm {
 
 	public boolean removePlayer(Player player) {
 		this.acquirePlayerLock();
-
 		Player p = this.players.remove(player.getPlayerId());
 		this.releasePlayerLock();
-
 		return p != null;
 	}
 
 	public boolean hasHitEnemy(long bulletId, long enemyId) {
-
 		return (this.bulletHits.get(bulletId) != null) && this.bulletHits.get(bulletId).contains(enemyId);
 	}
 
@@ -157,10 +187,8 @@ public class Realm {
 
 	public boolean removePlayer(long playerId) {
 		this.acquirePlayerLock();
-
 		Player p = this.players.remove(playerId);
 		this.releasePlayerLock();
-
 		return p != null;
 	}
 
@@ -185,7 +213,7 @@ public class Realm {
 	}
 
 	public boolean removeBullet(Collection<Long> b) {
-		for(Long l : b) {
+		for (Long l : b) {
 			this.bullets.remove(l);
 			this.bulletHits.remove(l);
 		}
@@ -238,11 +266,11 @@ public class Realm {
 		for (GameObject g : go) {
 			colBoxes.add(g.getBounds());
 		}
-
 		return colBoxes.toArray(new AABB[0]);
 	}
 
 	public GameObject[] getGameObjectsInBounds(AABB cam) {
+
 		List<GameObject> objs = new ArrayList<>();
 		for (Player p : this.players.values()) {
 			if (p.getBounds().intersect(cam)) {
@@ -278,9 +306,7 @@ public class Realm {
 				objs.add(lc);
 			}
 		}
-
 		return objs.toArray(new LootContainer[0]);
-
 	}
 
 	public void spawnRandomEnemies() {
@@ -289,7 +315,7 @@ public class Realm {
 
 		SpriteSheet enemySheet1 = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses-1.png");
 
-		Random r = new Random(System.currentTimeMillis());
+		Random r = new Random(System.nanoTime());
 		for (int i = 0; i < this.tileManager.getHeight(); i++) {
 			for (int j = 0; j < this.tileManager.getWidth(); j++) {
 				Enemy go = null;
@@ -338,8 +364,7 @@ public class Realm {
 	public void spawnRandomEnemy() {
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 
-
-		Random r = new Random(System.currentTimeMillis());
+		Random r = new Random(System.nanoTime());
 		Enemy go = null;
 		Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getWidth()),
 				GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getHeight()));
@@ -356,18 +381,17 @@ public class Realm {
 			go.setPos(spawnPos);
 			break;
 		case 2:
-			go = new Monster(1, new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
-					spawnPos, 64);
+			go = new Monster(1, new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0), spawnPos,
+					64);
 			go.setPos(spawnPos);
 			break;
 		case 3:
-			go = new Monster(7, new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0),
-					spawnPos, 64);
+			go = new Monster(7, new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0), spawnPos, 64);
 			go.setPos(spawnPos);
 			break;
 		case 4:
-			go = new Monster(8, new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0),
-					spawnPos, 64);
+			go = new Monster(8, new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0), spawnPos,
+					64);
 			go.setPos(spawnPos);
 			break;
 
@@ -376,27 +400,26 @@ public class Realm {
 	}
 
 	private Thread getStatsThread() {
-		Runnable r = ()->{
-			while(true) {
+		Runnable r = () -> {
+			while (true) {
 				double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
 
-				Realm.log.info("Enemies: {}",this.enemies.size());
-				Realm.log.info("Players: {}",this.players.size());
-				Realm.log.info("Loot: {}",this.loot.size());
-				Realm.log.info("Bullets: {}",this.bullets.size());
-				Realm.log.info("BulletHits: {}",this.bulletHits.size());
+				Realm.log.info("Enemies: {}", this.enemies.size());
+				Realm.log.info("Players: {}", this.players.size());
+				Realm.log.info("Loot: {}", this.loot.size());
+				Realm.log.info("Bullets: {}", this.bullets.size());
+				Realm.log.info("BulletHits: {}", this.bulletHits.size());
 				Realm.log.info("Heap Mem: {}", heapSize);
 
 				try {
 					Thread.sleep(10000);
-				}catch(Exception e) {
+				} catch (Exception e) {
 
 				}
 			}
 		};
 		return new Thread(r);
 	}
-
 
 	private void acquirePlayerLock() {
 		try {
@@ -411,6 +434,14 @@ public class Realm {
 			this.playerLock.release();
 		} catch (Exception e) {
 			Realm.log.error(e.getMessage());
+		}
+	}
+
+	private void await(long ms) {
+		try {
+			Thread.sleep(ms);
+		} catch (Exception e) {
+
 		}
 	}
 }

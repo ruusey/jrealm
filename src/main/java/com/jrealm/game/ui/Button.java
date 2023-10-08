@@ -5,6 +5,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
@@ -209,7 +210,7 @@ public class Button {
 				}
 			}
 			this.canHover = false;
-			if ((mouse.getButton() == 1) && !this.clicked) {
+			if ((mouse.isPressed(MouseEvent.BUTTON1)) && !this.clicked) {
 				this.clicked = true;
 				this.pressed = true;
 				if (key.shift.down) {
@@ -223,7 +224,7 @@ public class Button {
 					this.mouseDownEvents.get(i).action(1);
 				}
 			}
-			else if ((mouse.getButton() == -1) && this.clicked) {
+			else if ((!mouse.isPressed(MouseEvent.BUTTON1)) && this.clicked) {
 				this.clicked = false;
 				for (int i = 0; i < this.mouseUpEvents.size(); i++) {
 					this.mouseUpEvents.get(i).action(new Vector2f(mouse.getX(), mouse.getY()));
@@ -235,7 +236,7 @@ public class Button {
 			for (int i = 0; i < this.hoverOutEvents.size(); i++) {
 				this.hoverOutEvents.get(i).action(1);
 			}
-		} else if ((mouse.getButton() == -1) && this.clicked && PlayerUI.DRAGGING_ITEM) {
+		} else if ((!mouse.isPressed(MouseEvent.BUTTON1)) && this.clicked && PlayerUI.DRAGGING_ITEM) {
 			this.clicked = false;
 			PlayerUI.DRAGGING_ITEM = false;
 			for (int i = 0; i < this.mouseUpEvents.size(); i++) {

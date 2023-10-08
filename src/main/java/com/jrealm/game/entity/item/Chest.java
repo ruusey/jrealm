@@ -10,6 +10,7 @@ import lombok.Data;
 
 @Data
 public class Chest extends LootContainer {
+	private boolean visible = true;
 	public Chest(Vector2f pos) {
 		super(GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(2, 0, 8, 8), pos);
 		this.setUid(UUID.randomUUID().toString());

@@ -48,6 +48,7 @@ public class KeyHandler implements KeyListener{
 	public Key escape = new Key();
 	public Key shift = new Key();
 	public Key f1 = new Key();
+	public Key f2 = new Key();
 
 	public Key one = new Key();
 	public Key two = new Key();
@@ -102,6 +103,9 @@ public class KeyHandler implements KeyListener{
 		}
 		if(e.getKeyCode() == KeyEvent.VK_F1) {
 			this.f1.toggle(pressed);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_F2) {
+			this.f2.toggle(pressed);
 		}
 		if(e.getKeyCode() == KeyEvent.VK_SHIFT) {
 			this.shift.toggle(pressed);

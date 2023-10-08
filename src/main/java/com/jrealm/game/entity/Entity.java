@@ -2,6 +2,7 @@ package com.jrealm.game.entity;
 
 import java.awt.Graphics2D;
 
+import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.graphics.Animation;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
@@ -39,7 +40,7 @@ public abstract class Entity extends GameObject {
 	protected boolean right = false;
 	protected boolean left = false;
 	protected boolean attack = false;
-	protected boolean fallen = false;
+	private boolean fallen = false;
 
 	public boolean xCol = false;
 	public boolean yCol = false;
@@ -68,6 +69,10 @@ public abstract class Entity extends GameObject {
 
 	protected AABB hitBounds;
 
+
+	private short[] effectIds;
+	private long[] effectTimes;
+
 	public Entity(int id, SpriteSheet sprite, Vector2f origin, int size) {
 		super(id, sprite, origin, 0, 0, size);
 		this.hitsize = size;
@@ -81,17 +86,61 @@ public abstract class Entity extends GameObject {
 		this.tc = new TileCollision(this);
 	}
 
+	public void removeEffect(short effectId) {
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if (this.effectIds[i] == effectId) {
+				this.effectIds[i] = -1;
+				this.effectTimes[i] = -1;
+			}
+		}
+	}
+
+	public void removeExpiredEffects() {
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if (this.effectIds[i] != -1) {
+				if (System.currentTimeMillis() > this.effectTimes[i]) {
+					this.effectIds[i] = -1;
+					this.effectTimes[i] = -1;
+				}
+			}
+		}
+	}
+
+	public boolean hasEffect(EffectType effect) {
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if (this.effectIds[i] == effect.effectId)
+				return true;
+		}
+		return false;
+	}
+
+	public void resetEffects() {
+		this.effectIds = new short[] { -1, -1, -1, -1, -1, -1, -1, -1 };
+		this.effectTimes = new long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
+	}
+
+	public void addEffect(EffectType effect, long duration) {
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if (this.effectIds[i] == -1) {
+				this.effectIds[i] = effect.effectId;
+				this.effectTimes[i] = System.currentTimeMillis() + duration;
+			}
+		}
+	}
+
 	public void setIsInvincible(boolean invincible) {
 		this.isInvincible = invincible;
 	}
 
-	public void setFallen(boolean b) { this.fallen = b; }
+	public void setFallen(boolean b) {
+		this.fallen = b;
+	}
 
 	public void setHealth(int i, float f, boolean dir) {
 		if (!this.isInvincible) {
 			this.health = i;
 			this.invincibletime = System.nanoTime();
-			if(this.health <= 0) {
+			if (this.health <= 0) {
 				this.die = true;
 			}
 
@@ -106,17 +155,34 @@ public abstract class Entity extends GameObject {
 	}
 
 
-	public boolean getDeath() { return this.die; }
-	public int getHealth() { return this.health; }
-	public float getHealthPercent() { return this.healthpercent; }
-	public int getDefense() { return this.defense; }
-	public AABB getHitBounds() { return this.hitBounds; }
+	public boolean getDeath() {
+		return this.die;
+	}
+
+	public int getHealth() {
+		return this.health;
+	}
+
+	public float getHealthPercent() {
+		return this.healthpercent;
+	}
+
+	public int getDefense() {
+		return this.defense;
+	}
+
+	public AABB getHitBounds() {
+		return this.hitBounds;
+	}
 	public int getDirection() {
-		if((this.currentDirection == this.UP) || (this.currentDirection == this.LEFT))
+		if ((this.currentDirection == this.UP) || (this.currentDirection == this.LEFT))
 			return 1;
 		return -1;
 	}
-	public Animation getAnimation() { return this.ani; }
+
+	public Animation getAnimation() {
+		return this.ani;
+	}
 
 	public void setAnimation(int i, Sprite[] frames, int delay) {
 		this.currentAnimation = i;
@@ -126,9 +192,10 @@ public abstract class Entity extends GameObject {
 
 	public void animate() {
 
-		if(this.attacking) {
-			if(this.currentAnimation < 5) {
-				this.setAnimation(this.currentAnimation + this.ATTACK, this.sprite.getSpriteArray(this.currentAnimation + this.ATTACK), this.attackDuration / 100);
+		if (this.attacking) {
+			if (this.currentAnimation < 5) {
+				this.setAnimation(this.currentAnimation + this.ATTACK,
+						this.sprite.getSpriteArray(this.currentAnimation + this.ATTACK), this.attackDuration / 100);
 			}
 		} else if (this.up) {
 			if (((this.currentAnimation != this.UP) || (this.ani.getDelay() == -1))) {
@@ -146,17 +213,18 @@ public abstract class Entity extends GameObject {
 			if (((this.currentAnimation != this.RIGHT) || (this.ani.getDelay() == -1))) {
 				this.setAnimation(this.RIGHT, this.sprite.getSpriteArray(this.RIGHT + this.sprite.getRowOffset()), 5);
 			}
-		} else if (this.fallen) {
+		} else if (this.isFallen()) {
 			if ((this.currentAnimation != this.FALLEN) || (this.ani.getDelay() == -1)) {
 				this.setAnimation(this.FALLEN, this.sprite.getSpriteArray(this.FALLEN + this.sprite.getRowOffset()),
 						15);
 			}
-		} else if(!this.attacking && (this.currentAnimation > 4)) {
-			this.setAnimation(this.currentAnimation - this.ATTACK, this.sprite.getSpriteArray(this.currentAnimation - this.ATTACK), -1);
-		} else if(!this.attacking) {
-			if(this.hasIdle && (this.currentAnimation != this.IDLE)) {
+		} else if (!this.attacking && (this.currentAnimation > 4)) {
+			this.setAnimation(this.currentAnimation - this.ATTACK,
+					this.sprite.getSpriteArray(this.currentAnimation - this.ATTACK), -1);
+		} else if (!this.attacking) {
+			if (this.hasIdle && (this.currentAnimation != this.IDLE)) {
 				this.setAnimation(this.IDLE, this.sprite.getSpriteArray(this.IDLE + this.sprite.getRowOffset()), 10);
-			} else if(!this.hasIdle) {
+			} else if (!this.hasIdle) {
 				this.setAnimation(this.currentAnimation,
 						this.sprite.getSpriteArray(this.currentAnimation + this.sprite.getRowOffset()), -1);
 			}
@@ -179,77 +247,63 @@ public abstract class Entity extends GameObject {
 		}
 	}
 
-	protected boolean isAttacking(double time) {
-
-		if((this.attacktime / 1000000) > ((time / 1000000) - this.attackSpeed)) {
-			this.canAttack = false;
-		} else {
-			this.canAttack = true;
-		}
-
-		if(((this.attacktime / 1000000) + this.attackDuration) > (time / 1000000))
-			return true;
-
-		return false;
-	}
-
 	public void move() {
-		if(this.up) {
+		if (this.up) {
 			this.currentDirection = this.UP;
 			this.dy -= this.acc;
-			if(this.dy < -this.maxSpeed) {
+			if (this.dy < -this.maxSpeed) {
 				this.dy = -this.maxSpeed;
 			}
-		} else if(this.dy < 0) {
+		} else if (this.dy < 0) {
 			this.dy += this.deacc;
-			if(this.dy > 0) {
+			if (this.dy > 0) {
 				this.dy = 0;
 			}
 		}
 
-		if(this.down) {
+		if (this.down) {
 			this.currentDirection = this.DOWN;
 			this.dy += this.acc;
-			if(this.dy > this.maxSpeed) {
+			if (this.dy > this.maxSpeed) {
 				this.dy = this.maxSpeed;
 			}
-		} else if(this.dy > 0) {
+		} else if (this.dy > 0) {
 			this.dy -= this.deacc;
-			if(this.dy < 0) {
+			if (this.dy < 0) {
 				this.dy = 0;
 			}
 		}
 
-		if(this.left) {
+		if (this.left) {
 			this.currentDirection = this.LEFT;
 			this.dx -= this.acc;
-			if(this.dx < -this.maxSpeed) {
+			if (this.dx < -this.maxSpeed) {
 				this.dx = -this.maxSpeed;
 			}
-		} else if(this.dx < 0) {
+		} else if (this.dx < 0) {
 			this.dx += this.deacc;
-			if(this.dx > 0) {
+			if (this.dx > 0) {
 				this.dx = 0;
 			}
 		}
 
-		if(this.right) {
+		if (this.right) {
 			this.currentDirection = this.RIGHT;
 			this.dx += this.acc;
-			if(this.dx > this.maxSpeed) {
+			if (this.dx > this.maxSpeed) {
 				this.dx = this.maxSpeed;
 			}
-		} else if(this.dx > 0) {
+		} else if (this.dx > 0) {
 			this.dx -= this.deacc;
-			if(this.dx < 0) {
+			if (this.dx < 0) {
 				this.dx = 0;
 			}
 		}
 	}
 
 	public void update(double time) {
-		if(this.isInvincible) {
-			if(((this.invincibletime / 1000000) + this.invincible) < (time / 1000000) ) {
+		if (this.isInvincible) {
+			if (((this.invincibletime / 1000000) + this.invincible) < (time / 1000000)) {
 				this.isInvincible = false;
 			}
 		}
@@ -260,5 +314,9 @@ public abstract class Entity extends GameObject {
 
 	@Override
 	public abstract void render(Graphics2D g);
+
+	public boolean isFallen() {
+		return this.fallen;
+	}
 
 }

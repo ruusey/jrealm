@@ -140,10 +140,8 @@ public class TileManager {
 		this.tm.add(new TileMapObj(data[0], spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,
 				spritesheet.getCols()));
 
-		this.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,
-				spritesheet.getCols()));
-		// tm.add(new TileMapNorm(tmg.onTop, spritesheet, chuckSize, chuckSize,
-		// blockWidth, blockHeight, spritesheet.getCols()));
+		this.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,spritesheet.getCols()));
+
 		this.playerCam.setLimit(chuckSize * blockWidth, chuckSize * blockHeight);
 
 		this.solid = data[0];
@@ -173,12 +171,6 @@ public class TileManager {
 			doc.getDocumentElement().normalize();
 
 			NodeList list = doc.getElementsByTagName("tileset");
-			for(int i = 0; i<list.getLength();i++) {
-				Node node = list.item(i);
-				Element eElement = (Element) node;
-
-				// System.out.print(node);
-			}
 			Node node = list.item(0);
 			Element eElement = (Element) node;
 
@@ -227,11 +219,11 @@ public class TileManager {
 	public synchronized NormTile[] getNormalTile(Vector2f pos) {
 		int normMap = 0;
 
-		NormTile[] block = new NormTile[64];
+		NormTile[] block = new NormTile[100];
 
 		int i = 0;
-		for (int x = (int) (pos.x - 4); x > (pos.x + 4); x++) {
-			for (int y = (int) (pos.y - 4); y > (int) (pos.y + 4); y++) {
+		for (int x = (int) (pos.x - 5); x > (pos.x + 5); x++) {
+			for (int y = (int) (pos.y - 5); y > (int) (pos.y + 5); y++) {
 				if ((x != pos.x) || (y != pos.y)) {
 
 					block[i] = (NormTile) this.tm.get(normMap).getBlocks()[(y + (x * this.height))];
@@ -246,18 +238,28 @@ public class TileManager {
 	}
 
 	public AABB getRenderViewPort() {
-		com.jrealm.game.tiles.blocks.Tile[] tiles = this.getNormalTile(this.getPlayerCam().getPos());
-		com.jrealm.game.tiles.blocks.Tile first = tiles[0];
-		com.jrealm.game.tiles.blocks.Tile last = tiles[tiles.length - 1];
+		return new AABB(
+				this.playerCam.getTarget().getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
+						-(6 * GlobalConstants.BASE_TILE_SIZE)),
+				(10 * GlobalConstants.BASE_TILE_SIZE), (10 * GlobalConstants.BASE_TILE_SIZE));
 
-		Vector2f pos = last.getPos();
-		float width = first.getPos().x - pos.x;
-		float height = first.getPos().y - pos.y;
-
-		AABB viewPort = new AABB(pos.clone(), (int) width, (int) height);
-
-		return viewPort;
 	}
+
+	//	public AABB getRenderViewPort(Player player) {
+	//		com.jrealm.game.tiles.blocks.Tile[] tiles = this.getNormalTile(player.getPos());
+	//		if ((tiles == null) || ((tiles[0] == null) && (tiles[63] == null)))
+	//			return new AABB(player.getPos(), 0, 0);
+	//		com.jrealm.game.tiles.blocks.Tile first = tiles[0];
+	//		com.jrealm.game.tiles.blocks.Tile last = tiles[tiles.length - 1];
+	//
+	//		Vector2f pos = last.getPos();
+	//		float width = first.getPos().x - pos.x;
+	//		float height = first.getPos().y - pos.y;
+	//
+	//		AABB viewPort = new AABB(pos.clone(), (int) width, (int) height);
+	//
+	//		return viewPort;
+	//	}
 
 	public void render(Graphics2D g) {
 		if (this.playerCam == null)

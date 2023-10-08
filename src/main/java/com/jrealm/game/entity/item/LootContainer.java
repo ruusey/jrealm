@@ -32,7 +32,7 @@ public class LootContainer {
 		this.uid = UUID.randomUUID().toString();
 		this.items = new GameItem[8];
 		this.pos = pos;
-		Random r = new Random(System.currentTimeMillis());
+		Random r = new Random(System.nanoTime());
 		this.items[0] = GameDataManager.GAME_ITEMS.get(r.nextInt(8));
 		for (int i = 1; i < (r.nextInt(7) + 1); i++) {
 			this.items[i] = GameDataManager.GAME_ITEMS.get(r.nextInt(152) + 1);

@@ -49,6 +49,8 @@ public class Slots {
 	}
 
 	public void render(Graphics2D g, Vector2f pos) {
+		if (this.getItem() == null)
+			return;
 		Sprite itemSprite = GameDataManager.getSubSprite(this.item, 8);
 
 		if(this.button != null) {

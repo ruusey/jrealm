@@ -19,12 +19,12 @@ public class Damage {
 
 	@JsonIgnore
 	public short getInRange() {
-		Random r = new Random(System.currentTimeMillis());
+		Random r = new Random(System.nanoTime());
 		return (short) (r.nextInt(this.max - this.min) + this.min);
 	}
 
 	public static short getInRange(Damage d) {
-		Random r = new Random(System.currentTimeMillis());
+		Random r = new Random(System.nanoTime());
 		return (short) (r.nextInt(d.getMax() - d.getMin()) + d.getMin());
 	}
 

@@ -2,6 +2,7 @@ package com.jrealm.game.states;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.contants.PlayerLocation;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -58,6 +60,7 @@ public class PlayState extends GameState {
 
 	public long playerId = -1l;
 
+	private PlayerLocation playerLocation = PlayerLocation.NEXUS;
 
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
@@ -66,34 +69,17 @@ public class PlayState extends GameState {
 		this.cam = cam;
 		this.realm = new Realm(this.cam);
 
-
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
-		this.loadClass(CharacterClass.WIZARD, true);
-		this.setupChests();
-
-	}
-
-	private void setupChests() {
-		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 96);
-		if (this.realm.getChests().size() == 0) {
-			this.await(100);
-			this.realm.addLootContainer(new Chest(chestLoc));
-			this.await(100);
-			this.realm.addLootContainer(new Chest(chestLoc.clone(-128, 0)));
-			this.await(100);
-			this.realm.addLootContainer(new Chest(chestLoc.clone(-256, 0)));
-		}
-
+		this.loadClass(CharacterClass.PALLADIN, true);
 	}
 
 	private void loadClass(CharacterClass cls, boolean setEquipment) {
 
 		Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE,
+				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE,
-				this.realm.getTileManager());
+				GlobalConstants.PLAYER_SIZE);
 		if (setEquipment || (this.playerId == -1l)) {
 			player.equipSlots(this.getStartingEquipment(cls));
 		} else {
@@ -116,7 +102,7 @@ public class PlayState extends GameState {
 	public Map<Integer, GameItem> getStartingEquipment(CharacterClass characterClass) {
 		Map<Integer, GameItem> result = new HashMap<>();
 
-		switch(characterClass) {
+		switch (characterClass) {
 		case ROGUE:
 			result.put(0, GameDataManager.GAME_ITEMS.get(49));
 			result.put(1, GameDataManager.GAME_ITEMS.get(152));
@@ -162,9 +148,10 @@ public class PlayState extends GameState {
 			break;
 		case PALLADIN:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
+			result.put(1, GameDataManager.GAME_ITEMS.get(153));
+
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			// result.put(4, GameDataManager.GAME_ITEMS.get(75));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		}
@@ -180,6 +167,43 @@ public class PlayState extends GameState {
 		return this.realm.getPlayers().get(this.playerId).getPos();
 	}
 
+	private void movePlayer() {
+		if(!this.getPlayer().isFallen()) {
+			this.getPlayer().move();
+			if (!this.getPlayer().getTc().collisionTile(this.realm.getTileManager().getTm().get(1).getBlocks(),
+					this.getPlayer().getDx(), 0)) {
+				// PlayState.map.x += dx;
+				this.getPlayer().getPos().x += this.getPlayer().getDx();
+				this.getPlayer().xCol = false;
+			} else {
+				this.getPlayer().xCol = true;
+			}
+			if (!this.getPlayer().getTc().collisionTile(this.realm.getTileManager().getTm().get(1).getBlocks(), 0,
+					this.getPlayer().getDy())) {
+				// PlayState.map.y += dy;
+				this.getPlayer().getPos().y += this.getPlayer().getDy();
+				this.getPlayer().yCol = false;
+			} else {
+				this.getPlayer().yCol = true;
+			}
+
+			this.getPlayer().getTc().normalTile(this.getPlayer().getDx(), 0);
+			this.getPlayer().getTc().normalTile(0, this.getPlayer().getDy());
+
+
+		} else {
+			this.getPlayer().xCol = true;
+			this.getPlayer().yCol = true;
+			if (this.getPlayer().getAni().hasPlayedOnce()) {
+				this.getPlayer().resetPosition();
+				this.getPlayer().setDx(0);
+				this.getPlayer().setDy(0);
+				this.getPlayer().setFallen(false);
+			}
+		}
+
+	}
+
 	@Override
 	public void update(double time) {
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
@@ -193,7 +217,9 @@ public class PlayState extends GameState {
 					this.gsm.add(GameStateManager.GAMEOVER);
 					this.gsm.pop(GameStateManager.PLAY);
 				}
-				Runnable monitorDamageText = () ->{
+
+
+				Runnable monitorDamageText = () -> {
 					List<DamageText> toRemove = new ArrayList<>();
 					for (DamageText text : this.getDamageText()) {
 						text.update();
@@ -252,19 +278,21 @@ public class PlayState extends GameState {
 				};
 				Runnable updatePlayerAndUi = () -> {
 					player.update(time);
+					this.movePlayer();
+
 					this.pui.update(time);
 				};
 				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText,
 						checkAbilityUsage);
 			}
+
 			this.cam.target(player);
 			this.cam.update();
 		}
 	}
 
 	public synchronized void addProjectile(int projectileGroupId, Vector2f src, Vector2f dest, short size,
-			float magnitude,
-			float range, short damage, boolean isEnemy, List<Short> flags) {
+			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags) {
 		Player player = this.realm.getPlayer(this.playerId);
 		if (player == null)
 			return;
@@ -284,8 +312,8 @@ public class PlayState extends GameState {
 	}
 
 	public synchronized void addProjectile(int projectileGroupId, Vector2f src, float angle, short size,
-			float magnitude,
-			float range, short damage, boolean isEnemy, List<Short> flags, short amplitude, short frequency) {
+			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags, short amplitude,
+			short frequency) {
 		Player player = this.realm.getPlayer(this.playerId);
 		if (player == null)
 			return;
@@ -327,10 +355,10 @@ public class PlayState extends GameState {
 		List<Bullet> toRemove = new ArrayList<>();
 		TileMap currentMap = this.realm.getTileManager().getTm().get(1);
 		Tile[] viewportTiles = null;
-		if(currentMap == null)
+		if (currentMap == null)
 			return;
 		viewportTiles = currentMap.getBlocksInBounds(this.getCam().getBounds());
-		for(Bullet b : this.getBullets()) {
+		for (Bullet b : this.getBullets()) {
 			if (b.remove()) {
 				toRemove.add(b);
 				continue;
@@ -346,7 +374,6 @@ public class PlayState extends GameState {
 		}
 		toRemove.forEach(bullet -> {
 			this.realm.removeBullet(bullet);
-
 		});
 	}
 
@@ -358,8 +385,7 @@ public class PlayState extends GameState {
 			Stats stats = player.getComputedStats();
 			Vector2f sourcePos = p.getPos();
 			int computedDamage = b.getDamage() - p.getComputedStats().getDef();
-			DamageText hitText = DamageText.builder().damage(computedDamage + "")
-					.effect(TextEffect.DAMAGE)
+			DamageText hitText = DamageText.builder().damage(computedDamage + "").effect(TextEffect.DAMAGE)
 					.sourcePos(sourcePos).build();
 			this.damageText.add(hitText);
 			b.setPlayerHit(true);
@@ -400,7 +426,7 @@ public class PlayState extends GameState {
 
 	private List<Bullet> getBullets() {
 
-		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.cam.getBounds());
+		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort());
 
 		List<Bullet> results = new ArrayList<>();
 		for (int i = 0; i < gameObject.length; i++) {
@@ -415,6 +441,9 @@ public class PlayState extends GameState {
 	public void input(MouseHandler mouse, KeyHandler key) {
 		key.escape.tick();
 		key.f1.tick();
+		key.f2.tick();
+		key.shift.tick();
+
 		key.enter.tick();
 		Player player = this.realm.getPlayer(this.playerId);
 
@@ -423,12 +452,15 @@ public class PlayState extends GameState {
 				player.input(mouse, key);
 			}
 			this.cam.input(mouse, key);
-
-			if (key.f1.clicked) {
-
+			if (key.f2.clicked) {
+				this.playerLocation = PlayerLocation.VAULT;
 				this.realm.loadMap("tile/vault.xml");
-				this.loadClass(CharacterClass.valueOf(this.getPlayer().getId()), false);
-				this.setupChests();
+				this.loadClass(this.currentPlayerCharacterClass(), false);
+			}
+			if (key.f1.clicked) {
+				this.playerLocation = PlayerLocation.REALM;
+				this.realm.loadMap("tile/nexus2.xml");
+				this.loadClass(this.currentPlayerCharacterClass(), false);
 			}
 
 			this.pui.input(mouse, key);
@@ -456,9 +488,6 @@ public class PlayState extends GameState {
 			}
 
 
-			if (key.shift.down) {
-				this.realm.loadMap("tile/vault.xml");
-			}
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);
 			this.cam.target(player);
@@ -475,12 +504,12 @@ public class PlayState extends GameState {
 		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (400 - (stats.getDex() * 12)))
 				&& !this.gsm.isStateActive(GameStateManager.EDIT);
 		boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
-		if ((mouse.getButton() == 1) && canShoot) {
+		if ((mouse.isPressed(MouseEvent.BUTTON1)) && canShoot) {
 			this.lastShotTick = System.currentTimeMillis();
 			Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
 			this.shotDestQueue.add(dest);
 		}
-		if ((mouse.getButton() == 2) && canUseAbility) {
+		if ((mouse.isPressed(MouseEvent.BUTTON3)) && canUseAbility) {
 			this.useAbility(mouse);
 		}
 	}
@@ -493,10 +522,10 @@ public class PlayState extends GameState {
 		if (this.getPlayer().getMana() < effect.getMpCost())
 			return;
 		this.getPlayer().setMana(this.getPlayer().getMana() - effect.getMpCost());
-		// this.getPlayer().addEffect(effect.getEffectId(), effect.getDuration());
-		// this.getPlayer().getSprite().getSpriteSheet().setEffect(Sprite.effect.DECAY);
+
 		if ((abilityItem.getDamage() != null)) {
-			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(abilityItem.getDamage().getProjectileGroupId());
+			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
+					.get(abilityItem.getDamage().getProjectileGroupId());
 			Player player = this.getPlayer();
 			Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
 			dest.addX(PlayState.map.x);
@@ -507,15 +536,18 @@ public class PlayState extends GameState {
 				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
 				this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), dest.clone(-offset, -offset),
-						Float.parseFloat(p.getAngle()), p.getSize(),
-						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
-						p.getFrequency());
+						Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage,
+						false, p.getFlags(), p.getAmplitude(), p.getFrequency());
 			}
 
 		} else if (abilityItem.getEffect() != null) {
 			this.getPlayer().addEffect(effect.getEffectId(), effect.getDuration());
 		}
 		this.lastAbilityTick = System.currentTimeMillis();
+	}
+
+	private CharacterClass currentPlayerCharacterClass() {
+		return CharacterClass.valueOf(this.getPlayer().getId());
 	}
 
 	public GameItem getLootContainerItemByUid(String uid) {
@@ -574,10 +606,11 @@ public class PlayState extends GameState {
 		if (player != null) {
 			player.render(g);
 		}
+		//		AABB test = new AABB(new Vector2f(this.getPlayerPos().x * 0.5f, this.getPlayerPos().y * 0.5f),
+		//				(int) 32 * 8, (int) 32 * 8);
 
-
-		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getRealmCamera().getBounds());
-
+		GameObject[] gameObject = this.realm
+				.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort());
 
 		for (int i = 0; i < gameObject.length; i++) {
 			GameObject toRender = gameObject[i];
@@ -684,12 +717,4 @@ public class PlayState extends GameState {
 		}
 	}
 
-
-	private void await(long ms) {
-		try {
-			Thread.sleep(ms);
-		} catch (Exception e) {
-
-		}
-	}
 }

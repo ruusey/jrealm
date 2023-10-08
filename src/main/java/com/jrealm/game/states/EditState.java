@@ -1,6 +1,7 @@
 package com.jrealm.game.states;
 
 import java.awt.Graphics2D;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
 import com.jrealm.game.entity.GameObject;
@@ -64,7 +65,8 @@ public class EditState extends GameState {
 		this.btnEnemy1.input(mouse, key);
 		this.btnEnemy2.input(mouse, key);
 
-		if((mouse.getButton() == 1) && !this.clicked && (this.entityList[this.selection] != null) && !this.btnEnemy1.getHovering() && !this.btnEnemy2.getHovering()) {
+		if ((mouse.isPressed(MouseEvent.BUTTON1)) && !this.clicked && (this.entityList[this.selection] != null)
+				&& !this.btnEnemy1.getHovering() && !this.btnEnemy2.getHovering()) {
 			GameObject go = this.entityList[this.selection];
 			go.setPos(new Vector2f((mouse.getX() - (go.getSize() / 2)) + this.cam.getPos().x + 64,
 					(mouse.getY() - (go.getSize() / 2)) + this.cam.getPos().y + 64));
@@ -77,7 +79,7 @@ public class EditState extends GameState {
 			//			}
 
 			this.clicked = true;
-		} else if(mouse.getButton() == -1) {
+		} else if (!mouse.isPressed(MouseEvent.BUTTON1)) {
 			this.clicked = false;
 		}
 	}

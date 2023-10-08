@@ -2663,5 +2663,53 @@
 		"targetSlot": 1,
 		"targetClass": 0,
 		"fameBonus": 8
+	},
+	{
+		"itemId": 153,
+		"row": 10,
+		"col": 6,
+		"spriteKey": "entity/rotmg-abilities.png",
+		"name": "Test Seal",
+		"description": "A palladin seal for testing",
+		"stats": {
+			"def": 10,
+			"wis": 10,
+			"vit": 10
+		},
+		"effect": {
+			"self": true,
+			"effectId": 1,
+			"duration": 5000,
+			"mpCost": 100
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 1,
+		"targetClass": 6,
+		"fameBonus": 8
+	},
+		{
+		"itemId": 154,
+		"row": 3,
+		"col": 6,
+		"spriteKey": "entity/rotmg-abilities.png",
+		"name": "Test Quiver",
+		"description": "An archer quiver for testing",
+		"stats": {
+			"dex": 10,
+			"spd": 10,
+			"vit": 10
+		},
+		"effect": {
+			"self": false,
+			"effectId": 2,
+			"duration": 5000,
+			"mpCost": 100
+		},
+		"consumable": false,
+		"tier": 14,
+		"targetSlot": 1,
+		"targetClass": 1,
+		"fameBonus": 8
 	}
 ]

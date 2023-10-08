@@ -3,6 +3,7 @@ package com.jrealm.game.entity;
 import java.awt.Color;
 import java.awt.Graphics2D;
 
+import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
@@ -13,8 +14,10 @@ import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.states.PlayState;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public abstract class Enemy extends Entity {
 
 	private long enemyId;
@@ -43,7 +46,7 @@ public abstract class Enemy extends Entity {
 	}
 
 	public void chase(Player player) {
-		if ((player == null) || player.hasEffect((short) 0)) {
+		if ((player == null) || player.hasEffect(EffectType.INVISIBLE)) {
 			this.up = false;
 			this.down = false;
 			this.right = false;
@@ -104,7 +107,7 @@ public abstract class Enemy extends Entity {
 		}
 
 		if (this.attackrange.colCircleBox(player.getBounds()) && !this.isInvincible
-				&& !playState.getPlayer().hasEffect((short) 0)) {
+				&& !playState.getPlayer().hasEffect(EffectType.INVISIBLE)) {
 			this.attack = true;
 
 			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 500);
@@ -135,7 +138,7 @@ public abstract class Enemy extends Entity {
 			this.attack = false;
 		}
 
-		if (!this.fallen) {
+		if (!this.isFallen()) {
 			if (!this.tc.collisionTile(playState.getRealm().getTileManager().getTm().get(1).getBlocks(),
 					this.dx,
 					0)) {
