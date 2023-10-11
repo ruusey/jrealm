@@ -20,6 +20,10 @@ public class UpdatePacket extends Packet {
 	private Stats stats;
 	private GameItem[] inventory;
 	
+	public UpdatePacket() {
+		
+	}
+	
 	public UpdatePacket(byte id, byte[] data) {
 		super(id, data);
 		try {
