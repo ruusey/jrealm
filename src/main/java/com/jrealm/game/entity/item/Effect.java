@@ -4,8 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.EffectType;
-import com.jrealm.net.packet.client.temp.StreamReadable;
-import com.jrealm.net.packet.client.temp.StreamWritable;
+import com.jrealm.net.packet.client.temp.Streamable;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Effect implements StreamReadable<Effect>, StreamWritable<Effect> {
+public class Effect implements Streamable<Effect> {
 	private boolean self;
 	private EffectType effectId;
 	private long duration;

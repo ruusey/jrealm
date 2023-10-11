@@ -5,8 +5,7 @@ import java.io.DataOutputStream;
 import java.util.Random;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.jrealm.net.packet.client.temp.StreamReadable;
-import com.jrealm.net.packet.client.temp.StreamWritable;
+import com.jrealm.net.packet.client.temp.Streamable;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Damage implements StreamReadable<Damage>, StreamWritable<Damage>{
+public class Damage implements Streamable<Damage>{
 	private int projectileGroupId;
 	private short min;
 	private short max;

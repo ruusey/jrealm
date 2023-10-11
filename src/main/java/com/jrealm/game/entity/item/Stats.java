@@ -7,14 +7,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.jrealm.net.packet.client.temp.StreamReadable;
-import com.jrealm.net.packet.client.temp.StreamWritable;
+import com.jrealm.net.packet.client.temp.Streamable;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Stats implements StreamReadable<Stats>, StreamWritable<Stats> {
+public class Stats implements Streamable<Stats> {
 	private short hp;
 	private short mp;
 	private short def;

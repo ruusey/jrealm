@@ -5,8 +5,7 @@ import java.io.DataOutputStream;
 import java.util.UUID;
 
 import com.jrealm.game.model.SpriteModel;
-import com.jrealm.net.packet.client.temp.StreamReadable;
-import com.jrealm.net.packet.client.temp.StreamWritable;
+import com.jrealm.net.packet.client.temp.Streamable;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +15,7 @@ import lombok.Data;
 @AllArgsConstructor
 @Builder
 
-public class GameItem extends SpriteModel implements StreamReadable<GameItem>, StreamWritable<GameItem>{
+public class GameItem extends SpriteModel implements Streamable<GameItem>{
 	private int itemId;
 	@Builder.Default
 	private String uid = UUID.randomUUID().toString();

@@ -1,12 +1,15 @@
 package com.jrealm.game.entity.item;
 
 import java.awt.Graphics2D;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.util.Random;
 import java.util.UUID;
 
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.net.packet.client.temp.Streamable;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +20,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LootContainer {
+public class LootContainer implements Streamable<LootContainer> {
 	private long lootContainerId;
 	private Sprite sprite;
 	private String uid;
@@ -27,6 +30,7 @@ public class LootContainer {
 	private long spawnedTime;
 
 	private boolean contentsChanged;
+
 	public LootContainer(Sprite sprite, Vector2f pos) {
 		this.sprite = sprite;
 		this.uid = UUID.randomUUID().toString();
@@ -85,5 +89,45 @@ public class LootContainer {
 		g.drawImage(this.sprite.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), 32, 32,
 				null);
 
+	}
+
+	@Override
+	public void write(DataOutputStream stream) throws Exception {
+		stream.writeLong(this.getLootContainerId());
+		stream.writeUTF(this.getUid());
+		int itemsSize = this.items == null || this.items.length == 0 ? 0 : this.items.length;
+
+		stream.writeInt(itemsSize);
+
+		for (int i = 0; i < itemsSize; i++) {
+			this.items[i].write(stream);
+		}
+
+		stream.writeFloat(this.pos.x);
+		stream.writeFloat(this.pos.y);
+		stream.writeLong(this.spawnedTime);
+		stream.writeBoolean(this.contentsChanged);
+	}
+
+	@Override
+	public LootContainer read(DataInputStream stream) throws Exception {
+		Sprite lootSprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8);
+
+		long lootContainerId = stream.readLong();
+		String uid = stream.readUTF();
+		int itemsSize = stream.readInt();
+		GameItem[] items = new GameItem[itemsSize];
+		for (int i = 0; i < itemsSize; i++) {
+			items[i] = new GameItem().read(stream);
+		}
+		float posX = stream.readFloat();
+		float posY = stream.readFloat();
+
+		long spawnedTime = stream.readLong();
+		boolean contentsChanged = stream.readBoolean();
+
+		return LootContainer.builder().lootContainerId(lootContainerId).uid(uid).items(items)
+				.pos(new Vector2f(posX, posY)).spawnedTime(spawnedTime).contentsChanged(contentsChanged)
+				.sprite(lootSprite).build();
 	}
 }
