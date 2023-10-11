@@ -28,6 +28,7 @@ import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectKey;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.packet.client.temp.ObjectMove;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -300,6 +301,15 @@ public class Realm {
 		}
 
 		return objs.toArray(new GameObject[0]);
+	}
+	
+	public List<ObjectMove> getGameObjectsAsPackets(AABB cam) {
+		List<ObjectMove> objectMovements = new ArrayList<>();
+		GameObject[] gameObjects = this.getGameObjectsInBounds(cam);
+		for(GameObject obj : gameObjects) {
+			objectMovements.add(new ObjectMove(obj, 1l));
+		}
+		return objectMovements;
 	}
 
 	public LootContainer[] getLootInBounds(AABB cam) {

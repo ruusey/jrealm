@@ -19,7 +19,7 @@ public class UpdatePacket extends Packet {
 	private long playerId;
 	private Stats stats;
 	private GameItem[] inventory;
-
+	
 	public UpdatePacket(byte id, byte[] data) {
 		super(id, data);
 		try {
@@ -96,7 +96,5 @@ public class UpdatePacket extends Packet {
 		}
 
 		return new UpdatePacket((byte) 2, byteStream.toByteArray());
-
 	}
-
 }

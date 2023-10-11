@@ -4,6 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.entity.Bullet;
+import com.jrealm.game.entity.Enemy;
+import com.jrealm.game.entity.GameObject;
+import com.jrealm.game.entity.Player;
 import com.jrealm.net.server.temp.EntityType;
 import com.jrealm.net.server.temp.Packet;
 
@@ -26,6 +30,23 @@ public class ObjectMove extends Packet{
 		}
 	}
 	
+	public ObjectMove(GameObject obj, long objectId) {
+		this.entityId = objectId;
+		if(obj instanceof Enemy) {
+			this.entityType = EntityType.ENEMY.getEntityTypeId();
+		}else if (obj instanceof Player) {
+			this.entityType = EntityType.PLAYER.getEntityTypeId();
+		}else if(obj instanceof Bullet) {
+			this.entityType = EntityType.BULLET.getEntityTypeId();
+		}
+		this.posX = obj.getPos().x;
+		this.posY = obj.getPos().y;
+		
+		this.velX = obj.getDx();
+		this.velY = obj.getDy();
+
+	}
+		
 	@Override
 	public void serializeWrite(DataOutputStream stream) throws Exception {
 		if(this.getId()<1 || this.getData()== null || this.getData().length<5) throw new IllegalStateException("No Packet data available to write to DataOutputStream");

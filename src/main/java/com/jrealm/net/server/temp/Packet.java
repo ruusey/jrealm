@@ -8,6 +8,11 @@ public abstract class Packet implements GameMessage{
 	private byte id;
 	private byte[] data;
 	
+	public Packet() {
+		this.id = -1;
+		this.data = null;
+	}
+	
 	public Packet(byte id, byte[] data) {
 		this.id = id;
 		this.data = data;
@@ -20,7 +25,6 @@ public abstract class Packet implements GameMessage{
 	public byte[] getData() {
 		return this.data;
 	}
-	
 	
 	public void addHeader(DataOutputStream stream) throws Exception{
 		stream.writeByte(this.id);
