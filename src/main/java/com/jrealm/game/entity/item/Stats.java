@@ -1,15 +1,20 @@
 package com.jrealm.game.entity.item;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.jrealm.net.packet.client.temp.StreamReadable;
+import com.jrealm.net.packet.client.temp.StreamWritable;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Stats {
+public class Stats implements StreamReadable<Stats>, StreamWritable<Stats> {
 	private short hp;
 	private short mp;
 	private short def;
@@ -43,5 +48,39 @@ public class Stats {
 		return Stats.builder().hp((short) (this.hp)).mp((short) (this.mp)).def((short) (this.def))
 				.att((short) (this.att)).spd((short) (this.spd)).dex((short) (this.dex)).vit((short) (this.vit))
 				.wis((short) (this.wis)).build();
+	}
+
+	
+	@Override
+	public Stats read(DataInputStream stream) throws Exception{
+		short att = stream.readShort();
+		short def = stream.readShort();
+
+		short dex = stream.readShort();
+		short spd = stream.readShort();
+
+		short vit = stream.readShort();
+		short wis = stream.readShort();
+
+		short mp = stream.readShort();
+		short hp = stream.readShort();
+		
+		return new Stats(hp,mp,def,att,spd,dex,vit,wis);
+	}
+
+	@Override
+	public void write(DataOutputStream stream) throws Exception {
+		stream.writeShort(this.getAtt());
+		stream.writeShort(this.getDef());
+
+		stream.writeShort(this.getSpd());
+		stream.writeShort(this.getDex());
+
+		stream.writeShort(this.getVit());
+		stream.writeShort(this.getWis());
+
+		stream.writeShort(this.getMp());
+		stream.writeShort(this.getHp());
+		
 	}
 }

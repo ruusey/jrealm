@@ -1,8 +1,12 @@
 package com.jrealm.game.entity.item;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.util.UUID;
 
 import com.jrealm.game.model.SpriteModel;
+import com.jrealm.net.packet.client.temp.StreamReadable;
+import com.jrealm.net.packet.client.temp.StreamWritable;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +16,7 @@ import lombok.Data;
 @AllArgsConstructor
 @Builder
 
-public class GameItem extends SpriteModel {
+public class GameItem extends SpriteModel implements StreamReadable<GameItem>, StreamWritable<GameItem>{
 	private int itemId;
 	@Builder.Default
 	private String uid = UUID.randomUUID().toString();
@@ -52,5 +56,35 @@ public class GameItem extends SpriteModel {
 		itemFinal.setSpriteKey(this.getSpriteKey());
 
 		return itemFinal;
+	}
+
+	@Override
+	public GameItem read(DataInputStream stream) throws Exception {
+		int itemId = stream.readInt();
+		String uid = stream.readUTF();
+		String name = stream.readUTF();
+		String description = stream.readUTF();
+		Stats stats = new Stats().read(stream);
+		Damage damage = new Damage().read(stream);
+		Effect effect = new Effect().read(stream);
+		boolean consumable = stream.readBoolean();
+		byte tier = stream.readByte();
+		byte targetSlot = stream.readByte();
+		byte targetClass = stream.readByte();
+		byte fameBonus = stream.readByte();
+		
+		return new GameItem(itemId, uid, name, description, stats, damage, effect, consumable, tier, targetSlot, targetClass, fameBonus);
+		
+	}
+
+	@Override
+	public void write(DataOutputStream stream) throws Exception {
+		stream.writeInt(this.itemId);
+		stream.writeUTF(this.uid);
+		stream.writeUTF(this.name);
+		stream.writeUTF(this.description);
+		this.stats.write(stream);
+		
+		
 	}
 }
