@@ -218,4 +218,3 @@ public class Sprite {
 		return this.getNewSubimage(0, 0, this.w, this.h);
 	}
 }
-
