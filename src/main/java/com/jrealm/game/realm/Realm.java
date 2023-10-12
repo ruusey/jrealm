@@ -28,8 +28,9 @@ import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectKey;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.packet.client.player.temp.UpdatePacket;
-import com.jrealm.net.packet.client.temp.ObjectMove;
+import com.jrealm.net.EntityType;
+import com.jrealm.net.client.packet.ObjectMove;
+import com.jrealm.net.client.packet.UpdatePacket;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -303,27 +304,57 @@ public class Realm {
 
 		return objs.toArray(new GameObject[0]);
 	}
-	
+
+	public GameObject[] getAllGameObjects() {
+
+		List<GameObject> objs = new ArrayList<>();
+		for (Player p : this.players.values()) {
+			objs.add(p);
+		}
+
+		for (Bullet b : this.bullets.values()) {
+			objs.add(b);
+		}
+
+		for (Enemy e : this.enemies.values()) {
+			objs.add(e);
+		}
+
+		for (Material e : this.materials.values()) {
+			objs.add(e);
+		}
+		return objs.toArray(new GameObject[0]);
+	}
+
 	public List<UpdatePacket> getPlayersAsPackets(AABB cam) {
 		List<UpdatePacket> playerUpdates = new ArrayList<>();
 		for (Player p : this.players.values()) {
-			if (p.getBounds().intersect(cam)) {
-				try {
-					playerUpdates.add(new UpdatePacket().fromPlayer(p));
-				}catch(Exception e) {
-					log.error("Failed to create update packet from Player. Reason: {}", e.getMessage());
-				}
+			// if (p.getBounds().intersect(cam)) {
+			try {
+				UpdatePacket pack = new UpdatePacket();
+				pack = pack.fromPlayer(p);
+				playerUpdates.add(pack);
+			} catch (Exception e) {
+				log.error("Failed to create update packet from Player. Reason: {}", e.getMessage());
 			}
+			// }
 		}
 		return playerUpdates;
 	}
-	
-	//TODO: Move long generated long ID into GameObject base class
+
+	// TODO: Move long generated long ID into GameObject base class
 	public List<ObjectMove> getGameObjectsAsPackets(AABB cam) {
 		List<ObjectMove> objectMovements = new ArrayList<>();
-		GameObject[] gameObjects = this.getGameObjectsInBounds(cam);
-		for(GameObject obj : gameObjects) {
-			objectMovements.add(new ObjectMove(obj, 1l));
+		GameObject[] gameObjects = this.getAllGameObjects();
+		for (GameObject obj : gameObjects) {
+			try {
+				ObjectMove movePacket = new ObjectMove();
+				movePacket = movePacket.fromGameObject(obj);
+				objectMovements.add(movePacket);
+
+			} catch (Exception e) {
+				log.error("Failed to create ObjectMove Packet. Reason: {}", e.getMessage());
+			}
 		}
 		return objectMovements;
 	}

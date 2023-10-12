@@ -9,8 +9,7 @@ import java.util.UUID;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.net.packet.client.temp.Streamable;
-
+import com.jrealm.net.Streamable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

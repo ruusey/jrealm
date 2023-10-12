@@ -6,11 +6,15 @@ import java.net.Socket;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.jrealm.net.server.packet.Packet;
+import com.jrealm.net.Packet;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Data
+@EqualsAndHashCode(callSuper=false)
 public class SocketClient extends Thread {
 	private static final int BUFFER_CAPACITY = 65536 * 10;
 
@@ -25,7 +29,7 @@ public class SocketClient extends Thread {
 	public long localNoDataTime = System.currentTimeMillis();
 	public long remoteNoDataTime = System.currentTimeMillis();
 
-	public static final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<Packet>();
+	public static final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
 
 
 	public SocketClient(int port) {
@@ -47,5 +51,6 @@ public class SocketClient extends Thread {
 		dos.flush();
 
 	}
+	
 
 }

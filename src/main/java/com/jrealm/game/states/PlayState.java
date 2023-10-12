@@ -84,7 +84,7 @@ public class PlayState extends GameState {
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 				GlobalConstants.PLAYER_SIZE);
 		if (setEquipment || (this.playerId == -1l)) {
-			player.equipSlots(this.getStartingEquipment(cls));
+			player.equipSlots(PlayState.getStartingEquipment(cls));
 		} else {
 			GameItem[] existing = this.getPlayer().getInventory();
 			player.setInventory(existing);
@@ -102,7 +102,7 @@ public class PlayState extends GameState {
 
 	}
 
-	public Map<Integer, GameItem> getStartingEquipment(CharacterClass characterClass) {
+	public static Map<Integer, GameItem> getStartingEquipment(final CharacterClass characterClass) {
 		Map<Integer, GameItem> result = new HashMap<>();
 
 		switch (characterClass) {
@@ -119,7 +119,6 @@ public class PlayState extends GameState {
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(5, GameDataManager.GAME_ITEMS.get(0));
-
 			break;
 		case WIZARD:
 			result.put(0, GameDataManager.GAME_ITEMS.get(121));
@@ -128,7 +127,6 @@ public class PlayState extends GameState {
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
-			// priest
 		case PRIEST:
 			result.put(0, GameDataManager.GAME_ITEMS.get(137));
 			result.put(1, GameDataManager.GAME_ITEMS.get(157));
@@ -136,7 +134,6 @@ public class PlayState extends GameState {
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
-			// warr
 		case WARRIOR:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
 			result.put(1, GameDataManager.GAME_ITEMS.get(156));
@@ -144,11 +141,9 @@ public class PlayState extends GameState {
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
-			// knight
 		case KNIGHT:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
 			result.put(1, GameDataManager.GAME_ITEMS.get(155));
-
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
@@ -156,7 +151,6 @@ public class PlayState extends GameState {
 		case PALLADIN:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
 			result.put(1, GameDataManager.GAME_ITEMS.get(153));
-
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
@@ -164,7 +158,6 @@ public class PlayState extends GameState {
 		default:
 			break;
 		}
-
 		return result;
 	}
 

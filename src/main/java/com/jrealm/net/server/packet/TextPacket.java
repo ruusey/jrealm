@@ -3,6 +3,8 @@ package com.jrealm.net.server.packet;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 
+import com.jrealm.net.Packet;
+
 import lombok.Data;
 
 @Data
@@ -10,7 +12,7 @@ public class TextPacket {
 	private String message;
 
 	public TextPacket(Packet packet) {
-		DataInputStream stream = new DataInputStream(new ByteArrayInputStream(packet.getBody()));
+		DataInputStream stream = new DataInputStream(new ByteArrayInputStream(packet.getData()));
 		try {
 			this.message = stream.readUTF();
 			int test = stream.readInt();

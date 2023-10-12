@@ -5,7 +5,7 @@ import java.io.DataOutputStream;
 import java.util.Random;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.jrealm.net.packet.client.temp.Streamable;
+import com.jrealm.net.Streamable;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

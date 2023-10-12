@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.jrealm.net.server.packet.Packet;
+import com.jrealm.net.Packet;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,7 +27,7 @@ public class SocketServer extends Thread {
 	public long localNoDataTime = System.currentTimeMillis();
 	public long remoteNoDataTime = System.currentTimeMillis();
 
-	public Queue<Packet> packetQueue = new ConcurrentLinkedQueue<Packet>();
+	public Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
 
 	private Socket clientSocket;
 
@@ -42,10 +42,16 @@ public class SocketServer extends Thread {
 
 	@Override
 	public void run() {
+		try {
+			this.clientSocket = this.serverSocket.accept();
+			
+		}catch(Exception e) {
+			log.error("Failed to accept incoming socket connection, exiting...",e);
+			return;
+		}
+
 		while (!this.shutdown) {
 			try {
-				this.clientSocket = this.serverSocket.accept();
-				Thread.sleep(1000);
 				InputStream stream = this.clientSocket.getInputStream();
 				int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
 						this.remoteBuffer.length - this.remoteBufferIndex);
@@ -70,10 +76,11 @@ public class SocketServer extends Thread {
 						}
 						this.remoteBufferIndex -= packetLength;
 						this.packetQueue.add(new Packet(packetId, packetBytes));
-						System.out.println();
 
 					}
 				}
+				//Thread.sleep(1000);
+
 			}catch(Exception e) {
 				SocketServer.log.error("Failed to parse client input {}", e.getMessage());
 			}

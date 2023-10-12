@@ -1,4 +1,4 @@
-package com.jrealm.net.packet.client.temp;
+package com.jrealm.net;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

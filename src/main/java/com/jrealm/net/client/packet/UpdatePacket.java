@@ -1,4 +1,4 @@
-package com.jrealm.net.packet.client.player.temp;
+package com.jrealm.net.client.packet;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -8,7 +8,7 @@ import java.io.DataOutputStream;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
-import com.jrealm.net.server.temp.Packet;
+import com.jrealm.net.Packet;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +30,7 @@ public class UpdatePacket extends Packet {
 			final DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
 			this.readData(dis);
 		} catch (Exception e) {
+			e.printStackTrace();
 			log.error("Failed to build Stats Packet. Reason: {}", e.getMessage());
 		}
 	}
@@ -48,14 +49,23 @@ public class UpdatePacket extends Packet {
 		int invSize = 0;
 		if (this.inventory != null) {
 			invSize = this.inventory.length;
-			stream.writeShort(invSize);
-		} else {
-			stream.writeShort(invSize);
 		}
+		stream.writeShort(invSize);
 
 		for (int i = 0; i < invSize; i++) {
-			this.inventory[i].write(stream);
+			if(this.inventory[i]!=null) {
+				this.inventory[i].write(stream);
+			}else {
+				stream.writeInt(-1);
+			}
 		}
+	}
+	
+	@Override
+	public void readData(Packet packet) throws Exception {
+		ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData());
+		DataInputStream dis = new DataInputStream(bis);
+		this.readData(dis);
 	}
 
 	@Override
@@ -64,13 +74,15 @@ public class UpdatePacket extends Packet {
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
 		this.playerId = stream.readLong();
 		this.stats = new Stats().read(stream);
-		int invSize = stream.readInt();
+		int invSize = stream.readShort();
 
 		if (invSize > 0) {
 			this.inventory = new GameItem[invSize];
 
 			for (int i = 0; i < invSize; i++) {
-				this.inventory[i] = new GameItem().read(stream);
+				//if(stream.available()>0) {
+					this.inventory[i] = new GameItem().read(stream);
+				//}
 			}
 		} else {
 			this.inventory = new GameItem[20];
@@ -79,26 +91,33 @@ public class UpdatePacket extends Packet {
 
 	public UpdatePacket fromPlayer(Player player) throws Exception {
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+		
 		DataOutputStream stream = new DataOutputStream(byteStream);
-		this.addHeader(stream);
-		stream.writeLong(this.playerId);
+		//this.addHeader(stream);
+		stream.writeLong(player.getPlayerId());
 
-		if (this.stats != null) {
-			this.stats.write(stream);
+		if (player.getStats() != null) {
+			player.getStats().write(stream);
 		}
 
 		int invSize = 0;
-		if (this.inventory != null) {
-			invSize = this.inventory.length;
-			stream.writeShort(invSize);
-		} else {
-			stream.writeShort(invSize);
-		}
+		if (player.getInventory() != null) {
+			invSize = player.getInventory().length;
+		} 
+		stream.writeShort(invSize);
+		
 
 		for (int i = 0; i < invSize; i++) {
-			this.inventory[i].write(stream);
+			GameItem item = player.getInventory()[i];
+			if(item!=null) {
+				player.getInventory()[i].write(stream);
+			}else {
+				stream.writeInt(-1);
+			}
 		}
-
+		
+		//this.addHeader(finalOutputStream, (byte) 2, byteStream.toByteArray().length);
+		//finalOutputStream.write(byteStream.toByteArray());
 		return new UpdatePacket((byte) 2, byteStream.toByteArray());
 	}
 }

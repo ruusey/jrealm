@@ -5,17 +5,18 @@ import java.io.DataOutputStream;
 import java.util.UUID;
 
 import com.jrealm.game.model.SpriteModel;
-import com.jrealm.net.packet.client.temp.Streamable;
+import com.jrealm.net.Streamable;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @AllArgsConstructor
 @Builder
-
-public class GameItem extends SpriteModel implements Streamable<GameItem>{
+@Slf4j
+public class GameItem extends SpriteModel implements Streamable<GameItem> {
 	private int itemId;
 	@Builder.Default
 	private String uid = UUID.randomUUID().toString();
@@ -60,20 +61,54 @@ public class GameItem extends SpriteModel implements Streamable<GameItem>{
 	@Override
 	public GameItem read(DataInputStream stream) throws Exception {
 		int itemId = stream.readInt();
+		if(itemId==-1) {
+			return null;
+		}
 		String uid = stream.readUTF();
 		String name = stream.readUTF();
 		String description = stream.readUTF();
-		Stats stats = new Stats().read(stream);
-		Damage damage = new Damage().read(stream);
-		Effect effect = new Effect().read(stream);
+		boolean hasStats = stream.readBoolean();
+		Stats stats = null;
+
+		if (hasStats) {
+			try {
+				stats = new Stats().read(stream);
+			} catch (Exception e) {
+				log.error("Failed to get stats, no stats present");
+			}
+		}
+
+		boolean hasDamage = stream.readBoolean();
+
+		Damage damage = null;
+		if (hasDamage) {
+			try {
+				damage = new Damage().read(stream);
+			} catch (Exception e) {
+				log.error("Failed to get damage, no damage present");
+			}
+		}
+
+		boolean hasEffect = stream.readBoolean();
+		Effect effect = null;
+
+		if (hasEffect) {
+			try {
+				effect = new Effect().read(stream);
+			} catch (Exception e) {
+				log.error("Failed to get effect, no effect present");
+			}
+		}
+
 		boolean consumable = stream.readBoolean();
 		byte tier = stream.readByte();
 		byte targetSlot = stream.readByte();
 		byte targetClass = stream.readByte();
 		byte fameBonus = stream.readByte();
-		
-		return new GameItem(itemId, uid, name, description, stats, damage, effect, consumable, tier, targetSlot, targetClass, fameBonus);
-		
+
+		return new GameItem(itemId, uid, name, description, stats, damage, effect, consumable, tier, targetSlot,
+				targetClass, fameBonus);
+
 	}
 
 	@Override
@@ -82,8 +117,31 @@ public class GameItem extends SpriteModel implements Streamable<GameItem>{
 		stream.writeUTF(this.uid);
 		stream.writeUTF(this.name);
 		stream.writeUTF(this.description);
-		this.stats.write(stream);
-		
-		
+		if (this.stats != null) {
+			stream.writeBoolean(true);
+			this.stats.write(stream);
+		} else {
+			stream.writeBoolean(false);
+		}
+
+		if (this.damage != null) {
+			stream.writeBoolean(true);
+			this.damage.write(stream);
+		} else {
+			stream.writeBoolean(false);
+		}
+
+		if (this.effect != null) {
+			stream.writeBoolean(true);
+			this.effect.write(stream);
+		} else {
+			stream.writeBoolean(false);
+		}
+
+		stream.writeBoolean(this.consumable);
+		stream.writeByte(this.tier);
+		stream.writeByte(this.targetSlot);
+		stream.writeByte(this.targetClass);
+		stream.writeByte(this.fameBonus);
 	}
 }

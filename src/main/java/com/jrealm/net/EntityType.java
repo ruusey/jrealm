@@ -1,4 +1,4 @@
-package com.jrealm.net.server.temp;
+package com.jrealm.net;
 
 import java.util.HashMap;
 import java.util.Map;
