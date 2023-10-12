@@ -28,6 +28,8 @@ import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectKey;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.packet.client.player.temp.UpdatePacket;
+import com.jrealm.net.packet.client.temp.ObjectMove;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -300,6 +302,30 @@ public class Realm {
 		}
 
 		return objs.toArray(new GameObject[0]);
+	}
+	
+	public List<UpdatePacket> getPlayersAsPackets(AABB cam) {
+		List<UpdatePacket> playerUpdates = new ArrayList<>();
+		for (Player p : this.players.values()) {
+			if (p.getBounds().intersect(cam)) {
+				try {
+					playerUpdates.add(new UpdatePacket().fromPlayer(p));
+				}catch(Exception e) {
+					log.error("Failed to create update packet from Player. Reason: {}", e.getMessage());
+				}
+			}
+		}
+		return playerUpdates;
+	}
+	
+	//TODO: Move long generated long ID into GameObject base class
+	public List<ObjectMove> getGameObjectsAsPackets(AABB cam) {
+		List<ObjectMove> objectMovements = new ArrayList<>();
+		GameObject[] gameObjects = this.getGameObjectsInBounds(cam);
+		for(GameObject obj : gameObjects) {
+			objectMovements.add(new ObjectMove(obj, 1l));
+		}
+		return objectMovements;
 	}
 
 	public LootContainer[] getLootInBounds(AABB cam) {
