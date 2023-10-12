@@ -43,19 +43,19 @@ public enum CharacterClass {
 	}
 
 	public static boolean isPlayerHeavyClass(Player p) {
-		return CharacterClass.isHeavyClass(CharacterClass.valueOf(p.getId()));
+		return CharacterClass.isHeavyClass(CharacterClass.valueOf(p.getClassId()));
 	}
 
 	public static boolean isPlayerLeatherClass(Player p) {
-		return CharacterClass.isLeatherClass(CharacterClass.valueOf(p.getId()));
+		return CharacterClass.isLeatherClass(CharacterClass.valueOf(p.getClassId()));
 	}
 
 	public static boolean isPlayerRobeClass(Player p) {
-		return CharacterClass.isRobeClass(CharacterClass.valueOf(p.getId()));
+		return CharacterClass.isRobeClass(CharacterClass.valueOf(p.getClassId()));
 	}
 
 	public static CharacterClass getPlayerCharacterClass(Player p) {
-		return CharacterClass.valueOf(p.getId());
+		return CharacterClass.valueOf(p.getClassId());
 	}
 
 	public static boolean isValidUser(Player p, byte requiredClass) {

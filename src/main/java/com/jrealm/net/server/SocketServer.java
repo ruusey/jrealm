@@ -11,29 +11,33 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Data
+@EqualsAndHashCode(callSuper=false)
 public class SocketServer extends Thread {
 	private static final int BUFFER_CAPACITY = 65536 * 10;
 
 	private ServerSocket serverSocket;
 	private boolean shutdown = false;
-	public byte[] localBuffer = new byte[SocketServer.BUFFER_CAPACITY];
-	public int localBufferIndex = 0;
-	public byte[] remoteBuffer = new byte[SocketServer.BUFFER_CAPACITY];
-	public int remoteBufferIndex = 0;
-	public long lastUpdate = 0;
-	public long previousTime = 0;
-	public long localNoDataTime = System.currentTimeMillis();
-	public long remoteNoDataTime = System.currentTimeMillis();
+	private byte[] localBuffer = new byte[SocketServer.BUFFER_CAPACITY];
+	private int localBufferIndex = 0;
+	private byte[] remoteBuffer = new byte[SocketServer.BUFFER_CAPACITY];
+	private int remoteBufferIndex = 0;
+	private long lastUpdate = 0;
+	private long previousTime = 0;
+	private long localNoDataTime = System.currentTimeMillis();
+	private long remoteNoDataTime = System.currentTimeMillis();
 
-	public Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
+	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
 
 	private Socket clientSocket;
 
 	public SocketServer(int port) {
-		SocketServer.log.info("Creating local HTTP server at port {}", port);
+		SocketServer.log.info("Creating local server at port {}", port);
 		try {
 			this.serverSocket = new ServerSocket(port);
 		} catch (Exception e) {
@@ -45,7 +49,6 @@ public class SocketServer extends Thread {
 	public void run() {
 		try {
 			this.clientSocket = this.serverSocket.accept();
-			
 		}catch(Exception e) {
 			log.error("Failed to accept incoming socket connection, exiting...",e);
 			return;
@@ -77,16 +80,11 @@ public class SocketServer extends Thread {
 						}
 						this.remoteBufferIndex -= packetLength;
 						this.packetQueue.add(new BlankPacket(packetId, packetBytes));
-
 					}
 				}
-				//Thread.sleep(1000);
-
 			}catch(Exception e) {
 				SocketServer.log.error("Failed to parse client input {}", e.getMessage());
 			}
-
 		}
-
 	}
 }

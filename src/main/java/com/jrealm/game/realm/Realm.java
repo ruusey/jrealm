@@ -142,30 +142,23 @@ public class Realm {
 		if (player != null) {
 			player.resetPosition();
 		}
-
 	}
 
 	public long addMaterial(Material m) {
-		long randomId = Realm.RANDOM.nextLong();
-		m.setMaterialId(randomId);
-		this.materials.put(randomId, m);
-
-		return randomId;
-
+		this.materials.put(m.getId(), m);
+		return m.getId();
 	}
 
 	public long addPlayer(Player player) {
 		this.acquirePlayerLock();
-		long randomId = Realm.RANDOM.nextLong();
-		player.setPlayerId(randomId);
-		this.players.put(randomId, player);
+		this.players.put(player.getId(), player);
 		this.releasePlayerLock();
-		return randomId;
+		return player.getId();
 	}
 
 	public boolean removePlayer(Player player) {
 		this.acquirePlayerLock();
-		Player p = this.players.remove(player.getPlayerId());
+		Player p = this.players.remove(player.getId());
 		this.releasePlayerLock();
 		return p != null;
 	}
@@ -205,15 +198,13 @@ public class Realm {
 	}
 
 	public long addBullet(Bullet b) {
-		long randomId = Realm.RANDOM.nextLong();
-		b.setBulletId(randomId);
-		this.bullets.put(randomId, b);
-		return randomId;
+		this.bullets.put(b.getId(), b);
+		return b.getId();
 	}
 
 	public boolean removeBullet(Bullet b) {
-		Bullet bullet = this.bullets.remove(b.getBulletId());
-		this.bulletHits.remove(b.getBulletId());
+		Bullet bullet = this.bullets.remove(b.getId());
+		this.bulletHits.remove(b.getId());
 		return bullet != null;
 	}
 
@@ -226,10 +217,8 @@ public class Realm {
 	}
 
 	public long addEnemy(Enemy enemy) {
-		long randomId = Realm.RANDOM.nextLong();
-		enemy.setEnemyId(randomId);
-		this.enemies.put(randomId, enemy);
-		return randomId;
+		this.enemies.put(enemy.getId(), enemy);
+		return enemy.getId();
 	}
 
 	public Enemy getEnemy(long enemyId) {
@@ -237,7 +226,7 @@ public class Realm {
 	}
 
 	public boolean removeEnemy(Enemy enemy) {
-		Enemy e = this.enemies.remove(enemy.getEnemyId());
+		Enemy e = this.enemies.remove(enemy.getId());
 		return e != null;
 	}
 
@@ -388,29 +377,29 @@ public class Realm {
 					}
 					switch (r.nextInt(5)) {
 					case 0:
-						go = new Monster(0, new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0),
-								spawnPos, 64);
+						go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0),
+								spawnPos, 64,0);
 						go.setPos(spawnPos);
 						break;
 					case 1:
-						go = new Monster(2,
+						go = new Monster(Realm.RANDOM.nextLong(),
 								new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
-								spawnPos, 64);
+								spawnPos, 64,2);
 						go.setPos(spawnPos);
 						break;
 					case 2:
-						go = new Monster(1, new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
-								new Vector2f(j * 64, i * 64), 64);
+						go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
+								new Vector2f(j * 64, i * 64), 64, 1);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					case 3:
-						go = new Monster(7, new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0),
-								new Vector2f(j * 64, i * 64), 64);
+						go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0),
+								new Vector2f(j * 64, i * 64), 64, 7);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					case 4:
-						go = new Monster(8, new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0),
-								new Vector2f(j * 64, i * 64), 64);
+						go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0),
+								new Vector2f(j * 64, i * 64), 64,8);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					}
@@ -430,27 +419,27 @@ public class Realm {
 
 		switch (r.nextInt(5)) {
 		case 0:
-			go = new Monster(0, new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0), spawnPos,
-					64);
+			go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0), spawnPos,
+					64,0);
 			go.setPos(spawnPos);
 			break;
 		case 1:
-			go = new Monster(2, new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
-					spawnPos, 64);
+			go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
+					spawnPos, 64,2);
 			go.setPos(spawnPos);
 			break;
 		case 2:
-			go = new Monster(1, new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0), spawnPos,
-					64);
+			go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0), spawnPos,
+					64,1);
 			go.setPos(spawnPos);
 			break;
 		case 3:
-			go = new Monster(7, new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0), spawnPos, 64);
+			go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0), spawnPos, 64,7);
 			go.setPos(spawnPos);
 			break;
 		case 4:
-			go = new Monster(8, new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0), spawnPos,
-					64);
+			go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0), spawnPos,
+					64,8);
 			go.setPos(spawnPos);
 			break;
 

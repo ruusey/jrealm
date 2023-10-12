@@ -73,7 +73,7 @@ public abstract class Entity extends GameObject {
 	private short[] effectIds;
 	private long[] effectTimes;
 
-	public Entity(int id, SpriteSheet sprite, Vector2f origin, int size) {
+	public Entity(long id, SpriteSheet sprite, Vector2f origin, int size) {
 		super(id, sprite, origin, 0, 0, size);
 		this.hitsize = size;
 

@@ -12,13 +12,12 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class Material extends GameObject {
-	private long materialId;
 	protected int maxHealth = 100;
 	protected int health = 100;
 	protected int damage = 10;
 	protected int material;
 
-	public Material(int id, Sprite image, Vector2f origin, int size, int material) {
+	public Material(long id, Sprite image, Vector2f origin, int size, int material) {
 		super(id, image, origin, size);
 		this.material = material;
 

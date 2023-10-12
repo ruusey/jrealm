@@ -6,6 +6,7 @@ import java.awt.Graphics2D;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
@@ -25,7 +26,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class Player extends Entity {
-	private long playerId;
 	private Camera cam;
 
 	private Cardinality cardinality = Cardinality.EAST;
@@ -36,9 +36,10 @@ public class Player extends Entity {
 
 	private long lastStatsTime = 0l;
 	private LootContainer currentLootContainer;
-
-	public Player(int id, Camera cam, SpriteSheet sprite, Vector2f origin, int size) {
+	private int classId;
+	public Player(long id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, CharacterClass characterClass) {
 		super(id, sprite, origin, size);
+		this.classId = characterClass.classId;
 		this.resetEffects();
 		this.cam = cam;
 		this.size = size;

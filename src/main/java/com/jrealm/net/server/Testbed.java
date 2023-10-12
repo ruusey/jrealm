@@ -31,75 +31,114 @@ public class Testbed {
 	public static void main(String[] args) {
 		GameDataManager.loadGameData();
 		CharacterClass clazz = CharacterClass.ARCHER;
-		Player player = new Player(CharacterClass.ARCHER.classId, cam, GameDataManager.loadClassSprites(clazz),
+		Player player = new Player(Realm.RANDOM.nextLong(), cam, GameDataManager.loadClassSprites(clazz),
 				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE);
+				GlobalConstants.PLAYER_SIZE, clazz);
 		player.equipSlots(PlayState.getStartingEquipment(clazz));
 
 		SocketServer socketServer = new SocketServer(2222);
 		socketServer.start();
 		SocketClient socketClient = new SocketClient(2222);
+		socketClient.start();
 
 		Realm realm = new Realm(cam);
 		realm.spawnRandomEnemies();
 		long playerId = -1l;
 		try {
 			playerId = realm.addPlayer(player);
-			OutputStream stream = socketClient.getClientSocket().getOutputStream();
-			DataOutputStream dos = new DataOutputStream(stream);
+			OutputStream toServerStream = socketClient.getClientSocket().getOutputStream();
+			DataOutputStream dosToServer = new DataOutputStream(toServerStream);
+			
+			OutputStream toClientStream = socketServer.getClientSocket().getOutputStream();
+			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
+			
 			log.info("Added player {} to realm. Sending update packets", playerId);
 			List<UpdatePacket> uPackets = realm.getPlayersAsPackets(cam.getBounds());
 			List<ObjectMove> mPackets = realm.getGameObjectsAsPackets(cam.getBounds());
 
 			TextPacket welcomeMessage = TextPacket.create("SYSTEM", "Ruusey", "Welcome to JRealm!");
-
-			welcomeMessage.serializeWrite(dos);
+			welcomeMessage.serializeWrite(dosToServer);
 
 			for (UpdatePacket packet : uPackets) {
-				packet.serializeWrite(dos);
+				packet.serializeWrite(dosToServer);
 			}
 
 			for (ObjectMove packet : mPackets) {
-				packet.serializeWrite(dos);
+				packet.serializeWrite(dosToClient);
 			}
 
-			while (socketServer.packetQueue.isEmpty()) {
-				Thread.sleep(1000);
+			while (socketServer.getPacketQueue().isEmpty()) {
+				Thread.sleep(100);
 			}
 
-			Packet nextPacket = socketServer.packetQueue.remove();
+			Packet nextPacket = socketServer.getPacketQueue().remove();
 			while (nextPacket != null) {
 				switch (nextPacket.getId()) {
 				case 2:
 					UpdatePacket updatePacket = new UpdatePacket();
 					updatePacket.readData(nextPacket.getData());
-					log.info("Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
+					log.info("[SERVER] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 					break;
 				case 3:
 					ObjectMove objectMovePacket = new ObjectMove();
 					objectMovePacket.readData(nextPacket.getData());
-					log.info("Recieved ObjectMove Packet for Game Object {} {}",
+					log.info("[SERVER] Recieved ObjectMove Packet for Game Object {} ID {}",
 							EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
 					break;
 				case 4:
 					TextPacket textPacket = new TextPacket();
 					textPacket.readData(nextPacket.getData());
-					log.info("Recieved Text Packet \n\tTO: {}\n\tFROM: {}\n\tMESSAGE: {}", textPacket.getTo(),
+					log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
+							textPacket.getFrom(), textPacket.getMessage());
+					break;
+				default:
+					log.error("[SERVER] Unknown packet with ID {} recieved, Discarding", nextPacket.getId());
+				}
+				try {
+					nextPacket = socketServer.getPacketQueue().remove();
+				} catch (Exception e) {
+					log.warn("No more SERVER packets to process. Exiting...");
+					break;
+				}
+			}
+			
+			while (socketClient.getPacketQueue().isEmpty()) {
+				Thread.sleep(100);
+			}
+			
+			nextPacket = socketClient.getPacketQueue().remove();
+			while (nextPacket != null) {
+				switch (nextPacket.getId()) {
+				case 2:
+					UpdatePacket updatePacket = new UpdatePacket();
+					updatePacket.readData(nextPacket.getData());
+					log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
+					break;
+				case 3:
+					ObjectMove objectMovePacket = new ObjectMove();
+					objectMovePacket.readData(nextPacket.getData());
+					log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
+							EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
+					break;
+				case 4:
+					TextPacket textPacket = new TextPacket();
+					textPacket.readData(nextPacket.getData());
+					log.info("[CLIENT] Recieved Text Packet \n\tTO: {}\n\tFROM: {}\n\tMESSAGE: {}", textPacket.getTo(),
 							textPacket.getFrom(), textPacket.getMessage());
 					break;
 				default:
 					log.error("Unknown packet with ID {} recieved, Discarding", nextPacket.getId());
 				}
 				try {
-					nextPacket = socketServer.packetQueue.remove();
+					nextPacket = socketClient.getPacketQueue().remove();
 				} catch (Exception e) {
-					log.warn("No more packets to recieve. Exiting...");
+					log.warn("No more CLIENT packets to process. Exiting...");
 					break;
 				}
 			}
 		} catch (Exception e) {
-			Testbed.log.error("Failed ", e);
+			Testbed.log.error("Networking failure ", e);
 		}
 	}
 }

@@ -89,7 +89,7 @@ public class UpdatePacket extends Packet {
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 		
 		DataOutputStream stream = new DataOutputStream(byteStream);
-		stream.writeLong(player.getPlayerId());
+		stream.writeLong(player.getId());
 
 		if (player.getStats() != null) {
 			player.getStats().write(stream);

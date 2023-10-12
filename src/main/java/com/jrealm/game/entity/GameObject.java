@@ -12,7 +12,7 @@ import lombok.Data;
 
 @Data
 public abstract class GameObject {
-	protected int id;
+	protected long id;
 	protected SpriteSheet sprite;
 	protected Sprite image;
 	protected AABB bounds;
@@ -35,17 +35,17 @@ public abstract class GameObject {
 	protected String name = "";
 
 	public boolean discovered;
-	public GameObject(int id, SpriteSheet sprite, Vector2f origin, int spriteX, int spriteY, int size) {
+	public GameObject(long id, SpriteSheet sprite, Vector2f origin, int spriteX, int spriteY, int size) {
 		this(id, origin, size);
 		this.sprite = sprite;
 	}
 
-	public GameObject(int id, Sprite image, Vector2f origin, int size) {
+	public GameObject(long id, Sprite image, Vector2f origin, int size) {
 		this(id, origin, size);
 		this.image = image;
 	}
 
-	private GameObject(int id, Vector2f origin, int size) {
+	private GameObject(long id, Vector2f origin, int size) {
 		this.id = id;
 		this.bounds = new AABB(origin, size, size);
 		this.pos = origin;

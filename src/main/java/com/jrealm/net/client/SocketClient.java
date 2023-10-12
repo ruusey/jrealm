@@ -1,11 +1,15 @@
 package com.jrealm.net.client;
 
 import java.io.DataOutputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
 
 import lombok.Data;
@@ -20,16 +24,16 @@ public class SocketClient extends Thread {
 
 	private Socket clientSocket;
 	private boolean shutdown = false;
-	public byte[] localBuffer = new byte[SocketClient.BUFFER_CAPACITY];
-	public int localBufferIndex = 0;
-	public byte[] remoteBuffer = new byte[SocketClient.BUFFER_CAPACITY];
-	public int remoteBufferIndex = 0;
-	public long lastUpdate = 0;
-	public long previousTime = 0;
-	public long localNoDataTime = System.currentTimeMillis();
-	public long remoteNoDataTime = System.currentTimeMillis();
+	private byte[] localBuffer = new byte[SocketClient.BUFFER_CAPACITY];
+	private int localBufferIndex = 0;
+	private byte[] remoteBuffer = new byte[SocketClient.BUFFER_CAPACITY];
+	private int remoteBufferIndex = 0;
+	private long lastUpdate = 0;
+	private long previousTime = 0;
+	private long localNoDataTime = System.currentTimeMillis();
+	private long remoteNoDataTime = System.currentTimeMillis();
 
-	public static final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
+	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
 
 
 	public SocketClient(int port) {
@@ -40,16 +44,41 @@ public class SocketClient extends Thread {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}
 	}
+	
+	@Override
+	public void run() {
+		while (!this.shutdown) {
+			try {
+				InputStream stream = this.clientSocket.getInputStream();
+				int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
+						this.remoteBuffer.length - this.remoteBufferIndex);
+				if (bytesRead == -1)
+					throw new SocketException("end of stream");
+				if (bytesRead > 0) {
+					this.remoteBufferIndex += bytesRead;
 
-	public void writeString(String txt) throws Exception {
-		OutputStream stream = this.clientSocket.getOutputStream();
-		DataOutputStream dos = new DataOutputStream(stream);
-		dos.writeByte(1);
-		dos.writeInt(txt.length() + 5 + 4);
-		dos.writeUTF(txt);
-		dos.writeInt(99);
-		dos.flush();
-
+					while (this.remoteBufferIndex >= 5) {
+						int packetLength = ((ByteBuffer) ByteBuffer.allocate(4).put(this.remoteBuffer[1])
+								.put(this.remoteBuffer[2]).put(this.remoteBuffer[3]).put(this.remoteBuffer[4]).rewind())
+								.getInt();
+						if (this.remoteBufferIndex < (packetLength)) {
+							break;
+						}
+						byte packetId = this.remoteBuffer[0];
+						byte[] packetBytes = new byte[packetLength];
+						System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
+						if (this.remoteBufferIndex > packetLength) {
+							System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
+									this.remoteBufferIndex - packetLength);
+						}
+						this.remoteBufferIndex -= packetLength;
+						this.packetQueue.add(new BlankPacket(packetId, packetBytes));
+					}
+				}
+			}catch(Exception e) {
+				SocketClient.log.error("Failed to parse client input {}", e.getMessage());
+			}
+		}
 	}
 	
 

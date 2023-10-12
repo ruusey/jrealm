@@ -78,10 +78,10 @@ public class PlayState extends GameState {
 	}
 
 	private void loadClass(CharacterClass cls, boolean setEquipment) {
-		Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls),
+		Player player = new Player(Realm.RANDOM.nextLong(), this.cam, GameDataManager.loadClassSprites(cls),
 				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE);
+				GlobalConstants.PLAYER_SIZE, cls);
 		if (setEquipment || (this.playerId == -1l)) {
 			player.equipSlots(PlayState.getStartingEquipment(cls));
 		} else {
@@ -308,7 +308,7 @@ public class PlayState extends GameState {
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(projectileGroupId, bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
 		b.setFlags(flags);
 
 		this.realm.addBullet(b);
@@ -329,7 +329,7 @@ public class PlayState extends GameState {
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(projectileGroupId, bulletImage, src, angle, size, magnitude, range, damage, isEnemy);
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), bulletImage, src, angle, size, magnitude, range, damage, isEnemy);
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);
 
@@ -400,10 +400,10 @@ public class PlayState extends GameState {
 	}
 
 	private synchronized void proccessEnemyHit(Bullet b, Enemy e) {
-		if (this.realm.hasHitEnemy(b.getBulletId(), e.getEnemyId()))
+		if (this.realm.hasHitEnemy(b.getId(), e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
-			this.realm.hitEnemy(b.getBulletId(), e.getEnemyId());
+			this.realm.hitEnemy(b.getId(), e.getId());
 
 			e.setHealth(e.getHealth() - b.getDamage(), 0, false);
 			Vector2f sourcePos = e.getPos();
@@ -599,7 +599,7 @@ public class PlayState extends GameState {
 	}
 
 	private CharacterClass currentPlayerCharacterClass() {
-		return CharacterClass.valueOf(this.getPlayer().getId());
+		return CharacterClass.valueOf(this.getPlayer().getClassId());
 	}
 
 	public GameItem getLootContainerItemByUid(String uid) {

@@ -21,7 +21,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public abstract class Enemy extends Entity {
 
-	private long enemyId;
 	protected AABB sense;
 	protected int r_sense;
 
@@ -35,9 +34,9 @@ public abstract class Enemy extends Entity {
 
 	private int weaponId = 1;
 
-	public Enemy(int id, SpriteSheet sprite, Vector2f origin, int size) {
+	public Enemy(long id, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
 		super(id, sprite, origin, size);
-		this.weaponId = id;
+
 		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
 				(origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);
 		this.attackrange = new AABB(new Vector2f(

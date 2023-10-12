@@ -15,7 +15,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class Bullet extends GameObject {
-	private long bulletId;
 	private float angle;
 	private float magnitude;
 	private float range;
@@ -33,13 +32,13 @@ public class Bullet extends GameObject {
 	public short amplitude = 4;
 	public short frequency = 25;
 
-	public Bullet(int id, Sprite image, Vector2f origin, int size) {
+	public Bullet(long id, Sprite image, Vector2f origin, int size) {
 		super(id, image, origin, size);
 		this.flags = new ArrayList<>();
 
 	}
 
-	public Bullet(int id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
+	public Bullet(long id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
 			short damage,
 			boolean isEnemy) {
 		super(id, image, origin, size);
@@ -51,7 +50,7 @@ public class Bullet extends GameObject {
 		this.flags = new ArrayList<>();
 	}
 
-	public Bullet(int id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
+	public Bullet(long id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
 			short damage, short amplitude, short frequency, boolean isEnemy) {
 		super(id, image, origin, size);
 		this.magnitude = magnitude;
@@ -65,7 +64,7 @@ public class Bullet extends GameObject {
 
 	}
 
-	public Bullet(int id, Sprite image, Vector2f origin, float angle, short size, float magnitude, float range,
+	public Bullet(long id, Sprite image, Vector2f origin, float angle, short size, float magnitude, float range,
 			short damage,
 			boolean isEnemy) {
 		super(id, image, origin, size);
