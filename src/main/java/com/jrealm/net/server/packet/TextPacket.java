@@ -62,4 +62,14 @@ public class TextPacket extends Packet {
 
 		return new TextPacket((byte) 4, baos.toByteArray());
 	}
+	
+	public static TextPacket create(String from, String to, String text) {
+		TextPacket created = null;
+		try {
+			created = new TextPacket().from(from, to, text);
+		}catch(Exception e) {
+			log.error("Failed to create Text Packet. Reason: {}", e);
+		}
+		return created;
+	}
 }

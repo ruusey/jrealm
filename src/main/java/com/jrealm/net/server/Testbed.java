@@ -49,13 +49,12 @@ public class Testbed {
 			OutputStream stream = socketClient.getClientSocket().getOutputStream();
 			DataOutputStream dos = new DataOutputStream(stream);
 			log.info("Added player {} to realm. Sending update packets", playerId);
-			// while(true) {
 			List<UpdatePacket> uPackets = realm.getPlayersAsPackets(cam.getBounds());
 			List<ObjectMove> mPackets = realm.getGameObjectsAsPackets(cam.getBounds());
 
-			TextPacket tPacket = new TextPacket();
-			tPacket = tPacket.from("SYSTEM", "Ruusey", "Welcome to JRealm!");
-			tPacket.serializeWrite(dos);
+			TextPacket welcomeMessage = TextPacket.create("SYSTEM", "Ruusey", "Welcome to JRealm!");
+
+			welcomeMessage.serializeWrite(dos);
 
 			for (UpdatePacket packet : uPackets) {
 				packet.serializeWrite(dos);
@@ -95,15 +94,12 @@ public class Testbed {
 				try {
 					nextPacket = socketServer.packetQueue.remove();
 				} catch (Exception e) {
+					log.warn("No more packets to recieve. Exiting...");
 					break;
 				}
 			}
-
-			// }
 		} catch (Exception e) {
 			Testbed.log.error("Failed ", e);
 		}
-
 	}
-
 }
