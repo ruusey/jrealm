@@ -10,30 +10,18 @@ import lombok.Data;
 
 @Data
 public class AABBTree {
-
 	private ArrayList<AABB> nodeList;
-	// private HashMap<GameObject, AABBNode> nodeIndex;
-
 	private int rootIndex = 0;
 
 	public AABBTree() {
 		this.nodeList = new ArrayList<AABB>();
-		// this.nodeIndex = new HashMap<GameObject, AABBNode>();
 	}
 
 	public void insert(GameObject go) {
-
-		// System.out.println("Adding: game object to tree...");
 		this.nodeList.add(go.getBounds());
-
 	}
 
-	// TODO: fix inifite loop. check if tree is correctly created
 	public AABB insertLeaf(AABB newNode) {
-
-		// make sure we are inserting a new leaf?
-
-
 		//		while(!this.nodeList.get(treeIndex).isLeaf()) {
 		//
 		//			AABB aabb = newNode.aabb; // node to insert
@@ -72,10 +60,7 @@ public class AABBTree {
 		//			}
 		//		}
 
-		// suitable sibling leaf node found
-
 		this.nodeList.add(newNode);
-
 		return newNode;
 	}
 
@@ -83,58 +68,7 @@ public class AABBTree {
 		return this.nodeList;
 	}
 
-	public void removeObject(GameObject go) {
-		// AABBNode node = this.nodeIndex.get(go);
-		boolean success = this.nodeList.remove(go.getBounds());
-
-	}
-
-
-
-
-
-
-	@Override
-	public String toString() {
-		String result = "[\n";
-		ArrayList<AABB> tree = this.nodeList;
-
-		//		for(int i = 0; i < tree.size(); i++) {
-		//			result += "  " + i + ":{ " + tree.get(i). + ", "
-		//					+
-		//					tree.get(i).left + ", " + tree.get(i).right +
-		//					", " + tree.get(i).parent + " }\n";
-		//		}
-
-		return result + "]";
-	}
-
-	private static class AABBNode {
-
-		public AABB aabb;
-		public GameObject go;
-
-		public int parent = -1;
-		public int left = -1;
-		public int right = -1;
-
-		public int index;
-		public int height = -1; // not in use
-
-		public boolean isLeaf() { return this.left == -1; }
-
-		public AABBNode(GameObject go, int index) {
-			this.go = go;
-			this.aabb = go.getBounds();
-			this.index = index;
-		}
-
-		public AABBNode(int parent, int left, int right, int index, int height) {
-			this.parent = parent;
-			this.left = left;
-			this.right = right;
-			this.index = index;
-			this.height = height;
-		}
+	public boolean removeObject(GameObject go) {
+		return this.nodeList.remove(go.getBounds());
 	}
 }

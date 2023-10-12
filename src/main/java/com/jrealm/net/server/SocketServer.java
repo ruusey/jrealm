@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
 
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +76,7 @@ public class SocketServer extends Thread {
 									this.remoteBufferIndex - packetLength);
 						}
 						this.remoteBufferIndex -= packetLength;
-						this.packetQueue.add(new Packet(packetId, packetBytes));
+						this.packetQueue.add(new BlankPacket(packetId, packetBytes));
 
 					}
 				}

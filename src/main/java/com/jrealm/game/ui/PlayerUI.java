@@ -344,6 +344,7 @@ public class PlayerUI {
 
 	}
 
+	@SuppressWarnings("unused")
 	private void removeGroundLootItemByUid(String uid) {
 		int foundIdx = -1;
 		for (int i = 0; i < this.groundLoot.length; i++) {

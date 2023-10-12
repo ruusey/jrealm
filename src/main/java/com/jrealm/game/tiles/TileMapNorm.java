@@ -10,6 +10,11 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.tiles.blocks.NormTile;
 import com.jrealm.game.tiles.blocks.Tile;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@EqualsAndHashCode(callSuper=false)
 public class TileMapNorm extends TileMap {
 
 	public Tile[] blocks;
@@ -38,8 +43,7 @@ public class TileMapNorm extends TileMap {
 	}
 
 	public synchronized NormTile[] getNormalTile(int id) {
-		int normMap = 0;
-		int height = this.height;
+
 		NormTile[] block = new NormTile[100];
 
 		int i = 0;

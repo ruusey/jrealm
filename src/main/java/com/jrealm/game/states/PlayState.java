@@ -78,7 +78,6 @@ public class PlayState extends GameState {
 	}
 
 	private void loadClass(CharacterClass cls, boolean setEquipment) {
-
 		Player player = new Player(cls.classId, this.cam, GameDataManager.loadClassSprites(cls),
 				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),

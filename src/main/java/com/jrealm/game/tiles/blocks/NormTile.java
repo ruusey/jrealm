@@ -7,9 +7,10 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-
+@EqualsAndHashCode(callSuper=true)
 public class NormTile extends Tile {
 
 	public NormTile(Sprite img, Vector2f pos, int w, int h) {

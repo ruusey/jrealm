@@ -59,6 +59,7 @@ public class TileCollision {
 
 	public int getTile() { return this.tileId; }
 
+	@SuppressWarnings("unused")
 	private boolean collisionHole(Tile[] tiles, float ax, float ay, float xt, float yt, Tile block) {
 		int nextXt = (int) ((((this.e.getPos().x + ax) + this.e.getBounds().getXOffset()) / GlobalConstants.BASE_SIZE)
 				+ (this.e.getBounds().getWidth() / GlobalConstants.BASE_SIZE));

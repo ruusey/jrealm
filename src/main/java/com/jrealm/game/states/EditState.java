@@ -2,10 +2,8 @@ package com.jrealm.game.states;
 
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 
 import com.jrealm.game.entity.GameObject;
-import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.ui.Button;
 import com.jrealm.game.util.Camera;
@@ -14,29 +12,29 @@ import com.jrealm.game.util.MouseHandler;
 
 public class EditState extends GameState {
 
-	private BufferedImage imgButton;
+	//private BufferedImage imgButton;
 	private Button btnEnemy1;
 	private Button btnEnemy2;
 	private boolean clicked = false;
 
 	private GameObject gameObject = null;
-	private PlayState ps;
+	//private PlayState ps;
 	private Camera cam;
 
 	private int selection = 0;
 	private GameObject e_enemy1;
 	private GameObject e_enemy2;
 	private GameObject[] entityList = {this.gameObject, this.e_enemy1, this.e_enemy2};
-	private int count = 0;
+	//private int count = 0;
 
 
 	public EditState(GameStateManager gsm, Camera cam) {
 		super(gsm);
-		this.imgButton = GameStateManager.ui.getSprite(0, 0, 128, 64).image;
-		this.ps = (PlayState) gsm.getState(GameStateManager.PLAY);
+		//this.imgButton = GameStateManager.ui.getSprite(0, 0, 128, 64).image;
+		//this.ps = (PlayState) gsm.getState(GameStateManager.PLAY);
 		this.cam = cam;
 
-		SpriteSheet enemySheet = new SpriteSheet("entity/enemy/minimonsters.png", 16, 16, 0);
+		//SpriteSheet enemySheet = new SpriteSheet("entity/enemy/minimonsters.png", 16, 16, 0);
 
 		//		this.btnEnemy1 = new Button("TinyMon", new Vector2f(64 + 24, 64 + 24), 32, 24, this.imgButton, new Vector2f(64, 64), 220, 75);
 		//		this.btnEnemy1.addEvent(e -> {

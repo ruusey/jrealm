@@ -12,14 +12,11 @@ import com.jrealm.game.util.MouseHandler;
 
 public class GameOverState extends GameState {
 
-	private String gameover = "GAME OVER";
-
 	private BufferedImage imgButton;
 	private BufferedImage imgHover;
 	private Button btnReset;
 	private Button btnQuit;
 	private Font font;
-
 
 	public GameOverState(GameStateManager gsm) {
 		super(gsm);

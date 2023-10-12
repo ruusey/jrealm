@@ -28,7 +28,6 @@ import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectKey;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.EntityType;
 import com.jrealm.net.client.packet.ObjectMove;
 import com.jrealm.net.client.packet.UpdatePacket;
 

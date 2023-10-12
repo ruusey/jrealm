@@ -10,12 +10,14 @@ import com.jrealm.net.Streamable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
 @AllArgsConstructor
 @Builder
 @Slf4j
+@EqualsAndHashCode(callSuper=false)
 public class GameItem extends SpriteModel implements Streamable<GameItem> {
 	private int itemId;
 	@Builder.Default

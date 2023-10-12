@@ -11,10 +11,12 @@ import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Packet;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Data
+@EqualsAndHashCode(callSuper=true)
 public class UpdatePacket extends Packet {
 	private long playerId;
 	private Stats stats;
@@ -27,8 +29,7 @@ public class UpdatePacket extends Packet {
 	public UpdatePacket(byte id, byte[] data) {
 		super(id, data);
 		try {
-			final DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
-			this.readData(dis);
+			this.readData(data);
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Failed to build Stats Packet. Reason: {}", e.getMessage());
@@ -62,26 +63,21 @@ public class UpdatePacket extends Packet {
 	}
 	
 	@Override
-	public void readData(Packet packet) throws Exception {
-		ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData());
+	public void readData(byte[] data) throws Exception {
+		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		DataInputStream dis = new DataInputStream(bis);
-		this.readData(dis);
-	}
-
-	@Override
-	public void readData(DataInputStream stream) throws Exception {
-		if (stream == null || stream.available() < 5)
+		if (dis == null || dis.available() < 5)
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
-		this.playerId = stream.readLong();
-		this.stats = new Stats().read(stream);
-		int invSize = stream.readShort();
+		this.playerId = dis.readLong();
+		this.stats = new Stats().read(dis);
+		int invSize = dis.readShort();
 
 		if (invSize > 0) {
 			this.inventory = new GameItem[invSize];
 
 			for (int i = 0; i < invSize; i++) {
 				//if(stream.available()>0) {
-					this.inventory[i] = new GameItem().read(stream);
+					this.inventory[i] = new GameItem().read(dis);
 				//}
 			}
 		} else {
@@ -93,7 +89,6 @@ public class UpdatePacket extends Packet {
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 		
 		DataOutputStream stream = new DataOutputStream(byteStream);
-		//this.addHeader(stream);
 		stream.writeLong(player.getPlayerId());
 
 		if (player.getStats() != null) {
@@ -116,8 +111,6 @@ public class UpdatePacket extends Packet {
 			}
 		}
 		
-		//this.addHeader(finalOutputStream, (byte) 2, byteStream.toByteArray().length);
-		//finalOutputStream.write(byteStream.toByteArray());
 		return new UpdatePacket((byte) 2, byteStream.toByteArray());
 	}
 }

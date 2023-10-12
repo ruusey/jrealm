@@ -9,13 +9,16 @@ import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@EqualsAndHashCode(callSuper=true)
+@Slf4j
 public class ObjectMove extends Packet {
 
 	private long entityId;
@@ -32,10 +35,9 @@ public class ObjectMove extends Packet {
 	public ObjectMove(final byte id, final byte[] data) {
 		super(id, data);
 		try {
-			final DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
-			this.readData(dis);
+			this.readData(data);
 		} catch (Exception e) {
-			// log.error("Failed to parse ObjectMove packet, Reason: {}", e.getMessage());
+			log.error("Failed to parse ObjectMove packet, Reason: {}", e);
 		}
 	}
 
@@ -71,23 +73,18 @@ public class ObjectMove extends Packet {
 	}
 
 	@Override
-	public void readData(Packet packet) throws Exception {
-		ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData());
+	public void readData(byte[] data) throws Exception {
+		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		DataInputStream dis = new DataInputStream(bis);
-		this.readData(dis);
-	}
-	
-	@Override
-	public void readData(DataInputStream stream) throws Exception {
-		if (stream == null || stream.available() < 5)
+		if (dis == null || dis.available() < 5)
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
 
-		this.entityId = stream.readLong();
-		this.entityType = stream.readByte();
-		this.posX = stream.readFloat();
-		this.posY = stream.readFloat();
-		this.velX = stream.readFloat();
-		this.velY = stream.readFloat();
+		this.entityId = dis.readLong();
+		this.entityType = dis.readByte();
+		this.posX = dis.readFloat();
+		this.posY = dis.readFloat();
+		this.velX = dis.readFloat();
+		this.velY = dis.readFloat();
 	}
 
 	public EntityType getTargetEntityType() {

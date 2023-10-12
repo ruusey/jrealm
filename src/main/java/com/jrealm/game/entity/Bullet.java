@@ -9,9 +9,11 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 
 @Data
+@EqualsAndHashCode(callSuper=false)
 public class Bullet extends GameObject {
 	private long bulletId;
 	private float angle;

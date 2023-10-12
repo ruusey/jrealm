@@ -7,8 +7,10 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper=true)
 public class Chest extends LootContainer {
 	private boolean visible = true;
 	public Chest(Vector2f pos) {

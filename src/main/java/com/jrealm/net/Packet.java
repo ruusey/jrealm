@@ -1,10 +1,9 @@
 package com.jrealm.net;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 
-public class Packet implements GameMessage{
+public abstract class Packet implements GameMessage{
 	private byte id;
 	private byte[] data;
 	
@@ -34,20 +33,5 @@ public class Packet implements GameMessage{
 	public void addHeader(DataOutputStream stream, byte packetId, int contentLength) throws Exception{
 		stream.writeByte(packetId);
 		stream.writeInt(contentLength + NetConstants.PACKET_HEADER_SIZE);
-	}
-
-	@Override
-	public void readData(DataInputStream stream) throws Exception {
-		
-	}
-
-	@Override
-	public void serializeWrite(DataOutputStream stream) throws Exception {
-		
-	}
-
-	@Override
-	public void readData(Packet packet) throws Exception {
-		
 	}
 }

@@ -24,10 +24,10 @@ public enum EntityType {
 	}
 	
 	public static EntityType valueOf(byte value) {
-		return map.get(new Byte(value));
+		return map.get(Byte.valueOf(value));
 	}
 	
 	public static EntityType valueOf(int value) {
-		return map.get(new Byte((byte)value));
+		return map.get(Byte.valueOf((byte)value));
 	}
 }
