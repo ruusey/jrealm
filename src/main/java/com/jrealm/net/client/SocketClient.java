@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
+import com.jrealm.net.server.SocketServer;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -38,8 +39,7 @@ public class SocketClient extends Thread {
 
 	public SocketClient(int port) {
 		try {
-
-			this.clientSocket = new Socket("127.0.0.1", port);
+			this.clientSocket = new Socket(SocketServer.LOCALHOST, port);
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}
@@ -80,6 +80,4 @@ public class SocketClient extends Thread {
 			}
 		}
 	}
-	
-
 }

@@ -1,15 +1,20 @@
 package com.jrealm.net.server;
 
+import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
+import com.jrealm.net.client.SocketClient;
+import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,6 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class SocketServer extends Thread {
+	public static final String LOCALHOST = "127.0.0.1";
+	
 	private static final int BUFFER_CAPACITY = 65536 * 10;
 
 	private ServerSocket serverSocket;
@@ -34,7 +41,8 @@ public class SocketServer extends Thread {
 
 	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
 
-	private Socket clientSocket;
+	private Map<String, Socket> clients = new ConcurrentHashMap<>();
+
 
 	public SocketServer(int port) {
 		SocketServer.log.info("Creating local server at port {}", port);
@@ -48,7 +56,12 @@ public class SocketServer extends Thread {
 	@Override
 	public void run() {
 		try {
-			this.clientSocket = this.serverSocket.accept();
+			Socket socket = this.serverSocket.accept();
+			String remoteAddr = socket.getInetAddress().getHostAddress();
+			this.clients.put(remoteAddr, socket);
+			TextPacket welcomeMessage = TextPacket.create("SYSTEM", "Ruusey", "Welcome to JRealm!");
+			welcomeMessage.serializeWrite(new DataOutputStream(socket.getOutputStream()));
+			log.info("Server accepted new connection from Remote Address {}",remoteAddr);
 		}catch(Exception e) {
 			log.error("Failed to accept incoming socket connection, exiting...",e);
 			return;
@@ -56,7 +69,7 @@ public class SocketServer extends Thread {
 
 		while (!this.shutdown) {
 			try {
-				InputStream stream = this.clientSocket.getInputStream();
+				InputStream stream = this.clients.get(LOCALHOST).getInputStream();
 				int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
 						this.remoteBuffer.length - this.remoteBufferIndex);
 				if (bytesRead == -1)

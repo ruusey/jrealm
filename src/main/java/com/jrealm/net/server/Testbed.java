@@ -12,6 +12,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.realm.Realm;
+import com.jrealm.game.realm.RealmManager;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
 import com.jrealm.net.EntityType;
@@ -36,43 +37,56 @@ public class Testbed {
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 				GlobalConstants.PLAYER_SIZE, clazz);
 		player.equipSlots(PlayState.getStartingEquipment(clazz));
-
-		SocketServer socketServer = new SocketServer(2222);
-		socketServer.start();
-		SocketClient socketClient = new SocketClient(2222);
-		socketClient.start();
-
 		Realm realm = new Realm(cam);
 		realm.spawnRandomEnemies();
+
+		RealmManager realmManager = new RealmManager(realm);
+		realmManager.start();
+		SocketClient socketClient = new SocketClient(2222);
+		socketClient.start();
+		
+	
+		while(realmManager.getServer().getClients().size()==0) {
+			try {
+				Thread.sleep(100);
+				log.info("Waiting for client connections in Server Manager");
+			}catch(Exception e) {
+				
+			}
+		}
 		long playerId = -1l;
 		try {
 			playerId = realm.addPlayer(player);
 			OutputStream toServerStream = socketClient.getClientSocket().getOutputStream();
 			DataOutputStream dosToServer = new DataOutputStream(toServerStream);
-			
-			OutputStream toClientStream = socketServer.getClientSocket().getOutputStream();
-			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-			
-			log.info("Added player {} to realm. Sending update packets", playerId);
-			List<UpdatePacket> uPackets = realm.getPlayersAsPackets(cam.getBounds());
-			List<ObjectMove> mPackets = realm.getGameObjectsAsPackets(cam.getBounds());
-
-			TextPacket welcomeMessage = TextPacket.create("SYSTEM", "Ruusey", "Welcome to JRealm!");
+			TextPacket welcomeMessage = TextPacket.create("CLIENT", "Ruusey", "Login");
 			welcomeMessage.serializeWrite(dosToServer);
+//			OutputStream toServerStream = socketClient.getClientSocket().getOutputStream();
+//			DataOutputStream dosToServer = new DataOutputStream(toServerStream);
+//			
+//			OutputStream toClientStream = realmManager.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();
+//			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
+//			
+//			log.info("Added player {} to realm. Sending update packets", playerId);
+//			List<UpdatePacket> uPackets = realm.getPlayersAsPackets(cam.getBounds());
+//			List<ObjectMove> mPackets = realm.getGameObjectsAsPackets(cam.getBounds());
+//
+//			TextPacket welcomeMessage = TextPacket.create("SYSTEM", "Ruusey", "Welcome to JRealm!");
+//			welcomeMessage.serializeWrite(dosToServer);
+//
+//			for (UpdatePacket packet : uPackets) {
+//				packet.serializeWrite(dosToServer);
+//			}
+//
+//			for (ObjectMove packet : mPackets) {
+//				packet.serializeWrite(dosToClient);
+//			}
 
-			for (UpdatePacket packet : uPackets) {
-				packet.serializeWrite(dosToServer);
-			}
-
-			for (ObjectMove packet : mPackets) {
-				packet.serializeWrite(dosToClient);
-			}
-
-			while (socketServer.getPacketQueue().isEmpty()) {
+			while (realmManager.getServer().getPacketQueue().isEmpty()) {
 				Thread.sleep(100);
 			}
 
-			Packet nextPacket = socketServer.getPacketQueue().remove();
+			Packet nextPacket = realmManager.getServer().getPacketQueue().remove();
 			while (nextPacket != null) {
 				switch (nextPacket.getId()) {
 				case 2:
@@ -96,15 +110,15 @@ public class Testbed {
 					log.error("[SERVER] Unknown packet with ID {} recieved, Discarding", nextPacket.getId());
 				}
 				try {
-					nextPacket = socketServer.getPacketQueue().remove();
+					nextPacket = realmManager.getServer().getPacketQueue().remove();
 				} catch (Exception e) {
 					log.warn("No more SERVER packets to process. Exiting...");
 					break;
 				}
 			}
-			
+			Thread.sleep(1000);
 			while (socketClient.getPacketQueue().isEmpty()) {
-				Thread.sleep(100);
+				Thread.sleep(1000);
 			}
 			
 			nextPacket = socketClient.getPacketQueue().remove();
