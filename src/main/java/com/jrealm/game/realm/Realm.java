@@ -28,7 +28,7 @@ import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectKey;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.client.packet.ObjectMove;
+import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 
 import lombok.AllArgsConstructor;
@@ -331,12 +331,12 @@ public class Realm {
 	}
 
 	// TODO: Move long generated long ID into GameObject base class
-	public List<ObjectMove> getGameObjectsAsPackets(AABB cam) {
-		List<ObjectMove> objectMovements = new ArrayList<>();
+	public List<ObjectMovePacket> getGameObjectsAsPackets(AABB cam) {
+		List<ObjectMovePacket> objectMovements = new ArrayList<>();
 		GameObject[] gameObjects = this.getAllGameObjects();
 		for (GameObject obj : gameObjects) {
 			try {
-				ObjectMove movePacket = new ObjectMove();
+				ObjectMovePacket movePacket = new ObjectMovePacket();
 				movePacket = movePacket.fromGameObject(obj);
 				objectMovements.add(movePacket);
 

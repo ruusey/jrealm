@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GameLauncher {
-
 	public GameLauncher() {
 		new Window();
 	}
@@ -13,5 +12,4 @@ public class GameLauncher {
 		GameLauncher.log.info("Starting JRealm...");
 		new GameLauncher();
 	}
-
 }

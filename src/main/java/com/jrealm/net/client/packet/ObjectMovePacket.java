@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper=true)
 @Slf4j
-public class ObjectMove extends Packet {
+public class ObjectMovePacket extends Packet {
 
 	private long entityId;
 	private byte entityType;
@@ -28,11 +28,11 @@ public class ObjectMove extends Packet {
 	private float velX;
 	private float velY;
 
-	public ObjectMove() {
+	public ObjectMovePacket() {
 		
 	}
 	
-	public ObjectMove(final byte id, final byte[] data) {
+	public ObjectMovePacket(final byte id, final byte[] data) {
 		super(id, data);
 		try {
 			this.readData(data);
@@ -41,7 +41,7 @@ public class ObjectMove extends Packet {
 		}
 	}
 
-	public ObjectMove(GameObject obj, long objectId) {
+	public ObjectMovePacket(GameObject obj, long objectId) {
 		this.entityId = objectId;
 		if (obj instanceof Enemy) {
 			this.entityType = EntityType.ENEMY.getEntityTypeId();
@@ -91,7 +91,7 @@ public class ObjectMove extends Packet {
 		return EntityType.valueOf(entityType);
 	}
 
-	public ObjectMove fromGameObject(GameObject obj) throws Exception {
+	public ObjectMovePacket fromGameObject(GameObject obj) throws Exception {
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 
 		DataOutputStream stream = new DataOutputStream(byteStream);
@@ -109,6 +109,6 @@ public class ObjectMove extends Packet {
 		stream.writeFloat(obj.getDx());
 		stream.writeFloat(obj.getDy());
 
-		return new ObjectMove((byte) 3, byteStream.toByteArray());
+		return new ObjectMovePacket((byte) 3, byteStream.toByteArray());
 	}
 }

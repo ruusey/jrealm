@@ -2,7 +2,11 @@ package com.jrealm.net.server;
 
 import java.io.DataOutputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
@@ -18,8 +22,9 @@ import com.jrealm.game.util.Camera;
 import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.SocketClient;
-import com.jrealm.net.client.packet.ObjectMove;
+import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +34,20 @@ public class Testbed {
 	private static final Camera cam = new Camera(
 			new AABB(new Vector2f(-64, -64), GamePanel.width + 128, GamePanel.height + 128));
 
+	
+	private static final Map<Integer, Consumer<Packet>> packetCallbacksClient = new HashMap<>();
+	private static final Map<Integer, Consumer<Packet>> packetCallbacksServer = new HashMap<>();
+
+	
 	public static void main(String[] args) {
+		
+		packetCallbacksClient.put(2, Testbed::handleUpdateClient);
+		packetCallbacksClient.put(3, Testbed::handleObjectMoveClient);
+		packetCallbacksClient.put(4, Testbed::handleTextClient);
+
+		packetCallbacksServer.put(4, Testbed::handleTextServer);
+		packetCallbacksServer.put(5, Testbed::handleHeartbeatServer);
+
 		GameDataManager.loadGameData();
 		CharacterClass clazz = CharacterClass.ARCHER;
 		Player player = new Player(Realm.RANDOM.nextLong(), cam, GameDataManager.loadClassSprites(clazz),
@@ -57,54 +75,33 @@ public class Testbed {
 		long playerId = -1l;
 		try {
 			playerId = realm.addPlayer(player);
-			OutputStream toServerStream = socketClient.getClientSocket().getOutputStream();
-			DataOutputStream dosToServer = new DataOutputStream(toServerStream);
-			TextPacket welcomeMessage = TextPacket.create("CLIENT", "Ruusey", "Login");
-			welcomeMessage.serializeWrite(dosToServer);
-//			OutputStream toServerStream = socketClient.getClientSocket().getOutputStream();
-//			DataOutputStream dosToServer = new DataOutputStream(toServerStream);
-//			
-//			OutputStream toClientStream = realmManager.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();
-//			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-//			
-//			log.info("Added player {} to realm. Sending update packets", playerId);
-//			List<UpdatePacket> uPackets = realm.getPlayersAsPackets(cam.getBounds());
-//			List<ObjectMove> mPackets = realm.getGameObjectsAsPackets(cam.getBounds());
-//
-//			TextPacket welcomeMessage = TextPacket.create("SYSTEM", "Ruusey", "Welcome to JRealm!");
-//			welcomeMessage.serializeWrite(dosToServer);
-//
-//			for (UpdatePacket packet : uPackets) {
-//				packet.serializeWrite(dosToServer);
-//			}
-//
-//			for (ObjectMove packet : mPackets) {
-//				packet.serializeWrite(dosToClient);
-//			}
 
 			while (realmManager.getServer().getPacketQueue().isEmpty()) {
 				Thread.sleep(100);
 			}
-
+			
 			Packet nextPacket = realmManager.getServer().getPacketQueue().remove();
 			while (nextPacket != null) {
 				switch (nextPacket.getId()) {
 				case 2:
 					UpdatePacket updatePacket = new UpdatePacket();
 					updatePacket.readData(nextPacket.getData());
-					log.info("[SERVER] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
+
 					break;
 				case 3:
-					ObjectMove objectMovePacket = new ObjectMove();
+					ObjectMovePacket objectMovePacket = new ObjectMovePacket();
 					objectMovePacket.readData(nextPacket.getData());
-					log.info("[SERVER] Recieved ObjectMove Packet for Game Object {} ID {}",
-							EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
+
 					break;
 				case 4:
 					TextPacket textPacket = new TextPacket();
 					textPacket.readData(nextPacket.getData());
-					log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
-							textPacket.getFrom(), textPacket.getMessage());
+					packetCallbacksServer.get(4).accept(textPacket);
+					break;
+				case 5:
+					HeartbeatPacket heartbeatPacket = new HeartbeatPacket();
+					heartbeatPacket.readData(nextPacket.getData());
+					packetCallbacksServer.get(5).accept(heartbeatPacket);
 					break;
 				default:
 					log.error("[SERVER] Unknown packet with ID {} recieved, Discarding", nextPacket.getId());
@@ -127,19 +124,17 @@ public class Testbed {
 				case 2:
 					UpdatePacket updatePacket = new UpdatePacket();
 					updatePacket.readData(nextPacket.getData());
-					log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
+					packetCallbacksClient.get(2).accept(updatePacket);
 					break;
 				case 3:
-					ObjectMove objectMovePacket = new ObjectMove();
+					ObjectMovePacket objectMovePacket = new ObjectMovePacket();
 					objectMovePacket.readData(nextPacket.getData());
-					log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
-							EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
+					packetCallbacksClient.get(3).accept(objectMovePacket);
 					break;
 				case 4:
 					TextPacket textPacket = new TextPacket();
 					textPacket.readData(nextPacket.getData());
-					log.info("[CLIENT] Recieved Text Packet \n\tTO: {}\n\tFROM: {}\n\tMESSAGE: {}", textPacket.getTo(),
-							textPacket.getFrom(), textPacket.getMessage());
+					packetCallbacksClient.get(4).accept(textPacket);
 					break;
 				default:
 					log.error("Unknown packet with ID {} recieved, Discarding", nextPacket.getId());
@@ -154,5 +149,33 @@ public class Testbed {
 		} catch (Exception e) {
 			Testbed.log.error("Networking failure ", e);
 		}
+	}
+	
+	public static void handleTextServer(Packet packet) {
+		TextPacket textPacket = (TextPacket) packet;
+		log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
+				textPacket.getFrom(), textPacket.getMessage());
+	}
+	
+	public static void handleTextClient(Packet packet) {
+		TextPacket textPacket = (TextPacket) packet;
+		log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
+				textPacket.getFrom(), textPacket.getMessage());
+	}
+	
+	public static void handleHeartbeatServer(Packet packet) {
+		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
+		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(), heartbeatPacket.getTimestamp());
+	}
+	
+	public static void handleObjectMoveClient(Packet packet) {
+		ObjectMovePacket objectMovePacket = (ObjectMovePacket) packet;
+		log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
+				EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());	
+	}
+	
+	public static void handleUpdateClient(Packet packet) {
+		UpdatePacket updatePacket = (UpdatePacket) packet;
+		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 	}
 }

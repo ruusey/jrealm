@@ -7,7 +7,7 @@ import java.util.Map;
 
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.client.SocketClient;
-import com.jrealm.net.client.packet.ObjectMove;
+import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.SocketServer;
 
@@ -33,7 +33,7 @@ public class RealmManager extends Thread{
 			try {
 				for(Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 					List<UpdatePacket> uPackets = this.realm.getPlayersAsPackets(player.getValue().getCam().getBounds());
-					List<ObjectMove> mPackets = this.realm.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
+					List<ObjectMovePacket> mPackets = this.realm.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
 					try {
 						OutputStream toClientStream = server.getClients().get(SocketServer.LOCALHOST).getOutputStream();
 						DataOutputStream dosToClient = new DataOutputStream(toClientStream);
@@ -42,7 +42,7 @@ public class RealmManager extends Thread{
 							packet.serializeWrite(dosToClient);
 						}
 
-						for (ObjectMove packet : mPackets) {
+						for (ObjectMovePacket packet : mPackets) {
 							packet.serializeWrite(dosToClient);
 						}
 					}catch(Exception e) {
@@ -57,7 +57,4 @@ public class RealmManager extends Thread{
 		}
 		log.info("Realm manager exiting run().");
 	}
-	
-	
-	
 }

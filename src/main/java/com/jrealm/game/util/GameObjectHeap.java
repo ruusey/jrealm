@@ -3,7 +3,6 @@ package com.jrealm.game.util;
 import java.util.ArrayList;
 
 import com.jrealm.game.entity.GameObject;
-
 // Maybe Quicksort?
 public class GameObjectHeap extends ArrayList<GameObjectKey> {
 

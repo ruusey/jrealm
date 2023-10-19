@@ -9,9 +9,12 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
 import com.jrealm.net.server.SocketServer;
+import com.jrealm.net.server.packet.HeartbeatPacket;
+import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -40,6 +43,7 @@ public class SocketClient extends Thread {
 	public SocketClient(int port) {
 		try {
 			this.clientSocket = new Socket(SocketServer.LOCALHOST, port);
+			this.sendRemote(TextPacket.create("Ruusey", "SYSTEM", "LoginRequest"));
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}
@@ -47,6 +51,7 @@ public class SocketClient extends Thread {
 	
 	@Override
 	public void run() {
+		this.startHeartbeatThread();
 		while (!this.shutdown) {
 			try {
 				InputStream stream = this.clientSocket.getInputStream();
@@ -79,5 +84,37 @@ public class SocketClient extends Thread {
 				SocketClient.log.error("Failed to parse client input {}", e.getMessage());
 			}
 		}
+	}
+	
+	public void sendRemote(Packet packet) throws Exception {
+		if(this.clientSocket==null) throw new Exception("Client socket is null/not yet established");
+		try {
+			OutputStream stream = this.clientSocket.getOutputStream();
+			DataOutputStream dos = new DataOutputStream(stream);
+			packet.serializeWrite(dos);
+		}catch(Exception e) {
+			String remoteAddr = this.clientSocket.getInetAddress().getHostAddress();
+			log.error("Failed to send Packet to remote addr {}", remoteAddr);
+		}
+	}
+	
+	public void startHeartbeatThread() {
+		Runnable sendHeartbeat = ()->{
+			while(!this.shutdown) {
+				try {
+					long currentTime = System.currentTimeMillis();
+					long playerId = 1l;
+					
+					HeartbeatPacket pack = new HeartbeatPacket().from(playerId, currentTime);
+					this.sendRemote(pack);
+					
+					Thread.sleep(1000);
+				}catch(Exception e) {
+					
+				}
+			}
+		};
+		WorkerThread.submitAndForkRun(sendHeartbeat);
+		//WorkerThread.submitAndRun(heartBeatThread);
 	}
 }

@@ -40,4 +40,13 @@ public class WorkerThread extends Thread {
 
 		WorkerThread.allOf(futures);
 	}
+	
+	/*
+	 * Submits runnables that execute in an newly forked thread (good for long running tasks)
+	 */
+	public static void submitAndForkRun(Runnable... runnables) {
+		for (int i = 0; i < runnables.length; i++) {
+			WorkerThread.submit(new Thread(runnables[i]));
+		}
+	}
 }
