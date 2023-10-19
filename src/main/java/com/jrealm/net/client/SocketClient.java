@@ -6,13 +6,19 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
+import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.SocketServer;
+import com.jrealm.net.server.Testbed;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
@@ -24,6 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class SocketClient extends Thread {
+	
+	private long currentPlayerId;
+	
 	private static final int BUFFER_CAPACITY = 65536 * 10;
 
 	private Socket clientSocket;
@@ -38,10 +47,16 @@ public class SocketClient extends Thread {
 	private long remoteNoDataTime = System.currentTimeMillis();
 
 	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
+	
+	private static final Map<Integer, Consumer<Packet>> packetCallbacksClient = new HashMap<>();
 
 
 	public SocketClient(int port) {
 		try {
+			packetCallbacksClient.put(2, Testbed::handleUpdateClient);
+			packetCallbacksClient.put(3, Testbed::handleObjectMoveClient);
+			packetCallbacksClient.put(4, Testbed::handleTextClient);
+		
 			this.clientSocket = new Socket(SocketServer.LOCALHOST, port);
 			this.sendRemote(TextPacket.create("Ruusey", "SYSTEM", "LoginRequest"));
 		} catch (Exception e) {
@@ -51,7 +66,6 @@ public class SocketClient extends Thread {
 	
 	@Override
 	public void run() {
-		this.startHeartbeatThread();
 		while (!this.shutdown) {
 			try {
 				InputStream stream = this.clientSocket.getInputStream();
@@ -83,6 +97,7 @@ public class SocketClient extends Thread {
 			}catch(Exception e) {
 				SocketClient.log.error("Failed to parse client input {}", e.getMessage());
 			}
+			this.processClientPackets();
 		}
 	}
 	
@@ -103,7 +118,7 @@ public class SocketClient extends Thread {
 			while(!this.shutdown) {
 				try {
 					long currentTime = System.currentTimeMillis();
-					long playerId = 1l;
+					long playerId = this.currentPlayerId;
 					
 					HeartbeatPacket pack = new HeartbeatPacket().from(playerId, currentTime);
 					this.sendRemote(pack);
@@ -116,5 +131,37 @@ public class SocketClient extends Thread {
 		};
 		WorkerThread.submitAndForkRun(sendHeartbeat);
 		//WorkerThread.submitAndRun(heartBeatThread);
+	}
+	
+	public void processClientPackets() {
+		while(!this.getPacketQueue().isEmpty()) {
+			try {
+				Packet toProcess = this.getPacketQueue().remove();
+				switch (toProcess.getId()) {
+					case 2:
+						UpdatePacket updatePacket = new UpdatePacket();
+						updatePacket.readData(toProcess.getData());
+						packetCallbacksClient.get(2).accept(updatePacket);
+
+						break;
+					case 3:
+						ObjectMovePacket objectMovePacket = new ObjectMovePacket();
+						objectMovePacket.readData(toProcess.getData());
+						packetCallbacksClient.get(3).accept(objectMovePacket);
+
+						break;
+					case 4:
+						TextPacket textPacket = new TextPacket();
+						textPacket.readData(toProcess.getData());
+						break;
+					case 5:
+						HeartbeatPacket heartbeatPacket = new HeartbeatPacket();
+						heartbeatPacket.readData(toProcess.getData());
+						break;
+					}
+			}catch(Exception e) {
+				log.error("Failed to process Client Packet. Reason: {}", e);
+			}
+		}
 	}
 }

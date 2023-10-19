@@ -75,77 +75,12 @@ public class Testbed {
 		long playerId = -1l;
 		try {
 			playerId = realm.addPlayer(player);
-
+			socketClient.setCurrentPlayerId(playerId);
+			socketClient.startHeartbeatThread();
 			while (realmManager.getServer().getPacketQueue().isEmpty()) {
 				Thread.sleep(100);
 			}
 			
-			Packet nextPacket = realmManager.getServer().getPacketQueue().remove();
-			while (nextPacket != null) {
-				switch (nextPacket.getId()) {
-				case 2:
-					UpdatePacket updatePacket = new UpdatePacket();
-					updatePacket.readData(nextPacket.getData());
-
-					break;
-				case 3:
-					ObjectMovePacket objectMovePacket = new ObjectMovePacket();
-					objectMovePacket.readData(nextPacket.getData());
-
-					break;
-				case 4:
-					TextPacket textPacket = new TextPacket();
-					textPacket.readData(nextPacket.getData());
-					packetCallbacksServer.get(4).accept(textPacket);
-					break;
-				case 5:
-					HeartbeatPacket heartbeatPacket = new HeartbeatPacket();
-					heartbeatPacket.readData(nextPacket.getData());
-					packetCallbacksServer.get(5).accept(heartbeatPacket);
-					break;
-				default:
-					log.error("[SERVER] Unknown packet with ID {} recieved, Discarding", nextPacket.getId());
-				}
-				try {
-					nextPacket = realmManager.getServer().getPacketQueue().remove();
-				} catch (Exception e) {
-					log.warn("No more SERVER packets to process. Exiting...");
-					break;
-				}
-			}
-			Thread.sleep(1000);
-			while (socketClient.getPacketQueue().isEmpty()) {
-				Thread.sleep(1000);
-			}
-			
-			nextPacket = socketClient.getPacketQueue().remove();
-			while (nextPacket != null) {
-				switch (nextPacket.getId()) {
-				case 2:
-					UpdatePacket updatePacket = new UpdatePacket();
-					updatePacket.readData(nextPacket.getData());
-					packetCallbacksClient.get(2).accept(updatePacket);
-					break;
-				case 3:
-					ObjectMovePacket objectMovePacket = new ObjectMovePacket();
-					objectMovePacket.readData(nextPacket.getData());
-					packetCallbacksClient.get(3).accept(objectMovePacket);
-					break;
-				case 4:
-					TextPacket textPacket = new TextPacket();
-					textPacket.readData(nextPacket.getData());
-					packetCallbacksClient.get(4).accept(textPacket);
-					break;
-				default:
-					log.error("Unknown packet with ID {} recieved, Discarding", nextPacket.getId());
-				}
-				try {
-					nextPacket = socketClient.getPacketQueue().remove();
-				} catch (Exception e) {
-					log.warn("No more CLIENT packets to process. Exiting...");
-					break;
-				}
-			}
 		} catch (Exception e) {
 			Testbed.log.error("Networking failure ", e);
 		}
