@@ -9,8 +9,6 @@ import java.util.function.Consumer;
 
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Packet;
-import com.jrealm.net.PacketType;
-import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.SocketServer;
@@ -19,10 +17,12 @@ import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Slf4j
+@EqualsAndHashCode(callSuper=false)
 public class RealmManager extends Thread{
 	private SocketServer server;
 	private Realm realm;
@@ -80,12 +80,10 @@ public class RealmManager extends Thread{
 				case 2:
 					UpdatePacket updatePacket = new UpdatePacket();
 					updatePacket.readData(toProcess.getData());
-
 					break;
 				case 3:
 					ObjectMovePacket objectMovePacket = new ObjectMovePacket();
 					objectMovePacket.readData(toProcess.getData());
-
 					break;
 				case 4:
 					TextPacket textPacket = new TextPacket();

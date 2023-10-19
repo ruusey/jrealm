@@ -67,37 +67,48 @@ public class SocketClient extends Thread {
 	@Override
 	public void run() {
 		while (!this.shutdown) {
-			try {
-				InputStream stream = this.clientSocket.getInputStream();
-				int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
-						this.remoteBuffer.length - this.remoteBufferIndex);
-				if (bytesRead == -1)
-					throw new SocketException("end of stream");
-				if (bytesRead > 0) {
-					this.remoteBufferIndex += bytesRead;
+			Runnable recievePackets = () -> {
+				this.readPackets();
+			};
+			
+			Runnable processPackets = () -> {
+				this.processPackets();
+			};
+			
+			WorkerThread.submitAndRun(recievePackets, processPackets);
+		}
+	}
+	
+	private void readPackets() {
+		try {
+			InputStream stream = this.clientSocket.getInputStream();
+			int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
+					this.remoteBuffer.length - this.remoteBufferIndex);
+			if (bytesRead == -1)
+				throw new SocketException("end of stream");
+			if (bytesRead > 0) {
+				this.remoteBufferIndex += bytesRead;
 
-					while (this.remoteBufferIndex >= 5) {
-						int packetLength = ((ByteBuffer) ByteBuffer.allocate(4).put(this.remoteBuffer[1])
-								.put(this.remoteBuffer[2]).put(this.remoteBuffer[3]).put(this.remoteBuffer[4]).rewind())
-								.getInt();
-						if (this.remoteBufferIndex < (packetLength)) {
-							break;
-						}
-						byte packetId = this.remoteBuffer[0];
-						byte[] packetBytes = new byte[packetLength];
-						System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
-						if (this.remoteBufferIndex > packetLength) {
-							System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
-									this.remoteBufferIndex - packetLength);
-						}
-						this.remoteBufferIndex -= packetLength;
-						this.packetQueue.add(new BlankPacket(packetId, packetBytes));
+				while (this.remoteBufferIndex >= 5) {
+					int packetLength = ((ByteBuffer) ByteBuffer.allocate(4).put(this.remoteBuffer[1])
+							.put(this.remoteBuffer[2]).put(this.remoteBuffer[3]).put(this.remoteBuffer[4]).rewind())
+							.getInt();
+					if (this.remoteBufferIndex < (packetLength)) {
+						break;
 					}
+					byte packetId = this.remoteBuffer[0];
+					byte[] packetBytes = new byte[packetLength];
+					System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
+					if (this.remoteBufferIndex > packetLength) {
+						System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
+								this.remoteBufferIndex - packetLength);
+					}
+					this.remoteBufferIndex -= packetLength;
+					this.packetQueue.add(new BlankPacket(packetId, packetBytes));
 				}
-			}catch(Exception e) {
-				SocketClient.log.error("Failed to parse client input {}", e.getMessage());
 			}
-			this.processClientPackets();
+		}catch(Exception e) {
+			SocketClient.log.error("Failed to parse client input {}", e.getMessage());
 		}
 	}
 	
@@ -130,10 +141,9 @@ public class SocketClient extends Thread {
 			}
 		};
 		WorkerThread.submitAndForkRun(sendHeartbeat);
-		//WorkerThread.submitAndRun(heartBeatThread);
 	}
 	
-	public void processClientPackets() {
+	public void processPackets() {
 		while(!this.getPacketQueue().isEmpty()) {
 			try {
 				Packet toProcess = this.getPacketQueue().remove();

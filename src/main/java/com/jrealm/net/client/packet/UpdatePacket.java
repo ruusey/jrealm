@@ -9,6 +9,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Packet;
+import com.jrealm.net.PacketType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -111,6 +112,6 @@ public class UpdatePacket extends Packet {
 			}
 		}
 		
-		return new UpdatePacket((byte) 2, byteStream.toByteArray());
+		return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
 	}
 }

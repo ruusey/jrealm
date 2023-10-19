@@ -6,12 +6,15 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.net.Packet;
+import com.jrealm.net.PacketType;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class HeartbeatPacket extends Packet{
 
 	private long playerId;
@@ -47,9 +50,7 @@ public class HeartbeatPacket extends Packet{
 		this.addHeader(stream);
 		stream.writeLong(this.playerId);
 		stream.writeLong(this.timestamp);
-		
 	}
-	
 	
 	public HeartbeatPacket from(long playerId, long timestamp) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -57,7 +58,7 @@ public class HeartbeatPacket extends Packet{
 		dos.writeLong(playerId);
 		dos.writeLong(timestamp);
 
-		return new HeartbeatPacket((byte) 5, baos.toByteArray());
+		return new HeartbeatPacket(PacketType.HEARTBEAT.getPacketId(), baos.toByteArray());
 	}
 
 }

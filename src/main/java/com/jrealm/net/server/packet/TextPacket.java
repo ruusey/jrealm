@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.net.Packet;
+import com.jrealm.net.PacketType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -60,7 +61,7 @@ public class TextPacket extends Packet {
 		dos.writeUTF(to);
 		dos.writeUTF(text);
 
-		return new TextPacket((byte) 4, baos.toByteArray());
+		return new TextPacket(PacketType.TEXT.getPacketId(), baos.toByteArray());
 	}
 	
 	public static TextPacket create(String from, String to, String text) {

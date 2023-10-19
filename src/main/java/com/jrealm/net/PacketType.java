@@ -12,7 +12,7 @@ public enum PacketType {
 	private boolean isServer;
 	static {
 		for(PacketType et : PacketType.values()) {
-			map.put(et.getEntityTypeId(), et);
+			map.put(et.getPacketId(), et);
 		}
 	}
 	private PacketType(byte entityTypeId, boolean isServer) {
@@ -20,7 +20,7 @@ public enum PacketType {
 		this.isServer = isServer;
 	}
 	
-	public byte getEntityTypeId() {
+	public byte getPacketId() {
 		return this.packetId;
 	}
 	

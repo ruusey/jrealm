@@ -11,6 +11,7 @@ import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.PacketType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -55,7 +56,6 @@ public class ObjectMovePacket extends Packet {
 
 		this.velX = obj.getDx();
 		this.velY = obj.getDy();
-
 	}
 
 	@Override
@@ -109,6 +109,6 @@ public class ObjectMovePacket extends Packet {
 		stream.writeFloat(obj.getDx());
 		stream.writeFloat(obj.getDy());
 
-		return new ObjectMovePacket((byte) 3, byteStream.toByteArray());
+		return new ObjectMovePacket(PacketType.OBJECT_MOVE.getPacketId(), byteStream.toByteArray());
 	}
 }

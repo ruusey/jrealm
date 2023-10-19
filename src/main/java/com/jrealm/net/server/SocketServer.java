@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
-import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
@@ -70,7 +69,6 @@ public class SocketServer extends Thread {
 					log.info("Server accepted new connection from Remote Address {}", remoteAddr);
 				} catch (Exception e) {
 					log.error("Failed to accept incoming socket connection, exiting...", e);
-					// return;
 				}
 			}
 		};
