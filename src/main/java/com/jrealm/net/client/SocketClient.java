@@ -55,6 +55,7 @@ public class SocketClient implements Runnable {
 			this.registerPacketCallbacks();
 			this.clientSocket = new Socket(SocketServer.LOCALHOST, port);
 			this.sendRemote(TextPacket.create("Ruusey", "SYSTEM", "LoginRequest"));
+			this.startHeartbeatThread();
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}

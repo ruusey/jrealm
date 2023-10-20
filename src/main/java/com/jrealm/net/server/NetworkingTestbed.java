@@ -47,7 +47,6 @@ public class NetworkingTestbed {
 		try {
 			playerId = realm.addPlayer(player);
 			socketClient.setCurrentPlayerId(playerId);
-			socketClient.startHeartbeatThread();
 			while (realmManager.getServer().getPacketQueue().isEmpty()) {
 				Thread.sleep(100);
 			}

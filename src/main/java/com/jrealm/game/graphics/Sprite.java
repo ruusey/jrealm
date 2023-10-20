@@ -217,4 +217,8 @@ public class Sprite {
 	public Sprite getNewSubimage() {
 		return this.getNewSubimage(0, 0, this.w, this.h);
 	}
+	
+	public Sprite clone() {
+		return new Sprite(this.getImage());
+	}
 }

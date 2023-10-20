@@ -78,9 +78,7 @@ public class SocketServer implements Runnable {
 				}
 			}
 		};
-
 		WorkerThread.submitAndRun(socketAccept, processClients);
-
 	}
 
 	private void enqueueClientPackets() {
