@@ -429,6 +429,8 @@ public class PlayState extends GameState {
 				}
 			}
 			if (e.getDeath()) {
+				e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
+
 				this.realm.clearHitMap();
 				this.realm.spawnRandomEnemy();
 				this.realm.removeEnemy(e);
@@ -695,7 +697,7 @@ public class PlayState extends GameState {
 		AABB renderBounds = this.realm.getTileManager().getRenderViewPort();
 		LootContainer closeLoot = null;
 		for (LootContainer lc : this.realm.getLoot().values()) {
-			if (lc instanceof Chest && this.playerLocation.equals(PlayerLocation.REALM)) {
+			if ((lc instanceof Chest) && this.playerLocation.equals(PlayerLocation.REALM)) {
 				continue;
 			}
 			if ((player.getBounds().distance(lc.getPos()) < GlobalConstants.PLAYER_SIZE)) {
