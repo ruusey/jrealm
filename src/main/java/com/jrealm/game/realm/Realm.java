@@ -377,29 +377,33 @@ public class Realm {
 					}
 					switch (r.nextInt(5)) {
 					case 0:
-						go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0),
-								spawnPos, 64,0);
+						go = new Monster(Realm.RANDOM.nextLong(),
+								new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0), spawnPos,
+								64, 0);
 						go.setPos(spawnPos);
 						break;
 					case 1:
 						go = new Monster(Realm.RANDOM.nextLong(),
 								new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
-								spawnPos, 64,2);
+								spawnPos, 64, 2);
 						go.setPos(spawnPos);
 						break;
 					case 2:
-						go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
+						go = new Monster(Realm.RANDOM.nextLong(),
+								new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
 								new Vector2f(j * 64, i * 64), 64, 1);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					case 3:
-						go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0),
+						go = new Monster(Realm.RANDOM.nextLong(),
+								new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0),
 								new Vector2f(j * 64, i * 64), 64, 7);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					case 4:
-						go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0),
-								new Vector2f(j * 64, i * 64), 64,8);
+						go = new Monster(Realm.RANDOM.nextLong(),
+								new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0),
+								new Vector2f(j * 64, i * 64), 64, 8);
 						go.setPos(new Vector2f(j * 64, i * 64));
 						break;
 					}
@@ -419,27 +423,28 @@ public class Realm {
 
 		switch (r.nextInt(5)) {
 		case 0:
-			go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0), spawnPos,
-					64,0);
+			go = new Monster(Realm.RANDOM.nextLong(),
+					new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0), spawnPos, 64, 0);
 			go.setPos(spawnPos);
 			break;
 		case 1:
-			go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
-					spawnPos, 64,2);
+			go = new Monster(Realm.RANDOM.nextLong(),
+					new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0), spawnPos, 64, 2);
 			go.setPos(spawnPos);
 			break;
 		case 2:
-			go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0), spawnPos,
-					64,1);
+			go = new Monster(Realm.RANDOM.nextLong(),
+					new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0), spawnPos, 64, 1);
 			go.setPos(spawnPos);
 			break;
 		case 3:
-			go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0), spawnPos, 64,7);
+			go = new Monster(Realm.RANDOM.nextLong(),
+					new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0), spawnPos, 64, 7);
 			go.setPos(spawnPos);
 			break;
 		case 4:
-			go = new Monster(Realm.RANDOM.nextLong(), new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0), spawnPos,
-					64,8);
+			go = new Monster(Realm.RANDOM.nextLong(),
+					new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0), spawnPos, 64, 8);
 			go.setPos(spawnPos);
 			break;
 

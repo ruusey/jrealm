@@ -252,6 +252,7 @@ public class PlayerUI {
 							this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
 							this.getPlayState().getPlayer().getInventory()[idx] = item;
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
+							this.setGroundLoot(this.groundLoot);
 						}
 						if (this.playState.getNearestChest() != null) {
 							LootContainer nearestChest = this.playState.getNearestChest();
@@ -276,6 +277,7 @@ public class PlayerUI {
 						this.playState.getRealm().addLootContainer(
 								new LootContainer(this.playState.getPlayer().getPos().clone(), toDrop));
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
+						this.setGroundLoot(this.groundLoot);
 					}
 				});
 				this.inventory[actualIdx] = new Slots(b, item);

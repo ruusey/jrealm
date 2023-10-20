@@ -32,7 +32,7 @@ public abstract class Enemy extends Entity {
 
 	public long lastShotTick = 0;
 
-	private int weaponId = 1;
+	private int weaponId = -1;
 
 	public Enemy(long id, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
 		super(id, sprite, origin, size);
@@ -43,6 +43,8 @@ public abstract class Enemy extends Entity {
 				(origin.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
 				(origin.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
 				this.r_attackrange);
+		
+		this.weaponId = weaponId;
 	}
 
 	public void chase(Player player) {
