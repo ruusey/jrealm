@@ -65,9 +65,6 @@ public class GamePanel extends JPanel implements Runnable {
 		if (this.thread == null) {
 			this.thread = new Thread(this, "GameThread");
 			this.thread.start();
-
-			// WorkerThread.submit(this.thread);
-
 		}
 	}
 

@@ -10,15 +10,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
-
+import java.util.function.BiConsumer;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
+import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.PacketType;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.SocketServer;
-import com.jrealm.net.server.Testbed;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
@@ -28,12 +28,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 public class SocketClient extends Thread {
-	
-	private long currentPlayerId;
-	
+
 	private static final int BUFFER_CAPACITY = 65536 * 10;
+
+	private long currentPlayerId;
 
 	private Socket clientSocket;
 	private boolean shutdown = false;
@@ -47,38 +47,34 @@ public class SocketClient extends Thread {
 	private long remoteNoDataTime = System.currentTimeMillis();
 
 	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
-	
-	private static final Map<Integer, Consumer<Packet>> packetCallbacksClient = new HashMap<>();
 
+	private final Map<Byte, BiConsumer<SocketClient, Packet>> packetCallbacksClient = new HashMap<>();
 
 	public SocketClient(int port) {
 		try {
-			packetCallbacksClient.put(2, Testbed::handleUpdateClient);
-			packetCallbacksClient.put(3, Testbed::handleObjectMoveClient);
-			packetCallbacksClient.put(4, Testbed::handleTextClient);
-		
+			this.registerPacketCallbacks();
 			this.clientSocket = new Socket(SocketServer.LOCALHOST, port);
 			this.sendRemote(TextPacket.create("Ruusey", "SYSTEM", "LoginRequest"));
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}
 	}
-	
+
 	@Override
 	public void run() {
 		while (!this.shutdown) {
 			Runnable recievePackets = () -> {
 				this.readPackets();
 			};
-			
+
 			Runnable processPackets = () -> {
 				this.processPackets();
 			};
-			
+
 			WorkerThread.submitAndRun(recievePackets, processPackets);
 		}
 	}
-	
+
 	private void readPackets() {
 		try {
 			InputStream stream = this.clientSocket.getInputStream();
@@ -107,71 +103,98 @@ public class SocketClient extends Thread {
 					this.packetQueue.add(new BlankPacket(packetId, packetBytes));
 				}
 			}
-		}catch(Exception e) {
+		} catch (Exception e) {
 			SocketClient.log.error("Failed to parse client input {}", e.getMessage());
 		}
 	}
-	
+
 	public void sendRemote(Packet packet) throws Exception {
-		if(this.clientSocket==null) throw new Exception("Client socket is null/not yet established");
+		if (this.clientSocket == null)
+			throw new Exception("Client socket is null/not yet established");
 		try {
 			OutputStream stream = this.clientSocket.getOutputStream();
 			DataOutputStream dos = new DataOutputStream(stream);
 			packet.serializeWrite(dos);
-		}catch(Exception e) {
+		} catch (Exception e) {
 			String remoteAddr = this.clientSocket.getInetAddress().getHostAddress();
 			log.error("Failed to send Packet to remote addr {}", remoteAddr);
 		}
 	}
-	
+
 	public void startHeartbeatThread() {
-		Runnable sendHeartbeat = ()->{
-			while(!this.shutdown) {
+		Runnable sendHeartbeat = () -> {
+			while (!this.shutdown) {
 				try {
 					long currentTime = System.currentTimeMillis();
 					long playerId = this.currentPlayerId;
-					
+
 					HeartbeatPacket pack = new HeartbeatPacket().from(playerId, currentTime);
 					this.sendRemote(pack);
-					
+
 					Thread.sleep(1000);
-				}catch(Exception e) {
-					
+				} catch (Exception e) {
+					log.error("Failed to send Heartbeat packet. Reason: {}", e);
 				}
 			}
 		};
 		WorkerThread.submitAndForkRun(sendHeartbeat);
 	}
-	
+
+	private void registerPacketCallbacks() {
+		this.registerPacketCallback(PacketType.UPDATE.getPacketId(), SocketClient::handleUpdateClient);
+		this.registerPacketCallback(PacketType.OBJECT_MOVE.getPacketId(), SocketClient::handleObjectMoveClient);
+		this.registerPacketCallback(PacketType.TEXT.getPacketId(), SocketClient::handleTextClient);
+	}
+
+	private void registerPacketCallback(byte packetId, BiConsumer<SocketClient, Packet> callback) {
+		this.packetCallbacksClient.put(packetId, callback);
+	}
+
 	public void processPackets() {
-		while(!this.getPacketQueue().isEmpty()) {
+		while (!this.getPacketQueue().isEmpty()) {
 			try {
 				Packet toProcess = this.getPacketQueue().remove();
 				switch (toProcess.getId()) {
-					case 2:
-						UpdatePacket updatePacket = new UpdatePacket();
-						updatePacket.readData(toProcess.getData());
-						packetCallbacksClient.get(2).accept(updatePacket);
-
-						break;
-					case 3:
-						ObjectMovePacket objectMovePacket = new ObjectMovePacket();
-						objectMovePacket.readData(toProcess.getData());
-						packetCallbacksClient.get(3).accept(objectMovePacket);
-
-						break;
-					case 4:
-						TextPacket textPacket = new TextPacket();
-						textPacket.readData(toProcess.getData());
-						break;
-					case 5:
-						HeartbeatPacket heartbeatPacket = new HeartbeatPacket();
-						heartbeatPacket.readData(toProcess.getData());
-						break;
-					}
-			}catch(Exception e) {
+				case 2:
+					UpdatePacket updatePacket = new UpdatePacket();
+					updatePacket.readData(toProcess.getData());
+					this.packetCallbacksClient.get(PacketType.UPDATE.getPacketId()).accept(this, updatePacket);
+					break;
+				case 3:
+					ObjectMovePacket objectMovePacket = new ObjectMovePacket();
+					objectMovePacket.readData(toProcess.getData());
+					this.packetCallbacksClient.get(PacketType.OBJECT_MOVE.getPacketId()).accept(this, objectMovePacket);
+					break;
+				case 4:
+					TextPacket textPacket = new TextPacket();
+					textPacket.readData(toProcess.getData());
+					this.packetCallbacksClient.get(PacketType.TEXT.getPacketId()).accept(this, textPacket);
+					break;
+				case 5:
+					HeartbeatPacket heartbeatPacket = new HeartbeatPacket();
+					heartbeatPacket.readData(toProcess.getData());
+					break;
+				}
+			} catch (Exception e) {
 				log.error("Failed to process Client Packet. Reason: {}", e);
 			}
 		}
+	}
+
+	public static void handleTextClient(SocketClient cli, Packet packet) {
+		TextPacket textPacket = (TextPacket) packet;
+		log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
+				textPacket.getFrom(), textPacket.getMessage());
+	}
+
+	public static void handleObjectMoveClient(SocketClient cli, Packet packet) {
+		ObjectMovePacket objectMovePacket = (ObjectMovePacket) packet;
+		log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
+				EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
+	}
+
+	public static void handleUpdateClient(SocketClient cli, Packet packet) {
+		UpdatePacket updatePacket = (UpdatePacket) packet;
+		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 	}
 }

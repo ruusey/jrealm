@@ -55,7 +55,6 @@ public class SocketServer extends Thread {
 
 	@Override
 	public void run() {
-
 		Runnable socketAccept = () -> {
 			log.info("Server now accepting inbound connections...");
 			while (!this.shutdownSocketAccept) {
