@@ -1,6 +1,5 @@
 package com.jrealm.net.server;
 
-import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -14,8 +13,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
-import com.jrealm.net.server.packet.TextPacket;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class SocketServer extends Thread {
+public class SocketServer implements Runnable {
 	public static final String LOCALHOST = "127.0.0.1";
 
 	private static final int BUFFER_CAPACITY = 65536 * 10;
@@ -63,8 +60,6 @@ public class SocketServer extends Thread {
 					String remoteAddr = socket.getInetAddress().getHostAddress();
 					log.info("Accepted new socket connection from {}", remoteAddr);
 					this.clients.put(remoteAddr, socket);
-					TextPacket welcomeMessage = TextPacket.create("SYSTEM", "Ruusey", "Welcome to JRealm!");
-					welcomeMessage.serializeWrite(new DataOutputStream(socket.getOutputStream()));
 					log.info("Server accepted new connection from Remote Address {}", remoteAddr);
 				} catch (Exception e) {
 					log.error("Failed to accept incoming socket connection, exiting...", e);

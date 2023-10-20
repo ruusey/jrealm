@@ -128,14 +128,13 @@ public class PlayerUI {
 					if (this.overlapsEquipment(event)
 							&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
 						Slots currentEquip = this.inventory[item.getTargetSlot()];
-						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
-						this.inventory[item.getTargetSlot()].setItem(item);
-						this.playState.replaceLootContainerItemByUid(item.getUid(),
-								this.groundLoot[actualIdx].getItem());
+//						this.inventory[item.getTargetSlot()].setItem(item);
+//
+//						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
+						this.playState.replaceLootContainerItemByUid(item.getUid(), currentEquip.getItem());
 						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
-
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
-						this.setGroundLoot(this.groundLoot);
+						this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
 					} else if (this.overlapsInventory(event)) {
 						GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
 						Slots groundLoot = this.groundLoot[actualIdx];
@@ -149,7 +148,7 @@ public class PlayerUI {
 
 						}
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
-						this.setGroundLoot(this.groundLoot);
+						this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
 					}
 				});
 				this.groundLoot[actualIdx] = new Slots(b, item);
@@ -253,15 +252,13 @@ public class PlayerUI {
 							this.getPlayState().getPlayer().getInventory()[idx] = item;
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
 							this.setGroundLoot(this.groundLoot);
-						}
-						if (this.playState.getNearestChest() != null) {
+						} else if (this.playState.getNearestChest() != null) {
 							LootContainer nearestChest = this.playState.getNearestChest();
 							int idxToPlace = nearestChest.getFirstNullIdx();
 							nearestChest.setItem(idxToPlace, item);
 							this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
 
 							this.groundLoot[idxToPlace] = new Slots(slotButton, item);
-
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
 							this.setGroundLoot(this.groundLoot);
 						}

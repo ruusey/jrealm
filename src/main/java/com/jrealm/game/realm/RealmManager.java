@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = false)
-public class RealmManager extends Thread {
+public class RealmManager implements Runnable {
 	private SocketServer server;
 	private Realm realm;
 	private boolean shutdown = false;
@@ -41,11 +41,10 @@ public class RealmManager extends Thread {
 	private int tickCount;
 	
 	public RealmManager(Realm realm) {
+		this.registerPacketCallbacks();
 		this.realm = realm;
 		this.server = new SocketServer(2222);
-		this.server.start();
-
-		this.registerPacketCallbacks();
+		WorkerThread.submitAndForkRun(this.server);
 	}
 
 	@Override
@@ -198,5 +197,14 @@ public class RealmManager extends Thread {
 		TextPacket textPacket = (TextPacket) packet;
 		log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
+		try {
+			OutputStream toClientStream = mgr.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();
+			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
+			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(), "Welcome to JRealm "+textPacket.getFrom()+"!");
+			welcomeMessage.serializeWrite(dosToClient);
+		}catch(Exception e) {
+			log.error("Failed to send welcome message. Reason: {}", e);
+		}
+	
 	}
 }

@@ -11,6 +11,7 @@ import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManager;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
+import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.SocketClient;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,9 +32,8 @@ public class NetworkingTestbed {
 		realm.spawnRandomEnemies();
 
 		RealmManager realmManager = new RealmManager(realm);
-		realmManager.start();
 		SocketClient socketClient = new SocketClient(2222);
-		socketClient.start();
+		WorkerThread.submitAndForkRun(realmManager, socketClient);
 		
 		while(realmManager.getServer().getClients().size()==0) {
 			try {

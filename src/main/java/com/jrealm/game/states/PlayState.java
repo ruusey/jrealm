@@ -169,7 +169,7 @@ public class PlayState extends GameState {
 	}
 
 	private void movePlayer() {
-		if(!this.getPlayer().isFallen()) {
+		if (!this.getPlayer().isFallen()) {
 			this.getPlayer().move();
 			if (!this.getPlayer().getTc().collisionTile(this.realm.getTileManager().getTm().get(1).getBlocks(),
 					this.getPlayer().getDx(), 0)) {
@@ -190,7 +190,6 @@ public class PlayState extends GameState {
 
 			this.getPlayer().getTc().normalTile(this.getPlayer().getDx(), 0);
 			this.getPlayer().getTc().normalTile(0, this.getPlayer().getDy());
-
 
 		} else {
 			this.getPlayer().xCol = true;
@@ -218,7 +217,6 @@ public class PlayState extends GameState {
 					this.gsm.add(GameStateManager.GAMEOVER);
 					this.gsm.pop(GameStateManager.PLAY);
 				}
-
 
 				Runnable monitorDamageText = () -> {
 					List<DamageText> toRemove = new ArrayList<>();
@@ -272,9 +270,10 @@ public class PlayState extends GameState {
 				Runnable checkAbilityUsage = () -> {
 					if (this.getPlayer() == null)
 						return;
-					for(GameObject e : this.realm.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort())){
+					for (GameObject e : this.realm
+							.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort())) {
 						if ((e instanceof Entity) || (e instanceof Enemy)) {
-							Entity entCast = (Entity)e;
+							Entity entCast = (Entity) e;
 							entCast.removeExpiredEffects();
 						}
 					}
@@ -329,7 +328,8 @@ public class PlayState extends GameState {
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), bulletImage, src, angle, size, magnitude, range, damage, isEnemy);
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), bulletImage, src, angle, size, magnitude, range, damage,
+				isEnemy);
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);
 
@@ -419,7 +419,6 @@ public class PlayState extends GameState {
 			if (b.hasFlag((short) 2)) {
 				if (!e.hasEffect(EffectType.PARALYZED)) {
 					e.addEffect(EffectType.PARALYZED, 5000);
-
 				}
 			}
 
@@ -504,8 +503,6 @@ public class PlayState extends GameState {
 				}
 			}
 
-
-
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);
 			this.cam.target(player);
@@ -571,8 +568,7 @@ public class PlayState extends GameState {
 
 			}
 
-		}
-		else if ((abilityItem.getDamage() != null)) {
+		} else if ((abilityItem.getDamage() != null)) {
 			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
 					.get(abilityItem.getDamage().getProjectileGroupId());
 			Player player = this.getPlayer();
@@ -658,11 +654,11 @@ public class PlayState extends GameState {
 		if (player != null) {
 			player.render(g);
 		}
-		//		AABB test = new AABB(new Vector2f(this.getPlayerPos().x * 0.5f, this.getPlayerPos().y * 0.5f),
-		//				(int) 32 * 8, (int) 32 * 8);
+		// AABB test = new AABB(new Vector2f(this.getPlayerPos().x * 0.5f,
+		// this.getPlayerPos().y * 0.5f),
+		// (int) 32 * 8, (int) 32 * 8);
 
-		GameObject[] gameObject = this.realm
-				.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort());
+		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort());
 
 		for (int i = 0; i < gameObject.length; i++) {
 			GameObject toRender = gameObject[i];
@@ -699,13 +695,13 @@ public class PlayState extends GameState {
 		AABB renderBounds = this.realm.getTileManager().getRenderViewPort();
 		LootContainer closeLoot = null;
 		for (LootContainer lc : this.realm.getLoot().values()) {
-			if(lc instanceof Chest && this.playerLocation.equals(PlayerLocation.REALM)) {
+			if (lc instanceof Chest && this.playerLocation.equals(PlayerLocation.REALM)) {
 				continue;
 			}
 			if ((player.getBounds().distance(lc.getPos()) < GlobalConstants.PLAYER_SIZE)) {
 				closeLoot = lc;
 			}
-			AABB lcBounds = new AABB(lc.getPos(), 32,32);
+			AABB lcBounds = new AABB(lc.getPos(), 32, 32);
 			if (!lc.isEmpty() && lcBounds.intersect(renderBounds)) {
 				lc.render(g);
 
