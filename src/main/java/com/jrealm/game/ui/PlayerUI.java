@@ -29,7 +29,6 @@ public class PlayerUI {
 	private FillBars mp;
 
 	private Slots[] inventory;
-
 	private Slots[] groundLoot;
 
 	private PlayState playState;
@@ -39,23 +38,20 @@ public class PlayerUI {
 	private Graphics2D tempGraphics;
 
 	public PlayerUI(PlayState p) {
-		this.playState = p;
 		SpriteSheet bars = new SpriteSheet("ui/fillbars.png", 0);
-		BufferedImage[] barSpritesHp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 0, 7, 14), // red health
-				// bar
+		BufferedImage[] barSpritesHp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 0, 7, 14),
 				bars.getSubimage(0, 0, 12, 20) };
-
 		BufferedImage[] barSpritesMp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 16, 7, 14),
 				bars.getSubimage(0, 0, 12, 20) };
+
 		Vector2f posHp = new Vector2f(GamePanel.width - 356, 128);
 		Vector2f posMp = posHp.clone(0, 64);
 
+		this.playState = p;
 		this.hp = new FillBars(p.getPlayer(), barSpritesHp, posHp, 16, 16, false);
 		this.mp = new FillBars(p.getPlayer(), barSpritesMp, posMp, 16, 16, true);
-
 		this.groundLoot = new Slots[8];
 		this.inventory = new Slots[20];
-
 		this.tooltips = new HashMap<>();
 	}
 
@@ -70,7 +66,6 @@ public class PlayerUI {
 		for (int i = start; i < end; i++) {
 			items[idx++] = this.inventory[i];
 		}
-
 		return items;
 	}
 
@@ -115,22 +110,21 @@ public class PlayerUI {
 					this.tooltips.put(item.getUid(),
 							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
 				});
+
 				b.onHoverOut(event -> {
 					this.tooltips.remove(item.getUid());
 				});
+
 				b.onMouseDown(event -> {
 					PlayerUI.DRAGGING_ITEM = true;
-
 				});
+
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
 					this.tooltips.clear();
 					if (this.overlapsEquipment(event)
 							&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
 						Slots currentEquip = this.inventory[item.getTargetSlot()];
-//						this.inventory[item.getTargetSlot()].setItem(item);
-//
-//						this.groundLoot[actualIdx].setItem(currentEquip.getItem());
 						this.playState.replaceLootContainerItemByUid(item.getUid(), currentEquip.getItem());
 						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
@@ -140,17 +134,19 @@ public class PlayerUI {
 						Slots groundLoot = this.groundLoot[actualIdx];
 						int idx = this.firstNullIdx(currentInv);
 						Slots currentEquip = this.inventory[idx + 4];
+
 						if ((currentEquip == null) && (idx > -1)) {
 							this.inventory[idx + 4] = groundLoot;
 							this.groundLoot[actualIdx] = null;
 							this.getPlayState().getPlayer().getInventory()[idx + 4] = item;
 							this.playState.replaceLootContainerItemByUid(item.getUid(), null);
-
 						}
+
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
 						this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
 					}
 				});
+
 				this.groundLoot[actualIdx] = new Slots(b, item);
 			}
 		}
@@ -176,14 +172,17 @@ public class PlayerUI {
 				b.onHoverOut(event -> {
 					this.tooltips.clear();
 				});
+
 				b.onMouseDown(event -> {
 					PlayerUI.DRAGGING_ITEM = true;
 				});
+
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
 					this.tooltips.clear();
 
 				});
+
 				this.inventory[actualIdx] = new Slots(b, item);
 			}
 		}
@@ -204,6 +203,7 @@ public class PlayerUI {
 				} else {
 					b = new Button(new Vector2f(startX + (i * 64), 450), 64);
 				}
+
 				b.onHoverIn(event -> {
 					this.tooltips.put(item.getUid(),
 							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
@@ -212,6 +212,7 @@ public class PlayerUI {
 				b.onHoverOut(event -> {
 					this.tooltips.clear();
 				});
+
 				b.onMouseDown(event -> {
 
 					PlayerUI.DRAGGING_ITEM = true;
@@ -231,6 +232,7 @@ public class PlayerUI {
 						this.tooltips.clear();
 					}
 				});
+				// TODO: rework final assignment for dropping loot
 				final Button slotButton = b;
 				b.onMouseUp(event -> {
 					PlayerUI.DRAGGING_ITEM = false;
@@ -261,12 +263,6 @@ public class PlayerUI {
 							this.setEquipment(this.getPlayState().getPlayer().getInventory());
 							this.setGroundLoot(this.groundLoot);
 						}
-						// else {
-						// int idx = this.getOverlapIdx(event);
-						// this.getPlayState().getPlayer().getInventory()[idx] = item;
-						// this.setEquipment(this.getPlayState().getPlayer().getInventory());
-						// }
-
 					} else if (this.overlapsGround(event)) {
 						GameItem toDrop = item.clone();
 						this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
@@ -276,6 +272,7 @@ public class PlayerUI {
 						this.setGroundLoot(this.groundLoot);
 					}
 				});
+
 				this.inventory[actualIdx] = new Slots(b, item);
 			}
 		}
@@ -329,15 +326,14 @@ public class PlayerUI {
 
 	private boolean overlapsInventory(Vector2f pos) {
 		final int panelWidth = (GamePanel.width / 5);
-
 		final int startX = GamePanel.width - panelWidth;
 		final int startY = 450;
+
 		AABB currBounds = new AABB(new Vector2f(startX, startY), panelWidth, 128);
 		AABB bounds = new AABB(currBounds.getPos().clone(), (int) currBounds.getWidth() * 4,
 				(int) currBounds.getHeight() * 4);
 
 		return bounds.inside((int) pos.x, (int) pos.y);
-
 	}
 
 	@SuppressWarnings("unused")
@@ -388,7 +384,6 @@ public class PlayerUI {
 			if (curr.getItem() != null)
 				return false;
 		}
-
 		return true;
 	}
 
@@ -401,7 +396,6 @@ public class PlayerUI {
 			if (curr.getItem() != null)
 				return false;
 		}
-
 		return true;
 	}
 
@@ -409,19 +403,16 @@ public class PlayerUI {
 		if (this.playState.getPlayer() != null) {
 			int panelWidth = (GamePanel.width / 5);
 			int startX = (GamePanel.width - panelWidth) + 8;
-
-			Stats stats = this.playState.getPlayer().getComputedStats();
-
-			g.setColor(Color.WHITE);
-
 			int xOffset = 128;
 			int yOffset = 42;
 			int startY = 350;
-
+			
+			Stats stats = this.playState.getPlayer().getComputedStats();
 			Vector2f posHp = new Vector2f(GamePanel.width - 64, 128 + 32);
 			Vector2f posMp = posHp.clone(0, 64);
+			
+			g.setColor(Color.WHITE);
 			g.drawString("" + this.playState.getPlayer().getHealth(), posHp.x, posHp.y);
-
 			g.drawString("" + this.playState.getPlayer().getMana(), posMp.x, posMp.y);
 
 			g.drawString("att :" + stats.getAtt(), startX, startY);
@@ -442,10 +433,9 @@ public class PlayerUI {
 		g.fillRect(startX, 0, panelWidth, GamePanel.height);
 
 		Slots[] equips = this.getSlots(0, 4);
-
 		Slots[] inv1 = this.getSlots(4, 8);
-
 		Slots[] inv2 = this.getSlots(8, 12);
+		
 		for (int i = 0; i < equips.length; i++) {
 			Slots curr = equips[i];
 			if (curr != null) {
@@ -479,6 +469,7 @@ public class PlayerUI {
 				}
 			}
 		}
+		
 		Slots[] gl1 = Arrays.copyOfRange(this.groundLoot, 0, 4);
 		Slots[] gl2 = Arrays.copyOfRange(this.groundLoot, 4, 8);
 
@@ -493,6 +484,7 @@ public class PlayerUI {
 				}
 			}
 		}
+		
 		for (int i = 0; i < gl2.length; i++) {
 			Slots curr = gl2[i];
 			if (curr != null) {
