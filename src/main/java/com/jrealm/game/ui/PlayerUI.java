@@ -240,7 +240,6 @@ public class PlayerUI {
 						GameItem itemClone = currentEquip.getItem().clone();
 						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
 						this.getPlayState().getPlayer().getInventory()[actualIdx] = itemClone;
-
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
 					} else if (this.overlapsInventory(event)) {
 						Slots dropped = this.getOverlapping(event);
@@ -312,9 +311,7 @@ public class PlayerUI {
 
 	private boolean overlapsGround(Vector2f pos) {
 		final int panelWidth = (GamePanel.width / 5);
-
 		AABB currBounds = new AABB(new Vector2f(0, 0), GamePanel.width - panelWidth, GamePanel.height);
-
 		return currBounds.inside((int) pos.x, (int) pos.y);
 	}
 
@@ -507,17 +504,6 @@ public class PlayerUI {
 				}
 			}
 		}
-		// for (int i = 0; i < this.groundLoot.length; i++) {
-		// Slots curr = this.groundLoot[i];
-		// if (curr != null) {
-		// if ((curr.getDragPos() == null)) {
-		// this.groundLoot[i].render(g, new Vector2f(startX + (i * 64), 650));
-		// } else {
-		// this.groundLoot[i].render(g, curr.getDragPos());
-		//
-		// }
-		// }
-		// }
 
 		for (ItemTooltip tip : this.tooltips.values()) {
 			tip.render(g);

@@ -152,7 +152,7 @@ public class SpriteSheet {
 	}
 
 	public Sprite getSprite(int x, int y, int w, int h) {
-		return this.SPRITESHEET.getSubimage(x * w, y * h, w, h);
+		return this.SPRITESHEET.getNewSubimage(x * w, y * h, w, h);
 	}
 
 	public BufferedImage getSubimage(int x, int y, int w, int h) {
