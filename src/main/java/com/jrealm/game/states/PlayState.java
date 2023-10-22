@@ -93,9 +93,9 @@ public class PlayState extends GameState {
 		if ((this.playerId != -1) || (this.realm.getPlayer(this.playerId) != null)) {
 			this.realm.removePlayer(this.playerId);
 		}
-
 		this.playerId = this.realm.addPlayer(player);
 		this.pui = new PlayerUI(this);
+		this.getPlayer().getStats().setDef((short)50);
 
 		this.getPui().setEquipment(player.getInventory());
 
@@ -393,7 +393,11 @@ public class PlayState extends GameState {
 			this.damageText.add(hitText);
 			b.setPlayerHit(true);
 			// player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
+			short minDmg = (short) (b.getDamage()*0.15);
 			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
+			if (dmgToInflict < minDmg) {
+				dmgToInflict = minDmg;
+			}
 			player.setHealth(player.getHealth() - dmgToInflict, 0, false);
 			this.realm.removeBullet(b);
 		}
