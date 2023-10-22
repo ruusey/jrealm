@@ -88,193 +88,203 @@ public class PlayerUI {
 	}
 
 	public void setGroundLoot(GameItem[] loot, Graphics2D g) {
-		int panelWidth = (GamePanel.width / 5);
-		int startX = GamePanel.width - panelWidth;
-
 		this.groundLoot = new Slots[8];
 
 		for (int i = 0; i < loot.length; i++) {
 			GameItem item = loot[i];
-			int yOffset = i > 3 ? 64 : 0;
-
-			if (item != null) {
-				final int actualIdx = i;
-				Button b = null;
-				if (i > 3) {
-					b = new Button(new Vector2f(startX + ((actualIdx - 4) * 64), 650 + yOffset), 64);
-				} else {
-					b = new Button(new Vector2f(startX + (actualIdx * 64), 650 + yOffset), 64);
-				}
-
-				b.onHoverIn(event -> {
-					this.tooltips.put(item.getUid(),
-							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
-				});
-
-				b.onHoverOut(event -> {
-					this.tooltips.remove(item.getUid());
-				});
-
-				b.onMouseDown(event -> {
-					PlayerUI.DRAGGING_ITEM = true;
-				});
-
-				b.onMouseUp(event -> {
-					PlayerUI.DRAGGING_ITEM = false;
-					this.tooltips.clear();
-					if (this.overlapsEquipment(event)
-							&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
-						Slots currentEquip = this.inventory[item.getTargetSlot()];
-						this.playState.replaceLootContainerItemByUid(item.getUid(), currentEquip.getItem());
-						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
-						this.setEquipment(this.getPlayState().getPlayer().getInventory());
-						this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
-					} else if (this.overlapsInventory(event)) {
-						GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
-						Slots groundLoot = this.groundLoot[actualIdx];
-						int idx = this.firstNullIdx(currentInv);
-						Slots currentEquip = this.inventory[idx + 4];
-
-						if ((currentEquip == null) && (idx > -1)) {
-							this.inventory[idx + 4] = groundLoot;
-							this.groundLoot[actualIdx] = null;
-							this.getPlayState().getPlayer().getInventory()[idx + 4] = item;
-							this.playState.replaceLootContainerItemByUid(item.getUid(), null);
-						}
-
-						this.setEquipment(this.getPlayState().getPlayer().getInventory());
-						this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
-					}
-				});
-
-				this.groundLoot[actualIdx] = new Slots(b, item);
+			this.buildGroundLootSlotButton(i, item, g);
+		}
+	}
+	
+	private void buildGroundLootSlotButton(int index, GameItem item, Graphics2D g) {
+		int panelWidth = (GamePanel.width / 5);
+		int startX = GamePanel.width - panelWidth;
+		
+		int yOffset = index > 3 ? 64 : 0;
+		if (item != null) {
+			final int actualIdx = index;
+			Button b = null;
+			if (index > 3) {
+				b = new Button(new Vector2f(startX + ((actualIdx - 4) * 64), 650 + yOffset), 64);
+			} else {
+				b = new Button(new Vector2f(startX + (actualIdx * 64), 650 + yOffset), 64);
 			}
+
+			b.onHoverIn(event -> {
+				this.tooltips.put(item.getUid(),
+						new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
+			});
+
+			b.onHoverOut(event -> {
+				this.tooltips.remove(item.getUid());
+			});
+
+			b.onMouseDown(event -> {
+				PlayerUI.DRAGGING_ITEM = true;
+			});
+
+			b.onMouseUp(event -> {
+				PlayerUI.DRAGGING_ITEM = false;
+				this.tooltips.clear();
+				if (this.overlapsEquipment(event)
+						&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
+					Slots currentEquip = this.inventory[item.getTargetSlot()];
+					this.playState.replaceLootContainerItemByUid(item.getUid(), currentEquip.getItem());
+					this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
+					this.setEquipment(this.getPlayState().getPlayer().getInventory());
+					this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
+				} else if (this.overlapsInventory(event)) {
+					GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
+					Slots groundLoot = this.groundLoot[actualIdx];
+					int idx = this.firstNullIdx(currentInv);
+					Slots currentEquip = this.inventory[idx + 4];
+
+					if ((currentEquip == null) && (idx > -1)) {
+						this.inventory[idx + 4] = groundLoot;
+						//this.groundLoot[actualIdx] = null;
+						this.getPlayState().getPlayer().getInventory()[idx + 4] = item;
+						this.playState.replaceLootContainerItemByUid(item.getUid(), null);
+					}
+
+					this.setEquipment(this.getPlayState().getPlayer().getInventory());
+					this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
+				}
+			});
+
+			this.groundLoot[actualIdx] = new Slots(b, item);
 		}
 	}
 
 	private void buildEquipmentSlots(GameItem[] equipment) {
-		final int panelWidth = (GamePanel.width / 5);
-		final int startX = GamePanel.width - panelWidth;
-
 		for (int i = 0; i < equipment.length; i++) {
 			GameItem item = equipment[i];
-			if (item != null) {
-				int actualIdx = (int) item.getTargetSlot();
-				if (actualIdx == -1) {
-					actualIdx = i;
-				}
-				Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
-				b.onHoverIn(event -> {
-					this.tooltips.put(item.getUid(),
-							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
-				});
-
-				b.onHoverOut(event -> {
-					this.tooltips.clear();
-				});
-
-				b.onMouseDown(event -> {
-					PlayerUI.DRAGGING_ITEM = true;
-				});
-
-				b.onMouseUp(event -> {
-					PlayerUI.DRAGGING_ITEM = false;
-					this.tooltips.clear();
-
-				});
-
-				this.inventory[actualIdx] = new Slots(b, item);
+			this.buildEquipmentSlotButton(i, item);
+		}
+	}
+	
+	private void buildEquipmentSlotButton(int idx, GameItem item) {
+		final int panelWidth = (GamePanel.width / 5);
+		final int startX = GamePanel.width - panelWidth;
+		if (item != null) {
+			int actualIdx = (int) item.getTargetSlot();
+			if (actualIdx == -1) {
+				actualIdx = idx;
 			}
+			Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
+			b.onHoverIn(event -> {
+				this.tooltips.put(item.getUid(),
+						new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
+			});
+
+			b.onHoverOut(event -> {
+				this.tooltips.clear();
+			});
+
+			b.onMouseDown(event -> {
+				PlayerUI.DRAGGING_ITEM = true;
+			});
+
+			b.onMouseUp(event -> {
+				PlayerUI.DRAGGING_ITEM = false;
+				this.tooltips.clear();
+
+			});
+
+			this.inventory[actualIdx] = new Slots(b, item);
 		}
 	}
 
 	private void buildInventorySlots(GameItem[] inventory) {
+		for (int i = 0; i < (inventory.length); i++) {
+			GameItem item = inventory[i];
+			this.buildInventorySlotsButton(i, item);
+		}
+	}
+	
+	private void buildInventorySlotsButton(int index, GameItem item) {
 		final int inventoryOffset = 4;
 		final int panelWidth = (GamePanel.width / 5);
 		final int startX = GamePanel.width - panelWidth;
 
-		for (int i = 0; i < (inventory.length); i++) {
-			GameItem item = inventory[i];
-			if (item != null) {
-				final int actualIdx = i + inventoryOffset;
-				Button b = null;
-				if (i > 3) {
-					b = new Button(new Vector2f(startX + ((i - 4) * 64), 516), 64);
-				} else {
-					b = new Button(new Vector2f(startX + (i * 64), 450), 64);
-				}
+		if (item != null) {
+			final int actualIdx = index + inventoryOffset;
+			Button b = null;
+			if (index > 3) {
+				b = new Button(new Vector2f(startX + ((index - 4) * 64), 516), 64);
+			} else {
+				b = new Button(new Vector2f(startX + (index * 64), 450), 64);
+			}
 
-				b.onHoverIn(event -> {
-					this.tooltips.put(item.getUid(),
-							new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
-				});
+			b.onHoverIn(event -> {
+				this.tooltips.put(item.getUid(),
+						new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
+			});
 
-				b.onHoverOut(event -> {
-					this.tooltips.clear();
-				});
+			b.onHoverOut(event -> {
+				this.tooltips.clear();
+			});
 
-				b.onMouseDown(event -> {
+			b.onMouseDown(event -> {
 
-					PlayerUI.DRAGGING_ITEM = true;
-					if (item.isConsumable()) {
-						Stats newStats = this.playState.getPlayer().getStats().concat(item.getStats());
-						this.playState.getPlayer().setStats(newStats);
+				PlayerUI.DRAGGING_ITEM = true;
+				if (item.isConsumable()) {
+					Stats newStats = this.playState.getPlayer().getStats().concat(item.getStats());
+					this.playState.getPlayer().setStats(newStats);
 
-						if (item.getStats().getHp() > 0) {
-							this.playState.getPlayer().drinkHp();
-						} else if (item.getStats().getMp() > 0) {
-							this.playState.getPlayer().drinkMp();
-						}
-						this.tooltips.remove(item.getUid());
-						this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
-						this.inventory[actualIdx] = null;
-						PlayerUI.DRAGGING_ITEM = false;
-						this.tooltips.clear();
+					if (item.getStats().getHp() > 0) {
+						this.playState.getPlayer().drinkHp();
+					} else if (item.getStats().getMp() > 0) {
+						this.playState.getPlayer().drinkMp();
 					}
-				});
-				// TODO: rework final assignment for dropping loot
-				final Button slotButton = b;
-				b.onMouseUp(event -> {
+					this.tooltips.remove(item.getUid());
+					this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
+					this.inventory[actualIdx] = null;
 					PlayerUI.DRAGGING_ITEM = false;
-					if (this.overlapsEquipment(event)
-							&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
-						Slots currentEquip = this.inventory[item.getTargetSlot()];
-						GameItem itemClone = currentEquip.getItem().clone();
-						this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
-						this.getPlayState().getPlayer().getInventory()[actualIdx] = itemClone;
+					this.tooltips.clear();
+				}
+			});
+			// TODO: rework final assignment for dropping loot
+			final Button slotButton = b;
+			b.onMouseUp(event -> {
+				PlayerUI.DRAGGING_ITEM = false;
+				if (this.overlapsEquipment(event)
+						&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
+					Slots currentEquip = this.inventory[item.getTargetSlot()];
+					GameItem itemClone = currentEquip.getItem().clone();
+					this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
+					this.getPlayState().getPlayer().getInventory()[actualIdx] = itemClone;
+					this.setEquipment(this.getPlayState().getPlayer().getInventory());
+				} else if (this.overlapsInventory(event)) {
+					Slots dropped = this.getOverlapping(event);
+					if (dropped != null) {
+						int idx = this.getOverlapIdx(event);
+						GameItem swap = dropped.getItem().clone();
+						dropped = null;
+						this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
+						this.getPlayState().getPlayer().getInventory()[idx] = item;
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
-					} else if (this.overlapsInventory(event)) {
-						Slots dropped = this.getOverlapping(event);
-						if (dropped != null) {
-							int idx = this.getOverlapIdx(event);
-							GameItem swap = dropped.getItem().clone();
-							dropped = null;
-							this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
-							this.getPlayState().getPlayer().getInventory()[idx] = item;
-							this.setEquipment(this.getPlayState().getPlayer().getInventory());
-							this.setGroundLoot(this.groundLoot);
-						} else if (this.playState.getNearestChest() != null) {
-							LootContainer nearestChest = this.playState.getNearestChest();
-							int idxToPlace = nearestChest.getFirstNullIdx();
-							nearestChest.setItem(idxToPlace, item);
-							this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
-
-							this.groundLoot[idxToPlace] = new Slots(slotButton, item);
-							this.setEquipment(this.getPlayState().getPlayer().getInventory());
-							this.setGroundLoot(this.groundLoot);
-						}
-					} else if (this.overlapsGround(event)) {
-						GameItem toDrop = item.clone();
+						this.setGroundLoot(this.groundLoot);
+					} else if (this.playState.getNearestChest() != null) {
+						LootContainer nearestChest = this.playState.getNearestChest();
+						int idxToPlace = nearestChest.getFirstNullIdx();
+						nearestChest.setItem(idxToPlace, item);
 						this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
-						this.playState.getRealm().addLootContainer(
-								new LootContainer(this.playState.getPlayer().getPos().clone(), toDrop));
+
+						this.groundLoot[idxToPlace] = new Slots(slotButton, item);
 						this.setEquipment(this.getPlayState().getPlayer().getInventory());
 						this.setGroundLoot(this.groundLoot);
 					}
-				});
+				} else if (this.overlapsGround(event)) {
+					GameItem toDrop = item.clone();
+					this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
+					this.playState.getRealm().addLootContainer(
+							new LootContainer(this.playState.getPlayer().getPos().clone(), toDrop));
+					this.setEquipment(this.getPlayState().getPlayer().getInventory());
+					this.setGroundLoot(this.groundLoot);
+				}
+			});
 
-				this.inventory[actualIdx] = new Slots(b, item);
-			}
+			this.inventory[actualIdx] = new Slots(b, item);
 		}
 	}
 
