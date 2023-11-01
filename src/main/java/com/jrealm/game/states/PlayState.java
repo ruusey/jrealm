@@ -232,8 +232,7 @@ public class PlayState extends GameState {
 				Runnable playerShootDequeue = () -> {
 					for (int i = 0; i < this.shotDestQueue.size(); i++) {
 						Vector2f dest = this.shotDestQueue.remove(i);
-						dest.addX(PlayState.map.x);
-						dest.addY(PlayState.map.y);
+						
 						Vector2f source = this.getPlayerPos().clone(player.getSize() / 2, player.getSize() / 2);
 						ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
 						float angle = Bullet.getAngle(source, dest);
@@ -531,6 +530,8 @@ public class PlayState extends GameState {
 		if ((mouse.isPressed(MouseEvent.BUTTON1)) && canShoot) {
 			this.lastShotTick = System.currentTimeMillis();
 			Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
+			dest.addX(PlayState.map.x);
+			dest.addY(PlayState.map.y);
 			this.shotDestQueue.add(dest);
 		}
 		if ((mouse.isPressed(MouseEvent.BUTTON3)) && canUseAbility) {

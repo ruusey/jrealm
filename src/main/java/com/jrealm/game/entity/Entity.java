@@ -350,4 +350,22 @@ public abstract class Entity extends GameObject {
 		return this.fallen;
 	}
 
+	public void setUp(boolean up) {
+		this.up = up;
+	}
+
+	public void setDown(boolean down) {
+		this.down = down;
+	}
+
+	public void setRight(boolean right) {
+		this.right = right;
+	}
+
+	public void setLeft(boolean left) {
+		this.left = left;
+	}
+	
+	
+
 }

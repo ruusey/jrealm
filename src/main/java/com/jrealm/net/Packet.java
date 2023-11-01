@@ -39,6 +39,10 @@ public abstract class Packet implements GameMessage{
 		stream.writeInt(contentLength + NetConstants.PACKET_HEADER_SIZE);
 	}
 	
+	public Tuple<Class<? extends Packet>, PacketType> getPacketType() {
+		return PacketType.valueOf(id);
+	}
+	
 	public static Packet newPacketInstance(final byte packetId, final byte[] data) {
 		final Tuple<Class<? extends Packet>, PacketType> typeInfo = PacketType.valueOf(packetId);
 		final Class<? extends Packet> packetClass = typeInfo.getX();
