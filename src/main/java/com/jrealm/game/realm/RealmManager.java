@@ -120,6 +120,7 @@ public class RealmManager implements Runnable {
 				this.processServerPackets();
 			};
 			
+			
 			WorkerThread.submitAndRun(broadcastGameData, processServerPackets);
 		} catch (Exception e) {
 			log.error("Failed to sleep");

@@ -26,8 +26,10 @@ import com.jrealm.game.tiles.blocks.NormTile;
 import com.jrealm.game.util.Camera;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public class TileManager {
 
 	public volatile ArrayList<TileMap> tm;
@@ -207,7 +209,7 @@ public class TileManager {
 			this.playerCam.setLimit(width * blockWidth, height * blockHeight);
 
 		} catch (Exception e) {
-			System.out.println("ERROR - TILEMANAGER: can not read tilemap:");
+			log.error("TILEMANAGER: can not read tilemap:");
 			e.printStackTrace();
 			System.exit(0);
 		}
@@ -225,41 +227,21 @@ public class TileManager {
 		for (int x = (int) (pos.x - 5); x > (pos.x + 5); x++) {
 			for (int y = (int) (pos.y - 5); y > (int) (pos.y + 5); y++) {
 				if ((x != pos.x) || (y != pos.y)) {
-
 					block[i] = (NormTile) this.tm.get(normMap).getBlocks()[(y + (x * this.height))];
 					i++;
 				}
-
-
 			}
 		}
-
 		return block;
 	}
 
 	public AABB getRenderViewPort() {
 		return new AABB(
-				this.playerCam.getTarget().getPos().clone(-(2 * GlobalConstants.BASE_TILE_SIZE),
-						-(2 * GlobalConstants.BASE_TILE_SIZE)),
+				this.playerCam.getTarget().getPos().clone(-(5 * GlobalConstants.BASE_TILE_SIZE),
+						-(5 * GlobalConstants.BASE_TILE_SIZE)),
 				(10 * GlobalConstants.BASE_TILE_SIZE), (10 * GlobalConstants.BASE_TILE_SIZE));
 
 	}
-
-	//	public AABB getRenderViewPort(Player player) {
-	//		com.jrealm.game.tiles.blocks.Tile[] tiles = this.getNormalTile(player.getPos());
-	//		if ((tiles == null) || ((tiles[0] == null) && (tiles[63] == null)))
-	//			return new AABB(player.getPos(), 0, 0);
-	//		com.jrealm.game.tiles.blocks.Tile first = tiles[0];
-	//		com.jrealm.game.tiles.blocks.Tile last = tiles[tiles.length - 1];
-	//
-	//		Vector2f pos = last.getPos();
-	//		float width = first.getPos().x - pos.x;
-	//		float height = first.getPos().y - pos.y;
-	//
-	//		AABB viewPort = new AABB(pos.clone(), (int) width, (int) height);
-	//
-	//		return viewPort;
-	//	}
 
 	public void render(Graphics2D g) {
 		if (this.playerCam == null)

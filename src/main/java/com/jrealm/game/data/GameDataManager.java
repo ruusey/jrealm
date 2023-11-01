@@ -22,8 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 public class GameDataManager {
 	private static final transient ObjectMapper mapper = new ObjectMapper();
 
-	public static SpriteSheet PLAYER_SPRITESHEET = null;
-
 	public static Map<Integer, ProjectileGroup> PROJECTILE_GROUPS = null;
 	public static Map<Integer, GameItem> GAME_ITEMS = null;
 	public static Map<String, SpriteSheet> SPRITE_SHEETS = null;
@@ -41,7 +39,6 @@ public class GameDataManager {
 				.getResourceAsStream("data/projectile-groups.json");
 		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
 
-		//replaceInjectVariables(text);
 		ProjectileGroup[] projectileGroups = GameDataManager.mapper.readValue(text, ProjectileGroup[].class);
 
 		for (ProjectileGroup group : projectileGroups) {
