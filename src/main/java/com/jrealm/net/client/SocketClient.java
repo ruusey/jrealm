@@ -153,29 +153,11 @@ public class SocketClient implements Runnable {
 
 	public void processPackets() {
 		while (!this.getPacketQueue().isEmpty()) {
+			Packet toProcess = this.getPacketQueue().remove();
+
 			try {
-				Packet toProcess = this.getPacketQueue().remove();
-				switch (toProcess.getId()) {
-				case 2:
-					UpdatePacket updatePacket = new UpdatePacket();
-					updatePacket.readData(toProcess.getData());
-					this.packetCallbacksClient.get(PacketType.UPDATE.getPacketId()).accept(this, updatePacket);
-					break;
-				case 3:
-					ObjectMovePacket objectMovePacket = new ObjectMovePacket();
-					objectMovePacket.readData(toProcess.getData());
-					this.packetCallbacksClient.get(PacketType.OBJECT_MOVE.getPacketId()).accept(this, objectMovePacket);
-					break;
-				case 4:
-					TextPacket textPacket = new TextPacket();
-					textPacket.readData(toProcess.getData());
-					this.packetCallbacksClient.get(PacketType.TEXT.getPacketId()).accept(this, textPacket);
-					break;
-				case 5:
-					HeartbeatPacket heartbeatPacket = new HeartbeatPacket();
-					heartbeatPacket.readData(toProcess.getData());
-					break;
-				}
+				Packet created = Packet.newPacketInstance(toProcess.getId(), toProcess.getData());
+				this.packetCallbacksClient.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
 				log.error("Failed to process Client Packet. Reason: {}", e);
 			}

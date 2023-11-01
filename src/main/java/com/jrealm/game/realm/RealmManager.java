@@ -15,6 +15,7 @@ import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.HeartbeatPacket;
+import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
@@ -154,26 +155,8 @@ public class RealmManager implements Runnable {
 		while (!this.getServer().getPacketQueue().isEmpty()) {
 			Packet toProcess = this.getServer().getPacketQueue().remove();
 			try {
-				switch (toProcess.getId()) {
-				case 2:
-					UpdatePacket updatePacket = new UpdatePacket();
-					updatePacket.readData(toProcess.getData());
-					break;
-				case 3:
-					ObjectMovePacket objectMovePacket = new ObjectMovePacket();
-					objectMovePacket.readData(toProcess.getData());
-					break;
-				case 4:
-					TextPacket textPacket = new TextPacket();
-					textPacket.readData(toProcess.getData());
-					this.packetCallbacksServer.get(PacketType.TEXT.getPacketId()).accept(this, textPacket);
-					break;
-				case 5:
-					HeartbeatPacket heartbeatPacket = new HeartbeatPacket();
-					heartbeatPacket.readData(toProcess.getData());
-					this.packetCallbacksServer.get(PacketType.HEARTBEAT.getPacketId()).accept(this, heartbeatPacket);
-					break;
-				}
+				Packet created = Packet.newPacketInstance(toProcess.getId(), toProcess.getData());
+				this.packetCallbacksServer.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
 				log.error("Failed to process server packets {}", e);
 			}
@@ -181,8 +164,10 @@ public class RealmManager implements Runnable {
 	}
 
 	private void registerPacketCallbacks() {
+		this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), RealmManager::handlePlayerMoveServer);
 		this.registerPacketCallback(PacketType.HEARTBEAT.getPacketId(), RealmManager::handleHeartbeatServer);
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManager::handleTextServer);
+		
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManager, Packet> callback) {
@@ -192,6 +177,11 @@ public class RealmManager implements Runnable {
 	public static void handleHeartbeatServer(RealmManager mgr, Packet packet) {
 		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
 		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(), heartbeatPacket.getTimestamp());
+	}
+	
+	public static void handlePlayerMoveServer(RealmManager mgr, Packet packet) {
+		PlayerMovePacket heartbeatPacket = (PlayerMovePacket) packet;
+		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
 	}
 	
 	public static void handleTextServer(RealmManager mgr, Packet packet) {
