@@ -54,7 +54,7 @@ public class TextPacket extends Packet {
 		stream.writeUTF(this.message);
 	}
 
-	public TextPacket from(String from, String to, String text) throws Exception {
+	public static TextPacket from(String from, String to, String text) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		dos.writeUTF(from);
@@ -67,7 +67,7 @@ public class TextPacket extends Packet {
 	public static TextPacket create(String from, String to, String text) {
 		TextPacket created = null;
 		try {
-			created = new TextPacket().from(from, to, text);
+			created = from(from, to, text);
 		}catch(Exception e) {
 			log.error("Failed to create Text Packet. Reason: {}", e);
 		}

@@ -86,7 +86,7 @@ public class UpdatePacket extends Packet {
 		}
 	}
 
-	public UpdatePacket fromPlayer(Player player) throws Exception {
+	public static UpdatePacket from(Player player) throws Exception {
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 		
 		DataOutputStream stream = new DataOutputStream(byteStream);

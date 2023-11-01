@@ -312,8 +312,7 @@ public class Realm {
 		for (Player p : this.players.values()) {
 			// if (p.getBounds().intersect(cam)) {
 			try {
-				UpdatePacket pack = new UpdatePacket();
-				pack = pack.fromPlayer(p);
+				UpdatePacket pack = UpdatePacket.from(p);
 				playerUpdates.add(pack);
 			} catch (Exception e) {
 				log.error("Failed to create update packet from Player. Reason: {}", e.getMessage());
@@ -329,8 +328,7 @@ public class Realm {
 		GameObject[] gameObjects = this.getAllGameObjects();
 		for (GameObject obj : gameObjects) {
 			try {
-				ObjectMovePacket movePacket = new ObjectMovePacket();
-				movePacket = movePacket.fromGameObject(obj);
+				ObjectMovePacket movePacket = ObjectMovePacket.from(obj);
 				objectMovements.add(movePacket);
 
 			} catch (Exception e) {

@@ -91,7 +91,7 @@ public class ObjectMovePacket extends Packet {
 		return EntityType.valueOf(entityType);
 	}
 
-	public ObjectMovePacket fromGameObject(GameObject obj) throws Exception {
+	public static ObjectMovePacket from(GameObject obj) throws Exception {
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 
 		DataOutputStream stream = new DataOutputStream(byteStream);
