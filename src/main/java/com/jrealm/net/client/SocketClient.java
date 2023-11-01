@@ -136,7 +136,7 @@ public class SocketClient implements Runnable {
 
 					HeartbeatPacket pack = new HeartbeatPacket().from(playerId, currentTime);
 					this.sendRemote(pack);
-					Thread.sleep(1000);
+					Thread.sleep(500);
 				} catch (Exception e) {
 					log.error("Failed to send Heartbeat packet. Reason: {}", e);
 				}

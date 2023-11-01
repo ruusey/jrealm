@@ -17,7 +17,7 @@ public enum PacketType {
 	OBJECT_MOVE    ((byte) 3, false, ObjectMovePacket.class),
 	TEXT           ((byte) 4, true, TextPacket.class), 
 	HEARTBEAT      ((byte) 5, true, HeartbeatPacket.class),
-	PLAYER_SHOOT   ((byte) 5, true, PlayerShootPacket.class);
+	PLAYER_SHOOT   ((byte) 6, true, PlayerShootPacket.class);
 
 
 	private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();

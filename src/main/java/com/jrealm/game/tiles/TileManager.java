@@ -18,6 +18,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
@@ -130,7 +131,6 @@ public class TileManager {
 		String[] data = new String[3];
 		TileMapGenerator tmg = new TileMapGenerator(chuckSize, blockWidth, this.materialManagers.get(0));
 
-		// For now
 		data[0] = "";
 
 		for (int i = 0; i < chuckSize; i++) {
@@ -141,11 +141,8 @@ public class TileManager {
 
 		this.tm.add(new TileMapObj(data[0], spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,
 				spritesheet.getCols()));
-
 		this.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,spritesheet.getCols()));
-
 		this.playerCam.setLimit(chuckSize * blockWidth, chuckSize * blockHeight);
-
 		this.solid = data[0];
 		this.genMap = tmg.base;
 	}
@@ -160,11 +157,8 @@ public class TileManager {
 		int tileColumns;
 		int layers = 0;
 		SpriteSheet sprite;
-
 		String[] data = new String[10];
-
 		try {
-
 			InputStream inputStream = TileManager.class.getClassLoader().getResourceAsStream(path);
 			String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
 			DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -238,6 +232,14 @@ public class TileManager {
 	public AABB getRenderViewPort() {
 		return new AABB(
 				this.playerCam.getTarget().getPos().clone(-(5 * GlobalConstants.BASE_TILE_SIZE),
+						-(5 * GlobalConstants.BASE_TILE_SIZE)),
+				(10 * GlobalConstants.BASE_TILE_SIZE), (10 * GlobalConstants.BASE_TILE_SIZE));
+
+	}
+	
+	public AABB getRenderViewPort(Player p) {
+		return new AABB(
+				p.getPos().clone(-(5 * GlobalConstants.BASE_TILE_SIZE),
 						-(5 * GlobalConstants.BASE_TILE_SIZE)),
 				(10 * GlobalConstants.BASE_TILE_SIZE), (10 * GlobalConstants.BASE_TILE_SIZE));
 

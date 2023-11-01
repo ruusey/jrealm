@@ -23,13 +23,11 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.states.GameStateManager;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.tiles.TileMap;
 import com.jrealm.game.tiles.blocks.Tile;
-import com.jrealm.game.ui.DamageText;
-import com.jrealm.game.ui.TextEffect;
 import com.jrealm.game.util.Cardinality;
+import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
@@ -74,63 +72,15 @@ public class RealmManager implements Runnable {
 	@Override
 	public void run() {
 		//TODO: remove and replace with an actual value: 20
-
-		final double GAME_HERTZ = 2.0;
-		final double TBU = 1000000000 / GAME_HERTZ; // Time Before Update
-
-		final int MUBR = 3; // Must Update before render
-
-		this.lastUpdateTime = System.nanoTime();
-
-		//TODO: remove and replace with an actual value: 20
-		final double TARGET_FPS = 2;
-		final double TTBR = 1000000000 / TARGET_FPS; // Total time before render
-
-		int frameCount = 0;
-		this.lastSecondTime = (long) (this.lastUpdateTime / 1000000000);
-		this.oldFrameCount = 0;
-
-		this.tickCount = 0;
-		this.oldTickCount = 0;
-
-		while (!this.shutdown) {
-			this.now = System.nanoTime();
-			int updateCount = 0;
-			while (((this.now - this.lastUpdateTime) > TBU) && (updateCount < MUBR)) {
-				this.tick();
-				this.lastUpdateTime += TBU;
-				updateCount++;
-				this.tickCount++;
-			}
-
-			if ((this.now - this.lastUpdateTime) > TBU) {
-				this.lastUpdateTime = (long) (this.now - TBU);
-			}
-			
-			int thisSecond = (int) (this.lastUpdateTime / 1000000000);
-			if (thisSecond > this.lastSecondTime) {
-				if (frameCount != this.oldFrameCount) {
-					// System.out.println("NEW SECOND " + thisSecond + " " + frameCount);
-					this.oldFrameCount = frameCount;
-				}
-
-				if (this.tickCount != this.oldTickCount) {
-					this.oldTickCount = this.tickCount;
-				}
-				this.tickCount = 0;
-				frameCount = 0;
-				this.lastSecondTime = thisSecond;
-			}
-
-			while (((this.now - this.lastRenderTime) < TTBR) && ((this.now - this.lastUpdateTime) < TBU)) {
-				try {
-				} catch (Exception e) {
-					System.out.println("ERROR: yielding thread");
-				}
-				this.now = System.nanoTime();
-			}
-			
-		}
+		
+		Runnable tick = ()->{
+			this.tick();
+			this.update(0);
+		};
+		
+		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 2);
+		WorkerThread.submitAndForkRun(workerThread);
+		
 		log.info("RealmManager exiting run().");
 	}
 	
@@ -197,7 +147,7 @@ public class RealmManager implements Runnable {
 	}
 	
 	public void update(double time) {
-		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
+		//Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 
 		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 			Player p = this.realm.getPlayer(player.getValue().getId());
@@ -245,7 +195,7 @@ public class RealmManager implements Runnable {
 			Runnable checkAbilityUsage = () -> {
 				
 				for (GameObject e : this.realm
-						.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort())) {
+						.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort(p))) {
 					if ((e instanceof Entity) || (e instanceof Enemy)) {
 						Entity entCast = (Entity) e;
 						entCast.removeExpiredEffects();
@@ -300,7 +250,7 @@ public class RealmManager implements Runnable {
 	}
 	
 	public synchronized void processBulletHit(Player p) {
-		List<Bullet> results = this.getBullets();
+		List<Bullet> results = this.getBullets(p);
 		GameObject[] gameObject = this.realm.getGameObjectsInBounds(p.getCam().getBounds());
 		Player player = this.realm.getPlayer(p.getId());
 
@@ -323,7 +273,7 @@ public class RealmManager implements Runnable {
 		if (currentMap == null)
 			return;
 		viewportTiles = currentMap.getBlocksInBounds(p.getCam().getBounds());
-		for (Bullet b : this.getBullets()) {
+		for (Bullet b : this.getBullets(p)) {
 			if (b.remove()) {
 				toRemove.add(b);
 				continue;
@@ -348,8 +298,8 @@ public class RealmManager implements Runnable {
 			return;
 		if (b.getBounds().collides(0, 0, player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
 			Stats stats = player.getComputedStats();
-			Vector2f sourcePos = p.getPos();
-			int computedDamage = b.getDamage() - p.getComputedStats().getDef();
+//			Vector2f sourcePos = p.getPos();
+//			int computedDamage = b.getDamage() - p.getComputedStats().getDef();
 //			DamageText hitText = DamageText.builder().damage(computedDamage + "").effect(TextEffect.DAMAGE)
 //					.sourcePos(sourcePos).build();
 //			this.damageText.add(hitText);
@@ -452,9 +402,9 @@ public class RealmManager implements Runnable {
 		this.realm.addBullet(b);
 	}
 	
-	private List<Bullet> getBullets() {
+	private List<Bullet> getBullets(Player p) {
 
-		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort());
+		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort(p));
 
 		List<Bullet> results = new ArrayList<>();
 		for (int i = 0; i < gameObject.length; i++) {

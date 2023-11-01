@@ -39,26 +39,19 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Slf4j
 public class Realm {
-	private Semaphore playerLock = new Semaphore(1);
 	public static final transient SecureRandom RANDOM = new SecureRandom();
 
 	private Map<Long, Player> players;
-
 	private Map<Long, Bullet> bullets;
-
 	private Map<Long, List<Long>> bulletHits;
-
 	private Map<Long, Enemy> enemies;
-
 	private Map<Long, LootContainer> loot;
-
 	private Map<Long, Material> materials;
-
-	private TileManager tileManager;
-
 	private Map<Integer, MaterialManager> materialManagers;
 
+	private TileManager tileManager;
 	private Camera realmCamera = null;
+	private Semaphore playerLock = new Semaphore(1);
 
 	public Realm(Camera cam) {
 		this.players = new ConcurrentHashMap<>();
