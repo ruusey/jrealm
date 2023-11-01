@@ -58,7 +58,6 @@ public class SocketServer implements Runnable {
 				try {
 					Socket socket = this.serverSocket.accept();
 					String remoteAddr = socket.getInetAddress().getHostAddress();
-					log.info("Accepted new socket connection from {}", remoteAddr);
 					this.clients.put(remoteAddr, socket);
 					log.info("Server accepted new connection from Remote Address {}", remoteAddr);
 				} catch (Exception e) {

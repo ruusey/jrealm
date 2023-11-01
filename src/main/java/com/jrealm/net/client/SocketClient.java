@@ -126,12 +126,16 @@ public class SocketClient implements Runnable {
 		Runnable sendHeartbeat = () -> {
 			while (!this.shutdown) {
 				try {
+					if(this.currentPlayerId <= 0) {
+						Thread.sleep(1000);
+						continue;
+					}
+
 					long currentTime = System.currentTimeMillis();
 					long playerId = this.currentPlayerId;
 
 					HeartbeatPacket pack = new HeartbeatPacket().from(playerId, currentTime);
 					this.sendRemote(pack);
-
 					Thread.sleep(1000);
 				} catch (Exception e) {
 					log.error("Failed to send Heartbeat packet. Reason: {}", e);
@@ -154,7 +158,6 @@ public class SocketClient implements Runnable {
 	public void processPackets() {
 		while (!this.getPacketQueue().isEmpty()) {
 			Packet toProcess = this.getPacketQueue().remove();
-
 			try {
 				Packet created = Packet.newPacketInstance(toProcess.getId(), toProcess.getData());
 				this.packetCallbacksClient.get(created.getId()).accept(this, created);

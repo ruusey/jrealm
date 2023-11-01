@@ -11,11 +11,11 @@ import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.TextPacket;
 
 public enum PacketType {
-	PLAYER_MOVE((byte) 1, false, PlayerMovePacket.class),
-	UPDATE((byte) 2, false, UpdatePacket.class), 
-	OBJECT_MOVE((byte) 3, false, ObjectMovePacket.class),
-	TEXT((byte) 4, true, TextPacket.class), 
-	HEARTBEAT((byte) 5, true, HeartbeatPacket.class);
+	PLAYER_MOVE ((byte) 1, false, PlayerMovePacket.class),
+	UPDATE      ((byte) 2, false, UpdatePacket.class), 
+	OBJECT_MOVE ((byte) 3, false, ObjectMovePacket.class),
+	TEXT        ((byte) 4, true, TextPacket.class), 
+	HEARTBEAT   ((byte) 5, true, HeartbeatPacket.class);
 
 	private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
 

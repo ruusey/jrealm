@@ -167,7 +167,6 @@ public class RealmManager implements Runnable {
 		this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), RealmManager::handlePlayerMoveServer);
 		this.registerPacketCallback(PacketType.HEARTBEAT.getPacketId(), RealmManager::handleHeartbeatServer);
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManager::handleTextServer);
-		
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManager, Packet> callback) {
