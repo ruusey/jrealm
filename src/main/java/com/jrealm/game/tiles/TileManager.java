@@ -233,7 +233,7 @@ public class TileManager {
 		return new AABB(
 				this.playerCam.getTarget().getPos().clone(-(5 * GlobalConstants.BASE_TILE_SIZE),
 						-(5 * GlobalConstants.BASE_TILE_SIZE)),
-				(10 * GlobalConstants.BASE_TILE_SIZE), (10 * GlobalConstants.BASE_TILE_SIZE));
+				(15 * GlobalConstants.BASE_TILE_SIZE), (15 * GlobalConstants.BASE_TILE_SIZE));
 
 	}
 	
@@ -241,7 +241,7 @@ public class TileManager {
 		return new AABB(
 				p.getPos().clone(-(5 * GlobalConstants.BASE_TILE_SIZE),
 						-(5 * GlobalConstants.BASE_TILE_SIZE)),
-				(10 * GlobalConstants.BASE_TILE_SIZE), (10 * GlobalConstants.BASE_TILE_SIZE));
+				(15 * GlobalConstants.BASE_TILE_SIZE), (15 * GlobalConstants.BASE_TILE_SIZE));
 
 	}
 

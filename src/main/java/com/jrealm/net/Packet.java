@@ -43,16 +43,15 @@ public abstract class Packet implements GameMessage{
 		return PacketType.valueOf(id);
 	}
 	
-	public static Packet newPacketInstance(final byte packetId, final byte[] data) {
+	public static Packet newInstance(final byte packetId, final byte[] data) {
 		final Tuple<Class<? extends Packet>, PacketType> typeInfo = PacketType.valueOf(packetId);
 		final Class<? extends Packet> packetClass = typeInfo.getX();
+		Packet packetObj = null;
 		try {
-			Packet packetObj = packetClass.getDeclaredConstructor(byte.class, byte[].class).newInstance(packetId, data);
-			//packetObj.readData(data);
-			return packetObj;
+			packetObj = packetClass.getDeclaredConstructor(byte.class, byte[].class).newInstance(packetId, data);
 		} catch (Exception e) {
 			log.error("Failed to construct instance of {}. Reason: {}", packetClass, e.getMessage());
 		}
-		return null;
+		return packetObj;
 	}
 }

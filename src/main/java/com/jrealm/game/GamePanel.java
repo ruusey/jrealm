@@ -131,9 +131,7 @@ public class GamePanel extends JPanel implements Runnable {
 			Runnable renderAndDraw = () -> {
 				this.render();
 				this.draw();
-
 			};
-
 
 			WorkerThread.submitAndRun(up, input, renderAndDraw);
 			frameCount++;

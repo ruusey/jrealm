@@ -134,7 +134,7 @@ public class SocketClient implements Runnable {
 					long currentTime = System.currentTimeMillis();
 					long playerId = this.currentPlayerId;
 
-					HeartbeatPacket pack = new HeartbeatPacket().from(playerId, currentTime);
+					HeartbeatPacket pack = HeartbeatPacket.from(playerId, currentTime);
 					this.sendRemote(pack);
 					Thread.sleep(500);
 				} catch (Exception e) {
@@ -159,7 +159,7 @@ public class SocketClient implements Runnable {
 		while (!this.getPacketQueue().isEmpty()) {
 			Packet toProcess = this.getPacketQueue().remove();
 			try {
-				Packet created = Packet.newPacketInstance(toProcess.getId(), toProcess.getData());
+				Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
 				this.packetCallbacksClient.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
 				log.error("Failed to process Client Packet. Reason: {}", e);

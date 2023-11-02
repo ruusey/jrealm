@@ -52,7 +52,7 @@ public class HeartbeatPacket extends Packet{
 		stream.writeLong(this.timestamp);
 	}
 	
-	public HeartbeatPacket from(long playerId, long timestamp) throws Exception {
+	public static HeartbeatPacket from(long playerId, long timestamp) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		dos.writeLong(playerId);

@@ -128,7 +128,7 @@ public class RealmManager implements Runnable {
 		while (!this.getServer().getPacketQueue().isEmpty()) {
 			Packet toProcess = this.getServer().getPacketQueue().remove();
 			try {
-				Packet created = Packet.newPacketInstance(toProcess.getId(), toProcess.getData());
+				Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
 				this.packetCallbacksServer.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
 				log.error("Failed to process server packets {}", e);
