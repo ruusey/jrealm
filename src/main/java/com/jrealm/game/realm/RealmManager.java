@@ -195,7 +195,7 @@ public class RealmManager implements Runnable {
 			Runnable checkAbilityUsage = () -> {
 				
 				for (GameObject e : this.realm
-						.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort(p))) {
+						.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort())) {
 					if ((e instanceof Entity) || (e instanceof Enemy)) {
 						Entity entCast = (Entity) e;
 						entCast.removeExpiredEffects();
@@ -404,7 +404,7 @@ public class RealmManager implements Runnable {
 	
 	private List<Bullet> getBullets(Player p) {
 
-		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort(p));
+		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort());
 
 		List<Bullet> results = new ArrayList<>();
 		for (int i = 0; i < gameObject.length; i++) {
