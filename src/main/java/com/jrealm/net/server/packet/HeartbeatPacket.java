@@ -60,5 +60,4 @@ public class HeartbeatPacket extends Packet{
 
 		return new HeartbeatPacket(PacketType.HEARTBEAT.getPacketId(), baos.toByteArray());
 	}
-
 }

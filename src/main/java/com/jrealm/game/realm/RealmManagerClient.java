@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.LoginModel;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
@@ -52,7 +53,6 @@ public class RealmManagerClient implements Runnable {
 		this.state = state;
 		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.client);
-		this.startHeartbeatThread();
 	}
 
 	@Override
@@ -137,18 +137,25 @@ public class RealmManagerClient implements Runnable {
 	
 	public static void handleTextClient(RealmManagerClient cli, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
+		try {
+			LoginModel login = textPacket.messageAs(LoginModel.class);
+			cli.setCurrentPlayerId(login.getPlayerId());
+			cli.startHeartbeatThread();
+		}catch(Exception e) {
+			log.error("Failed to get LoginModel from TextPacket");
+		}
 		log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
 	}
 
 	public static void handleObjectMoveClient(RealmManagerClient cli, Packet packet) {
 		ObjectMovePacket objectMovePacket = (ObjectMovePacket) packet;
-		log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
-				EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
+//		log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
+//				EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
 	}
 
 	public static void handleUpdateClient(RealmManagerClient cli, Packet packet) {
 		UpdatePacket updatePacket = (UpdatePacket) packet;
-		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
+//		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 	}
 }

@@ -24,6 +24,7 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.LoginModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.states.PlayState;
@@ -71,6 +72,8 @@ public class RealmManagerServer implements Runnable {
 		this.server = new SocketServer(2222);
 		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
+		this.getRealm().loadMap("tile/vault.xml", null);
+
 	}
 
 	@Override
@@ -431,22 +434,26 @@ public class RealmManagerServer implements Runnable {
 	
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
-		log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
-				textPacket.getFrom(), textPacket.getMessage());
+
 		try {
+			LoginModel clientLogin = textPacket.messageAs(LoginModel.class);
+			log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
+					textPacket.getFrom(), clientLogin);
 			OutputStream toClientStream = mgr.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(), "Welcome to JRealm "+textPacket.getFrom()+"!");
-			welcomeMessage.serializeWrite(dosToClient);
+
 			Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 			CharacterClass cls = CharacterClass.ROGUE;
 			Player player = new Player(Realm.RANDOM.nextLong(), c , GameDataManager.loadClassSprites(cls),
 					new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 							(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 					GlobalConstants.PLAYER_SIZE, cls);
-			mgr.getRealm().loadMap("tile/vault.xml", null);
 
-			mgr.getRealm().addPlayer(player);
+			long newId = mgr.getRealm().addPlayer(player);
+			LoginModel login = LoginModel.builder().playerId(newId).build();
+			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(), login);
+
+			welcomeMessage.serializeWrite(dosToClient);
 		}catch(Exception e) {
 			log.error("Failed to send welcome message. Reason: {}", e);
 		}

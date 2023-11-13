@@ -8,6 +8,8 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import com.jrealm.game.model.LoginModel;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
@@ -41,7 +43,8 @@ public class SocketClient implements Runnable {
 	public SocketClient(int port) {
 		try {
 			this.clientSocket = new Socket(SocketServer.LOCALHOST, port);
-			this.sendRemote(TextPacket.create("Ruusey", "SYSTEM", "LoginRequest"));
+			LoginModel login = LoginModel.builder().username("ruusey").password("password123").build();
+			this.sendRemote(TextPacket.create("Ruusey", "SYSTEM", login));
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}

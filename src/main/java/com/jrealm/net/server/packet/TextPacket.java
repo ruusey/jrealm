@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 
@@ -22,6 +23,11 @@ public class TextPacket extends Packet {
 
 	public TextPacket() {
 
+	}
+	
+	public <T> T messageAs(Class<T> type) throws Exception{
+		ObjectMapper m = new ObjectMapper();
+		return m.readValue(this.message, type);
 	}
 
 	public TextPacket(byte packetId, byte[] data) {
@@ -68,6 +74,16 @@ public class TextPacket extends Packet {
 		TextPacket created = null;
 		try {
 			created = from(from, to, text);
+		}catch(Exception e) {
+			log.error("Failed to create Text Packet. Reason: {}", e);
+		}
+		return created;
+	}
+	
+	public static TextPacket create(String from, String to, Object model) {
+		TextPacket created = null;
+		try {
+			created = from(from, to, new ObjectMapper().writeValueAsString(model));
 		}catch(Exception e) {
 			log.error("Failed to create Text Packet. Reason: {}", e);
 		}
