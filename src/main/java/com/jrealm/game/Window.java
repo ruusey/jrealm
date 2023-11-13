@@ -5,6 +5,8 @@ import java.awt.image.BufferStrategy;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
+import com.jrealm.game.realm.RealmManagerServer;
+
 public class Window extends JFrame {
 	public static final long serialVersionUID = 1L;
 

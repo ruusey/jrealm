@@ -75,7 +75,6 @@ public class GamePanel extends JPanel implements Runnable {
 	}
 
 	public void init() {
-		GameDataManager.loadGameData();
 		this.running = true;
 
 		this.initGraphics();
@@ -113,7 +112,7 @@ public class GamePanel extends JPanel implements Runnable {
 
 				int updateCount = 0;
 				while (((this.now - this.lastUpdateTime) > TBU) && (updateCount < MUBR)) {
-					this.update(this.now);
+					//this.update(this.now);
 					// this.input(this.mouse, this.key);
 					this.lastUpdateTime += TBU;
 					updateCount++;

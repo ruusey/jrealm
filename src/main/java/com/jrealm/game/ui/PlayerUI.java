@@ -277,7 +277,7 @@ public class PlayerUI {
 				} else if (this.overlapsGround(event)) {
 					GameItem toDrop = item.clone();
 					this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
-					this.playState.getRealm().addLootContainer(
+					this.playState.getClient().getRealm().addLootContainer(
 							new LootContainer(this.playState.getPlayer().getPos().clone(), toDrop));
 					this.setEquipment(this.getPlayState().getPlayer().getInventory());
 					this.setGroundLoot(this.groundLoot);

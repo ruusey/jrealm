@@ -8,7 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import com.jrealm.game.GamePanel;
+import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -26,6 +29,7 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.tiles.TileMap;
 import com.jrealm.game.tiles.blocks.Tile;
+import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
@@ -45,12 +49,12 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = false)
-public class RealmManager implements Runnable {
+public class RealmManagerServer implements Runnable {
 	private SocketServer server;
 	private Realm realm;
 	private boolean shutdown = false;
 
-	private final Map<Byte, BiConsumer<RealmManager, Packet>> packetCallbacksServer = new HashMap<>();
+	private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
 	private List<Vector2f> shotDestQueue;
 	private long lastUpdateTime;
 	private long now;
@@ -61,7 +65,7 @@ public class RealmManager implements Runnable {
 	private int oldTickCount;
 	private int tickCount;
 	
-	public RealmManager(Realm realm) {
+	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
 		this.server = new SocketServer(2222);
@@ -72,13 +76,13 @@ public class RealmManager implements Runnable {
 	@Override
 	public void run() {
 		//TODO: remove and replace with an actual value: 20
-		
+		log.info("Starting JRealm Server");
 		Runnable tick = ()->{
 			this.tick();
 			this.update(0);
 		};
 		
-		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 2);
+		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 		
 		log.info("RealmManager exiting run().");
@@ -93,7 +97,6 @@ public class RealmManager implements Runnable {
 			Runnable processServerPackets = () -> {
 				this.processServerPackets();
 			};
-			
 			
 			WorkerThread.submitAndRun(broadcastGameData, processServerPackets);
 		} catch (Exception e) {
@@ -137,12 +140,12 @@ public class RealmManager implements Runnable {
 	}
 
 	private void registerPacketCallbacks() {
-		this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), RealmManager::handlePlayerMoveServer);
-		this.registerPacketCallback(PacketType.HEARTBEAT.getPacketId(), RealmManager::handleHeartbeatServer);
-		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManager::handleTextServer);
+		this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), RealmManagerServer::handlePlayerMoveServer);
+		this.registerPacketCallback(PacketType.HEARTBEAT.getPacketId(), RealmManagerServer::handleHeartbeatServer);
+		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManagerServer::handleTextServer);
 	}
 
-	private void registerPacketCallback(byte packetId, BiConsumer<RealmManager, Packet> callback) {
+	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerServer, Packet> callback) {
 		this.packetCallbacksServer.put(packetId, callback);
 	}
 	
@@ -195,7 +198,7 @@ public class RealmManager implements Runnable {
 			Runnable checkAbilityUsage = () -> {
 				
 				for (GameObject e : this.realm
-						.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort())) {
+						.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort(p))) {
 					if ((e instanceof Entity) || (e instanceof Enemy)) {
 						Entity entCast = (Entity) e;
 						entCast.removeExpiredEffects();
@@ -298,13 +301,7 @@ public class RealmManager implements Runnable {
 			return;
 		if (b.getBounds().collides(0, 0, player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
 			Stats stats = player.getComputedStats();
-//			Vector2f sourcePos = p.getPos();
-//			int computedDamage = b.getDamage() - p.getComputedStats().getDef();
-//			DamageText hitText = DamageText.builder().damage(computedDamage + "").effect(TextEffect.DAMAGE)
-//					.sourcePos(sourcePos).build();
-//			this.damageText.add(hitText);
 			b.setPlayerHit(true);
-			// player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
 			short minDmg = (short) (b.getDamage()*0.15);
 			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
 			if (dmgToInflict < minDmg) {
@@ -322,10 +319,6 @@ public class RealmManager implements Runnable {
 			this.realm.hitEnemy(b.getId(), e.getId());
 
 			e.setHealth(e.getHealth() - b.getDamage(), 0, false);
-//			Vector2f sourcePos = e.getPos();
-//			DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
-//					.sourcePos(sourcePos).build();
-//			this.damageText.add(hitText);
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {
@@ -404,7 +397,7 @@ public class RealmManager implements Runnable {
 	
 	private List<Bullet> getBullets(Player p) {
 
-		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort());
+		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort(p));
 
 		List<Bullet> results = new ArrayList<>();
 		for (int i = 0; i < gameObject.length; i++) {
@@ -415,12 +408,12 @@ public class RealmManager implements Runnable {
 		return results;
 	}
 	
-	public static void handleHeartbeatServer(RealmManager mgr, Packet packet) {
+	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
 		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
 		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(), heartbeatPacket.getTimestamp());
 	}
 	
-	public static void handlePlayerMoveServer(RealmManager mgr, Packet packet) {
+	public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
 		PlayerMovePacket heartbeatPacket = (PlayerMovePacket) packet;
 		Player toMove = mgr.getRealm().getPlayer(heartbeatPacket.getEntityId());
 		boolean doMove = heartbeatPacket.isMove();
@@ -436,7 +429,7 @@ public class RealmManager implements Runnable {
 		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
 	}
 	
-	public static void handleTextServer(RealmManager mgr, Packet packet) {
+	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
 		log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
@@ -445,6 +438,15 @@ public class RealmManager implements Runnable {
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(), "Welcome to JRealm "+textPacket.getFrom()+"!");
 			welcomeMessage.serializeWrite(dosToClient);
+			Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+			CharacterClass cls = CharacterClass.ROGUE;
+			Player player = new Player(Realm.RANDOM.nextLong(), c , GameDataManager.loadClassSprites(cls),
+					new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+							(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+					GlobalConstants.PLAYER_SIZE, cls);
+			mgr.getRealm().loadMap("tile/vault.xml", null);
+
+			mgr.getRealm().addPlayer(player);
 		}catch(Exception e) {
 			log.error("Failed to send welcome message. Reason: {}", e);
 		}

@@ -8,7 +8,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.realm.Realm;
-import com.jrealm.game.realm.RealmManager;
+import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.WorkerThread;
@@ -28,10 +28,10 @@ public class NetworkingTestbed {
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 				GlobalConstants.PLAYER_SIZE, clazz);
 		player.equipSlots(PlayState.getStartingEquipment(clazz));
-		Realm realm = new Realm(cam);
+		Realm realm = new Realm(cam, true);
 		realm.spawnRandomEnemies();
 
-		RealmManager realmManager = new RealmManager(realm);
+		RealmManagerServer realmManager = new RealmManagerServer(realm);
 		SocketClient socketClient = new SocketClient(2222);
 		WorkerThread.submitAndForkRun(realmManager, socketClient);
 		
@@ -46,7 +46,7 @@ public class NetworkingTestbed {
 		long playerId = -1l;
 		try {
 			playerId = realm.addPlayer(player);
-			socketClient.setCurrentPlayerId(playerId);
+			//socketClient.setCurrentPlayerId(playerId);
 			while (realmManager.getServer().getPacketQueue().isEmpty()) {
 				Thread.sleep(100);
 			}

@@ -91,7 +91,7 @@ public abstract class Enemy extends Entity {
 	public void update(PlayState playState, double time) {
 
 		super.update(time);
-		Player player = playState.getRealm().getPlayer(playState.getPlayerId());
+		Player player = playState.getClient().getRealm().getPlayer(playState.getPlayerId());
 		if (player == null)
 			return;
 		this.chase(player);
@@ -150,14 +150,14 @@ public abstract class Enemy extends Entity {
 			return;
 		}
 		if (!this.isFallen()) {
-			if (!this.tc.collisionTile(playState.getRealm().getTileManager().getTm().get(1).getBlocks(),
+			if (!this.tc.collisionTile(playState.getClient().getRealm().getTileManager().getTm().get(1).getBlocks(),
 					this.dx,
 					0)) {
 				this.sense.getPos().x += this.dx;
 				this.attackrange.getPos().x += this.dx;
 				this.pos.x += this.dx;
 			}
-			if (!this.tc.collisionTile(playState.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
+			if (!this.tc.collisionTile(playState.getClient().getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
 					this.dy)) {
 				this.sense.getPos().y += this.dy;
 				this.attackrange.getPos().y += this.dy;

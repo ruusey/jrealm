@@ -59,8 +59,8 @@ public class TimedWorkerThread extends Thread {
 				this.lastUpdateTime += TBU;
 				updateCount++;
 				this.tickCount++;
-				log.info("TimedThread updateCount = {}", updateCount);
-				log.info("TimedThread tickCount = {}", this.tickCount);
+//				log.info("TimedThread updateCount = {}", updateCount);
+//				log.info("TimedThread tickCount = {}", this.tickCount);
 			}
 
 			if ((this.now - this.lastUpdateTime) > TBU) {

@@ -53,14 +53,16 @@ public class Realm {
 	private Camera realmCamera = null;
 	private Semaphore playerLock = new Semaphore(1);
 
-	public Realm(Camera cam) {
+	public Realm(Camera cam, boolean isServer) {
 		this.players = new ConcurrentHashMap<>();
 
 		this.realmCamera = cam;
 
 		this.loadMap("tile/vault.xml", null);
 		this.setupChests();
-		WorkerThread.submit(this.getStatsThread());
+		if(isServer) {
+			WorkerThread.submit(this.getStatsThread());
+		}
 	}
 
 	private void setupChests() {
