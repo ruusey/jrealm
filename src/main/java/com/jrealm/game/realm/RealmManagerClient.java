@@ -20,7 +20,6 @@ import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 import com.jrealm.net.client.SocketClient;
@@ -37,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = false)
+@SuppressWarnings("unused")
 public class RealmManagerClient implements Runnable {
 	private SocketClient client;
 	private PlayState state;

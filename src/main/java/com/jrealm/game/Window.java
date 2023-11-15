@@ -5,8 +5,6 @@ import java.awt.image.BufferStrategy;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
-import com.jrealm.game.realm.RealmManagerServer;
-
 public class Window extends JFrame {
 	public static final long serialVersionUID = 1L;
 
@@ -21,7 +19,6 @@ public class Window extends JFrame {
 		this.setLocationRelativeTo(null);
 		this.setResizable(false);
 		this.setVisible(true);
-
 	}
 
 	@Override
@@ -29,11 +26,8 @@ public class Window extends JFrame {
 		super.addNotify();
 		this.createBufferStrategy(2);
 		this.bs = this.getBufferStrategy();
-
 		this.gp = new GamePanel(this.bs, 1920, 1080);
 		// add(gp);
 		this.setContentPane(this.gp);
-
 	}
-
 }

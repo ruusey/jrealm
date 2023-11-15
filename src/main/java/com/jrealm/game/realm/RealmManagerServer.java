@@ -53,6 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = false)
+@SuppressWarnings("unused")
 public class RealmManagerServer implements Runnable {
 	private SocketServer server;
 	private Realm realm;
