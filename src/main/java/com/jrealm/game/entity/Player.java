@@ -293,4 +293,17 @@ public class Player extends Entity {
 			this.left = false;
 		}
 	}
+	
+	public boolean getIsUp() {
+		return this.up;
+	}
+	public boolean getIsDown() {
+		return this.down;
+	}
+	public boolean getIsLeft() {
+		return this.left;
+	}
+	public boolean getIsRight() {
+		return this.right;
+	}
 }

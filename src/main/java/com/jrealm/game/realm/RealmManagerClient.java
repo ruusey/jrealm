@@ -6,9 +6,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import com.jrealm.game.GamePanel;
+import com.jrealm.game.contants.CharacterClass;
+import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.entity.Player;
+import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.model.LoginModel;
+import com.jrealm.game.messaging.CommandType;
+import com.jrealm.game.messaging.LoginRequestMessage;
+import com.jrealm.game.messaging.LoginResponseMessage;
 import com.jrealm.game.states.PlayState;
+import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.EntityType;
@@ -17,6 +26,7 @@ import com.jrealm.net.PacketType;
 import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
@@ -102,6 +112,8 @@ public class RealmManagerClient implements Runnable {
 		this.registerPacketCallback(PacketType.UPDATE.getPacketId(), RealmManagerClient::handleUpdateClient);
 		this.registerPacketCallback(PacketType.OBJECT_MOVE.getPacketId(), RealmManagerClient::handleObjectMoveClient);
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManagerClient::handleTextClient);
+		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerClient::handleCommandClient);
+
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerClient, Packet> callback) {
@@ -137,15 +149,24 @@ public class RealmManagerClient implements Runnable {
 	
 	public static void handleTextClient(RealmManagerClient cli, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
-		try {
-			LoginModel login = textPacket.messageAs(LoginModel.class);
-			cli.setCurrentPlayerId(login.getPlayerId());
-			cli.startHeartbeatThread();
-		}catch(Exception e) {
-			log.error("Failed to get LoginModel from TextPacket");
-		}
 		log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
+	}
+	
+	public static void handleCommandClient(RealmManagerClient cli, Packet packet) {
+		CommandPacket commandPacket = (CommandPacket) packet;
+		try {
+			switch(commandPacket.getCommandId()) {
+			case 2:
+				LoginResponseMessage loginResponse = CommandType.fromPacket(commandPacket);
+				doLoginResponse(cli, loginResponse);
+				break;
+			}
+		}catch(Exception e) {
+			log.error("Failed to handle client command packet. Reason: {}", e.getMessage());
+		}
+		
+		log.info("[CLIENT] Recieved Command Packet for Player {} Command={}", commandPacket.getPlayerId(), commandPacket.getCommand());
 	}
 
 	public static void handleObjectMoveClient(RealmManagerClient cli, Packet packet) {
@@ -157,5 +178,24 @@ public class RealmManagerClient implements Runnable {
 	public static void handleUpdateClient(RealmManagerClient cli, Packet packet) {
 		UpdatePacket updatePacket = (UpdatePacket) packet;
 //		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
+	}
+	
+	private static void doLoginResponse(RealmManagerClient cli, LoginResponseMessage loginResponse) {
+		try {
+			if(loginResponse.isSuccess()) {
+				Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+				CharacterClass cls = CharacterClass.ROGUE;
+				Player player = new Player(loginResponse.getPlayerId(), c, GameDataManager.loadClassSprites(cls),
+						new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+								(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+						GlobalConstants.PLAYER_SIZE, cls);
+				long addedPlayer =cli.getRealm().addPlayer(player);
+				cli.getState().loadClass(player, cls, false);
+				cli.setCurrentPlayerId(addedPlayer);
+				cli.getState().setPlayerId(addedPlayer);
+			}
+		}catch(Exception e) {
+			log.error("Failed to response to login response. Reason: {}", e.getMessage());
+		}
 	}
 }

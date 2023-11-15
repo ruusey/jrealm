@@ -24,7 +24,9 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.model.LoginModel;
+import com.jrealm.game.messaging.CommandType;
+import com.jrealm.game.messaging.LoginRequestMessage;
+import com.jrealm.game.messaging.LoginResponseMessage;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.states.PlayState;
@@ -39,6 +41,7 @@ import com.jrealm.net.PacketType;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.SocketServer;
+import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.TextPacket;
@@ -61,11 +64,11 @@ public class RealmManagerServer implements Runnable {
 	private long now;
 	private long lastRenderTime;
 	private long lastSecondTime;
-	
+
 	private int oldFrameCount;
 	private int oldTickCount;
 	private int tickCount;
-	
+
 	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
@@ -78,39 +81,38 @@ public class RealmManagerServer implements Runnable {
 
 	@Override
 	public void run() {
-		//TODO: remove and replace with an actual value: 20
+		// TODO: remove and replace with an actual value: 20
 		log.info("Starting JRealm Server");
-		Runnable tick = ()->{
+		Runnable tick = () -> {
 			this.tick();
 			this.update(0);
 		};
-		
+
 		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
-		
+
 		log.info("RealmManager exiting run().");
 	}
-	
+
 	private void tick() {
 		try {
 			Runnable broadcastGameData = () -> {
 				this.broadcastGameData();
 			};
-			
+
 			Runnable processServerPackets = () -> {
 				this.processServerPackets();
 			};
-			
+
 			WorkerThread.submitAndRun(broadcastGameData, processServerPackets);
 		} catch (Exception e) {
 			log.error("Failed to sleep");
 		}
 	}
-	
+
 	public void broadcastGameData() {
 		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
-			List<UpdatePacket> uPackets = this.realm
-					.getPlayersAsPackets(player.getValue().getCam().getBounds());
+			List<UpdatePacket> uPackets = this.realm.getPlayersAsPackets(player.getValue().getCam().getBounds());
 			List<ObjectMovePacket> mPackets = this.realm
 					.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
 			try {
@@ -146,20 +148,21 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), RealmManagerServer::handlePlayerMoveServer);
 		this.registerPacketCallback(PacketType.HEARTBEAT.getPacketId(), RealmManagerServer::handleHeartbeatServer);
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManagerServer::handleTextServer);
+		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerServer::handleCommandServer);
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerServer, Packet> callback) {
 		this.packetCallbacksServer.put(packetId, callback);
 	}
-	
+
 	public void update(double time) {
-		//Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
+		// Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 
 		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 			Player p = this.realm.getPlayer(player.getValue().getId());
 			if (p == null)
 				continue;
-			
+
 			Runnable playerShootDequeue = () -> {
 				for (int i = 0; i < this.shotDestQueue.size(); i++) {
 					Vector2f dest = this.shotDestQueue.remove(i);
@@ -173,8 +176,9 @@ public class RealmManagerServer implements Runnable {
 						short rolledDamage = p.getInventory()[0].getDamage().getInRange();
 						rolledDamage += p.getComputedStats().getAtt();
 						this.addProjectile(p.getId(), p.getWeaponId(), source.clone(-offset, -offset),
-								angle + Float.parseFloat(proj.getAngle()), proj.getSize(), proj.getMagnitude(), proj.getRange(),
-								rolledDamage, false, proj.getFlags(), proj.getAmplitude(), proj.getFrequency());
+								angle + Float.parseFloat(proj.getAngle()), proj.getSize(), proj.getMagnitude(),
+								proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
+								proj.getFrequency());
 					}
 				}
 
@@ -184,8 +188,8 @@ public class RealmManagerServer implements Runnable {
 				for (int i = 0; i < gameObject.length; i++) {
 					if (gameObject[i] instanceof Enemy) {
 						Enemy enemy = ((Enemy) gameObject[i]);
-						//TODO: Fix
-						//enemy.update(this, time);
+						// TODO: Fix
+						// enemy.update(this, time);
 					}
 
 					if (gameObject[i] instanceof Bullet) {
@@ -199,7 +203,7 @@ public class RealmManagerServer implements Runnable {
 			};
 			// Rewrite this asap
 			Runnable checkAbilityUsage = () -> {
-				
+
 				for (GameObject e : this.realm
 						.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort(p))) {
 					if ((e instanceof Entity) || (e instanceof Enemy)) {
@@ -212,26 +216,24 @@ public class RealmManagerServer implements Runnable {
 				p.update(time);
 				this.movePlayer(p);
 
-				//this.pui.update(time);
+				// this.pui.update(time);
 			};
 			WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, checkAbilityUsage);
 
-		}	
+		}
 	}
-	
+
 	private void movePlayer(Player p) {
 		if (!p.isFallen()) {
 			p.move();
-			if (!p.getTc().collisionTile(this.realm.getTileManager().getTm().get(1).getBlocks(),
-					p.getDx(), 0)) {
+			if (!p.getTc().collisionTile(this.realm.getTileManager().getTm().get(1).getBlocks(), p.getDx(), 0)) {
 				// PlayState.map.x += dx;
 				p.getPos().x += p.getDx();
 				p.xCol = false;
 			} else {
 				p.xCol = true;
 			}
-			if (!p.getTc().collisionTile(this.realm.getTileManager().getTm().get(1).getBlocks(), 0,
-					p.getDy())) {
+			if (!p.getTc().collisionTile(this.realm.getTileManager().getTm().get(1).getBlocks(), 0, p.getDy())) {
 				// PlayState.map.y += dy;
 				p.getPos().y += p.getDy();
 				p.yCol = false;
@@ -254,7 +256,7 @@ public class RealmManagerServer implements Runnable {
 		}
 
 	}
-	
+
 	public synchronized void processBulletHit(Player p) {
 		List<Bullet> results = this.getBullets(p);
 		GameObject[] gameObject = this.realm.getGameObjectsInBounds(p.getCam().getBounds());
@@ -305,7 +307,7 @@ public class RealmManagerServer implements Runnable {
 		if (b.getBounds().collides(0, 0, player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
 			Stats stats = player.getComputedStats();
 			b.setPlayerHit(true);
-			short minDmg = (short) (b.getDamage()*0.15);
+			short minDmg = (short) (b.getDamage() * 0.15);
 			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
 			if (dmgToInflict < minDmg) {
 				dmgToInflict = minDmg;
@@ -353,9 +355,8 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	
-	public synchronized void addProjectile(long entityId, int projectileGroupId, Vector2f src, Vector2f dest, short size,
-			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags) {
+	public synchronized void addProjectile(long entityId, int projectileGroupId, Vector2f src, Vector2f dest,
+			short size, float magnitude, float range, short damage, boolean isEnemy, List<Short> flags) {
 		Player player = this.realm.getPlayer(entityId);
 		if (player == null)
 			return;
@@ -397,7 +398,7 @@ public class RealmManagerServer implements Runnable {
 		b.setFlags(flags);
 		this.realm.addBullet(b);
 	}
-	
+
 	private List<Bullet> getBullets(Player p) {
 
 		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort(p));
@@ -410,12 +411,13 @@ public class RealmManagerServer implements Runnable {
 		}
 		return results;
 	}
-	
+
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
 		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
-		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(), heartbeatPacket.getTimestamp());
+		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
+				heartbeatPacket.getTimestamp());
 	}
-	
+
 	public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
 		PlayerMovePacket heartbeatPacket = (PlayerMovePacket) packet;
 		Player toMove = mgr.getRealm().getPlayer(heartbeatPacket.getEntityId());
@@ -431,32 +433,62 @@ public class RealmManagerServer implements Runnable {
 		}
 		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
 	}
-	
+
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
 
 		try {
-			LoginModel clientLogin = textPacket.messageAs(LoginModel.class);
 			log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
-					textPacket.getFrom(), clientLogin);
+					textPacket.getFrom(), textPacket.getMessage());
 			OutputStream toClientStream = mgr.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 
+			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(),
+					"Welcome to JRealm " + textPacket.getFrom());
+
+			welcomeMessage.serializeWrite(dosToClient);
+		} catch (Exception e) {
+			log.error("Failed to send welcome message. Reason: {}", e);
+		}
+
+	}
+
+	public static void handleCommandServer(RealmManagerServer mgr, Packet packet) {
+		CommandPacket commandPacket = (CommandPacket) packet;
+
+		try {
+			switch (commandPacket.getCommandId()) {
+			case 1:
+				doLogin(mgr, CommandType.fromPacket(commandPacket));
+				break;
+			}
+		} catch (Exception e) {
+			log.error("Failed to perform Server command for Player {}. Reason: {}", commandPacket.getPlayerId(),
+					e.getMessage());
+		}
+
+		log.info("[SERVER] Recieved Command Packet For Player {}. Command={}", commandPacket.getPlayerId(),
+				commandPacket.getCommand());
+	}
+
+	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request) {
+		try {
 			Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 			CharacterClass cls = CharacterClass.ROGUE;
-			Player player = new Player(Realm.RANDOM.nextLong(), c , GameDataManager.loadClassSprites(cls),
+			Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
 					new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 							(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 					GlobalConstants.PLAYER_SIZE, cls);
 
 			long newId = mgr.getRealm().addPlayer(player);
-			LoginModel login = LoginModel.builder().playerId(newId).build();
-			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(), login);
-
-			welcomeMessage.serializeWrite(dosToClient);
-		}catch(Exception e) {
-			log.error("Failed to send welcome message. Reason: {}", e);
+			OutputStream toClientStream = mgr.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();
+			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
+			LoginResponseMessage message = LoginResponseMessage.builder().playerId(newId).success(true).build();
+			
+			CommandPacket commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
+			commandResponse.serializeWrite(dosToClient);
+		} catch (Exception e) {
+			log.error("Failed to perform Client Login. Reason: {}", e);
 		}
-	
 	}
 }

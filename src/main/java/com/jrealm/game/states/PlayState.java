@@ -41,9 +41,11 @@ import com.jrealm.game.ui.DamageText;
 import com.jrealm.game.ui.PlayerUI;
 import com.jrealm.game.ui.TextEffect;
 import com.jrealm.game.util.Camera;
+import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.server.packet.PlayerMovePacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -64,7 +66,6 @@ public class PlayState extends GameState {
 	public long playerId = -1l;
 
 	private PlayerLocation playerLocation = PlayerLocation.VAULT;
-
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 		PlayState.map = new Vector2f();
@@ -76,14 +77,10 @@ public class PlayState extends GameState {
 		this.damageText = new ConcurrentLinkedQueue<>();
 		this.loadClass(CharacterClass.ROGUE, true);
 		WorkerThread.submitAndForkRun(this.client);
-
 	}
-
-	private void loadClass(CharacterClass cls, boolean setEquipment) {
-		Player player = new Player(Realm.RANDOM.nextLong(), this.cam, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE, cls);
+	
+	
+	public void loadClass(Player player, CharacterClass cls, boolean setEquipment) {
 		if (setEquipment || (this.playerId == -1l)) {
 			player.equipSlots(PlayState.getStartingEquipment(cls));
 		} else {
@@ -100,6 +97,14 @@ public class PlayState extends GameState {
 		this.getPlayer().getStats().setDef((short)50);
 
 		this.getPui().setEquipment(player.getInventory());
+	}
+
+	private void loadClass(CharacterClass cls, boolean setEquipment) {
+		Player player = new Player(Realm.RANDOM.nextLong(), this.cam, GameDataManager.loadClassSprites(cls),
+				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+				GlobalConstants.PLAYER_SIZE, cls);
+		this.loadClass(player, cls, setEquipment);
 
 	}
 
@@ -472,6 +477,26 @@ public class PlayState extends GameState {
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
 			if (this.cam.getTarget() == player) {
 				player.input(mouse, key);
+				Cardinality c = null;
+				if (player.getIsUp()) {
+					c = Cardinality.NORTH;
+				} else if (player.getIsDown()) {
+					c = Cardinality.SOUTH;
+				} else if (player.getIsLeft()) {
+					c = Cardinality.WEST;
+				} else if (player.getIsRight()) {
+					c = Cardinality.EAST;
+				}
+				
+				if(c != null) {
+					try {
+						
+						PlayerMovePacket packet = PlayerMovePacket.from(player, c, true);
+						this.client.getClient().sendRemote(packet);
+					}catch(Exception e) {
+						
+					}	
+				}
 			}
 			this.cam.input(mouse, key);
 			if (key.f2.clicked && !this.playerLocation.equals(PlayerLocation.VAULT)) {

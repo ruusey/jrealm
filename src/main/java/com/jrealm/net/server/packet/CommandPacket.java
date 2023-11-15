@@ -6,6 +6,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jrealm.game.entity.Player;
+import com.jrealm.game.messaging.CommandType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 
@@ -13,74 +15,69 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
+
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
-public class TextPacket extends Packet {
-	private String from;
-	private String to;
-	private String message;
-
-	public TextPacket() {
-
+public class CommandPacket extends Packet {
+	private long playerId;
+	private byte commandId;
+	private String command;
+	
+	public CommandPacket() {
+		
 	}
-
-	public TextPacket(byte packetId, byte[] data) {
+	
+	public <T> T messageAs(Class<T> type) throws Exception{
+		ObjectMapper m = new ObjectMapper();
+		return m.readValue(this.command, type);
+	}
+	
+	public CommandPacket(byte packetId, byte[] data) {
 		super(packetId, data);
 		try {
 			this.readData(data);
 		} catch (Exception e) {
-			log.error("Failed to create Text Packet. Reason: {}", e);
+			log.error("Failed to create Command Packet. Reason: {}", e);
 		}
 	}
-
+	
 	@Override
 	public void readData(byte[] data) throws Exception {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		DataInputStream dis = new DataInputStream(bis);
 		if (dis == null || dis.available() < 5)
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
-		this.from = dis.readUTF();
-		this.to = dis.readUTF();
-		this.message = dis.readUTF();
+		this.playerId = dis.readLong();
+		this.command = dis.readUTF();
 	}
-
+	
 	@Override
 	public void serializeWrite(DataOutputStream stream) throws Exception {
 		if (this.getId() < 1 || this.getData() == null || this.getData().length < 5)
 			throw new IllegalStateException("No Packet data available to write to DataOutputStream");
 		this.addHeader(stream);
-		stream.writeUTF(this.from);
-		stream.writeUTF(this.to);
-		stream.writeUTF(this.message);
+		stream.writeLong(this.playerId);
+		stream.writeByte(this.commandId);
+		stream.writeUTF(this.command);
 	}
-
-	public static TextPacket from(String from, String to, String text) throws Exception {
+	
+	public static CommandPacket from(Player target, byte commandId, String command) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
-		dos.writeUTF(from);
-		dos.writeUTF(to);
-		dos.writeUTF(text);
+		dos.writeLong(target.getId());
+		dos.writeByte(commandId);
+		dos.writeUTF(command);
 
-		return new TextPacket(PacketType.TEXT.getPacketId(), baos.toByteArray());
+		return new CommandPacket(PacketType.COMMAND.getPacketId(), baos.toByteArray());
 	}
 	
-	public static TextPacket create(String from, String to, String text) {
-		TextPacket created = null;
+	public static CommandPacket create(Player target, CommandType type, Object command) {
+		CommandPacket created = null;
 		try {
-			created = from(from, to, text);
+			created = from(target, type.getCommandId(), new ObjectMapper().writeValueAsString(command));
 		}catch(Exception e) {
-			log.error("Failed to create Text Packet. Reason: {}", e);
-		}
-		return created;
-	}
-	
-	public static TextPacket create(String from, String to, Object model) {
-		TextPacket created = null;
-		try {
-			created = from(from, to, new ObjectMapper().writeValueAsString(model));
-		}catch(Exception e) {
-			log.error("Failed to create Text Packet. Reason: {}", e);
+			log.error("Failed to create Command Packet. Reason: {}", e);
 		}
 		return created;
 	}

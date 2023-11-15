@@ -1,4 +1,4 @@
-package com.jrealm.game.model;
+package com.jrealm.game.messaging;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,8 +9,7 @@ import lombok.Builder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LoginModel {
-	private String username;
-	private String password;
+public class LoginResponseMessage {
 	private long playerId;
+	private boolean success;
 }
