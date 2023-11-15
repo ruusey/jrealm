@@ -151,10 +151,19 @@ public class RealmManagerClient implements Runnable {
 		TextPacket textPacket = (TextPacket) packet;
 		log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
+		log.info("Responding with LoginRequest");
+		LoginRequestMessage login = LoginRequestMessage.builder().username("ruusey").password("password123").build();
+		try {
+			CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
+			cli.getClient().sendRemote(loginPacket);
+		}catch(Exception e) {
+			log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
+		}	
 	}
 	
 	public static void handleCommandClient(RealmManagerClient cli, Packet packet) {
 		CommandPacket commandPacket = (CommandPacket) packet;
+		log.info("[CLIENT] Recieved Command Packet for Player {} Command={}", commandPacket.getPlayerId(), commandPacket.getCommand());
 		try {
 			switch(commandPacket.getCommandId()) {
 			case 2:
@@ -165,8 +174,6 @@ public class RealmManagerClient implements Runnable {
 		}catch(Exception e) {
 			log.error("Failed to handle client command packet. Reason: {}", e.getMessage());
 		}
-		
-		log.info("[CLIENT] Recieved Command Packet for Player {} Command={}", commandPacket.getPlayerId(), commandPacket.getCommand());
 	}
 
 	public static void handleObjectMoveClient(RealmManagerClient cli, Packet packet) {
@@ -189,10 +196,10 @@ public class RealmManagerClient implements Runnable {
 						new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 								(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 						GlobalConstants.PLAYER_SIZE, cls);
-				long addedPlayer =cli.getRealm().addPlayer(player);
-				cli.getState().loadClass(player, cls, false);
-				cli.setCurrentPlayerId(addedPlayer);
-				cli.getState().setPlayerId(addedPlayer);
+				log.info("Login succesful, added Player ID {}", player.getId());
+				cli.getState().loadClass(player, cls, true);
+				cli.setCurrentPlayerId(player.getId());
+				cli.getState().setPlayerId(player.getId());
 			}
 		}catch(Exception e) {
 			log.error("Failed to response to login response. Reason: {}", e.getMessage());

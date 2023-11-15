@@ -49,6 +49,7 @@ public class CommandPacket extends Packet {
 		if (dis == null || dis.available() < 5)
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
 		this.playerId = dis.readLong();
+		this.commandId = dis.readByte();
 		this.command = dis.readUTF();
 	}
 	
@@ -68,7 +69,15 @@ public class CommandPacket extends Packet {
 		dos.writeLong(target.getId());
 		dos.writeByte(commandId);
 		dos.writeUTF(command);
-
+		return new CommandPacket(PacketType.COMMAND.getPacketId(), baos.toByteArray());
+	}
+	
+	public static CommandPacket from(CommandType cmd, Object command) throws Exception {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(baos);
+		dos.writeLong(-1l);
+		dos.writeByte(cmd.getCommandId());
+		dos.writeUTF(new ObjectMapper().writeValueAsString(command));
 		return new CommandPacket(PacketType.COMMAND.getPacketId(), baos.toByteArray());
 	}
 	

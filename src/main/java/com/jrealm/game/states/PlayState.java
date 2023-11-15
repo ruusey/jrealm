@@ -75,7 +75,7 @@ public class PlayState extends GameState {
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
-		this.loadClass(CharacterClass.ROGUE, true);
+		//this.loadClass(CharacterClass.ROGUE, true);
 		WorkerThread.submitAndForkRun(this.client);
 	}
 	
@@ -473,8 +473,9 @@ public class PlayState extends GameState {
 
 		key.enter.tick();
 		Player player = this.client.getRealm().getPlayer(this.playerId);
-
+		if(player==null) return;
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
+			
 			if (this.cam.getTarget() == player) {
 				player.input(mouse, key);
 				Cardinality c = null;
@@ -509,8 +510,9 @@ public class PlayState extends GameState {
 				this.client.getRealm().loadMap("tile/nexus2.xml", this.getPlayer());
 				this.loadClass(this.currentPlayerCharacterClass(), false);
 			}
-
-			this.pui.input(mouse, key);
+			if(this.pui!=null) {
+				this.pui.input(mouse, key);
+			}
 			if (!this.playerLocation.equals(PlayerLocation.REALM)) {
 				if (key.one.down) {
 					this.loadClass(CharacterClass.ARCHER, true);
@@ -683,11 +685,11 @@ public class PlayState extends GameState {
 
 	@Override
 	public void render(Graphics2D g) {
-		this.client.getRealm().getTileManager().render(g);
 		Player player = this.client.getRealm().getPlayer(this.playerId);
-		if (player != null) {
-			player.render(g);
-		}
+		if(player==null) return;
+		this.client.getRealm().getTileManager().render(g);
+		player.render(g);
+		
 		// AABB test = new AABB(new Vector2f(this.getPlayerPos().x * 0.5f,
 		// this.getPlayerPos().y * 0.5f),
 		// (int) 32 * 8, (int) 32 * 8);

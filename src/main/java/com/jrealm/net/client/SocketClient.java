@@ -43,8 +43,7 @@ public class SocketClient implements Runnable {
 	public SocketClient(int port) {
 		try {
 			this.clientSocket = new Socket(SocketServer.LOCALHOST, port);
-			LoginRequestMessage login = LoginRequestMessage.builder().username("ruusey").password("password123").build();
-			this.sendRemote(TextPacket.create("Ruusey", "SYSTEM", login));
+			this.sendRemote(TextPacket.create("Ruusey", "SYSTEM", "LoginRequest"));
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}

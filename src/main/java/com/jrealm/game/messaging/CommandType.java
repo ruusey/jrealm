@@ -7,7 +7,7 @@ import com.jrealm.net.server.packet.CommandPacket;
 
 public enum CommandType {
 	LOGIN_REQUEST  ((byte) 1, LoginRequestMessage.class),
-	LOGIN_RESPONSE ((byte) 2, LoginRequestMessage.class);
+	LOGIN_RESPONSE ((byte) 2, LoginResponseMessage.class);
 	
 	private byte commandId;
 	private Class<?> commandClass;
