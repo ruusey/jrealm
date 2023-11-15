@@ -1,6 +1,5 @@
 package com.jrealm.game.entity;
 
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.Map;
@@ -19,6 +18,7 @@ import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
+import com.jrealm.net.client.packet.UpdatePacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,16 +27,13 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class Player extends Entity {
 	private Camera cam;
-
 	private Cardinality cardinality = Cardinality.EAST;
-
 	private GameItem[] inventory;
-
 	private Stats stats;
-
 	private long lastStatsTime = 0l;
 	private LootContainer currentLootContainer;
 	private int classId;
+
 	public Player(long id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, CharacterClass characterClass) {
 		super(id, sprite, origin, size);
 		this.classId = characterClass.classId;
@@ -59,7 +56,6 @@ public class Player extends Entity {
 		this.ani.setNumFrames(2, this.ATTACK + this.LEFT);
 		this.ani.setNumFrames(2, this.ATTACK + this.UP);
 		this.ani.setNumFrames(2, this.ATTACK + this.DOWN);
-
 
 		this.hasIdle = false;
 		this.health = this.maxHealth = this.defaultMaxHealth = 500;
@@ -91,17 +87,15 @@ public class Player extends Entity {
 		}
 	}
 
-
-
 	public GameItem getSlot(int slot) {
 		return this.inventory[slot];
 	}
 
 	public GameItem[] getSlots(int start, int end) {
-		int size = end-start;
+		int size = end - start;
 		int idx = 0;
 		GameItem[] items = new GameItem[size];
-		for(int i = start; i< end; i++) {
+		for (int i = start; i < end; i++) {
 			items[idx++] = this.inventory[i];
 		}
 
@@ -157,7 +151,6 @@ public class Player extends Entity {
 			}
 		}
 
-
 		if (((System.currentTimeMillis() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
 
@@ -205,12 +198,13 @@ public class Player extends Entity {
 
 	@Override
 	public void render(Graphics2D g) {
-		//		g.setColor(Color.green);
-		//		g.drawRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y + this.bounds.getYOffset()), (int) this.bounds.getWidth(), (int) this.bounds.getHeight());
+		// g.setColor(Color.green);
+		// g.drawRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int)
+		// (this.pos.getWorldVar().y + this.bounds.getYOffset()), (int)
+		// this.bounds.getWidth(), (int) this.bounds.getHeight());
 		Color c = new Color(0f, 0f, 0f, .4f);
 		g.setColor(c);
 		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 24, this.size, this.size / 2);
-
 
 		if (this.hasEffect(EffectType.INVISIBLE)) {
 			if (!this.getSprite().hasEffect(Sprite.EffectEnum.SEPIA)) {
@@ -248,23 +242,23 @@ public class Player extends Entity {
 	public void input(MouseHandler mouse, KeyHandler key) {
 		Stats stats = this.getComputedStats();
 
-		if(!this.isFallen()) {
-			if(key.up.down) {
+		if (!this.isFallen()) {
+			if (key.up.down) {
 				this.up = true;
 			} else {
 				this.up = false;
 			}
-			if(key.down.down) {
+			if (key.down.down) {
 				this.down = true;
 			} else {
 				this.down = false;
 			}
-			if(key.left.down) {
+			if (key.left.down) {
 				this.left = true;
 			} else {
 				this.left = false;
 			}
-			if(key.right.down) {
+			if (key.right.down) {
 				this.right = true;
 			} else {
 				this.right = false;
@@ -277,12 +271,12 @@ public class Player extends Entity {
 			this.maxSpeed = maxSpeed;
 			this.cam.setMaxSpeed(maxSpeed);
 
-			if(this.up && this.down) {
+			if (this.up && this.down) {
 				this.up = false;
 				this.down = false;
 			}
 
-			if(this.right && this.left) {
+			if (this.right && this.left) {
 				this.right = false;
 				this.left = false;
 			}
@@ -293,16 +287,24 @@ public class Player extends Entity {
 			this.left = false;
 		}
 	}
-	
+
+	public void applyUpdate(UpdatePacket packet) {
+		this.stats = packet.getStats();
+		this.inventory = packet.getInventory();
+	}
+
 	public boolean getIsUp() {
 		return this.up;
 	}
+
 	public boolean getIsDown() {
 		return this.down;
 	}
+
 	public boolean getIsLeft() {
 		return this.left;
 	}
+
 	public boolean getIsRight() {
 		return this.right;
 	}

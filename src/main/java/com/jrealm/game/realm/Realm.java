@@ -191,7 +191,11 @@ public class Realm {
 		this.releasePlayerLock();
 		return p;
 	}
-
+	
+	public Bullet getBullet(long bulletId) {
+		return this.bullets.get(bulletId);
+	}
+	
 	public long addBullet(Bullet b) {
 		this.bullets.put(b.getId(), b);
 		return b.getId();
@@ -330,9 +334,10 @@ public class Realm {
 		GameObject[] gameObjects = this.getAllGameObjects();
 		for (GameObject obj : gameObjects) {
 			try {
-				ObjectMovePacket movePacket = ObjectMovePacket.from(obj);
-				objectMovements.add(movePacket);
-
+				if(obj.getDx()>0 || obj.getDy()>0) {
+					ObjectMovePacket movePacket = ObjectMovePacket.from(obj);
+					objectMovements.add(movePacket);
+				}
 			} catch (Exception e) {
 				log.error("Failed to create ObjectMove Packet. Reason: {}", e.getMessage());
 			}

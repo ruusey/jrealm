@@ -82,7 +82,6 @@ public class RealmManagerServer implements Runnable {
 
 	@Override
 	public void run() {
-		// TODO: remove and replace with an actual value: 20
 		log.info("Starting JRealm Server");
 		Runnable tick = () -> {
 			this.tick();
@@ -158,7 +157,6 @@ public class RealmManagerServer implements Runnable {
 
 	public void update(double time) {
 		// Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
-
 		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 			Player p = this.realm.getPlayer(player.getValue().getId());
 			if (p == null)
@@ -216,11 +214,8 @@ public class RealmManagerServer implements Runnable {
 			Runnable updatePlayerAndUi = () -> {
 				p.update(time);
 				this.movePlayer(p);
-
-				// this.pui.update(time);
 			};
 			WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, checkAbilityUsage);
-
 		}
 	}
 
@@ -228,7 +223,6 @@ public class RealmManagerServer implements Runnable {
 		if (!p.isFallen()) {
 			p.move();
 			if (!p.getTc().collisionTile(this.realm.getTileManager().getTm().get(1).getBlocks(), p.getDx(), 0)) {
-				// PlayState.map.x += dx;
 				p.getPos().x += p.getDx();
 				p.xCol = false;
 			} else {
@@ -423,14 +417,25 @@ public class RealmManagerServer implements Runnable {
 		PlayerMovePacket heartbeatPacket = (PlayerMovePacket) packet;
 		Player toMove = mgr.getRealm().getPlayer(heartbeatPacket.getEntityId());
 		boolean doMove = heartbeatPacket.isMove();
-		if (heartbeatPacket.getDirection() == Cardinality.NORTH) {
+		if (heartbeatPacket.getDirection().equals(Cardinality.NORTH)) {
 			toMove.setUp(doMove);
-		} else if (heartbeatPacket.getDirection() == Cardinality.SOUTH) {
+			toMove.setDy(-toMove.getMaxSpeed());
+		} else if (heartbeatPacket.getDirection().equals(Cardinality.SOUTH)) {
 			toMove.setDown(doMove);
-		} else if (heartbeatPacket.getDirection() == Cardinality.EAST) {
+			toMove.setDy(toMove.getMaxSpeed());
+		} else if (heartbeatPacket.getDirection().equals(Cardinality.EAST)) {
 			toMove.setRight(doMove);
-		} else if (heartbeatPacket.getDirection() == Cardinality.WEST) {
+			toMove.setDx(toMove.getMaxSpeed());
+		} else if (heartbeatPacket.getDirection().equals(Cardinality.WEST)) {
 			toMove.setLeft(doMove);
+			toMove.setDx(-toMove.getMaxSpeed());
+		}else if(heartbeatPacket.getDirection().equals(Cardinality.NONE)) {
+			toMove.setRight(false);
+			toMove.setUp(false);
+			toMove.setDown(false);
+			toMove.setLeft(false);
+			toMove.setDx(0);
+			toMove.setDy(0);
 		}
 		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
 	}
@@ -480,8 +485,9 @@ public class RealmManagerServer implements Runnable {
 					new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 							(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 					GlobalConstants.PLAYER_SIZE, cls);
-
+			player.equipSlots(PlayState.getStartingEquipment(cls));
 			long newId = mgr.getRealm().addPlayer(player);
+			
 			OutputStream toClientStream = mgr.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 			LoginResponseMessage message = LoginResponseMessage.builder().playerId(newId).success(true).build();

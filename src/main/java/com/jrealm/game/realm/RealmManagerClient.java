@@ -10,6 +10,8 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.entity.Bullet;
+import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
@@ -67,7 +69,6 @@ public class RealmManagerClient implements Runnable {
 
 	@Override
 	public void run() {
-		//TODO: remove and replace with an actual value: 20
 		log.info("Starting JRealm Client");
 
 		Runnable tick = ()->{
@@ -83,11 +84,9 @@ public class RealmManagerClient implements Runnable {
 	
 	private void tick() {
 		try {
-			
 			Runnable processServerPackets = () -> {
 				this.processClientPackets();
 			};
-			
 			
 			WorkerThread.submitAndRun(processServerPackets);
 		} catch (Exception e) {
@@ -113,7 +112,6 @@ public class RealmManagerClient implements Runnable {
 		this.registerPacketCallback(PacketType.OBJECT_MOVE.getPacketId(), RealmManagerClient::handleObjectMoveClient);
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManagerClient::handleTextClient);
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerClient::handleCommandClient);
-
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerClient, Packet> callback) {
@@ -178,12 +176,30 @@ public class RealmManagerClient implements Runnable {
 
 	public static void handleObjectMoveClient(RealmManagerClient cli, Packet packet) {
 		ObjectMovePacket objectMovePacket = (ObjectMovePacket) packet;
+		switch(objectMovePacket.getTargetEntityType()) {
+		case PLAYER:
+			Player playerToUpdate = cli.getRealm().getPlayer(objectMovePacket.getEntityId());
+			playerToUpdate.applyMovement(objectMovePacket);
+			break;
+		case ENEMY:
+			Enemy enemyToUpdate = cli.getRealm().getEnemy(objectMovePacket.getEntityId());
+			enemyToUpdate.applyMovement(objectMovePacket);
+			break;
+		case BULLET:
+			Bullet bulletToUpdate = cli.getRealm().getBullet(objectMovePacket.getEntityId());
+			bulletToUpdate.applyMovement(objectMovePacket);
+			break;
+		default:
+			break;
+		}
 //		log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
 //				EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
 	}
 
 	public static void handleUpdateClient(RealmManagerClient cli, Packet packet) {
 		UpdatePacket updatePacket = (UpdatePacket) packet;
+		Player toUpdate = cli.getRealm().getPlayer(cli.getCurrentPlayerId());
+		toUpdate.applyUpdate(updatePacket);
 //		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 	}
 	
@@ -201,6 +217,7 @@ public class RealmManagerClient implements Runnable {
 				cli.setCurrentPlayerId(player.getId());
 				cli.getState().setPlayerId(player.getId());
 				cli.startHeartbeatThread();
+				Player test = cli.getRealm().getPlayer(cli.getCurrentPlayerId());
 			}
 		}catch(Exception e) {
 			log.error("Failed to response to login response. Reason: {}", e.getMessage());

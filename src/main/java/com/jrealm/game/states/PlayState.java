@@ -214,7 +214,7 @@ public class PlayState extends GameState {
 	@Override
 	public void update(double time) {
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
-		Player player = this.client.getRealm().getPlayer(this.playerId);
+		Player player = this.client.getRealm().getPlayer(this.client.getCurrentPlayerId());
 		if (player == null)
 			return;
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
@@ -285,8 +285,8 @@ public class PlayState extends GameState {
 					}
 				};
 				Runnable updatePlayerAndUi = () -> {
-					player.update(time);
-					this.movePlayer();
+//					player.update(time);
+//					this.movePlayer();
 
 					this.pui.update(time);
 				};
@@ -487,17 +487,15 @@ public class PlayState extends GameState {
 					c = Cardinality.WEST;
 				} else if (player.getIsRight()) {
 					c = Cardinality.EAST;
-				}
-				
-				if(c != null) {
-					try {
-						
+				} 
+				try {
+					if(c != null) {
 						PlayerMovePacket packet = PlayerMovePacket.from(player, c, true);
 						this.client.getClient().sendRemote(packet);
-					}catch(Exception e) {
-						
-					}	
-				}
+					}
+				}catch(Exception e) {
+					
+				}	
 			}
 			this.cam.input(mouse, key);
 			if (key.f2.clicked && !this.playerLocation.equals(PlayerLocation.VAULT)) {
@@ -702,6 +700,7 @@ public class PlayState extends GameState {
 				toRender.render(g);
 			}
 		}
+		if(this.pui==null) return;
 		this.pui.render(g);
 
 		this.renderCloseLoot(g);

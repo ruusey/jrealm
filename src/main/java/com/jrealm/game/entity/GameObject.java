@@ -7,6 +7,7 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.TileCollision;
+import com.jrealm.net.client.packet.ObjectMovePacket;
 
 import lombok.Data;
 
@@ -71,6 +72,12 @@ public abstract class GameObject {
 
 	public void update() {
 
+	}
+	
+	public void applyMovement(ObjectMovePacket packet) {
+		this.pos = new Vector2f(packet.getPosX(), packet.getPosY());
+		this.dx = packet.getVelX();
+		this.dy = packet.getVelY();
 	}
 
 	@Override
