@@ -200,6 +200,7 @@ public class RealmManagerClient implements Runnable {
 				cli.getState().loadClass(player, cls, true);
 				cli.setCurrentPlayerId(player.getId());
 				cli.getState().setPlayerId(player.getId());
+				cli.startHeartbeatThread();
 			}
 		}catch(Exception e) {
 			log.error("Failed to response to login response. Reason: {}", e.getMessage());
