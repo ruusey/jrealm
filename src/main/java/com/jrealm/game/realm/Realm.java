@@ -334,7 +334,7 @@ public class Realm {
 		GameObject[] gameObjects = this.getAllGameObjects();
 		for (GameObject obj : gameObjects) {
 			try {
-				if(obj.getDx()>0 || obj.getDy()>0) {
+				if((obj.getDx()>0 || obj.getDy()>0) || (obj.getDx()<0 || obj.getDy()<0)) {
 					ObjectMovePacket movePacket = ObjectMovePacket.from(obj);
 					objectMovements.add(movePacket);
 				}

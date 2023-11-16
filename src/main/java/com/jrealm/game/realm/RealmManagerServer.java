@@ -419,21 +419,26 @@ public class RealmManagerServer implements Runnable {
 		boolean doMove = heartbeatPacket.isMove();
 		if (heartbeatPacket.getDirection().equals(Cardinality.NORTH)) {
 			toMove.setUp(doMove);
-			toMove.setDy(-toMove.getMaxSpeed());
-		} else if (heartbeatPacket.getDirection().equals(Cardinality.SOUTH)) {
+			toMove.setDy(doMove ? toMove.getMaxSpeed() : 0.0f);
+		} 
+		if (heartbeatPacket.getDirection().equals(Cardinality.SOUTH)) {
 			toMove.setDown(doMove);
-			toMove.setDy(toMove.getMaxSpeed());
-		} else if (heartbeatPacket.getDirection().equals(Cardinality.EAST)) {
+			toMove.setDy(doMove ? toMove.getMaxSpeed() : 0.0f);
+		} 
+		if (heartbeatPacket.getDirection().equals(Cardinality.EAST)) {
 			toMove.setRight(doMove);
-			toMove.setDx(toMove.getMaxSpeed());
-		} else if (heartbeatPacket.getDirection().equals(Cardinality.WEST)) {
+			toMove.setDx(doMove ? toMove.getMaxSpeed() : 0.0f);
+		} 
+		if (heartbeatPacket.getDirection().equals(Cardinality.WEST)) {
 			toMove.setLeft(doMove);
-			toMove.setDx(-toMove.getMaxSpeed());
-		}else if(heartbeatPacket.getDirection().equals(Cardinality.NONE)) {
-			toMove.setRight(false);
-			toMove.setUp(false);
-			toMove.setDown(false);
+			toMove.setDx(doMove ? toMove.getMaxSpeed() : 0.0f);
+		}
+		if(heartbeatPacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setLeft(false);
+			toMove.setRight(false);
+			toMove.setDown(false);
+			toMove.setUp(false);
+
 			toMove.setDx(0);
 			toMove.setDy(0);
 		}

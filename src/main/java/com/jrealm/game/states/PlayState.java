@@ -44,6 +44,7 @@ import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
+import com.jrealm.game.util.Tuple;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 
@@ -64,8 +65,10 @@ public class PlayState extends GameState {
 	public long lastAbilityTick = 0;
 
 	public long playerId = -1l;
-
+	
 	private PlayerLocation playerLocation = PlayerLocation.VAULT;
+	
+	private Tuple<Cardinality, Boolean> lastDirection;
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 		PlayState.map = new Vector2f();
@@ -479,18 +482,36 @@ public class PlayState extends GameState {
 			if (this.cam.getTarget() == player) {
 				player.input(mouse, key);
 				Cardinality c = null;
+				boolean move = true;
 				if (player.getIsUp()) {
 					c = Cardinality.NORTH;
-				} else if (player.getIsDown()) {
+				}
+				
+				if (player.getIsDown()) {
 					c = Cardinality.SOUTH;
-				} else if (player.getIsLeft()) {
+				}
+				
+				if (player.getIsLeft()) {
 					c = Cardinality.WEST;
-				} else if (player.getIsRight()) {
-					c = Cardinality.EAST;
 				} 
+				if (player.getIsRight()) {
+					c = Cardinality.EAST;
+				}
+				
+				if(c==null) {
+					c = Cardinality.NONE;
+					move = false;
+				}
+				
+				if(this.lastDirection==null) {
+					this.lastDirection = new Tuple<Cardinality, Boolean>(c, move);
+				}
+				
+				Tuple<Cardinality, Boolean> temp = new Tuple<Cardinality, Boolean>(c, move);
 				try {
-					if(c != null) {
-						PlayerMovePacket packet = PlayerMovePacket.from(player, c, true);
+					if(!lastDirection.equals(temp)) {
+						this.lastDirection = temp;
+						PlayerMovePacket packet = PlayerMovePacket.from(player, temp.getX(), temp.getY());
 						this.client.getClient().sendRemote(packet);
 					}
 				}catch(Exception e) {
