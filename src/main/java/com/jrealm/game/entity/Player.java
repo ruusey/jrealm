@@ -2,6 +2,8 @@ package com.jrealm.game.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
@@ -18,6 +20,7 @@ import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
+import com.jrealm.net.Streamable;
 import com.jrealm.net.client.packet.UpdatePacket;
 
 import lombok.Data;
@@ -25,7 +28,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class Player extends Entity {
+public class Player extends Entity implements Streamable<Player>{
 	private Camera cam;
 	private Cardinality cardinality = Cardinality.EAST;
 	private GameItem[] inventory;
@@ -42,8 +45,6 @@ public class Player extends Entity {
 		this.size = size;
 		this.bounds.setWidth(this.size);
 		this.bounds.setHeight(this.size);
-		// this.bounds.setXOffset(16);
-		// this.bounds.setYOffset(40);
 
 		this.hitBounds.setWidth(this.size);
 		this.hitBounds.setHeight(this.size);
@@ -307,5 +308,23 @@ public class Player extends Entity {
 
 	public boolean getIsRight() {
 		return this.right;
+	}
+
+	@Override
+	public void write(DataOutputStream stream) throws Exception {
+		stream.writeLong(this.getId());
+		stream.writeInt(this.getClassId());
+		stream.writeFloat(this.getPos().x);
+		stream.writeFloat(this.getPos().y);
+		stream.writeFloat(this.dx);
+		stream.writeFloat(this.dy);
+		
+		
+	}
+
+	@Override
+	public Player read(DataInputStream stream) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

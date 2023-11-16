@@ -64,12 +64,9 @@ public abstract class Entity extends GameObject {
 	protected int mana = 100;
 	protected float healthpercent = 1;
 	protected float manapercent = 1;
-	protected int defense = 100;
-	protected int damage = 25;
 
 	protected AABB hitBounds;
-
-
+	
 	private short[] effectIds;
 	private long[] effectTimes;
 
@@ -178,7 +175,6 @@ public abstract class Entity extends GameObject {
 		this.manapercent = (float) this.mana / (float) this.maxMana;
 	}
 
-
 	public boolean getDeath() {
 		return this.die;
 	}
@@ -189,10 +185,6 @@ public abstract class Entity extends GameObject {
 
 	public float getHealthPercent() {
 		return this.healthpercent;
-	}
-
-	public int getDefense() {
-		return this.defense;
 	}
 
 	public AABB getHitBounds() {

@@ -44,6 +44,7 @@ import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
+import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
@@ -146,6 +147,7 @@ public class RealmManagerServer implements Runnable {
 
 	private void registerPacketCallbacks() {
 		this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), RealmManagerServer::handlePlayerMoveServer);
+		this.registerPacketCallback(PacketType.PLAYER_SHOOT.getPacketId(), RealmManagerServer::handlePlayerShootServer);
 		this.registerPacketCallback(PacketType.HEARTBEAT.getPacketId(), RealmManagerServer::handleHeartbeatServer);
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManagerServer::handleTextServer);
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerServer::handleCommandServer);
@@ -334,7 +336,6 @@ public class RealmManagerServer implements Runnable {
 			if (b.hasFlag((short) 3)) {
 				if (!e.hasEffect(EffectType.STUNNED)) {
 					e.addEffect(EffectType.STUNNED, 5000);
-
 				}
 			}
 			if (e.getDeath()) {
@@ -392,6 +393,7 @@ public class RealmManagerServer implements Runnable {
 
 		b.setFlags(flags);
 		this.realm.addBullet(b);
+		
 	}
 
 	private List<Bullet> getBullets(Player p) {
@@ -444,7 +446,30 @@ public class RealmManagerServer implements Runnable {
 		}
 		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
 	}
-
+	
+	public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {
+		PlayerShootPacket shootPacket = (PlayerShootPacket)packet;
+		Vector2f src = new Vector2f(shootPacket.getSrcX(), shootPacket.getSrcY());
+		Player player = mgr.getRealm().getPlayer(shootPacket.getEntityId());
+		
+		Vector2f dest = new Vector2f(shootPacket.getDestX(), shootPacket.getDestY());
+		dest.addX(PlayState.map.x);
+		dest.addY(PlayState.map.y);
+		Vector2f source = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
+		float angle = Bullet.getAngle(source, dest);
+		for (Projectile proj : group.getProjectiles()) {
+			short offset = (short) (player.getSize() / (short) 2);
+			short rolledDamage = player.getInventory()[0].getDamage().getInRange();
+			rolledDamage += player.getComputedStats().getAtt();
+			mgr.addProjectile(player.getId(), player.getWeaponId(), source.clone(-offset, -offset),
+					angle + Float.parseFloat(proj.getAngle()), proj.getSize(), proj.getMagnitude(),
+					proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
+					proj.getFrequency());
+		}
+		log.info("[SERVER] Recieved PlayerShoot Packet For Player {}, BulletId: {}", shootPacket.getEntityId(), shootPacket.getProjectileId());
+	}
+	
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
 

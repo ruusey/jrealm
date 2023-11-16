@@ -47,12 +47,15 @@ import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.Tuple;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.server.packet.PlayerMovePacket;
+import com.jrealm.net.server.packet.PlayerShootPacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@Slf4j
 public class PlayState extends GameState {
 	private RealmManagerClient client;
 	private Queue<DamageText> damageText;
@@ -212,7 +215,6 @@ public class PlayState extends GameState {
 				this.getPlayer().setFallen(false);
 			}
 		}
-
 	}
 
 	@Override
@@ -251,12 +253,18 @@ public class PlayState extends GameState {
 							short offset = (short) (p.getSize() / (short) 2);
 							short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 							rolledDamage += player.getComputedStats().getAtt();
-							this.addProjectile(player.getWeaponId(), source.clone(-offset, -offset),
+							
+							long newProj = this.addProjectile(player.getWeaponId(), source.clone(-offset, -offset),
 									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
 									rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
+							try {
+								PlayerShootPacket packet = PlayerShootPacket.from(newProj, player, dest);
+								this.client.getClient().sendRemote(packet);
+							}catch(Exception e) {
+								log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
+							}
 						}
 					}
-
 				};
 
 				Runnable processGameObjects = () -> {
@@ -323,12 +331,12 @@ public class PlayState extends GameState {
 		this.client.getRealm().addBullet(b);
 	}
 
-	public synchronized void addProjectile(int projectileGroupId, Vector2f src, float angle, short size,
+	public synchronized long addProjectile(int projectileGroupId, Vector2f src, float angle, short size,
 			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags, short amplitude,
 			short frequency) {
 		Player player = this.client.getRealm().getPlayer(this.playerId);
 		if (player == null)
-			return;
+			return -1;
 		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
 		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
 		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
@@ -344,7 +352,7 @@ public class PlayState extends GameState {
 		b.setFrequency(frequency);
 
 		b.setFlags(flags);
-		this.client.getRealm().addBullet(b);
+		return this.client.getRealm().addBullet(b);
 	}
 
 	public synchronized void processBulletHit() {

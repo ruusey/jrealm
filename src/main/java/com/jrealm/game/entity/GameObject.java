@@ -22,7 +22,6 @@ public abstract class GameObject {
 	protected int spriteX;
 	protected int spriteY;
 
-	// used for moving objects like boxes and such
 	protected float dx;
 	protected float dy;
 

@@ -20,7 +20,6 @@ public class Monster extends Enemy {
 		// this.xOffset = size / 4;
 		// this.yOffset = size / 4;
 		Random r = new Random(System.nanoTime());
-		this.damage = 10;
 		this.acc = 1f;
 		this.deacc = 2f;
 		this.maxSpeed = 1.4f;

@@ -85,11 +85,11 @@ public class RealmManagerClient implements Runnable {
 	
 	private void tick() {
 		try {
-			Runnable processServerPackets = () -> {
+			Runnable processClientPackets = () -> {
 				this.processClientPackets();
 			};
 			
-			WorkerThread.submitAndRun(processServerPackets);
+			WorkerThread.submitAndRun(processClientPackets);
 		} catch (Exception e) {
 			log.error("Failed to sleep");
 		}
@@ -132,7 +132,7 @@ public class RealmManagerClient implements Runnable {
 
 					HeartbeatPacket pack = HeartbeatPacket.from(playerId, currentTime);
 					this.client.sendRemote(pack);
-					Thread.sleep(500);
+					Thread.sleep(1000);
 				} catch (Exception e) {
 					log.error("Failed to send Heartbeat packet. Reason: {}", e);
 				}
