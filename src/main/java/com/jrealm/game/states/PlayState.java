@@ -96,6 +96,7 @@ public class PlayState extends GameState {
 			this.client.getRealm().removePlayer(this.playerId);
 		}
 		this.playerId = this.client.getRealm().addPlayer(player);
+		this.client.setCurrentPlayerId(this.playerId);
 		this.pui = new PlayerUI(this);
 		this.getPlayer().getStats().setDef((short)50);
 

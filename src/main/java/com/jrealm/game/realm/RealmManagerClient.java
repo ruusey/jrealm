@@ -1,5 +1,6 @@
 package com.jrealm.game.realm;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -126,12 +127,7 @@ public class RealmManagerClient implements Runnable {
 		Runnable sendHeartbeat = () -> {
 			while (!this.shutdown) {
 				try {
-					if(this.currentPlayerId <= 0) {
-						Thread.sleep(1000);
-						continue;
-					}
-
-					long currentTime = System.currentTimeMillis();
+					long currentTime = Instant.now().toEpochMilli();
 					long playerId = this.currentPlayerId;
 
 					HeartbeatPacket pack = HeartbeatPacket.from(playerId, currentTime);
@@ -217,7 +213,6 @@ public class RealmManagerClient implements Runnable {
 				cli.setCurrentPlayerId(player.getId());
 				cli.getState().setPlayerId(player.getId());
 				cli.startHeartbeatThread();
-				Player test = cli.getRealm().getPlayer(cli.getCurrentPlayerId());
 			}
 		}catch(Exception e) {
 			log.error("Failed to response to login response. Reason: {}", e.getMessage());
