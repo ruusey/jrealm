@@ -39,6 +39,7 @@ import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.SocketServer;
@@ -79,7 +80,19 @@ public class RealmManagerServer implements Runnable {
 		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap("tile/vault.xml", null);
+		
 
+	}
+	
+	private void addTestPlayer() {
+		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+		CharacterClass cls = CharacterClass.WIZARD;
+		Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
+				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+				GlobalConstants.PLAYER_SIZE, cls);
+		player.equipSlots(PlayState.getStartingEquipment(cls));
+		long newId = this.getRealm().addPlayer(player);
 	}
 
 	@Override
@@ -128,6 +141,10 @@ public class RealmManagerServer implements Runnable {
 				for (ObjectMovePacket packet : mPackets) {
 					packet.serializeWrite(dosToClient);
 				}
+				
+				LoadPacket load = this.realm.getLoadPacket(player.getValue().getCam().getBounds());
+				
+				load.serializeWrite(dosToClient);
 			} catch (Exception e) {
 				log.error("Failed to get OutputStream to Client");
 			}

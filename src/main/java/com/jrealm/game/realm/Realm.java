@@ -28,6 +28,7 @@ import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectKey;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 
@@ -147,6 +148,15 @@ public class Realm {
 	public long addPlayer(Player player) {
 		this.acquirePlayerLock();
 		this.players.put(player.getId(), player);
+		this.releasePlayerLock();
+		return player.getId();
+	}
+	
+	public long addPlayerIfNotExists(Player player) {
+		this.acquirePlayerLock();
+		if(!this.players.containsKey(player.getId())) {
+			this.players.put(player.getId(), player);
+		}
 		this.releasePlayerLock();
 		return player.getId();
 	}
@@ -326,6 +336,17 @@ public class Realm {
 			// }
 		}
 		return playerUpdates;
+	}
+	
+	public LoadPacket getLoadPacket(AABB cam) {
+		LoadPacket load = null;
+		try {
+			 load = LoadPacket.from(this.getPlayers().values().toArray(new Player[0]));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return load;
 	}
 
 	public List<ObjectMovePacket> getGameObjectsAsPackets(AABB cam) {

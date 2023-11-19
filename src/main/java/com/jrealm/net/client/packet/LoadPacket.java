@@ -1,6 +1,7 @@
 package com.jrealm.net.client.packet;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
@@ -9,6 +10,7 @@ import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.net.Packet;
+import com.jrealm.net.PacketType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,7 +35,7 @@ public class LoadPacket extends Packet {
 		try {
 			this.readData(data);
 		} catch (Exception e) {
-			log.error("Failed to parse ObjectMove packet, Reason: {}", e);
+			log.error("Failed to parse LoadPacket packet, Reason: {}", e);
 		}
 	}
 
@@ -61,5 +63,17 @@ public class LoadPacket extends Packet {
 		for(Player p : this.players) {
 			p.write(stream);
 		}
+	}
+	
+	public static LoadPacket from(Player[] players) throws Exception{
+		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+
+		DataOutputStream stream = new DataOutputStream(byteStream);
+		stream.writeInt(players.length);
+		for(Player p : players) {
+			p.write(stream);
+		}
+		
+		return new LoadPacket(PacketType.LOAD.getPacketId(), byteStream.toByteArray());
 	}
 }

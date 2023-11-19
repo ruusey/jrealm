@@ -115,6 +115,8 @@ public class RealmManagerClient implements Runnable {
 		this.registerPacketCallback(PacketType.OBJECT_MOVE.getPacketId(), RealmManagerClient::handleObjectMoveClient);
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManagerClient::handleTextClient);
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerClient::handleCommandClient);
+		this.registerPacketCallback(PacketType.LOAD.getPacketId(), RealmManagerClient::handleLoadClient);
+
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerClient, Packet> callback) {
@@ -147,9 +149,12 @@ public class RealmManagerClient implements Runnable {
 		LoadPacket textPacket = (LoadPacket) packet;
 		log.info("[CLIENT] Recieved Loat Packet");
 		try {
+			for(Player p : textPacket.getPlayers()) {
+				//cli.getRealm().addPlayerIfNotExists(p);
+			}
 			//cli.getRealm()
 		}catch(Exception e) {
-			log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
+			log.error("Failed to handle Load Packet. Reason: {}", e.getMessage());
 		}	
 	}
 	

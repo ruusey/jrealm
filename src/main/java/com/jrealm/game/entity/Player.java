@@ -362,4 +362,9 @@ public class Player extends Entity implements Streamable<Player>{
 		player.setDy(dY);
 		return player;
 	}
+	
+	@Override
+	public String toString() {
+		return this.getId()+" , Pos: "+this.pos.toString()+", Class: "+this.getClassId();
+	}
 }
