@@ -328,7 +328,6 @@ public class Realm {
 		return playerUpdates;
 	}
 
-	// TODO: Move long generated long ID into GameObject base class
 	public List<ObjectMovePacket> getGameObjectsAsPackets(AABB cam) {
 		List<ObjectMovePacket> objectMovements = new ArrayList<>();
 		GameObject[] gameObjects = this.getAllGameObjects();

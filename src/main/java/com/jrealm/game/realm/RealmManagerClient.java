@@ -27,6 +27,7 @@ import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 import com.jrealm.net.client.SocketClient;
+import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.packet.CommandPacket;
@@ -140,6 +141,16 @@ public class RealmManagerClient implements Runnable {
 			}
 		};
 		WorkerThread.submitAndForkRun(sendHeartbeat);
+	}
+	
+	public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
+		LoadPacket textPacket = (LoadPacket) packet;
+		log.info("[CLIENT] Recieved Loat Packet");
+		try {
+			//cli.getRealm()
+		}catch(Exception e) {
+			log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
+		}	
 	}
 	
 	public static void handleTextClient(RealmManagerClient cli, Packet packet) {

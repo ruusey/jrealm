@@ -43,7 +43,12 @@ public class LoadPacket extends Packet {
 		DataInputStream dis = new DataInputStream(bis);
 		if (dis == null || dis.available() < 5)
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
-
+		int playersSize = dis.readInt();
+		this.players = new Player[playersSize];
+		for(int i = 0; i< playersSize; i++) {
+			this.players[i] = Player.fromStream(dis);
+		}
+		
 	}
 
 	@Override
@@ -52,5 +57,9 @@ public class LoadPacket extends Packet {
 			throw new IllegalStateException("No Packet data available to write to DataOutputStream");
 
 		this.addHeader(stream);
+		stream.writeInt(this.players.length);
+		for(Player p : this.players) {
+			p.write(stream);
+		}
 	}
 }

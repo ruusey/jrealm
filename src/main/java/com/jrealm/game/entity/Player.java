@@ -15,6 +15,7 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
+import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
@@ -320,6 +321,7 @@ public class Player extends Entity implements Streamable<Player>{
 	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.getId());
 		stream.writeInt(this.getClassId());
+		stream.writeShort(this.getSize());
 		stream.writeFloat(this.getPos().x);
 		stream.writeFloat(this.getPos().y);
 		stream.writeFloat(this.dx);
@@ -328,7 +330,36 @@ public class Player extends Entity implements Streamable<Player>{
 
 	@Override
 	public Player read(DataInputStream stream) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		long id = stream.readLong();
+		int classId = stream.readInt();
+		short size = stream.readShort();
+		float posX = stream.readFloat();
+		float posY = stream.readFloat();
+		float dX = stream.readFloat();
+		float dY = stream.readFloat();
+		Player player = Player.fromData(id, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
+		player.setDx(dX);
+		player.setDy(dY);
+		return player;
+	}
+	
+	public static Player fromData(long id, Vector2f origin, int size, CharacterClass characterClass) {
+		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+		SpriteSheet sheet = GameDataManager.loadClassSprites(characterClass);
+		return new Player(id, c, sheet, origin, size, characterClass);
+	}
+	
+	public static Player fromStream(DataInputStream stream) throws Exception {
+		long id = stream.readLong();
+		int classId = stream.readInt();
+		short size = stream.readShort();
+		float posX = stream.readFloat();
+		float posY = stream.readFloat();
+		float dX = stream.readFloat();
+		float dY = stream.readFloat();
+		Player player = Player.fromData(id, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
+		player.setDx(dX);
+		player.setDy(dY);
+		return player;
 	}
 }
