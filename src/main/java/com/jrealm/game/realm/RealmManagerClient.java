@@ -23,6 +23,7 @@ import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 import com.jrealm.net.client.SocketClient;

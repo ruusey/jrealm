@@ -52,7 +52,9 @@ public class Slots {
 		if (this.getItem() == null)
 			return;
 		Sprite itemSprite = GameDataManager.getSubSprite(this.item, 8);
-
+		if(itemSprite==null) {
+			return;
+		}
 		if(this.button != null) {
 			this.button.render(g);
 		} else {

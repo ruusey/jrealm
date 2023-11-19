@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jrealm.game.util.Tuple;
+import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.packet.CommandPacket;
@@ -19,7 +20,9 @@ public enum PacketType {
 	TEXT           ((byte) 4, true, TextPacket.class), 
 	HEARTBEAT      ((byte) 5, true, HeartbeatPacket.class),
 	PLAYER_SHOOT   ((byte) 6, true, PlayerShootPacket.class),
-	COMMAND		   ((byte) 7, true, CommandPacket.class);
+	COMMAND		   ((byte) 7, true, CommandPacket.class),
+	LOAD_MAP	   ((byte) 8, true, LoadMapPacket.class);
+
 
 	private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
 

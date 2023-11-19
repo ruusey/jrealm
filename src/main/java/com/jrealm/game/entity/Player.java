@@ -9,6 +9,7 @@ import java.util.Map;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
@@ -292,6 +293,11 @@ public class Player extends Entity implements Streamable<Player>{
 	public void applyUpdate(UpdatePacket packet) {
 		this.stats = packet.getStats();
 		this.inventory = packet.getInventory();
+		for(GameItem item: this.inventory) {
+			if(item!=null) {
+				GameDataManager.loadSpriteModel(item);
+			}
+		}
 	}
 
 	public boolean getIsUp() {
@@ -318,8 +324,6 @@ public class Player extends Entity implements Streamable<Player>{
 		stream.writeFloat(this.getPos().y);
 		stream.writeFloat(this.dx);
 		stream.writeFloat(this.dy);
-		
-		
 	}
 
 	@Override

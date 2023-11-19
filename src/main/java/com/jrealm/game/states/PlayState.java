@@ -46,6 +46,7 @@ import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.Tuple;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 
@@ -529,14 +530,28 @@ public class PlayState extends GameState {
 			}
 			this.cam.input(mouse, key);
 			if (key.f2.clicked && !this.playerLocation.equals(PlayerLocation.VAULT)) {
+				try {
+					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/vault.xml");
+					this.client.getClient().sendRemote(loadMap);
+				}catch(Exception e) {
+					log.error("Failed to send load map packet for map {}. Reason: {}", "tile/vault.xml", e.getMessage());
+				}
 				this.playerLocation = PlayerLocation.VAULT;
 				this.client.getRealm().loadMap("tile/vault.xml", this.getPlayer());
-				this.loadClass(this.currentPlayerCharacterClass(), false);
+				this.loadClass(this.getPlayer(), this.currentPlayerCharacterClass(), false);
 			}
 			if (key.f1.clicked && !this.playerLocation.equals(PlayerLocation.REALM)) {
+				try {
+					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/nexus2.xml");
+					this.client.getClient().sendRemote(loadMap);
+				}catch(Exception e) {
+					log.error("Failed to send load map packet for map {}. Reason: {}", "tile/nexus2.xml", e.getMessage());
+				}
+
 				this.playerLocation = PlayerLocation.REALM;
 				this.client.getRealm().loadMap("tile/nexus2.xml", this.getPlayer());
-				this.loadClass(this.currentPlayerCharacterClass(), false);
+				this.loadClass(this.getPlayer(), this.currentPlayerCharacterClass(), false);
+				
 			}
 			if(this.pui!=null) {
 				this.pui.input(mouse, key);

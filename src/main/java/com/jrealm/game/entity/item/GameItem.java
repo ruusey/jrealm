@@ -146,4 +146,11 @@ public class GameItem extends SpriteModel implements Streamable<GameItem> {
 		stream.writeByte(this.targetClass);
 		stream.writeByte(this.fameBonus);
 	}
+	
+	public void applySpriteModel(final SpriteModel model) {
+		this.setRow(model.getRow());
+		this.setCol(model.getCol());
+		this.setAngleOffset(model.getAngleOffset());
+		this.setSpriteKey(model.getSpriteKey());
+	}
 }

@@ -152,7 +152,14 @@ public class GameDataManager {
 	}
 
 	public static Sprite getSubSprite(String spriteKey, int col, int row, int size) {
-		return GameDataManager.SPRITE_SHEETS.get(spriteKey).getSprite(col, row, size, size);
+		SpriteSheet sheet = GameDataManager.SPRITE_SHEETS.get(spriteKey);
+		return sheet.getSprite(col, row, size, size);
+	}
+	
+	public static void loadSpriteModel(GameItem item){
+		if(item.getItemId()>-1) {
+			item.applySpriteModel(GameDataManager.GAME_ITEMS.get(item.getItemId()));
+		}
 	}
 
 	public static Sprite getSubSprite(SpriteModel model, int size) {

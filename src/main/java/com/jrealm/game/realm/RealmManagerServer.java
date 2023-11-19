@@ -38,6 +38,7 @@ import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
+import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.SocketServer;
@@ -151,6 +152,8 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(PacketType.HEARTBEAT.getPacketId(), RealmManagerServer::handleHeartbeatServer);
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManagerServer::handleTextServer);
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerServer::handleCommandServer);
+		this.registerPacketCallback(PacketType.LOAD_MAP.getPacketId(), RealmManagerServer::handleLoadMapServer);
+
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerServer, Packet> callback) {
@@ -505,6 +508,22 @@ public class RealmManagerServer implements Runnable {
 
 		log.info("[SERVER] Recieved Command Packet For Player {}. Command={}", commandPacket.getPlayerId(),
 				commandPacket.getCommand());
+	}
+	
+	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {
+		LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
+
+		try {
+			Player player = mgr.getRealm().getPlayer(loadMapPacket.getPlayerId());
+			mgr.getRealm().loadMap(loadMapPacket.getMapKey(), player);
+			
+		} catch (Exception e) {
+			log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
+					e.getMessage());
+		}
+
+		log.info("[SERVER] Recieved Load Map packet from Player {}. Map={}", loadMapPacket.getPlayerId(),
+				loadMapPacket.getMapKey());
 	}
 
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request) {
