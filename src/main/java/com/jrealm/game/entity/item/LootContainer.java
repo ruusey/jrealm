@@ -57,6 +57,14 @@ public class LootContainer implements Streamable<LootContainer> {
 		this.items[0] = loot;
 		this.spawnedTime = System.currentTimeMillis();
 	}
+	
+	public LootContainer(Vector2f pos, GameItem[] loot) {
+		this.sprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8);
+		this.pos = pos;
+		this.uid = UUID.randomUUID().toString();
+		this.items = loot;
+		this.spawnedTime = System.currentTimeMillis();
+	}
 
 	public boolean isExpired() {
 		return (System.currentTimeMillis() - this.spawnedTime) > 60000;
@@ -96,6 +104,7 @@ public class LootContainer implements Streamable<LootContainer> {
 	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.getLootContainerId());
 		stream.writeUTF(this.getUid());
+		stream.writeBoolean(this instanceof Chest);
 		GameItem[] toWrite = getCondensedItems(this);
 		stream.writeInt(toWrite.length);
 		for (int i = 0; i < toWrite.length; i++) {
@@ -113,6 +122,7 @@ public class LootContainer implements Streamable<LootContainer> {
 
 		long lootContainerId = stream.readLong();
 		String uid = stream.readUTF();
+		boolean isChest = stream.readBoolean();
 		int itemsSize = stream.readInt();
 		GameItem[] items = new GameItem[itemsSize];
 		for (int i = 0; i < itemsSize; i++) {
@@ -123,37 +133,19 @@ public class LootContainer implements Streamable<LootContainer> {
 
 		long spawnedTime = stream.readLong();
 		boolean contentsChanged = stream.readBoolean();
-
-		return LootContainer.builder().lootContainerId(lootContainerId).uid(uid).items(items)
+		LootContainer container = LootContainer.builder().lootContainerId(lootContainerId).uid(uid).items(items)
 				.pos(new Vector2f(posX, posY)).spawnedTime(spawnedTime).contentsChanged(contentsChanged)
 				.sprite(null).build();
-	}
-	
-	public static LootContainer from(DataInputStream stream, boolean loadSprite) throws Exception{
-		long lootContainerId = stream.readLong();
-		String uid = stream.readUTF();
-		int itemsSize = stream.readInt();
-		GameItem[] items = new GameItem[itemsSize];
-		for (int i = 0; i < itemsSize; i++) {
-			items[i] = new GameItem().read(stream);
-		}
-		float posX = stream.readFloat();
-		float posY = stream.readFloat();
-
-		long spawnedTime = stream.readLong();
-		boolean contentsChanged = stream.readBoolean();
-		if(loadSprite) {
-			return LootContainer.builder().lootContainerId(lootContainerId).uid(uid).items(items)
-					.pos(new Vector2f(posX, posY)).spawnedTime(spawnedTime).contentsChanged(contentsChanged)
-					.sprite(GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8)).build();
+		if(isChest) {
+			Chest chest = new Chest(container);
+			chest.setPos(new Vector2f(posX, posY));
+			return chest;
 		}else {
-			return LootContainer.builder().lootContainerId(lootContainerId).uid(uid).items(items)
-					.pos(new Vector2f(posX, posY)).spawnedTime(spawnedTime).contentsChanged(contentsChanged)
-					.sprite(null).build();
+			return container;
 		}
-	
+		
 	}
-	
+
 	public static GameItem[] getCondensedItems(LootContainer container) {
 		List<GameItem> items = new ArrayList<>();
 		for(GameItem item : container.getItems()) {

@@ -151,6 +151,7 @@ public class RealmManagerClient implements Runnable {
 		try {
 			
 			for(Player p : textPacket.getPlayers()) {
+				if(p.getId()==cli.getCurrentPlayerId()) continue;
 				cli.getRealm().addPlayerIfNotExists(p);
 			}
 			for(LootContainer lc : textPacket.getContainers()) {
@@ -215,7 +216,8 @@ public class RealmManagerClient implements Runnable {
 
 	public static void handleUpdateClient(RealmManagerClient cli, Packet packet) {
 		UpdatePacket updatePacket = (UpdatePacket) packet;
-		Player toUpdate = cli.getRealm().getPlayer(cli.getCurrentPlayerId());
+		if(updatePacket.getPlayerId()!=cli.getCurrentPlayerId()) return;
+		Player toUpdate = cli.getRealm().getPlayer((updatePacket.getPlayerId()));
 		toUpdate.applyUpdate(updatePacket);
 //		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 	}

@@ -75,6 +75,7 @@ public abstract class GameObject {
 	
 	public void applyMovement(ObjectMovePacket packet) {
 		this.pos = new Vector2f(packet.getPosX(), packet.getPosY());
+		this.bounds = new AABB(this.pos, size, size);
 		this.dx = packet.getVelX();
 		this.dy = packet.getVelY();
 	}

@@ -266,8 +266,13 @@ public class Realm {
 	
 	public long addLootContainerIfNotExists(LootContainer lc) {
 		if(!this.loot.containsKey(lc.getLootContainerId())) {
-			Sprite lootSprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8);
-			lc.setSprite(lootSprite);
+			Sprite lootSprite = null;
+			if(lc instanceof Chest) {
+				lootSprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(2, 0, 8, 8);
+			}else {
+				lootSprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8);
+			}
+			lc.setSprite(lootSprite.clone());
 			for(GameItem item : lc.getItems()) {
 				GameDataManager.loadSpriteModel(item);
 			}

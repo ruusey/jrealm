@@ -19,11 +19,15 @@ public class Chest extends LootContainer {
 	}
 
 	public Chest(Vector2f pos, GameItem loot) {
-
 		super(pos, loot);
 		this.setUid(UUID.randomUUID().toString());
-
 		super.setSprite(GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(2, 0, 8, 8));
+	}
+	
+	public Chest(LootContainer c) {
+		super(c.getPos(), c.getItems());
+		this.setLootContainerId(c.getLootContainerId());
+		this.visible = true;
 	}
 
 	public void addItemAtFirtIdx(GameItem item) {
@@ -51,6 +55,11 @@ public class Chest extends LootContainer {
 	@Override
 	public void render(Graphics2D g) {
 		super.render(g);
+	}
+	
+	@Override
+	public String toString() {
+		return (this.getLootContainerId()+" "+this.getPos()+" isChest="+(this instanceof Chest));
 	}
 
 }
