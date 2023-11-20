@@ -24,8 +24,8 @@ public class GamePanel extends JPanel implements Runnable {
 
 	public static final long serialVersionUID = 1L;
 
-	public static int width;
-	public static int height;
+	public static int width = 1920;
+	public static int height = 1080;
 	public static int oldFrameCount;
 	public static int oldTickCount;
 	public static int tickCount;

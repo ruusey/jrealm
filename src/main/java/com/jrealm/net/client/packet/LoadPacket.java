@@ -51,6 +51,12 @@ public class LoadPacket extends Packet {
 			this.players[i] = Player.fromStream(dis);
 		}
 		
+		int containersSize = dis.readInt();
+		this.containers = new LootContainer[containersSize];
+		for(int i = 0; i< containersSize; i++) {
+			this.containers[i] = new LootContainer().read(dis);
+		}
+		
 	}
 
 	@Override
@@ -63,15 +69,24 @@ public class LoadPacket extends Packet {
 		for(Player p : this.players) {
 			p.write(stream);
 		}
+		stream.writeInt(this.containers.length);
+		for(LootContainer l : this.containers) {
+			l.write(stream);
+		}
 	}
 	
-	public static LoadPacket from(Player[] players) throws Exception{
+	public static LoadPacket from(Player[] players, LootContainer[] loot) throws Exception{
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 
 		DataOutputStream stream = new DataOutputStream(byteStream);
 		stream.writeInt(players.length);
 		for(Player p : players) {
 			p.write(stream);
+		}
+		
+		stream.writeInt(loot.length);
+		for(LootContainer l : loot) {
+			l.write(stream);
 		}
 		
 		return new LoadPacket(PacketType.LOAD.getPacketId(), byteStream.toByteArray());

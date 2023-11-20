@@ -367,6 +367,4 @@ public abstract class Entity extends GameObject {
 		this.left = left;
 	}
 	
-	
-
 }

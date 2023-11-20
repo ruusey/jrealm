@@ -19,6 +19,7 @@ import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.enemy.Monster;
 import com.jrealm.game.entity.item.Chest;
+import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.material.Material;
 import com.jrealm.game.entity.material.MaterialManager;
@@ -63,8 +64,8 @@ public class Realm {
 		this.realmCamera = cam;
 
 		this.loadMap("tile/vault.xml", null);
-		this.setupChests();
 		if(isServer) {
+			this.setupChests();
 			WorkerThread.submit(this.getStatsThread());
 		}
 	}
@@ -262,6 +263,18 @@ public class Realm {
 		this.loot.put(randomId, lc);
 		return randomId;
 	}
+	
+	public long addLootContainerIfNotExists(LootContainer lc) {
+		if(!this.loot.containsKey(lc.getLootContainerId())) {
+			Sprite lootSprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8);
+			lc.setSprite(lootSprite);
+			for(GameItem item : lc.getItems()) {
+				GameDataManager.loadSpriteModel(item);
+			}
+			this.loot.put(lc.getLootContainerId(), lc);
+		}
+		return lc.getLootContainerId();
+	}
 
 	public boolean removeLootContainer(LootContainer lc) {
 		LootContainer lootContainer = this.loot.remove(lc.getLootContainerId());
@@ -358,7 +371,9 @@ public class Realm {
 	public LoadPacket getLoadPacket(AABB cam) {
 		LoadPacket load = null;
 		try {
-			 load = LoadPacket.from(this.getPlayers().values().toArray(new Player[0]));
+			final Player[] playersToLoad = this.getPlayers().values().toArray(new Player[0]);
+			final LootContainer[] containersToLoad = this.getLoot().values().toArray(new LootContainer[0]);
+			load = LoadPacket.from(playersToLoad, containersToLoad);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -3,6 +3,8 @@ package com.jrealm.game.entity.item;
 import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -94,12 +96,10 @@ public class LootContainer implements Streamable<LootContainer> {
 	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.getLootContainerId());
 		stream.writeUTF(this.getUid());
-		int itemsSize = this.items == null || this.items.length == 0 ? 0 : this.items.length;
-
-		stream.writeInt(itemsSize);
-
-		for (int i = 0; i < itemsSize; i++) {
-			this.items[i].write(stream);
+		GameItem[] toWrite = getCondensedItems(this);
+		stream.writeInt(toWrite.length);
+		for (int i = 0; i < toWrite.length; i++) {
+			toWrite[i].write(stream);
 		}
 
 		stream.writeFloat(this.pos.x);
@@ -110,7 +110,6 @@ public class LootContainer implements Streamable<LootContainer> {
 
 	@Override
 	public LootContainer read(DataInputStream stream) throws Exception {
-		Sprite lootSprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8);
 
 		long lootContainerId = stream.readLong();
 		String uid = stream.readUTF();
@@ -127,6 +126,41 @@ public class LootContainer implements Streamable<LootContainer> {
 
 		return LootContainer.builder().lootContainerId(lootContainerId).uid(uid).items(items)
 				.pos(new Vector2f(posX, posY)).spawnedTime(spawnedTime).contentsChanged(contentsChanged)
-				.sprite(lootSprite).build();
+				.sprite(null).build();
+	}
+	
+	public static LootContainer from(DataInputStream stream, boolean loadSprite) throws Exception{
+		long lootContainerId = stream.readLong();
+		String uid = stream.readUTF();
+		int itemsSize = stream.readInt();
+		GameItem[] items = new GameItem[itemsSize];
+		for (int i = 0; i < itemsSize; i++) {
+			items[i] = new GameItem().read(stream);
+		}
+		float posX = stream.readFloat();
+		float posY = stream.readFloat();
+
+		long spawnedTime = stream.readLong();
+		boolean contentsChanged = stream.readBoolean();
+		if(loadSprite) {
+			return LootContainer.builder().lootContainerId(lootContainerId).uid(uid).items(items)
+					.pos(new Vector2f(posX, posY)).spawnedTime(spawnedTime).contentsChanged(contentsChanged)
+					.sprite(GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8)).build();
+		}else {
+			return LootContainer.builder().lootContainerId(lootContainerId).uid(uid).items(items)
+					.pos(new Vector2f(posX, posY)).spawnedTime(spawnedTime).contentsChanged(contentsChanged)
+					.sprite(null).build();
+		}
+	
+	}
+	
+	public static GameItem[] getCondensedItems(LootContainer container) {
+		List<GameItem> items = new ArrayList<>();
+		for(GameItem item : container.getItems()) {
+			if(item!=null) {
+				items.add(item);
+			}
+		}
+		return items.toArray(new GameItem[0]);
 	}
 }

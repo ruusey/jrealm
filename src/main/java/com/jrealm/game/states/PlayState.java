@@ -711,7 +711,7 @@ public class PlayState extends GameState {
 
 	public Chest getNearestChest() {
 		for (LootContainer lc : this.client.getRealm().getLoot().values()) {
-			if ((this.client.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= GlobalConstants.PLAYER_SIZE)
+			if ((this.client.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= GlobalConstants.PLAYER_SIZE*2)
 					&& (lc instanceof Chest) && !this.playerLocation.equals(PlayerLocation.REALM))
 				return (Chest) lc;
 		}
@@ -720,7 +720,7 @@ public class PlayState extends GameState {
 
 	public LootContainer getNearestLootContainer() {
 		for (LootContainer lc : this.client.getRealm().getLoot().values()) {
-			if ((this.client.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= GlobalConstants.PLAYER_SIZE))
+			if ((this.client.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= GlobalConstants.PLAYER_SIZE*2))
 				return lc;
 		}
 		return null;

@@ -14,6 +14,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
+import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
@@ -148,10 +149,13 @@ public class RealmManagerClient implements Runnable {
 	public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
 		LoadPacket textPacket = (LoadPacket) packet;
 		try {
+			
 			for(Player p : textPacket.getPlayers()) {
 				cli.getRealm().addPlayerIfNotExists(p);
 			}
-			//cli.getRealm()
+			for(LootContainer lc : textPacket.getContainers()) {
+				cli.getRealm().addLootContainerIfNotExists(lc);
+			}
 		}catch(Exception e) {
 			log.error("Failed to handle Load Packet. Reason: {}", e.getMessage());
 		}	

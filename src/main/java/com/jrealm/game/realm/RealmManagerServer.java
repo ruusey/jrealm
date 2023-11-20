@@ -92,7 +92,6 @@ public class RealmManagerServer implements Runnable {
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 				GlobalConstants.PLAYER_SIZE, cls);
 		player.equipSlots(PlayState.getStartingEquipment(cls));
-		player.setPos(new Vector2f(580.0f, 510.0f));
 		player.setMaxSpeed(0.6f);
 		player.setUp(true);
 		
@@ -105,7 +104,6 @@ public class RealmManagerServer implements Runnable {
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 				GlobalConstants.PLAYER_SIZE, cls);
 		player.equipSlots(PlayState.getStartingEquipment(cls));
-		player.setPos(new Vector2f(580.0f, 510.0f));
 		player.setMaxSpeed(0.6f);
 		player.setLeft(true);
 		player.setUp(true);
