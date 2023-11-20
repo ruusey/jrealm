@@ -191,6 +191,7 @@ public class RealmManagerClient implements Runnable {
 		switch(objectMovePacket.getTargetEntityType()) {
 		case PLAYER:
 			Player playerToUpdate = cli.getRealm().getPlayer(objectMovePacket.getEntityId());
+			if(playerToUpdate==null) break;
 			playerToUpdate.applyMovement(objectMovePacket);
 			break;
 		case ENEMY:

@@ -93,7 +93,24 @@ public class RealmManagerServer implements Runnable {
 				GlobalConstants.PLAYER_SIZE, cls);
 		player.equipSlots(PlayState.getStartingEquipment(cls));
 		player.setPos(new Vector2f(580.0f, 510.0f));
+		player.setMaxSpeed(0.6f);
+		player.setUp(true);
+		
 		long newId = this.getRealm().addPlayer(player);
+
+		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+		cls = CharacterClass.PALLADIN;
+		player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
+				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+				GlobalConstants.PLAYER_SIZE, cls);
+		player.equipSlots(PlayState.getStartingEquipment(cls));
+		player.setPos(new Vector2f(580.0f, 510.0f));
+		player.setMaxSpeed(0.6f);
+		player.setLeft(true);
+		player.setUp(true);
+		newId = this.getRealm().addPlayer(player);
+		
 	}
 
 	@Override
