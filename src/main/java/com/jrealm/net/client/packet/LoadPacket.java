@@ -74,11 +74,13 @@ public class LoadPacket extends Packet {
 		for(Player p : this.players) {
 			p.write(stream);
 		}
+		
 		stream.writeInt(this.containers.length);
 		for(LootContainer l : this.containers) {
 			l.write(stream);
 		}
 		
+		stream.writeInt(this.bullets.length);
 		for(Bullet b : this.bullets) {
 			b.write(stream);
 		}
