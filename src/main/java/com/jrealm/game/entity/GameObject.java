@@ -45,7 +45,7 @@ public abstract class GameObject {
 		this.image = image;
 	}
 
-	private GameObject(long id, Vector2f origin, int size) {
+	public GameObject(long id, Vector2f origin, int size) {
 		this.id = id;
 		this.bounds = new AABB(origin, size, size);
 		this.pos = origin;

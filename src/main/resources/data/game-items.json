@@ -2140,7 +2140,7 @@
 		"col": 3,
 		"spriteKey": "entity/rotmg-items.png",
 		"name": "Serpentine Staff",
-		"description": "A staff powered by the magic of Stheno’s minions.",
+		"description": "A staff powered by the magic of Sthenoï¿½s minions.",
 		"damage": {
 			"projectileGroupId": 10,
 			"min": 20,
@@ -2363,6 +2363,7 @@
 			"max": 75
 		},
 		"effect": {
+			"effectId": 6,
 			"mpCost": 75
 		},
 		"consumable": false,

@@ -147,10 +147,9 @@ public class RealmManagerClient implements Runnable {
 	
 	public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
 		LoadPacket textPacket = (LoadPacket) packet;
-		log.info("[CLIENT] Recieved Loat Packet");
 		try {
 			for(Player p : textPacket.getPlayers()) {
-				//cli.getRealm().addPlayerIfNotExists(p);
+				cli.getRealm().addPlayerIfNotExists(p);
 			}
 			//cli.getRealm()
 		}catch(Exception e) {

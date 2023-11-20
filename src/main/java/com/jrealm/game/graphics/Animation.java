@@ -1,5 +1,8 @@
 package com.jrealm.game.graphics;
 
+import lombok.Data;
+
+@Data
 public class Animation {
 
 	private Sprite[] frames;

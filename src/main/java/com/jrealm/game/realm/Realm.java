@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
@@ -21,6 +22,8 @@ import com.jrealm.game.entity.item.Chest;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.material.Material;
 import com.jrealm.game.entity.material.MaterialManager;
+import com.jrealm.game.graphics.Animation;
+import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
@@ -155,6 +158,20 @@ public class Realm {
 	public long addPlayerIfNotExists(Player player) {
 		this.acquirePlayerLock();
 		if(!this.players.containsKey(player.getId())) {
+			SpriteSheet sheet = GameDataManager.loadClassSprites(CharacterClass.valueOf(player.getClassId()));
+			player.setSprite(sheet);
+			player.setAni(new Animation());
+			player.getAnimation().setFrames(sheet.getSpriteArray(0));
+			player.getAnimation().setNumFrames(2, player.UP);
+			player.getAnimation().setNumFrames(2, player.DOWN);
+			player.getAnimation().setNumFrames(2, player.RIGHT);
+			player.getAnimation().setNumFrames(2, player.LEFT);
+			player.getAnimation().setNumFrames(2, player.ATTACK + player.RIGHT);
+			player.getAnimation().setNumFrames(2, player.ATTACK + player.LEFT);
+			player.getAnimation().setNumFrames(2, player.ATTACK + player.UP);
+			player.getAnimation().setNumFrames(2, player.ATTACK + player.DOWN);
+			player.setAnimation(player.RIGHT, sheet.getSpriteArray(player.RIGHT), 10);
+
 			this.players.put(player.getId(), player);
 		}
 		this.releasePlayerLock();
@@ -331,7 +348,7 @@ public class Realm {
 				UpdatePacket pack = UpdatePacket.from(p);
 				playerUpdates.add(pack);
 			} catch (Exception e) {
-				log.error("Failed to create update packet from Player. Reason: {}", e.getMessage());
+				log.error("Failed to create update packet from Player. Reason: {}", e);
 			}
 			// }
 		}

@@ -73,6 +73,7 @@ public class RealmManagerServer implements Runnable {
 	private int oldTickCount;
 	private int tickCount;
 
+	private long firstPlayerId;
 	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
@@ -80,18 +81,18 @@ public class RealmManagerServer implements Runnable {
 		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap("tile/vault.xml", null);
-		
 
 	}
 	
 	private void addTestPlayer() {
 		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		CharacterClass cls = CharacterClass.WIZARD;
+		CharacterClass cls = CharacterClass.ARCHER;
 		Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
 				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 				GlobalConstants.PLAYER_SIZE, cls);
 		player.equipSlots(PlayState.getStartingEquipment(cls));
+		player.setPos(new Vector2f(580.0f, 510.0f));
 		long newId = this.getRealm().addPlayer(player);
 	}
 
@@ -107,6 +108,7 @@ public class RealmManagerServer implements Runnable {
 		WorkerThread.submitAndForkRun(workerThread);
 
 		log.info("RealmManager exiting run().");
+
 	}
 
 	private void tick() {
@@ -127,6 +129,7 @@ public class RealmManagerServer implements Runnable {
 
 	public void broadcastGameData() {
 		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
+			if(player.getKey()!=this.getFirstPlayerId()) continue;
 			List<UpdatePacket> uPackets = this.realm.getPlayersAsPackets(player.getValue().getCam().getBounds());
 			List<ObjectMovePacket> mPackets = this.realm
 					.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
@@ -143,7 +146,6 @@ public class RealmManagerServer implements Runnable {
 				}
 				
 				LoadPacket load = this.realm.getLoadPacket(player.getValue().getCam().getBounds());
-				
 				load.serializeWrite(dosToClient);
 			} catch (Exception e) {
 				log.error("Failed to get OutputStream to Client");
@@ -553,13 +555,14 @@ public class RealmManagerServer implements Runnable {
 					GlobalConstants.PLAYER_SIZE, cls);
 			player.equipSlots(PlayState.getStartingEquipment(cls));
 			long newId = mgr.getRealm().addPlayer(player);
-			
+			mgr.setFirstPlayerId(newId);
 			OutputStream toClientStream = mgr.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 			LoginResponseMessage message = LoginResponseMessage.builder().playerId(newId).success(true).build();
 			
 			CommandPacket commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
 			commandResponse.serializeWrite(dosToClient);
+			mgr.addTestPlayer();
 		} catch (Exception e) {
 			log.error("Failed to perform Client Login. Reason: {}", e);
 		}

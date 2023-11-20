@@ -74,6 +74,31 @@ public class Player extends Entity implements Streamable<Player>{
 		this.stats.setAtt((short) 5);
 		this.stats.setWis((short) 5);
 	}
+	
+	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
+		super(id, origin, size);
+		this.classId = characterClass.classId;
+		this.resetEffects();
+		this.size = size;
+		this.bounds.setWidth(this.size);
+		this.bounds.setHeight(this.size);
+
+		this.hitBounds.setWidth(this.size);
+		this.hitBounds.setHeight(this.size);
+		this.hasIdle = false;
+		this.health = this.maxHealth = this.defaultMaxHealth = 500;
+		this.mana = this.maxMana = this.defaultMaxMana = 100;
+		this.name = "player";
+
+		this.resetInventory();
+
+		this.stats = new Stats();
+		this.stats.setVit((short) 5);
+		this.stats.setDex((short) 5);
+		this.stats.setSpd((short) 5);
+		this.stats.setAtt((short) 5);
+		this.stats.setWis((short) 5);
+	}
 
 	private void resetInventory() {
 		this.inventory = new GameItem[20];
@@ -357,7 +382,7 @@ public class Player extends Entity implements Streamable<Player>{
 		float posY = stream.readFloat();
 		float dX = stream.readFloat();
 		float dY = stream.readFloat();
-		Player player = Player.fromData(id, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
+		Player player = new Player(id, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
 		player.setDx(dX);
 		player.setDy(dY);
 		return player;

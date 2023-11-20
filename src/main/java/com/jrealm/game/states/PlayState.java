@@ -731,7 +731,11 @@ public class PlayState extends GameState {
 		Player player = this.client.getRealm().getPlayer(this.playerId);
 		if(player==null) return;
 		this.client.getRealm().getTileManager().render(g);
-		player.render(g);
+
+		for(Player p : this.client.getRealm().getPlayers().values()) {
+			p.render(g);
+		}
+		
 		
 		// AABB test = new AABB(new Vector2f(this.getPlayerPos().x * 0.5f,
 		// this.getPlayerPos().y * 0.5f),

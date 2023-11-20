@@ -87,6 +87,7 @@ public class SocketClient implements Runnable {
 				}
 			}
 		} catch (Exception e) {
+			e.printStackTrace();
 			SocketClient.log.error("Failed to parse client input {}", e.getMessage());
 		}
 	}
