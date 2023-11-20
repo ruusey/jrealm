@@ -2,6 +2,8 @@ package com.jrealm.game.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.data.GameDataManager;
@@ -13,13 +15,14 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.states.PlayState;
+import com.jrealm.net.Streamable;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public abstract class Enemy extends Entity {
+public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 	protected AABB sense;
 	protected int r_sense;
@@ -37,6 +40,18 @@ public abstract class Enemy extends Entity {
 	public Enemy(long id, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
 		super(id, sprite, origin, size);
 
+		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
+				(origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);
+		this.attackrange = new AABB(new Vector2f(
+				(origin.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
+				(origin.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
+				this.r_attackrange);
+		
+		this.weaponId = weaponId;
+	}
+	
+	public Enemy(long id, Vector2f origin, int size, int weaponId) {
+		super(id, origin, size);
 		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
 				(origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);
 		this.attackrange = new AABB(new Vector2f(
@@ -211,6 +226,23 @@ public abstract class Enemy extends Entity {
 		g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
 				(int) (24 * this.healthpercent), 5);
 
+	}
+	
+	// TODO: Add enemy type identifier
+	@Override
+	public void write(DataOutputStream stream) throws Exception{
+		stream.writeLong(this.getId());
+		//stream.writeInt(this.getClassId());
+		stream.writeShort(this.getSize());
+		stream.writeFloat(this.getPos().x);
+		stream.writeFloat(this.getPos().y);
+		stream.writeFloat(this.dx);
+		stream.writeFloat(this.dy);
+	}
+	
+	@Override
+	public Enemy read(DataInputStream stream) throws Exception {
+		return null;
 	}
 
 }

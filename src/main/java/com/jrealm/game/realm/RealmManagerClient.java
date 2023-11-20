@@ -157,6 +157,8 @@ public class RealmManagerClient implements Runnable {
 			for(LootContainer lc : textPacket.getContainers()) {
 				cli.getRealm().addLootContainerIfNotExists(lc);
 			}
+			// TODO:
+			// Add bullet type identifier in bullet class, same for enemy
 		}catch(Exception e) {
 			log.error("Failed to handle Load Packet. Reason: {}", e.getMessage());
 		}	

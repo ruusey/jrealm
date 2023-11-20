@@ -378,10 +378,10 @@ public class Realm {
 		try {
 			final Player[] playersToLoad = this.getPlayers().values().toArray(new Player[0]);
 			final LootContainer[] containersToLoad = this.getLoot().values().toArray(new LootContainer[0]);
-			load = LoadPacket.from(playersToLoad, containersToLoad);
+			final Bullet[] bulletsToLoad = this.getBullets().values().toArray(new Bullet[0]);
+			load = LoadPacket.from(playersToLoad, containersToLoad, bulletsToLoad);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error("Failed to get load Packet. Reason: {}");
 		}
 		return load;
 	}
