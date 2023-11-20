@@ -30,7 +30,7 @@ public class PlayerUI {
 
 	private Slots[] inventory;
 	private Slots[] groundLoot;
-
+	
 	private PlayState playState;
 
 	private Map<String, ItemTooltip> tooltips;

@@ -35,9 +35,11 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 	public long lastShotTick = 0;
 
+	
+	private int enemyId;
 	private int weaponId = -1;
 
-	public Enemy(long id, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
+	public Enemy(long id, int enemyId, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
 		super(id, sprite, origin, size);
 
 		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
@@ -50,7 +52,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		this.weaponId = weaponId;
 	}
 	
-	public Enemy(long id, Vector2f origin, int size, int weaponId) {
+	public Enemy(long id, int enemyId, Vector2f origin, int size, int weaponId) {
 		super(id, origin, size);
 		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
 				(origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);

@@ -1,21 +1,87 @@
 [
 	{
-		"enemyId": 0,
-		"spriteKey":"",
-		"row":0,
-		"col":0,
-		"name": " ",
-		"hp":1000,
-		"exp": 1000,
-		"phases": [
-			{
-				"projectileGroupId":7,
-				"duration": 5000
-			},
-			{
-				"projectileGroupId":8,
-				"duration": 5000
-			}
-		]
+		"enemyId": 1,
+		"name": "Cube God",
+		"spriteKey": "entity/rotmg-bosses.png",
+		"row": 4,
+		"col": 7,
+		"size": 64,
+		"attackId": 0,
+		"xp": 1000,
+		"health": 1000,
+		"maxSpeed": 1.4,
+		"chaseRange": 650.0,
+		"attackRange": 450.0,
+		"stats": {
+			"def": 5
+		}
+	},
+	{
+		"enemyId": 2,
+		"name": "Skull Shrine",
+		"spriteKey": "entity/rotmg-bosses.png",
+		"row": 4,
+		"col": 5,
+		"size": 64,
+		"attackId": 2,
+		"xp": 1000,
+		"health": 1000,
+		"maxSpeed": 1.4,
+		"chaseRange": 650.0,
+		"attackRange": 450.0,
+		"stats": {
+			"def": 5
+		}
+	},
+	{
+		"enemyId": 3,
+		"name": "Ghost God",
+		"spriteKey": "entity/rotmg-bosses.png",
+		"row": 4,
+		"col": 0,
+		"size": 64,
+		"attackId": 1,
+		"xp": 1000,
+		"health": 1000,
+		"maxSpeed": 1.4,
+		"chaseRange": 650.0,
+		"attackRange": 450.0,
+		"stats": {
+			"def": 5
+		}
+	},
+	{
+		"enemyId": 4,
+		"name": "Medusa",
+		"spriteKey": "entity/rotmg-bosses.png",
+		"row": 1,
+		"col": 2,
+		"size": 64,
+		"attackId": 7,
+		"xp": 1000,
+		"health": 1000,
+		"maxSpeed": 1.4,
+		"chaseRange": 650.0,
+		"attackRange": 450.0,
+		"stats": {
+			"def": 5
+		}
+	},
+	{
+		"enemyId": 5,
+		"name": "Red Demon",
+		"spriteKey": "entity/rotmg-bosses.png",
+		"row": 0,
+		"col": 1,
+		"size": 64,
+		"attackId": 8,
+		"xp": 1000,
+		"health": 1000,
+		"maxSpeed": 1.4,
+		"chaseRange": 650.0,
+		"attackRange": 450.0,
+		"stats": {
+			"def": 5
+		}
 	}
 ]

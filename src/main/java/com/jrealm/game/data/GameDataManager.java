@@ -12,6 +12,7 @@ import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
+import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.SpriteModel;
@@ -24,6 +25,7 @@ public class GameDataManager {
 
 	public static Map<Integer, ProjectileGroup> PROJECTILE_GROUPS = null;
 	public static Map<Integer, GameItem> GAME_ITEMS = null;
+	public static Map<Integer, EnemyModel> ENEMIES = null;
 	public static Map<String, SpriteSheet> SPRITE_SHEETS = null;
 
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "material/trees.png", "tile/overworldOP.png",
@@ -31,6 +33,20 @@ public class GameDataManager {
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png",
 			"entity/rotmg-abilities.png", "tile/rotmg-tiles.png" };
 
+	private static void loadEnemies() throws Exception {
+		GameDataManager.log.info("Loading Enemies..");
+		GameDataManager.ENEMIES = new HashMap<>();
+		InputStream inputStream = GameDataManager.class.getClassLoader()
+				.getResourceAsStream("data/enemies.json");
+		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		
+		EnemyModel[] enemies = GameDataManager.mapper.readValue(text, EnemyModel[].class);
+		for(EnemyModel enemy : enemies) {
+			GameDataManager.ENEMIES.put(enemy.getEnemyId(), enemy);
+		}
+		GameDataManager.log.info("Loading Enemies... DONE");
+	}
+	
 	private static void loadProjectileGroups() throws Exception {
 		GameDataManager.log.info("Loading Projectile Groups...");
 
@@ -177,6 +193,7 @@ public class GameDataManager {
 			GameDataManager.loadProjectileGroups();
 			GameDataManager.loadGameItems();
 			GameDataManager.loadSpriteSheets();
+			GameDataManager.loadEnemies();
 		}catch(Exception e) {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}

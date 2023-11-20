@@ -15,8 +15,8 @@ import lombok.EqualsAndHashCode;
 public class Monster extends Enemy {
 	private String uuid;
 
-	public Monster(long id, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
-		super(id, sprite, origin, size, weaponId);
+	public Monster(long id, int enemyId, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
+		super(id, enemyId, sprite, origin, size, weaponId);
 		// this.xOffset = size / 4;
 		// this.yOffset = size / 4;
 		Random r = new Random(System.nanoTime());

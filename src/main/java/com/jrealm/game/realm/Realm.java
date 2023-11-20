@@ -28,6 +28,7 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectKey;
@@ -413,16 +414,13 @@ public class Realm {
 	}
 
 	public void spawnRandomEnemies() {
+		if(this.enemies==null) this.enemies = new ConcurrentHashMap<>();
 		Vector2f v = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
-
-		// SpriteSheet enemySheet1 =
-		// GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses-1.png");
 
 		Random r = new Random(System.nanoTime());
 		for (int i = 0; i < this.tileManager.getHeight(); i++) {
 			for (int j = 0; j < this.tileManager.getWidth(); j++) {
-				Enemy go = null;
 				int doSpawn = r.nextInt(200);
 				if ((doSpawn > 195) && (i > 0) && (j > 0)) {
 					Vector2f spawnPos = new Vector2f(j * 64, i * 64);
@@ -430,39 +428,17 @@ public class Realm {
 					if (bounds.distance(v) < 512) {
 						continue;
 					}
-					switch (r.nextInt(5)) {
-					case 0:
-						go = new Monster(Realm.RANDOM.nextLong(),
-								new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0), spawnPos,
-								64, 0);
-						go.setPos(spawnPos);
-						break;
-					case 1:
-						go = new Monster(Realm.RANDOM.nextLong(),
-								new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0),
-								spawnPos, 64, 2);
-						go.setPos(spawnPos);
-						break;
-					case 2:
-						go = new Monster(Realm.RANDOM.nextLong(),
-								new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0),
-								new Vector2f(j * 64, i * 64), 64, 1);
-						go.setPos(new Vector2f(j * 64, i * 64));
-						break;
-					case 3:
-						go = new Monster(Realm.RANDOM.nextLong(),
-								new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0),
-								new Vector2f(j * 64, i * 64), 64, 7);
-						go.setPos(new Vector2f(j * 64, i * 64));
-						break;
-					case 4:
-						go = new Monster(Realm.RANDOM.nextLong(),
-								new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0),
-								new Vector2f(j * 64, i * 64), 64, 8);
-						go.setPos(new Vector2f(j * 64, i * 64));
-						break;
-					}
-					this.addEnemy(go);
+					List<EnemyModel> enemyToSpawn = new ArrayList<>();
+					GameDataManager.ENEMIES.values().forEach(enemy->{
+						enemyToSpawn.add(enemy);
+					});
+					EnemyModel toSpawn = enemyToSpawn.get(r.nextInt(enemyToSpawn.size()));
+					Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
+							new SpriteSheet(enemySheet.getSprite(toSpawn.getCol(), toSpawn.getRow(), 16, 16),
+									toSpawn.getName(), 16, 16, 0),
+							new Vector2f(j * 64, i * 64), toSpawn.getSize(), toSpawn.getAttackId());
+					enemy.setPos(spawnPos);
+					this.addEnemy(enemy);
 				}
 			}
 		}
@@ -470,41 +446,21 @@ public class Realm {
 
 	public void spawnRandomEnemy() {
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
-
 		Random r = new Random(System.nanoTime());
-		Enemy go = null;
 		Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getWidth()),
 				GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getHeight()));
 
-		switch (r.nextInt(5)) {
-		case 0:
-			go = new Monster(Realm.RANDOM.nextLong(),
-					new SpriteSheet(enemySheet.getSprite(7, 4, 16, 16), "Cube God", 16, 16, 0), spawnPos, 64, 0);
-			go.setPos(spawnPos);
-			break;
-		case 1:
-			go = new Monster(Realm.RANDOM.nextLong(),
-					new SpriteSheet(enemySheet.getSprite(5, 4, 16, 16), "Skull Shrine", 16, 16, 0), spawnPos, 64, 2);
-			go.setPos(spawnPos);
-			break;
-		case 2:
-			go = new Monster(Realm.RANDOM.nextLong(),
-					new SpriteSheet(enemySheet.getSprite(0, 4, 16, 16), "Ghost God", 16, 16, 0), spawnPos, 64, 1);
-			go.setPos(spawnPos);
-			break;
-		case 3:
-			go = new Monster(Realm.RANDOM.nextLong(),
-					new SpriteSheet(enemySheet.getSprite(2, 1, 16, 16), "Medusa", 16, 16, 0), spawnPos, 64, 7);
-			go.setPos(spawnPos);
-			break;
-		case 4:
-			go = new Monster(Realm.RANDOM.nextLong(),
-					new SpriteSheet(enemySheet.getSprite(1, 0, 16, 16), "Red Demon", 16, 16, 0), spawnPos, 64, 8);
-			go.setPos(spawnPos);
-			break;
-
-		}
-		this.addEnemy(go);
+		List<EnemyModel> enemyToSpawn = new ArrayList<>();
+		GameDataManager.ENEMIES.values().forEach(enemy->{
+			enemyToSpawn.add(enemy);
+		});
+		EnemyModel toSpawn = enemyToSpawn.get(r.nextInt(enemyToSpawn.size()));
+		Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
+				new SpriteSheet(enemySheet.getSprite(toSpawn.getCol(), toSpawn.getRow(), 16, 16),
+						toSpawn.getName(), 16, 16, 0),
+				spawnPos, toSpawn.getSize(), toSpawn.getAttackId());
+		enemy.setPos(spawnPos);
+		this.addEnemy(enemy);
 	}
 
 	private Thread getStatsThread() {
