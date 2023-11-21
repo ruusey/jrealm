@@ -255,7 +255,7 @@ public class PlayState extends GameState {
 							short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 							rolledDamage += player.getComputedStats().getAtt();
 							
-							long newProj = this.addProjectile(player.getWeaponId(), source.clone(-offset, -offset),
+							long newProj = this.addProjectile(player.getWeaponId(), p.getProjectileId(), source.clone(-offset, -offset),
 									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
 									rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
 							try {
@@ -271,10 +271,10 @@ public class PlayState extends GameState {
 				Runnable processGameObjects = () -> {
 					GameObject[] gameObject = this.client.getRealm().getGameObjectsInBounds(this.cam.getBounds());
 					for (int i = 0; i < gameObject.length; i++) {
-						if (gameObject[i] instanceof Enemy) {
-							Enemy enemy = ((Enemy) gameObject[i]);
-							enemy.update(this, time);
-						}
+//						if (gameObject[i] instanceof Enemy) {
+//							Enemy enemy = ((Enemy) gameObject[i]);
+//							enemy.update(this, time);
+//						}
 
 						if (gameObject[i] instanceof Bullet) {
 							Bullet bullet = ((Bullet) gameObject[i]);
@@ -312,7 +312,7 @@ public class PlayState extends GameState {
 		}
 	}
 
-	public synchronized void addProjectile(int projectileGroupId, Vector2f src, Vector2f dest, short size,
+	public synchronized void addProjectile(int projectileGroupId, int projectileId, Vector2f src, Vector2f dest, short size,
 			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags) {
 		Player player = this.client.getRealm().getPlayer(this.playerId);
 		if (player == null)
@@ -326,13 +326,13 @@ public class PlayState extends GameState {
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
 		b.setFlags(flags);
 
 		this.client.getRealm().addBullet(b);
 	}
 
-	public synchronized long addProjectile(int projectileGroupId, Vector2f src, float angle, short size,
+	public synchronized long addProjectile(int projectileGroupId, int projectileId, Vector2f src, float angle, short size,
 			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags, short amplitude,
 			short frequency) {
 		Player player = this.client.getRealm().getPlayer(this.playerId);
@@ -347,7 +347,7 @@ public class PlayState extends GameState {
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), bulletImage, src, angle, size, magnitude, range, damage,
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, angle, size, magnitude, range, damage,
 				isEnemy);
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);
@@ -635,12 +635,12 @@ public class PlayState extends GameState {
 				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
 				if (p.getPositionMode() == ProjectilePositionMode.TARGET_PLAYER) {
-					this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), source.clone(-offset, -offset),
+					this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), p.getProjectileId(), source.clone(-offset, -offset),
 							angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
 							rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
 				} else {
 					source = dest;
-					this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), source.clone(-offset, -offset),
+					this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), p.getProjectileId(), source.clone(-offset, -offset),
 							Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage,
 							false, p.getFlags(), p.getAmplitude(), p.getFrequency());
 				}
@@ -659,7 +659,7 @@ public class PlayState extends GameState {
 				short offset = (short) (p.getSize() / (short) 2);
 				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
-				this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), dest.clone(-offset, -offset),
+				this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), p.getProjectileId() ,dest.clone(-offset, -offset),
 						Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage,
 						false, p.getFlags(), p.getAmplitude(), p.getFrequency());
 			}

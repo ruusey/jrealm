@@ -14,7 +14,8 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.ProjectilePositionMode;
-import com.jrealm.game.states.PlayState;
+import com.jrealm.game.realm.Realm;
+import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.net.Streamable;
 
 import lombok.Data;
@@ -105,10 +106,9 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		}
 	}
 
-	public void update(PlayState playState, double time) {
-
+	public void update(RealmManagerServer mgr, double time) {
+		Player player = mgr.getClosestPlayer(this.getPos(), this.r_sense);
 		super.update(time);
-		Player player = playState.getClient().getRealm().getPlayer(playState.getPlayerId());
 		if (player == null)
 			return;
 		this.chase(player);
@@ -128,7 +128,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		}
 
 		if (this.attackrange.colCircleBox(player.getBounds()) && !this.isInvincible
-				&& !playState.getPlayer().hasEffect(EffectType.INVISIBLE)) {
+				&& !player.hasEffect(EffectType.INVISIBLE)) {
 			this.attack = true;
 
 			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 500)
@@ -145,15 +145,14 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 				for (Projectile p : group.getProjectiles()) {
 					if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
-						playState.addProjectile(this.getWeaponId(), source.clone(),
+						mgr.addProjectile(player.getId(), this.getWeaponId(), p.getProjectileId(), source.clone(),
 								angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
 								p.getDamage(), true, p.getFlags(), p.getAmplitude(), p.getFrequency());
 					} else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
-						playState.addProjectile(this.getWeaponId(), source.clone(), Float.parseFloat(p.getAngle()),
+						mgr.addProjectile(player.getId(), this.getWeaponId(), p.getProjectileId(), source.clone(), Float.parseFloat(p.getAngle()),
 								p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
 								p.getAmplitude(), p.getFrequency());
 					}
-
 				}
 			}
 		} else {
@@ -167,14 +166,14 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			return;
 		}
 		if (!this.isFallen()) {
-			if (!this.tc.collisionTile(playState.getClient().getRealm().getTileManager().getTm().get(1).getBlocks(),
+			if (!this.tc.collisionTile(mgr.getRealm().getTileManager().getTm().get(1).getBlocks(),
 					this.dx,
 					0)) {
 				this.sense.getPos().x += this.dx;
 				this.attackrange.getPos().x += this.dx;
 				this.pos.x += this.dx;
 			}
-			if (!this.tc.collisionTile(playState.getClient().getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
+			if (!this.tc.collisionTile(mgr.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
 					this.dy)) {
 				this.sense.getPos().y += this.dy;
 				this.attackrange.getPos().y += this.dy;

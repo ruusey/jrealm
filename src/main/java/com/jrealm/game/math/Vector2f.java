@@ -63,6 +63,10 @@ public class Vector2f {
 
 		return this;
 	}
+	
+	public float distanceTo(Vector2f other) {
+		 return (float) Math.hypot(this.x-other.x, this.y-other.y);
+	}
 
 	@Override
 	public Vector2f clone() {

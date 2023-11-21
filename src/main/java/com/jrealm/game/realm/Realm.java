@@ -29,6 +29,7 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
+import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectKey;
@@ -229,6 +230,18 @@ public class Realm {
 		this.bullets.put(b.getId(), b);
 		return b.getId();
 	}
+	
+	public long addBulletIfNotExists(Bullet b) {
+		Bullet existing = this.bullets.get(b.getId());
+		if(existing==null) {
+			ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(b.getProjectileId());
+			SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
+			Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
+			b.setImage(bulletImage);
+			this.bullets.put(b.getId(), b);
+		}
+		return b.getId();
+	}
 
 	public boolean removeBullet(Bullet b) {
 		Bullet bullet = this.bullets.remove(b.getId());
@@ -425,7 +438,7 @@ public class Realm {
 				if ((doSpawn > 195) && (i > 0) && (j > 0)) {
 					Vector2f spawnPos = new Vector2f(j * 64, i * 64);
 					AABB bounds = new AABB(spawnPos, 64, 64);
-					if (bounds.distance(v) < 512) {
+					if (bounds.distance(v) < 256) {
 						continue;
 					}
 					List<EnemyModel> enemyToSpawn = new ArrayList<>();

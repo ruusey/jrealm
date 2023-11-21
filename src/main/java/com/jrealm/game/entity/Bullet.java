@@ -14,10 +14,10 @@ import com.jrealm.net.Streamable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-
 @Data
-@EqualsAndHashCode(callSuper=false)
-public class Bullet extends GameObject implements Streamable<Bullet>{
+@EqualsAndHashCode(callSuper = false)
+public class Bullet extends GameObject implements Streamable<Bullet> {
+	private int projectileId;
 	private float angle;
 	private float magnitude;
 	private float range;
@@ -35,15 +35,16 @@ public class Bullet extends GameObject implements Streamable<Bullet>{
 	private short amplitude = 4;
 	private short frequency = 25;
 
-	public Bullet(long id, Sprite image, Vector2f origin, int size) {
+	public Bullet(long id, int bulletId, Sprite image, Vector2f origin, int size) {
 		super(id, image, origin, size);
 		this.flags = new ArrayList<>();
 	}
 
-	public Bullet(long id, Vector2f origin, int size, float angle,
-			float magnitude, float range, short damage, boolean isEnemy, boolean playerHit, boolean enemyHit,
-			List<Short> flags, boolean invert, long timeStep, short amplitude, short frequency) {
+	public Bullet(long id, int projectileId, Vector2f origin, int size, float angle, float magnitude, float range,
+			short damage, boolean isEnemy, boolean playerHit, boolean enemyHit, List<Short> flags, boolean invert,
+			long timeStep, short amplitude, short frequency) {
 		super(id, origin, size);
+		this.projectileId = projectileId;
 		this.angle = angle;
 		this.magnitude = magnitude;
 		this.range = range;
@@ -58,10 +59,10 @@ public class Bullet extends GameObject implements Streamable<Bullet>{
 		this.frequency = frequency;
 	}
 
-	public Bullet(long id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
-			short damage,
-			boolean isEnemy) {
+	public Bullet(long id, int projectileId, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude,
+			float range, short damage, boolean isEnemy) {
 		super(id, image, origin, size);
+		this.projectileId = projectileId;
 		this.magnitude = magnitude;
 		this.range = range;
 		this.damage = damage;
@@ -70,9 +71,10 @@ public class Bullet extends GameObject implements Streamable<Bullet>{
 		this.flags = new ArrayList<>();
 	}
 
-	public Bullet(long id, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude, float range,
-			short damage, short amplitude, short frequency, boolean isEnemy) {
+	public Bullet(long id, int projectileId, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude,
+			float range, short damage, short amplitude, short frequency, boolean isEnemy) {
 		super(id, image, origin, size);
+		this.projectileId = projectileId;
 		this.magnitude = magnitude;
 		this.range = range;
 		this.damage = damage;
@@ -83,12 +85,11 @@ public class Bullet extends GameObject implements Streamable<Bullet>{
 		this.flags = new ArrayList<>();
 
 	}
-		
 
-	public Bullet(long id, Sprite image, Vector2f origin, float angle, short size, float magnitude, float range,
-			short damage,
-			boolean isEnemy) {
+	public Bullet(long id, int projectileId, Sprite image, Vector2f origin, float angle, short size, float magnitude,
+			float range, short damage, boolean isEnemy) {
 		super(id, image, origin, size);
+		this.projectileId = projectileId;
 		this.magnitude = magnitude;
 		this.range = range;
 		this.damage = damage;
@@ -135,7 +136,7 @@ public class Bullet extends GameObject implements Streamable<Bullet>{
 		if (this.hasFlag((short) 12)) {
 			this.update(1);
 		} else {
-			//Regular straight line projectile
+			// Regular straight line projectile
 			Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
 					(float) (Math.cos(this.angle) * this.magnitude));
 			double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
@@ -187,6 +188,7 @@ public class Bullet extends GameObject implements Streamable<Bullet>{
 	@Override
 	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.id);
+		stream.writeInt(this.projectileId);
 		stream.writeInt(this.size);
 		stream.writeFloat(this.pos.x);
 		stream.writeFloat(this.pos.y);
@@ -201,7 +203,7 @@ public class Bullet extends GameObject implements Streamable<Bullet>{
 		stream.writeBoolean(this.enemyHit);
 		stream.writeBoolean(this.invert);
 		stream.writeInt(this.flags.size());
-		for(short s : this.flags) {
+		for (short s : this.flags) {
 			stream.writeShort(s);
 		}
 		stream.writeLong(this.timeStep);
@@ -212,6 +214,7 @@ public class Bullet extends GameObject implements Streamable<Bullet>{
 	@Override
 	public Bullet read(DataInputStream stream) throws Exception {
 		final long id = stream.readLong();
+		final int bulletId = stream.readInt();
 		final int size = stream.readInt();
 		final float posX = stream.readFloat();
 		final float posY = stream.readFloat();
@@ -227,24 +230,26 @@ public class Bullet extends GameObject implements Streamable<Bullet>{
 		final boolean invert = stream.readBoolean();
 		final int flagsSize = stream.readInt();
 		final short[] flags = new short[flagsSize];
-		for(int i = 0; i < flagsSize; i ++) {
+		for (int i = 0; i < flagsSize; i++) {
 			flags[i] = stream.readShort();
 		}
 		final long timeStep = stream.readLong();
 		final short amplitude = stream.readShort();
 		final short frequency = stream.readShort();
 		List<Short> flagsList = new ArrayList<>();
-		for(short s : flags) {
+		for (short s : flags) {
 			flagsList.add(s);
 		}
-		Bullet newBullet = new Bullet(id, new Vector2f(posX, posY),size, angle, magnitude, range, damage, isEnemy, playerHit, enemyHit, flagsList, invert,timeStep, amplitude, frequency);
+		Bullet newBullet = new Bullet(id, bulletId, new Vector2f(posX, posY), size, angle, magnitude, range, damage,
+				isEnemy, playerHit, enemyHit, flagsList, invert, timeStep, amplitude, frequency);
 		newBullet.setDx(dX);
 		newBullet.setDy(dY);
 		return newBullet;
 	}
-	
-	public static Bullet fromStream(DataInputStream stream) throws Exception{
+
+	public static Bullet fromStream(DataInputStream stream) throws Exception {
 		final long id = stream.readLong();
+		final int bulletId = stream.readInt();
 		final int size = stream.readInt();
 		final float posX = stream.readFloat();
 		final float posY = stream.readFloat();
@@ -260,17 +265,18 @@ public class Bullet extends GameObject implements Streamable<Bullet>{
 		final boolean invert = stream.readBoolean();
 		final int flagsSize = stream.readInt();
 		final short[] flags = new short[flagsSize];
-		for(int i = 0; i < flagsSize; i ++) {
+		for (int i = 0; i < flagsSize; i++) {
 			flags[i] = stream.readShort();
 		}
 		final long timeStep = stream.readLong();
 		final short amplitude = stream.readShort();
 		final short frequency = stream.readShort();
 		List<Short> flagsList = new ArrayList<>();
-		for(short s : flags) {
+		for (short s : flags) {
 			flagsList.add(s);
 		}
-		Bullet newBullet = new Bullet(id, new Vector2f(posX, posY),size, angle, magnitude, range, damage, isEnemy, playerHit, enemyHit, flagsList, invert,timeStep, amplitude, frequency);
+		Bullet newBullet = new Bullet(id, bulletId, new Vector2f(posX, posY), size, angle, magnitude, range, damage,
+				isEnemy, playerHit, enemyHit, flagsList, invert, timeStep, amplitude, frequency);
 		newBullet.setDx(dX);
 		newBullet.setDy(dY);
 		return newBullet;

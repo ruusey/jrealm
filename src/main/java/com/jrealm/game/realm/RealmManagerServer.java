@@ -179,6 +179,19 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 	}
+	
+	public Player getClosestPlayer(Vector2f pos, float limit) {
+		float best = Float.MAX_VALUE;
+		Player bestPlayer = null;
+		for(Player player : this.realm.getPlayers().values()) {
+			float dist = player.getPos().distanceTo(pos);
+			if(dist<best && dist<=limit) {
+				best = dist;
+				bestPlayer = player;
+			}
+		}
+		return bestPlayer;	
+	}
 
 	private void registerPacketCallbacks() {
 		this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), RealmManagerServer::handlePlayerMoveServer);
@@ -213,7 +226,7 @@ public class RealmManagerServer implements Runnable {
 						short offset = (short) (p.getSize() / (short) 2);
 						short rolledDamage = p.getInventory()[0].getDamage().getInRange();
 						rolledDamage += p.getComputedStats().getAtt();
-						this.addProjectile(p.getId(), p.getWeaponId(), source.clone(-offset, -offset),
+						this.addProjectile(p.getId(), proj.getProjectileId(), p.getWeaponId(), source.clone(-offset, -offset),
 								angle + Float.parseFloat(proj.getAngle()), proj.getSize(), proj.getMagnitude(),
 								proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
 								proj.getFrequency());
@@ -227,7 +240,7 @@ public class RealmManagerServer implements Runnable {
 					if (gameObject[i] instanceof Enemy) {
 						Enemy enemy = ((Enemy) gameObject[i]);
 						// TODO: Fix
-						// enemy.update(this, time);
+						enemy.update(this, time);
 					}
 
 					if (gameObject[i] instanceof Bullet) {
@@ -388,7 +401,7 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	public synchronized void addProjectile(long entityId, int projectileGroupId, Vector2f src, Vector2f dest,
+	public synchronized void addProjectile(long entityId, int projectileId, int projectileGroupId, Vector2f src, Vector2f dest,
 			short size, float magnitude, float range, short damage, boolean isEnemy, List<Short> flags) {
 		Player player = this.realm.getPlayer(entityId);
 		if (player == null)
@@ -402,13 +415,13 @@ public class RealmManagerServer implements Runnable {
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
 		b.setFlags(flags);
 
 		this.realm.addBullet(b);
 	}
 
-	public synchronized void addProjectile(long entityId, int projectileGroupId, Vector2f src, float angle, short size,
+	public synchronized void addProjectile(long entityId, int projectileId, int projectileGroupId, Vector2f src, float angle, short size,
 			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags, short amplitude,
 			short frequency) {
 		Player player = this.realm.getPlayer(entityId);
@@ -423,7 +436,7 @@ public class RealmManagerServer implements Runnable {
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), bulletImage, src, angle, size, magnitude, range, damage,
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, angle, size, magnitude, range, damage,
 				isEnemy);
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);
@@ -499,7 +512,7 @@ public class RealmManagerServer implements Runnable {
 			short offset = (short) (player.getSize() / (short) 2);
 			short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 			rolledDamage += player.getComputedStats().getAtt();
-			mgr.addProjectile(player.getId(), player.getWeaponId(), source.clone(-offset, -offset),
+			mgr.addProjectile(player.getId(), proj.getProjectileId(), player.getWeaponId(), source.clone(-offset, -offset),
 					angle + Float.parseFloat(proj.getAngle()), proj.getSize(), proj.getMagnitude(),
 					proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
 					proj.getFrequency());
