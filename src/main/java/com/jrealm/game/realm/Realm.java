@@ -160,8 +160,8 @@ public class Realm {
 	}
 	
 	public long addPlayerIfNotExists(Player player) {
-		this.acquirePlayerLock();
 		if(!this.players.containsKey(player.getId())) {
+			this.acquirePlayerLock();
 			SpriteSheet sheet = GameDataManager.loadClassSprites(CharacterClass.valueOf(player.getClassId()));
 			player.setSprite(sheet);
 			player.setAni(new Animation());
@@ -177,8 +177,9 @@ public class Realm {
 			player.setAnimation(player.RIGHT, sheet.getSpriteArray(player.RIGHT), 10);
 
 			this.players.put(player.getId(), player);
+			this.releasePlayerLock();
+
 		}
-		this.releasePlayerLock();
 		return player.getId();
 	}
 
@@ -372,6 +373,28 @@ public class Realm {
 
 		return objs.toArray(new GameObject[0]);
 	}
+	
+	public GameObject[] getGameObjectss() {
+
+		List<GameObject> objs = new ArrayList<>();
+		for (Player p : this.players.values()) {
+			objs.add(p);
+		}
+
+		for (Bullet b : this.bullets.values()) {
+			objs.add(b);
+		}
+
+		for (Enemy e : this.enemies.values()) {
+			objs.add(e);
+		}
+
+		for (Material e : this.materials.values()) {
+			objs.add(e);
+		}
+
+		return objs.toArray(new GameObject[0]);
+	}
 
 	public GameObject[] getAllGameObjects() {
 
@@ -413,10 +436,35 @@ public class Realm {
 		LoadPacket load = null;
 		try {
 			final Player[] playersToLoad = this.getPlayers().values().toArray(new Player[0]);
+//			final List<Player> playersToLoad = new ArrayList<>();
+//			for(Player p : this.players.values()) {
+//				final boolean inViewport = cam.inside((int)p.getPos().x, (int)p.getPos().y);
+//				if(inViewport) {
+//					playersToLoad.add(p);
+//				}
+//
+//			}
 			final LootContainer[] containersToLoad = this.getLoot().values().toArray(new LootContainer[0]);
-			final Bullet[] bulletsToLoad = this.getBullets().values().toArray(new Bullet[0]);
-			final Enemy[] enemiesToLoad = this.getEnemies().values().toArray(new Enemy[0]);
-			load = LoadPacket.from(playersToLoad, containersToLoad, bulletsToLoad, enemiesToLoad);
+			final List<Bullet> bulletsToLoad = new ArrayList<>();
+			
+			for(Bullet b : this.bullets.values()) {
+				final boolean inViewport = cam.inside((int)b.getPos().x, (int)b.getPos().y);
+				if(inViewport) {
+					bulletsToLoad.add(b);
+				}
+			}
+			// Maybe dont send all 500 enemies in the same packet??
+			// final Enemy[] enemiesToLoad = this.getEnemies().values().toArray(new Enemy[0]);
+			final List<Enemy> enemiesToLoad = new ArrayList<>();
+			for(Enemy e : this.getEnemies().values()) {
+				final boolean inViewport = cam.inside((int)e.getPos().x, (int)e.getPos().y);
+				if(inViewport) {
+					enemiesToLoad.add(e);
+				}
+			}
+
+			load = LoadPacket.from(playersToLoad, containersToLoad,
+					bulletsToLoad.toArray(new Bullet[0]), enemiesToLoad.toArray(new Enemy[0]));
 		} catch (Exception e) {
 			log.error("Failed to get load Packet. Reason: {}");
 		}
@@ -461,7 +509,7 @@ public class Realm {
 				if ((doSpawn > 195) && (i > 0) && (j > 0)) {
 					Vector2f spawnPos = new Vector2f(j * 64, i * 64);
 					AABB bounds = new AABB(spawnPos, 64, 64);
-					if (bounds.distance(v) < 256) {
+					if (bounds.distance(v) < 500) {
 						continue;
 					}
 					List<EnemyModel> enemyToSpawn = new ArrayList<>();

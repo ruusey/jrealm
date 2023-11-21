@@ -94,20 +94,20 @@ public class RealmManagerServer implements Runnable {
 		player.equipSlots(PlayState.getStartingEquipment(cls));
 		player.setMaxSpeed(0.6f);
 		player.setDown(true);
-		
+		player.setRight(true);
 		long newId = this.getRealm().addPlayer(player);
 
-		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		cls = CharacterClass.PALLADIN;
-		player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE, cls);
-		player.equipSlots(PlayState.getStartingEquipment(cls));
-		player.setMaxSpeed(0.6f);
-		player.setLeft(true);
-		player.setDown(true);
-		newId = this.getRealm().addPlayer(player);
+//		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+//		cls = CharacterClass.PALLADIN;
+//		player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
+//				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+//						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+//				GlobalConstants.PLAYER_SIZE, cls);
+//		player.equipSlots(PlayState.getStartingEquipment(cls));
+//		player.setMaxSpeed(0.6f);
+//		player.setLeft(true);
+//		player.setDown(true);
+//		newId = this.getRealm().addPlayer(player);
 		
 	}
 
@@ -119,7 +119,7 @@ public class RealmManagerServer implements Runnable {
 			this.update(0);
 		};
 
-		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 64);
+		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 30);
 		WorkerThread.submitAndForkRun(workerThread);
 
 		log.info("RealmManager exiting run().");
@@ -160,7 +160,7 @@ public class RealmManagerServer implements Runnable {
 					packet.serializeWrite(dosToClient);
 				}
 				
-				LoadPacket load = this.realm.getLoadPacket(player.getValue().getCam().getBounds());
+				LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
 				load.serializeWrite(dosToClient);
 			} catch (Exception e) {
 				log.error("Failed to get OutputStream to Client");
@@ -235,21 +235,7 @@ public class RealmManagerServer implements Runnable {
 
 			};
 			Runnable processGameObjects = () -> {
-				GameObject[] gameObject = this.realm.getGameObjectsInBounds(p.getCam().getBounds());
-				for (int i = 0; i < gameObject.length; i++) {
-					if (gameObject[i] instanceof Enemy) {
-						Enemy enemy = ((Enemy) gameObject[i]);
-						// TODO: Fix
-						enemy.update(this, time);
-					}
-
-					if (gameObject[i] instanceof Bullet) {
-						Bullet bullet = ((Bullet) gameObject[i]);
-						if (bullet != null) {
-							bullet.update();
-						}
-					}
-				}
+				
 				this.processBulletHit(p);
 			};
 			// Rewrite this asap
@@ -269,6 +255,26 @@ public class RealmManagerServer implements Runnable {
 			};
 			WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, checkAbilityUsage);
 		}
+		
+		Runnable processGameObjects = () -> {
+			GameObject[] gameObject = this.realm.getAllGameObjects();
+			for (int i = 0; i < gameObject.length; i++) {
+				if (gameObject[i] instanceof Enemy) {
+					Enemy enemy = ((Enemy) gameObject[i]);
+					// TODO: Fix
+					enemy.update(this, time);
+				}
+
+				if (gameObject[i] instanceof Bullet) {
+					Bullet bullet = ((Bullet) gameObject[i]);
+					if (bullet != null) {
+						bullet.update();
+					}
+				}
+			}
+		};
+		
+		WorkerThread.submitAndRun(processGameObjects);
 	}
 
 	private void movePlayer(Player p) {

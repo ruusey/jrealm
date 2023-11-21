@@ -216,8 +216,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			}
 		}
 
-
-
 		// Health Bar UI
 		g.setColor(Color.red);
 		g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),

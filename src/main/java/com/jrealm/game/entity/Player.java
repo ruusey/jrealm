@@ -160,7 +160,8 @@ public class Player extends Entity implements Streamable<Player>{
 	public void update(double time) {
 		super.update(time);
 		Stats stats = this.getComputedStats();
-
+		
+		this.cam.update();
 		if ((stats.getHp() > 0) && (this.getMaxHealth() == this.getDefaultMaxHealth())) {
 			this.setMaxHealth(this.getMaxHealth() + stats.getHp());
 		} else if (stats.getHp() == 0) {
