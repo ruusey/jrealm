@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.entity.enemy.Monster;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
@@ -14,7 +15,6 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.ProjectilePositionMode;
-import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.net.Streamable;
 
@@ -42,14 +42,14 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 	public Enemy(long id, int enemyId, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
 		super(id, sprite, origin, size);
-
+		
 		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
 				(origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);
 		this.attackrange = new AABB(new Vector2f(
 				(origin.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
 				(origin.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
 				this.r_attackrange);
-		
+		this.enemyId = enemyId;
 		this.weaponId = weaponId;
 	}
 	
@@ -61,7 +61,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 				(origin.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
 				(origin.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
 				this.r_attackrange);
-		
+		this.enemyId = enemyId;
 		this.weaponId = weaponId;
 	}
 
@@ -233,7 +233,8 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	@Override
 	public void write(DataOutputStream stream) throws Exception{
 		stream.writeLong(this.getId());
-		//stream.writeInt(this.getClassId());
+		stream.writeInt(this.getEnemyId());
+		stream.writeInt(this.getWeaponId());
 		stream.writeShort(this.getSize());
 		stream.writeFloat(this.getPos().x);
 		stream.writeFloat(this.getPos().y);
@@ -243,7 +244,35 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	
 	@Override
 	public Enemy read(DataInputStream stream) throws Exception {
-		return null;
+		final long id = stream.readLong();
+		final int enemyId = stream.readInt();
+		final int weaponId = stream.readInt();
+		final short size = stream.readShort();
+		final float posX = stream.readFloat();
+		final float posY = stream.readFloat();
+		final float dx = stream.readFloat();
+		final float dy = stream.readFloat();
+		
+		final Enemy newEnemy = new Monster(id, enemyId, new Vector2f(posX, posY), size, weaponId);
+		newEnemy.setDy(dy);
+		newEnemy.setDx(dx);
+		return newEnemy;
+	}
+	
+	public static Enemy fromStream(DataInputStream stream) throws Exception{
+		final long id = stream.readLong();
+		final int enemyId = stream.readInt();
+		final int weaponId = stream.readInt();
+		final short size = stream.readShort();
+		final float posX = stream.readFloat();
+		final float posY = stream.readFloat();
+		final float dx = stream.readFloat();
+		final float dy = stream.readFloat();
+		
+		final Enemy newEnemy = new Monster(id, enemyId, new Vector2f(posX, posY), size, weaponId);
+		newEnemy.setDy(dy);
+		newEnemy.setDx(dx);
+		return newEnemy;
 	}
 
 }

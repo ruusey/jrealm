@@ -93,7 +93,7 @@ public class RealmManagerServer implements Runnable {
 				GlobalConstants.PLAYER_SIZE, cls);
 		player.equipSlots(PlayState.getStartingEquipment(cls));
 		player.setMaxSpeed(0.6f);
-		player.setUp(true);
+		player.setDown(true);
 		
 		long newId = this.getRealm().addPlayer(player);
 
@@ -106,7 +106,7 @@ public class RealmManagerServer implements Runnable {
 		player.equipSlots(PlayState.getStartingEquipment(cls));
 		player.setMaxSpeed(0.6f);
 		player.setLeft(true);
-		player.setUp(true);
+		player.setDown(true);
 		newId = this.getRealm().addPlayer(player);
 		
 	}
@@ -119,7 +119,7 @@ public class RealmManagerServer implements Runnable {
 			this.update(0);
 		};
 
-		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
+		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 64);
 		WorkerThread.submitAndForkRun(workerThread);
 
 		log.info("RealmManager exiting run().");

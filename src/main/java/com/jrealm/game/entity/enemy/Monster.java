@@ -45,5 +45,33 @@ public class Monster extends Enemy {
 		this.right = true;
 		this.uuid = UUID.randomUUID().toString();
 	}
+	
+	public Monster(long id, int enemyId, Vector2f origin, int size, int weaponId) {
+		super(id, enemyId, origin, size, weaponId);
+		// this.xOffset = size / 4;
+		// this.yOffset = size / 4;
+		Random r = new Random(System.nanoTime());
+		this.acc = 1f;
+		this.deacc = 2f;
+		this.maxSpeed = 1.4f;
+		this.r_sense = 650;
+		this.r_attackrange = 450;
+
+		this.ATTACK = 0;
+		this.IDLE = 0;
+		this.FALLEN = 1;
+		this.UP = 1;
+		this.DOWN = 1;
+		this.LEFT = 1;
+		this.RIGHT = 1;
+		this.health = r.nextInt(1000) + 1000;
+		this.maxHealth = this.health;
+		this.hasIdle = true;
+		this.useRight = true;
+
+
+		this.right = true;
+		this.uuid = UUID.randomUUID().toString();
+	}
 
 }

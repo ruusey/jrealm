@@ -60,13 +60,14 @@ public class Realm {
 	private Camera realmCamera = null;
 	private Semaphore playerLock = new Semaphore(1);
 
+	private boolean isServer;
 	public Realm(Camera cam, boolean isServer) {
 		this.players = new ConcurrentHashMap<>();
-
+		this.isServer = isServer;
 		this.realmCamera = cam;
 
 		this.loadMap("tile/vault.xml", null);
-		if(isServer) {
+		if(this.isServer) {
 			this.setupChests();
 			WorkerThread.submit(this.getStatsThread());
 		}
@@ -137,7 +138,7 @@ public class Realm {
 		this.materials = new ConcurrentHashMap<>();
 		this.materialManagers = new ConcurrentHashMap<>();
 		this.tileManager = new TileManager(path, this.realmCamera);
-		if (!path.toLowerCase().contains("vault")) {
+		if (!path.toLowerCase().contains("vault") && this.isServer) {
 			this.spawnRandomEnemies();
 		}
 
@@ -259,6 +260,27 @@ public class Realm {
 
 	public long addEnemy(Enemy enemy) {
 		this.enemies.put(enemy.getId(), enemy);
+		return enemy.getId();
+	}
+	
+	public long addEnemyIfNotExists(Enemy enemy) {
+		Enemy existing = this.enemies.get(enemy.getId());
+		if(existing==null) {
+			EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
+			SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
+			SpriteSheet sheet = new SpriteSheet(enemySheet.getSprite(model.getCol(), model.getRow(), 16, 16),
+					enemy.getName(), 16, 16, 0);
+			
+			enemy.setSprite(sheet);
+			enemy.setAni(new Animation());
+			enemy.getAnimation().setFrames(sheet.getSpriteArray(0));
+			enemy.getAni().setNumFrames(3, 0);
+			enemy.getAni().setNumFrames(5, 1);
+
+			enemy.setCurrentAnimation(enemy.RIGHT);
+			this.enemies.put(enemy.getId(), enemy);
+
+		}
 		return enemy.getId();
 	}
 
@@ -393,7 +415,8 @@ public class Realm {
 			final Player[] playersToLoad = this.getPlayers().values().toArray(new Player[0]);
 			final LootContainer[] containersToLoad = this.getLoot().values().toArray(new LootContainer[0]);
 			final Bullet[] bulletsToLoad = this.getBullets().values().toArray(new Bullet[0]);
-			load = LoadPacket.from(playersToLoad, containersToLoad, bulletsToLoad);
+			final Enemy[] enemiesToLoad = this.getEnemies().values().toArray(new Enemy[0]);
+			load = LoadPacket.from(playersToLoad, containersToLoad, bulletsToLoad, enemiesToLoad);
 		} catch (Exception e) {
 			log.error("Failed to get load Packet. Reason: {}");
 		}

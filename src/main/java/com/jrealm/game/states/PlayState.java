@@ -455,7 +455,7 @@ public class PlayState extends GameState {
 				e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
 
 				this.client.getRealm().clearHitMap();
-				this.client.getRealm().spawnRandomEnemy();
+				//this.client.getRealm().spawnRandomEnemy();
 				this.client.getRealm().removeEnemy(e);
 				this.client.getRealm().addLootContainer(new LootContainer(
 						GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8),

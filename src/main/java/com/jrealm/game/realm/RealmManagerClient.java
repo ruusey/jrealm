@@ -161,9 +161,13 @@ public class RealmManagerClient implements Runnable {
 			for(Bullet b : textPacket.getBullets()) {
 				cli.getRealm().addBulletIfNotExists(b);
 			}
+			
+			for(Enemy e : textPacket.getEnemies()) {
+				cli.getRealm().addEnemyIfNotExists(e);
+			}
 
 		}catch(Exception e) {
-			log.error("Failed to handle Load Packet. Reason: {}", e.getMessage());
+			log.error("Failed to handle Load Packet. Reason: {}", e);
 		}	
 	}
 	
