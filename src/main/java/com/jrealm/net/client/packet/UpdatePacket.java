@@ -49,6 +49,10 @@ public class UpdatePacket extends Packet {
 		this.addHeader(stream);
 		stream.writeLong(this.playerId);
 		stream.writeUTF(this.playerName);
+		stream.writeInt(this.health);
+		stream.writeInt(this.maxHealth);
+		stream.writeInt(this.mana);
+		stream.writeInt(this.maxMana);
 		if (this.stats != null) {
 			this.stats.write(stream);
 		}
@@ -67,10 +71,7 @@ public class UpdatePacket extends Packet {
 			}
 		}
 		
-		stream.writeInt(this.health);
-		stream.writeInt(this.maxHealth);
-		stream.writeInt(this.mana);
-		stream.writeInt(this.maxMana);
+		
 	}
 	
 	@Override
@@ -81,12 +82,15 @@ public class UpdatePacket extends Packet {
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
 		this.playerId = dis.readLong();
 		this.playerName = dis.readUTF();
+		this.health = dis.readInt();
+		this.maxHealth = dis.readInt();
+		this.mana = dis.readInt();
+		this.maxMana = dis.readInt();
 		this.stats = new Stats().read(dis);
 		int invSize = dis.readShort();
 
 		if (invSize > 0) {
 			this.inventory = new GameItem[invSize];
-
 			for (int i = 0; i < invSize; i++) {
 				//if(stream.available()>0) {
 					this.inventory[i] = new GameItem().read(dis);
@@ -95,11 +99,6 @@ public class UpdatePacket extends Packet {
 		} else {
 			this.inventory = new GameItem[20];
 		}
-		
-		this.health = dis.readInt();
-		this.maxHealth = dis.readInt();
-		this.mana = dis.readInt();
-		this.maxMana = dis.readInt();
 	}
 
 	public static UpdatePacket from(Player player) throws Exception {
@@ -108,6 +107,10 @@ public class UpdatePacket extends Packet {
 		DataOutputStream stream = new DataOutputStream(byteStream);
 		stream.writeLong(player.getId());
 		stream.writeUTF(player.getName());
+		stream.writeInt(player.getHealth());
+		stream.writeInt(player.getMaxHealth());
+		stream.writeInt(player.getMana());
+		stream.writeInt(player.getMaxMana());
 		if (player.getStats() != null) {
 			player.getStats().write(stream);
 		}
@@ -118,7 +121,6 @@ public class UpdatePacket extends Packet {
 		} 
 		stream.writeShort(invSize);
 		
-
 		for (int i = 0; i < invSize; i++) {
 			GameItem item = player.getInventory()[i];
 			if(item!=null) {
@@ -127,12 +129,6 @@ public class UpdatePacket extends Packet {
 				stream.writeInt(-1);
 			}
 		}
-		
-		stream.writeInt(player.getHealth());
-		stream.writeInt(player.getMaxHealth());
-		stream.writeInt(player.getMana());
-		stream.writeInt(player.getMaxMana());
-		
 		return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
 	}
 }
