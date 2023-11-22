@@ -332,6 +332,10 @@ public class Player extends Entity implements Streamable<Player>{
 				GameDataManager.loadSpriteModel(item);
 			}
 		}
+		this.health = packet.getHealth();
+		this.maxHealth = packet.getMaxHealth();
+		this.mana = packet.getMana();
+		this.maxMana = packet.getMaxMana();
 	}
 
 	public boolean getIsUp() {

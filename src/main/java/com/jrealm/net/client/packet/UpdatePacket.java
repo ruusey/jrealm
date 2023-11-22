@@ -22,6 +22,10 @@ public class UpdatePacket extends Packet {
 	private long playerId;
 	private String playerName;
 	private Stats stats;
+	private int health;
+	private int maxHealth;
+	private int mana;
+	private int maxMana;
 	private GameItem[] inventory;
 	
 	public UpdatePacket() {
@@ -62,6 +66,11 @@ public class UpdatePacket extends Packet {
 				stream.writeInt(-1);
 			}
 		}
+		
+		stream.writeInt(this.health);
+		stream.writeInt(this.maxHealth);
+		stream.writeInt(this.mana);
+		stream.writeInt(this.maxMana);
 	}
 	
 	@Override
@@ -86,6 +95,11 @@ public class UpdatePacket extends Packet {
 		} else {
 			this.inventory = new GameItem[20];
 		}
+		
+		this.health = dis.readInt();
+		this.maxHealth = dis.readInt();
+		this.mana = dis.readInt();
+		this.maxMana = dis.readInt();
 	}
 
 	public static UpdatePacket from(Player player) throws Exception {
@@ -113,6 +127,11 @@ public class UpdatePacket extends Packet {
 				stream.writeInt(-1);
 			}
 		}
+		
+		stream.writeInt(player.getHealth());
+		stream.writeInt(player.getMaxHealth());
+		stream.writeInt(player.getMana());
+		stream.writeInt(player.getMaxMana());
 		
 		return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
 	}
