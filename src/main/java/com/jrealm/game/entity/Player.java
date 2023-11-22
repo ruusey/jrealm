@@ -13,6 +13,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
+import com.jrealm.game.graphics.Font;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
@@ -38,7 +39,8 @@ public class Player extends Entity implements Streamable<Player>{
 	private long lastStatsTime = 0l;
 	private LootContainer currentLootContainer;
 	private int classId;
-
+	
+	private boolean headless = false;
 	public Player(long id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, CharacterClass characterClass) {
 		super(id, sprite, origin, size);
 		this.classId = characterClass.classId;
@@ -63,7 +65,6 @@ public class Player extends Entity implements Streamable<Player>{
 		this.hasIdle = false;
 		this.health = this.maxHealth = this.defaultMaxHealth = 500;
 		this.mana = this.maxMana = this.defaultMaxMana = 100;
-		this.name = "player";
 
 		this.resetInventory();
 
@@ -88,7 +89,6 @@ public class Player extends Entity implements Streamable<Player>{
 		this.hasIdle = false;
 		this.health = this.maxHealth = this.defaultMaxHealth = 500;
 		this.mana = this.maxMana = this.defaultMaxMana = 100;
-		this.name = "player";
 
 		this.resetInventory();
 
@@ -231,10 +231,15 @@ public class Player extends Entity implements Streamable<Player>{
 		// g.drawRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int)
 		// (this.pos.getWorldVar().y + this.bounds.getYOffset()), (int)
 		// this.bounds.getWidth(), (int) this.bounds.getHeight());
-		Color c = new Color(0f, 0f, 0f, .4f);
+		Color c = new Color(0f, 0f, 0f, 1f);
 		g.setColor(c);
+		java.awt.Font currentFont = g.getFont();
+		java.awt.Font newFont = currentFont.deriveFont(currentFont.getSize() * 0.50F);		
+		g.setFont(newFont);
 		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 24, this.size, this.size / 2);
-
+		if(this.getName()!=null) {
+			g.drawString(this.getName(), (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 64);
+		}
 		if (this.hasEffect(EffectType.INVISIBLE)) {
 			if (!this.getSprite().hasEffect(Sprite.EffectEnum.SEPIA)) {
 				this.getSprite().setEffect(Sprite.EffectEnum.SEPIA);
@@ -266,6 +271,7 @@ public class Player extends Entity implements Streamable<Player>{
 			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y),
 					this.size, this.size, null);
 		}
+		g.setFont(currentFont);
 	}
 
 	public void input(MouseHandler mouse, KeyHandler key) {
@@ -318,6 +324,7 @@ public class Player extends Entity implements Streamable<Player>{
 	}
 
 	public void applyUpdate(UpdatePacket packet) {
+		this.name = packet.getPlayerName();
 		this.stats = packet.getStats();
 		this.inventory = packet.getInventory();
 		for(GameItem item: this.inventory) {
@@ -346,6 +353,7 @@ public class Player extends Entity implements Streamable<Player>{
 	@Override
 	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.getId());
+		stream.writeUTF(this.getName());
 		stream.writeInt(this.getClassId());
 		stream.writeShort(this.getSize());
 		stream.writeFloat(this.getPos().x);
@@ -357,26 +365,31 @@ public class Player extends Entity implements Streamable<Player>{
 	@Override
 	public Player read(DataInputStream stream) throws Exception {
 		long id = stream.readLong();
+		String name = stream.readUTF();
 		int classId = stream.readInt();
 		short size = stream.readShort();
 		float posX = stream.readFloat();
 		float posY = stream.readFloat();
 		float dX = stream.readFloat();
 		float dY = stream.readFloat();
-		Player player = Player.fromData(id, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
+		Player player = Player.fromData(id, name, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
 		player.setDx(dX);
 		player.setDy(dY);
+		player.setName(name);
 		return player;
 	}
 	
-	public static Player fromData(long id, Vector2f origin, int size, CharacterClass characterClass) {
+	public static Player fromData(long id, String name, Vector2f origin, int size, CharacterClass characterClass) {
 		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 		SpriteSheet sheet = GameDataManager.loadClassSprites(characterClass);
-		return new Player(id, c, sheet, origin, size, characterClass);
+		Player player =  new Player(id, c, sheet, origin, size, characterClass);
+		player.setName(name);
+		return player;
 	}
 	
 	public static Player fromStream(DataInputStream stream) throws Exception {
 		long id = stream.readLong();
+		String name = stream.readUTF();
 		int classId = stream.readInt();
 		short size = stream.readShort();
 		float posX = stream.readFloat();
@@ -386,11 +399,12 @@ public class Player extends Entity implements Streamable<Player>{
 		Player player = new Player(id, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
 		player.setDx(dX);
 		player.setDy(dY);
+		player.setName(name);
 		return player;
 	}
 	
 	@Override
 	public String toString() {
-		return this.getId()+" , Pos: "+this.pos.toString()+", Class: "+this.getClassId();
+		return this.getId()+" , Pos: "+this.pos.toString()+", Class: "+this.getClassId()+", Headless: "+this.isHeadless();
 	}
 }

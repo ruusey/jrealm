@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper=true)
 public class UpdatePacket extends Packet {
 	private long playerId;
+	private String playerName;
 	private Stats stats;
 	private GameItem[] inventory;
 	
@@ -43,7 +44,7 @@ public class UpdatePacket extends Packet {
 			throw new IllegalStateException("No Packet data available to write to DataOutputStream");
 		this.addHeader(stream);
 		stream.writeLong(this.playerId);
-
+		stream.writeUTF(this.playerName);
 		if (this.stats != null) {
 			this.stats.write(stream);
 		}
@@ -70,6 +71,7 @@ public class UpdatePacket extends Packet {
 		if (dis == null || dis.available() < 5)
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
 		this.playerId = dis.readLong();
+		this.playerName = dis.readUTF();
 		this.stats = new Stats().read(dis);
 		int invSize = dis.readShort();
 
@@ -91,7 +93,7 @@ public class UpdatePacket extends Packet {
 		
 		DataOutputStream stream = new DataOutputStream(byteStream);
 		stream.writeLong(player.getId());
-
+		stream.writeUTF(player.getName());
 		if (player.getStats() != null) {
 			player.getStats().write(stream);
 		}

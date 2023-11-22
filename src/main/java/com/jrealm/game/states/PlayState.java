@@ -268,23 +268,10 @@ public class PlayState extends GameState {
 					}
 				};
 
-//				Runnable processGameObjects = () -> {
-//					GameObject[] gameObject = this.client.getRealm().getGameObjectsInBounds(this.cam.getBounds());
-//					for (int i = 0; i < gameObject.length; i++) {
-////						if (gameObject[i] instanceof Enemy) {
-////							Enemy enemy = ((Enemy) gameObject[i]);
-////							enemy.update(this, time);
-////						}
-//
-//						if (gameObject[i] instanceof Bullet) {
-//							Bullet bullet = ((Bullet) gameObject[i]);
-//							if (bullet != null) {
-//								bullet.update();
-//							}
-//						}
-//					}
+				Runnable processGameObjects = () -> {
+
 					this.processBulletHit();
-//				};
+				};
 				// Rewrite this asap
 				Runnable checkAbilityUsage = () -> {
 					if (this.getPlayer() == null)
@@ -299,11 +286,11 @@ public class PlayState extends GameState {
 				};
 				Runnable updatePlayerAndUi = () -> {
 //					player.update(time);
-//					this.movePlayer();
+					//this.movePlayer();
 
 					this.pui.update(time);
 				};
-				WorkerThread.submitAndRun(playerShootDequeue, updatePlayerAndUi, monitorDamageText,
+				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText,
 						checkAbilityUsage);
 			}
 
@@ -359,108 +346,26 @@ public class PlayState extends GameState {
 	public synchronized void processBulletHit() {
 		List<Bullet> results = this.getBullets();
 		GameObject[] gameObject = this.client.getRealm().getGameObjectsInBounds(this.cam.getBounds());
-		Player player = this.client.getRealm().getPlayer(this.playerId);
 
 		for (int i = 0; i < gameObject.length; i++) {
 			if (gameObject[i] instanceof Enemy) {
 				Enemy enemy = ((Enemy) gameObject[i]);
 				for (Bullet b : results) {
-					this.processPlayerHit(b, player);
 					this.proccessEnemyHit(b, enemy);
 				}
 			}
 		}
-		this.proccessTerrainHit();
 	}
 
-	private void proccessTerrainHit() {
-		List<Bullet> toRemove = new ArrayList<>();
-		TileMap currentMap = this.client.getRealm().getTileManager().getTm().get(1);
-		Tile[] viewportTiles = null;
-		if (currentMap == null)
-			return;
-		viewportTiles = currentMap.getBlocksInBounds(this.getCam().getBounds());
-		for (Bullet b : this.getBullets()) {
-			if (b.remove()) {
-				toRemove.add(b);
-				continue;
-			}
-			for (Tile tile : viewportTiles) {
-				if (tile == null) {
-					continue;
-				}
-				if (b.getBounds().intersect(new AABB(tile.getPos(), tile.getWidth(), tile.getHeight()))) {
-					toRemove.add(b);
-				}
-			}
-		}
-		toRemove.forEach(bullet -> {
-			this.client.getRealm().removeBullet(bullet);
-		});
-	}
-
-	private synchronized void processPlayerHit(Bullet b, Player p) {
-		Player player = this.client.getRealm().getPlayer(this.playerId);
-		if (player == null)
-			return;
-		if (b.getBounds().collides(0, 0, player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
-			Stats stats = player.getComputedStats();
-			Vector2f sourcePos = p.getPos();
-			int computedDamage = b.getDamage() - p.getComputedStats().getDef();
-			DamageText hitText = DamageText.builder().damage(computedDamage + "").effect(TextEffect.DAMAGE)
-					.sourcePos(sourcePos).build();
-			this.damageText.add(hitText);
-			b.setPlayerHit(true);
-			// player.getAnimation().getImage().setEffect(Sprite.effect.REDISH);
-			short minDmg = (short) (b.getDamage()*0.15);
-			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
-			if (dmgToInflict < minDmg) {
-				dmgToInflict = minDmg;
-			}
-			player.setHealth(player.getHealth() - dmgToInflict, 0, false);
-			this.client.getRealm().removeBullet(b);
-		}
-	}
 
 	private synchronized void proccessEnemyHit(Bullet b, Enemy e) {
 		if (this.client.getRealm().hasHitEnemy(b.getId(), e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
-			this.client.getRealm().hitEnemy(b.getId(), e.getId());
-
-			e.setHealth(e.getHealth() - b.getDamage(), 0, false);
 			Vector2f sourcePos = e.getPos();
 			DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
 					.sourcePos(sourcePos).build();
 			this.damageText.add(hitText);
-			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
-				b.setEnemyHit(true);
-			} else if (b.remove()) {
-				this.client.getRealm().removeBullet(b);
-			}
-
-			if (b.hasFlag((short) 2)) {
-				if (!e.hasEffect(EffectType.PARALYZED)) {
-					e.addEffect(EffectType.PARALYZED, 5000);
-				}
-			}
-
-			if (b.hasFlag((short) 3)) {
-				if (!e.hasEffect(EffectType.STUNNED)) {
-					e.addEffect(EffectType.STUNNED, 5000);
-
-				}
-			}
-			if (e.getDeath()) {
-				e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
-
-				this.client.getRealm().clearHitMap();
-				//this.client.getRealm().spawnRandomEnemy();
-				this.client.getRealm().removeEnemy(e);
-				this.client.getRealm().addLootContainer(new LootContainer(
-						GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8),
-						e.getPos()));
-			}
 		}
 	}
 

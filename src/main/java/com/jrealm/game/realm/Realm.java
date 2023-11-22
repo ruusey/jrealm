@@ -30,6 +30,7 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.ProjectileGroup;
+import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectKey;
@@ -242,6 +243,8 @@ public class Realm {
 			if (pg.getAngleOffset() != null) {
 				bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
 			}
+			
+			
 			b.setImage(bulletImage);
 			this.bullets.put(b.getId(), b);
 		}
@@ -474,20 +477,19 @@ public class Realm {
 		return load;
 	}
 
-	public List<ObjectMovePacket> getGameObjectsAsPackets(AABB cam) {
-		List<ObjectMovePacket> objectMovements = new ArrayList<>();
+	public ObjectMovePacket getGameObjectsAsPackets(AABB cam) throws Exception{
 		GameObject[] gameObjects = this.getAllGameObjects();
+		List<GameObject> validObjects = new ArrayList<>();
 		for (GameObject obj : gameObjects) {
 			try {
 				if((obj.getDx()>0 || obj.getDy()>0) || (obj.getDx()<0 || obj.getDy()<0)) {
-					ObjectMovePacket movePacket = ObjectMovePacket.from(obj);
-					objectMovements.add(movePacket);
+					validObjects.add(obj);
 				}
 			} catch (Exception e) {
 				log.error("Failed to create ObjectMove Packet. Reason: {}", e.getMessage());
 			}
 		}
-		return objectMovements;
+		return ObjectMovePacket.from(validObjects.toArray(new GameObject[0]));
 	}
 
 	public LootContainer[] getLootInBounds(AABB cam) {

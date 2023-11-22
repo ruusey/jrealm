@@ -2,6 +2,7 @@ package com.jrealm.game.realm;
 
 import java.io.DataOutputStream;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -92,17 +93,19 @@ public class RealmManagerServer implements Runnable {
 	}
 	
 	private void addTestPlayer() {
-//		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-//		CharacterClass cls = CharacterClass.ARCHER;
-//		Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
-//				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-//						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-//				GlobalConstants.PLAYER_SIZE, cls);
-//		player.equipSlots(PlayState.getStartingEquipment(cls));
-//		player.setMaxSpeed(0.6f);
-//		player.setDown(true);
-//		player.setRight(true);
-//		long newId = this.getRealm().addPlayer(player);
+		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+		CharacterClass cls = CharacterClass.ARCHER;
+		Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
+				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+				GlobalConstants.PLAYER_SIZE, cls);
+		player.setName("Dingus");
+		player.equipSlots(PlayState.getStartingEquipment(cls));
+		player.setMaxSpeed(0.6f);
+		player.setDown(true);
+		player.setRight(true);
+		player.setHeadless(true);
+		long newId = this.getRealm().addPlayer(player);
 
 //		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 //		cls = CharacterClass.PALLADIN;
@@ -156,30 +159,37 @@ public class RealmManagerServer implements Runnable {
 		}catch(Exception e) {
 			log.error("Failed to create unload packet. Reason: {}", e);
 		}
-		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
-			if(player.getKey()!=this.getFirstPlayerId()) continue;
-			List<UpdatePacket> uPackets = this.realm.getPlayersAsPackets(player.getValue().getCam().getBounds());
-			List<ObjectMovePacket> mPackets = this.realm
-					.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
-			try {
-				OutputStream toClientStream = server.getClients().get(SocketServer.LOCALHOST).getOutputStream();
-				DataOutputStream dosToClient = new DataOutputStream(toClientStream);
+		final UnloadPacket unloadToBroadcast = unload;
+		for(Map.Entry<String, Socket> client : this.server.getClients().entrySet()) {
+			List<Runnable> playerWork = new ArrayList<>();
+			for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
+				//if(player.getValue().isHeadless()) return;
+					
+					try {
+						List<UpdatePacket> uPackets = this.realm.getPlayersAsPackets(player.getValue().getCam().getBounds());
+						ObjectMovePacket mPacket = this.realm
+								.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
+						OutputStream toClientStream = client.getValue().getOutputStream();
+						DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 
-				for (UpdatePacket packet : uPackets) {
-					packet.serializeWrite(dosToClient);
-				}
+						for (UpdatePacket packet : uPackets) {
+							packet.serializeWrite(dosToClient);
+						}
+						
+						LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
+						load.serializeWrite(dosToClient);
+						if(unloadToBroadcast!=null) {
+							unloadToBroadcast.serializeWrite(dosToClient);
+						}
+						mPacket.serializeWrite(dosToClient);
 
-				for (ObjectMovePacket packet : mPackets) {
-					packet.serializeWrite(dosToClient);
-				}
+					} catch (Exception e) {
+						log.error("Failed to get OutputStream to Client");
+					}
 				
-				LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
-				load.serializeWrite(dosToClient);
-				
-				unload.serializeWrite(dosToClient);
-			} catch (Exception e) {
-				log.error("Failed to get OutputStream to Client");
+				//playerWork.add(perPlayerWork);
 			}
+			//WorkerThread.submitAndRun(playerWork.toArray(new Runnable[0]));
 		}
 	}
 
@@ -495,7 +505,6 @@ public class RealmManagerServer implements Runnable {
 
 		b.setFlags(flags);
 		this.realm.addBullet(b);
-		
 	}
 
 	private List<Bullet> getBullets(Player p) {
@@ -634,6 +643,8 @@ public class RealmManagerServer implements Runnable {
 							(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 					GlobalConstants.PLAYER_SIZE, cls);
 			player.equipSlots(PlayState.getStartingEquipment(cls));
+			player.setName(request.getUsername());
+			player.setHeadless(false);
 			long newId = mgr.getRealm().addPlayer(player);
 			mgr.setFirstPlayerId(newId);
 			OutputStream toClientStream = mgr.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();

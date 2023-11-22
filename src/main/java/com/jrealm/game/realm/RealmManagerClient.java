@@ -30,6 +30,7 @@ import com.jrealm.net.PacketType;
 import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.packet.CommandPacket;
@@ -107,7 +108,7 @@ public class RealmManagerClient implements Runnable {
 				Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
 				this.packetCallbacksClient.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
-				log.error("Failed to process server packets {}", e);
+				log.error("Failed to process client packets {}", e);
 			}
 		}
 	}
@@ -232,23 +233,26 @@ public class RealmManagerClient implements Runnable {
 
 	public static void handleObjectMoveClient(RealmManagerClient cli, Packet packet) {
 		ObjectMovePacket objectMovePacket = (ObjectMovePacket) packet;
-		switch(objectMovePacket.getTargetEntityType()) {
-		case PLAYER:
-			Player playerToUpdate = cli.getRealm().getPlayer(objectMovePacket.getEntityId());
-			if(playerToUpdate==null) break;
-			playerToUpdate.applyMovement(objectMovePacket);
-			break;
-		case ENEMY:
-			Enemy enemyToUpdate = cli.getRealm().getEnemy(objectMovePacket.getEntityId());
-			if(enemyToUpdate == null) break;
-			enemyToUpdate.applyMovement(objectMovePacket);
-			break;
-		case BULLET:
-			Bullet bulletToUpdate = cli.getRealm().getBullet(objectMovePacket.getEntityId());
-			bulletToUpdate.applyMovement(objectMovePacket);
-			break;
-		default:
-			break;
+		for(ObjectMovement movement : objectMovePacket.getMovements()) {
+			switch(movement.getTargetEntityType()) {
+			case PLAYER:
+				Player playerToUpdate = cli.getRealm().getPlayer(movement.getEntityId());
+				if(playerToUpdate==null) break;
+				playerToUpdate.applyMovement(movement);
+				break;
+			case ENEMY:
+				Enemy enemyToUpdate = cli.getRealm().getEnemy(movement.getEntityId());
+				if(enemyToUpdate == null) break;
+				enemyToUpdate.applyMovement(movement);
+				break;
+			case BULLET:
+				Bullet bulletToUpdate = cli.getRealm().getBullet(movement.getEntityId());
+				if(bulletToUpdate==null) break;
+				bulletToUpdate.applyMovement(movement);
+				break;
+			default:
+				break;
+			}
 		}
 //		log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
 //				EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());

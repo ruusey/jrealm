@@ -8,6 +8,7 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.TileCollision;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.ObjectMovement;
 
 import lombok.Data;
 
@@ -73,7 +74,7 @@ public abstract class GameObject {
 
 	}
 	
-	public void applyMovement(ObjectMovePacket packet) {
+	public void applyMovement(ObjectMovement packet) {
 		this.pos = new Vector2f(packet.getPosX(), packet.getPosY());
 		this.bounds = new AABB(this.pos, size, size);
 		this.dx = packet.getVelX();
