@@ -10,15 +10,24 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class Packet implements GameMessage{
 	private byte id;
 	private byte[] data;
+	private String srcIp;
 	
 	public Packet() {
 		this.id = -1;
 		this.data = null;
+		this.srcIp = null;
 	}
 	
 	public Packet(byte id, byte[] data) {
 		this.id = id;
 		this.data = data;
+		this.srcIp = null;
+	}
+	
+	public Packet(byte id, byte[] data, String srcIp) {
+		this.id = id;
+		this.data = data;
+		this.srcIp = srcIp;
 	}
 	
 	public byte getId() {
@@ -27,6 +36,14 @@ public abstract class Packet implements GameMessage{
 	
 	public byte[] getData() {
 		return this.data;
+	}
+	
+	public String getSrcIp() {
+		return this.srcIp;
+	}
+	
+	public void setSrcIp(String srcIp) {
+		this.srcIp = srcIp;
 	}
 	
 	public void addHeader(DataOutputStream stream) throws Exception{

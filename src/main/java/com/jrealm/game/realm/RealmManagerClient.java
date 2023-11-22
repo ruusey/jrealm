@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import com.jrealm.game.GameLauncher;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
@@ -68,7 +69,11 @@ public class RealmManagerClient implements Runnable {
 	public RealmManagerClient(PlayState state, Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
-		this.client = new SocketClient(SocketServer.LOCALHOST, 2222);
+		if(GameLauncher.LOCAL_SERVER) {
+			this.client = new SocketClient(SocketServer.LOCALHOST, 2222);
+		}else {
+			this.client = new SocketClient(SocketClient.SERVER_ADDR, 2222);
+		}
 		this.state = state;
 		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.client);
@@ -205,7 +210,7 @@ public class RealmManagerClient implements Runnable {
 				textPacket.getFrom(), textPacket.getMessage());
 		log.info("Responding with LoginRequest");
 		try {
-			LoginRequestMessage login = LoginRequestMessage.builder().username("ruusey").password("password123").remoteAddr(SocketClient.getLocalAddr()).build();
+			LoginRequestMessage login = LoginRequestMessage.builder().username("ruusey").password("password123").build();
 
 			CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
 			cli.getClient().sendRemote(loginPacket);

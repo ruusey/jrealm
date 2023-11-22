@@ -106,7 +106,9 @@ public class SocketServer implements Runnable {
 									this.remoteBufferIndex - packetLength);
 						}
 						this.remoteBufferIndex -= packetLength;
-						this.packetQueue.add(new BlankPacket(packetId, packetBytes));
+						BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
+						newPacket.setSrcIp(client.getValue().getInetAddress().getHostAddress());
+						this.packetQueue.add(newPacket);
 					}
 				}
 			} catch (Exception e) {

@@ -76,10 +76,10 @@ public class RealmManagerServer implements Runnable {
 	private int tickCount;
 
 	private long firstPlayerId;
-	
+
 	private List<Long> expiredEnemies;
 	private List<Long> expiredBullets;
-	
+
 	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
@@ -91,7 +91,7 @@ public class RealmManagerServer implements Runnable {
 		this.getRealm().loadMap("tile/vault.xml", null);
 
 	}
-	
+
 	private void addTestPlayer() {
 		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 		CharacterClass cls = CharacterClass.ARCHER;
@@ -118,7 +118,7 @@ public class RealmManagerServer implements Runnable {
 //		player.setLeft(true);
 //		player.setDown(true);
 //		newId = this.getRealm().addPlayer(player);
-		
+
 	}
 
 	@Override
@@ -156,40 +156,42 @@ public class RealmManagerServer implements Runnable {
 		UnloadPacket unload = null;
 		try {
 			unload = this.getUnloadPacket();
-		}catch(Exception e) {
+		} catch (Exception e) {
 			log.error("Failed to create unload packet. Reason: {}", e);
 		}
 		final UnloadPacket unloadToBroadcast = unload;
-		for(Map.Entry<String, Socket> client : this.server.getClients().entrySet()) {
+		for (Map.Entry<String, Socket> client : this.server.getClients().entrySet()) {
 			List<Runnable> playerWork = new ArrayList<>();
 			for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
-				//if(player.getValue().isHeadless()) return;
-					
-					try {
-						List<UpdatePacket> uPackets = this.realm.getPlayersAsPackets(player.getValue().getCam().getBounds());
-						ObjectMovePacket mPacket = this.realm
-								.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
-						OutputStream toClientStream = client.getValue().getOutputStream();
-						DataOutputStream dosToClient = new DataOutputStream(toClientStream);
+				// if(player.getValue().isHeadless()) return;
 
-						for (UpdatePacket packet : uPackets) {
-							packet.serializeWrite(dosToClient);
-						}
-						
-						LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
-						load.serializeWrite(dosToClient);
-						if(unloadToBroadcast!=null) {
-							unloadToBroadcast.serializeWrite(dosToClient);
-						}
-						mPacket.serializeWrite(dosToClient);
+				try {
+					List<UpdatePacket> uPackets = this.realm
+							.getPlayersAsPackets(player.getValue().getCam().getBounds());
+					ObjectMovePacket mPacket = this.realm
+							.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
+					OutputStream toClientStream = client.getValue().getOutputStream();
+					DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 
-					} catch (Exception e) {
-						log.error("Failed to get OutputStream to Client");
+					for (UpdatePacket packet : uPackets) {
+						packet.serializeWrite(dosToClient);
 					}
-				
-				//playerWork.add(perPlayerWork);
+
+					LoadPacket load = this.realm
+							.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
+					load.serializeWrite(dosToClient);
+					if (unloadToBroadcast != null) {
+						unloadToBroadcast.serializeWrite(dosToClient);
+					}
+					mPacket.serializeWrite(dosToClient);
+
+				} catch (Exception e) {
+					log.error("Failed to get OutputStream to Client");
+				}
+
+				// playerWork.add(perPlayerWork);
 			}
-			//WorkerThread.submitAndRun(playerWork.toArray(new Runnable[0]));
+			// WorkerThread.submitAndRun(playerWork.toArray(new Runnable[0]));
 		}
 	}
 
@@ -198,27 +200,28 @@ public class RealmManagerServer implements Runnable {
 			Packet toProcess = this.getServer().getPacketQueue().remove();
 			try {
 				Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
+				created.setSrcIp(toProcess.getSrcIp());
 				this.packetCallbacksServer.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
 				log.error("Failed to process server packets {}", e);
 			}
 		}
 	}
-	
+
 	public Player getClosestPlayer(Vector2f pos, float limit) {
 		float best = Float.MAX_VALUE;
 		Player bestPlayer = null;
-		for(Player player : this.realm.getPlayers().values()) {
+		for (Player player : this.realm.getPlayers().values()) {
 			float dist = player.getPos().distanceTo(pos);
-			if(dist<best && dist<=limit) {
+			if (dist < best && dist <= limit) {
 				best = dist;
 				bestPlayer = player;
 			}
 		}
-		return bestPlayer;	
+		return bestPlayer;
 	}
-	
-	private UnloadPacket getUnloadPacket() throws Exception{
+
+	private UnloadPacket getUnloadPacket() throws Exception {
 		Long[] expiredBullets = this.expiredBullets.toArray(new Long[0]);
 		Long[] expiredEnemies = this.expiredEnemies.toArray(new Long[0]);
 		this.expiredBullets.clear();
@@ -261,16 +264,16 @@ public class RealmManagerServer implements Runnable {
 						short offset = (short) (p.getSize() / (short) 2);
 						short rolledDamage = p.getInventory()[0].getDamage().getInRange();
 						rolledDamage += p.getComputedStats().getAtt();
-						this.addProjectile(0l, p.getId(), proj.getProjectileId(), p.getWeaponId(), source.clone(-offset, -offset),
-								angle + Float.parseFloat(proj.getAngle()), proj.getSize(), proj.getMagnitude(),
-								proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
-								proj.getFrequency());
+						this.addProjectile(0l, p.getId(), proj.getProjectileId(), p.getWeaponId(),
+								source.clone(-offset, -offset), angle + Float.parseFloat(proj.getAngle()),
+								proj.getSize(), proj.getMagnitude(), proj.getRange(), rolledDamage, false,
+								proj.getFlags(), proj.getAmplitude(), proj.getFrequency());
 					}
 				}
 
 			};
 			Runnable processGameObjects = () -> {
-				
+
 				this.processBulletHit(p);
 			};
 			// Rewrite this asap
@@ -290,7 +293,7 @@ public class RealmManagerServer implements Runnable {
 			};
 			WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, checkAbilityUsage);
 		}
-		
+
 		Runnable processGameObjects = () -> {
 			GameObject[] gameObject = this.realm.getAllGameObjects();
 			for (int i = 0; i < gameObject.length; i++) {
@@ -308,7 +311,7 @@ public class RealmManagerServer implements Runnable {
 				}
 			}
 		};
-		
+
 		WorkerThread.submitAndRun(processGameObjects);
 	}
 
@@ -344,10 +347,11 @@ public class RealmManagerServer implements Runnable {
 		}
 
 	}
-	
+
 	private List<Bullet> getBullets() {
 
-		GameObject[] gameObject = this.getRealm().getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort());
+		GameObject[] gameObject = this.getRealm()
+				.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort());
 
 		List<Bullet> results = new ArrayList<>();
 		for (int i = 0; i < gameObject.length; i++) {
@@ -460,8 +464,9 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	public synchronized void addProjectile(long id, long targetPlayerId, int projectileId, int projectileGroupId, Vector2f src, Vector2f dest,
-			short size, float magnitude, float range, short damage, boolean isEnemy, List<Short> flags) {
+	public synchronized void addProjectile(long id, long targetPlayerId, int projectileId, int projectileGroupId,
+			Vector2f src, Vector2f dest, short size, float magnitude, float range, short damage, boolean isEnemy,
+			List<Short> flags) {
 		Player player = this.realm.getPlayer(targetPlayerId);
 		if (player == null)
 			return;
@@ -482,9 +487,9 @@ public class RealmManagerServer implements Runnable {
 		this.realm.addBullet(b);
 	}
 
-	public synchronized void addProjectile(long id, long targetPlayerId, int projectileId, int projectileGroupId, Vector2f src, float angle, short size,
-			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags, short amplitude,
-			short frequency) {
+	public synchronized void addProjectile(long id, long targetPlayerId, int projectileId, int projectileGroupId,
+			Vector2f src, float angle, short size, float magnitude, float range, short damage, boolean isEnemy,
+			List<Short> flags, short amplitude, short frequency) {
 		Player player = this.realm.getPlayer(targetPlayerId);
 		if (player == null)
 			return;
@@ -498,8 +503,7 @@ public class RealmManagerServer implements Runnable {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
 		long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
-		Bullet b = new Bullet(idToUse, projectileId, bulletImage, src, angle, size, magnitude, range, damage,
-				isEnemy);
+		Bullet b = new Bullet(idToUse, projectileId, bulletImage, src, angle, size, magnitude, range, damage, isEnemy);
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);
 
@@ -533,20 +537,20 @@ public class RealmManagerServer implements Runnable {
 		if (heartbeatPacket.getDirection().equals(Cardinality.NORTH)) {
 			toMove.setUp(doMove);
 			toMove.setDy(doMove ? toMove.getMaxSpeed() : 0.0f);
-		} 
+		}
 		if (heartbeatPacket.getDirection().equals(Cardinality.SOUTH)) {
 			toMove.setDown(doMove);
 			toMove.setDy(doMove ? toMove.getMaxSpeed() : 0.0f);
-		} 
+		}
 		if (heartbeatPacket.getDirection().equals(Cardinality.EAST)) {
 			toMove.setRight(doMove);
 			toMove.setDx(doMove ? toMove.getMaxSpeed() : 0.0f);
-		} 
+		}
 		if (heartbeatPacket.getDirection().equals(Cardinality.WEST)) {
 			toMove.setLeft(doMove);
 			toMove.setDx(doMove ? toMove.getMaxSpeed() : 0.0f);
 		}
-		if(heartbeatPacket.getDirection().equals(Cardinality.NONE)) {
+		if (heartbeatPacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setLeft(false);
 			toMove.setRight(false);
 			toMove.setDown(false);
@@ -557,12 +561,12 @@ public class RealmManagerServer implements Runnable {
 		}
 		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
 	}
-	
+
 	public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {
-		PlayerShootPacket shootPacket = (PlayerShootPacket)packet;
+		PlayerShootPacket shootPacket = (PlayerShootPacket) packet;
 		Vector2f src = new Vector2f(shootPacket.getSrcX(), shootPacket.getSrcY());
 		Player player = mgr.getRealm().getPlayer(shootPacket.getEntityId());
-		
+
 		Vector2f dest = new Vector2f(shootPacket.getDestX(), shootPacket.getDestY());
 		dest.addX(player.getCam().getPos().x);
 		dest.addY(player.getCam().getPos().y);
@@ -573,22 +577,21 @@ public class RealmManagerServer implements Runnable {
 			short offset = (short) (player.getSize() / (short) 2);
 			short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 			rolledDamage += player.getComputedStats().getAtt();
-			mgr.addProjectile(shootPacket.getProjectileId(), player.getId(), proj.getProjectileId(), player.getWeaponId(), source.clone(-offset, -offset),
-					angle + Float.parseFloat(proj.getAngle()), proj.getSize(), proj.getMagnitude(),
-					proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
-					proj.getFrequency());
+			mgr.addProjectile(shootPacket.getProjectileId(), player.getId(), proj.getProjectileId(),
+					player.getWeaponId(), source.clone(-offset, -offset), angle + Float.parseFloat(proj.getAngle()),
+					proj.getSize(), proj.getMagnitude(), proj.getRange(), rolledDamage, false, proj.getFlags(),
+					proj.getAmplitude(), proj.getFrequency());
 		}
-		log.info("[SERVER] Recieved PlayerShoot Packet For Player {}, BulletId: {}", shootPacket.getEntityId(), shootPacket.getProjectileId());
+		log.info("[SERVER] Recieved PlayerShoot Packet For Player {}, BulletId: {}", shootPacket.getEntityId(),
+				shootPacket.getProjectileId());
 	}
-	
+
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
-
 		try {
 			log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 					textPacket.getFrom(), textPacket.getMessage());
-			String hostToRespond = textPacket.getMessage().split("@")[1];
-			OutputStream toClientStream = mgr.getServer().getClients().get(hostToRespond).getOutputStream();
+			OutputStream toClientStream = mgr.getServer().getClients().get(textPacket.getSrcIp()).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 
 			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(),
@@ -602,29 +605,26 @@ public class RealmManagerServer implements Runnable {
 
 	public static void handleCommandServer(RealmManagerServer mgr, Packet packet) {
 		CommandPacket commandPacket = (CommandPacket) packet;
-
 		try {
 			switch (commandPacket.getCommandId()) {
 			case 1:
-				doLogin(mgr, CommandType.fromPacket(commandPacket));
+				doLogin(mgr, CommandType.fromPacket(commandPacket), commandPacket);
 				break;
 			}
 		} catch (Exception e) {
 			log.error("Failed to perform Server command for Player {}. Reason: {}", commandPacket.getPlayerId(),
 					e.getMessage());
 		}
-
 		log.info("[SERVER] Recieved Command Packet For Player {}. Command={}", commandPacket.getPlayerId(),
 				commandPacket.getCommand());
 	}
-	
+
 	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {
 		LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
-
 		try {
 			Player player = mgr.getRealm().getPlayer(loadMapPacket.getPlayerId());
 			mgr.getRealm().loadMap(loadMapPacket.getMapKey(), player);
-			
+
 		} catch (Exception e) {
 			log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
 					e.getMessage());
@@ -634,7 +634,7 @@ public class RealmManagerServer implements Runnable {
 				loadMapPacket.getMapKey());
 	}
 
-	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request) {
+	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
 		try {
 			Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 			CharacterClass cls = CharacterClass.ROGUE;
@@ -647,10 +647,10 @@ public class RealmManagerServer implements Runnable {
 			player.setHeadless(false);
 			long newId = mgr.getRealm().addPlayer(player);
 			mgr.setFirstPlayerId(newId);
-			OutputStream toClientStream = mgr.getServer().getClients().get(request.getRemoteAddr()).getOutputStream();
+			OutputStream toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 			LoginResponseMessage message = LoginResponseMessage.builder().playerId(newId).success(true).build();
-			
+
 			CommandPacket commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
 			commandResponse.serializeWrite(dosToClient);
 			mgr.addTestPlayer();

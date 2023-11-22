@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = false)
 public class SocketClient implements Runnable {
 	public static String PLAYER_USERNAME = null;
+	public static String SERVER_ADDR = null;
 	private static final int BUFFER_CAPACITY = 65536 * 10;
 
 	private Socket clientSocket;
@@ -44,7 +45,7 @@ public class SocketClient implements Runnable {
 	public SocketClient(String targetHost, int port) {
 		try {
 			this.clientSocket = new Socket(targetHost, port);
-			this.sendRemote(TextPacket.create(PLAYER_USERNAME, "SYSTEM", "LoginRequest@"+SocketClient.getLocalAddr()));
+			this.sendRemote(TextPacket.create(SocketClient.PLAYER_USERNAME, "SYSTEM", "LoginRequest"));
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}
