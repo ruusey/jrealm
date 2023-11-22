@@ -7,6 +7,7 @@ import com.jrealm.game.util.Tuple;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
@@ -23,7 +24,9 @@ public enum PacketType {
 	PLAYER_SHOOT   ((byte) 6, true, PlayerShootPacket.class),
 	COMMAND		   ((byte) 7, true, CommandPacket.class),
 	LOAD_MAP	   ((byte) 8, true, LoadMapPacket.class),
-	LOAD	   	   ((byte) 9, true, LoadPacket.class);
+	LOAD	   	   ((byte) 9, true, LoadPacket.class),
+	UNLOAD	   	   ((byte) 10, true, UnloadPacket.class);
+
 
 
 

@@ -131,7 +131,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 				&& !player.hasEffect(EffectType.INVISIBLE)) {
 			this.attack = true;
 
-			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 500)
+			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 850)
 					&& !this.hasEffect(EffectType.STUNNED);
 
 			if (canShoot) {
@@ -145,11 +145,11 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 				for (Projectile p : group.getProjectiles()) {
 					if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
-						mgr.addProjectile(player.getId(), this.getWeaponId(), p.getProjectileId(), source.clone(),
+						mgr.addProjectile(0l, player.getId(), this.getWeaponId(), p.getProjectileId(), source.clone(),
 								angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
 								p.getDamage(), true, p.getFlags(), p.getAmplitude(), p.getFrequency());
 					} else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
-						mgr.addProjectile(player.getId(), this.getWeaponId(), p.getProjectileId(), source.clone(), Float.parseFloat(p.getAngle()),
+						mgr.addProjectile(0l, player.getId(), this.getWeaponId(), p.getProjectileId(), source.clone(), Float.parseFloat(p.getAngle()),
 								p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
 								p.getAmplitude(), p.getFrequency());
 					}

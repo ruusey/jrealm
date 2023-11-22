@@ -239,6 +239,9 @@ public class Realm {
 			ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(b.getProjectileId());
 			SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
 			Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
+			if (pg.getAngleOffset() != null) {
+				bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
+			}
 			b.setImage(bulletImage);
 			this.bullets.put(b.getId(), b);
 		}

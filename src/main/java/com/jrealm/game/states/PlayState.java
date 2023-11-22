@@ -268,23 +268,23 @@ public class PlayState extends GameState {
 					}
 				};
 
-				Runnable processGameObjects = () -> {
-					GameObject[] gameObject = this.client.getRealm().getGameObjectsInBounds(this.cam.getBounds());
-					for (int i = 0; i < gameObject.length; i++) {
-//						if (gameObject[i] instanceof Enemy) {
-//							Enemy enemy = ((Enemy) gameObject[i]);
-//							enemy.update(this, time);
+//				Runnable processGameObjects = () -> {
+//					GameObject[] gameObject = this.client.getRealm().getGameObjectsInBounds(this.cam.getBounds());
+//					for (int i = 0; i < gameObject.length; i++) {
+////						if (gameObject[i] instanceof Enemy) {
+////							Enemy enemy = ((Enemy) gameObject[i]);
+////							enemy.update(this, time);
+////						}
+//
+//						if (gameObject[i] instanceof Bullet) {
+//							Bullet bullet = ((Bullet) gameObject[i]);
+//							if (bullet != null) {
+//								bullet.update();
+//							}
 //						}
-
-						if (gameObject[i] instanceof Bullet) {
-							Bullet bullet = ((Bullet) gameObject[i]);
-							if (bullet != null) {
-								bullet.update();
-							}
-						}
-					}
+//					}
 					this.processBulletHit();
-				};
+//				};
 				// Rewrite this asap
 				Runnable checkAbilityUsage = () -> {
 					if (this.getPlayer() == null)
@@ -303,7 +303,7 @@ public class PlayState extends GameState {
 
 					this.pui.update(time);
 				};
-				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText,
+				WorkerThread.submitAndRun(playerShootDequeue, updatePlayerAndUi, monitorDamageText,
 						checkAbilityUsage);
 			}
 

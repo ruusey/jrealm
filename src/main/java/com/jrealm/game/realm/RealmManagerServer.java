@@ -41,6 +41,7 @@ import com.jrealm.net.PacketType;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
@@ -74,28 +75,34 @@ public class RealmManagerServer implements Runnable {
 	private int tickCount;
 
 	private long firstPlayerId;
+	
+	private List<Long> expiredEnemies;
+	private List<Long> expiredBullets;
+	
 	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
 		this.server = new SocketServer(2222);
 		this.shotDestQueue = new ArrayList<>();
+		this.expiredEnemies = new ArrayList<>();
+		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap("tile/vault.xml", null);
 
 	}
 	
 	private void addTestPlayer() {
-		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		CharacterClass cls = CharacterClass.ARCHER;
-		Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE, cls);
-		player.equipSlots(PlayState.getStartingEquipment(cls));
-		player.setMaxSpeed(0.6f);
-		player.setDown(true);
-		player.setRight(true);
-		long newId = this.getRealm().addPlayer(player);
+//		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+//		CharacterClass cls = CharacterClass.ARCHER;
+//		Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
+//				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+//						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+//				GlobalConstants.PLAYER_SIZE, cls);
+//		player.equipSlots(PlayState.getStartingEquipment(cls));
+//		player.setMaxSpeed(0.6f);
+//		player.setDown(true);
+//		player.setRight(true);
+//		long newId = this.getRealm().addPlayer(player);
 
 //		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 //		cls = CharacterClass.PALLADIN;
@@ -119,7 +126,7 @@ public class RealmManagerServer implements Runnable {
 			this.update(0);
 		};
 
-		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 30);
+		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 
 		log.info("RealmManager exiting run().");
@@ -143,6 +150,12 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void broadcastGameData() {
+		UnloadPacket unload = null;
+		try {
+			unload = this.getUnloadPacket();
+		}catch(Exception e) {
+			log.error("Failed to create unload packet. Reason: {}", e);
+		}
 		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 			if(player.getKey()!=this.getFirstPlayerId()) continue;
 			List<UpdatePacket> uPackets = this.realm.getPlayersAsPackets(player.getValue().getCam().getBounds());
@@ -162,6 +175,8 @@ public class RealmManagerServer implements Runnable {
 				
 				LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
 				load.serializeWrite(dosToClient);
+				
+				unload.serializeWrite(dosToClient);
 			} catch (Exception e) {
 				log.error("Failed to get OutputStream to Client");
 			}
@@ -192,6 +207,14 @@ public class RealmManagerServer implements Runnable {
 		}
 		return bestPlayer;	
 	}
+	
+	private UnloadPacket getUnloadPacket() throws Exception{
+		Long[] expiredBullets = this.expiredBullets.toArray(new Long[0]);
+		Long[] expiredEnemies = this.expiredEnemies.toArray(new Long[0]);
+		this.expiredBullets.clear();
+		this.expiredEnemies.clear();
+		return UnloadPacket.from(new Long[0], new Long[0], expiredBullets, expiredEnemies);
+	}
 
 	private void registerPacketCallbacks() {
 		this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), RealmManagerServer::handlePlayerMoveServer);
@@ -200,7 +223,6 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManagerServer::handleTextServer);
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerServer::handleCommandServer);
 		this.registerPacketCallback(PacketType.LOAD_MAP.getPacketId(), RealmManagerServer::handleLoadMapServer);
-
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerServer, Packet> callback) {
@@ -217,8 +239,11 @@ public class RealmManagerServer implements Runnable {
 			Runnable playerShootDequeue = () -> {
 				for (int i = 0; i < this.shotDestQueue.size(); i++) {
 					Vector2f dest = this.shotDestQueue.remove(i);
-					dest.addX(PlayState.map.x);
-					dest.addY(PlayState.map.y);
+//					dest.addX(PlayState.map.x);
+//					dest.addY(PlayState.map.y);
+					dest.addX(p.getCam().getPos().x);
+					dest.addY(p.getCam().getPos().y);
+
 					Vector2f source = p.getPos().clone(p.getSize() / 2, p.getSize() / 2);
 					ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(p.getWeaponId());
 					float angle = Bullet.getAngle(source, dest);
@@ -226,7 +251,7 @@ public class RealmManagerServer implements Runnable {
 						short offset = (short) (p.getSize() / (short) 2);
 						short rolledDamage = p.getInventory()[0].getDamage().getInRange();
 						rolledDamage += p.getComputedStats().getAtt();
-						this.addProjectile(p.getId(), proj.getProjectileId(), p.getWeaponId(), source.clone(-offset, -offset),
+						this.addProjectile(0l, p.getId(), proj.getProjectileId(), p.getWeaponId(), source.clone(-offset, -offset),
 								angle + Float.parseFloat(proj.getAngle()), proj.getSize(), proj.getMagnitude(),
 								proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
 								proj.getFrequency());
@@ -309,6 +334,19 @@ public class RealmManagerServer implements Runnable {
 		}
 
 	}
+	
+	private List<Bullet> getBullets() {
+
+		GameObject[] gameObject = this.getRealm().getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort());
+
+		List<Bullet> results = new ArrayList<>();
+		for (int i = 0; i < gameObject.length; i++) {
+			if (gameObject[i] instanceof Bullet) {
+				results.add((Bullet) gameObject[i]);
+			}
+		}
+		return results;
+	}
 
 	public synchronized void processBulletHit(Player p) {
 		List<Bullet> results = this.getBullets(p);
@@ -349,6 +387,7 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 		toRemove.forEach(bullet -> {
+			this.expiredBullets.add(bullet.getId());
 			this.realm.removeBullet(bullet);
 		});
 	}
@@ -366,6 +405,7 @@ public class RealmManagerServer implements Runnable {
 				dmgToInflict = minDmg;
 			}
 			player.setHealth(player.getHealth() - dmgToInflict, 0, false);
+			this.expiredBullets.add(b.getId());
 			this.realm.removeBullet(b);
 		}
 	}
@@ -380,6 +420,7 @@ public class RealmManagerServer implements Runnable {
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {
+				this.expiredBullets.add(b.getId());
 				this.realm.removeBullet(b);
 			}
 
@@ -396,6 +437,8 @@ public class RealmManagerServer implements Runnable {
 			}
 			if (e.getDeath()) {
 				e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
+				this.expiredBullets.add(b.getId());
+				this.expiredEnemies.add(e.getId());
 
 				this.realm.clearHitMap();
 				this.realm.spawnRandomEnemy();
@@ -407,9 +450,9 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	public synchronized void addProjectile(long entityId, int projectileId, int projectileGroupId, Vector2f src, Vector2f dest,
+	public synchronized void addProjectile(long id, long targetPlayerId, int projectileId, int projectileGroupId, Vector2f src, Vector2f dest,
 			short size, float magnitude, float range, short damage, boolean isEnemy, List<Short> flags) {
-		Player player = this.realm.getPlayer(entityId);
+		Player player = this.realm.getPlayer(targetPlayerId);
 		if (player == null)
 			return;
 		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
@@ -421,16 +464,18 @@ public class RealmManagerServer implements Runnable {
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
+		long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
+
+		Bullet b = new Bullet(id, projectileId, bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
 		b.setFlags(flags);
 
 		this.realm.addBullet(b);
 	}
 
-	public synchronized void addProjectile(long entityId, int projectileId, int projectileGroupId, Vector2f src, float angle, short size,
+	public synchronized void addProjectile(long id, long targetPlayerId, int projectileId, int projectileGroupId, Vector2f src, float angle, short size,
 			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags, short amplitude,
 			short frequency) {
-		Player player = this.realm.getPlayer(entityId);
+		Player player = this.realm.getPlayer(targetPlayerId);
 		if (player == null)
 			return;
 		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
@@ -442,7 +487,8 @@ public class RealmManagerServer implements Runnable {
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, angle, size, magnitude, range, damage,
+		long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
+		Bullet b = new Bullet(idToUse, projectileId, bulletImage, src, angle, size, magnitude, range, damage,
 				isEnemy);
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);
@@ -509,8 +555,8 @@ public class RealmManagerServer implements Runnable {
 		Player player = mgr.getRealm().getPlayer(shootPacket.getEntityId());
 		
 		Vector2f dest = new Vector2f(shootPacket.getDestX(), shootPacket.getDestY());
-		dest.addX(PlayState.map.x);
-		dest.addY(PlayState.map.y);
+		dest.addX(player.getCam().getPos().x);
+		dest.addY(player.getCam().getPos().y);
 		Vector2f source = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
 		float angle = Bullet.getAngle(source, dest);
@@ -518,7 +564,7 @@ public class RealmManagerServer implements Runnable {
 			short offset = (short) (player.getSize() / (short) 2);
 			short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 			rolledDamage += player.getComputedStats().getAtt();
-			mgr.addProjectile(player.getId(), proj.getProjectileId(), player.getWeaponId(), source.clone(-offset, -offset),
+			mgr.addProjectile(shootPacket.getProjectileId(), player.getId(), proj.getProjectileId(), player.getWeaponId(), source.clone(-offset, -offset),
 					angle + Float.parseFloat(proj.getAngle()), proj.getSize(), proj.getMagnitude(),
 					proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
 					proj.getFrequency());

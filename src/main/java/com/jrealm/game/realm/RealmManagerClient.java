@@ -30,6 +30,7 @@ import com.jrealm.net.PacketType;
 import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
@@ -117,6 +118,8 @@ public class RealmManagerClient implements Runnable {
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManagerClient::handleTextClient);
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerClient::handleCommandClient);
 		this.registerPacketCallback(PacketType.LOAD.getPacketId(), RealmManagerClient::handleLoadClient);
+		this.registerPacketCallback(PacketType.UNLOAD.getPacketId(), RealmManagerClient::handleUnloadClient);
+
 
 	}
 
@@ -170,6 +173,33 @@ public class RealmManagerClient implements Runnable {
 			log.error("Failed to handle Load Packet. Reason: {}", e);
 		}	
 	}
+	
+	public static void handleUnloadClient(RealmManagerClient cli, Packet packet) {
+		UnloadPacket textPacket = (UnloadPacket) packet;
+		try {
+			
+			for(Long p : textPacket.getPlayers()) {
+				if(p==cli.getCurrentPlayerId()) continue;
+				cli.getRealm().getPlayers().remove(p);
+			}
+			for(Long lc : textPacket.getContainers()) {
+				cli.getRealm().getLoot().remove(lc);
+			}
+			
+			for(Long b : textPacket.getBullets()) {
+				cli.getRealm().getBullets().remove(b);
+			}
+			
+			for(Long e : textPacket.getEnemies()) {
+				cli.getRealm().getEnemies().remove(e);
+			}
+
+		}catch(Exception e) {
+			log.error("Failed to handle Load Packet. Reason: {}", e);
+		}	
+	}
+	
+	
 	
 	public static void handleTextClient(RealmManagerClient cli, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;

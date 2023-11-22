@@ -143,6 +143,8 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 			this.range -= dist;
 			this.pos.addX(vel.x);
 			this.pos.addY(vel.y);
+			this.dx = vel.x;
+			this.dy = vel.y;
 		}
 	}
 
