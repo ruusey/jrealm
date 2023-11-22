@@ -127,11 +127,11 @@ public class RealmManagerServer implements Runnable {
 			this.update(0);
 		};
 
+
 		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 
 		RealmManagerServer.log.info("RealmManager exiting run().");
-
 	}
 
 	private void tick() {
@@ -182,7 +182,9 @@ public class RealmManagerServer implements Runnable {
 					if (unloadToBroadcast != null) {
 						unloadToBroadcast.serializeWrite(dosToClient);
 					}
-					mPacket.serializeWrite(dosToClient);
+					if (mPacket != null) {
+						mPacket.serializeWrite(dosToClient);
+					}
 
 				} catch (Exception e) {
 					disconnectedClients.add(client.getKey());
@@ -649,17 +651,16 @@ public class RealmManagerServer implements Runnable {
 			player.equipSlots(PlayState.getStartingEquipment(cls));
 			player.setName(request.getUsername());
 			player.setHeadless(false);
-			long newId = mgr.getRealm().addPlayer(player);
 			OutputStream toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-			LoginResponseMessage message = LoginResponseMessage.builder().playerId(newId).success(true).build();
+			LoginResponseMessage message = LoginResponseMessage.builder().playerId(player.getId()).success(true)
+					.build();
+			mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
 
 			CommandPacket commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
 			commandResponse.serializeWrite(dosToClient);
-			if (mgr.getRealm().getPlayers().size() == 1) {
-				mgr.addTestPlayer();
-			}
-			mgr.getRemoteAddresses().put(command.getSrcIp(), newId);
+			long newId = mgr.getRealm().addPlayer(player);
+
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to perform Client Login. Reason: {}", e);
 		}

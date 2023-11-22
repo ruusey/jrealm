@@ -30,7 +30,6 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.GameObjectKey;
@@ -159,7 +158,7 @@ public class Realm {
 		this.releasePlayerLock();
 		return player.getId();
 	}
-	
+
 	public long addPlayerIfNotExists(Player player) {
 		if(!this.players.containsKey(player.getId())) {
 			this.acquirePlayerLock();
@@ -224,16 +223,16 @@ public class Realm {
 		this.releasePlayerLock();
 		return p;
 	}
-	
+
 	public Bullet getBullet(long bulletId) {
 		return this.bullets.get(bulletId);
 	}
-	
+
 	public long addBullet(Bullet b) {
 		this.bullets.put(b.getId(), b);
 		return b.getId();
 	}
-	
+
 	public long addBulletIfNotExists(Bullet b) {
 		Bullet existing = this.bullets.get(b.getId());
 		if(existing==null) {
@@ -243,8 +242,8 @@ public class Realm {
 			if (pg.getAngleOffset() != null) {
 				bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
 			}
-			
-			
+
+
 			b.setImage(bulletImage);
 			this.bullets.put(b.getId(), b);
 		}
@@ -269,7 +268,7 @@ public class Realm {
 		this.enemies.put(enemy.getId(), enemy);
 		return enemy.getId();
 	}
-	
+
 	public long addEnemyIfNotExists(Enemy enemy) {
 		Enemy existing = this.enemies.get(enemy.getId());
 		if(existing==null) {
@@ -277,7 +276,7 @@ public class Realm {
 			SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 			SpriteSheet sheet = new SpriteSheet(enemySheet.getSprite(model.getCol(), model.getRow(), 16, 16),
 					enemy.getName(), 16, 16, 0);
-			
+
 			enemy.setSprite(sheet);
 			enemy.setAni(new Animation());
 			enemy.getAnimation().setFrames(sheet.getSpriteArray(0));
@@ -306,7 +305,7 @@ public class Realm {
 		this.loot.put(randomId, lc);
 		return randomId;
 	}
-	
+
 	public long addLootContainerIfNotExists(LootContainer lc) {
 		if(!this.loot.containsKey(lc.getLootContainerId())) {
 			Sprite lootSprite = null;
@@ -379,7 +378,7 @@ public class Realm {
 
 		return objs.toArray(new GameObject[0]);
 	}
-	
+
 	public GameObject[] getGameObjectss() {
 
 		List<GameObject> objs = new ArrayList<>();
@@ -431,28 +430,28 @@ public class Realm {
 				UpdatePacket pack = UpdatePacket.from(p);
 				playerUpdates.add(pack);
 			} catch (Exception e) {
-				log.error("Failed to create update packet from Player. Reason: {}", e);
+				Realm.log.error("Failed to create update packet from Player. Reason: {}", e);
 			}
 			// }
 		}
 		return playerUpdates;
 	}
-	
+
 	public LoadPacket getLoadPacket(AABB cam) {
 		LoadPacket load = null;
 		try {
 			final Player[] playersToLoad = this.getPlayers().values().toArray(new Player[0]);
-//			final List<Player> playersToLoad = new ArrayList<>();
-//			for(Player p : this.players.values()) {
-//				final boolean inViewport = cam.inside((int)p.getPos().x, (int)p.getPos().y);
-//				if(inViewport) {
-//					playersToLoad.add(p);
-//				}
-//
-//			}
+			//			final List<Player> playersToLoad = new ArrayList<>();
+			//			for(Player p : this.players.values()) {
+			//				final boolean inViewport = cam.inside((int)p.getPos().x, (int)p.getPos().y);
+			//				if(inViewport) {
+			//					playersToLoad.add(p);
+			//				}
+			//
+			//			}
 			final LootContainer[] containersToLoad = this.getLoot().values().toArray(new LootContainer[0]);
 			final List<Bullet> bulletsToLoad = new ArrayList<>();
-			
+
 			for(Bullet b : this.bullets.values()) {
 				final boolean inViewport = cam.inside((int)b.getPos().x, (int)b.getPos().y);
 				if(inViewport) {
@@ -472,7 +471,7 @@ public class Realm {
 			load = LoadPacket.from(playersToLoad, containersToLoad,
 					bulletsToLoad.toArray(new Bullet[0]), enemiesToLoad.toArray(new Enemy[0]));
 		} catch (Exception e) {
-			log.error("Failed to get load Packet. Reason: {}");
+			Realm.log.error("Failed to get load Packet. Reason: {}");
 		}
 		return load;
 	}
@@ -482,14 +481,16 @@ public class Realm {
 		List<GameObject> validObjects = new ArrayList<>();
 		for (GameObject obj : gameObjects) {
 			try {
-				if((obj.getDx()>0 || obj.getDy()>0) || (obj.getDx()<0 || obj.getDy()<0)) {
+				if(((obj.getDx()>0) || (obj.getDy()>0)) || ((obj.getDx()<0) || (obj.getDy()<0))) {
 					validObjects.add(obj);
 				}
 			} catch (Exception e) {
-				log.error("Failed to create ObjectMove Packet. Reason: {}", e.getMessage());
+				Realm.log.error("Failed to create ObjectMove Packet. Reason: {}", e.getMessage());
 			}
 		}
-		return ObjectMovePacket.from(validObjects.toArray(new GameObject[0]));
+		if (validObjects.size() > 0)
+			return ObjectMovePacket.from(validObjects.toArray(new GameObject[0]));
+		return null;
 	}
 
 	public LootContainer[] getLootInBounds(AABB cam) {
@@ -503,7 +504,9 @@ public class Realm {
 	}
 
 	public void spawnRandomEnemies() {
-		if(this.enemies==null) this.enemies = new ConcurrentHashMap<>();
+		if(this.enemies==null) {
+			this.enemies = new ConcurrentHashMap<>();
+		}
 		Vector2f v = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 
