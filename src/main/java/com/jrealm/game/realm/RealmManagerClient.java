@@ -25,7 +25,6 @@ import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 import com.jrealm.net.client.SocketClient;
@@ -59,11 +58,11 @@ public class RealmManagerClient implements Runnable {
 	private long now;
 	private long lastRenderTime;
 	private long lastSecondTime;
-	
+
 	private int oldFrameCount;
 	private int oldTickCount;
 	private int tickCount;
-	
+
 	private long currentPlayerId;
 
 	public RealmManagerClient(PlayState state, Realm realm) {
@@ -81,31 +80,31 @@ public class RealmManagerClient implements Runnable {
 
 	@Override
 	public void run() {
-		log.info("Starting JRealm Client");
+		RealmManagerClient.log.info("Starting JRealm Client");
 
 		Runnable tick = ()->{
 			this.tick();
 			this.update(0);
 		};
-		
+
 		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
-		
-		log.info("RealmManager exiting run().");
+
+		RealmManagerClient.log.info("RealmManager exiting run().");
 	}
-	
+
 	private void tick() {
 		try {
 			Runnable processClientPackets = () -> {
 				this.processClientPackets();
 			};
-			
+
 			WorkerThread.submitAndRun(processClientPackets);
 		} catch (Exception e) {
-			log.error("Failed to sleep");
+			RealmManagerClient.log.error("Failed to sleep");
 		}
 	}
-	
+
 
 	public void processClientPackets() {
 		while (!this.getClient().getPacketQueue().isEmpty()) {
@@ -114,7 +113,7 @@ public class RealmManagerClient implements Runnable {
 				Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
 				this.packetCallbacksClient.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
-				log.error("Failed to process client packets {}", e);
+				RealmManagerClient.log.error("Failed to process client packets {}", e);
 			}
 		}
 	}
@@ -131,9 +130,9 @@ public class RealmManagerClient implements Runnable {
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerClient, Packet> callback) {
 		this.packetCallbacksClient.put(packetId, callback);
 	}
-	
+
 	public void update(double time) {
-		this.state.update(time);	
+		this.state.update(time);
 	}
 
 	public void startHeartbeatThread() {
@@ -147,90 +146,95 @@ public class RealmManagerClient implements Runnable {
 					this.client.sendRemote(pack);
 					Thread.sleep(1000);
 				} catch (Exception e) {
-					log.error("Failed to send Heartbeat packet. Reason: {}", e);
+					RealmManagerClient.log.error("Failed to send Heartbeat packet. Reason: {}", e);
 				}
 			}
 		};
 		WorkerThread.submitAndForkRun(sendHeartbeat);
 	}
-	
+
 	public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
 		LoadPacket textPacket = (LoadPacket) packet;
 		try {
-			
+
 			for(Player p : textPacket.getPlayers()) {
-				if(p.getId()==cli.getCurrentPlayerId()) continue;
+				if(p.getId()==cli.getCurrentPlayerId()) {
+					continue;
+				}
 				cli.getRealm().addPlayerIfNotExists(p);
 			}
 			for(LootContainer lc : textPacket.getContainers()) {
 				cli.getRealm().addLootContainerIfNotExists(lc);
 			}
-			
+
 			for(Bullet b : textPacket.getBullets()) {
 				cli.getRealm().addBulletIfNotExists(b);
 			}
-			
+
 			for(Enemy e : textPacket.getEnemies()) {
 				cli.getRealm().addEnemyIfNotExists(e);
 			}
 
 		}catch(Exception e) {
-			log.error("Failed to handle Load Packet. Reason: {}", e);
-		}	
+			RealmManagerClient.log.error("Failed to handle Load Packet. Reason: {}", e);
+		}
 	}
-	
+
 	public static void handleUnloadClient(RealmManagerClient cli, Packet packet) {
 		UnloadPacket textPacket = (UnloadPacket) packet;
 		try {
-			
+
 			for(Long p : textPacket.getPlayers()) {
-				if(p==cli.getCurrentPlayerId()) continue;
+				if(p==cli.getCurrentPlayerId()) {
+					continue;
+				}
 				cli.getRealm().getPlayers().remove(p);
 			}
 			for(Long lc : textPacket.getContainers()) {
 				cli.getRealm().getLoot().remove(lc);
 			}
-			
+
 			for(Long b : textPacket.getBullets()) {
 				cli.getRealm().getBullets().remove(b);
 			}
-			
+
 			for(Long e : textPacket.getEnemies()) {
 				cli.getRealm().getEnemies().remove(e);
 			}
 
 		}catch(Exception e) {
-			log.error("Failed to handle Load Packet. Reason: {}", e);
-		}	
+			RealmManagerClient.log.error("Failed to handle Load Packet. Reason: {}", e);
+		}
 	}
-	
+
 	public static void handleTextClient(RealmManagerClient cli, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
-		log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
+		RealmManagerClient.log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
-		log.info("Responding with LoginRequest");
+		RealmManagerClient.log.info("Responding with LoginRequest");
 		try {
-			LoginRequestMessage login = LoginRequestMessage.builder().username("ruusey").password("password123").build();
+			LoginRequestMessage login = LoginRequestMessage.builder().username(SocketClient.PLAYER_USERNAME)
+					.password("password123").build();
 
 			CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
 			cli.getClient().sendRemote(loginPacket);
 		}catch(Exception e) {
-			log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
-		}	
+			RealmManagerClient.log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
+		}
 	}
-	
+
 	public static void handleCommandClient(RealmManagerClient cli, Packet packet) {
 		CommandPacket commandPacket = (CommandPacket) packet;
-		log.info("[CLIENT] Recieved Command Packet for Player {} Command={}", commandPacket.getPlayerId(), commandPacket.getCommand());
+		RealmManagerClient.log.info("[CLIENT] Recieved Command Packet for Player {} Command={}", commandPacket.getPlayerId(), commandPacket.getCommand());
 		try {
 			switch(commandPacket.getCommandId()) {
 			case 2:
 				LoginResponseMessage loginResponse = CommandType.fromPacket(commandPacket);
-				doLoginResponse(cli, loginResponse);
+				RealmManagerClient.doLoginResponse(cli, loginResponse);
 				break;
 			}
 		}catch(Exception e) {
-			log.error("Failed to handle client command packet. Reason: {}", e.getMessage());
+			RealmManagerClient.log.error("Failed to handle client command packet. Reason: {}", e.getMessage());
 		}
 	}
 
@@ -240,25 +244,31 @@ public class RealmManagerClient implements Runnable {
 			switch(movement.getTargetEntityType()) {
 			case PLAYER:
 				Player playerToUpdate = cli.getRealm().getPlayer(movement.getEntityId());
-				if(playerToUpdate==null) break;
+				if(playerToUpdate==null) {
+					break;
+				}
 				playerToUpdate.applyMovement(movement);
 				break;
 			case ENEMY:
 				Enemy enemyToUpdate = cli.getRealm().getEnemy(movement.getEntityId());
-				if(enemyToUpdate == null) break;
+				if(enemyToUpdate == null) {
+					break;
+				}
 				enemyToUpdate.applyMovement(movement);
 				break;
 			case BULLET:
 				Bullet bulletToUpdate = cli.getRealm().getBullet(movement.getEntityId());
-				if(bulletToUpdate==null) break;
+				if(bulletToUpdate==null) {
+					break;
+				}
 				bulletToUpdate.applyMovement(movement);
 				break;
 			default:
 				break;
 			}
 		}
-//		log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
-//				EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
+		//		log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
+		//				EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
 	}
 
 	public static void handleUpdateClient(RealmManagerClient cli, Packet packet) {
@@ -266,9 +276,9 @@ public class RealmManagerClient implements Runnable {
 		if(updatePacket.getPlayerId()!=cli.getCurrentPlayerId()) return;
 		Player toUpdate = cli.getRealm().getPlayer((updatePacket.getPlayerId()));
 		toUpdate.applyUpdate(updatePacket);
-//		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
+		//		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 	}
-	
+
 	private static void doLoginResponse(RealmManagerClient cli, LoginResponseMessage loginResponse) {
 		try {
 			if(loginResponse.isSuccess()) {
@@ -278,14 +288,14 @@ public class RealmManagerClient implements Runnable {
 						new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 								(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 						GlobalConstants.PLAYER_SIZE, cls);
-				log.info("Login succesful, added Player ID {}", player.getId());
+				RealmManagerClient.log.info("Login succesful, added Player ID {}", player.getId());
 				cli.getState().loadClass(player, cls, true);
 				cli.setCurrentPlayerId(player.getId());
 				cli.getState().setPlayerId(player.getId());
 				cli.startHeartbeatThread();
 			}
 		}catch(Exception e) {
-			log.error("Failed to response to login response. Reason: {}", e.getMessage());
+			RealmManagerClient.log.error("Failed to response to login response. Reason: {}", e.getMessage());
 		}
 	}
 }

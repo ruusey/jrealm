@@ -75,11 +75,9 @@ public class RealmManagerServer implements Runnable {
 	private int oldTickCount;
 	private int tickCount;
 
-	private long firstPlayerId;
-
 	private List<Long> expiredEnemies;
 	private List<Long> expiredBullets;
-
+	private Map<String, Long> remoteAddresses = new HashMap<>();
 	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
@@ -107,23 +105,23 @@ public class RealmManagerServer implements Runnable {
 		player.setHeadless(true);
 		long newId = this.getRealm().addPlayer(player);
 
-//		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-//		cls = CharacterClass.PALLADIN;
-//		player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
-//				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-//						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-//				GlobalConstants.PLAYER_SIZE, cls);
-//		player.equipSlots(PlayState.getStartingEquipment(cls));
-//		player.setMaxSpeed(0.6f);
-//		player.setLeft(true);
-//		player.setDown(true);
-//		newId = this.getRealm().addPlayer(player);
+		//		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+		//		cls = CharacterClass.PALLADIN;
+		//		player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
+		//				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+		//						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+		//				GlobalConstants.PLAYER_SIZE, cls);
+		//		player.equipSlots(PlayState.getStartingEquipment(cls));
+		//		player.setMaxSpeed(0.6f);
+		//		player.setLeft(true);
+		//		player.setDown(true);
+		//		newId = this.getRealm().addPlayer(player);
 
 	}
 
 	@Override
 	public void run() {
-		log.info("Starting JRealm Server");
+		RealmManagerServer.log.info("Starting JRealm Server");
 		Runnable tick = () -> {
 			this.tick();
 			this.update(0);
@@ -132,7 +130,7 @@ public class RealmManagerServer implements Runnable {
 		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 
-		log.info("RealmManager exiting run().");
+		RealmManagerServer.log.info("RealmManager exiting run().");
 
 	}
 
@@ -148,7 +146,7 @@ public class RealmManagerServer implements Runnable {
 
 			WorkerThread.submitAndRun(broadcastGameData, processServerPackets);
 		} catch (Exception e) {
-			log.error("Failed to sleep");
+			RealmManagerServer.log.error("Failed to sleep");
 		}
 	}
 
@@ -157,9 +155,10 @@ public class RealmManagerServer implements Runnable {
 		try {
 			unload = this.getUnloadPacket();
 		} catch (Exception e) {
-			log.error("Failed to create unload packet. Reason: {}", e);
+			RealmManagerServer.log.error("Failed to create unload packet. Reason: {}", e);
 		}
 		final UnloadPacket unloadToBroadcast = unload;
+		final List<String> disconnectedClients = new ArrayList<>();
 		for (Map.Entry<String, Socket> client : this.server.getClients().entrySet()) {
 			List<Runnable> playerWork = new ArrayList<>();
 			for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
@@ -186,12 +185,17 @@ public class RealmManagerServer implements Runnable {
 					mPacket.serializeWrite(dosToClient);
 
 				} catch (Exception e) {
-					log.error("Failed to get OutputStream to Client");
+					disconnectedClients.add(client.getKey());
+					RealmManagerServer.log.error("Failed to get OutputStream to Client");
 				}
 
 				// playerWork.add(perPlayerWork);
 			}
 			// WorkerThread.submitAndRun(playerWork.toArray(new Runnable[0]));
+		}
+		for(String disconnectedClient : disconnectedClients) {
+			this.realm.getPlayers().remove(this.getRemoteAddresses().get(disconnectedClient));
+			this.server.getClients().remove(disconnectedClient);
 		}
 	}
 
@@ -203,7 +207,7 @@ public class RealmManagerServer implements Runnable {
 				created.setSrcIp(toProcess.getSrcIp());
 				this.packetCallbacksServer.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
-				log.error("Failed to process server packets {}", e);
+				RealmManagerServer.log.error("Failed to process server packets {}", e);
 			}
 		}
 	}
@@ -213,7 +217,7 @@ public class RealmManagerServer implements Runnable {
 		Player bestPlayer = null;
 		for (Player player : this.realm.getPlayers().values()) {
 			float dist = player.getPos().distanceTo(pos);
-			if (dist < best && dist <= limit) {
+			if ((dist < best) && (dist <= limit)) {
 				best = dist;
 				bestPlayer = player;
 			}
@@ -246,14 +250,15 @@ public class RealmManagerServer implements Runnable {
 		// Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 			Player p = this.realm.getPlayer(player.getValue().getId());
-			if (p == null)
+			if (p == null) {
 				continue;
+			}
 
 			Runnable playerShootDequeue = () -> {
 				for (int i = 0; i < this.shotDestQueue.size(); i++) {
 					Vector2f dest = this.shotDestQueue.remove(i);
-//					dest.addX(PlayState.map.x);
-//					dest.addY(PlayState.map.y);
+					//					dest.addX(PlayState.map.x);
+					//					dest.addY(PlayState.map.y);
 					dest.addX(p.getCam().getPos().x);
 					dest.addY(p.getCam().getPos().y);
 
@@ -526,7 +531,7 @@ public class RealmManagerServer implements Runnable {
 
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
 		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
-		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
+		RealmManagerServer.log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
 				heartbeatPacket.getTimestamp());
 	}
 
@@ -559,7 +564,7 @@ public class RealmManagerServer implements Runnable {
 			toMove.setDx(0);
 			toMove.setDy(0);
 		}
-		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
+		RealmManagerServer.log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
 	}
 
 	public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {
@@ -582,14 +587,14 @@ public class RealmManagerServer implements Runnable {
 					proj.getSize(), proj.getMagnitude(), proj.getRange(), rolledDamage, false, proj.getFlags(),
 					proj.getAmplitude(), proj.getFrequency());
 		}
-		log.info("[SERVER] Recieved PlayerShoot Packet For Player {}, BulletId: {}", shootPacket.getEntityId(),
+		RealmManagerServer.log.info("[SERVER] Recieved PlayerShoot Packet For Player {}, BulletId: {}", shootPacket.getEntityId(),
 				shootPacket.getProjectileId());
 	}
 
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
 		try {
-			log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
+			RealmManagerServer.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 					textPacket.getFrom(), textPacket.getMessage());
 			OutputStream toClientStream = mgr.getServer().getClients().get(textPacket.getSrcIp()).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
@@ -599,7 +604,7 @@ public class RealmManagerServer implements Runnable {
 
 			welcomeMessage.serializeWrite(dosToClient);
 		} catch (Exception e) {
-			log.error("Failed to send welcome message. Reason: {}", e);
+			RealmManagerServer.log.error("Failed to send welcome message. Reason: {}", e);
 		}
 	}
 
@@ -608,14 +613,14 @@ public class RealmManagerServer implements Runnable {
 		try {
 			switch (commandPacket.getCommandId()) {
 			case 1:
-				doLogin(mgr, CommandType.fromPacket(commandPacket), commandPacket);
+				RealmManagerServer.doLogin(mgr, CommandType.fromPacket(commandPacket), commandPacket);
 				break;
 			}
 		} catch (Exception e) {
-			log.error("Failed to perform Server command for Player {}. Reason: {}", commandPacket.getPlayerId(),
+			RealmManagerServer.log.error("Failed to perform Server command for Player {}. Reason: {}", commandPacket.getPlayerId(),
 					e.getMessage());
 		}
-		log.info("[SERVER] Recieved Command Packet For Player {}. Command={}", commandPacket.getPlayerId(),
+		RealmManagerServer.log.info("[SERVER] Recieved Command Packet For Player {}. Command={}", commandPacket.getPlayerId(),
 				commandPacket.getCommand());
 	}
 
@@ -626,11 +631,10 @@ public class RealmManagerServer implements Runnable {
 			mgr.getRealm().loadMap(loadMapPacket.getMapKey(), player);
 
 		} catch (Exception e) {
-			log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
+			RealmManagerServer.log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
 					e.getMessage());
 		}
-
-		log.info("[SERVER] Recieved Load Map packet from Player {}. Map={}", loadMapPacket.getPlayerId(),
+		RealmManagerServer.log.info("[SERVER] Recieved Load Map packet from Player {}. Map={}", loadMapPacket.getPlayerId(),
 				loadMapPacket.getMapKey());
 	}
 
@@ -646,16 +650,18 @@ public class RealmManagerServer implements Runnable {
 			player.setName(request.getUsername());
 			player.setHeadless(false);
 			long newId = mgr.getRealm().addPlayer(player);
-			mgr.setFirstPlayerId(newId);
 			OutputStream toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 			LoginResponseMessage message = LoginResponseMessage.builder().playerId(newId).success(true).build();
 
 			CommandPacket commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
 			commandResponse.serializeWrite(dosToClient);
-			mgr.addTestPlayer();
+			if (mgr.getRealm().getPlayers().size() == 1) {
+				mgr.addTestPlayer();
+			}
+			mgr.getRemoteAddresses().put(command.getSrcIp(), newId);
 		} catch (Exception e) {
-			log.error("Failed to perform Client Login. Reason: {}", e);
+			RealmManagerServer.log.error("Failed to perform Client Login. Reason: {}", e);
 		}
 	}
 }
