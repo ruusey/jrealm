@@ -7,19 +7,20 @@ import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.client.SocketClient;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GameLauncher {
-	public static final boolean LOCAL_SERVER = false;
+	public static final boolean LOCAL_SERVER = true;
 	public static final boolean LOCAL_CLIENT = true;
 	public GameLauncher() {
 		new Window();
 	}
 
 	public static void main(String[] args) {
-
+		
 		GameLauncher.log.info("Starting JRealm...");
 		GameDataManager.loadGameData();
 		if(GameLauncher.LOCAL_SERVER) {
@@ -29,6 +30,10 @@ public class GameLauncher {
 			WorkerThread.submitAndForkRun(server);
 		}
 		if (GameLauncher.LOCAL_CLIENT) {
+			SocketClient.PLAYER_USERNAME = args[0];
+			if(SocketClient.PLAYER_USERNAME==null) {
+				log.error("Please set the player username. [java -jar ./jrealm-client.jar {PLAYER_NAME}]");
+			}
 			new GameLauncher();
 		}
 	}

@@ -68,7 +68,7 @@ public class RealmManagerClient implements Runnable {
 	public RealmManagerClient(PlayState state, Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
-		this.client = new SocketClient("192.168.1.67", 2222);
+		this.client = new SocketClient(SocketServer.LOCALHOST, 2222);
 		this.state = state;
 		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.client);

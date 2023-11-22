@@ -163,7 +163,7 @@ public class Player extends Entity implements Streamable<Player>{
 		
 		this.cam.update();
 		if ((stats.getHp() > 0) && (this.getMaxHealth() == this.getDefaultMaxHealth())) {
-			this.setMaxHealth(this.getMaxHealth() + stats.getHp());
+		//	this.setMaxHealth(this.getMaxHealth() + stats.getHp());
 		} else if (stats.getHp() == 0) {
 			this.setMaxHealth(this.getDefaultMaxHealth());
 			if (this.getHealth() > this.getMaxHealth()) {
