@@ -587,7 +587,8 @@ public class RealmManagerServer implements Runnable {
 		try {
 			log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 					textPacket.getFrom(), textPacket.getMessage());
-			OutputStream toClientStream = mgr.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();
+			String hostToRespond = textPacket.getMessage().split("@")[1];
+			OutputStream toClientStream = mgr.getServer().getClients().get(hostToRespond).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 
 			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(),
@@ -597,7 +598,6 @@ public class RealmManagerServer implements Runnable {
 		} catch (Exception e) {
 			log.error("Failed to send welcome message. Reason: {}", e);
 		}
-
 	}
 
 	public static void handleCommandServer(RealmManagerServer mgr, Packet packet) {
@@ -647,7 +647,7 @@ public class RealmManagerServer implements Runnable {
 			player.setHeadless(false);
 			long newId = mgr.getRealm().addPlayer(player);
 			mgr.setFirstPlayerId(newId);
-			OutputStream toClientStream = mgr.getServer().getClients().get(SocketServer.LOCALHOST).getOutputStream();
+			OutputStream toClientStream = mgr.getServer().getClients().get(request.getRemoteAddr()).getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 			LoginResponseMessage message = LoginResponseMessage.builder().playerId(newId).success(true).build();
 			

@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GameLauncher {
+	public static final boolean LOCAL_SERVER = true;
 	public GameLauncher() {
 		new Window();
 	}
@@ -20,11 +21,12 @@ public class GameLauncher {
 		
 		GameLauncher.log.info("Starting JRealm...");
 		GameDataManager.loadGameData();
-
-		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		Realm realm = new Realm(c, true);
-		RealmManagerServer server = new RealmManagerServer(realm);
-		WorkerThread.submitAndForkRun(server);
+		if(LOCAL_SERVER) {
+			Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+			Realm realm = new Realm(c, true);
+			RealmManagerServer server = new RealmManagerServer(realm);
+			WorkerThread.submitAndForkRun(server);
+		}
 		new GameLauncher();
 	}
 }

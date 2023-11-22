@@ -33,6 +33,7 @@ import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.TextPacket;
@@ -67,7 +68,7 @@ public class RealmManagerClient implements Runnable {
 	public RealmManagerClient(PlayState state, Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
-		this.client = new SocketClient(2222);
+		this.client = new SocketClient(SocketServer.LOCALHOST, 2222);
 		this.state = state;
 		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.client);
@@ -120,8 +121,6 @@ public class RealmManagerClient implements Runnable {
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerClient::handleCommandClient);
 		this.registerPacketCallback(PacketType.LOAD.getPacketId(), RealmManagerClient::handleLoadClient);
 		this.registerPacketCallback(PacketType.UNLOAD.getPacketId(), RealmManagerClient::handleUnloadClient);
-
-
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerClient, Packet> callback) {
@@ -200,15 +199,14 @@ public class RealmManagerClient implements Runnable {
 		}	
 	}
 	
-	
-	
 	public static void handleTextClient(RealmManagerClient cli, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
 		log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
 		log.info("Responding with LoginRequest");
-		LoginRequestMessage login = LoginRequestMessage.builder().username("ruusey").password("password123").build();
 		try {
+			LoginRequestMessage login = LoginRequestMessage.builder().username("ruusey").password("password123").remoteAddr(SocketClient.getLocalAddr()).build();
+
 			CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
 			cli.getClient().sendRemote(loginPacket);
 		}catch(Exception e) {

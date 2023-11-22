@@ -3,12 +3,14 @@ package com.jrealm.net.client;
 import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.jrealm.game.GameLauncher;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
@@ -39,10 +41,10 @@ public class SocketClient implements Runnable {
 
 	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
 
-	public SocketClient(int port) {
+	public SocketClient(String targetHost, int port) {
 		try {
-			this.clientSocket = new Socket(SocketServer.LOCALHOST, port);
-			this.sendRemote(TextPacket.create("Ruusey", "SYSTEM", "LoginRequest"));
+			this.clientSocket = new Socket(targetHost, port);
+			this.sendRemote(TextPacket.create("Ruusey", "SYSTEM", "LoginRequest@"+SocketClient.getLocalAddr()));
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}
@@ -103,5 +105,17 @@ public class SocketClient implements Runnable {
 			String remoteAddr = this.clientSocket.getInetAddress().getHostAddress();
 			log.error("Failed to send Packet to remote addr {}", remoteAddr);
 		}
+	}
+	
+	public static String getLocalAddr() throws Exception{
+		if(GameLauncher.LOCAL_SERVER) return SocketServer.LOCALHOST;
+		String[] split = InetAddress.getLocalHost().toString().split("/");
+		String addr = null;
+		if(split.length>1) {
+			addr = split[1];
+		}else {
+			addr = split[0];
+		}
+		return addr;
 	}
 }
