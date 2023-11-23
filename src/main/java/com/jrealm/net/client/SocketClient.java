@@ -27,6 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 public class SocketClient implements Runnable {
 	public static String PLAYER_USERNAME = null;
 	public static String SERVER_ADDR = null;
+	public static int CLASS_ID = 0;
+
 	private static final int BUFFER_CAPACITY = 65536 * 10;
 
 	private Socket clientSocket;
@@ -63,7 +65,7 @@ public class SocketClient implements Runnable {
 			};
 			WorkerThread.submitAndRun(recievePackets);
 		}
-	
+
 
 	}
 
@@ -112,10 +114,10 @@ public class SocketClient implements Runnable {
 			packet.serializeWrite(dos);
 		} catch (Exception e) {
 			String remoteAddr = this.clientSocket.getInetAddress().getHostAddress();
-			log.error("Failed to send Packet to remote addr {}", remoteAddr);
+			SocketClient.log.error("Failed to send Packet to remote addr {}", remoteAddr);
 		}
 	}
-	
+
 	public static String getLocalAddr() throws Exception{
 		if(GameLauncher.LOCAL_SERVER) return SocketServer.LOCALHOST;
 		String[] split = InetAddress.getLocalHost().toString().split("/");

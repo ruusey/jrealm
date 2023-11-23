@@ -45,7 +45,6 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = false)
-@SuppressWarnings("unused")
 public class RealmManagerClient implements Runnable {
 	private SocketClient client;
 	private PlayState state;
@@ -214,7 +213,8 @@ public class RealmManagerClient implements Runnable {
 				textPacket.getFrom(), textPacket.getMessage());
 		RealmManagerClient.log.info("Responding with LoginRequest");
 		try {
-			LoginRequestMessage login = LoginRequestMessage.builder().username(SocketClient.PLAYER_USERNAME)
+			LoginRequestMessage login = LoginRequestMessage.builder().classId(SocketClient.CLASS_ID)
+					.username(SocketClient.PLAYER_USERNAME)
 					.password("password123").build();
 
 			CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
@@ -287,7 +287,7 @@ public class RealmManagerClient implements Runnable {
 		try {
 			if(loginResponse.isSuccess()) {
 				Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-				CharacterClass cls = CharacterClass.ROGUE;
+				CharacterClass cls = CharacterClass.valueOf(loginResponse.getClassId());
 				Player player = new Player(loginResponse.getPlayerId(), c, GameDataManager.loadClassSprites(cls),
 						new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 								(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),

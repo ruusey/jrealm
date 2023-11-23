@@ -1,9 +1,9 @@
 package com.jrealm.game.messaging;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Builder;
 
 @Data
 @NoArgsConstructor
@@ -12,5 +12,5 @@ import lombok.Builder;
 public class LoginRequestMessage {
 	private String username;
 	private String password;
-	private long characterId;
+	private int classId;
 }

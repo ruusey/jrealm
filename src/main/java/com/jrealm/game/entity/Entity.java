@@ -66,7 +66,7 @@ public abstract class Entity extends GameObject {
 	protected float manapercent = 1;
 
 	protected AABB hitBounds;
-	
+
 	private short[] effectIds;
 	private long[] effectTimes;
 
@@ -83,14 +83,14 @@ public abstract class Entity extends GameObject {
 		this.tc = new TileCollision(this);
 		this.resetEffects();
 	}
-	
+
 	public Entity(long id, Vector2f origin, int size) {
 		super(id, origin, size);
 		this.hitsize = size;
 
 		this.hitBounds = new AABB(origin, size, size);
 		this.tc = new TileCollision(this);
-		this.resetEffects();	
+		this.resetEffects();
 	}
 
 	public void removeEffect(short effectId) {
@@ -366,5 +366,5 @@ public abstract class Entity extends GameObject {
 	public void setLeft(boolean left) {
 		this.left = left;
 	}
-	
+
 }

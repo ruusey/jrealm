@@ -4,6 +4,7 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,9 +36,12 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 	private short amplitude = 4;
 	private short frequency = 25;
 
+	private long createdTime;
+
 	public Bullet(long id, int bulletId, Sprite image, Vector2f origin, int size) {
 		super(id, image, origin, size);
 		this.flags = new ArrayList<>();
+		this.createdTime = Instant.now().toEpochMilli();
 	}
 
 	public Bullet(long id, int projectileId, Vector2f origin, int size, float angle, float magnitude, float range,
@@ -57,6 +61,7 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 		this.timeStep = timeStep;
 		this.amplitude = amplitude;
 		this.frequency = frequency;
+		this.createdTime = Instant.now().toEpochMilli();
 	}
 
 	public Bullet(long id, int projectileId, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude,
@@ -69,6 +74,7 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 		this.angle = -Bullet.getAngle(origin, dest);
 		this.isEnemy = isEnemy;
 		this.flags = new ArrayList<>();
+		this.createdTime = Instant.now().toEpochMilli();
 	}
 
 	public Bullet(long id, int projectileId, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude,
@@ -83,7 +89,7 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 		this.frequency = frequency;
 		this.isEnemy = isEnemy;
 		this.flags = new ArrayList<>();
-
+		this.createdTime = Instant.now().toEpochMilli();
 	}
 
 	public Bullet(long id, int projectileId, Sprite image, Vector2f origin, float angle, short size, float magnitude,
@@ -96,7 +102,7 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 		this.angle = -angle;
 		this.isEnemy = isEnemy;
 		this.flags = new ArrayList<>();
-
+		this.createdTime = Instant.now().toEpochMilli();
 	}
 
 	public static float getAngle(Vector2f source, Vector2f target) {
@@ -122,7 +128,8 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 	}
 
 	public boolean remove() {
-		return this.range <= 0.0;
+		final boolean timeExp = ((Instant.now().toEpochMilli()) - this.createdTime) > 10000;
+		return ((this.range <= 0.0) || timeExp);
 	}
 
 	public short getDamage() {

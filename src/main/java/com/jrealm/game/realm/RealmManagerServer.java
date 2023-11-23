@@ -736,7 +736,7 @@ public class RealmManagerServer implements Runnable {
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
 		try {
 			Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-			CharacterClass cls = CharacterClass.ROGUE;
+			CharacterClass cls = CharacterClass.valueOf(request.getClassId());
 			Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
 					new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 							(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
@@ -747,7 +747,8 @@ public class RealmManagerServer implements Runnable {
 			OutputStream toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getClientSocket()
 					.getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-			LoginResponseMessage message = LoginResponseMessage.builder().playerId(player.getId()).success(true)
+			LoginResponseMessage message = LoginResponseMessage.builder().classId(request.getClassId())
+					.playerId(player.getId()).success(true)
 					.build();
 			mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
 
