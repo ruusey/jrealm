@@ -34,8 +34,6 @@ public class SocketServer implements Runnable {
 	private long localNoDataTime = System.currentTimeMillis();
 	private long remoteNoDataTime = System.currentTimeMillis();
 
-	private final List<Packet> packetQueue = new ArrayList<>();
-
 	private volatile Map<String, ProcessingThread> clients = new ConcurrentHashMap<>();
 
 	public SocketServer(int port) {
@@ -57,7 +55,6 @@ public class SocketServer implements Runnable {
 					String remoteAddr = socket.getInetAddress().getHostAddress();
 					ProcessingThread procesingThread = new ProcessingThread(this, socket);
 					this.clients.put(remoteAddr, procesingThread);
-
 					procesingThread.start();
 					SocketServer.log.info("Server accepted new connection from Remote Address {}", remoteAddr);
 				} catch (Exception e) {

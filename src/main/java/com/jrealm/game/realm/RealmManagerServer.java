@@ -202,19 +202,18 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void processServerPackets() {
-
-		for (Packet packet : this.getServer().getPacketQueue()) {
-			try {
-				Packet created = Packet.newInstance(packet.getId(), packet.getData());
-				created.setSrcIp(packet.getSrcIp());
-				this.packetCallbacksServer.get(created.getId()).accept(this, created);
-			} catch (Exception e) {
-				RealmManagerServer.log.error("Failed to process server packets {}", e);
+		for(ProcessingThread thread: this.getServer().getClients().values()) {
+			while(!thread.getPacketQueue().isEmpty()) {
+				Packet packet = thread.getPacketQueue().remove();
+				try {
+					Packet created = Packet.newInstance(packet.getId(), packet.getData());
+					created.setSrcIp(packet.getSrcIp());
+					this.packetCallbacksServer.get(created.getId()).accept(this, created);
+				} catch (Exception e) {
+					RealmManagerServer.log.error("Failed to process server packets {}", e);
+				}
 			}
 		}
-		this.getServer().getPacketQueue().clear();
-
-
 	}
 
 	public Player getClosestPlayer(Vector2f pos, float limit) {
@@ -599,8 +598,8 @@ public class RealmManagerServer implements Runnable {
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
 		try {
-			RealmManagerServer.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
-					textPacket.getFrom(), textPacket.getMessage());
+			RealmManagerServer.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}", textPacket.getTo(),
+					textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
 			OutputStream toClientStream = mgr.getServer().getClients().get(textPacket.getSrcIp()).getClientSocket()
 					.getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
@@ -609,6 +608,8 @@ public class RealmManagerServer implements Runnable {
 					"Welcome to JRealm " + textPacket.getFrom());
 
 			welcomeMessage.serializeWrite(dosToClient);
+			
+			RealmManagerServer.log.info("[SERVER] Sent welcome message to {}", textPacket.getSrcIp());
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to send welcome message. Reason: {}", e);
 		}
@@ -616,6 +617,8 @@ public class RealmManagerServer implements Runnable {
 
 	public static void handleCommandServer(RealmManagerServer mgr, Packet packet) {
 		CommandPacket commandPacket = (CommandPacket) packet;
+		RealmManagerServer.log.info("[SERVER] Recieved Command Packet For Player {}. Command={}. SrcIp={}", commandPacket.getPlayerId(),
+				commandPacket.getCommand(), commandPacket.getSrcIp());
 		try {
 			switch (commandPacket.getCommandId()) {
 			case 1:
@@ -626,8 +629,6 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.error("Failed to perform Server command for Player {}. Reason: {}", commandPacket.getPlayerId(),
 					e.getMessage());
 		}
-		RealmManagerServer.log.info("[SERVER] Recieved Command Packet For Player {}. Command={}", commandPacket.getPlayerId(),
-				commandPacket.getCommand());
 	}
 
 	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {

@@ -4,8 +4,13 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.net.BlankPacket;
+import com.jrealm.net.Packet;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +29,7 @@ public class ProcessingThread extends Thread{
 	private long previousTime = 0;
 	private long localNoDataTime = System.currentTimeMillis();
 	private long remoteNoDataTime = System.currentTimeMillis();
+	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
 
 	public ProcessingThread(SocketServer server, Socket clientSocket) {
 		this.server = server;
@@ -68,7 +74,7 @@ public class ProcessingThread extends Thread{
 					this.remoteBufferIndex -= packetLength;
 					BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
 					newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-					this.server.getPacketQueue().add(newPacket);
+					this.packetQueue.add(newPacket);
 				}
 			}
 		} catch (Exception e) {

@@ -92,7 +92,9 @@ public class SocketClient implements Runnable {
 								this.remoteBufferIndex - packetLength);
 					}
 					this.remoteBufferIndex -= packetLength;
-					this.packetQueue.add(new BlankPacket(packetId, packetBytes));
+					BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
+					newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+					this.packetQueue.add(newPacket);
 				}
 			}
 		} catch (Exception e) {

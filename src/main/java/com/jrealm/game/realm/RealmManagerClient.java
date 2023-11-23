@@ -111,6 +111,7 @@ public class RealmManagerClient implements Runnable {
 			Packet toProcess = this.getClient().getPacketQueue().remove();
 			try {
 				Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
+				created.setSrcIp(toProcess.getSrcIp());
 				this.packetCallbacksClient.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
 				RealmManagerClient.log.error("Failed to process client packets {}", e);
