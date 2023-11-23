@@ -274,8 +274,11 @@ public class RealmManagerClient implements Runnable {
 
 	public static void handleUpdateClient(RealmManagerClient cli, Packet packet) {
 		UpdatePacket updatePacket = (UpdatePacket) packet;
-		if(updatePacket.getPlayerId()!=cli.getCurrentPlayerId()) return;
+		//		if (updatePacket.getPlayerId() != cli.getCurrentPlayerId())
+		//			return;
 		Player toUpdate = cli.getRealm().getPlayer((updatePacket.getPlayerId()));
+		if (toUpdate == null)
+			return;
 		toUpdate.applyUpdate(updatePacket);
 		//		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 	}
