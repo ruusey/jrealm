@@ -2,13 +2,10 @@ package com.jrealm.net.server;
 
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.Packet;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = false)
 public class SocketServer implements Runnable {
 	public static final String LOCALHOST = "127.0.0.1";
-
 	private static final int BUFFER_CAPACITY = 65536 * 10;
 
 	private ServerSocket serverSocket;

@@ -11,10 +11,12 @@ import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class ProcessingThread extends Thread{
 	private static final int BUFFER_CAPACITY = 65536 * 10;
 
@@ -54,7 +56,6 @@ public class ProcessingThread extends Thread{
 				throw new SocketException("end of stream");
 			if (bytesRead > 0) {
 				this.remoteBufferIndex += bytesRead;
-
 				while (this.remoteBufferIndex >= 5) {
 					int packetLength = ((ByteBuffer) ByteBuffer.allocate(4).put(this.remoteBuffer[1])
 							.put(this.remoteBuffer[2]).put(this.remoteBuffer[3]).put(this.remoteBuffer[4]).rewind())
@@ -80,6 +81,5 @@ public class ProcessingThread extends Thread{
 			this.shutdownProcessing = true;
 			ProcessingThread.log.error("Failed to parse client input {}", e.getMessage());
 		}
-
 	}
 }
