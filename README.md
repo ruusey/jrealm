@@ -10,7 +10,8 @@ The server requires port 2222 to be available
 Replace `{SERVER_ADDRESS}` with the IP Address of the server you wish to connect to <br />
 Replace `{USERNAME}` with your desired in game username
 Replace `{CLASS_ID}` with your desired in game character class:
-```	ROGUE(0),
+```	
+    ROGUE(0),
 	ARCHER(1),
 	WIZARD(2),
 	PRIEST(3),
