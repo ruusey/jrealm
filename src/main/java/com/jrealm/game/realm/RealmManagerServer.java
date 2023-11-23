@@ -18,6 +18,8 @@ import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
+import com.jrealm.game.entity.item.Effect;
+import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
@@ -29,6 +31,7 @@ import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.messaging.LoginResponseMessage;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
+import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.tiles.TileMap;
 import com.jrealm.game.tiles.blocks.Tile;
@@ -50,6 +53,7 @@ import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
+import com.jrealm.net.server.packet.UseAbilityPacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -165,8 +169,6 @@ public class RealmManagerServer implements Runnable {
 			}
 			List<Runnable> playerWork = new ArrayList<>();
 			for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
-				// if(player.getValue().isHeadless()) return;
-
 				try {
 					List<UpdatePacket> uPackets = this.realm
 							.getPlayersAsPackets(player.getValue().getCam().getBounds());
@@ -247,6 +249,7 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), RealmManagerServer::handleTextServer);
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerServer::handleCommandServer);
 		this.registerPacketCallback(PacketType.LOAD_MAP.getPacketId(), RealmManagerServer::handleLoadMapServer);
+		this.registerPacketCallback(PacketType.USE_ABILITY.getPacketId(), RealmManagerServer::handleUseAbilityServer);
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerServer, Packet> callback) {
@@ -254,7 +257,6 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void update(double time) {
-		// Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 			Player p = this.realm.getPlayer(player.getValue().getId());
 			if (p == null) {
@@ -264,8 +266,7 @@ public class RealmManagerServer implements Runnable {
 			Runnable playerShootDequeue = () -> {
 				for (int i = 0; i < this.shotDestQueue.size(); i++) {
 					Vector2f dest = this.shotDestQueue.remove(i);
-					//					dest.addX(PlayState.map.x);
-					//					dest.addY(PlayState.map.y);
+
 					dest.addX(p.getCam().getPos().x);
 					dest.addY(p.getCam().getPos().y);
 
@@ -311,7 +312,6 @@ public class RealmManagerServer implements Runnable {
 			for (int i = 0; i < gameObject.length; i++) {
 				if (gameObject[i] instanceof Enemy) {
 					Enemy enemy = ((Enemy) gameObject[i]);
-					// TODO: Fix
 					enemy.update(this, time);
 				}
 
@@ -337,7 +337,6 @@ public class RealmManagerServer implements Runnable {
 				p.xCol = true;
 			}
 			if (!p.getTc().collisionTile(this.realm.getTileManager().getTm().get(1).getBlocks(), 0, p.getDy())) {
-				// PlayState.map.y += dy;
 				p.getPos().y += p.getDy();
 				p.yCol = false;
 			} else {
@@ -360,8 +359,73 @@ public class RealmManagerServer implements Runnable {
 
 	}
 
-	private List<Bullet> getBullets() {
+	private void useAbility(long playerId, Vector2f pos) {
+		Player player = this.realm.getPlayer(playerId);
+		GameItem abilityItem = player.getAbility();
+		if ((abilityItem == null) || (abilityItem.getEffect() == null))
+			return;
+		Effect effect = abilityItem.getEffect();
+		if (player.getMana() < effect.getMpCost())
+			return;
+		player.setMana(player.getMana() - effect.getMpCost());
 
+		if (((abilityItem.getDamage() != null) && (abilityItem.getEffect() != null))) {
+			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
+					.get(abilityItem.getDamage().getProjectileGroupId());
+
+			Vector2f dest = new Vector2f(pos.x, pos.y);
+			dest.addX(player.getCam().getPos().x);
+			dest.addY(player.getCam().getPos().y);
+			Vector2f source = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+			float angle = Bullet.getAngle(source, dest);
+
+			for (Projectile p : group.getProjectiles()) {
+				short offset = (short) (p.getSize() / (short) 2);
+				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
+				rolledDamage += player.getComputedStats().getAtt();
+				if (p.getPositionMode() == ProjectilePositionMode.TARGET_PLAYER) {
+					this.addProjectile(0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+							p.getProjectileId(),
+							source.clone(-offset, -offset), angle + Float.parseFloat(p.getAngle()), p.getSize(),
+							p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
+							p.getFrequency());
+				} else {
+					source = dest;
+					this.addProjectile(0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+							p.getProjectileId(),
+							source.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
+							p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
+							p.getFrequency());
+				}
+
+			}
+
+		} else if ((abilityItem.getDamage() != null)) {
+			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
+					.get(abilityItem.getDamage().getProjectileGroupId());
+			Vector2f dest = new Vector2f(pos.x, pos.y);
+			dest.addX(player.getCam().getPos().x);
+			dest.addY(player.getCam().getPos().y);
+			for (Projectile p : group.getProjectiles()) {
+
+				short offset = (short) (p.getSize() / (short) 2);
+				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
+				rolledDamage += player.getComputedStats().getAtt();
+				this.addProjectile(0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+						p.getProjectileId(),
+						dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
+						p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
+			}
+
+		} else if (abilityItem.getEffect() != null) {
+			player.addEffect(effect.getEffectId(), effect.getDuration());
+			if (abilityItem.getEffect().getEffectId().equals(EffectType.HEAL)) {
+				player.addHealth(50);
+			}
+		}
+	}
+
+	private List<Bullet> getBullets() {
 		GameObject[] gameObject = this.getRealm()
 				.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort());
 
@@ -536,6 +600,21 @@ public class RealmManagerServer implements Runnable {
 		return results;
 	}
 
+	private void broadcastPacket(Packet packet) {
+		for (Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
+			if (!client.getValue().isHandshakeComplete()) {
+				continue;
+			}
+			try {
+				final OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
+				final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
+			} catch (Exception e) {
+				RealmManagerServer.log.error("Failed to broadcast Packet to client {}", client.getKey());
+			}
+
+		}
+	}
+
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
 		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
 		RealmManagerServer.log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
@@ -572,6 +651,12 @@ public class RealmManagerServer implements Runnable {
 			toMove.setDy(0);
 		}
 		RealmManagerServer.log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
+	}
+
+	public static void handleUseAbilityServer(RealmManagerServer mgr, Packet packet) {
+		UseAbilityPacket useAbilityPacket = (UseAbilityPacket) packet;
+		mgr.useAbility(useAbilityPacket.getPlayerId(), new Vector2f(useAbilityPacket.getPosX(), useAbilityPacket.getPosY()));
+		RealmManagerServer.log.info("[SERVER] Recieved UseAbility Packet For Player {}", useAbilityPacket.getPlayerId());
 	}
 
 	public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {

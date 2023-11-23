@@ -38,7 +38,7 @@ public class Player extends Entity implements Streamable<Player>{
 	private long lastStatsTime = 0l;
 	private LootContainer currentLootContainer;
 	private int classId;
-	
+
 	private boolean headless = false;
 	public Player(long id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, CharacterClass characterClass) {
 		super(id, sprite, origin, size);
@@ -74,7 +74,7 @@ public class Player extends Entity implements Streamable<Player>{
 		this.stats.setAtt((short) 5);
 		this.stats.setWis((short) 5);
 	}
-	
+
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
 		super(id, origin, size);
 		this.classId = characterClass.classId;
@@ -159,10 +159,10 @@ public class Player extends Entity implements Streamable<Player>{
 	public void update(double time) {
 		super.update(time);
 		Stats stats = this.getComputedStats();
-		
+
 		this.cam.update();
 		if ((stats.getHp() > 0) && (this.getMaxHealth() == this.getDefaultMaxHealth())) {
-		//	this.setMaxHealth(this.getMaxHealth() + stats.getHp());
+			//	this.setMaxHealth(this.getMaxHealth() + stats.getHp());
 		} else if (stats.getHp() == 0) {
 			this.setMaxHealth(this.getDefaultMaxHealth());
 			if (this.getHealth() > this.getMaxHealth()) {
@@ -233,7 +233,7 @@ public class Player extends Entity implements Streamable<Player>{
 		Color c = new Color(0f, 0f, 0f, 1f);
 		g.setColor(c);
 		java.awt.Font currentFont = g.getFont();
-		java.awt.Font newFont = currentFont.deriveFont(currentFont.getSize() * 0.50F);		
+		java.awt.Font newFont = currentFont.deriveFont(currentFont.getSize() * 0.50F);
 		g.setFont(newFont);
 		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 24, this.size, this.size / 2);
 		if(this.getName()!=null) {
@@ -335,6 +335,8 @@ public class Player extends Entity implements Streamable<Player>{
 		this.maxHealth = packet.getMaxHealth();
 		this.mana = packet.getMana();
 		this.maxMana = packet.getMaxMana();
+		this.setEffectIds(packet.getEffectIds());
+		this.setEffectTimes(packet.getEffectTimes());
 	}
 
 	public boolean getIsUp() {
@@ -381,7 +383,7 @@ public class Player extends Entity implements Streamable<Player>{
 		player.setName(name);
 		return player;
 	}
-	
+
 	public static Player fromData(long id, String name, Vector2f origin, int size, CharacterClass characterClass) {
 		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 		SpriteSheet sheet = GameDataManager.loadClassSprites(characterClass);
@@ -389,7 +391,7 @@ public class Player extends Entity implements Streamable<Player>{
 		player.setName(name);
 		return player;
 	}
-	
+
 	public static Player fromStream(DataInputStream stream) throws Exception {
 		long id = stream.readLong();
 		String name = stream.readUTF();
@@ -405,7 +407,7 @@ public class Player extends Entity implements Streamable<Player>{
 		player.setName(name);
 		return player;
 	}
-	
+
 	@Override
 	public String toString() {
 		return this.getId()+" , Pos: "+this.pos.toString()+", Class: "+this.getClassId()+", Headless: "+this.isHeadless();

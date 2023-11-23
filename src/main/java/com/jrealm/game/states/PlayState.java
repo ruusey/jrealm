@@ -22,7 +22,6 @@ import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.Chest;
-import com.jrealm.game.entity.item.Effect;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
@@ -32,11 +31,8 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
-import com.jrealm.game.tiles.TileMap;
-import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.ui.DamageText;
 import com.jrealm.game.ui.PlayerUI;
 import com.jrealm.game.ui.TextEffect;
@@ -49,6 +45,7 @@ import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
+import com.jrealm.net.server.packet.UseAbilityPacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -69,9 +66,9 @@ public class PlayState extends GameState {
 	public long lastAbilityTick = 0;
 
 	public long playerId = -1l;
-	
+
 	private PlayerLocation playerLocation = PlayerLocation.VAULT;
-	
+
 	private Tuple<Cardinality, Boolean> lastDirection;
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
@@ -85,8 +82,8 @@ public class PlayState extends GameState {
 		//this.loadClass(CharacterClass.ROGUE, true);
 		WorkerThread.submitAndForkRun(this.client);
 	}
-	
-	
+
+
 	public void loadClass(Player player, CharacterClass cls, boolean setEquipment) {
 		if (setEquipment || (this.playerId == -1l)) {
 			player.equipSlots(PlayState.getStartingEquipment(cls));
@@ -246,7 +243,7 @@ public class PlayState extends GameState {
 				Runnable playerShootDequeue = () -> {
 					for (int i = 0; i < this.shotDestQueue.size(); i++) {
 						Vector2f dest = this.shotDestQueue.remove(i);
-						
+
 						Vector2f source = this.getPlayerPos().clone(player.getSize() / 2, player.getSize() / 2);
 						ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
 						float angle = Bullet.getAngle(source, dest);
@@ -254,7 +251,7 @@ public class PlayState extends GameState {
 							short offset = (short) (p.getSize() / (short) 2);
 							short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 							rolledDamage += player.getComputedStats().getAtt();
-							
+
 							long newProj = this.addProjectile(player.getWeaponId(), p.getProjectileId(), source.clone(-offset, -offset),
 									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
 									rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
@@ -262,7 +259,7 @@ public class PlayState extends GameState {
 								PlayerShootPacket packet = PlayerShootPacket.from(newProj, player, dest);
 								this.client.getClient().sendRemote(packet);
 							}catch(Exception e) {
-								log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
+								PlayState.log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
 							}
 						}
 					}
@@ -285,7 +282,7 @@ public class PlayState extends GameState {
 					}
 				};
 				Runnable updatePlayerAndUi = () -> {
-//					player.update(time);
+					//					player.update(time);
 					//this.movePlayer();
 
 					this.pui.update(time);
@@ -393,7 +390,7 @@ public class PlayState extends GameState {
 		Player player = this.client.getRealm().getPlayer(this.playerId);
 		if(player==null) return;
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
-			
+
 			if (this.cam.getTarget() == player) {
 				player.input(mouse, key);
 				Cardinality c = null;
@@ -401,37 +398,37 @@ public class PlayState extends GameState {
 				if (player.getIsUp()) {
 					c = Cardinality.NORTH;
 				}
-				
+
 				if (player.getIsDown()) {
 					c = Cardinality.SOUTH;
 				}
-				
+
 				if (player.getIsLeft()) {
 					c = Cardinality.WEST;
-				} 
+				}
 				if (player.getIsRight()) {
 					c = Cardinality.EAST;
 				}
-				
+
 				if(c==null) {
 					c = Cardinality.NONE;
 					move = false;
 				}
-				
+
 				if(this.lastDirection==null) {
 					this.lastDirection = new Tuple<Cardinality, Boolean>(c, move);
 				}
-				
+
 				Tuple<Cardinality, Boolean> temp = new Tuple<Cardinality, Boolean>(c, move);
 				try {
-					if(!lastDirection.equals(temp)) {
+					if(!this.lastDirection.equals(temp)) {
 						this.lastDirection = temp;
 						PlayerMovePacket packet = PlayerMovePacket.from(player, temp.getX(), temp.getY());
 						this.client.getClient().sendRemote(packet);
 					}
 				}catch(Exception e) {
-					
-				}	
+
+				}
 			}
 			this.cam.input(mouse, key);
 			if (key.f2.clicked && !this.playerLocation.equals(PlayerLocation.VAULT)) {
@@ -439,7 +436,7 @@ public class PlayState extends GameState {
 					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/vault.xml");
 					this.client.getClient().sendRemote(loadMap);
 				}catch(Exception e) {
-					log.error("Failed to send load map packet for map {}. Reason: {}", "tile/vault.xml", e.getMessage());
+					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/vault.xml", e.getMessage());
 				}
 				this.playerLocation = PlayerLocation.VAULT;
 				this.client.getRealm().loadMap("tile/vault.xml", this.getPlayer());
@@ -450,13 +447,13 @@ public class PlayState extends GameState {
 					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/nexus2.xml");
 					this.client.getClient().sendRemote(loadMap);
 				}catch(Exception e) {
-					log.error("Failed to send load map packet for map {}. Reason: {}", "tile/nexus2.xml", e.getMessage());
+					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/nexus2.xml", e.getMessage());
 				}
 
 				this.playerLocation = PlayerLocation.REALM;
 				this.client.getRealm().loadMap("tile/nexus2.xml", this.getPlayer());
 				this.loadClass(this.getPlayer(), this.currentPlayerCharacterClass(), false);
-				
+
 			}
 			if(this.pui!=null) {
 				this.pui.input(mouse, key);
@@ -512,70 +509,15 @@ public class PlayState extends GameState {
 			this.shotDestQueue.add(dest);
 		}
 		if ((mouse.isPressed(MouseEvent.BUTTON3)) && canUseAbility) {
-			this.useAbility(mouse);
-		}
-	}
+			try {
+				UseAbilityPacket useAbility = UseAbilityPacket.from(this.getPlayer(), new Vector2f(mouse.getX(), mouse.getY()));
+				this.client.getClient().sendRemote(useAbility);
+				this.lastAbilityTick = System.currentTimeMillis();
 
-	private void useAbility(MouseHandler mouse) {
-		GameItem abilityItem = this.getPlayer().getAbility();
-		if ((abilityItem == null) || (abilityItem.getEffect() == null))
-			return;
-		Effect effect = abilityItem.getEffect();
-		if (this.getPlayer().getMana() < effect.getMpCost())
-			return;
-		this.getPlayer().setMana(this.getPlayer().getMana() - effect.getMpCost());
-
-		if (((abilityItem.getDamage() != null) && (abilityItem.getEffect() != null))) {
-			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
-					.get(abilityItem.getDamage().getProjectileGroupId());
-			Player player = this.getPlayer();
-			Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
-			dest.addX(PlayState.map.x);
-			dest.addY(PlayState.map.y);
-			Vector2f source = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
-			float angle = Bullet.getAngle(source, dest);
-
-			for (Projectile p : group.getProjectiles()) {
-				short offset = (short) (p.getSize() / (short) 2);
-				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
-				rolledDamage += player.getComputedStats().getAtt();
-				if (p.getPositionMode() == ProjectilePositionMode.TARGET_PLAYER) {
-					this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), p.getProjectileId(), source.clone(-offset, -offset),
-							angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
-							rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
-				} else {
-					source = dest;
-					this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), p.getProjectileId(), source.clone(-offset, -offset),
-							Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage,
-							false, p.getFlags(), p.getAmplitude(), p.getFrequency());
-				}
-
-			}
-
-		} else if ((abilityItem.getDamage() != null)) {
-			ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
-					.get(abilityItem.getDamage().getProjectileGroupId());
-			Player player = this.getPlayer();
-			Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
-			dest.addX(PlayState.map.x);
-			dest.addY(PlayState.map.y);
-			for (Projectile p : group.getProjectiles()) {
-
-				short offset = (short) (p.getSize() / (short) 2);
-				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
-				rolledDamage += player.getComputedStats().getAtt();
-				this.addProjectile(abilityItem.getDamage().getProjectileGroupId(), p.getProjectileId() ,dest.clone(-offset, -offset),
-						Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage,
-						false, p.getFlags(), p.getAmplitude(), p.getFrequency());
-			}
-
-		} else if (abilityItem.getEffect() != null) {
-			this.getPlayer().addEffect(effect.getEffectId(), effect.getDuration());
-			if (abilityItem.getEffect().getEffectId().equals(EffectType.HEAL)) {
-				this.getPlayer().addHealth(50);
+			}catch(Exception e) {
+				PlayState.log.error("Failed to send UseAbility packet. Reason: {}", e);
 			}
 		}
-		this.lastAbilityTick = System.currentTimeMillis();
 	}
 
 	private CharacterClass currentPlayerCharacterClass() {
@@ -616,7 +558,7 @@ public class PlayState extends GameState {
 
 	public Chest getNearestChest() {
 		for (LootContainer lc : this.client.getRealm().getLoot().values()) {
-			if ((this.client.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= GlobalConstants.PLAYER_SIZE*2)
+			if ((this.client.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= (GlobalConstants.PLAYER_SIZE*2))
 					&& (lc instanceof Chest) && !this.playerLocation.equals(PlayerLocation.REALM))
 				return (Chest) lc;
 		}
@@ -625,7 +567,7 @@ public class PlayState extends GameState {
 
 	public LootContainer getNearestLootContainer() {
 		for (LootContainer lc : this.client.getRealm().getLoot().values()) {
-			if ((this.client.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= GlobalConstants.PLAYER_SIZE*2))
+			if ((this.client.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= (GlobalConstants.PLAYER_SIZE*2)))
 				return lc;
 		}
 		return null;
@@ -640,8 +582,8 @@ public class PlayState extends GameState {
 		for(Player p : this.client.getRealm().getPlayers().values()) {
 			p.render(g);
 		}
-		
-		
+
+
 		// AABB test = new AABB(new Vector2f(this.getPlayerPos().x * 0.5f,
 		// this.getPlayerPos().y * 0.5f),
 		// (int) 32 * 8, (int) 32 * 8);

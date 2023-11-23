@@ -14,21 +14,20 @@ import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
+import com.jrealm.net.server.packet.UseAbilityPacket;
 
 public enum PacketType {
 	PLAYER_MOVE    ((byte) 1, false, PlayerMovePacket.class),
-	UPDATE         ((byte) 2, false, UpdatePacket.class), 
+	UPDATE         ((byte) 2, false, UpdatePacket.class),
 	OBJECT_MOVE    ((byte) 3, false, ObjectMovePacket.class),
-	TEXT           ((byte) 4, true, TextPacket.class), 
+	TEXT           ((byte) 4, true, TextPacket.class),
 	HEARTBEAT      ((byte) 5, true, HeartbeatPacket.class),
 	PLAYER_SHOOT   ((byte) 6, true, PlayerShootPacket.class),
 	COMMAND		   ((byte) 7, true, CommandPacket.class),
 	LOAD_MAP	   ((byte) 8, true, LoadMapPacket.class),
 	LOAD	   	   ((byte) 9, true, LoadPacket.class),
-	UNLOAD	   	   ((byte) 10, true, UnloadPacket.class);
-
-
-
+	UNLOAD         ((byte) 10, true, UnloadPacket.class), 
+	USE_ABILITY    ((byte) 11, true, UseAbilityPacket.class);
 
 	private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
 
@@ -38,7 +37,7 @@ public enum PacketType {
 
 	static {
 		for (PacketType et : PacketType.values()) {
-			map.put(et.getPacketId(), new Tuple<Class<? extends Packet>, PacketType>(et.getPacketClass(), et));
+			PacketType.map.put(et.getPacketId(), new Tuple<Class<? extends Packet>, PacketType>(et.getPacketClass(), et));
 		}
 	}
 
@@ -61,18 +60,18 @@ public enum PacketType {
 	}
 
 	public static Tuple<Class<? extends Packet>, PacketType> valueOf(byte value) {
-		return map.get(Byte.valueOf(value));
+		return PacketType.map.get(Byte.valueOf(value));
 	}
 
 	public static Tuple<Class<? extends Packet>, PacketType> valueOf(int value) {
-		return map.get(Byte.valueOf((byte) value));
+		return PacketType.map.get(Byte.valueOf((byte) value));
 	}
 
 	public static boolean isServerPacket(Packet packet) {
-		return isServerPacket(packet.getId());
+		return PacketType.isServerPacket(packet.getId());
 	}
 
 	public static boolean isServerPacket(byte packetId) {
-		return map.get(packetId).getY().getIsServer();
+		return PacketType.map.get(packetId).getY().getIsServer();
 	}
 }
