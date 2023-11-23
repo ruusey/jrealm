@@ -160,6 +160,9 @@ public class RealmManagerServer implements Runnable {
 		final UnloadPacket unloadToBroadcast = unload;
 		final List<String> disconnectedClients = new ArrayList<>();
 		for (Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
+			if (!client.getValue().isHandshakeComplete()) {
+				continue;
+			}
 			List<Runnable> playerWork = new ArrayList<>();
 			for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 				// if(player.getValue().isHeadless()) return;
@@ -608,7 +611,7 @@ public class RealmManagerServer implements Runnable {
 					"Welcome to JRealm " + textPacket.getFrom());
 
 			welcomeMessage.serializeWrite(dosToClient);
-			
+
 			RealmManagerServer.log.info("[SERVER] Sent welcome message to {}", textPacket.getSrcIp());
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to send welcome message. Reason: {}", e);
@@ -666,7 +669,7 @@ public class RealmManagerServer implements Runnable {
 			CommandPacket commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
 			commandResponse.serializeWrite(dosToClient);
 			long newId = mgr.getRealm().addPlayer(player);
-
+			mgr.getServer().getClients().get(command.getSrcIp()).setHandshakeComplete(true);
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to perform Client Login. Reason: {}", e);
 		}

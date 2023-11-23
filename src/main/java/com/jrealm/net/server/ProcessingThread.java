@@ -4,8 +4,6 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -30,7 +28,7 @@ public class ProcessingThread extends Thread{
 	private long localNoDataTime = System.currentTimeMillis();
 	private long remoteNoDataTime = System.currentTimeMillis();
 	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
-
+	private boolean handshakeComplete = false;
 	public ProcessingThread(SocketServer server, Socket clientSocket) {
 		this.server = server;
 		this.clientSocket = clientSocket;
