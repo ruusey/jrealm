@@ -1,15 +1,13 @@
 # jrealm
 ### Realm 2 in Java
 ### Running
-* Server:
-`java -jar ./jrealm-{version}-server.jar`
+* Server: <br />
+`java -jar ./jrealm-{version}-server.jar` <br />
 The server requires port 2222 to be available
 
-* Client
-`java -jar ./jrealm-{version}-client.jar {SERVER_ADDRESS} {USERNAME}`
-
-Replace `{SERVER_ADDRESS}` with the IP Address of the server you wish to connect to
-
+* Client: <br />
+`java -jar ./jrealm-{version}-client.jar {SERVER_ADDRESS} {USERNAME}` <br />
+Replace `{SERVER_ADDRESS}` with the IP Address of the server you wish to connect to <br />
 Replace `{USERNAME}` with your desired in game username
 
 # Important classes:
