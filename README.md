@@ -7,8 +7,10 @@ The server requires port 2222 to be available
 
 * Client
 `java -jar ./jrealm-{version}-client.jar {SERVER_ADDRESS} {USERNAME}`
+
 Replace `{SERVER_ADDRESS}` with the IP Address of the server you wish to connect to
-Replace `{SERVER_ADDRESS}` with the IP Address of the server you wish to connect to
+
+Replace `{USERNAME}` with your desired in game username
 
 # Important classes:
 
