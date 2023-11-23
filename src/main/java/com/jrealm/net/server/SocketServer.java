@@ -1,18 +1,15 @@
 package com.jrealm.net.server;
 
-import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -37,9 +34,9 @@ public class SocketServer implements Runnable {
 	private long localNoDataTime = System.currentTimeMillis();
 	private long remoteNoDataTime = System.currentTimeMillis();
 
-	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
+	private final List<Packet> packetQueue = new ArrayList<>();
 
-	private Map<String, Socket> clients = new ConcurrentHashMap<>();
+	private volatile Map<String, ProcessingThread> clients = new ConcurrentHashMap<>();
 
 	public SocketServer(int port) {
 		SocketServer.log.info("Creating local server at port {}", port);
@@ -53,59 +50,23 @@ public class SocketServer implements Runnable {
 	@Override
 	public void run() {
 		Runnable socketAccept = () -> {
-			log.info("Server now accepting inbound connections...");
+			SocketServer.log.info("Server now accepting inbound connections...");
 			while (!this.shutdownSocketAccept) {
 				try {
 					Socket socket = this.serverSocket.accept();
 					String remoteAddr = socket.getInetAddress().getHostAddress();
-					this.clients.put(remoteAddr, socket);
-					Thread procesingThread = new ProcessingThread(this, socket);
-					WorkerThread.submitAndForkRun(procesingThread);
-					log.info("Server accepted new connection from Remote Address {}", remoteAddr);
+					ProcessingThread procesingThread = new ProcessingThread(this, socket);
+					this.clients.put(remoteAddr, procesingThread);
+
+					procesingThread.start();
+					SocketServer.log.info("Server accepted new connection from Remote Address {}", remoteAddr);
 				} catch (Exception e) {
-					log.error("Failed to accept incoming socket connection, exiting...", e);
+					SocketServer.log.error("Failed to accept incoming socket connection, exiting...", e);
 				}
 			}
 		};
 
-	
-		WorkerThread.submitAndRun(socketAccept);
-	}
 
-	private void enqueueClientPackets() {
-		for (Map.Entry<String, Socket> client : this.clients.entrySet()) {
-			try {
-				InputStream stream = client.getValue().getInputStream();
-				int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
-						this.remoteBuffer.length - this.remoteBufferIndex);
-				if (bytesRead == -1)
-					throw new SocketException("end of stream");
-				if (bytesRead > 0) {
-					this.remoteBufferIndex += bytesRead;
-
-					while (this.remoteBufferIndex >= 5) {
-						int packetLength = ((ByteBuffer) ByteBuffer.allocate(4).put(this.remoteBuffer[1])
-								.put(this.remoteBuffer[2]).put(this.remoteBuffer[3]).put(this.remoteBuffer[4]).rewind())
-								.getInt();
-						if (this.remoteBufferIndex < (packetLength)) {
-							break;
-						}
-						byte packetId = this.remoteBuffer[0];
-						byte[] packetBytes = new byte[packetLength];
-						System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
-						if (this.remoteBufferIndex > packetLength) {
-							System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
-									this.remoteBufferIndex - packetLength);
-						}
-						this.remoteBufferIndex -= packetLength;
-						BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
-						newPacket.setSrcIp(client.getValue().getInetAddress().getHostAddress());
-						this.packetQueue.add(newPacket);
-					}
-				}
-			} catch (Exception e) {
-				SocketServer.log.error("Failed to parse client input {}", e.getMessage());
-			}
-		}
+		WorkerThread.submitAndForkRun(socketAccept);
 	}
 }

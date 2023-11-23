@@ -2,7 +2,6 @@ package com.jrealm.game.realm;
 
 import java.io.DataOutputStream;
 import java.io.OutputStream;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +43,7 @@ import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.server.ProcessingThread;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
@@ -159,7 +159,7 @@ public class RealmManagerServer implements Runnable {
 		}
 		final UnloadPacket unloadToBroadcast = unload;
 		final List<String> disconnectedClients = new ArrayList<>();
-		for (Map.Entry<String, Socket> client : this.server.getClients().entrySet()) {
+		for (Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
 			List<Runnable> playerWork = new ArrayList<>();
 			for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 				// if(player.getValue().isHeadless()) return;
@@ -169,7 +169,7 @@ public class RealmManagerServer implements Runnable {
 							.getPlayersAsPackets(player.getValue().getCam().getBounds());
 					ObjectMovePacket mPacket = this.realm
 							.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
-					OutputStream toClientStream = client.getValue().getOutputStream();
+					OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
 					DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 
 					for (UpdatePacket packet : uPackets) {
@@ -202,16 +202,19 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void processServerPackets() {
-		while (!this.getServer().getPacketQueue().isEmpty()) {
-			Packet toProcess = this.getServer().getPacketQueue().remove();
+
+		for (Packet packet : this.getServer().getPacketQueue()) {
 			try {
-				Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
-				created.setSrcIp(toProcess.getSrcIp());
+				Packet created = Packet.newInstance(packet.getId(), packet.getData());
+				created.setSrcIp(packet.getSrcIp());
 				this.packetCallbacksServer.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
 				RealmManagerServer.log.error("Failed to process server packets {}", e);
 			}
 		}
+		this.getServer().getPacketQueue().clear();
+
+
 	}
 
 	public Player getClosestPlayer(Vector2f pos, float limit) {
@@ -598,7 +601,8 @@ public class RealmManagerServer implements Runnable {
 		try {
 			RealmManagerServer.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 					textPacket.getFrom(), textPacket.getMessage());
-			OutputStream toClientStream = mgr.getServer().getClients().get(textPacket.getSrcIp()).getOutputStream();
+			OutputStream toClientStream = mgr.getServer().getClients().get(textPacket.getSrcIp()).getClientSocket()
+					.getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 
 			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(),
@@ -651,7 +655,8 @@ public class RealmManagerServer implements Runnable {
 			player.equipSlots(PlayState.getStartingEquipment(cls));
 			player.setName(request.getUsername());
 			player.setHeadless(false);
-			OutputStream toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getOutputStream();
+			OutputStream toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getClientSocket()
+					.getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 			LoginResponseMessage message = LoginResponseMessage.builder().playerId(player.getId()).success(true)
 					.build();
