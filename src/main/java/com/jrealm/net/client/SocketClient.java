@@ -31,8 +31,6 @@ public class SocketClient implements Runnable {
 
 	private Socket clientSocket;
 	private boolean shutdown = false;
-	private byte[] localBuffer = new byte[SocketClient.BUFFER_CAPACITY];
-	private int localBufferIndex = 0;
 	private byte[] remoteBuffer = new byte[SocketClient.BUFFER_CAPACITY];
 	private int remoteBufferIndex = 0;
 	private long lastUpdate = 0;
@@ -45,7 +43,6 @@ public class SocketClient implements Runnable {
 	public SocketClient(String targetHost, int port) {
 		try {
 			this.clientSocket = new Socket(targetHost, port);
-			this.sendRemote(TextPacket.create(SocketClient.PLAYER_USERNAME, "SYSTEM", "LoginRequest"));
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}
@@ -53,12 +50,21 @@ public class SocketClient implements Runnable {
 
 	@Override
 	public void run() {
+		try {
+			Thread.sleep(100);
+			this.sendRemote(TextPacket.create(SocketClient.PLAYER_USERNAME, "SYSTEM", "LoginRequest"));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		while (!this.shutdown) {
 			Runnable recievePackets = () -> {
 				this.readPackets();
 			};
 			WorkerThread.submitAndRun(recievePackets);
 		}
+	
+
 	}
 
 	private void readPackets() {

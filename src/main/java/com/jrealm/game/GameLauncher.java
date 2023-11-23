@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GameLauncher {
 	public static final boolean LOCAL_SERVER = true;
-	public static final boolean LOCAL_CLIENT = false;
+	public static final boolean LOCAL_CLIENT = true;
 	public GameLauncher() {
 		new Window();
 	}

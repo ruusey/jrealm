@@ -59,6 +59,8 @@ public class SocketServer implements Runnable {
 					Socket socket = this.serverSocket.accept();
 					String remoteAddr = socket.getInetAddress().getHostAddress();
 					this.clients.put(remoteAddr, socket);
+					Thread procesingThread = new ProcessingThread(this, socket);
+					WorkerThread.submitAndForkRun(procesingThread);
 					log.info("Server accepted new connection from Remote Address {}", remoteAddr);
 				} catch (Exception e) {
 					log.error("Failed to accept incoming socket connection, exiting...", e);
@@ -66,18 +68,8 @@ public class SocketServer implements Runnable {
 			}
 		};
 
-		Runnable processClients = () -> {
-			log.info("Begin processing client packets...");
-			while (!this.shutdownProcessing) {
-				try {
-					this.enqueueClientPackets();
-					Thread.sleep(100);
-				} catch (Exception e) {
-					SocketServer.log.error("Failed to parse client input {}", e.getMessage());
-				}
-			}
-		};
-		WorkerThread.submitAndRun(socketAccept, processClients);
+	
+		WorkerThread.submitAndRun(socketAccept);
 	}
 
 	private void enqueueClientPackets() {
