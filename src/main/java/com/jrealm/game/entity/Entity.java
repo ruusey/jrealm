@@ -343,6 +343,11 @@ public abstract class Entity extends GameObject {
 		this.setHitBoxDirection();
 		this.ani.update();
 	}
+	
+	public void updateAnimation() {
+		this.animate();
+		this.ani.update();
+	}
 
 	@Override
 	public abstract void render(Graphics2D g);

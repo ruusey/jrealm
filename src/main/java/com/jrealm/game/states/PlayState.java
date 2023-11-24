@@ -180,41 +180,6 @@ public class PlayState extends GameState {
 		return this.client.getRealm().getPlayers().get(this.playerId).getPos();
 	}
 
-	private void movePlayer() {
-		if (!this.getPlayer().isFallen()) {
-			this.getPlayer().move();
-			if (!this.getPlayer().getTc().collisionTile(this.client.getRealm().getTileManager().getTm().get(1).getBlocks(),
-					this.getPlayer().getDx(), 0)) {
-				// PlayState.map.x += dx;
-				this.getPlayer().getPos().x += this.getPlayer().getDx();
-				this.getPlayer().xCol = false;
-			} else {
-				this.getPlayer().xCol = true;
-			}
-			if (!this.getPlayer().getTc().collisionTile(this.client.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
-					this.getPlayer().getDy())) {
-				// PlayState.map.y += dy;
-				this.getPlayer().getPos().y += this.getPlayer().getDy();
-				this.getPlayer().yCol = false;
-			} else {
-				this.getPlayer().yCol = true;
-			}
-
-			this.getPlayer().getTc().normalTile(this.getPlayer().getDx(), 0);
-			this.getPlayer().getTc().normalTile(0, this.getPlayer().getDy());
-
-		} else {
-			this.getPlayer().xCol = true;
-			this.getPlayer().yCol = true;
-			if (this.getPlayer().getAni().hasPlayedOnce()) {
-				this.getPlayer().resetPosition();
-				this.getPlayer().setDx(0);
-				this.getPlayer().setDy(0);
-				this.getPlayer().setFallen(false);
-			}
-		}
-	}
-
 	@Override
 	public void update(double time) {
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
@@ -581,6 +546,7 @@ public class PlayState extends GameState {
 
 		for(Player p : this.client.getRealm().getPlayers().values()) {
 			p.render(g);
+			p.updateAnimation();
 		}
 
 

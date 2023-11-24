@@ -30,42 +30,35 @@ public class SpriteSheet {
 		this.file = file;
 		this.w = this.TILE_SIZE;
 		this.h = this.TILE_SIZE;
-
 		SpriteSheet.log.info("Loading Sprite File {}", file);
 		this.SPRITESHEET = new Sprite(this.loadSprite(file));
-
 		this.wSprite = this.SPRITESHEET.image.getWidth() / this.w;
 		this.hSprite = this.SPRITESHEET.image.getHeight() / this.h;
-		this.loadSpriteArray();
 		this.rowOffset = rowOffset;
+		this.loadSpriteArray();
 	}
 
 	public SpriteSheet(Sprite sprite, String name, int w, int h, int rowOffset) {
 		this.w = w;
 		this.h = h;
-
 		this.SPRITESHEET = sprite;
-
 		this.wSprite = this.SPRITESHEET.image.getWidth() / w;
 		this.hSprite = this.SPRITESHEET.image.getHeight() / h;
-		this.loadSpriteArray();
 		this.rowOffset = rowOffset;
-
+		this.loadSpriteArray();
 	}
 
 	public SpriteSheet(String file, int w, int h, int rowOffset) {
 		this.w = w;
 		this.h = h;
 		this.file = file;
-
 		SpriteSheet.log.info("Loading Sprite File {}", file);
 		this.SPRITESHEET = new Sprite(this.loadSprite(file));
 
 		this.wSprite = this.SPRITESHEET.image.getWidth() / w;
 		this.hSprite = this.SPRITESHEET.image.getHeight() / h;
-		this.loadSpriteArray();
 		this.rowOffset = rowOffset;
-
+		this.loadSpriteArray();
 	}
 
 	public void setSize(int width, int height) {
@@ -123,7 +116,6 @@ public class SpriteSheet {
 
 	public void loadSpriteArray() {
 		this.spriteArray = new Sprite[this.hSprite][this.wSprite];
-
 		for (int y = 0; y < this.hSprite; y++) {
 			for (int x = 0; x < this.wSprite; x++) {
 				this.spriteArray[y][x] = this.getSprite(x, y);
@@ -144,11 +136,11 @@ public class SpriteSheet {
 	}
 
 	public Sprite getSprite(int x, int y) {
-		return this.SPRITESHEET.getSubimage(x * this.w, y * this.h, this.w, this.h);
+		return this.SPRITESHEET.getSubimage(x * this.w, (y * this.h), this.w, this.h);
 	}
 
 	public Sprite getNewSprite(int x, int y) {
-		return this.SPRITESHEET.getNewSubimage(x * this.w, y * this.h, this.w, this.h);
+		return this.SPRITESHEET.getNewSubimage(x * this.w, (y * this.h), this.w, this.h);
 	}
 
 	public Sprite getSprite(int x, int y, int w, int h) {
