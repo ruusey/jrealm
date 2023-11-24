@@ -166,14 +166,23 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 		if (this.hasFlag((short) 13)) {
 			double shift = -this.amplitude * Math.sin(Math.toRadians(this.timeStep));
 			double shift2 = this.amplitude * Math.cos(Math.toRadians(this.timeStep));
-			this.pos.addX((float) (vel.x + shift2));
-			this.pos.addY((float) (vel.y + shift));
+			float velX = (float) (vel.x + shift2);
+			float velY = (float) (vel.y + shift);
+			this.pos.addX(velX);
+			this.pos.addY(velY);
+			this.dx = velX;
+			this.dy = velY;
 		} else {
 			double shift = this.amplitude * Math.sin(Math.toRadians(this.timeStep));
 			double shift2 = this.amplitude * Math.cos(Math.toRadians(this.timeStep));
-			this.pos.addX((float) (vel.x + shift2));
-			this.pos.addY((float) (vel.y + shift));
+			float velX = (float) (vel.x + shift2);
+			float velY = (float) (vel.y + shift);
+			this.pos.addX(velX);
+			this.pos.addY(velY);
+			this.dx = velX;
+			this.dy = velY;
 		}
+
 	}
 
 	@Override

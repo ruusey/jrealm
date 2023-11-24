@@ -324,10 +324,12 @@ public class PlayState extends GameState {
 		if (this.client.getRealm().hasHitEnemy(b.getId(), e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
-			Vector2f sourcePos = e.getPos();
-			DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
-					.sourcePos(sourcePos).build();
-			this.damageText.add(hitText);
+			if (!this.getClient().getRealm().hasHitEnemy(b.getId(), e.getId())) {
+				Vector2f sourcePos = e.getPos();
+				DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
+						.sourcePos(sourcePos).build();
+				this.damageText.add(hitText);
+			}
 		}
 	}
 
@@ -485,7 +487,10 @@ public class PlayState extends GameState {
 		}
 		if ((mouse.isPressed(MouseEvent.BUTTON3)) && canUseAbility) {
 			try {
-				UseAbilityPacket useAbility = UseAbilityPacket.from(this.getPlayer(), new Vector2f(mouse.getX(), mouse.getY()));
+				Vector2f pos = new Vector2f(mouse.getX(), mouse.getY());
+				pos.addX(PlayState.map.x);
+				pos.addY(PlayState.map.y);
+				UseAbilityPacket useAbility = UseAbilityPacket.from(this.getPlayer(), pos);
 				this.client.getClient().sendRemote(useAbility);
 				this.lastAbilityTick = System.currentTimeMillis();
 

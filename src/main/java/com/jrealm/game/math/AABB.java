@@ -4,6 +4,9 @@ import java.util.ArrayList;
 
 import com.jrealm.game.entity.GameObject;
 
+import lombok.Data;
+
+@Data
 public class AABB {
 
 	private Vector2f pos;

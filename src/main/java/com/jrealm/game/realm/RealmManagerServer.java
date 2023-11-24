@@ -263,30 +263,7 @@ public class RealmManagerServer implements Runnable {
 				continue;
 			}
 
-			Runnable playerShootDequeue = () -> {
-				for (int i = 0; i < this.shotDestQueue.size(); i++) {
-					Vector2f dest = this.shotDestQueue.remove(i);
-
-					dest.addX(p.getCam().getPos().x);
-					dest.addY(p.getCam().getPos().y);
-
-					Vector2f source = p.getPos().clone(p.getSize() / 2, p.getSize() / 2);
-					ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(p.getWeaponId());
-					float angle = Bullet.getAngle(source, dest);
-					for (Projectile proj : group.getProjectiles()) {
-						short offset = (short) (p.getSize() / (short) 2);
-						short rolledDamage = p.getInventory()[0].getDamage().getInRange();
-						rolledDamage += p.getComputedStats().getAtt();
-						this.addProjectile(0l, p.getId(), proj.getProjectileId(), p.getWeaponId(),
-								source.clone(-offset, -offset), angle + Float.parseFloat(proj.getAngle()),
-								proj.getSize(), proj.getMagnitude(), proj.getRange(), rolledDamage, false,
-								proj.getFlags(), proj.getAmplitude(), proj.getFrequency());
-					}
-				}
-
-			};
 			Runnable processGameObjects = () -> {
-
 				this.processBulletHit(p);
 			};
 			// Rewrite this asap
@@ -304,7 +281,7 @@ public class RealmManagerServer implements Runnable {
 				p.update(time);
 				this.movePlayer(p);
 			};
-			WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, checkAbilityUsage);
+			WorkerThread.submitAndRun(processGameObjects, updatePlayerAndUi, checkAbilityUsage);
 		}
 
 		Runnable processGameObjects = () -> {
