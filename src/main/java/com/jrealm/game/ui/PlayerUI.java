@@ -3,8 +3,10 @@ package com.jrealm.game.ui;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
@@ -19,22 +21,24 @@ import com.jrealm.game.model.ItemTooltip;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
+import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
 
 @Data
 public class PlayerUI {
+	private static final int CHAT_SIZE = 10;
 	public static boolean DRAGGING_ITEM = false;
 	private FillBars hp;
 	private FillBars mp;
 
 	private Slots[] inventory;
 	private Slots[] groundLoot;
-	
+
 	private PlayState playState;
 
 	private Map<String, ItemTooltip> tooltips;
-
+	private Map<String, TextPacket> playerChat;
 	private Graphics2D tempGraphics;
 
 	public PlayerUI(PlayState p) {
@@ -53,6 +57,13 @@ public class PlayerUI {
 		this.groundLoot = new Slots[8];
 		this.inventory = new Slots[20];
 		this.tooltips = new HashMap<>();
+		this.playerChat = new LinkedHashMap<String, TextPacket>() {
+			private static final long serialVersionUID = 4568387673008726309L;
+			@Override
+			protected boolean removeEldestEntry(Map.Entry<String, TextPacket> eldest) {
+				return this.size() > PlayerUI.CHAT_SIZE;
+			}
+		};
 	}
 
 	public Slots getSlot(int slot) {
@@ -77,6 +88,12 @@ public class PlayerUI {
 		return -1;
 	}
 
+	public void enqueueChat(final TextPacket packet) {
+		String message = "[{0}]: {}";
+		message = MessageFormat.format(message, packet.getFrom(), packet.getMessage());
+		this.playerChat.put(message, packet);
+	}
+
 	public void setEquipment(GameItem[] loot) {
 		this.inventory = new Slots[20];
 
@@ -95,11 +112,11 @@ public class PlayerUI {
 			this.buildGroundLootSlotButton(i, item, g);
 		}
 	}
-	
+
 	private void buildGroundLootSlotButton(int index, GameItem item, Graphics2D g) {
 		int panelWidth = (GamePanel.width / 5);
 		int startX = GamePanel.width - panelWidth;
-		
+
 		int yOffset = index > 3 ? 64 : 0;
 		if (item != null) {
 			final int actualIdx = index;
@@ -161,7 +178,7 @@ public class PlayerUI {
 			this.buildEquipmentSlotButton(i, item);
 		}
 	}
-	
+
 	private void buildEquipmentSlotButton(int idx, GameItem item) {
 		final int panelWidth = (GamePanel.width / 5);
 		final int startX = GamePanel.width - panelWidth;
@@ -200,7 +217,7 @@ public class PlayerUI {
 			this.buildInventorySlotsButton(i, item);
 		}
 	}
-	
+
 	private void buildInventorySlotsButton(int index, GameItem item) {
 		final int inventoryOffset = 4;
 		final int panelWidth = (GamePanel.width / 5);
@@ -416,11 +433,11 @@ public class PlayerUI {
 			int xOffset = 128;
 			int yOffset = 42;
 			int startY = 350;
-			
+
 			Stats stats = this.playState.getPlayer().getComputedStats();
 			Vector2f posHp = new Vector2f(GamePanel.width - 64, 128 + 32);
 			Vector2f posMp = posHp.clone(0, 64);
-			
+
 			g.setColor(Color.WHITE);
 			g.drawString("" + this.playState.getPlayer().getHealth(), posHp.x, posHp.y);
 			g.drawString("" + this.playState.getPlayer().getMana(), posMp.x, posMp.y);
@@ -435,6 +452,24 @@ public class PlayerUI {
 		}
 	}
 
+	private void renderChat(Graphics2D g) {
+		g.setColor(Color.WHITE);
+		java.awt.Font currentFont = g.getFont();
+		float newSize = currentFont.getSize() * 0.50F;
+		java.awt.Font newFont = currentFont.deriveFont(newSize);
+		g.setFont(newFont);
+
+		int index = 10;
+		for(Map.Entry<String, TextPacket> packet: this.playerChat.entrySet()){
+			int y = (int) ((GamePanel.height - (index * newSize)) + 8);
+			g.drawString(packet.getKey(), 0, y);
+			index--;
+		}
+
+		g.setFont(currentFont);
+		g.setColor(Color.BLACK);
+
+	}
 	public void render(Graphics2D g) {
 		int panelWidth = (GamePanel.width / 5);
 		int startX = GamePanel.width - panelWidth;
@@ -445,7 +480,7 @@ public class PlayerUI {
 		Slots[] equips = this.getSlots(0, 4);
 		Slots[] inv1 = this.getSlots(4, 8);
 		Slots[] inv2 = this.getSlots(8, 12);
-		
+
 		for (int i = 0; i < equips.length; i++) {
 			Slots curr = equips[i];
 			if (curr != null) {
@@ -479,7 +514,7 @@ public class PlayerUI {
 				}
 			}
 		}
-		
+
 		Slots[] gl1 = Arrays.copyOfRange(this.groundLoot, 0, 4);
 		Slots[] gl2 = Arrays.copyOfRange(this.groundLoot, 4, 8);
 
@@ -494,7 +529,7 @@ public class PlayerUI {
 				}
 			}
 		}
-		
+
 		for (int i = 0; i < gl2.length; i++) {
 			Slots curr = gl2[i];
 			if (curr != null) {
@@ -514,5 +549,6 @@ public class PlayerUI {
 		this.hp.render(g);
 		this.mp.render(g);
 		this.renderStats(g);
+		this.renderChat(g);
 	}
 }
