@@ -59,6 +59,7 @@ public class KeyHandler implements KeyListener{
 	public Key zero = new Key();
 
 	public Key q = new Key();
+	public Key t = new Key();
 
 	public KeyHandler(GamePanel game) {
 		game.addKeyListener(this);
@@ -135,6 +136,10 @@ public class KeyHandler implements KeyListener{
 
 		if (e.getKeyCode() == KeyEvent.VK_Q) {
 			this.q.toggle(pressed);
+		}
+
+		if (e.getKeyCode() == KeyEvent.VK_T) {
+			this.t.toggle(pressed);
 		}
 	}
 

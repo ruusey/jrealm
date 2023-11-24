@@ -297,6 +297,8 @@ public class RealmManagerClient implements Runnable {
 				cli.setCurrentPlayerId(player.getId());
 				cli.getState().setPlayerId(player.getId());
 				cli.startHeartbeatThread();
+				TextPacket packet = TextPacket.create("SYSTEM", "TestFrom", "Welcome to JRealm!");
+				cli.getState().getPui().enqueueChat(packet);
 			}
 		}catch(Exception e) {
 			RealmManagerClient.log.error("Failed to response to login response. Reason: {}", e.getMessage());

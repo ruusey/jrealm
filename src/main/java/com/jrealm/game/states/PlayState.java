@@ -350,7 +350,7 @@ public class PlayState extends GameState {
 		key.f1.tick();
 		key.f2.tick();
 		key.shift.tick();
-
+		key.t.tick();
 		key.enter.tick();
 		Player player = this.client.getRealm().getPlayer(this.playerId);
 		if(player==null) return;
@@ -445,6 +445,7 @@ public class PlayState extends GameState {
 				if (key.six.down) {
 					this.loadClass(CharacterClass.PALLADIN, true);
 				}
+
 			}
 
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
@@ -459,6 +460,15 @@ public class PlayState extends GameState {
 				this.gsm.add(GameStateManager.PAUSE);
 			}
 		}
+		//		if (key.t.down) {
+		//			try {
+		//				TextPacket packet = TextPacket.create("TestTo", "TestFrom", "Hello World!");
+		//				this.client.getClient().sendRemote(packet);
+		//			} catch (Exception e) {
+		//				PlayState.log.error("Failed to send test text packet: {}", e);
+		//			}
+		//
+		//		}
 		Stats stats = player.getComputedStats();
 		if (this.getPlayer().hasEffect(EffectType.SPEEDY)) {
 			stats.setDex((short) (stats.getDex() * 2));

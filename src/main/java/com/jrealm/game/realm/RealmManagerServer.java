@@ -696,7 +696,9 @@ public class RealmManagerServer implements Runnable {
 					"Welcome to JRealm " + textPacket.getFrom());
 
 			welcomeMessage.serializeWrite(dosToClient);
-
+			if (!textPacket.getTo().equalsIgnoreCase("SYSTEM")) {
+				mgr.broadcastPacket(textPacket);
+			}
 			RealmManagerServer.log.info("[SERVER] Sent welcome message to {}", textPacket.getSrcIp());
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to send welcome message. Reason: {}", e);

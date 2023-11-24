@@ -89,7 +89,7 @@ public class PlayerUI {
 	}
 
 	public void enqueueChat(final TextPacket packet) {
-		String message = "[{0}]: {}";
+		String message = "[{0}]: {1}";
 		message = MessageFormat.format(message, packet.getFrom(), packet.getMessage());
 		this.playerChat.put(message, packet);
 	}
@@ -462,7 +462,7 @@ public class PlayerUI {
 		int index = 10;
 		for(Map.Entry<String, TextPacket> packet: this.playerChat.entrySet()){
 			int y = (int) ((GamePanel.height - (index * newSize)) + 8);
-			g.drawString(packet.getKey(), 0, y);
+			g.drawString(packet.getKey(), 8, y);
 			index--;
 		}
 
