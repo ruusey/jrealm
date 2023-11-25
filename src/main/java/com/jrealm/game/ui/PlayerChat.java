@@ -9,11 +9,14 @@ import java.util.Map;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
+import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public class PlayerChat {
 	private static final int CHAT_SIZE = 10;
 	private Map<String, TextPacket> playerChat;
@@ -22,7 +25,7 @@ public class PlayerChat {
 	private boolean releasedEnter;
 	private boolean pressedEnter;
 	public PlayerChat() {
-		this.currentMessage = null;
+		this.currentMessage = "";
 		this.chatOpen = false;
 		this.releasedEnter = false;
 		this.pressedEnter = false;
@@ -42,7 +45,11 @@ public class PlayerChat {
 		this.playerChat.put(message, packet);
 	}
 
-	public void input(MouseHandler mouse, KeyHandler key) {
+	public void input(MouseHandler mouse, KeyHandler key, SocketClient client) {
+		if(key.captureMode) {
+			this.currentMessage = key.getContent();
+		}
+		
 		if (key.enter.down && !this.pressedEnter) {
 			this.pressedEnter = true;
 			return;
@@ -55,8 +62,18 @@ public class PlayerChat {
 
 		if (this.pressedEnter && this.releasedEnter) {
 			this.chatOpen = !this.chatOpen;
+			key.setCaptureMode(this.chatOpen);
 			this.pressedEnter = false;
 			this.releasedEnter = false;
+			if(!this.chatOpen && key.getContent().length()>0) {
+				try {
+					String messageToSend = key.getCapturedInput();
+					TextPacket packet = TextPacket.create(SocketClient.PLAYER_USERNAME, "SYSTEM", messageToSend);
+					client.sendRemote(packet);
+				}catch(Exception e) {
+					log.error("Failed to send PlayerChat to server. Reason: {}", e);
+				}
+			}	
 		}
 	}
 
@@ -75,10 +92,13 @@ public class PlayerChat {
 		}
 
 
-		g.setFont(currentFont);
-		g.setColor(Color.GRAY);
 		if (this.chatOpen) {
+			g.setColor(Color.WHITE);
+			g.drawString(this.currentMessage, 8,  (int) (GamePanel.height - (newSize)));
+			g.setColor(Color.GRAY);
 			g.drawRect(8, (int) (GamePanel.height - (newSize * 2)), 600, (int) newSize);
 		}
+		g.setFont(currentFont);
+
 	}
 }

@@ -7,8 +7,12 @@ import java.util.List;
 
 import com.jrealm.game.GamePanel;
 
-public class KeyHandler implements KeyListener{
+import lombok.Data;
 
+@Data
+public class KeyHandler implements KeyListener{
+	public boolean captureMode = false;
+	public String content = "";
 	public static List<Key> keys = new ArrayList<Key>();
 
 	public static class Key {
@@ -142,20 +146,35 @@ public class KeyHandler implements KeyListener{
 			this.t.toggle(pressed);
 		}
 	}
+	
+	public void captureInput() {
+		captureMode=true;
+	}
+	
+	public String getCapturedInput() {
+		String content = new String(this.content);
+		this.content = "";
+		this.captureMode=false;
+		return content;
+	}
 
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		// do nothing
+		if(this.captureMode) {
+			this.content+=e.getKeyChar();
+		}
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
+		//if(this.captureMode) return;
 		this.toggle(e, true);
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
+		//if(this.captureMode) return;
 		this.toggle(e, false);
 	}
 }

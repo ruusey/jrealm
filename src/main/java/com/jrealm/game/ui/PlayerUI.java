@@ -389,8 +389,11 @@ public class PlayerUI {
 				curr.input(mouse, key);
 			}
 		}
-
-		this.playerChat.input(mouse, key);
+		try {
+			this.playerChat.input(mouse, key, this.playState.getClient().getClient());
+		}catch(Exception e) {
+			
+		}
 	}
 
 	public boolean isEquipmentEmpty() {
