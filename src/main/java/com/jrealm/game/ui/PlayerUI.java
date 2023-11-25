@@ -3,10 +3,8 @@ package com.jrealm.game.ui;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
@@ -27,7 +25,6 @@ import lombok.Data;
 
 @Data
 public class PlayerUI {
-	private static final int CHAT_SIZE = 10;
 	public static boolean DRAGGING_ITEM = false;
 	private FillBars hp;
 	private FillBars mp;
@@ -36,9 +33,9 @@ public class PlayerUI {
 	private Slots[] groundLoot;
 
 	private PlayState playState;
+	private PlayerChat playerChat;
 
 	private Map<String, ItemTooltip> tooltips;
-	private Map<String, TextPacket> playerChat;
 	private Graphics2D tempGraphics;
 
 	public PlayerUI(PlayState p) {
@@ -57,13 +54,7 @@ public class PlayerUI {
 		this.groundLoot = new Slots[8];
 		this.inventory = new Slots[20];
 		this.tooltips = new HashMap<>();
-		this.playerChat = new LinkedHashMap<String, TextPacket>() {
-			private static final long serialVersionUID = 4568387673008726309L;
-			@Override
-			protected boolean removeEldestEntry(Map.Entry<String, TextPacket> eldest) {
-				return this.size() > PlayerUI.CHAT_SIZE;
-			}
-		};
+		this.playerChat = new PlayerChat();
 	}
 
 	public Slots getSlot(int slot) {
@@ -89,9 +80,7 @@ public class PlayerUI {
 	}
 
 	public void enqueueChat(final TextPacket packet) {
-		String message = "[{0}]: {1}";
-		message = MessageFormat.format(message, packet.getFrom(), packet.getMessage());
-		this.playerChat.put(message, packet);
+		this.playerChat.addChatMessage(packet);
 	}
 
 	public void setEquipment(GameItem[] loot) {
@@ -400,6 +389,8 @@ public class PlayerUI {
 				curr.input(mouse, key);
 			}
 		}
+
+		this.playerChat.input(mouse, key);
 	}
 
 	public boolean isEquipmentEmpty() {
@@ -452,24 +443,7 @@ public class PlayerUI {
 		}
 	}
 
-	private void renderChat(Graphics2D g) {
-		g.setColor(Color.WHITE);
-		java.awt.Font currentFont = g.getFont();
-		float newSize = currentFont.getSize() * 0.50F;
-		java.awt.Font newFont = currentFont.deriveFont(newSize);
-		g.setFont(newFont);
 
-		int index = 10;
-		for(Map.Entry<String, TextPacket> packet: this.playerChat.entrySet()){
-			int y = (int) ((GamePanel.height - (index * newSize)) + 8);
-			g.drawString(packet.getKey(), 8, y);
-			index--;
-		}
-
-		g.setFont(currentFont);
-		g.setColor(Color.BLACK);
-
-	}
 	public void render(Graphics2D g) {
 		int panelWidth = (GamePanel.width / 5);
 		int startX = GamePanel.width - panelWidth;
@@ -549,6 +523,6 @@ public class PlayerUI {
 		this.hp.render(g);
 		this.mp.render(g);
 		this.renderStats(g);
-		this.renderChat(g);
+		this.playerChat.render(g);
 	}
 }

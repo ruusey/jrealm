@@ -43,7 +43,6 @@ import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
-import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
@@ -85,9 +84,9 @@ public class RealmManagerServer implements Runnable {
 	private List<Long> expiredEnemies;
 	private List<Long> expiredBullets;
 	private Map<String, Long> remoteAddresses = new HashMap<>();
-	
+
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
-	
+
 	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
@@ -137,31 +136,31 @@ public class RealmManagerServer implements Runnable {
 			Runnable processServerPackets = () -> {
 				this.processServerPackets();
 			};
-			
+
 			Runnable sendGameData = () -> {
 				this.sendGameData();
 			};
-			
+
 			WorkerThread.submitAndRun(enqueueGameData, processServerPackets, sendGameData);
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to sleep");
 		}
 	}
-	
+
 	private void sendGameData() {
-		final List<Packet> extraPackets = new ArrayList<>();
+		final List<Packet> packetsToBroadcast = new ArrayList<>();
 
 		while(!this.outboundPacketQueue.isEmpty()) {
-			extraPackets.add(this.outboundPacketQueue.remove());
+			packetsToBroadcast.add(this.outboundPacketQueue.remove());
 		}
-		
+
 		final List<String> disconnectedClients = new ArrayList<>();
 		for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
 			try {
 				final OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
 				final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-				
-				for(Packet packet : extraPackets) {
+
+				for (Packet packet : packetsToBroadcast) {
 					packet.serializeWrite(dosToClient);
 				}
 			}catch(Exception e) {
@@ -169,7 +168,7 @@ public class RealmManagerServer implements Runnable {
 				RealmManagerServer.log.error("Failed to get OutputStream to Client. Reason: {}", e);
 			}
 		}
-		
+
 		for(String disconnectedClient : disconnectedClients) {
 			this.realm.getPlayers().remove(this.getRemoteAddresses().get(disconnectedClient));
 			this.server.getClients().remove(disconnectedClient);
@@ -208,15 +207,15 @@ public class RealmManagerServer implements Runnable {
 				if (mPacket != null) {
 					this.enqueueServerPacket(mPacket);
 				}
-				
+
 			} catch (Exception e) {
-				log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(), e);
+				RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(), e);
 			}
 		}
-		
+
 
 	}
-	
+
 	public void processServerPackets() {
 		for(ProcessingThread thread: this.getServer().getClients().values()) {
 			while(!thread.getPacketQueue().isEmpty()) {
@@ -442,7 +441,7 @@ public class RealmManagerServer implements Runnable {
 		}
 		this.proccessTerrainHit(p);
 	}
-	
+
 	public synchronized void enqueueServerPacket(Packet packet) {
 		this.outboundPacketQueue.add(packet);
 	}
@@ -681,9 +680,22 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}", textPacket.getTo(),
 					textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
 
+			// Solution 1
+			// Inline broadcast to clients on Server TextPacket
+			// Breaks the client outbound stream but not inbound
+			for (ProcessingThread clientThread : mgr.getServer().getClients().values()) {
+				OutputStream outputStream = clientThread.getClientSocket().getOutputStream();
+				DataOutputStream dos = new DataOutputStream(outputStream);
+				textPacket.serializeWrite(dos);
+			}
+
+			// Solution 2
+			// Deep clone
 			TextPacket toBroadcast = TextPacket.create(textPacket.getFrom(), textPacket.getTo(), textPacket.getMessage());
+			// Enqueue work to all clients to be send synchronously next
+			// server tick (broadcast event)
 			mgr.enqueueServerPacket(toBroadcast);
-			
+
 			RealmManagerServer.log.info("[SERVER] Broadcasted player chat message from {}", textPacket.getSrcIp());
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to send welcome message. Reason: {}", e);
