@@ -42,6 +42,7 @@ import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.Tuple;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
@@ -69,9 +70,7 @@ public class PlayState extends GameState {
 	public long playerId = -1l;
 
 	private PlayerLocation playerLocation = PlayerLocation.VAULT;
-
 	private Tuple<Cardinality, Boolean> lastDirection;
-	
 	private boolean sentChat = false;
 
 	public PlayState(GameStateManager gsm, Camera cam) {
@@ -83,7 +82,6 @@ public class PlayState extends GameState {
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
-		//this.loadClass(CharacterClass.ROGUE, true);
 		WorkerThread.submitAndForkRun(this.client);
 	}
 
@@ -114,7 +112,6 @@ public class PlayState extends GameState {
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 				GlobalConstants.PLAYER_SIZE, cls);
 		this.loadClass(player, cls, setEquipment);
-
 	}
 
 	public static Map<Integer, GameItem> getStartingEquipment(final CharacterClass characterClass) {
@@ -235,7 +232,6 @@ public class PlayState extends GameState {
 				};
 
 				Runnable processGameObjects = () -> {
-
 					this.processBulletHit();
 				};
 				// Rewrite this asap
@@ -251,9 +247,6 @@ public class PlayState extends GameState {
 					}
 				};
 				Runnable updatePlayerAndUi = () -> {
-					//					player.update(time);
-					//this.movePlayer();
-
 					this.pui.update(time);
 				};
 				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText,
@@ -469,7 +462,7 @@ public class PlayState extends GameState {
 		if (key.t.down && !this.sentChat) {
 			try {
 				this.sentChat = true;
-				TextPacket packet = TextPacket.create("TestTo", "TestFrom", "Hello World!");
+				TextPacket packet = TextPacket.create(SocketClient.PLAYER_USERNAME, "SYSTEM", "Hello World!");
 				this.client.getClient().sendRemote(packet);
 			} catch (Exception e) {
 				PlayState.log.error("Failed to send test text packet: {}", e);

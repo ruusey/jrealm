@@ -18,7 +18,6 @@ import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
-import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -57,7 +56,6 @@ public class SocketClient implements Runnable {
 	@Override
 	public void run() {
 		try {
-			Thread.sleep(100);
 			this.doLogin();
 		} catch (Exception e) {
 			log.error("Failed to send initial LoginRequest. Reason: {}", e);
@@ -93,6 +91,9 @@ public class SocketClient implements Runnable {
 						break;
 					}
 					byte packetId = this.remoteBuffer[0];
+					if(packetLength<0) {
+						System.out.println();
+					}
 					byte[] packetBytes = new byte[packetLength];
 					System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
 					if (this.remoteBufferIndex > packetLength) {

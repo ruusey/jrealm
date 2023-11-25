@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 
@@ -75,13 +74,11 @@ public class TextPacket extends Packet {
 		return created;
 	}
 	
-	public static TextPacket create(String from, String to, Object model) {
-		TextPacket created = null;
+	public TextPacket clone() {
 		try {
-			created = from(from, to, new ObjectMapper().writeValueAsString(model));
+			return TextPacket.from(this.from, this.to, this.message);
 		}catch(Exception e) {
-			log.error("Failed to create Text Packet. Reason: {}", e);
+			return null;
 		}
-		return created;
 	}
 }

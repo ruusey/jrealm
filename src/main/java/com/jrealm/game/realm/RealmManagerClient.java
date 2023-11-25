@@ -24,6 +24,7 @@ import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 import com.jrealm.net.client.SocketClient;
@@ -174,7 +175,6 @@ public class RealmManagerClient implements Runnable {
 			for(Enemy e : textPacket.getEnemies()) {
 				cli.getRealm().addEnemyIfNotExists(e);
 			}
-
 		}catch(Exception e) {
 			RealmManagerClient.log.error("Failed to handle Load Packet. Reason: {}", e);
 		}
@@ -212,7 +212,7 @@ public class RealmManagerClient implements Runnable {
 		RealmManagerClient.log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
 		try {
-			cli.getState().getPui().enqueueChat(textPacket);
+			cli.getState().getPui().enqueueChat(textPacket.clone());
 		}catch(Exception e) {
 			RealmManagerClient.log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
 		}
@@ -262,19 +262,15 @@ public class RealmManagerClient implements Runnable {
 				break;
 			}
 		}
-		//		log.info("[CLIENT] Recieved ObjectMove Packet for Game Object {} ID {}",
-		//				EntityType.valueOf(objectMovePacket.getEntityType()), objectMovePacket.getEntityId());
 	}
 
 	public static void handleUpdateClient(RealmManagerClient cli, Packet packet) {
 		UpdatePacket updatePacket = (UpdatePacket) packet;
-		//		if (updatePacket.getPlayerId() != cli.getCurrentPlayerId())
-		//			return;
 		Player toUpdate = cli.getRealm().getPlayer((updatePacket.getPlayerId()));
 		if (toUpdate == null)
 			return;
 		toUpdate.applyUpdate(updatePacket);
-		//		log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
+		//log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());	
 	}
 
 	private static void doLoginResponse(RealmManagerClient cli, LoginResponseMessage loginResponse) {
@@ -291,7 +287,7 @@ public class RealmManagerClient implements Runnable {
 				cli.setCurrentPlayerId(player.getId());
 				cli.getState().setPlayerId(player.getId());
 				cli.startHeartbeatThread();
-				TextPacket packet = TextPacket.create("SYSTEM", "TestFrom", "Welcome to JRealm!");
+				TextPacket packet = TextPacket.create("SYSTEM", "Player", "Welcome to JRealm "+GameLauncher.GAME_VERSION+"!");
 				cli.getState().getPui().enqueueChat(packet);
 			}
 		}catch(Exception e) {

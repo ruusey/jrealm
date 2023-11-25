@@ -680,20 +680,11 @@ public class RealmManagerServer implements Runnable {
 		try {
 			RealmManagerServer.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}", textPacket.getTo(),
 					textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
-			OutputStream toClientStream = mgr.getServer().getClients().get(textPacket.getSrcIp()).getClientSocket()
-					.getOutputStream();
-			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 
-			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(),
-					"Welcome to JRealm " + textPacket.getFrom());
-
-			if (!textPacket.getTo().equalsIgnoreCase("SYSTEM")) {
-				mgr.getOutboundPacketQueue().add(textPacket);
-			}else {
-				mgr.getOutboundPacketQueue().add(welcomeMessage);
-				//welcomeMessage.serializeWrite(dosToClient);
-				RealmManagerServer.log.info("[SERVER] Sent welcome message to {}", textPacket.getSrcIp());
-			}
+			TextPacket toBroadcast = TextPacket.create(textPacket.getFrom(), textPacket.getTo(), textPacket.getMessage());
+			mgr.enqueueServerPacket(toBroadcast);
+			
+			RealmManagerServer.log.info("[SERVER] Broadcasted player chat message from {}", textPacket.getSrcIp());
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to send welcome message. Reason: {}", e);
 		}
