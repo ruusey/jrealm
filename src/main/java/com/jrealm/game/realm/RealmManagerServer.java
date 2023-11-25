@@ -123,10 +123,8 @@ public class RealmManagerServer implements Runnable {
 			this.update(0);
 		};
 
-
 		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
-
 		RealmManagerServer.log.info("RealmManager exiting run().");
 	}
 
@@ -140,7 +138,6 @@ public class RealmManagerServer implements Runnable {
 				this.processServerPackets();
 			};
 			
-
 			WorkerThread.submitAndRun(broadcastGameData, processServerPackets);
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to sleep");
@@ -175,12 +172,12 @@ public class RealmManagerServer implements Runnable {
 					OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
 					DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 
+					for(TextPacket extraPacket : extraPackets) {
+						extraPacket.serializeWrite(dosToClient);
+					}
 					for (UpdatePacket packet : uPackets) {
 						packet.serializeWrite(dosToClient);
 					}
-//					for(TextPacket extraPacket : extraPackets) {
-//						extraPacket.serializeWrite(dosToClient);
-//					}
 	
 					if(load !=null) {
 						load.serializeWrite(dosToClient);
@@ -674,8 +671,8 @@ public class RealmManagerServer implements Runnable {
 				mgr.getOutboundPacketQueue().add(textPacket);
 			}else {
 				welcomeMessage.serializeWrite(dosToClient);
+				RealmManagerServer.log.info("[SERVER] Sent welcome message to {}", textPacket.getSrcIp());
 			}
-			RealmManagerServer.log.info("[SERVER] Sent welcome message to {}", textPacket.getSrcIp());
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to send welcome message. Reason: {}", e);
 		}
