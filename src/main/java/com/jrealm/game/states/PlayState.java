@@ -45,6 +45,7 @@ import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
+import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 
 import lombok.Data;
@@ -462,15 +463,15 @@ public class PlayState extends GameState {
 				this.gsm.add(GameStateManager.PAUSE);
 			}
 		}
-		//		if (key.t.down) {
-		//			try {
-		//				TextPacket packet = TextPacket.create("TestTo", "TestFrom", "Hello World!");
-		//				this.client.getClient().sendRemote(packet);
-		//			} catch (Exception e) {
-		//				PlayState.log.error("Failed to send test text packet: {}", e);
-		//			}
-		//
-		//		}
+		if (key.t.down) {
+			try {
+				TextPacket packet = TextPacket.create("TestTo", "TestFrom", "Hello World!");
+				this.client.getClient().sendRemote(packet);
+			} catch (Exception e) {
+				PlayState.log.error("Failed to send test text packet: {}", e);
+			}
+
+		}
 		Stats stats = player.getComputedStats();
 		if (this.getPlayer().hasEffect(EffectType.SPEEDY)) {
 			stats.setDex((short) (stats.getDex() * 2));

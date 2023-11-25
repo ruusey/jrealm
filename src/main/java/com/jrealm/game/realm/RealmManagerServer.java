@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiConsumer;
 
 import com.jrealm.game.GamePanel;
@@ -82,6 +84,9 @@ public class RealmManagerServer implements Runnable {
 	private List<Long> expiredEnemies;
 	private List<Long> expiredBullets;
 	private Map<String, Long> remoteAddresses = new HashMap<>();
+	
+	private final Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
+
 	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;

@@ -11,6 +11,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.game.GameLauncher;
+import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
@@ -40,8 +41,9 @@ public class SocketClient implements Runnable {
 	private long localNoDataTime = System.currentTimeMillis();
 	private long remoteNoDataTime = System.currentTimeMillis();
 
-	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
-
+	private final Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
+	private final Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
+	
 	public SocketClient(String targetHost, int port) {
 		try {
 			this.clientSocket = new Socket(targetHost, port);
@@ -56,18 +58,20 @@ public class SocketClient implements Runnable {
 			Thread.sleep(100);
 			this.sendRemote(TextPacket.create(SocketClient.PLAYER_USERNAME, "SYSTEM", "LoginRequest"));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error("Failed to send initial LoginRequest. Reason: {}", e);
 		}
-		while (!this.shutdown) {
-			Runnable recievePackets = () -> {
-				this.readPackets();
-			};
-			WorkerThread.submitAndRun(recievePackets);
-		}
-
-
-	}
+		
+		Runnable readPackets = () -> {
+			this.readPackets();
+		};
+		Runnable sendPackets = () -> {
+			this.sendPackets();	
+		};
+		TimedWorkerThread readThread = new TimedWorkerThread(readPackets, 32);
+		TimedWorkerThread sendThread = new TimedWorkerThread(sendPackets, 32);
+		sendThread.start();
+		readThread.start();
+}
 
 	private void readPackets() {
 		try {
@@ -96,26 +100,39 @@ public class SocketClient implements Runnable {
 					this.remoteBufferIndex -= packetLength;
 					BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
 					newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-					this.packetQueue.add(newPacket);
+					this.inboundPacketQueue.add(newPacket);
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			SocketClient.log.error("Failed to parse client input {}", e.getMessage());
+			SocketClient.log.error("Failed to parse client input. Reason {}", e);
+		}
+	}
+	
+	private void sendPackets() {
+		while(!this.outboundPacketQueue.isEmpty()) {
+			Packet toSend = this.outboundPacketQueue.remove();
+			try {
+				OutputStream stream = this.clientSocket.getOutputStream();
+				DataOutputStream dos = new DataOutputStream(stream);
+				toSend.serializeWrite(dos);
+			}catch(Exception e) {
+				String remoteAddr = this.clientSocket.getInetAddress().getHostAddress();
+				SocketClient.log.error("Failed to send Packet to remote addr {}, Reason: {}", remoteAddr, e);
+			}
 		}
 	}
 
+	/**
+	 * Enqueues a Packet instance to be sent to the remote during the next
+	 * processing cycle
+	 * @param packet Packet to send to remote server
+	 * @throws Exception
+	 */
 	public void sendRemote(Packet packet) throws Exception {
 		if (this.clientSocket == null)
 			throw new Exception("Client socket is null/not yet established");
-		try {
-			OutputStream stream = this.clientSocket.getOutputStream();
-			DataOutputStream dos = new DataOutputStream(stream);
-			packet.serializeWrite(dos);
-		} catch (Exception e) {
-			String remoteAddr = this.clientSocket.getInetAddress().getHostAddress();
-			SocketClient.log.error("Failed to send Packet to remote addr {}", remoteAddr);
-		}
+		
+		this.outboundPacketQueue.add(packet);
 	}
 
 	public static String getLocalAddr() throws Exception{
