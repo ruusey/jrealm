@@ -71,6 +71,9 @@ public class PlayState extends GameState {
 	private PlayerLocation playerLocation = PlayerLocation.VAULT;
 
 	private Tuple<Cardinality, Boolean> lastDirection;
+	
+	private boolean sentChat = false;
+
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 		PlayState.map = new Vector2f();
@@ -463,8 +466,9 @@ public class PlayState extends GameState {
 				this.gsm.add(GameStateManager.PAUSE);
 			}
 		}
-		if (key.t.down) {
+		if (key.t.down && !this.sentChat) {
 			try {
+				this.sentChat = true;
 				TextPacket packet = TextPacket.create("TestTo", "TestFrom", "Hello World!");
 				this.client.getClient().sendRemote(packet);
 			} catch (Exception e) {

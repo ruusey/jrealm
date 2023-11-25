@@ -43,6 +43,7 @@ import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
+import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
@@ -85,8 +86,7 @@ public class RealmManagerServer implements Runnable {
 	private List<Long> expiredBullets;
 	private Map<String, Long> remoteAddresses = new HashMap<>();
 	
-	private final Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
-
+	private final Queue<TextPacket> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
@@ -113,19 +113,6 @@ public class RealmManagerServer implements Runnable {
 		player.setRight(true);
 		player.setHeadless(true);
 		long newId = this.getRealm().addPlayer(player);
-
-		//		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		//		cls = CharacterClass.PALLADIN;
-		//		player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
-		//				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-		//						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-		//				GlobalConstants.PLAYER_SIZE, cls);
-		//		player.equipSlots(PlayState.getStartingEquipment(cls));
-		//		player.setMaxSpeed(0.6f);
-		//		player.setLeft(true);
-		//		player.setDown(true);
-		//		newId = this.getRealm().addPlayer(player);
-
 	}
 
 	@Override
@@ -152,6 +139,7 @@ public class RealmManagerServer implements Runnable {
 			Runnable processServerPackets = () -> {
 				this.processServerPackets();
 			};
+			
 
 			WorkerThread.submitAndRun(broadcastGameData, processServerPackets);
 		} catch (Exception e) {
@@ -160,7 +148,11 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void broadcastGameData() {
+		final List<TextPacket> extraPackets = new ArrayList<>();
 		UnloadPacket unload = null;
+		while(!this.outboundPacketQueue.isEmpty()) {
+			extraPackets.add(this.outboundPacketQueue.remove());
+		}
 		try {
 			unload = this.getUnloadPacket();
 		} catch (Exception e) {
@@ -177,6 +169,7 @@ public class RealmManagerServer implements Runnable {
 				try {
 					List<UpdatePacket> uPackets = this.realm
 							.getPlayersAsPackets(player.getValue().getCam().getBounds());
+					LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
 					ObjectMovePacket mPacket = this.realm
 							.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
 					OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
@@ -185,32 +178,32 @@ public class RealmManagerServer implements Runnable {
 					for (UpdatePacket packet : uPackets) {
 						packet.serializeWrite(dosToClient);
 					}
-
-					LoadPacket load = this.realm
-							.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
-					load.serializeWrite(dosToClient);
+//					for(TextPacket extraPacket : extraPackets) {
+//						extraPacket.serializeWrite(dosToClient);
+//					}
+	
+					if(load !=null) {
+						load.serializeWrite(dosToClient);
+					}
 					if (unloadToBroadcast != null) {
 						unloadToBroadcast.serializeWrite(dosToClient);
 					}
 					if (mPacket != null) {
 						mPacket.serializeWrite(dosToClient);
 					}
-
+					
 				} catch (Exception e) {
 					disconnectedClients.add(client.getKey());
 					RealmManagerServer.log.error("Failed to get OutputStream to Client");
 				}
-
-				// playerWork.add(perPlayerWork);
 			}
-			// WorkerThread.submitAndRun(playerWork.toArray(new Runnable[0]));
 		}
 		for(String disconnectedClient : disconnectedClients) {
 			this.realm.getPlayers().remove(this.getRemoteAddresses().get(disconnectedClient));
 			this.server.getClients().remove(disconnectedClient);
 		}
 	}
-
+	
 	public void processServerPackets() {
 		for(ProcessingThread thread: this.getServer().getClients().values()) {
 			while(!thread.getPacketQueue().isEmpty()) {
@@ -677,9 +670,10 @@ public class RealmManagerServer implements Runnable {
 			TextPacket welcomeMessage = TextPacket.create("SYSTEM", textPacket.getFrom(),
 					"Welcome to JRealm " + textPacket.getFrom());
 
-			welcomeMessage.serializeWrite(dosToClient);
 			if (!textPacket.getTo().equalsIgnoreCase("SYSTEM")) {
-				mgr.broadcastPacket(textPacket);
+				mgr.getOutboundPacketQueue().add(textPacket);
+			}else {
+				welcomeMessage.serializeWrite(dosToClient);
 			}
 			RealmManagerServer.log.info("[SERVER] Sent welcome message to {}", textPacket.getSrcIp());
 		} catch (Exception e) {

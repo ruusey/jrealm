@@ -110,6 +110,7 @@ public class RealmManagerClient implements Runnable {
 			Packet toProcess = this.getClient().getInboundPacketQueue().remove();
 			try {
 				Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
+				if(created == null) continue;
 				created.setSrcIp(toProcess.getSrcIp());
 				this.packetCallbacksClient.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
@@ -211,14 +212,19 @@ public class RealmManagerClient implements Runnable {
 		TextPacket textPacket = (TextPacket) packet;
 		RealmManagerClient.log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
-		RealmManagerClient.log.info("Responding with LoginRequest");
 		try {
-			LoginRequestMessage login = LoginRequestMessage.builder().classId(SocketClient.CLASS_ID)
-					.username(SocketClient.PLAYER_USERNAME)
-					.password("password123").build();
+			if(textPacket.getFrom().equalsIgnoreCase("SYSTEM")) {
+				RealmManagerClient.log.info("Responding with LoginRequest");
+				LoginRequestMessage login = LoginRequestMessage.builder().classId(SocketClient.CLASS_ID)
+						.username(SocketClient.PLAYER_USERNAME)
+						.password("password123").build();
 
-			CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
-			cli.getClient().sendRemote(loginPacket);
+				CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
+				cli.getClient().sendRemote(loginPacket);
+			}else {
+				cli.getState().getPui().enqueueChat(textPacket);
+			}
+		
 		}catch(Exception e) {
 			RealmManagerClient.log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
 		}
