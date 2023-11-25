@@ -11,10 +11,13 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.game.GameLauncher;
+import com.jrealm.game.messaging.CommandType;
+import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
 import com.jrealm.net.server.SocketServer;
+import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
@@ -55,7 +58,7 @@ public class SocketClient implements Runnable {
 	public void run() {
 		try {
 			Thread.sleep(100);
-			this.sendRemote(TextPacket.create(SocketClient.PLAYER_USERNAME, "SYSTEM", "LoginRequest"));
+			this.doLogin();
 		} catch (Exception e) {
 			log.error("Failed to send initial LoginRequest. Reason: {}", e);
 		}
@@ -105,6 +108,15 @@ public class SocketClient implements Runnable {
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to parse client input. Reason {}", e);
 		}
+	}
+	
+	private void doLogin() throws Exception{
+		LoginRequestMessage login = LoginRequestMessage.builder().classId(SocketClient.CLASS_ID)
+				.username(SocketClient.PLAYER_USERNAME)
+				.password("password123").build();
+
+		CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
+		this.sendRemote(loginPacket);
 	}
 	
 	private void sendPackets() {

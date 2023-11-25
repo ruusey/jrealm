@@ -19,7 +19,6 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
-import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.messaging.LoginResponseMessage;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
@@ -213,18 +212,7 @@ public class RealmManagerClient implements Runnable {
 		RealmManagerClient.log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
 		try {
-			if(textPacket.getFrom().equalsIgnoreCase("SYSTEM")) {
-				RealmManagerClient.log.info("Responding with LoginRequest");
-				LoginRequestMessage login = LoginRequestMessage.builder().classId(SocketClient.CLASS_ID)
-						.username(SocketClient.PLAYER_USERNAME)
-						.password("password123").build();
-
-				CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
-				cli.getClient().sendRemote(loginPacket);
-			}else {
-				cli.getState().getPui().enqueueChat(textPacket);
-			}
-		
+			cli.getState().getPui().enqueueChat(textPacket);
 		}catch(Exception e) {
 			RealmManagerClient.log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
 		}
