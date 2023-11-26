@@ -49,7 +49,7 @@ public class PlayerChat {
 		if(key.captureMode) {
 			this.currentMessage = key.getContent();
 		}
-		
+
 		if (key.enter.down && !this.pressedEnter) {
 			this.pressedEnter = true;
 			return;
@@ -65,15 +65,16 @@ public class PlayerChat {
 			key.setCaptureMode(this.chatOpen);
 			this.pressedEnter = false;
 			this.releasedEnter = false;
-			if(!this.chatOpen && key.getContent().length()>0) {
+			if (!this.chatOpen && !key.getContent().isBlank()) {
 				try {
 					String messageToSend = key.getCapturedInput();
+					messageToSend = messageToSend.replace("\n", "").replace("\r", "");
 					TextPacket packet = TextPacket.create(SocketClient.PLAYER_USERNAME, "SYSTEM", messageToSend);
 					client.sendRemote(packet);
 				}catch(Exception e) {
-					log.error("Failed to send PlayerChat to server. Reason: {}", e);
+					PlayerChat.log.error("Failed to send PlayerChat to server. Reason: {}", e);
 				}
-			}	
+			}
 		}
 	}
 
@@ -86,7 +87,7 @@ public class PlayerChat {
 
 		int index = PlayerChat.CHAT_SIZE;
 		for (Map.Entry<String, TextPacket> packet : this.playerChat.entrySet()) {
-			int y = (int) ((GamePanel.height - (index * newSize)) + 8);
+			int y = (int) ((GamePanel.height - (index * newSize)) - 100);
 			g.drawString(packet.getKey(), 8, y);
 			index--;
 		}

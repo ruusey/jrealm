@@ -24,7 +24,6 @@ import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 import com.jrealm.net.client.SocketClient;
@@ -86,7 +85,7 @@ public class RealmManagerClient implements Runnable {
 			this.update(0);
 		};
 
-		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
+		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 64);
 		WorkerThread.submitAndForkRun(workerThread);
 
 		RealmManagerClient.log.info("RealmManager exiting run().");
@@ -110,7 +109,9 @@ public class RealmManagerClient implements Runnable {
 			Packet toProcess = this.getClient().getInboundPacketQueue().remove();
 			try {
 				Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
-				if(created == null) continue;
+				if(created == null) {
+					continue;
+				}
 				created.setSrcIp(toProcess.getSrcIp());
 				this.packetCallbacksClient.get(created.getId()).accept(this, created);
 			} catch (Exception e) {
@@ -270,7 +271,7 @@ public class RealmManagerClient implements Runnable {
 		if (toUpdate == null)
 			return;
 		toUpdate.applyUpdate(updatePacket);
-		//log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());	
+		//log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 	}
 
 	private static void doLoginResponse(RealmManagerClient cli, LoginResponseMessage loginResponse) {

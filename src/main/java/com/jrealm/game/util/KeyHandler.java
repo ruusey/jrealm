@@ -146,11 +146,11 @@ public class KeyHandler implements KeyListener{
 			this.t.toggle(pressed);
 		}
 	}
-	
+
 	public void captureInput() {
-		captureMode=true;
+		this.captureMode=true;
 	}
-	
+
 	public String getCapturedInput() {
 		String content = new String(this.content);
 		this.content = "";
@@ -162,19 +162,23 @@ public class KeyHandler implements KeyListener{
 	@Override
 	public void keyTyped(KeyEvent e) {
 		if(this.captureMode) {
-			this.content+=e.getKeyChar();
+			if (e.getKeyCode() != KeyEvent.VK_ENTER) {
+				this.content += e.getKeyChar();
+			}
 		}
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		//if(this.captureMode) return;
+		if (this.captureMode && (e.getKeyCode() != KeyEvent.VK_ENTER))
+			return;
 		this.toggle(e, true);
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		//if(this.captureMode) return;
+		if (this.captureMode && (e.getKeyCode() != KeyEvent.VK_ENTER))
+			return;
 		this.toggle(e, false);
 	}
 }

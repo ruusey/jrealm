@@ -247,6 +247,7 @@ public class PlayState extends GameState {
 					}
 				};
 				Runnable updatePlayerAndUi = () -> {
+					this.getPlayer().update(time);
 					this.pui.update(time);
 				};
 				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText,

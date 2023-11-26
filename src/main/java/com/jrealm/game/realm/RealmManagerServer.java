@@ -680,22 +680,8 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}", textPacket.getTo(),
 					textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
 
-			// Solution 1
-			// Inline broadcast to clients on Server TextPacket
-			// Breaks the client outbound stream but not inbound
-			for (ProcessingThread clientThread : mgr.getServer().getClients().values()) {
-				OutputStream outputStream = clientThread.getClientSocket().getOutputStream();
-				DataOutputStream dos = new DataOutputStream(outputStream);
-				textPacket.serializeWrite(dos);
-			}
-
-			// Solution 2
-			// Deep clone
 			TextPacket toBroadcast = TextPacket.create(textPacket.getFrom(), textPacket.getTo(), textPacket.getMessage());
-			// Enqueue work to all clients to be send synchronously next
-			// server tick (broadcast event)
 			mgr.enqueueServerPacket(toBroadcast);
-
 			RealmManagerServer.log.info("[SERVER] Broadcasted player chat message from {}", textPacket.getSrcIp());
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to send welcome message. Reason: {}", e);

@@ -343,9 +343,10 @@ public abstract class Entity extends GameObject {
 		this.setHitBoxDirection();
 		this.ani.update();
 	}
-	
+
 	public void updateAnimation() {
-		this.animate();
+		int animationSpeed = (int) ((this.getMaxSpeed() / 5) * 100);
+		this.ani.setDelay(animationSpeed);
 		this.ani.update();
 	}
 
