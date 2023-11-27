@@ -38,7 +38,7 @@ public class ProcessingThread extends Thread{
 
 	@Override
 	public void run() {
-		this.monitorLastReceived();
+		//this.monitorLastReceived();
 		while (!this.shutdownProcessing) {
 			try {
 				this.enqueueClientPackets();

@@ -42,8 +42,8 @@ public class SocketClient implements Runnable {
 	private long previousTime = 0;
 	private long lastDataTime = System.currentTimeMillis();
 
-	private final Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
-	private final Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
+	private volatile Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
+	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	
 	public SocketClient(String targetHost, int port) {
 		try {
@@ -55,7 +55,7 @@ public class SocketClient implements Runnable {
 
 	@Override
 	public void run() {
-		this.monitorLastReceived();
+		//this.monitorLastReceived();
 		try {
 			this.doLogin();
 		} catch (Exception e) {
@@ -144,7 +144,7 @@ public class SocketClient implements Runnable {
 	 * @param packet Packet to send to remote server
 	 * @throws Exception
 	 */
-	public synchronized void sendRemote(Packet packet) throws Exception {
+	public void sendRemote(Packet packet) throws Exception {
 		if (this.clientSocket == null)
 			throw new Exception("Client socket is null/not yet established");
 		

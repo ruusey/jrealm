@@ -141,19 +141,24 @@ public class PlayerUI {
 					this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
 				} else if (this.overlapsInventory(event)) {
 					GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
-					Slots groundLoot = this.groundLoot[actualIdx];
+//					Slots groundLoot = this.groundLoot[actualIdx];
 					int idx = this.firstNullIdx(currentInv);
 					Slots currentEquip = this.inventory[idx + 4];
 
 					if ((currentEquip == null) && (idx > -1)) {
-						this.inventory[idx + 4] = groundLoot;
-						//this.groundLoot[actualIdx] = null;
-						this.getPlayState().getPlayer().getInventory()[idx + 4] = item;
-						this.playState.replaceLootContainerItemByUid(item.getUid(), null);
+						try {
+							this.playState.getRealmManager().moveItem(4, actualIdx+20, false, false);
+						}catch(Exception e) {
+							e.printStackTrace();
+						}
+//						this.inventory[idx + 4] = groundLoot;
+//						//this.groundLoot[actualIdx] = null;
+//						this.getPlayState().getPlayer().getInventory()[idx + 4] = item;
+//						this.playState.replaceLootContainerItemByUid(item.getUid(), null);
 					}
 
-					this.setEquipment(this.getPlayState().getPlayer().getInventory());
-					this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
+					//this.setEquipment(this.getPlayState().getPlayer().getInventory());
+					//this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
 				}
 			});
 

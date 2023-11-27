@@ -244,6 +244,19 @@ public class RealmManagerServer implements Runnable {
 		}
 		return bestPlayer;
 	}
+	
+	public LootContainer getClosestLootContainer(Vector2f pos, float limit) {
+		float best = Float.MAX_VALUE;
+		LootContainer bestLoot = null;
+		for (LootContainer lootContainer : this.realm.getLoot().values()) {
+			float dist = lootContainer.getPos().distanceTo(pos);
+			if ((dist < best) && (dist <= limit)) {
+				best = dist;
+				bestLoot = lootContainer;
+			}
+		}
+		return bestLoot;
+	}
 
 	private UnloadPacket getUnloadPacket() throws Exception {
 		Long[] expiredBullets = this.expiredBullets.toArray(new Long[0]);
@@ -737,6 +750,20 @@ public class RealmManagerServer implements Runnable {
 						player.getInventory()[moveItemPacket.getTargetSlotIndex()] = fromClone;
 					}
 					
+				}
+			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
+				LootContainer nearLoot = mgr.getClosestLootContainer(player.getPos(), 32);
+				GameItem lootItem = nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20];
+				GameItem currentInvItem = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
+				
+				if(lootItem!=null && currentInvItem == null) {
+					player.getInventory()[moveItemPacket.getTargetSlotIndex()] = lootItem.clone();
+					nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20] = null;
+				}else if(lootItem != null & currentInvItem !=null) {
+					GameItem lootClone = lootItem.clone();
+					GameItem currentInvItemClone = currentInvItem.clone();
+					lootItem = currentInvItemClone;
+					currentInvItem = lootClone;
 				}
 			}
 			

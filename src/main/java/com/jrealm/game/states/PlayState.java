@@ -462,8 +462,8 @@ public class PlayState extends GameState {
 		if (key.t.down && !this.sentChat) {
 			try {
 				this.sentChat = true;
-//				MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), (byte)-1, (byte)5, false, true);
-//				this.realmManager.getClient().sendRemote(moveItem);
+				MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), (byte)-1, (byte)5, false, true);
+				this.realmManager.getClient().sendRemote(moveItem);
 
 			} catch (Exception e) {
 				PlayState.log.error("Failed to send test text packet: {}", e);
