@@ -131,7 +131,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 				&& !player.hasEffect(EffectType.INVISIBLE)) {
 			this.attack = true;
 
-			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 850)
+			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 1500)
 					&& !this.hasEffect(EffectType.STUNNED);
 
 			if (canShoot) {

@@ -28,6 +28,7 @@ public class Chest extends LootContainer {
 		super(c.getPos(), c.getItems());
 		this.setLootContainerId(c.getLootContainerId());
 		this.visible = true;
+		this.setContentsChanged(c.getContentsChanged());
 	}
 
 	public void addItemAtFirtIdx(GameItem item) {

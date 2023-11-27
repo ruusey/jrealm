@@ -147,7 +147,7 @@ public class PlayerUI {
 
 					if ((currentEquip == null) && (idx > -1)) {
 						try {
-							this.playState.getRealmManager().moveItem(4, actualIdx+20, false, false);
+							this.playState.getRealmManager().moveItem(idx+4, actualIdx+20, false, false);
 						}catch(Exception e) {
 							e.printStackTrace();
 						}
@@ -233,6 +233,8 @@ public class PlayerUI {
 
 			b.onHoverOut(event -> {
 				this.tooltips.clear();
+				PlayerUI.DRAGGING_ITEM = false;
+
 			});
 
 			b.onMouseDown(event -> {
@@ -256,38 +258,41 @@ public class PlayerUI {
 				PlayerUI.DRAGGING_ITEM = false;
 				if (this.overlapsEquipment(event)
 						&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
-					Slots currentEquip = this.inventory[item.getTargetSlot()];
-					GameItem itemClone = currentEquip.getItem().clone();
-					this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
-					this.getPlayState().getPlayer().getInventory()[actualIdx] = itemClone;
-					this.setEquipment(this.getPlayState().getPlayer().getInventory());
-				} else if (this.overlapsInventory(event)) {
-					Slots dropped = this.getOverlapping(event);
-					if (dropped != null) {
-						int idx = this.getOverlapIdx(event);
-						GameItem swap = dropped.getItem().clone();
-						dropped = null;
-						this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
-						this.getPlayState().getPlayer().getInventory()[idx] = item;
-						this.setEquipment(this.getPlayState().getPlayer().getInventory());
-						this.setGroundLoot(this.groundLoot);
-					} else if (this.playState.getNearestChest() != null) {
-						LootContainer nearestChest = this.playState.getNearestChest();
-						int idxToPlace = nearestChest.getFirstNullIdx();
-						nearestChest.setItem(idxToPlace, item);
-						this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
+					
+					this.playState.getRealmManager().moveItem(item.getTargetSlot(), actualIdx, false, false);
 
-						this.groundLoot[idxToPlace] = new Slots(slotButton, item);
-						this.setEquipment(this.getPlayState().getPlayer().getInventory());
-						this.setGroundLoot(this.groundLoot);
-					}
-				} else if (this.overlapsGround(event)) {
-					GameItem toDrop = item.clone();
-					this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
-					this.playState.getRealmManager().getRealm().addLootContainer(
-							new LootContainer(this.playState.getPlayer().getPos().clone(), toDrop));
-					this.setEquipment(this.getPlayState().getPlayer().getInventory());
-					this.setGroundLoot(this.groundLoot);
+				} 
+//				else if (this.overlapsInventory(event)) {
+//					Slots dropped = this.getOverlapping(event);
+//					if (dropped != null) {
+//						int idx = this.getOverlapIdx(event);
+////						GameItem swap = dropped.getItem().clone();
+////						dropped = null;
+//						this.playState.getRealmManager().moveItem(idx, actualIdx, false, false);
+//
+////						this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
+////						this.getPlayState().getPlayer().getInventory()[idx] = item;
+////						this.setEquipment(this.getPlayState().getPlayer().getInventory());
+////						this.setGroundLoot(this.groundLoot);
+//					} else if (this.playState.getNearestChest() != null) {
+//						LootContainer nearestChest = this.playState.getNearestChest();
+//						int idxToPlace = nearestChest.getFirstNullIdx();
+//						nearestChest.setItem(idxToPlace, item);
+//						this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
+//
+//						this.groundLoot[idxToPlace] = new Slots(slotButton, item);
+//						this.setEquipment(this.getPlayState().getPlayer().getInventory());
+//						this.setGroundLoot(this.groundLoot);
+//					}
+//				} 
+				else if (this.overlapsGround(event)) {
+					this.playState.getRealmManager().moveItem(-1, actualIdx, true, false);
+
+//					this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
+//					this.playState.getRealmManager().getRealm().addLootContainer(
+//							new LootContainer(this.playState.getPlayer().getPos().clone(), toDrop));
+//					this.setEquipment(this.getPlayState().getPlayer().getInventory());
+//					this.setGroundLoot(this.groundLoot);
 				}
 			});
 

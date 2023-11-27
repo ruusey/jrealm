@@ -77,6 +77,11 @@ public class LootContainer implements Streamable<LootContainer> {
 		}
 		return true;
 	}
+	
+	public void setItems(GameItem[] items) {
+		this.items = items;
+		this.contentsChanged = true;
+	}
 
 	public void setItem(int idx, GameItem replacement) {
 		this.items[idx] = replacement;

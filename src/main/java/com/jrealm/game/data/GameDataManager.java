@@ -169,6 +169,9 @@ public class GameDataManager {
 
 	public static Sprite getSubSprite(String spriteKey, int col, int row, int size) {
 		SpriteSheet sheet = GameDataManager.SPRITE_SHEETS.get(spriteKey);
+		if(sheet==null) {
+			return null;
+		}
 		return sheet.getSprite(col, row, size, size);
 	}
 	

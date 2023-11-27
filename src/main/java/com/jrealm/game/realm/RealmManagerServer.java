@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
@@ -201,6 +202,7 @@ public class RealmManagerServer implements Runnable {
 
 				if(load !=null) {
 					this.enqueueServerPacket(load);
+					
 				}
 				if (unloadToBroadcast != null) {
 					this.enqueueServerPacket(unloadToBroadcast);
@@ -213,6 +215,9 @@ public class RealmManagerServer implements Runnable {
 				RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(), e);
 			}
 		}
+		this.getRealm().getLoot().values().forEach(lootContainer->{
+			lootContainer.setContentsChanged(false);
+		});
 
 
 	}
@@ -263,7 +268,9 @@ public class RealmManagerServer implements Runnable {
 		Long[] expiredEnemies = this.expiredEnemies.toArray(new Long[0]);
 		this.expiredBullets.clear();
 		this.expiredEnemies.clear();
-		return UnloadPacket.from(new Long[0], new Long[0], expiredBullets, expiredEnemies);
+		List<Long> lootContainers = this.realm.getLoot().values().stream().filter(lc->lc.isExpired() || lc.isEmpty()).map(lc->lc.getLootContainerId()).collect(Collectors.toList());
+		
+		return UnloadPacket.from(new Long[0], lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies);
 	}
 
 	private void registerPacketCallbacks() {
@@ -727,8 +734,34 @@ public class RealmManagerServer implements Runnable {
 		try {
 			Player player = mgr.getRealm().getPlayer(moveItemPacket.getPlayerId());
 			// if moving item from inventory
-			if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && moveItemPacket.getTargetSlotIndex()==-1) {
-				GameItem from = player.getInventory()[moveItemPacket.getFromSlotIndex()];
+			GameItem currentEquip = moveItemPacket.getTargetSlotIndex() == -1 ? null : player.getInventory()[moveItemPacket.getTargetSlotIndex()];
+			GameItem from = null;
+			if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())) {
+				from = player.getInventory()[moveItemPacket.getFromSlotIndex()];
+			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
+				LootContainer nearLoot = mgr.getClosestLootContainer(player.getPos(), 32);
+				from = nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20];
+			}
+			
+			if(moveItemPacket.isDrop()) {
+				player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
+				mgr.getRealm().addLootContainer(new LootContainer(player.getPos().clone(), from.clone()));
+			}else if(from!=null && from.isConsumable()&& !MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
+				Stats newStats = player.getStats().concat(from.getStats());
+				player.setStats(newStats);
+
+				if (from.getStats().getHp() > 0) {
+					player.drinkHp();
+				} else if (from.getStats().getMp() > 0) {
+					player.drinkMp();
+				}
+				player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
+			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isEquipment(moveItemPacket.getTargetSlotIndex()) && from!=null) {
+				
+				player.getInventory()[moveItemPacket.getFromSlotIndex()] = currentEquip.clone();
+				player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();	
+				
+			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && moveItemPacket.getTargetSlotIndex()==-1) {
 				if(from==null) return;
 				if(from.isConsumable() && moveItemPacket.isConsume()) {
 					Stats newStats = player.getStats().concat(from.getStats());
@@ -751,19 +784,23 @@ public class RealmManagerServer implements Runnable {
 					}
 					
 				}
+				
 			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
+				
 				LootContainer nearLoot = mgr.getClosestLootContainer(player.getPos(), 32);
 				GameItem lootItem = nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20];
 				GameItem currentInvItem = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
 				
 				if(lootItem!=null && currentInvItem == null) {
 					player.getInventory()[moveItemPacket.getTargetSlotIndex()] = lootItem.clone();
-					nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20] = null;
+					nearLoot.setItem(moveItemPacket.getFromSlotIndex()-20, null);
+					nearLoot.setItems(LootContainer.getCondensedItems(nearLoot));
 				}else if(lootItem != null & currentInvItem !=null) {
 					GameItem lootClone = lootItem.clone();
 					GameItem currentInvItemClone = currentInvItem.clone();
-					lootItem = currentInvItemClone;
-					currentInvItem = lootClone;
+					player.getInventory()[moveItemPacket.getTargetSlotIndex()] = lootClone;
+					nearLoot.setItem(moveItemPacket.getFromSlotIndex()-20, currentInvItemClone);
+					nearLoot.setItems(LootContainer.getCondensedItems(nearLoot));
 				}
 			}
 			

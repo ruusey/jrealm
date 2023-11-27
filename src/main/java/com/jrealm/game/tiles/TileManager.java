@@ -231,17 +231,17 @@ public class TileManager {
 
 	public AABB getRenderViewPort() {
 		return new AABB(
-				this.playerCam.getTarget().getPos().clone(-(5 * GlobalConstants.BASE_TILE_SIZE),
-						-(5 * GlobalConstants.BASE_TILE_SIZE)),
-				(15 * GlobalConstants.BASE_TILE_SIZE), (15 * GlobalConstants.BASE_TILE_SIZE));
+				this.playerCam.getTarget().getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
+						-(6 * GlobalConstants.BASE_TILE_SIZE)),
+				(12 * GlobalConstants.BASE_TILE_SIZE), (12 * GlobalConstants.BASE_TILE_SIZE));
 
 	}
 	
 	public AABB getRenderViewPort(Player p) {
 		return new AABB(
-				p.getPos().clone(-(5 * GlobalConstants.BASE_TILE_SIZE),
-						-(5 * GlobalConstants.BASE_TILE_SIZE)),
-				(15 * GlobalConstants.BASE_TILE_SIZE), (15 * GlobalConstants.BASE_TILE_SIZE));
+				p.getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
+						-(6 * GlobalConstants.BASE_TILE_SIZE)),
+				(12 * GlobalConstants.BASE_TILE_SIZE), (12 * GlobalConstants.BASE_TILE_SIZE));
 
 	}
 

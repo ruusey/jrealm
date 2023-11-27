@@ -424,19 +424,52 @@ public class PlayState extends GameState {
 			}
 			if (!this.playerLocation.equals(PlayerLocation.REALM)) {
 				if (key.one.down) {
-					this.loadClass(CharacterClass.ARCHER, true);
+					try {
+						GameItem from = this.getPlayer().getInventory()[4];
+						MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)4, false, false);
+						this.realmManager.getClient().sendRemote(moveItem);
+
+					} catch (Exception e) {
+						PlayState.log.error("Failed to send test move item packet: {}", e);
+					}
+//					this.loadClass(CharacterClass.ARCHER, true);
 				}
 				if (key.zero.down) {
 					this.loadClass(CharacterClass.ROGUE, true);
 				}
 				if (key.two.down) {
-					this.loadClass(CharacterClass.WIZARD, true);
+					try {
+						GameItem from = this.getPlayer().getInventory()[5];
+
+						MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)5, false, false);
+						this.realmManager.getClient().sendRemote(moveItem);
+
+					} catch (Exception e) {
+						PlayState.log.error("Failed to send test move item packet: {}", e);
+					}
+//					this.loadClass(CharacterClass.WIZARD, true);
 				}
 				if (key.three.down) {
-					this.loadClass(CharacterClass.PRIEST, true);
+					try {
+						GameItem from = this.getPlayer().getInventory()[6];
+						MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)6, false, false);
+						this.realmManager.getClient().sendRemote(moveItem);
+
+					} catch (Exception e) {
+						PlayState.log.error("Failed to send test move item packet: {}", e);
+					}
+//					this.loadClass(CharacterClass.PRIEST, true);
 				}
 				if (key.four.down) {
-					this.loadClass(CharacterClass.WARRIOR, true);
+					try {
+						GameItem from = this.getPlayer().getInventory()[7];
+						MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)7, false, false);
+						this.realmManager.getClient().sendRemote(moveItem);
+
+					} catch (Exception e) {
+						PlayState.log.error("Failed to send test move item packet: {}", e);
+					}
+					//this.loadClass(CharacterClass.WARRIOR, true);
 				}
 				if (key.five.down) {
 					this.loadClass(CharacterClass.KNIGHT, true);
@@ -444,9 +477,7 @@ public class PlayState extends GameState {
 				if (key.six.down) {
 					this.loadClass(CharacterClass.PALLADIN, true);
 				}
-
 			}
-
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);
 			this.cam.target(player);
@@ -462,7 +493,7 @@ public class PlayState extends GameState {
 		if (key.t.down && !this.sentChat) {
 			try {
 				this.sentChat = true;
-				MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), (byte)-1, (byte)5, false, true);
+				MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), (byte)0, (byte)4, false, false);
 				this.realmManager.getClient().sendRemote(moveItem);
 
 			} catch (Exception e) {
@@ -628,6 +659,9 @@ public class PlayState extends GameState {
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
 			this.getPui().setGroundLoot(new GameItem[8], g);
 
+		} else if(closeLoot!=null && closeLoot.getContentsChanged()) {
+			this.getPui().setGroundLoot(closeLoot.getItems(), g);
+			closeLoot.setContentsChanged(false);
 		}
 
 		for (LootContainer tr : toRemove) {
