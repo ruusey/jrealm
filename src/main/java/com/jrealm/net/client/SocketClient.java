@@ -14,6 +14,7 @@ import com.jrealm.game.GameLauncher;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.util.TimedWorkerThread;
+import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
 import com.jrealm.net.server.SocketServer;
@@ -39,8 +40,7 @@ public class SocketClient implements Runnable {
 	private int remoteBufferIndex = 0;
 	private long lastUpdate = 0;
 	private long previousTime = 0;
-	private long localNoDataTime = System.currentTimeMillis();
-	private long remoteNoDataTime = System.currentTimeMillis();
+	private long lastDataTime = System.currentTimeMillis();
 
 	private final Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private final Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
@@ -55,6 +55,7 @@ public class SocketClient implements Runnable {
 
 	@Override
 	public void run() {
+		this.monitorLastReceived();
 		try {
 			this.doLogin();
 		} catch (Exception e) {
@@ -78,6 +79,7 @@ public class SocketClient implements Runnable {
 			InputStream stream = this.clientSocket.getInputStream();
 			int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
 					this.remoteBuffer.length - this.remoteBufferIndex);
+			this.lastDataTime = System.currentTimeMillis();
 			if (bytesRead == -1)
 				throw new SocketException("end of stream");
 			if (bytesRead > 0) {
@@ -91,9 +93,6 @@ public class SocketClient implements Runnable {
 						break;
 					}
 					byte packetId = this.remoteBuffer[0];
-					if(packetLength<0) {
-						System.out.println();
-					}
 					byte[] packetBytes = new byte[packetLength];
 					System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
 					if (this.remoteBufferIndex > packetLength) {
@@ -121,11 +120,16 @@ public class SocketClient implements Runnable {
 	}
 	
 	private void sendPackets() {
+		OutputStream stream = null;
+		try{
+			stream = this.clientSocket.getOutputStream();
+		}catch(Exception e) {
+			return;
+		}
+		DataOutputStream dos = new DataOutputStream(stream);
 		while(!this.outboundPacketQueue.isEmpty()) {
 			Packet toSend = this.outboundPacketQueue.remove();
 			try {
-				OutputStream stream = this.clientSocket.getOutputStream();
-				DataOutputStream dos = new DataOutputStream(stream);
 				toSend.serializeWrite(dos);
 			}catch(Exception e) {
 				String remoteAddr = this.clientSocket.getInetAddress().getHostAddress();
@@ -140,11 +144,27 @@ public class SocketClient implements Runnable {
 	 * @param packet Packet to send to remote server
 	 * @throws Exception
 	 */
-	public void sendRemote(Packet packet) throws Exception {
+	public synchronized void sendRemote(Packet packet) throws Exception {
 		if (this.clientSocket == null)
 			throw new Exception("Client socket is null/not yet established");
 		
 		this.outboundPacketQueue.add(packet);
+	}
+	
+	private void monitorLastReceived() {
+		Runnable monitorLastRecieved = () ->{
+			while(!this.shutdown) {
+				try {
+					if((System.currentTimeMillis() - this.lastDataTime) > 5000) {
+						this.shutdown = true;
+					}
+				}catch(Exception e) {
+					
+				}
+				
+			}
+		};
+		WorkerThread.submitAndForkRun(monitorLastRecieved);
 	}
 
 	public static String getLocalAddr() throws Exception{

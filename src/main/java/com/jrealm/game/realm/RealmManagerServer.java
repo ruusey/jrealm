@@ -52,6 +52,7 @@ import com.jrealm.net.server.ProcessingThread;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
+import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
@@ -260,6 +261,8 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), RealmManagerServer::handleCommandServer);
 		this.registerPacketCallback(PacketType.LOAD_MAP.getPacketId(), RealmManagerServer::handleLoadMapServer);
 		this.registerPacketCallback(PacketType.USE_ABILITY.getPacketId(), RealmManagerServer::handleUseAbilityServer);
+		this.registerPacketCallback(PacketType.MOVE_ITEM.getPacketId(), RealmManagerServer::handleMoveItemServer);
+
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerServer, Packet> callback) {
@@ -702,6 +705,46 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.error("Failed to perform Server command for Player {}. Reason: {}", commandPacket.getPlayerId(),
 					e.getMessage());
 		}
+	}
+	
+	public static void handleMoveItemServer(RealmManagerServer mgr, Packet packet) {
+		MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
+		log.info("[SERVER] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
+
+		try {
+			Player player = mgr.getRealm().getPlayer(moveItemPacket.getPlayerId());
+			// if moving item from inventory
+			if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && moveItemPacket.getTargetSlotIndex()==-1) {
+				GameItem from = player.getInventory()[moveItemPacket.getFromSlotIndex()];
+				if(from==null) return;
+				if(from.isConsumable() && moveItemPacket.isConsume()) {
+					Stats newStats = player.getStats().concat(from.getStats());
+					player.setStats(newStats);
+
+					if (from.getStats().getHp() > 0) {
+						player.drinkHp();
+					} else if (from.getStats().getMp() > 0) {
+						player.drinkMp();
+					}
+					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
+				}else if(MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())){
+					GameItem to = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
+					if(to==null) {
+						player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from;
+					}else {
+						GameItem fromClone = from.clone();
+						player.getInventory()[moveItemPacket.getFromSlotIndex()] = to;
+						player.getInventory()[moveItemPacket.getTargetSlotIndex()] = fromClone;
+					}
+					
+				}
+			}
+			
+		} catch (Exception e) {
+			RealmManagerServer.log.error("Failed to handle MoveItem packet from Player {}. Reason: {}", moveItemPacket.getPlayerId(),
+					e);
+		}
+
 	}
 
 	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {

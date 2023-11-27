@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
 
@@ -27,8 +28,7 @@ public class ProcessingThread extends Thread{
 	private int remoteBufferIndex = 0;
 	private long lastUpdate = 0;
 	private long previousTime = 0;
-	private long localNoDataTime = System.currentTimeMillis();
-	private long remoteNoDataTime = System.currentTimeMillis();
+	private long lastDataTime = System.currentTimeMillis();
 	private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
 	private boolean handshakeComplete = false;
 	public ProcessingThread(SocketServer server, Socket clientSocket) {
@@ -38,6 +38,7 @@ public class ProcessingThread extends Thread{
 
 	@Override
 	public void run() {
+		this.monitorLastReceived();
 		while (!this.shutdownProcessing) {
 			try {
 				this.enqueueClientPackets();
@@ -52,6 +53,7 @@ public class ProcessingThread extends Thread{
 			InputStream stream = this.clientSocket.getInputStream();
 			int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
 					this.remoteBuffer.length - this.remoteBufferIndex);
+			this.lastDataTime = System.currentTimeMillis();
 			if (bytesRead == -1)
 				throw new SocketException("end of stream");
 			if (bytesRead > 0) {
@@ -81,5 +83,22 @@ public class ProcessingThread extends Thread{
 			this.shutdownProcessing = true;
 			ProcessingThread.log.error("Failed to parse client input {}", e.getMessage());
 		}
+	}
+	
+	private void monitorLastReceived() {
+		Runnable monitorLastRecieved = () ->{
+			while(!this.shutdownProcessing) {
+				try {
+					if((System.currentTimeMillis() - this.lastDataTime) > 5000) {
+						this.server.getClients().remove(this.clientSocket.getInetAddress().getHostAddress());
+						this.shutdownProcessing = true;
+					}
+				}catch(Exception e) {
+					
+				}
+				
+			}
+		};
+		WorkerThread.submitAndForkRun(monitorLastRecieved);
 	}
 }

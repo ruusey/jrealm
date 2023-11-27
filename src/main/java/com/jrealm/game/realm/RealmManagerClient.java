@@ -35,6 +35,7 @@ import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
+import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
@@ -154,6 +155,16 @@ public class RealmManagerClient implements Runnable {
 		};
 		WorkerThread.submitAndForkRun(sendHeartbeat);
 	}
+	
+	public void moveItem(int toSlotIndex, int fromSlotIndex, boolean drop, boolean consume) {
+		try {
+			MoveItemPacket moveItem = MoveItemPacket.from(this.state.getPlayer().getId(), (byte)toSlotIndex, (byte)fromSlotIndex, drop, consume);
+			this.getClient().sendRemote(moveItem);
+		}catch(Exception e) {
+			log.error("Failed to send MoveItem packet. Reason: {}", e);
+		}
+
+	}
 
 	public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
 		LoadPacket textPacket = (LoadPacket) packet;
@@ -270,7 +281,7 @@ public class RealmManagerClient implements Runnable {
 		Player toUpdate = cli.getRealm().getPlayer((updatePacket.getPlayerId()));
 		if (toUpdate == null)
 			return;
-		toUpdate.applyUpdate(updatePacket);
+		toUpdate.applyUpdate(updatePacket, cli.getState());
 		//log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 	}
 

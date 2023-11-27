@@ -42,11 +42,10 @@ import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.Tuple;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
-import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 
 import lombok.Data;
@@ -57,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = false)
 @Slf4j
 public class PlayState extends GameState {
-	private RealmManagerClient client;
+	private RealmManagerClient realmManager;
 	private Queue<DamageText> damageText;
 	private List<Vector2f> shotDestQueue;
 
@@ -78,11 +77,11 @@ public class PlayState extends GameState {
 		PlayState.map = new Vector2f();
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		this.cam = cam;
-		this.client = new RealmManagerClient(this, new Realm(this.cam, false));
+		this.realmManager = new RealmManagerClient(this, new Realm(this.cam, false));
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
-		WorkerThread.submitAndForkRun(this.client);
+		WorkerThread.submitAndForkRun(this.realmManager);
 	}
 
 
@@ -95,11 +94,11 @@ public class PlayState extends GameState {
 		}
 		this.cam.target(player);
 
-		if ((this.playerId != -1) || (this.client.getRealm().getPlayer(this.playerId) != null)) {
-			this.client.getRealm().removePlayer(this.playerId);
+		if ((this.playerId != -1) || (this.realmManager.getRealm().getPlayer(this.playerId) != null)) {
+			this.realmManager.getRealm().removePlayer(this.playerId);
 		}
-		this.playerId = this.client.getRealm().addPlayer(player);
-		this.client.setCurrentPlayerId(this.playerId);
+		this.playerId = this.realmManager.getRealm().addPlayer(player);
+		this.realmManager.setCurrentPlayerId(this.playerId);
 		this.pui = new PlayerUI(this);
 		this.getPlayer().getStats().setDef((short)50);
 
@@ -178,13 +177,13 @@ public class PlayState extends GameState {
 	}
 
 	public Vector2f getPlayerPos() {
-		return this.client.getRealm().getPlayers().get(this.playerId).getPos();
+		return this.realmManager.getRealm().getPlayers().get(this.playerId).getPos();
 	}
 
 	@Override
 	public void update(double time) {
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
-		Player player = this.client.getRealm().getPlayer(this.client.getCurrentPlayerId());
+		Player player = this.realmManager.getRealm().getPlayer(this.realmManager.getCurrentPlayerId());
 		if (player == null)
 			return;
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
@@ -223,7 +222,7 @@ public class PlayState extends GameState {
 									rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
 							try {
 								PlayerShootPacket packet = PlayerShootPacket.from(newProj, player, dest);
-								this.client.getClient().sendRemote(packet);
+								this.realmManager.getClient().sendRemote(packet);
 							}catch(Exception e) {
 								PlayState.log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
 							}
@@ -238,8 +237,8 @@ public class PlayState extends GameState {
 				Runnable checkAbilityUsage = () -> {
 					if (this.getPlayer() == null)
 						return;
-					for (GameObject e : this.client.getRealm()
-							.getGameObjectsInBounds(this.client.getRealm().getTileManager().getRenderViewPort())) {
+					for (GameObject e : this.realmManager.getRealm()
+							.getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort())) {
 						if ((e instanceof Entity) || (e instanceof Enemy)) {
 							Entity entCast = (Entity) e;
 							entCast.removeExpiredEffects();
@@ -261,7 +260,7 @@ public class PlayState extends GameState {
 
 	public synchronized void addProjectile(int projectileGroupId, int projectileId, Vector2f src, Vector2f dest, short size,
 			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags) {
-		Player player = this.client.getRealm().getPlayer(this.playerId);
+		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if (player == null)
 			return;
 		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
@@ -276,13 +275,13 @@ public class PlayState extends GameState {
 		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
 		b.setFlags(flags);
 
-		this.client.getRealm().addBullet(b);
+		this.realmManager.getRealm().addBullet(b);
 	}
 
 	public synchronized long addProjectile(int projectileGroupId, int projectileId, Vector2f src, float angle, short size,
 			float magnitude, float range, short damage, boolean isEnemy, List<Short> flags, short amplitude,
 			short frequency) {
-		Player player = this.client.getRealm().getPlayer(this.playerId);
+		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if (player == null)
 			return -1;
 		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
@@ -300,12 +299,12 @@ public class PlayState extends GameState {
 		b.setFrequency(frequency);
 
 		b.setFlags(flags);
-		return this.client.getRealm().addBullet(b);
+		return this.realmManager.getRealm().addBullet(b);
 	}
 
 	public synchronized void processBulletHit() {
 		List<Bullet> results = this.getBullets();
-		GameObject[] gameObject = this.client.getRealm().getGameObjectsInBounds(this.cam.getBounds());
+		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.cam.getBounds());
 
 		for (int i = 0; i < gameObject.length; i++) {
 			if (gameObject[i] instanceof Enemy) {
@@ -319,10 +318,10 @@ public class PlayState extends GameState {
 
 
 	private synchronized void proccessEnemyHit(Bullet b, Enemy e) {
-		if (this.client.getRealm().hasHitEnemy(b.getId(), e.getId()))
+		if (this.realmManager.getRealm().hasHitEnemy(b.getId(), e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
-			if (!this.getClient().getRealm().hasHitEnemy(b.getId(), e.getId())) {
+			if (!this.realmManager.getRealm().hasHitEnemy(b.getId(), e.getId())) {
 				Vector2f sourcePos = e.getPos();
 				DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
 						.sourcePos(sourcePos).build();
@@ -333,7 +332,7 @@ public class PlayState extends GameState {
 
 	private List<Bullet> getBullets() {
 
-		GameObject[] gameObject = this.client.getRealm().getGameObjectsInBounds(this.client.getRealm().getTileManager().getRenderViewPort());
+		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort());
 
 		List<Bullet> results = new ArrayList<>();
 		for (int i = 0; i < gameObject.length; i++) {
@@ -352,7 +351,7 @@ public class PlayState extends GameState {
 		key.shift.tick();
 		key.t.tick();
 		key.enter.tick();
-		Player player = this.client.getRealm().getPlayer(this.playerId);
+		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if(player==null) return;
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
 
@@ -389,7 +388,7 @@ public class PlayState extends GameState {
 					if(!this.lastDirection.equals(temp)) {
 						this.lastDirection = temp;
 						PlayerMovePacket packet = PlayerMovePacket.from(player, temp.getX(), temp.getY());
-						this.client.getClient().sendRemote(packet);
+						this.realmManager.getClient().sendRemote(packet);
 					}
 				}catch(Exception e) {
 
@@ -399,24 +398,24 @@ public class PlayState extends GameState {
 			if (key.f2.clicked && !this.playerLocation.equals(PlayerLocation.VAULT)) {
 				try {
 					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/vault.xml");
-					this.client.getClient().sendRemote(loadMap);
+					this.realmManager.getClient().sendRemote(loadMap);
 				}catch(Exception e) {
 					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/vault.xml", e.getMessage());
 				}
 				this.playerLocation = PlayerLocation.VAULT;
-				this.client.getRealm().loadMap("tile/vault.xml", this.getPlayer());
+				this.realmManager.getRealm().loadMap("tile/vault.xml", this.getPlayer());
 				this.loadClass(this.getPlayer(), this.currentPlayerCharacterClass(), false);
 			}
 			if (key.f1.clicked && !this.playerLocation.equals(PlayerLocation.REALM)) {
 				try {
 					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/nexus2.xml");
-					this.client.getClient().sendRemote(loadMap);
+					this.realmManager.getClient().sendRemote(loadMap);
 				}catch(Exception e) {
 					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/nexus2.xml", e.getMessage());
 				}
 
 				this.playerLocation = PlayerLocation.REALM;
-				this.client.getRealm().loadMap("tile/nexus2.xml", this.getPlayer());
+				this.realmManager.getRealm().loadMap("tile/nexus2.xml", this.getPlayer());
 				this.loadClass(this.getPlayer(), this.currentPlayerCharacterClass(), false);
 
 			}
@@ -463,8 +462,9 @@ public class PlayState extends GameState {
 		if (key.t.down && !this.sentChat) {
 			try {
 				this.sentChat = true;
-				TextPacket packet = TextPacket.create(SocketClient.PLAYER_USERNAME, "SYSTEM", "Hello World!");
-				this.client.getClient().sendRemote(packet);
+//				MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), (byte)-1, (byte)5, false, true);
+//				this.realmManager.getClient().sendRemote(moveItem);
+
 			} catch (Exception e) {
 				PlayState.log.error("Failed to send test text packet: {}", e);
 			}
@@ -490,7 +490,7 @@ public class PlayState extends GameState {
 				pos.addX(PlayState.map.x);
 				pos.addY(PlayState.map.y);
 				UseAbilityPacket useAbility = UseAbilityPacket.from(this.getPlayer(), pos);
-				this.client.getClient().sendRemote(useAbility);
+				this.realmManager.getClient().sendRemote(useAbility);
 				this.lastAbilityTick = System.currentTimeMillis();
 
 			}catch(Exception e) {
@@ -504,7 +504,7 @@ public class PlayState extends GameState {
 	}
 
 	public GameItem getLootContainerItemByUid(String uid) {
-		for (LootContainer lc : this.client.getRealm().getLoot().values()) {
+		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
 			for (GameItem item : lc.getItems()) {
 				if (item.getUid().equals(uid))
 					return item;
@@ -518,7 +518,7 @@ public class PlayState extends GameState {
 	}
 
 	public void replaceLootContainerItemByUid(String uid, GameItem replacement) {
-		for (LootContainer lc : this.client.getRealm().getLoot().values()) {
+		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
 			int foundIdx = -1;
 			for (int i = 0; i < lc.getItems().length; i++) {
 				GameItem item = lc.getItems()[i];
@@ -536,8 +536,8 @@ public class PlayState extends GameState {
 	}
 
 	public Chest getNearestChest() {
-		for (LootContainer lc : this.client.getRealm().getLoot().values()) {
-			if ((this.client.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= (GlobalConstants.PLAYER_SIZE*2))
+		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
+			if ((this.realmManager.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= (GlobalConstants.PLAYER_SIZE*2))
 					&& (lc instanceof Chest) && !this.playerLocation.equals(PlayerLocation.REALM))
 				return (Chest) lc;
 		}
@@ -545,8 +545,8 @@ public class PlayState extends GameState {
 	}
 
 	public LootContainer getNearestLootContainer() {
-		for (LootContainer lc : this.client.getRealm().getLoot().values()) {
-			if ((this.client.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= (GlobalConstants.PLAYER_SIZE*2)))
+		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
+			if ((this.realmManager.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= (GlobalConstants.PLAYER_SIZE*2)))
 				return lc;
 		}
 		return null;
@@ -554,11 +554,11 @@ public class PlayState extends GameState {
 
 	@Override
 	public void render(Graphics2D g) {
-		Player player = this.client.getRealm().getPlayer(this.playerId);
+		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if(player==null) return;
-		this.client.getRealm().getTileManager().render(g);
+		this.realmManager.getRealm().getTileManager().render(g);
 
-		for(Player p : this.client.getRealm().getPlayers().values()) {
+		for(Player p : this.realmManager.getRealm().getPlayers().values()) {
 			p.render(g);
 			p.updateAnimation();
 		}
@@ -568,7 +568,7 @@ public class PlayState extends GameState {
 		// this.getPlayerPos().y * 0.5f),
 		// (int) 32 * 8, (int) 32 * 8);
 
-		GameObject[] gameObject = this.client.getRealm().getGameObjectsInBounds(this.client.getRealm().getTileManager().getRenderViewPort());
+		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort());
 
 		for (int i = 0; i < gameObject.length; i++) {
 			GameObject toRender = gameObject[i];
@@ -600,12 +600,12 @@ public class PlayState extends GameState {
 
 	public void renderCloseLoot(Graphics2D g) {
 		List<LootContainer> toRemove = new ArrayList<>();
-		Player player = this.client.getRealm().getPlayer(this.playerId);
+		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if (player == null)
 			return;
-		AABB renderBounds = this.client.getRealm().getTileManager().getRenderViewPort();
+		AABB renderBounds = this.realmManager.getRealm().getTileManager().getRenderViewPort();
 		LootContainer closeLoot = null;
-		for (LootContainer lc : this.client.getRealm().getLoot().values()) {
+		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
 			if ((lc instanceof Chest) && this.playerLocation.equals(PlayerLocation.REALM)) {
 				continue;
 			}
@@ -631,19 +631,19 @@ public class PlayState extends GameState {
 		}
 
 		for (LootContainer tr : toRemove) {
-			this.client.getRealm().removeLootContainer(tr);
+			this.realmManager.getRealm().removeLootContainer(tr);
 		}
 	}
 
 	public Player getPlayer() {
-		return this.client.getRealm().getPlayer(this.playerId);
+		return this.realmManager.getRealm().getPlayer(this.playerId);
 	}
 
 	@SuppressWarnings("unused")
 	private void renderCollisionBoxes(Graphics2D g) {
 
-		GameObject[] gameObject = this.client.getRealm().getGameObjectsInBounds(this.cam.getBounds());
-		AABB[] colBoxes = this.client.getRealm().getCollisionBoxesInBounds(this.cam.getBounds());
+		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.cam.getBounds());
+		AABB[] colBoxes = this.realmManager.getRealm().getCollisionBoxesInBounds(this.cam.getBounds());
 		for (GameObject go : gameObject) {
 			AABB node = go.getBounds();
 

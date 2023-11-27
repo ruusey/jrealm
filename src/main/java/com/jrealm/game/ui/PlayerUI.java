@@ -234,17 +234,13 @@ public class PlayerUI {
 
 				PlayerUI.DRAGGING_ITEM = true;
 				if (item.isConsumable()) {
-					Stats newStats = this.playState.getPlayer().getStats().concat(item.getStats());
-					this.playState.getPlayer().setStats(newStats);
-
-					if (item.getStats().getHp() > 0) {
-						this.playState.getPlayer().drinkHp();
-					} else if (item.getStats().getMp() > 0) {
-						this.playState.getPlayer().drinkMp();
+					try {
+						this.playState.getRealmManager().moveItem(-1, actualIdx, false, true);
+					}catch(Exception e) {
+						e.printStackTrace();
 					}
+
 					this.tooltips.remove(item.getUid());
-					this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
-					this.inventory[actualIdx] = null;
 					PlayerUI.DRAGGING_ITEM = false;
 					this.tooltips.clear();
 				}
@@ -283,7 +279,7 @@ public class PlayerUI {
 				} else if (this.overlapsGround(event)) {
 					GameItem toDrop = item.clone();
 					this.getPlayState().getPlayer().getInventory()[actualIdx] = null;
-					this.playState.getClient().getRealm().addLootContainer(
+					this.playState.getRealmManager().getRealm().addLootContainer(
 							new LootContainer(this.playState.getPlayer().getPos().clone(), toDrop));
 					this.setEquipment(this.getPlayState().getPlayer().getInventory());
 					this.setGroundLoot(this.groundLoot);
@@ -390,7 +386,7 @@ public class PlayerUI {
 			}
 		}
 		try {
-			this.playerChat.input(mouse, key, this.playState.getClient().getClient());
+			this.playerChat.input(mouse, key, this.playState.getRealmManager().getClient());
 		}catch(Exception e) {
 			
 		}

@@ -11,6 +11,7 @@ import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
+import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
@@ -27,7 +28,9 @@ public enum PacketType {
 	LOAD_MAP	   ((byte) 8, true, LoadMapPacket.class),
 	LOAD	   	   ((byte) 9, true, LoadPacket.class),
 	UNLOAD         ((byte) 10, true, UnloadPacket.class), 
-	USE_ABILITY    ((byte) 11, true, UseAbilityPacket.class);
+	USE_ABILITY    ((byte) 11, true, UseAbilityPacket.class),
+	MOVE_ITEM      ((byte) 12, true, MoveItemPacket.class);
+
 
 	private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
 
