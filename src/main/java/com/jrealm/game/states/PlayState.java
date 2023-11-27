@@ -326,6 +326,7 @@ public class PlayState extends GameState {
 				DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
 						.sourcePos(sourcePos).build();
 				this.damageText.add(hitText);
+				this.realmManager.getRealm().hitEnemy(b.getId(), e.getId());
 			}
 		}
 	}
