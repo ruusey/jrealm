@@ -408,7 +408,7 @@ public class PlayState extends GameState {
 						this.sentStill = true;
 					}else {
 						for(Map.Entry<Cardinality, Boolean> movementDirection : this.lastDirection.entrySet()) {
-							if(movementDirection.getKey()!=Cardinality.NONE) {
+							if(movementDirection.getKey()!=Cardinality.NONE && movementDirection.getValue()) {
 								final PlayerMovePacket packet = PlayerMovePacket.from(player, movementDirection.getKey(), movementDirection.getValue());
 								this.realmManager.getClient().sendRemote(packet);
 							}
