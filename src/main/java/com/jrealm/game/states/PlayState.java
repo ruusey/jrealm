@@ -391,7 +391,6 @@ public class PlayState extends GameState {
 					this.lastDirection.put(Cardinality.EAST, true);
 				}else {
 					this.lastDirection.put(Cardinality.EAST, false);
-
 				}
 				
 				final List<Boolean> movements = this.lastDirection.values().stream().filter(movement->!movement).collect(Collectors.toList());
@@ -404,9 +403,9 @@ public class PlayState extends GameState {
 
 				try {
 					if(this.lastDirection.get(Cardinality.NONE) && !this.sentStill) {
-						this.sentStill = true;
 						final PlayerMovePacket packet = PlayerMovePacket.from(player, Cardinality.NONE, true);
 						this.realmManager.getClient().sendRemote(packet);
+						this.sentStill = true;
 					}else {
 						for(Map.Entry<Cardinality, Boolean> movementDirection : this.lastDirection.entrySet()) {
 							if(movementDirection.getKey()!=Cardinality.NONE) {
@@ -534,7 +533,6 @@ public class PlayState extends GameState {
 				this.sentChat = true;
 //				MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), (byte)0, (byte)4, false, false);
 //				this.realmManager.getClient().sendRemote(moveItem);
-
 			} catch (Exception e) {
 				PlayState.log.error("Failed to send test text packet: {}", e);
 			}
