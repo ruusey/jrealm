@@ -70,6 +70,7 @@ public class PlayState extends GameState {
 
 	private PlayerLocation playerLocation = PlayerLocation.VAULT;
 	private Map<Cardinality, Boolean> lastDirection;
+	private boolean sentStill = false;
 	private boolean sentChat = false;
 
 	public PlayState(final GameStateManager gsm, final Camera cam) {
@@ -80,6 +81,7 @@ public class PlayState extends GameState {
 		this.realmManager = new RealmManagerClient(this, new Realm(this.cam, false));
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
+		this.lastDirection = new HashMap<>();
 		WorkerThread.submitAndForkRun(this.realmManager);
 	}
 
@@ -364,24 +366,28 @@ public class PlayState extends GameState {
 				player.input(mouse, key);
 				
 				if (player.getIsUp()) {
+					this.sentStill = false;
 					this.lastDirection.put(Cardinality.NORTH, true);
 				}else {
 					this.lastDirection.put(Cardinality.NORTH, false);
 				}
 
 				if (player.getIsDown()) {
+					this.sentStill = false;
 					this.lastDirection.put(Cardinality.SOUTH, true);
 				}else {
 					this.lastDirection.put(Cardinality.SOUTH, false);
 				}
 
 				if (player.getIsLeft()) {
+					this.sentStill = false;
 					this.lastDirection.put(Cardinality.WEST, true);
 				}else {
 					this.lastDirection.put(Cardinality.WEST, false);
 
 				}
 				if (player.getIsRight()) {
+					this.sentStill = false;
 					this.lastDirection.put(Cardinality.EAST, true);
 				}else {
 					this.lastDirection.put(Cardinality.EAST, false);
@@ -397,7 +403,8 @@ public class PlayState extends GameState {
 				}
 
 				try {
-					if(this.lastDirection.get(Cardinality.NONE)) {
+					if(this.lastDirection.get(Cardinality.NONE) && !this.sentStill) {
+						this.sentStill = true;
 						final PlayerMovePacket packet = PlayerMovePacket.from(player, Cardinality.NONE, true);
 						this.realmManager.getClient().sendRemote(packet);
 					}else {
