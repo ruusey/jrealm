@@ -316,7 +316,6 @@ public class PlayState extends GameState {
 		}
 	}
 
-
 	private synchronized void proccessEnemyHit(final Bullet b, final Enemy e) {
 		if (this.realmManager.getRealm().hasHitEnemy(b.getId(), e.getId()))
 			return;
@@ -364,58 +363,58 @@ public class PlayState extends GameState {
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
 			if (this.cam.getTarget() == player) {
 				player.input(mouse, key);
+				final Map<Cardinality, Boolean> tempLastDirection = new HashMap<>();
 				
 				if (player.getIsUp()) {
-					this.sentStill = false;
-					this.lastDirection.put(Cardinality.NORTH, true);
+					tempLastDirection.put(Cardinality.NORTH, true);
 				}else {
-					this.lastDirection.put(Cardinality.NORTH, false);
+					tempLastDirection.put(Cardinality.NORTH, false);
 				}
 
 				if (player.getIsDown()) {
-					this.sentStill = false;
-					this.lastDirection.put(Cardinality.SOUTH, true);
+					tempLastDirection.put(Cardinality.SOUTH, true);
 				}else {
-					this.lastDirection.put(Cardinality.SOUTH, false);
+					tempLastDirection.put(Cardinality.SOUTH, false);
 				}
 
 				if (player.getIsLeft()) {
-					this.sentStill = false;
-					this.lastDirection.put(Cardinality.WEST, true);
+					tempLastDirection.put(Cardinality.WEST, true);
 				}else {
-					this.lastDirection.put(Cardinality.WEST, false);
-
+					tempLastDirection.put(Cardinality.WEST, false);
 				}
+				
 				if (player.getIsRight()) {
-					this.sentStill = false;
-					this.lastDirection.put(Cardinality.EAST, true);
+					tempLastDirection.put(Cardinality.EAST, true);
 				}else {
-					this.lastDirection.put(Cardinality.EAST, false);
+					tempLastDirection.put(Cardinality.EAST, false);
 				}
 				
 				final List<Boolean> movements = this.lastDirection.values().stream().filter(movement->!movement).collect(Collectors.toList());
 
 				if(movements.size()==4) {
-					this.lastDirection.put(Cardinality.NONE, true);
+					tempLastDirection.put(Cardinality.NONE, true);
 				}else {
-					this.lastDirection.put(Cardinality.NONE, false);
+					tempLastDirection.put(Cardinality.NONE, false);
 				}
-
-				try {
-					if(this.lastDirection.get(Cardinality.NONE) && !this.sentStill) {
-						final PlayerMovePacket packet = PlayerMovePacket.from(player, Cardinality.NONE, true);
-						this.realmManager.getClient().sendRemote(packet);
-						this.sentStill = true;
-					}else {
-						for(Map.Entry<Cardinality, Boolean> movementDirection : this.lastDirection.entrySet()) {
-							if(movementDirection.getKey()!=Cardinality.NONE && movementDirection.getValue()) {
+				
+			
+				
+				Map<Cardinality, Boolean> diffMap = this.getMovementDiff(this.lastDirection, tempLastDirection);
+				if(this.lastDirection == null) {
+					this.lastDirection = tempLastDirection;
+				}
+				if(!diffMap.isEmpty()) {
+					this.lastDirection = tempLastDirection;
+					for(Map.Entry<Cardinality, Boolean> movementDirection : diffMap.entrySet()) {
+						if(movementDirection.getKey()!=Cardinality.NONE && movementDirection.getValue()) {
+							try {
 								final PlayerMovePacket packet = PlayerMovePacket.from(player, movementDirection.getKey(), movementDirection.getValue());
 								this.realmManager.getClient().sendRemote(packet);
+							}catch(Exception e) {
+								log.error("Failed to send Move Packet. Reason: {}", e);
 							}
 						}
 					}
-				}catch(Exception e) {
-					log.error("Failed to send player movement to server. Reason: {}", e);
 				}
 			}
 			this.cam.input(mouse, key);
@@ -703,6 +702,17 @@ public class PlayState extends GameState {
 		for (final LootContainer tr : toRemove) {
 			this.realmManager.getRealm().removeLootContainer(tr);
 		}
+	}
+	
+	public Map<Cardinality, Boolean> getMovementDiff(final Map<Cardinality, Boolean> one, final Map<Cardinality, Boolean> two){
+		if(two == null) return one;
+		final Map<Cardinality, Boolean> diffMap = new HashMap<>();
+		for(Map.Entry<Cardinality, Boolean> entry: one.entrySet()) {
+			if(entry.getValue() != two.get(entry.getKey())) {
+				diffMap.put(entry.getKey(), entry.getValue());
+			}
+		}
+		return diffMap;
 	}
 
 	public Player getPlayer() {

@@ -101,9 +101,9 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	private void addTestPlayer() {
-		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		CharacterClass cls = CharacterClass.ARCHER;
-		Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
+		final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+		final CharacterClass cls = CharacterClass.ARCHER;
+		final Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
 				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 				GlobalConstants.PLAYER_SIZE, cls);
@@ -113,33 +113,33 @@ public class RealmManagerServer implements Runnable {
 		player.setDown(true);
 		player.setRight(true);
 		player.setHeadless(true);
-		long newId = this.getRealm().addPlayer(player);
+		final long newId = this.getRealm().addPlayer(player);
 	}
 
 	@Override
 	public void run() {
 		RealmManagerServer.log.info("Starting JRealm Server");
-		Runnable tick = () -> {
+		final Runnable tick = () -> {
 			this.tick();
 			this.update(0);
 		};
 
-		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
+		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
 	}
 
 	private void tick() {
 		try {
-			Runnable enqueueGameData = () -> {
+			final Runnable enqueueGameData = () -> {
 				this.enqueueGameData();
 			};
 
-			Runnable processServerPackets = () -> {
+			final Runnable processServerPackets = () -> {
 				this.processServerPackets();
 			};
 
-			Runnable sendGameData = () -> {
+			final Runnable sendGameData = () -> {
 				this.sendGameData();
 			};
 
@@ -171,7 +171,7 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 
-		for(String disconnectedClient : disconnectedClients) {
+		for(final String disconnectedClient : disconnectedClients) {
 			this.realm.getPlayers().remove(this.getRemoteAddresses().get(disconnectedClient));
 			this.server.getClients().remove(disconnectedClient);
 		}
@@ -188,15 +188,15 @@ public class RealmManagerServer implements Runnable {
 		final List<String> disconnectedClients = new ArrayList<>();
 
 		List<Runnable> playerWork = new ArrayList<>();
-		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
+		for (final Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 			try {
-				List<UpdatePacket> uPackets = this.realm
+				final List<UpdatePacket> uPackets = this.realm
 						.getPlayersAsPackets(player.getValue().getCam().getBounds());
-				LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
-				ObjectMovePacket mPacket = this.realm
+				final LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
+				final ObjectMovePacket mPacket = this.realm
 						.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
 
-				for (UpdatePacket packet : uPackets) {
+				for (final UpdatePacket packet : uPackets) {
 					this.enqueueServerPacket(packet);
 				}
 
@@ -223,11 +223,11 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void processServerPackets() {
-		for(ProcessingThread thread: this.getServer().getClients().values()) {
+		for(final ProcessingThread thread: this.getServer().getClients().values()) {
 			while(!thread.getPacketQueue().isEmpty()) {
-				Packet packet = thread.getPacketQueue().remove();
+				final Packet packet = thread.getPacketQueue().remove();
 				try {
-					Packet created = Packet.newInstance(packet.getId(), packet.getData());
+					final Packet created = Packet.newInstance(packet.getId(), packet.getData());
 					created.setSrcIp(packet.getSrcIp());
 					this.packetCallbacksServer.get(created.getId()).accept(this, created);
 				} catch (Exception e) {
@@ -237,7 +237,7 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	public Player getClosestPlayer(Vector2f pos, float limit) {
+	public Player getClosestPlayer(final Vector2f pos, final float limit) {
 		float best = Float.MAX_VALUE;
 		Player bestPlayer = null;
 		for (Player player : this.realm.getPlayers().values()) {
@@ -250,7 +250,7 @@ public class RealmManagerServer implements Runnable {
 		return bestPlayer;
 	}
 	
-	public LootContainer getClosestLootContainer(Vector2f pos, float limit) {
+	public LootContainer getClosestLootContainer(final Vector2f pos, final float limit) {
 		float best = Float.MAX_VALUE;
 		LootContainer bestLoot = null;
 		for (LootContainer lootContainer : this.realm.getLoot().values()) {
@@ -264,11 +264,11 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	private UnloadPacket getUnloadPacket() throws Exception {
-		Long[] expiredBullets = this.expiredBullets.toArray(new Long[0]);
-		Long[] expiredEnemies = this.expiredEnemies.toArray(new Long[0]);
+		final Long[] expiredBullets = this.expiredBullets.toArray(new Long[0]);
+		final Long[] expiredEnemies = this.expiredEnemies.toArray(new Long[0]);
 		this.expiredBullets.clear();
 		this.expiredEnemies.clear();
-		List<Long> lootContainers = this.realm.getLoot().values().stream().filter(lc->lc.isExpired() || lc.isEmpty()).map(lc->lc.getLootContainerId()).collect(Collectors.toList());
+		final List<Long> lootContainers = this.realm.getLoot().values().stream().filter(lc->lc.isExpired() || lc.isEmpty()).map(lc->lc.getLootContainerId()).collect(Collectors.toList());
 		
 		return UnloadPacket.from(new Long[0], lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies);
 	}
@@ -290,43 +290,43 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void update(double time) {
-		for (Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
-			Player p = this.realm.getPlayer(player.getValue().getId());
+		for (final Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
+			final Player p = this.realm.getPlayer(player.getValue().getId());
 			if (p == null) {
 				continue;
 			}
 
-			Runnable processGameObjects = () -> {
+			final Runnable processGameObjects = () -> {
 				this.processBulletHit(p);
 			};
 			// Rewrite this asap
-			Runnable checkAbilityUsage = () -> {
+			final Runnable checkAbilityUsage = () -> {
 
-				for (GameObject e : this.realm
+				for (final GameObject e : this.realm
 						.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort(p))) {
 					if ((e instanceof Entity) || (e instanceof Enemy)) {
-						Entity entCast = (Entity) e;
+						final Entity entCast = (Entity) e;
 						entCast.removeExpiredEffects();
 					}
 				}
 			};
-			Runnable updatePlayerAndUi = () -> {
+			final Runnable updatePlayerAndUi = () -> {
 				p.update(time);
 				this.movePlayer(p);
 			};
 			WorkerThread.submitAndRun(processGameObjects, updatePlayerAndUi, checkAbilityUsage);
 		}
 
-		Runnable processGameObjects = () -> {
-			GameObject[] gameObject = this.realm.getAllGameObjects();
+		final Runnable processGameObjects = () -> {
+			final GameObject[] gameObject = this.realm.getAllGameObjects();
 			for (int i = 0; i < gameObject.length; i++) {
 				if (gameObject[i] instanceof Enemy) {
-					Enemy enemy = ((Enemy) gameObject[i]);
+					final Enemy enemy = ((Enemy) gameObject[i]);
 					enemy.update(this, time);
 				}
 
 				if (gameObject[i] instanceof Bullet) {
-					Bullet bullet = ((Bullet) gameObject[i]);
+					final Bullet bullet = ((Bullet) gameObject[i]);
 					if (bullet != null) {
 						bullet.update();
 					}
