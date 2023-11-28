@@ -151,6 +151,7 @@ public class SocketClient implements Runnable {
 		this.outboundPacketQueue.add(packet);
 	}
 	
+	@SuppressWarnings("unused")
 	private void monitorLastReceived() {
 		Runnable monitorLastRecieved = () ->{
 			while(!this.shutdown) {
@@ -161,7 +162,6 @@ public class SocketClient implements Runnable {
 				}catch(Exception e) {
 					
 				}
-				
 			}
 		};
 		WorkerThread.submitAndForkRun(monitorLastRecieved);
