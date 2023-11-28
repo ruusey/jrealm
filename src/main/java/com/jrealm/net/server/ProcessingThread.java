@@ -85,6 +85,7 @@ public class ProcessingThread extends Thread{
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private void monitorLastReceived() {
 		Runnable monitorLastRecieved = () ->{
 			while(!this.shutdownProcessing) {

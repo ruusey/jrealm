@@ -7,7 +7,6 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.TileCollision;
-import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.ObjectMovement;
 
 import lombok.Data;

@@ -34,7 +34,7 @@ public class Button {
 	private AABB bounds;
 	private boolean hovering = false;
 	private boolean canHover = true;
-	private ArrayList<DoubleClickEvent> doubleClickEvents;
+	private ArrayList<RightClickEvent> rightClickEvents;
 
 	private ArrayList<MouseDownEvent> mouseDownEvents;
 	private ArrayList<MouseUpEvent> mouseUpEvents;
@@ -52,7 +52,7 @@ public class Button {
 
 		this.bounds = new AABB(this.pos, size, size);
 		this.drawString = false;
-		this.doubleClickEvents = new ArrayList<DoubleClickEvent>();
+		this.rightClickEvents = new ArrayList<RightClickEvent>();
 		this.hoverInEvents = new ArrayList<HoverInEvent>();
 		this.hoverOutEvents = new ArrayList<HoverOutEvent>();
 		this.mouseDownEvents = new ArrayList<MouseDownEvent>();
@@ -64,7 +64,7 @@ public class Button {
 		this.pos = pos;
 		this.image = this.createIconButton(icon, image, width + iconsize, height + iconsize, iconsize);
 		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
-		this.doubleClickEvents = new ArrayList<DoubleClickEvent>();
+		this.rightClickEvents = new ArrayList<RightClickEvent>();
 
 		this.hoverInEvents = new ArrayList<HoverInEvent>();
 		this.hoverOutEvents = new ArrayList<HoverOutEvent>();
@@ -120,7 +120,7 @@ public class Button {
 		this.pos = pos;
 
 		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
-		this.doubleClickEvents = new ArrayList<DoubleClickEvent>();
+		this.rightClickEvents = new ArrayList<RightClickEvent>();
 
 		this.hoverInEvents = new ArrayList<HoverInEvent>();
 		this.hoverOutEvents = new ArrayList<HoverOutEvent>();
@@ -170,8 +170,8 @@ public class Button {
 
 	public boolean getHovering() { return this.hovering; }
 
-	public void onDoubleClick(DoubleClickEvent e) {
-		this.doubleClickEvents.add(e);
+	public void onRightClick(RightClickEvent e) {
+		this.rightClickEvents.add(e);
 	}
 
 	public void onMouseDown(MouseDownEvent e) {
@@ -213,18 +213,19 @@ public class Button {
 			if ((mouse.isPressed(MouseEvent.BUTTON1)) && !this.clicked) {
 				this.clicked = true;
 				this.pressed = true;
-				if (key.shift.down) {
-					System.out.println("Double Click");
-					for (int i = 0; i < this.doubleClickEvents.size(); i++) {
-						this.doubleClickEvents.get(i).action(1);
-					}
-				}
+				
 				this.pressedtime = System.nanoTime() / 1000000;
 				for (int i = 0; i < this.mouseDownEvents.size(); i++) {
 					this.mouseDownEvents.get(i).action(1);
 				}
-			}
-			else if ((!mouse.isPressed(MouseEvent.BUTTON1)) && this.clicked) {
+			} else if(mouse.isPressed(MouseEvent.BUTTON2) && !this.clicked) {
+				this.clicked = true;
+				this.pressed = true;
+				this.pressedtime = System.nanoTime() / 1000000;
+				for (int i = 0; i < this.rightClickEvents.size(); i++) {
+					this.rightClickEvents.get(i).action(new Vector2f(mouse.getX(), mouse.getY()));
+				}
+			} else if ((!mouse.isPressed(MouseEvent.BUTTON1)) && this.clicked) {
 				this.clicked = false;
 				for (int i = 0; i < this.mouseUpEvents.size(); i++) {
 					this.mouseUpEvents.get(i).action(new Vector2f(mouse.getX(), mouse.getY()));
@@ -268,8 +269,8 @@ public class Button {
 
 	}
 
-	public interface DoubleClickEvent {
-		void action(int mouseButton);
+	public interface RightClickEvent {
+		void action(Vector2f mouseButton);
 	}
 
 	public interface MouseDownEvent {

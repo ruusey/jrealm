@@ -726,7 +726,7 @@ public class RealmManagerServer implements Runnable {
 					e.getMessage());
 		}
 	}
-	
+	// TODO: Isolate Move Item logic into its own helper class
 	public static void handleMoveItemServer(RealmManagerServer mgr, Packet packet) {
 		MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
 		log.info("[SERVER] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
@@ -782,9 +782,7 @@ public class RealmManagerServer implements Runnable {
 						player.getInventory()[moveItemPacket.getFromSlotIndex()] = to;
 						player.getInventory()[moveItemPacket.getTargetSlotIndex()] = fromClone;
 					}
-					
 				}
-				
 			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
 				
 				LootContainer nearLoot = mgr.getClosestLootContainer(player.getPos(), 32);
