@@ -71,7 +71,8 @@ public class PlayState extends GameState {
 	private PlayerLocation playerLocation = PlayerLocation.VAULT;
 	private Tuple<Cardinality, Boolean> lastDirection;
 	private boolean sentChat = false;
-
+	private Map<Cardinality, Boolean> lastDirectionMap;
+	
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 		PlayState.map = new Vector2f();
@@ -81,6 +82,7 @@ public class PlayState extends GameState {
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
+		//this.lastDirectionMap = new HashMap<>();
 		WorkerThread.submitAndForkRun(this.realmManager);
 	}
 
@@ -355,41 +357,59 @@ public class PlayState extends GameState {
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if(player==null) return;
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
-			
 			if (this.cam.getTarget() == player) {
+				final Map<Cardinality, Boolean > lastDirectionTempMap = new HashMap<>();
 				player.input(mouse, key);
 				Cardinality c = null;
-				boolean move = true;
 				if (player.getIsUp()) {
 					c = Cardinality.NORTH;
-				}else if (player.getIsDown()) {
+					lastDirectionTempMap.put(Cardinality.NORTH, true);
+				}else {
+					lastDirectionTempMap.put(Cardinality.NORTH, false);
+				}
+				
+				if (player.getIsDown()) {
 					c = Cardinality.SOUTH;
+					lastDirectionTempMap.put(Cardinality.SOUTH, true);
+				}else {
+					lastDirectionTempMap.put(Cardinality.SOUTH, false);
 				}
 
 				if (player.getIsLeft()) {
 					c = Cardinality.WEST;
-				}else if (player.getIsRight()) {
-					c = Cardinality.EAST;
+					lastDirectionTempMap.put(Cardinality.WEST, true);
+				}else {
+					lastDirectionTempMap.put(Cardinality.WEST, false);
 				}
-
+				
+				if (player.getIsRight()) {
+					c = Cardinality.EAST;
+					lastDirectionTempMap.put(Cardinality.EAST, true);
+				}else {
+					lastDirectionTempMap.put(Cardinality.EAST, false);
+				}
+				
 				if(c==null) {
 					c = Cardinality.NONE;
-					move = false;
+					lastDirectionTempMap.put(Cardinality.NONE, true);
 				}
 
-				if(this.lastDirection==null) {
-					this.lastDirection = new Tuple<Cardinality, Boolean>(c, move);
+				if(this.lastDirectionMap == null) {
+					this.lastDirectionMap = lastDirectionTempMap;
 				}
-
-				Tuple<Cardinality, Boolean> temp = new Tuple<Cardinality, Boolean>(c, move);
-				try {
-					if(!this.lastDirection.equals(temp)) {
-						this.lastDirection = temp;
-						PlayerMovePacket packet = PlayerMovePacket.from(player, temp.getX(), temp.getY());
-						this.realmManager.getClient().sendRemote(packet);
+				
+				if(!this.lastDirectionMap.equals(lastDirectionTempMap)) {
+					for(Map.Entry<Cardinality, Boolean> entry : lastDirectionTempMap.entrySet()) {
+						if(lastDirectionMap.get(entry.getKey())!=entry.getValue()) {
+							try {
+								PlayerMovePacket packet = PlayerMovePacket.from(player, entry.getKey(), entry.getValue());
+								this.realmManager.getClient().sendRemote(packet);
+							}catch(Exception e) {
+								log.error("Failed to create player move packet. Reason: {}", e);
+							}
+						}
 					}
-				}catch(Exception e) {
-
+					this.lastDirectionMap = lastDirectionTempMap;
 				}
 			}
 			this.cam.input(mouse, key);

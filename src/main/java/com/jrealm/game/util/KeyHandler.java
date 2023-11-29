@@ -161,24 +161,32 @@ public class KeyHandler implements KeyListener{
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		if(this.captureMode) {
-			if (e.getKeyCode() != KeyEvent.VK_ENTER) {
-				this.content += e.getKeyChar();
-			}
-		}
+//		if(this.captureMode) {
+//			if(e.getKeyCode() ==  KeyEvent.VK_BACK_SPACE) {
+//				this.content = this.content.substring(0, this.content.length()-2);
+//			}else if (e.getKeyCode() != KeyEvent.VK_ENTER) {
+//				this.content += e.getKeyChar();
+//			}
+//		}
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		if (this.captureMode && (e.getKeyCode() != KeyEvent.VK_ENTER))
-			return;
-		this.toggle(e, true);
+		if(this.captureMode && e.getKeyCode()!= KeyEvent.VK_ENTER) {
+			if(e.getKeyCode() ==  KeyEvent.VK_BACK_SPACE) {
+				this.content = this.content.substring(0, this.content.length()-1);
+			}else if (e.getKeyCode() != KeyEvent.VK_ENTER) {
+				this.content += e.getKeyChar();
+			}
+		}else {
+			this.toggle(e, true);
+		}
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		if (this.captureMode && (e.getKeyCode() != KeyEvent.VK_ENTER))
-			return;
+//		if (this.captureMode && (e.getKeyCode() != KeyEvent.VK_ENTER))
+//			return;
 		this.toggle(e, false);
 	}
 }
