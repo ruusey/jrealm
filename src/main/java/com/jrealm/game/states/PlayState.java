@@ -355,23 +355,20 @@ public class PlayState extends GameState {
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if(player==null) return;
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
-
+			
 			if (this.cam.getTarget() == player) {
 				player.input(mouse, key);
 				Cardinality c = null;
 				boolean move = true;
 				if (player.getIsUp()) {
 					c = Cardinality.NORTH;
-				}
-
-				if (player.getIsDown()) {
+				}else if (player.getIsDown()) {
 					c = Cardinality.SOUTH;
 				}
 
 				if (player.getIsLeft()) {
 					c = Cardinality.WEST;
-				}
-				if (player.getIsRight()) {
+				}else if (player.getIsRight()) {
 					c = Cardinality.EAST;
 				}
 

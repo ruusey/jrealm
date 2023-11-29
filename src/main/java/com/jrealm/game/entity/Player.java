@@ -337,9 +337,9 @@ public class Player extends Entity implements Streamable<Player>{
 		this.maxMana = packet.getMaxMana();
 		this.setEffectIds(packet.getEffectIds());
 		this.setEffectTimes(packet.getEffectTimes());
-		
-		state.getPui().setEquipment(this.inventory);
-		
+		if(packet.getPlayerId()==state.getPlayerId()) {
+			state.getPui().setEquipment(this.inventory);
+		}
 	}
 
 	public boolean getIsUp() {
