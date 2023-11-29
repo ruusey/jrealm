@@ -322,7 +322,7 @@ public class Player extends Entity implements Streamable<Player>{
 		}
 	}
 
-	public void applyUpdate(final UpdatePacket packet, final PlayState state) {
+	public void applyUpdate(UpdatePacket packet, PlayState state) {
 		this.name = packet.getPlayerName();
 		this.stats = packet.getStats();
 		this.inventory = packet.getInventory();
@@ -337,7 +337,9 @@ public class Player extends Entity implements Streamable<Player>{
 		this.maxMana = packet.getMaxMana();
 		this.setEffectIds(packet.getEffectIds());
 		this.setEffectTimes(packet.getEffectTimes());
-		state.getPui().setEquipment(this.inventory);
+		if(packet.getPlayerId()==state.getPlayerId()) {
+			state.getPui().setEquipment(this.inventory);
+		}
 	}
 
 	public boolean getIsUp() {
@@ -357,7 +359,7 @@ public class Player extends Entity implements Streamable<Player>{
 	}
 
 	@Override
-	public void write(final DataOutputStream stream) throws Exception {
+	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.getId());
 		stream.writeUTF(this.getName());
 		stream.writeInt(this.getClassId());
@@ -369,16 +371,16 @@ public class Player extends Entity implements Streamable<Player>{
 	}
 
 	@Override
-	public Player read(final DataInputStream stream) throws Exception {
-		final long id = stream.readLong();
-		final String name = stream.readUTF();
-		final int classId = stream.readInt();
-		final short size = stream.readShort();
-		final float posX = stream.readFloat();
-		final float posY = stream.readFloat();
-		final float dX = stream.readFloat();
-		final float dY = stream.readFloat();
-		final Player player = Player.fromData(id, name, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
+	public Player read(DataInputStream stream) throws Exception {
+		long id = stream.readLong();
+		String name = stream.readUTF();
+		int classId = stream.readInt();
+		short size = stream.readShort();
+		float posX = stream.readFloat();
+		float posY = stream.readFloat();
+		float dX = stream.readFloat();
+		float dY = stream.readFloat();
+		Player player = Player.fromData(id, name, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
 		player.setDx(dX);
 		player.setDy(dY);
 		player.setName(name);
@@ -386,23 +388,23 @@ public class Player extends Entity implements Streamable<Player>{
 	}
 
 	public static Player fromData(long id, String name, Vector2f origin, int size, CharacterClass characterClass) {
-		final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		final SpriteSheet sheet = GameDataManager.loadClassSprites(characterClass);
-		final Player player =  new Player(id, c, sheet, origin, size, characterClass);
+		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+		SpriteSheet sheet = GameDataManager.loadClassSprites(characterClass);
+		Player player =  new Player(id, c, sheet, origin, size, characterClass);
 		player.setName(name);
 		return player;
 	}
 
-	public static Player fromStream(final DataInputStream stream) throws Exception {
-		final long id = stream.readLong();
-		final String name = stream.readUTF();
-		final int classId = stream.readInt();
-		final short size = stream.readShort();
-		final float posX = stream.readFloat();
-		final float posY = stream.readFloat();
-		final float dX = stream.readFloat();
-		final float dY = stream.readFloat();
-		final Player player = new Player(id, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
+	public static Player fromStream(DataInputStream stream) throws Exception {
+		long id = stream.readLong();
+		String name = stream.readUTF();
+		int classId = stream.readInt();
+		short size = stream.readShort();
+		float posX = stream.readFloat();
+		float posY = stream.readFloat();
+		float dX = stream.readFloat();
+		float dY = stream.readFloat();
+		Player player = new Player(id, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
 		player.setDx(dX);
 		player.setDy(dY);
 		player.setName(name);
