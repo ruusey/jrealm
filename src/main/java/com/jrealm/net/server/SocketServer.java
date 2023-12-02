@@ -58,8 +58,6 @@ public class SocketServer implements Runnable {
 				}
 			}
 		};
-
-
 		WorkerThread.submitAndForkRun(socketAccept);
 	}
 }

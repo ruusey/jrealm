@@ -60,6 +60,8 @@ public class KeyHandler implements KeyListener{
 	public Key four = new Key();
 	public Key five = new Key();
 	public Key six = new Key();
+	public Key seven = new Key();
+	public Key eight = new Key();
 	public Key zero = new Key();
 
 	public Key q = new Key();
@@ -133,6 +135,12 @@ public class KeyHandler implements KeyListener{
 		}
 		if (e.getKeyCode() == KeyEvent.VK_6) {
 			this.six.toggle(pressed);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_7) {
+			this.seven.toggle(pressed);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_8) {
+			this.eight.toggle(pressed);
 		}
 		if (e.getKeyCode() == KeyEvent.VK_0) {
 			this.zero.toggle(pressed);

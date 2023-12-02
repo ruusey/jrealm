@@ -110,7 +110,6 @@ public class LootContainer implements Streamable<LootContainer> {
 	public void render(Graphics2D g) {
 		g.drawImage(this.sprite.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), 32, 32,
 				null);
-
 	}
 
 	@Override
@@ -166,13 +165,8 @@ public class LootContainer implements Streamable<LootContainer> {
 				items.add(item);
 			}
 		}
-//		while(items.size()<8) {
-//			items.add(null);
-//		}
 		return items.toArray(new GameItem[0]);
 	}
-	
-	
 	
 	public boolean equals(LootContainer other) {
 		GameItem[] thisLoot = getCondensedItems(this);
@@ -188,7 +182,6 @@ public class LootContainer implements Streamable<LootContainer> {
 				}
 			}
 		}
-
 		return basic && loot;
 	}
 }

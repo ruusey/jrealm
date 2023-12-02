@@ -209,7 +209,7 @@ public class ServerGameLogic {
 					nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
 				}else if(lootItem != null & currentInvItem !=null) {
 					GameItem lootClone = lootItem.clone();
-					GameItem currentInvItemClone = currentInvItem.clone();
+					//GameItem currentInvItemClone = currentInvItem.clone();
 					player.getInventory()[player.firstEmptyInvSlot()] = lootClone;
 					//nearLoot.setItem(moveItemPacket.getFromSlotIndex()-20, currentInvItemClone);
 					nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));

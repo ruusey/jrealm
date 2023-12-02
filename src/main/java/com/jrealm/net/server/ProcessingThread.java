@@ -79,7 +79,6 @@ public class ProcessingThread extends Thread{
 				}
 			}
 		} catch (Exception e) {
-			this.server.getClients().remove(this.clientSocket.getInetAddress().getHostAddress());
 			this.shutdownProcessing = true;
 			ProcessingThread.log.error("Failed to parse client input {}", e.getMessage());
 		}

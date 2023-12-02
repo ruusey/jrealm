@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiConsumer;
@@ -244,21 +245,24 @@ public class RealmManagerServer implements Runnable {
 		this.getRealm().getLoot().values().forEach(lootContainer->{
 			lootContainer.setContentsChanged(false);
 		});
-
-
 	}
 
 	public void processServerPackets() {
-		for(ProcessingThread thread: this.getServer().getClients().values()) {
-			while(!thread.getPacketQueue().isEmpty()) {
-				Packet packet = thread.getPacketQueue().remove();
-				try {
-					Packet created = Packet.newInstance(packet.getId(), packet.getData());
-					created.setSrcIp(packet.getSrcIp());
-					this.packetCallbacksServer.get(created.getId()).accept(this, created);
-				} catch (Exception e) {
-					RealmManagerServer.log.error("Failed to process server packets {}", e);
+		for(Entry<String, ProcessingThread> thread: this.getServer().getClients().entrySet()) {
+			if(!thread.getValue().isShutdownProcessing()) {
+				while(!thread.getValue().getPacketQueue().isEmpty()) {
+					Packet packet = thread.getValue().getPacketQueue().remove();
+					try {
+						Packet created = Packet.newInstance(packet.getId(), packet.getData());
+						created.setSrcIp(packet.getSrcIp());
+						this.packetCallbacksServer.get(created.getId()).accept(this, created);
+					} catch (Exception e) {
+						RealmManagerServer.log.error("Failed to process server packets {}", e);
+					}
 				}
+			}else {
+				this.server.getClients().remove(thread.getKey());
+				this.realm.removePlayer(this.remoteAddresses.get(thread.getKey()));
 			}
 		}
 	}
