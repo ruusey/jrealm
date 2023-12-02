@@ -127,7 +127,7 @@ public class ClientGameLogic {
 					break;
 				}
 				if(cli.getCurrentPlayerId()==movement.getEntityId()) {
-					playerToUpdate.applyMovement(movement);
+					playerToUpdate.applyMovementLerp(movement);
 				}else {
 					playerToUpdate.applyMovementLerp(movement);
 				}

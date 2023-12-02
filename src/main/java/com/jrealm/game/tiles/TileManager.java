@@ -203,8 +203,7 @@ public class TileManager {
 			this.playerCam.setLimit(width * blockWidth, height * blockHeight);
 
 		} catch (Exception e) {
-			log.error("TILEMANAGER: can not read tilemap:");
-			e.printStackTrace();
+			log.error("TILEMANAGER: can not read tilemap: {}", e);
 			System.exit(0);
 		}
 

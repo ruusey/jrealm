@@ -236,29 +236,50 @@ public class PlayState extends GameState {
 				Runnable processGameObjects = () -> {
 					this.processBulletHit();
 				};
-				// Rewrite this asap
-				Runnable checkAbilityUsage = () -> {
-					if (this.getPlayer() == null)
-						return;
-					for (GameObject e : this.realmManager.getRealm()
-							.getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort())) {
-						if ((e instanceof Entity) || (e instanceof Enemy)) {
-							Entity entCast = (Entity) e;
-							entCast.removeExpiredEffects();
-						}
-					}
-				};
+				
 				Runnable updatePlayerAndUi = () -> {
-					this.getPlayer().update(time);
+					player.update(time);
+					//this.movePlayer(player);
 					this.pui.update(time);
 				};
-				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText,
-						checkAbilityUsage);
+				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText);
 			}
 
 			this.cam.target(player);
 			this.cam.update();
 		}
+	}
+	
+	private void movePlayer(Player p) {
+		if (!p.isFallen()) {
+			p.move();
+			if (!p.getTc().collisionTile(this.getRealmManager().getRealm().getTileManager().getTm().get(1).getBlocks(), p.getDx(), 0)) {
+				p.getPos().x += p.getDx();
+				p.xCol = false;
+			} else {
+				p.xCol = true;
+			}
+			if (!p.getTc().collisionTile(this.getRealmManager().getRealm().getTileManager().getTm().get(1).getBlocks(), 0, p.getDy())) {
+				p.getPos().y += p.getDy();
+				p.yCol = false;
+			} else {
+				p.yCol = true;
+			}
+
+			p.getTc().normalTile(p.getDx(), 0);
+			p.getTc().normalTile(0, p.getDy());
+
+		} else {
+			p.xCol = true;
+			p.yCol = true;
+			if (p.getAni().hasPlayedOnce()) {
+				p.resetPosition();
+				p.setDx(0);
+				p.setDy(0);
+				p.setFallen(false);
+			}
+		}
+
 	}
 
 	public synchronized void addProjectile(int projectileGroupId, int projectileId, Vector2f src, Vector2f dest, short size,
