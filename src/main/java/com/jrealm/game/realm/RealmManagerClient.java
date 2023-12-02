@@ -163,35 +163,36 @@ public class RealmManagerClient implements Runnable {
 		}catch(Exception e) {
 			log.error("Failed to send MoveItem packet. Reason: {}", e);
 		}
-
 	}
 
 	public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
-		LoadPacket textPacket = (LoadPacket) packet;
+		LoadPacket loadPacket = (LoadPacket) packet;
 		try {
+//			log.info("[CLIENT] Recieved Load Packet \nPlayers: {}\nEnemies: {}\nBullets: {}\nLootContainers: {}",
+//					textPacket.getPlayers().length, textPacket.getEnemies().length, textPacket.getBullets().length,
+//					textPacket.getContainers().length);
 
-			for(Player p : textPacket.getPlayers()) {
+			for(Player p : loadPacket.getPlayers()) {
 				if(p.getId()==cli.getCurrentPlayerId()) {
 					continue;
 				}
 				cli.getRealm().addPlayerIfNotExists(p);
 			}
-			for(LootContainer lc : textPacket.getContainers()) {
+			for(LootContainer lc : loadPacket.getContainers()) {
 				if(lc.getContentsChanged()) {
 					LootContainer current = cli.getRealm().getLoot().get(lc.getLootContainerId());
 					current.setContentsChanged(true);
 					current.setItems(lc.getItems());
 				}else {
 					cli.getRealm().addLootContainerIfNotExists(lc);
-
 				}
 			}
 
-			for(Bullet b : textPacket.getBullets()) {
+			for(Bullet b : loadPacket.getBullets()) {
 				cli.getRealm().addBulletIfNotExists(b);
 			}
 
-			for(Enemy e : textPacket.getEnemies()) {
+			for(Enemy e : loadPacket.getEnemies()) {
 				cli.getRealm().addEnemyIfNotExists(e);
 			}
 		}catch(Exception e) {
@@ -200,29 +201,30 @@ public class RealmManagerClient implements Runnable {
 	}
 
 	public static void handleUnloadClient(RealmManagerClient cli, Packet packet) {
-		UnloadPacket textPacket = (UnloadPacket) packet;
+		UnloadPacket unloadPacket = (UnloadPacket) packet;
+		//log.info("[CLIENT] Recieved Unload Packet");
 		try {
 
-			for(Long p : textPacket.getPlayers()) {
+			for(Long p : unloadPacket.getPlayers()) {
 				if(p==cli.getCurrentPlayerId()) {
 					continue;
 				}
 				cli.getRealm().getPlayers().remove(p);
 			}
-			for(Long lc : textPacket.getContainers()) {
+			for(Long lc : unloadPacket.getContainers()) {
 				cli.getRealm().getLoot().remove(lc);
 			}
 
-			for(Long b : textPacket.getBullets()) {
+			for(Long b : unloadPacket.getBullets()) {
 				cli.getRealm().getBullets().remove(b);
 			}
 
-			for(Long e : textPacket.getEnemies()) {
+			for(Long e : unloadPacket.getEnemies()) {
 				cli.getRealm().getEnemies().remove(e);
 			}
 
 		}catch(Exception e) {
-			RealmManagerClient.log.error("Failed to handle Load Packet. Reason: {}", e);
+			RealmManagerClient.log.error("Failed to handle Unload Packet. Reason: {}", e);
 		}
 	}
 

@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.Arrays;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
@@ -117,5 +118,17 @@ public class UnloadPacket extends Packet{
 		}
 		
 		return new UnloadPacket(PacketType.UNLOAD.getPacketId(), byteStream.toByteArray());
-	}	
+	}
+	
+	public boolean equals(UnloadPacket other) {
+		boolean players = Arrays.equals(this.players, other.getPlayers());
+		boolean enemies = Arrays.equals(this.enemies, other.getEnemies());
+		boolean loot = Arrays.equals(this.containers, other.getContainers());
+		boolean bullets = Arrays.equals(this.bullets, other.getBullets());
+		
+		return players && enemies && loot && bullets;
+
+
+
+	}
 }

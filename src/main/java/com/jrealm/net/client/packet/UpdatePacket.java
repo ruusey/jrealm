@@ -165,4 +165,40 @@ public class UpdatePacket extends Packet {
 		}
 		return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
 	}
+	
+	public boolean equals(UpdatePacket other) {
+		boolean basic = this.playerId == other.getPlayerId() && this.playerName.equals(other.getPlayerName())
+				&& this.health == other.getHealth() && this.maxHealth == other.getMaxHealth()
+				&& this.mana == other.getMana() && this.maxMana == other.getMaxMana();
+		
+		boolean stats = this.stats.equals(other.getStats());
+		
+		boolean inv = true;
+		for(int i = 0; i< this.inventory.length; i++) {
+			if(this.inventory[i]!= null && other.getInventory()[i]!=null) {
+				if(this.inventory[i].equals(other.getInventory()[i])) {
+					continue;
+				}else {
+					inv=false;
+					break;
+				}
+			}else if(this.inventory[i]==null && other.getInventory()[i]==null) {
+				continue;
+			}else {
+				inv = false;
+				break;
+			}
+		}
+		
+		boolean effects = true;
+		for(int i = 0; i < this.effectIds.length ; i++) {
+			
+			if((this.effectIds[i]!=other.getEffectIds()[i]) || (this.effectTimes[i]!=other.getEffectTimes()[i])) {
+				effects=false;
+				break;
+			}
+		}
+				
+		return basic && stats && inv && effects;
+	}
 }

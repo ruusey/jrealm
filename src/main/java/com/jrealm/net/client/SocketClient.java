@@ -41,7 +41,7 @@ public class SocketClient implements Runnable {
 	private long lastUpdate = 0;
 	private long previousTime = 0;
 	private long lastDataTime = System.currentTimeMillis();
-
+	private long currentBytesRecieved = 0;
 	private volatile Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	
@@ -55,6 +55,7 @@ public class SocketClient implements Runnable {
 
 	@Override
 	public void run() {
+		this.startBandwidthMonitor();
 		//this.monitorLastReceived();
 		try {
 			this.doLogin();
@@ -99,6 +100,7 @@ public class SocketClient implements Runnable {
 						System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
 								this.remoteBufferIndex - packetLength);
 					}
+					this.currentBytesRecieved += packetLength;
 					this.remoteBufferIndex -= packetLength;
 					BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
 					newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
@@ -165,6 +167,23 @@ public class SocketClient implements Runnable {
 			}
 		};
 		WorkerThread.submitAndForkRun(monitorLastRecieved);
+	}
+	
+	public void startBandwidthMonitor() {
+		Runnable run = () ->{
+			while(!this.shutdown) {
+				try {
+					long bytesRead = this.currentBytesRecieved;
+					log.info("[CLIENT] current read rate = {}bytes/s", bytesRead);
+					this.currentBytesRecieved = 0;
+					Thread.sleep(1000);
+				}catch(Exception e) {
+					
+				}
+
+			}
+		};
+		WorkerThread.submitAndForkRun(run);
 	}
 
 	public static String getLocalAddr() throws Exception{

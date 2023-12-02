@@ -86,7 +86,9 @@ public class RealmManagerServer implements Runnable {
 	private List<Long> expiredEnemies;
 	private List<Long> expiredBullets;
 	private Map<String, Long> remoteAddresses = new HashMap<>();
-
+	private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
+	private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
+	private UnloadPacket lastUnload;
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 
 	public RealmManagerServer(Realm realm) {
@@ -197,15 +199,37 @@ public class RealmManagerServer implements Runnable {
 						.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
 
 				for (UpdatePacket packet : uPackets) {
-					this.enqueueServerPacket(packet);
+					if(this.playerUpdateState.get(player.getKey())==null) {
+						this.playerUpdateState.put(player.getKey(), packet);
+						this.enqueueServerPacket(packet);
+					}else {
+						UpdatePacket old = this.playerUpdateState.get(player.getKey());
+						if(!old.equals(packet)) {
+							this.playerUpdateState.put(player.getKey(), packet);
+							this.enqueueServerPacket(packet);
+						}
+					}
 				}
-
-				if(load !=null) {
+				if(this.playerLoadState.get(player.getKey())==null) {
+					this.playerLoadState.put(player.getKey(), load);
 					this.enqueueServerPacket(load);
-					
+				}else {
+					LoadPacket old = this.playerLoadState.get(player.getKey());
+					if(!old.equals(load)) {
+						this.playerLoadState.put(player.getKey(), load);
+						this.enqueueServerPacket(load);
+					}
 				}
 				if (unloadToBroadcast != null) {
-					this.enqueueServerPacket(unloadToBroadcast);
+					if(this.lastUnload==null) {
+						this.lastUnload = unloadToBroadcast;
+						this.enqueueServerPacket(unloadToBroadcast);
+					}else {
+						if(!this.lastUnload.equals(unloadToBroadcast)) {
+							this.lastUnload = unloadToBroadcast;
+							this.enqueueServerPacket(unloadToBroadcast);
+						}
+					}
 				}
 				if (mPacket != null) {
 					this.enqueueServerPacket(mPacket);
@@ -298,6 +322,7 @@ public class RealmManagerServer implements Runnable {
 
 			Runnable processGameObjects = () -> {
 				this.processBulletHit(p);
+				this.removeExpiredBullets();
 			};
 			// Rewrite this asap
 			Runnable checkAbilityUsage = () -> {
@@ -446,6 +471,21 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 		return results;
+	}
+	
+	public synchronized void removeExpiredBullets() {
+		List<Bullet> toRemove = new ArrayList<>();
+
+		for(Bullet b : this.realm.getBullets().values()) {
+			if(b.remove()) {
+				toRemove.add(b);
+			}
+		}
+		
+		toRemove.forEach(bullet -> {
+			this.expiredBullets.add(bullet.getId());
+			this.realm.removeBullet(bullet);
+		});
 	}
 
 	public synchronized void processBulletHit(Player p) {
@@ -631,8 +671,8 @@ public class RealmManagerServer implements Runnable {
 
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
 		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
-		RealmManagerServer.log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
-				heartbeatPacket.getTimestamp());
+//		RealmManagerServer.log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
+//				heartbeatPacket.getTimestamp());
 	}
 
 	public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {

@@ -124,14 +124,14 @@ public class PlayState extends GameState {
 			result.put(1, GameDataManager.GAME_ITEMS.get(152));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(5, GameDataManager.GAME_ITEMS.get(2));
+			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case ARCHER:
 			result.put(0, GameDataManager.GAME_ITEMS.get(17));
 			result.put(1, GameDataManager.GAME_ITEMS.get(154));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
 			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(5, GameDataManager.GAME_ITEMS.get(0));
+			result.put(4, GameDataManager.GAME_ITEMS.get(0));
 			break;
 		case WIZARD:
 			result.put(0, GameDataManager.GAME_ITEMS.get(121));

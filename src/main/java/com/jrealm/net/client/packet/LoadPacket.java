@@ -4,6 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -120,5 +124,22 @@ public class LoadPacket extends Packet {
 			e.write(stream);
 		}
 		return new LoadPacket(PacketType.LOAD.getPacketId(), byteStream.toByteArray());
+	}
+	
+	public boolean equals(LoadPacket other) {
+		List<Long> playerIdsThis = Stream.of(this.players).map(player->player.getId()).collect(Collectors.toList());
+		List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(player->player.getId()).collect(Collectors.toList());
+		
+		List<Long> lootIdsThis =Stream.of(this.containers).map(container->container.getLootContainerId()).collect(Collectors.toList());
+		List<Long> lootIdsOther =Stream.of(other.getContainers()).map(container->container.getLootContainerId()).collect(Collectors.toList());
+		
+		List<Long> enemyIdsThis =Stream.of(this.enemies).map(enemy->enemy.getId()).collect(Collectors.toList());
+		List<Long> enemyIdsOther =Stream.of(other.getEnemies()).map(enemy->enemy.getId()).collect(Collectors.toList());
+
+		List<Long> bulletIdsThis =Stream.of(this.bullets).map(bullet->bullet.getId()).collect(Collectors.toList());
+		List<Long> bulletIdsOther =Stream.of(other.getBullets()).map(bullet->bullet.getId()).collect(Collectors.toList());
+
+		return (playerIdsThis.equals(playerIdsOther) && lootIdsThis.equals(lootIdsOther) && enemyIdsThis.equals(enemyIdsOther) && bulletIdsThis.equals(bulletIdsOther));
+
 	}
 }
