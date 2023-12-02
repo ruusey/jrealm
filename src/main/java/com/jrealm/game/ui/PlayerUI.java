@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
-import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.SpriteSheet;
@@ -131,14 +130,16 @@ public class PlayerUI {
 			b.onMouseUp(event -> {
 				PlayerUI.DRAGGING_ITEM = false;
 				this.tooltips.clear();
-				if (this.overlapsEquipment(event)
-						&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
-					Slots currentEquip = this.inventory[item.getTargetSlot()];
-					this.playState.replaceLootContainerItemByUid(item.getUid(), currentEquip.getItem());
-					this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
-					this.setEquipment(this.getPlayState().getPlayer().getInventory());
-					this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
-				} else if (this.overlapsInventory(event)) {
+//				if (this.overlapsEquipment(event)
+//						&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
+//					Slots currentEquip = this.inventory[item.getTargetSlot()];
+//					this.playState.replaceLootContainerItemByUid(item.getUid(), currentEquip.getItem());
+//					this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
+//					this.setEquipment(this.getPlayState().getPlayer().getInventory());
+//					this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
+//				} else 
+					
+				if (this.overlapsInventory(event)) {
 					GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
 //					Slots groundLoot = this.groundLoot[actualIdx];
 					int idx = this.firstNullIdx(currentInv);
@@ -233,51 +234,11 @@ public class PlayerUI {
 
 			});
 
-			b.onMouseDown(event -> {
-				PlayerUI.DRAGGING_ITEM = true;
-				if (item.isConsumable()) {
-					try {
-						this.playState.getRealmManager().moveItem(-1, actualIdx, false, true);
-					}catch(Exception e) {
-						e.printStackTrace();
-					}
-
-					this.tooltips.remove(item.getUid());
-					PlayerUI.DRAGGING_ITEM = false;
-					this.tooltips.clear();
-				}
-			});
 			b.onRightClick(event->{
 				Slots dropped = this.getOverlapping(event);
 				if (dropped != null) {
 					int idx = this.getOverlapIdx(event);
 					this.playState.getRealmManager().moveItem(-1, idx, true, false);
-				}
-			});
-			b.onMouseUp(event -> {
-				PlayerUI.DRAGGING_ITEM = false;
-				if (this.overlapsEquipment(event)
-						&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
-					
-					this.playState.getRealmManager().moveItem(item.getTargetSlot(), actualIdx, false, false);
-				} 
-				else if (this.overlapsInventory(event)) {
-					Slots dropped = this.getOverlapping(event);
-					if (dropped != null) {
-						int idx = this.getOverlapIdx(event);
-//						GameItem swap = dropped.getItem().clone();
-//						dropped = null;
-						this.playState.getRealmManager().moveItem(idx, actualIdx, false, false);
-
-//						this.getPlayState().getPlayer().getInventory()[actualIdx] = swap;
-//						this.getPlayState().getPlayer().getInventory()[idx] = item;
-//						this.setEquipment(this.getPlayState().getPlayer().getInventory());
-//						this.setGroundLoot(this.groundLoot);
-					}
-
-				} 
-				else if (this.overlapsGround(event)) {
-					this.playState.getRealmManager().moveItem(-1, actualIdx, true, false);
 				}
 			});
 
@@ -301,6 +262,7 @@ public class PlayerUI {
 
 	}
 
+	@SuppressWarnings("unused")
 	private boolean overlapsEquipment(Vector2f pos) {
 		Slots[] equipSlots = this.getSlots(0, 4);
 		for (Slots s : equipSlots) {
@@ -312,7 +274,8 @@ public class PlayerUI {
 		}
 		return false;
 	}
-
+	
+	@SuppressWarnings("unused")
 	private boolean overlapsGround(Vector2f pos) {
 		final int panelWidth = (GamePanel.width / 5);
 		AABB currBounds = new AABB(new Vector2f(0, 0), GamePanel.width - panelWidth, GamePanel.height);

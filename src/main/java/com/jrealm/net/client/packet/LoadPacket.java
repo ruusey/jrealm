@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -139,6 +138,17 @@ public class LoadPacket extends Packet {
 		List<Long> bulletIdsThis =Stream.of(this.bullets).map(bullet->bullet.getId()).collect(Collectors.toList());
 		List<Long> bulletIdsOther =Stream.of(other.getBullets()).map(bullet->bullet.getId()).collect(Collectors.toList());
 
+		for(LootContainer c : this.containers) {
+			if(c.getContentsChanged()) {
+				return false;
+			}
+		}
+		
+		for(LootContainer c : other.getContainers()) {
+			if(c.getContentsChanged()) {
+				return false;
+			}
+		}
 		return (playerIdsThis.equals(playerIdsOther) && lootIdsThis.equals(lootIdsOther) && enemyIdsThis.equals(enemyIdsOther) && bulletIdsThis.equals(bulletIdsOther));
 
 	}
