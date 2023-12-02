@@ -126,21 +126,25 @@ public class ClientGameLogic {
 				if(playerToUpdate==null) {
 					break;
 				}
-				playerToUpdate.applyMovement(movement);
+				if(cli.getCurrentPlayerId()==movement.getEntityId()) {
+					playerToUpdate.applyMovement(movement);
+				}else {
+					playerToUpdate.applyMovementLerp(movement);
+				}
 				break;
 			case ENEMY:
 				Enemy enemyToUpdate = cli.getRealm().getEnemy(movement.getEntityId());
 				if(enemyToUpdate == null) {
 					break;
 				}
-				enemyToUpdate.applyMovement(movement);
+				enemyToUpdate.applyMovementLerp(movement);
 				break;
 			case BULLET:
 				Bullet bulletToUpdate = cli.getRealm().getBullet(movement.getEntityId());
 				if(bulletToUpdate==null) {
 					break;
 				}
-				bulletToUpdate.applyMovement(movement);
+				bulletToUpdate.applyMovementLerp(movement);
 				break;
 			default:
 				break;

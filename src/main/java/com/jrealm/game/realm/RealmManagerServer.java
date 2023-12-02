@@ -87,6 +87,8 @@ public class RealmManagerServer implements Runnable {
 
 	private List<Long> expiredEnemies;
 	private List<Long> expiredBullets;
+	private List<Long> expiredPlayers;
+
 	private Map<String, Long> remoteAddresses = new HashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
 	private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
@@ -99,6 +101,7 @@ public class RealmManagerServer implements Runnable {
 		this.server = new SocketServer(2222);
 		this.shotDestQueue = new ArrayList<>();
 		this.expiredEnemies = new ArrayList<>();
+		this.expiredPlayers = new ArrayList<>();
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap("tile/vault.xml", null);
@@ -176,7 +179,9 @@ public class RealmManagerServer implements Runnable {
 		}
 
 		for(String disconnectedClient : disconnectedClients) {
-			this.realm.getPlayers().remove(this.getRemoteAddresses().get(disconnectedClient));
+			Long dcPlayerId = this.getRemoteAddresses().get(disconnectedClient);
+			this.expiredPlayers.add(dcPlayerId);
+			this.realm.getPlayers().remove(dcPlayerId);
 			this.server.getClients().remove(disconnectedClient);
 		}
 	}
@@ -261,8 +266,10 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 			}else {
+				Long dcPlayerId = this.getRemoteAddresses().get(thread.getKey());
+				this.expiredPlayers.add(dcPlayerId);
 				this.server.getClients().remove(thread.getKey());
-				this.realm.removePlayer(this.remoteAddresses.get(thread.getKey()));
+				this.realm.removePlayer(dcPlayerId);
 			}
 		}
 	}
@@ -296,13 +303,15 @@ public class RealmManagerServer implements Runnable {
 	private UnloadPacket getUnloadPacket() throws Exception {
 		Long[] expiredBullets = this.expiredBullets.toArray(new Long[0]);
 		Long[] expiredEnemies = this.expiredEnemies.toArray(new Long[0]);
+		Long[] expiredPlayers = this.expiredPlayers.toArray(new Long[0]);
+		this.expiredPlayers.clear();
 		this.expiredBullets.clear();
 		this.expiredEnemies.clear();
 		List<Long> lootContainers = this.realm.getLoot().values().stream().filter(lc->lc.isExpired() || lc.isEmpty()).map(lc->lc.getLootContainerId()).collect(Collectors.toList());
 		for(Long lcId: lootContainers) {
 			this.realm.getLoot().remove(lcId);
 		}
-		return UnloadPacket.from(new Long[0], lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies);
+		return UnloadPacket.from(expiredPlayers, lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies);
 	}
 
 	private void registerPacketCallbacks() {
@@ -497,14 +506,16 @@ public class RealmManagerServer implements Runnable {
 
 	public synchronized void processBulletHit(Player p) {
 		List<Bullet> results = this.getBullets(p);
-		GameObject[] gameObject = this.realm.getGameObjectsInBounds(p.getCam().getBounds());
+		GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort(p));
 		Player player = this.realm.getPlayer(p.getId());
+		for (Bullet b : results) {
+			this.processPlayerHit(b, player);
+		}
 
 		for (int i = 0; i < gameObject.length; i++) {
 			if (gameObject[i] instanceof Enemy) {
 				Enemy enemy = ((Enemy) gameObject[i]);
 				for (Bullet b : results) {
-					this.processPlayerHit(b, player);
 					this.proccessEnemyHit(b, enemy);
 				}
 			}
@@ -522,7 +533,7 @@ public class RealmManagerServer implements Runnable {
 		Tile[] viewportTiles = null;
 		if (currentMap == null)
 			return;
-		viewportTiles = currentMap.getBlocksInBounds(p.getCam().getBounds());
+		viewportTiles = currentMap.getBlocksInBounds(this.getRealm().getTileManager().getRenderViewPort(p));
 		for (Bullet b : this.getBullets(p)) {
 			if (b.remove()) {
 				toRemove.add(b);
