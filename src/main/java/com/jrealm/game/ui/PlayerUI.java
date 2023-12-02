@@ -3,6 +3,7 @@ package com.jrealm.game.ui;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class PlayerUI {
 
 	private Map<String, ItemTooltip> tooltips;
 	private Graphics2D tempGraphics;
-
+	private long lastAction = Instant.now().toEpochMilli();
 	public PlayerUI(PlayState p) {
 		SpriteSheet bars = new SpriteSheet("ui/fillbars.png", 0);
 		BufferedImage[] barSpritesHp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 0, 7, 14),
@@ -139,7 +140,8 @@ public class PlayerUI {
 //					this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
 //				} else 
 					
-				if (this.overlapsInventory(event)) {
+				if (this.overlapsInventory(event) && this.canSwap()) {
+					this.setActionTime();
 					GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
 //					Slots groundLoot = this.groundLoot[actualIdx];
 					int idx = this.firstNullIdx(currentInv);
@@ -179,8 +181,10 @@ public class PlayerUI {
 						new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
 			});
 			b.onRightClick(event->{
+
 				Slots dropped = this.getOverlapping(event);
-				if (dropped != null) {
+				if (dropped != null && this.canSwap()) {
+					this.setActionTime();
 					int dropIndex = this.getOverlapIdx(event);
 					this.playState.getRealmManager().moveItem(-1, dropIndex, true, false);
 				}
@@ -236,7 +240,8 @@ public class PlayerUI {
 
 			b.onRightClick(event->{
 				Slots dropped = this.getOverlapping(event);
-				if (dropped != null) {
+				if (dropped != null && this.canSwap()) {
+					this.setActionTime();
 					int idx = this.getOverlapIdx(event);
 					this.playState.getRealmManager().moveItem(-1, idx, true, false);
 				}
@@ -348,6 +353,14 @@ public class PlayerUI {
 		}catch(Exception e) {
 			
 		}
+	}
+	
+	public boolean canSwap() {
+		return (Instant.now().toEpochMilli() - this.lastAction) > 1500;
+	}
+	
+	public void setActionTime() {
+		this.lastAction = Instant.now().toEpochMilli();
 	}
 
 	public boolean isEquipmentEmpty() {

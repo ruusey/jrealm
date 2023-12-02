@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -137,19 +139,84 @@ public class LoadPacket extends Packet {
 
 		List<Long> bulletIdsThis =Stream.of(this.bullets).map(bullet->bullet.getId()).collect(Collectors.toList());
 		List<Long> bulletIdsOther =Stream.of(other.getBullets()).map(bullet->bullet.getId()).collect(Collectors.toList());
+		
+		
+		boolean containersEq = true;
+		if(this.containers.length!=other.getContainers().length) {
+			containersEq = false;
+		}
+		
+		if(containersEq) {
+			for(int i = 0; i<this.containers.length; i++) {
+				if(!this.containers[i].equals(other.getContainers()[i])) {
+					containersEq = false;
+					break;
+				}
+			}
+		}
 
-		for(LootContainer c : this.containers) {
-			if(c.getContentsChanged()) {
-				return false;
+//		for(LootContainer c : this.containers) {
+//			if(c.getContentsChanged()) {
+//				return false;
+//			}
+//		}
+//		
+//		for(LootContainer c : other.getContainers()) {
+//			if(c.getContentsChanged()) {
+//				return false;
+//			}
+//		}
+		return (playerIdsThis.equals(playerIdsOther) && lootIdsThis.equals(lootIdsOther) && enemyIdsThis.equals(enemyIdsOther) && bulletIdsThis.equals(bulletIdsOther) && containersEq);
+
+	}
+	
+	public LoadPacket combine(LoadPacket other) throws Exception {
+		List<Long> playerIdsThis = Stream.of(this.players).map(player->player.getId()).collect(Collectors.toList());
+		List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(player->player.getId()).collect(Collectors.toList());
+		
+		List<Long> lootIdsThis =Stream.of(this.containers).map(container->container.getLootContainerId()).collect(Collectors.toList());
+		List<Long> lootIdsOther =Stream.of(other.getContainers()).map(container->container.getLootContainerId()).collect(Collectors.toList());
+		
+		List<Long> enemyIdsThis =Stream.of(this.enemies).map(enemy->enemy.getId()).collect(Collectors.toList());
+		List<Long> enemyIdsOther =Stream.of(other.getEnemies()).map(enemy->enemy.getId()).collect(Collectors.toList());
+
+		List<Long> bulletIdsThis =Stream.of(this.bullets).map(bullet->bullet.getId()).collect(Collectors.toList());
+		List<Long> bulletIdsOther =Stream.of(other.getBullets()).map(bullet->bullet.getId()).collect(Collectors.toList());
+		
+		List<Bullet> bullets = Arrays.asList(other.getBullets());
+		List<Player> players = Arrays.asList(other.getPlayers());
+		List<LootContainer> loot = Arrays.asList(other.getContainers());
+		List<Enemy> enemies = Arrays.asList(other.getEnemies());
+
+		List<Bullet> bulletsDiff = new ArrayList<>();
+		for(Bullet b : bullets) {
+			if(!bulletIdsThis.contains(b.getId())) {
+				bulletsDiff.add(b);
 			}
 		}
 		
-		for(LootContainer c : other.getContainers()) {
-			if(c.getContentsChanged()) {
-				return false;
+
+		List<Player> playersDiff = new ArrayList<>();
+		for(Player p : players) {
+			if(!playerIdsThis.contains(p.getId())) {
+				playersDiff.add(p);
 			}
 		}
-		return (playerIdsThis.equals(playerIdsOther) && lootIdsThis.equals(lootIdsOther) && enemyIdsThis.equals(enemyIdsOther) && bulletIdsThis.equals(bulletIdsOther));
-
+		
+		List<LootContainer> lootDiff = new ArrayList<>();
+		for(LootContainer p : loot) {
+			if(!lootIdsThis.contains(p.getLootContainerId()) || p.getContentsChanged()) {
+				lootDiff.add(p);
+			}
+		}
+		
+		List<Enemy> enemyDiff = new ArrayList<>();
+		for(Enemy e : enemies) {
+			if(!enemyIdsThis.contains(e.getId())) {
+				enemyDiff.add(e);
+			}
+		}
+		
+		return LoadPacket.from(playersDiff.toArray(new Player[0]), lootDiff.toArray(new LootContainer[0]), bulletsDiff.toArray(new Bullet[0]), enemyDiff.toArray(new Enemy[0]));
 	}
 }

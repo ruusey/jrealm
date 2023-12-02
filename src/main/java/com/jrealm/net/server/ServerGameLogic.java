@@ -27,7 +27,6 @@ import com.jrealm.game.util.Cardinality;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.server.packet.CommandPacket;
-import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
@@ -39,9 +38,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServerGameLogic {
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
-		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
-		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
-				heartbeatPacket.getTimestamp());
+//		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
+//		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
+//				heartbeatPacket.getTimestamp());
 	}
 
 	public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
@@ -73,7 +72,7 @@ public class ServerGameLogic {
 			toMove.setDx(0);
 			toMove.setDy(0);
 		}
-		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
+//		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
 	}
 
 	public static void handleUseAbilityServer(RealmManagerServer mgr, Packet packet) {
@@ -102,8 +101,8 @@ public class ServerGameLogic {
 					proj.getSize(), proj.getMagnitude(), proj.getRange(), rolledDamage, false, proj.getFlags(),
 					proj.getAmplitude(), proj.getFrequency());
 		}
-		log.info("[SERVER] Recieved PlayerShoot Packet For Player {}, BulletId: {}", shootPacket.getEntityId(),
-				shootPacket.getProjectileId());
+//		log.info("[SERVER] Recieved PlayerShoot Packet For Player {}, BulletId: {}", shootPacket.getEntityId(),
+//				shootPacket.getProjectileId());
 	}
 
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
@@ -157,7 +156,7 @@ public class ServerGameLogic {
 				if(nearLoot==null) {
 					mgr.getRealm().addLootContainer(new LootContainer(player.getPos().clone(), from.clone()));
 					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
-				}else {
+				}else if(nearLoot.getFirstNullIdx()>-1){
 					nearLoot.setItem(nearLoot.getFirstNullIdx(), from.clone());
 					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
 				}
@@ -205,15 +204,15 @@ public class ServerGameLogic {
 				GameItem currentInvItem = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
 				
 				if(lootItem!=null && currentInvItem == null) {
-					player.getInventory()[moveItemPacket.getTargetSlotIndex()] = lootItem.clone();
+					player.getInventory()[player.firstEmptyInvSlot()] = lootItem.clone();
 					nearLoot.setItem(moveItemPacket.getFromSlotIndex()-20, null);
-					nearLoot.setItems(LootContainer.getCondensedItems(nearLoot));
+					nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
 				}else if(lootItem != null & currentInvItem !=null) {
 					GameItem lootClone = lootItem.clone();
 					GameItem currentInvItemClone = currentInvItem.clone();
-					player.getInventory()[moveItemPacket.getTargetSlotIndex()] = lootClone;
-					nearLoot.setItem(moveItemPacket.getFromSlotIndex()-20, currentInvItemClone);
-					nearLoot.setItems(LootContainer.getCondensedItems(nearLoot));
+					player.getInventory()[player.firstEmptyInvSlot()] = lootClone;
+					//nearLoot.setItem(moveItemPacket.getFromSlotIndex()-20, currentInvItemClone);
+					nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
 				}
 			}
 			
@@ -221,7 +220,6 @@ public class ServerGameLogic {
 			log.error("Failed to handle MoveItem packet from Player {}. Reason: {}", moveItemPacket.getPlayerId(),
 					e);
 		}
-
 	}
 
 	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {

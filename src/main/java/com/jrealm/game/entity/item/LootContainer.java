@@ -82,6 +82,14 @@ public class LootContainer implements Streamable<LootContainer> {
 		this.items = items;
 		this.contentsChanged = true;
 	}
+	
+	public void setItemsUncondensed(GameItem[] items) {
+		this.items = new GameItem[8];
+		for(int i = 0 ; i<items.length; i++) {
+			this.items[i] = items[i];
+		}
+		this.contentsChanged = true;
+	}
 
 	public void setItem(int idx, GameItem replacement) {
 		this.items[idx] = replacement;
@@ -129,7 +137,7 @@ public class LootContainer implements Streamable<LootContainer> {
 		String uid = stream.readUTF();
 		boolean isChest = stream.readBoolean();
 		int itemsSize = stream.readInt();
-		GameItem[] items = new GameItem[itemsSize];
+		GameItem[] items = new GameItem[8];
 		for (int i = 0; i < itemsSize; i++) {
 			items[i] = new GameItem().read(stream);
 		}
@@ -158,6 +166,29 @@ public class LootContainer implements Streamable<LootContainer> {
 				items.add(item);
 			}
 		}
+//		while(items.size()<8) {
+//			items.add(null);
+//		}
 		return items.toArray(new GameItem[0]);
+	}
+	
+	
+	
+	public boolean equals(LootContainer other) {
+		GameItem[] thisLoot = getCondensedItems(this);
+		GameItem[] otherLoot = getCondensedItems(other);
+		boolean basic = this.lootContainerId == other.getLootContainerId()  && this.pos.equals(other.getPos());
+		boolean loot = thisLoot.length == otherLoot.length;
+
+		if(loot) {
+			for(int i = 0; i < thisLoot.length; i++) {
+				if(!thisLoot[i].equals(otherLoot[i])) {
+					loot = false;
+					break;
+				}
+			}
+		}
+
+		return basic && loot;
 	}
 }

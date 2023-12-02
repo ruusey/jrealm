@@ -217,8 +217,9 @@ public class RealmManagerServer implements Runnable {
 				}else {
 					LoadPacket old = this.playerLoadState.get(player.getKey());
 					if(!old.equals(load)) {
+						LoadPacket toSend = old.combine(load);
 						this.playerLoadState.put(player.getKey(), load);
-						this.enqueueServerPacket(load);
+						this.enqueueServerPacket(toSend);
 					}
 				}
 				if (unloadToBroadcast != null) {
@@ -294,7 +295,9 @@ public class RealmManagerServer implements Runnable {
 		this.expiredBullets.clear();
 		this.expiredEnemies.clear();
 		List<Long> lootContainers = this.realm.getLoot().values().stream().filter(lc->lc.isExpired() || lc.isEmpty()).map(lc->lc.getLootContainerId()).collect(Collectors.toList());
-		
+		for(Long lcId: lootContainers) {
+			this.realm.getLoot().remove(lcId);
+		}
 		return UnloadPacket.from(new Long[0], lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies);
 	}
 

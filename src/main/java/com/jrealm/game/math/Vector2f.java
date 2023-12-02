@@ -85,5 +85,9 @@ public class Vector2f {
 	public String toString() {
 		return this.x + ", " + this.y;
 	}
+	
+	public boolean equals(Vector2f other) {
+		return this.x == other.x && this.y == other.y;
+	}
 
 }

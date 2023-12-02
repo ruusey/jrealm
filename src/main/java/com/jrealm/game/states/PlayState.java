@@ -440,7 +440,6 @@ public class PlayState extends GameState {
 			if(this.pui!=null) {
 				this.pui.input(mouse, key);
 			}
-			if (!this.playerLocation.equals(PlayerLocation.REALM)) {
 				if (key.one.down) {
 					try {
 						GameItem from = this.getPlayer().getInventory()[4];
@@ -451,9 +450,6 @@ public class PlayState extends GameState {
 						PlayState.log.error("Failed to send test move item packet: {}", e);
 					}
 //					this.loadClass(CharacterClass.ARCHER, true);
-				}
-				if (key.zero.down) {
-					this.loadClass(CharacterClass.ROGUE, true);
 				}
 				if (key.two.down) {
 					try {
@@ -495,7 +491,7 @@ public class PlayState extends GameState {
 				if (key.six.down) {
 					this.loadClass(CharacterClass.PALLADIN, true);
 				}
-			}
+			
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);
 			this.cam.target(player);

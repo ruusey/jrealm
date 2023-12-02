@@ -70,7 +70,7 @@ public class SocketClient implements Runnable {
 			this.sendPackets();	
 		};
 		TimedWorkerThread readThread = new TimedWorkerThread(readPackets, 32);
-		TimedWorkerThread sendThread = new TimedWorkerThread(sendPackets, 20);
+		TimedWorkerThread sendThread = new TimedWorkerThread(sendPackets, 32);
 		sendThread.start();
 		readThread.start();
 }
@@ -174,7 +174,7 @@ public class SocketClient implements Runnable {
 			while(!this.shutdown) {
 				try {
 					long bytesRead = this.currentBytesRecieved;
-					log.info("[CLIENT] current read rate = {}bytes/s", bytesRead);
+					log.info("[CLIENT] current read rate = {} kbit/s", (float)(bytesRead/1024.0f) * 8.0f);
 					this.currentBytesRecieved = 0;
 					Thread.sleep(1000);
 				}catch(Exception e) {

@@ -316,7 +316,9 @@ public class Realm {
 			}
 			lc.setSprite(lootSprite.clone());
 			for(GameItem item : lc.getItems()) {
-				GameDataManager.loadSpriteModel(item);
+				if(item!=null) {
+					GameDataManager.loadSpriteModel(item);
+				}
 			}
 			this.loot.put(lc.getLootContainerId(), lc);
 		}
@@ -449,7 +451,16 @@ public class Realm {
 			//				}
 			//
 			//			}
-			final LootContainer[] containersToLoad = this.getLoot().values().toArray(new LootContainer[0]);
+			final List<LootContainer> containersToLoad = new ArrayList<>();
+
+			final LootContainer[] allContainers = this.getLoot().values().toArray(new LootContainer[0]);
+			for(LootContainer c : allContainers) {
+				final boolean inViewport = cam.inside((int)c.getPos().x, (int)c.getPos().y);
+				if(inViewport) {
+					containersToLoad.add(c);
+				}
+
+			}
 			final List<Bullet> bulletsToLoad = new ArrayList<>();
 
 			for(Bullet b : this.bullets.values()) {
@@ -468,7 +479,7 @@ public class Realm {
 				}
 			}
 
-			load = LoadPacket.from(playersToLoad, containersToLoad,
+			load = LoadPacket.from(playersToLoad, containersToLoad.toArray(new LootContainer[0]),
 					bulletsToLoad.toArray(new Bullet[0]), enemiesToLoad.toArray(new Enemy[0]));
 		} catch (Exception e) {
 			Realm.log.error("Failed to get load Packet. Reason: {}");

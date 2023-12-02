@@ -102,6 +102,15 @@ public class Player extends Entity implements Streamable<Player>{
 	private void resetInventory() {
 		this.inventory = new GameItem[20];
 	}
+	
+	public int firstEmptyInvSlot() {
+		for(int i = 4; i<this.inventory.length; i++) {
+			if(this.inventory[i]==null) {
+				return i;
+			}
+		}
+		return -1;
+	}
 
 	public boolean equipSlot(int slot, GameItem item) {
 		this.inventory[slot] = item;
