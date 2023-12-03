@@ -74,8 +74,8 @@ public abstract class GameObject {
 	}
 	
 	public void applyMovementLerp(ObjectMovement packet) {
-		final float lerpX = this.lerp(this.pos.x, packet.getPosX(), 0.50f);
-		final float lerpY = this.lerp(this.pos.y, packet.getPosY(), 0.50f);
+		final float lerpX = this.lerp(this.pos.x, packet.getPosX(), 0.65f);
+		final float lerpY = this.lerp(this.pos.y, packet.getPosY(), 0.65f);
 
 		this.pos = new Vector2f(lerpX, lerpY);
 		this.bounds = new AABB(this.pos, size, size);

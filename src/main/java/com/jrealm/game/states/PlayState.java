@@ -124,7 +124,7 @@ public class PlayState extends GameState {
 			result.put(0, GameDataManager.GAME_ITEMS.get(49));
 			result.put(1, GameDataManager.GAME_ITEMS.get(152));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
-			result.put(3, GameDataManager.GAME_ITEMS.get(56));
+			result.put(3, GameDataManager.GAME_ITEMS.get(48));
 			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case ARCHER:
@@ -328,8 +328,10 @@ public class PlayState extends GameState {
 
 	public synchronized void processBulletHit() {
 		List<Bullet> results = this.getBullets();
-		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.cam.getBounds());
-
+		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort(this.getPlayer()));
+		for (Bullet b : results) {
+			this.processPlayerHit(b, this.getPlayer());
+		}
 		for (int i = 0; i < gameObject.length; i++) {
 			if (gameObject[i] instanceof Enemy) {
 				Enemy enemy = ((Enemy) gameObject[i]);
@@ -337,6 +339,22 @@ public class PlayState extends GameState {
 					this.proccessEnemyHit(b, enemy);
 				}
 			}
+		}
+	}
+	
+	private synchronized void processPlayerHit(Bullet b, Player p) {
+		if (b.getBounds().collides(0, 0, p.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
+			Stats stats = p.getComputedStats();
+			b.setPlayerHit(true);
+			short minDmg = (short) (b.getDamage() * 0.15);
+			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
+			if (dmgToInflict < minDmg) {
+				dmgToInflict = minDmg;
+			}
+			Vector2f sourcePos = p.getPos();
+			DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
+					.sourcePos(sourcePos).build();
+			this.damageText.add(hitText);
 		}
 	}
 

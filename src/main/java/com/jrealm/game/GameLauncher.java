@@ -22,7 +22,6 @@ public class GameLauncher {
 	}
 
 	public static void main(String[] args) {
-
 		GameLauncher.log.info("Starting JRealm...");
 		GameDataManager.loadGameData();
 		if(GameLauncher.LOCAL_SERVER) {
