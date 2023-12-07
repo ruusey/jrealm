@@ -105,6 +105,7 @@ public class RealmManagerServer implements Runnable {
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap("tile/vault.xml", null);
+		this.addTestPlayer();
 	}
 
 	private void addTestPlayer() {
@@ -206,6 +207,7 @@ public class RealmManagerServer implements Runnable {
 						.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
 
 				for (UpdatePacket packet : uPackets) {
+					if(packet.getPlayerId()!=player.getKey()) continue;
 					if(this.playerUpdateState.get(player.getKey())==null) {
 						this.playerUpdateState.put(player.getKey(), packet);
 						this.enqueueServerPacket(packet);
