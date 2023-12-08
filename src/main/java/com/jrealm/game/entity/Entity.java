@@ -345,6 +345,24 @@ public abstract class Entity extends GameObject {
 	}
 
 	public void updateAnimation() {
+		if(this.dx>0) {
+			this.right=true;
+		}else if(this.dx<0) {
+			this.left=true;
+		}else {
+			this.right=false;
+			this.left=false;
+		}
+		
+		if(this.dy>0) {
+			this.down=true;
+		}else if(this.dy<0) {
+			this.up=true;
+		}else {
+			this.down=false;
+			this.up=false;
+		}
+		this.animate();
 		int animationSpeed = (int) ((this.getMaxSpeed() / 5) * 100);
 		this.ani.setDelay(animationSpeed);
 		this.ani.update();
