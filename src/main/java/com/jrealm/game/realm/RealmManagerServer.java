@@ -110,18 +110,32 @@ public class RealmManagerServer implements Runnable {
 
 	private void addTestPlayer() {
 		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		CharacterClass cls = CharacterClass.ARCHER;
+		CharacterClass cls = CharacterClass.KNIGHT;
 		Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
 				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 				GlobalConstants.PLAYER_SIZE, cls);
 		player.setName("Dingus");
 		player.equipSlots(PlayState.getStartingEquipment(cls));
-		player.setMaxSpeed(0.6f);
-		player.setDown(true);
-		player.setRight(true);
+		player.setMaxSpeed(0.4f);
+		player.setUp(true);
+		player.setLeft(true);
 		player.setHeadless(true);
 		long newId = this.getRealm().addPlayer(player);
+		
+		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+		cls = CharacterClass.PALLADIN;
+		player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
+				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+				GlobalConstants.PLAYER_SIZE, cls);
+		player.setName("Dingus2");
+		player.equipSlots(PlayState.getStartingEquipment(cls));
+		player.setMaxSpeed(0.3f);
+		player.setUp(true);
+		player.setRight(true);
+		player.setHeadless(true);
+		newId = this.getRealm().addPlayer(player);
 	}
 
 	@Override
