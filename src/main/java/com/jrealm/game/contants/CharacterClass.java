@@ -1,7 +1,10 @@
 package com.jrealm.game.contants;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.jrealm.game.entity.Player;
 
@@ -25,9 +28,14 @@ public enum CharacterClass {
 			CharacterClass.map.put(cc.classId, cc);
 		}
 	}
+
 	public int classId;
 	CharacterClass(int classId) {
 		this.classId = classId;
+	}
+
+	public static List<CharacterClass> getCharacterClasses() {
+		return Arrays.asList(CharacterClass.values()).stream().filter(c -> c.classId >= 0).collect(Collectors.toList());
 	}
 
 	public static boolean isRobeClass(CharacterClass c) {
