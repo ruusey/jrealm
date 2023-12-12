@@ -15,6 +15,7 @@ import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginResponseMessage;
 import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.util.Camera;
+import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
@@ -120,7 +121,9 @@ public class ClientGameLogic {
 	public static void handleObjectMoveClient(RealmManagerClient cli, Packet packet) {
 		ObjectMovePacket objectMovePacket = (ObjectMovePacket) packet;
 		for(ObjectMovement movement : objectMovePacket.getMovements()) {
-			switch(movement.getTargetEntityType()) {
+			EntityType type = movement.getTargetEntityType();
+			if(type==null) continue;
+			switch(type) {
 			case PLAYER:
 				Player playerToUpdate = cli.getRealm().getPlayer(movement.getEntityId());
 				if(playerToUpdate==null) {

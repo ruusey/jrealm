@@ -2,12 +2,14 @@ package com.jrealm.game.realm;
 
 import java.io.DataOutputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiConsumer;
@@ -94,65 +96,34 @@ public class RealmManagerServer implements Runnable {
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap("tile/vault.xml", null);
-		// this.addTestPlayer();
 	}
 
 	private void addTestPlayer() {
-		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		CharacterClass cls = CharacterClass.KNIGHT;
-		Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE, cls);
-		player.setName(UUID.randomUUID().toString().replaceAll("-", ""));
-		player.equipSlots(PlayState.getStartingEquipment(cls));
-		player.setMaxSpeed(0.4f);
-		player.setUp(true);
-		player.setLeft(true);
-		player.setHeadless(true);
-		long newId = this.getRealm().addPlayer(player);
-
-		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		cls = CharacterClass.PALLADIN;
-		player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE, cls);
-		player.setName(UUID.randomUUID().toString().replaceAll("-", ""));
-		player.equipSlots(PlayState.getStartingEquipment(cls));
-		player.setMaxSpeed(0.3f);
-		player.setUp(true);
-		player.setRight(true);
-		player.setHeadless(true);
-		newId = this.getRealm().addPlayer(player);
-
-		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		cls = CharacterClass.PRIEST;
-		player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE, cls);
-		player.setName(UUID.randomUUID().toString().replaceAll("-", ""));
-		player.equipSlots(PlayState.getStartingEquipment(cls));
-		player.setMaxSpeed(0.2f);
-		player.setDown(true);
-		player.setRight(true);
-		player.setHeadless(true);
-		newId = this.getRealm().addPlayer(player);
-
-		c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		cls = CharacterClass.WARRIOR;
-		player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE, cls);
-		player.setName(UUID.randomUUID().toString().replaceAll("-", ""));
-		player.equipSlots(PlayState.getStartingEquipment(cls));
-		player.setMaxSpeed(0.2f);
-		player.setDown(true);
-		player.setLeft(true);
-		player.setHeadless(true);
-		newId = this.getRealm().addPlayer(player);
+		Runnable spawnTestPlayers = ()-> {
+			final Random random = new Random(Instant.now().toEpochMilli());
+			for(int i = 0 ; i< CharacterClass.getCharacterClasses().size(); i++) {
+				final CharacterClass classToSpawn = CharacterClass.getCharacterClasses().get(i);
+				try {
+					Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+					Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(classToSpawn),
+							new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+									(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+							GlobalConstants.PLAYER_SIZE, classToSpawn);
+					player.setName(UUID.randomUUID().toString().replaceAll("-", ""));
+					player.equipSlots(PlayState.getStartingEquipment(classToSpawn));
+					player.setMaxSpeed(0.4f);
+					player.setUp(random.nextBoolean());
+					player.setLeft(random.nextBoolean());
+					player.setHeadless(true);
+					long newId = this.getRealm().addPlayer(player);
+					Thread.sleep(500);
+				}catch(Exception e) {
+					log.error("Failed to spawn test character of class type {}. Reason: {}", classToSpawn, e);
+				}
+			}		
+		};
+		
+		WorkerThread.submitAndForkRun(spawnTestPlayers);
 	}
 
 	@Override
@@ -166,6 +137,8 @@ public class RealmManagerServer implements Runnable {
 		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
+		this.addTestPlayer();
+
 	}
 
 	private void tick() {

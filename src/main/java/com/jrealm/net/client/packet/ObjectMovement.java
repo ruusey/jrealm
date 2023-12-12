@@ -42,7 +42,8 @@ public class ObjectMovement implements Streamable<ObjectMovement> {
 	}
 	
 	public EntityType getTargetEntityType() {
-		return EntityType.valueOf(entityType);
+		EntityType type = EntityType.valueOf(entityType);
+		return type;
 	}
 	
 	@Override
