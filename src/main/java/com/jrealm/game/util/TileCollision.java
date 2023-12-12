@@ -3,7 +3,6 @@ package com.jrealm.game.util;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.tiles.TileMapObj;
-import com.jrealm.game.tiles.blocks.HoleBlock;
 import com.jrealm.game.tiles.blocks.Tile;
 
 
@@ -35,7 +34,6 @@ public class TileCollision {
 		if(tiles != null) {
 			int xt;
 			int yt;
-
 			for(int c = 0; c < 4; c++) {
 
 				xt = (int) ((this.e.getPos().x + ax) + ((c % 2) * this.e.getBounds().getWidth())
@@ -53,38 +51,7 @@ public class TileCollision {
 				}
 			}
 		}
-
 		return false;
 	}
-
-	public int getTile() { return this.tileId; }
-
-	@SuppressWarnings("unused")
-	private boolean collisionHole(Tile[] tiles, float ax, float ay, float xt, float yt, Tile block) {
-		int nextXt = (int) ((((this.e.getPos().x + ax) + this.e.getBounds().getXOffset()) / GlobalConstants.BASE_SIZE)
-				+ (this.e.getBounds().getWidth() / GlobalConstants.BASE_SIZE));
-		int nextYt = (int) ((((this.e.getPos().y + ay) + this.e.getBounds().getYOffset()) / GlobalConstants.BASE_SIZE)
-				+ (this.e.getBounds().getHeight() / GlobalConstants.BASE_SIZE));
-
-		if(block.isInside(this.e.getBounds())) {
-			this.e.setFallen(true);
-			return false;
-		}
-		if((nextXt == (yt + 1)) || (nextXt == (xt + 1)) || (nextYt == (yt - 1)) || (nextXt == (xt - 1))) {
-			if (tiles[nextXt + (nextYt * TileMapObj.height)] instanceof HoleBlock) {
-				Tile nextblock = tiles[nextXt + (nextYt * TileMapObj.height)];
-
-				if(((this.e.getPos().x + this.e.getBounds().getXOffset()) > block.getPos().x)
-						&& ((this.e.getPos().y + this.e.getBounds().getYOffset()) > block.getPos().y)
-						&& ((nextblock.getWidth() + nextblock.getPos().x) > (this.e.getBounds().getWidth() + (this.e.getPos().x + this.e.getBounds().getXOffset())))
-						&& ((nextblock.getHeight() + nextblock.getPos().y) > (this.e.getBounds().getHeight() + (this.e.getPos().y + this.e.getBounds().getYOffset())))) {
-					this.e.setFallen(true);
-				}
-				return false;
-			}
-		}
-
-		this.e.setFallen(false);
-		return false;
-	}
+	public int getTile() { return this.tileId; }	
 }

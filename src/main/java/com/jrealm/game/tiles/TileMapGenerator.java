@@ -28,7 +28,7 @@ public class TileMapGenerator {
 	private int[] grass = {52, 53, 54};
 	private int[] dirt = {46, 47, 48};
 
-	private Tile[] tiles = { new Tile(0.6f, 35, this.grass), new Tile(1f, 29, this.dirt) }; // change this later?
+	private TileData[] tiles = { new TileData(0.6f, 35, this.grass), new TileData(1f, 29, this.dirt) }; // change this later?
 
 	public TileMapGenerator(int chuckSize, int tileSize, MaterialManager... mm) {
 		this.materialManagers = Arrays.asList(mm);
@@ -103,41 +103,5 @@ public class TileMapGenerator {
 		}
 
 		return data;
-	}
-}
-
-
-
-class Tile {
-	public float rarity;
-	public int spriteIndex;
-	public int[] vary;
-	// public can generate materials?
-	// public max materials?
-	// public number of materials?
-
-	public Tile(float rarity, int spriteIndex) {
-		this.rarity = rarity;
-		this.spriteIndex = spriteIndex;
-
-		// check if materials can be generated
-		// random number of materials based on max amount
-	}
-
-	public Tile(float rarity, int spriteIndex, int[] vary) {
-		this.rarity = rarity;
-		this.spriteIndex = spriteIndex;
-		this.vary = vary;
-
-		// check if materials can be generated
-		// random number of materials based on max amount
-	}
-
-	public int generate() {
-		double random = Math.random();
-		if((this.vary != null) && (random > 0.9))
-			return this.vary[((int) (random * 100)) % (this.vary.length )];
-
-		return this.spriteIndex;
 	}
 }
