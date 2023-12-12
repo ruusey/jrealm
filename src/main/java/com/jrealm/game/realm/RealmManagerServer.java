@@ -102,7 +102,7 @@ public class RealmManagerServer implements Runnable {
 	private void addTestPlayer() {
 		Runnable spawnTestPlayers = ()-> {
 			final Random random = new Random(Instant.now().toEpochMilli());
-			for(int i = 0 ; i< CharacterClass.getCharacterClasses().size(); i++) {
+			for(int i = 0 ; i < CharacterClass.getCharacterClasses().size(); i++) {
 				final CharacterClass classToSpawn = CharacterClass.getCharacterClasses().get(i);
 				try {
 					Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
@@ -112,7 +112,7 @@ public class RealmManagerServer implements Runnable {
 							GlobalConstants.PLAYER_SIZE, classToSpawn);
 					player.setName(UUID.randomUUID().toString().replaceAll("-", ""));
 					player.equipSlots(PlayState.getStartingEquipment(classToSpawn));
-					player.setMaxSpeed(random.nextFloat());
+					player.setMaxSpeed(random.nextFloat()/2);
 					
 					boolean up = random.nextBoolean();
 					boolean right = random.nextBoolean();
