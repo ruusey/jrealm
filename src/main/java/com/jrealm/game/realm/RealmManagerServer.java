@@ -97,7 +97,8 @@ public class RealmManagerServer implements Runnable {
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap("tile/vault.xml", null);
 	}
-
+	// Adds a headless player for each of CharacterClass in available classes
+	// Will wait briefly after adding each player to avoid client buffer overflow.
 	private void addTestPlayer() {
 		Runnable spawnTestPlayers = ()-> {
 			final Random random = new Random(Instant.now().toEpochMilli());
@@ -111,9 +112,22 @@ public class RealmManagerServer implements Runnable {
 							GlobalConstants.PLAYER_SIZE, classToSpawn);
 					player.setName(UUID.randomUUID().toString().replaceAll("-", ""));
 					player.equipSlots(PlayState.getStartingEquipment(classToSpawn));
-					player.setMaxSpeed(0.4f);
-					player.setUp(random.nextBoolean());
-					player.setLeft(random.nextBoolean());
+					player.setMaxSpeed(random.nextFloat());
+					
+					boolean up = random.nextBoolean();
+					boolean right = random.nextBoolean();
+
+					if(up) {
+						player.setUp(true);
+					}else {
+						player.setDown(true);
+					}
+					if(right) {
+						player.setRight(true);
+					}else {
+						player.setLeft(true);
+					}
+					
 					player.setHeadless(true);
 					long newId = this.getRealm().addPlayer(player);
 					Thread.sleep(500);
@@ -122,7 +136,7 @@ public class RealmManagerServer implements Runnable {
 				}
 			}		
 		};
-		
+		// Run this in a completely separate thread
 		WorkerThread.submitAndForkRun(spawnTestPlayers);
 	}
 
@@ -138,7 +152,6 @@ public class RealmManagerServer implements Runnable {
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
 		this.addTestPlayer();
-
 	}
 
 	private void tick() {
