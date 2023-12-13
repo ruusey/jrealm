@@ -1,0 +1,43 @@
+[
+	{
+		"tileId": 0,
+		"name": "Void_Tile",
+		"spriteKey": "tile/rotmg-tiles-all.png",
+		"row": 16,
+		"col": 15,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 0,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 1,
+		"name": "Nexus_Tile_0",
+		"spriteKey": "tile/rotmg-tiles-all.png",
+		"row": 5,
+		"col": 7,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 0,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	
+	{
+		"tileId": 2,
+		"name": "Dark_Brick_Wall_0",
+		"spriteKey": "tile/rotmg-tiles-all.png",
+		"row": 2,
+		"col": 9,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	}
+]
+

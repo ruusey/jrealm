@@ -1,234 +1,131 @@
 package com.jrealm.game.tiles;
 
 import java.awt.Graphics2D;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
 import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.entity.material.MaterialManager;
-import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.MapModel;
 import com.jrealm.game.tiles.blocks.Tile;
+import com.jrealm.game.tiles.blocks.TileData;
 import com.jrealm.game.util.Camera;
 
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
 @Data
-@Slf4j
 public class TileManager {
 
-	public volatile ArrayList<TileMap> tm;
-	private SpriteSheet spritesheet;
-	private int blockWidth;
-	private int blockHeight;
+	private List<TileMap> mapLayers;
 
-	private List<MaterialManager> materialManagers;
-	private int width;
-	private int height;
-
-	private String genMap;
-	private String solid;
-	private int chuckSize;
-	private String file;
-	private int columns;
-
-	private Camera playerCam;
-
-	public TileManager() {
-		this.tm = new ArrayList<>();
-	}
-
-	public TileManager(String path, Camera playerCam) {
-		this(path, GlobalConstants.BASE_TILE_SIZE, GlobalConstants.BASE_TILE_SIZE, playerCam);
-	}
-
-	public TileManager(String path, int blockWidth, int blockHeight, Camera playerCam) {
-		this.tm = new ArrayList<>();
-
-		this.playerCam = playerCam;
-		this.blockWidth = blockWidth;
-		this.blockHeight = blockHeight;
-		this.addTileMap(path, blockWidth, blockHeight);
-	}
-
-	public TileManager(SpriteSheet spritesheet, int chuckSize, Camera playerCam, MaterialManager... mm) {
-		this(spritesheet, GlobalConstants.BASE_TILE_SIZE, GlobalConstants.BASE_TILE_SIZE, chuckSize, playerCam, mm);
-	}
-
-	public TileManager(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize, Camera playerCam,
-			MaterialManager... mm) {
-		this.tm = new ArrayList<>();
-		this.playerCam = playerCam;
-		this.blockWidth = blockWidth;
-		this.blockHeight = blockHeight;
-		this.chuckSize = chuckSize;
-		this.spritesheet = spritesheet;
-		this.materialManagers = Arrays.asList(mm);
-		this.addTileMap(spritesheet, blockWidth, blockHeight, chuckSize, Arrays.asList(mm));
-		System.gc();
-	}
-
-	public String getGenMap() {
-		return this.genMap;
-	}
-
-	public String getSolid() {
-		return this.solid;
-	}
-
-	public int getChunkSize() {
-		return this.chuckSize;
-	}
-
-	public int getBlockWidth() {
-		return this.blockWidth;
-	}
-
-	public int getBlockHeight() {
-		return this.blockHeight;
-	}
-
-	public String getFilename() {
-		return this.file;
-	}
-
-	public int getColumns() {
-		return this.columns;
-	}
-
-	public void generateTileMap(int chuckSize) {
-		this.addTileMap(this.spritesheet, this.blockWidth, this.blockHeight, chuckSize, this.materialManagers);
-	}
-
-	private void addTileMap(SpriteSheet spritesheet, int blockWidth, int blockHeight, int chuckSize,
-			List<MaterialManager> matManagers) {
-		this.materialManagers = matManagers;
-		this.spritesheet = spritesheet;
-		this.blockWidth = blockWidth;
-		this.blockHeight = blockHeight;
-		this.width = chuckSize;
-		this.height = chuckSize;
-		this.file = spritesheet.getFilename();
-		this.columns = spritesheet.getCols();
-		this.playerCam.setTileSize(blockWidth);
-
-		String[] data = new String[3];
-		TileMapGenerator tmg = new TileMapGenerator(chuckSize, blockWidth, this.materialManagers.get(0));
-
-		data[0] = "";
-
-		for (int i = 0; i < chuckSize; i++) {
-			for (int j = 0; j < chuckSize; j++) {
-				data[0] += "0,";
-			}
-		}
-
-		this.tm.add(new TileMapObj(data[0], spritesheet, chuckSize, chuckSize, blockWidth));
+	public TileManager(int mapId) {
+		MapModel model = GameDataManager.MAPS.get(mapId);
+		this.mapLayers = this.getLayersFromData(model);
 		
-		this.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth));
-		this.playerCam.setLimit(chuckSize * blockWidth, chuckSize * blockHeight);
-		this.solid = data[0];
-		this.genMap = tmg.base;
 	}
+	
+	private List<TileMap> getLayersFromData(MapModel model) {
+		int[][] data = model.getData();
+		TileMap baseLayer = new TileMap((short)model.getMapId(), model.getTileSize(), model.getWidth(), model.getHeight());
+		TileMap collisionLayer = new TileMap((short)model.getMapId(), model.getTileSize(), model.getWidth(), model.getHeight());
 
-	private void addTileMap(String path, int blockWidth, int blockHeight) {
-		String imagePath;
-		this.playerCam.setTileSize(blockWidth);
-		int width = 0;
-		int height = 0;
-		int tileWidth;
-		int tileHeight;
-		int tileColumns;
-		int layers = 0;
-		SpriteSheet sprite;
-		String[] data = new String[10];
-		try {
-			InputStream inputStream = TileManager.class.getClassLoader().getResourceAsStream(path);
-			String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-			DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+		for(int i = 0; i< data.length; i++) {
+			for(int j = 0; j<data[i].length; j++) {
+				int tileIdToCreate = data[i][j];
+				TileData tileData = GameDataManager.TILES.get(tileIdToCreate).getData();
+				if(tileData.hasCollision()) {
+					collisionLayer.setBlockAt(i, j, (short)data[i][j], GameDataManager.TILES.get(tileIdToCreate).getData());
+					//Add a 'void' tile underneath the 
+					baseLayer.setBlockAt(i, j, (short)0, GameDataManager.TILES.get(0).getData());
 
-			Document doc = db.parse(new InputSource(new StringReader(text)));
-			doc.getDocumentElement().normalize();
+				}else {
+					baseLayer.setBlockAt(i, j, (short)data[i][j], GameDataManager.TILES.get(tileIdToCreate).getData());
+					collisionLayer.setBlockAt(i, j, (short)0, GameDataManager.TILES.get(0).getData());
 
-			NodeList list = doc.getElementsByTagName("tileset");
-			Node node = list.item(0);
-			Element eElement = (Element) node;
-
-			imagePath = eElement.getAttribute("name");
-			tileWidth = Integer.parseInt(eElement.getAttribute("tilewidth"));
-			tileHeight = Integer.parseInt(eElement.getAttribute("tileheight"));
-			tileColumns = Integer.parseInt(eElement.getAttribute("columns"));
-
-			this.columns = tileColumns;
-			this.file = imagePath;
-			sprite = new SpriteSheet("tile/" + imagePath + ".png", tileWidth, tileHeight, 0);
-
-			list = doc.getElementsByTagName("layer");
-			layers = list.getLength();
-
-			for (int i = 0; i < layers; i++) {
-				node = list.item(i);
-				eElement = (Element) node;
-				if (i <= 0) {
-					width = Integer.parseInt(eElement.getAttribute("width"));
-					height = Integer.parseInt(eElement.getAttribute("height"));
-				}
-
-				data[i] = eElement.getElementsByTagName("data").item(0).getTextContent();
-
-				if (i == 0) {
-					this.tm.add(new TileMapNorm(data[i], sprite, width, height, blockWidth));
-				} else {
-					this.tm.add(new TileMapObj(data[i], sprite, width, height, blockWidth));
+				
 				}
 			}
-			this.playerCam.setLimit(width * blockWidth, height * blockHeight);
-
-		} catch (Exception e) {
-			log.error("TILEMANAGER: can not read tilemap: {}", e);
-			System.exit(0);
 		}
+		return Arrays.asList(baseLayer, collisionLayer);
 
-		this.width = width;
-		this.height = height;
 	}
 
 	public synchronized Tile[] getNormalTile(Vector2f pos) {
-		int normMap = 0;
-
-		Tile[] block = new Tile[100];
+		Tile[] block = new Tile[144];
+		Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE, pos.y / GlobalConstants.BASE_TILE_SIZE);
 
 		int i = 0;
-		for (int x = (int) (pos.x - 5); x > (pos.x + 5); x++) {
-			for (int y = (int) (pos.y - 5); y > (int) (pos.y + 5); y++) {
+		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
+			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
 				if ((x != pos.x) || (y != pos.y)) {
-					block[i] = (Tile) this.tm.get(normMap).getBlocks()[(y + (x * this.height))];
+					block[i] = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
 					i++;
 				}
 			}
+//			if(i==100) {
+//				break;
+//			}
 		}
 		return block;
 	}
+	
+	public synchronized Tile[] getCollisionTile(Vector2f pos) {
+		Tile[] block = new Tile[144];
+		Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE, pos.y / GlobalConstants.BASE_TILE_SIZE);
+		int i = 0;
+		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
+			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
+				//if ((x != pos.x) || (y != pos.y)) {
+					block[i] = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
+					i++;
+				//}
+			}
+//			if(i==100) {
+//				break;
+//			}
+		}
+		return block;
+	}
+	
+	public TileMap getCollisionLayer() {
+		return this.mapLayers.get(this.mapLayers.size()-1);
+	}
+	
+	public TileMap getBaseLayer() {
+		return this.mapLayers.get(0);
+	}
+	
+	public boolean collisionTile(Entity e, float ax, float ay) {
+//		for (int c = 0; c < 4; c++) {
+//			xt = (int) ((e.getPos().x + ax) + ((c % 2) * e.getBounds().getWidth()) + e.getBounds().getXOffset())
+//					/ GlobalConstants.BASE_SIZE;
+//			yt = (int) ((e.getPos().y + ay) + ((c / 2) * e.getBounds().getHeight()) + e.getBounds().getYOffset())
+//					/ GlobalConstants.BASE_SIZE;
+//			if ((xt <= 0) || (yt <= 0) || ((xt + (yt * this.getHeight())) < 0)
+//					|| ((xt + (yt * this.getHeight())) > ((this.getHeight() * this.getWidth()) - 2)))
+//				return true;
+//
+//		}
+		
+		for(Tile t : this.getCollisionTile(e.getPos())) {
+			if(t==null || t.isVoid()) continue;
+			AABB tileBounds = new AABB(t.getPos(), t.getWidth(), t.getHeight());
+			if(e.getBounds().intersect(tileBounds)) {
+				return true;
+			}
+		}
 
-	public AABB getRenderViewPort() {
+		return false;
+	}
+
+	public AABB getRenderViewPort(Camera cam) {
 		return new AABB(
-				this.playerCam.getTarget().getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
+				cam.getTarget().getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
 						-(6 * GlobalConstants.BASE_TILE_SIZE)),
 				(12 * GlobalConstants.BASE_TILE_SIZE), (12 * GlobalConstants.BASE_TILE_SIZE));
 
@@ -242,12 +139,22 @@ public class TileManager {
 
 	}
 
-	public void render(Graphics2D g) {
-		if (this.playerCam == null)
-			return;
-		AABB bounds = new AABB(this.playerCam.getTarget().getPos().clone(-132, -132), 312, 312);
-		for (int i = 0; i < this.tm.size(); i++) {
-			this.tm.get(i).render(g, bounds);
+	public void render(Player player, Graphics2D g) {
+		
+		for(Tile tile : this.getNormalTile(player.getPos())) {
+			if(tile==null) continue;
+			tile.render(g);
 		}
+		
+		for(Tile tile : this.getCollisionTile(player.getPos())){
+			if(tile==null) continue;
+
+			if(!tile.isVoid()) {
+				tile.render(g);
+			}
+		}
+//		for (int i = 0; i < this.mapLayers.size(); i++) {
+//			this.mapLayers.get(i).render(g, bounds);
+//		}
 	}
 }

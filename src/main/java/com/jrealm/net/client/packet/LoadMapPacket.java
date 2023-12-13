@@ -22,10 +22,10 @@ public class LoadMapPacket extends Packet {
 
 	private long playerId;
 	private String mapKey;
-	private short tileSize;
-	private short width;
-	private short height;
-	private Tile[] tiles;
+//	private short tileSize;
+//	private short width;
+//	private short height;
+//	private Tile[] tiles;
 
 
 	public LoadMapPacket() {
@@ -50,16 +50,16 @@ public class LoadMapPacket extends Packet {
 		
 		this.playerId = dis.readLong();
 		this.mapKey = dis.readUTF();
-		this.tileSize = dis.readShort();
-		this.width = dis.readShort();
-		this.height = dis.readShort();
-		
-		short tilesSize = dis.readShort();
-		this.tiles = new Tile[tilesSize];
-		
-		for(int i = 0; i < tilesSize; i++) {
-			this.tiles[i] = new Tile().read(dis);
-		}
+//		this.tileSize = dis.readShort();
+//		this.width = dis.readShort();
+//		this.height = dis.readShort();
+//		
+//		short tilesSize = dis.readShort();
+//		this.tiles = new Tile[tilesSize];
+//		
+//		for(int i = 0; i < tilesSize; i++) {
+//			this.tiles[i] = new Tile().read(dis);
+//		}
 
 	}
 
@@ -71,16 +71,16 @@ public class LoadMapPacket extends Packet {
 		this.addHeader(stream);
 		stream.writeLong(this.playerId);
 		stream.writeUTF(this.mapKey);
-		stream.writeShort(this.tileSize);
-		stream.writeShort(this.width);
-		stream.writeShort(this.height);
-		
-		short tilesSize = this.tiles != null ?  (short) this.tiles.length : (short) 0;
-		stream.writeShort(tilesSize);
-		
-		for(Tile tile : this.tiles) {
-			tile.write(stream);
-		}
+//		stream.writeShort(this.tileSize);
+//		stream.writeShort(this.width);
+//		stream.writeShort(this.height);
+//		
+//		short tilesSize = this.tiles != null ?  (short) this.tiles.length : (short) 0;
+//		stream.writeShort(tilesSize);
+//		
+//		for(Tile tile : this.tiles) {
+//			tile.write(stream);
+//		}
 	}
 
 	public static LoadMapPacket from(Player player, String mapKey) throws Exception {
@@ -101,7 +101,7 @@ public class LoadMapPacket extends Packet {
 
 		stream.writeLong(player.getId());
 		stream.writeUTF(mapKey);
-		stream.writeShort(map.getTileSize());
+		//stream.writeShort(map.getTileSize());
 
 		return new LoadMapPacket(PacketType.LOAD_MAP.getPacketId(), byteStream.toByteArray());
 	}

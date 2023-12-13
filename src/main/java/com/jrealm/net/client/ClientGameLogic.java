@@ -174,6 +174,8 @@ public class ClientGameLogic {
 								(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 						GlobalConstants.PLAYER_SIZE, cls);
 				log.info("Login succesful, added Player ID {}", player.getId());
+				player.getCam().target(player);
+
 				cli.getState().loadClass(player, cls, true);
 				cli.setCurrentPlayerId(player.getId());
 				cli.getState().setPlayerId(player.getId());

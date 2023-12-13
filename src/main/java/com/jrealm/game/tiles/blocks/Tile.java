@@ -4,6 +4,7 @@ import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
@@ -38,6 +39,7 @@ public class Tile implements Streamable<Tile> {
 		this.size = size;
 		this.data = data;
 		this.discovered = discovered;
+		this.img = GameDataManager.getSubSprite(GameDataManager.TILES.get((int)this.tileId), 8);
 	}
 
 	public boolean update(AABB bounds) {
@@ -54,6 +56,10 @@ public class Tile implements Streamable<Tile> {
 
 	public Vector2f getPos() {
 		return this.pos;
+	}
+	
+	public boolean isVoid() {
+		return this.tileId == 0;
 	}
 
 	public void render(Graphics2D g) {

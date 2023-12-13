@@ -18,7 +18,6 @@ import com.jrealm.game.contants.PlayerLocation;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
-import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.Chest;
@@ -33,7 +32,7 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
-import com.jrealm.game.tiles.TileMapObj;
+import com.jrealm.game.tiles.TileMap;
 import com.jrealm.game.ui.DamageText;
 import com.jrealm.game.ui.PlayerUI;
 import com.jrealm.game.ui.TextEffect;
@@ -197,7 +196,6 @@ public class PlayState extends GameState {
 					this.gsm.add(GameStateManager.GAMEOVER);
 					this.gsm.pop(GameStateManager.PLAY);
 				}
-
 				Runnable monitorDamageText = () -> {
 					List<DamageText> toRemove = new ArrayList<>();
 					for (DamageText text : this.getDamageText()) {
@@ -254,22 +252,22 @@ public class PlayState extends GameState {
 	private void movePlayer(Player p) {
 		if (!p.isFallen()) {
 			p.move();
-			TileMapObj tileMap = (TileMapObj) this.getRealmManager().getRealm().getTileManager().getTm().get(1);
-			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), p.getDx(), 0)) {
-				p.getPos().x += p.getDx();
-				p.xCol = false;
-			} else {
-				p.xCol = true;
-			}
-			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), 0, p.getDy())) {
-				p.getPos().y += p.getDy();
-				p.yCol = false;
-			} else {
-				p.yCol = true;
-			}
-
-			p.getTc().normalTile(tileMap, p.getDx(), 0);
-			p.getTc().normalTile(tileMap, 0, p.getDy());
+			TileMap tileMap = this.getRealmManager().getRealm().getTileManager().getMapLayers().get(1);
+//			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), p.getDx(), 0)) {
+//				p.getPos().x += p.getDx();
+//				p.xCol = false;
+//			} else {
+//				p.xCol = true;
+//			}
+//			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), 0, p.getDy())) {
+//				p.getPos().y += p.getDy();
+//				p.yCol = false;
+//			} else {
+//				p.yCol = true;
+//			}
+//
+//			p.getTc().normalTile(tileMap, p.getDx(), 0);
+//			p.getTc().normalTile(tileMap, 0, p.getDy());
 
 		} else {
 			p.xCol = true;
@@ -377,7 +375,7 @@ public class PlayState extends GameState {
 
 	private List<Bullet> getBullets() {
 
-		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort());
+		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort(this.getPlayer()));
 
 		List<Bullet> results = new ArrayList<>();
 		for (int i = 0; i < gameObject.length; i++) {
@@ -673,7 +671,7 @@ public class PlayState extends GameState {
 	public void render(Graphics2D g) {
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if(player==null) return;
-		this.realmManager.getRealm().getTileManager().render(g);
+		this.realmManager.getRealm().getTileManager().render(player, g);
 
 		for(Player p : this.realmManager.getRealm().getPlayers().values()) {
 			p.render(g);
@@ -685,7 +683,7 @@ public class PlayState extends GameState {
 		// this.getPlayerPos().y * 0.5f),
 		// (int) 32 * 8, (int) 32 * 8);
 
-		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort());
+		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort(player));
 
 		for (int i = 0; i < gameObject.length; i++) {
 			GameObject toRender = gameObject[i];
@@ -720,7 +718,7 @@ public class PlayState extends GameState {
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if (player == null)
 			return;
-		AABB renderBounds = this.realmManager.getRealm().getTileManager().getRenderViewPort();
+		AABB renderBounds = this.realmManager.getRealm().getTileManager().getRenderViewPort(player);
 		LootContainer closeLoot = null;
 		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
 			if ((lc instanceof Chest) && this.playerLocation.equals(PlayerLocation.REALM)) {

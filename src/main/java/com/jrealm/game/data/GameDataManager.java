@@ -13,9 +13,11 @@ import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.model.EnemyModel;
+import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.SpriteModel;
+import com.jrealm.game.model.TileModel;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,12 +29,43 @@ public class GameDataManager {
 	public static Map<Integer, GameItem> GAME_ITEMS = null;
 	public static Map<Integer, EnemyModel> ENEMIES = null;
 	public static Map<String, SpriteSheet> SPRITE_SHEETS = null;
+	public static Map<Integer, TileModel> TILES = null;
+	public static Map<Integer, MapModel> MAPS = null;
+
 
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "material/trees.png", "tile/overworldOP.png",
 			"entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png",
-			"entity/rotmg-abilities.png", "tile/rotmg-tiles.png" };
+			"entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png" };
 
+	private static void loadMaps() throws Exception {
+		GameDataManager.log.info("Loading Maps..");
+		GameDataManager.MAPS = new HashMap<>();
+		InputStream inputStream = GameDataManager.class.getClassLoader()
+				.getResourceAsStream("data/maps.json");
+		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		
+		MapModel[] maps = GameDataManager.mapper.readValue(text, MapModel[].class);
+		for(MapModel map : maps) {
+			GameDataManager.MAPS.put(map.getMapId(), map);
+		}
+		GameDataManager.log.info("Loading Maps... DONE");
+	}
+	
+	private static void loadTiles() throws Exception {
+		GameDataManager.log.info("Loading Tiles..");
+		GameDataManager.TILES = new HashMap<>();
+		InputStream inputStream = GameDataManager.class.getClassLoader()
+				.getResourceAsStream("data/tiles.json");
+		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		
+		TileModel[] tiles = GameDataManager.mapper.readValue(text, TileModel[].class);
+		for(TileModel tile : tiles) {
+			GameDataManager.TILES.put(tile.getTileId(), tile);
+		}
+		GameDataManager.log.info("Loading Tiles... DONE");
+	}
+	
 	private static void loadEnemies() throws Exception {
 		GameDataManager.log.info("Loading Enemies..");
 		GameDataManager.ENEMIES = new HashMap<>();
@@ -119,6 +152,10 @@ public class GameDataManager {
 				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles.png",
 						new SpriteSheet("tile/rotmg-tiles.png", 8, 8, 0));
 				break;
+			case "tile/rotmg-tiles-all.png":
+				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles-all.png",
+						new SpriteSheet("tile/rotmg-tiles-all.png", 8, 8, 0));
+				break;
 			case "entity/rotmg-abilities.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-abilities.png",
 						new SpriteSheet("entity/rotmg-abilities.png", 8, 8, 0));
@@ -197,8 +234,18 @@ public class GameDataManager {
 			GameDataManager.loadGameItems();
 			GameDataManager.loadSpriteSheets();
 			GameDataManager.loadEnemies();
+			GameDataManager.loadTiles();
+			GameDataManager.loadMaps();
 		}catch(Exception e) {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}
+	}
+	
+	public static void main(String[] args) {
+		String data = "";
+		for(int i = 0; i < 32 ; i++) {
+			data+="0,";
+		}
+		System.out.println(data);
 	}
 }

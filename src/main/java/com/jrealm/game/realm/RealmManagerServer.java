@@ -38,7 +38,6 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.tiles.TileMap;
-import com.jrealm.game.tiles.TileMapObj;
 import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
@@ -418,22 +417,24 @@ public class RealmManagerServer implements Runnable {
 	private void movePlayer(final Player p) {
 		if (!p.isFallen()) {
 			p.move();
-			TileMapObj tileMap = (TileMapObj) this.getRealm().getTileManager().getTm().get(1);
-
-			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), p.getDx(), 0)) {
+			if(!this.getRealm().getTileManager().collisionTile(p, p.getDx(), p.getDy())) {
 				p.getPos().x += p.getDx();
-				p.xCol = false;
-			} else {
-				p.xCol = true;
-			}
-			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), 0, p.getDy())) {
 				p.getPos().y += p.getDy();
-				p.yCol = false;
-			} else {
-				p.yCol = true;
 			}
-			p.getTc().normalTile(tileMap, p.getDx(), 0);
-			p.getTc().normalTile(tileMap, 0, p.getDy());
+
+
+//			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), p.getDx(), 0)) {
+//				p.xCol = false;
+//			} else {
+//				p.xCol = true;
+//			}
+//			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), 0, p.getDy())) {
+//				p.yCol = false;
+//			} else {
+//				p.yCol = true;
+//			}
+//			p.getTc().normalTile(tileMap, p.getDx(), 0);
+//			p.getTc().normalTile(tileMap, 0, p.getDy());
 		} else {
 			p.xCol = true;
 			p.yCol = true;
@@ -512,18 +513,18 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	private List<Bullet> getBullets() {
-		final GameObject[] gameObject = this.getRealm()
-				.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort());
-
-		final List<Bullet> results = new ArrayList<>();
-		for (int i = 0; i < gameObject.length; i++) {
-			if (gameObject[i] instanceof Bullet) {
-				results.add((Bullet) gameObject[i]);
-			}
-		}
-		return results;
-	}
+//	private List<Bullet> getBullets() {
+//		final GameObject[] gameObject = this.getRealm()
+//				.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort());
+//
+//		final List<Bullet> results = new ArrayList<>();
+//		for (int i = 0; i < gameObject.length; i++) {
+//			if (gameObject[i] instanceof Bullet) {
+//				results.add((Bullet) gameObject[i]);
+//			}
+//		}
+//		return results;
+//	}
 
 	public synchronized void removeExpiredBullets() {
 		final List<Bullet> toRemove = new ArrayList<>();
@@ -565,7 +566,7 @@ public class RealmManagerServer implements Runnable {
 
 	private void proccessTerrainHit(final Player p) {
 		final List<Bullet> toRemove = new ArrayList<>();
-		final TileMap currentMap = this.realm.getTileManager().getTm().get(1);
+		final TileMap currentMap = this.realm.getTileManager().getMapLayers().get(1);
 		Tile[] viewportTiles = null;
 		if (currentMap == null)
 			return;

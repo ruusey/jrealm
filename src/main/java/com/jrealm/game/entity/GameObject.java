@@ -6,7 +6,6 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.util.TileCollision;
 import com.jrealm.net.client.packet.ObjectMovement;
 
 import lombok.Data;
@@ -31,7 +30,6 @@ public abstract class GameObject {
 	protected float force = 25f;
 
 	protected boolean teleported = false;
-	protected TileCollision tc;
 	protected String name = "";
 
 	public boolean discovered;

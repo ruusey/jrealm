@@ -8,7 +8,6 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.util.TileCollision;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -80,7 +79,6 @@ public abstract class Entity extends GameObject {
 		this.ani = new Animation();
 		this.setAnimation(this.RIGHT, sprite.getSpriteArray(this.RIGHT), 10);
 
-		this.tc = new TileCollision(this);
 		this.resetEffects();
 	}
 
@@ -89,7 +87,6 @@ public abstract class Entity extends GameObject {
 		this.hitsize = size;
 
 		this.hitBounds = new AABB(origin, size, size);
-		this.tc = new TileCollision(this);
 		this.resetEffects();
 	}
 

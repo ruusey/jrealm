@@ -85,44 +85,6 @@ public class Realm {
 		}
 	}
 
-	public void loadRandomTerrain() {
-		List<Chest> curr = this.getChests();
-
-		this.bullets = new ConcurrentHashMap<>();
-		this.enemies = new ConcurrentHashMap<>();
-		this.loot = new ConcurrentHashMap<>();
-		if (curr.size() > 0) {
-			curr.forEach(chest -> {
-				this.addLootContainer(chest);
-			});
-		}
-		this.bulletHits = new ConcurrentHashMap<>();
-		this.materials = new ConcurrentHashMap<>();
-		this.materialManagers = new ConcurrentHashMap<>();
-
-		SpriteSheet tileset = GameDataManager.SPRITE_SHEETS.get("tile/overworldOP.png");
-		SpriteSheet treeset = GameDataManager.SPRITE_SHEETS.get("material/trees.png");
-		SpriteSheet rockset = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png");
-
-		MaterialManager treeMgr = new MaterialManager(64, 150);
-		treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(1, 0), 64);
-		// treeMgr.setMaterial(MaterialManager.TYPE.TREE, treeset.getSprite(3, 0), 64);
-
-		MaterialManager rockMgr = new MaterialManager(32, 150);
-		rockMgr.setMaterial(MaterialManager.TYPE.TREE, rockset.getSprite(10, 5), 32);
-
-		this.tileManager = new TileManager(tileset, 150, this.realmCamera, treeMgr, rockMgr);
-
-		for (MaterialManager mm : this.tileManager.getMaterialManagers()) {
-			for (GameObjectKey go : mm.list) {
-				if (go.go instanceof Material) {
-					this.addMaterial((Material) go.go);
-				}
-			}
-		}
-		this.spawnRandomEnemies();
-	}
-
 	public void loadMap(String path, Player player) {
 		List<Chest> curr = this.getChests();
 
@@ -137,7 +99,7 @@ public class Realm {
 		this.bulletHits = new ConcurrentHashMap<>();
 		this.materials = new ConcurrentHashMap<>();
 		this.materialManagers = new ConcurrentHashMap<>();
-		this.tileManager = new TileManager(path, this.realmCamera);
+		this.tileManager = new TileManager(1);
 		if (!path.toLowerCase().contains("vault") && this.isServer) {
 			this.spawnRandomEnemies();
 		}
@@ -522,8 +484,8 @@ public class Realm {
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 
 		Random r = new Random(System.nanoTime());
-		for (int i = 0; i < this.tileManager.getHeight(); i++) {
-			for (int j = 0; j < this.tileManager.getWidth(); j++) {
+		for (int i = 0; i < this.tileManager.getMapLayers().get(0).getHeight(); i++) {
+			for (int j = 0; j < this.tileManager.getMapLayers().get(0).getWidth(); j++) {
 				int doSpawn = r.nextInt(200);
 				if ((doSpawn > 195) && (i > 0) && (j > 0)) {
 					Vector2f spawnPos = new Vector2f(j * 64, i * 64);
@@ -550,8 +512,8 @@ public class Realm {
 	public void spawnRandomEnemy() {
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 		Random r = new Random(System.nanoTime());
-		Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getWidth()),
-				GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getHeight()));
+		Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getMapLayers().get(0).getWidth()),
+				GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getMapLayers().get(0).getHeight()));
 
 		List<EnemyModel> enemyToSpawn = new ArrayList<>();
 		GameDataManager.ENEMIES.values().forEach(enemy->{
