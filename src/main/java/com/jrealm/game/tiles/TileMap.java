@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jrealm.game.contants.GlobalConstants;
-import com.jrealm.game.entity.Entity;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.tiles.blocks.Tile;
@@ -41,9 +40,6 @@ public class TileMap {
 	public Tile[][] getBlocks() {
 		return this.blocks;
 	}
-	
-
-	
 	
 	public void setBlockAt(int row, int col, short tileId, TileData data) {
 		Vector2f tilePos = new Vector2f(col*this.tileSize, row*this.tileSize);

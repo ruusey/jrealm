@@ -249,6 +249,7 @@ public class PlayState extends GameState {
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private void movePlayer(Player p) {
 		if (!p.isFallen()) {
 			p.move();

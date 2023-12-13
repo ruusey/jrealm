@@ -7,7 +7,6 @@ import java.io.DataOutputStream;
 
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.tiles.TileMap;
-import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 
