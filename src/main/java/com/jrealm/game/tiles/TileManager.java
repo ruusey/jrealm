@@ -23,7 +23,7 @@ import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.tiles.blocks.NormTile;
+import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.util.Camera;
 
 import lombok.Data;
@@ -139,9 +139,9 @@ public class TileManager {
 			}
 		}
 
-		this.tm.add(new TileMapObj(data[0], spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,
-				spritesheet.getCols()));
-		this.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth, blockHeight,spritesheet.getCols()));
+		this.tm.add(new TileMapObj(data[0], spritesheet, chuckSize, chuckSize, blockWidth));
+		
+		this.tm.add(new TileMapNorm(tmg.base, spritesheet, chuckSize, chuckSize, blockWidth));
 		this.playerCam.setLimit(chuckSize * blockWidth, chuckSize * blockHeight);
 		this.solid = data[0];
 		this.genMap = tmg.base;
@@ -193,11 +193,9 @@ public class TileManager {
 				data[i] = eElement.getElementsByTagName("data").item(0).getTextContent();
 
 				if (i == 0) {
-					this.tm
-					.add(new TileMapNorm(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
+					this.tm.add(new TileMapNorm(data[i], sprite, width, height, blockWidth));
 				} else {
-					this.tm
-					.add(new TileMapObj(data[i], sprite, width, height, blockWidth, blockHeight, tileColumns));
+					this.tm.add(new TileMapObj(data[i], sprite, width, height, blockWidth));
 				}
 			}
 			this.playerCam.setLimit(width * blockWidth, height * blockHeight);
@@ -211,16 +209,16 @@ public class TileManager {
 		this.height = height;
 	}
 
-	public synchronized NormTile[] getNormalTile(Vector2f pos) {
+	public synchronized Tile[] getNormalTile(Vector2f pos) {
 		int normMap = 0;
 
-		NormTile[] block = new NormTile[100];
+		Tile[] block = new Tile[100];
 
 		int i = 0;
 		for (int x = (int) (pos.x - 5); x > (pos.x + 5); x++) {
 			for (int y = (int) (pos.y - 5); y > (int) (pos.y + 5); y++) {
 				if ((x != pos.x) || (y != pos.y)) {
-					block[i] = (NormTile) this.tm.get(normMap).getBlocks()[(y + (x * this.height))];
+					block[i] = (Tile) this.tm.get(normMap).getBlocks()[(y + (x * this.height))];
 					i++;
 				}
 			}

@@ -1,15 +1,18 @@
 package com.jrealm.game.tiles.blocks;
 
 import java.awt.Graphics2D;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.net.Streamable;
 
 import lombok.Data;
 
 @Data
-public abstract class Tile {
+public class Tile implements Streamable<Tile> {
 	private short tileId;
 	private boolean discovered = false;
 	private short size;
@@ -18,30 +21,69 @@ public abstract class Tile {
 
 	public Sprite img;
 
-	public Tile(short tileId, Sprite img, Vector2f pos, short size) {
+	public Tile(short tileId, Sprite img, Vector2f pos, TileData data, short size, boolean discovered) {
 		this.tileId = tileId;
 		this.img = img;
 		this.pos = pos;
 		this.size = size;
+		this.data = data;
+		this.discovered = discovered;
 	}
-	
-	public Tile(short tileId, Vector2f pos, short size) {
+
+	public Tile(short tileId, Vector2f pos, TileData data, short size, boolean discovered) {
 		this.tileId = tileId;
 		this.pos = pos;
 		this.size = size;
+		this.data = data;
+		this.discovered = discovered;
 	}
 
-	public int getWidth() { return this.size; }
-	public int getHeight() { return this.size; }
+	public boolean update(AABB bounds) {
+		return false;
+	}
 
-	public abstract boolean update(AABB p);
-	public abstract boolean isInside(AABB p);
+	public int getWidth() {
+		return this.size;
+	}
 
-	public abstract Sprite getImage();
-	public Vector2f getPos() { return this.pos; }
+	public int getHeight() {
+		return this.size;
+	}
+
+	public Vector2f getPos() {
+		return this.pos;
+	}
 
 	public void render(Graphics2D g) {
-		g.drawImage(this.img.image, (int) this.pos.getWorldVar().x, (int) this.pos.getWorldVar().y, this.size, this.size, null);
+		g.drawImage(this.img.image, (int) this.pos.getWorldVar().x, (int) this.pos.getWorldVar().y, this.size,
+				this.size, null);
+	}
 
+	@Override
+	public void write(DataOutputStream stream) throws Exception {
+		stream.writeShort(this.tileId);
+		stream.writeBoolean(this.discovered);
+		stream.writeShort(this.size);
+		stream.writeFloat(this.pos.x);
+		stream.writeFloat(this.pos.y);
+		stream.writeFloat(this.data.getRarity());
+		stream.writeByte(this.data.getHasCollision());
+		stream.writeByte(this.data.getSlows());
+		stream.writeByte(this.data.getDamaging());
+	}
+
+	@Override
+	public Tile read(DataInputStream stream) throws Exception {
+		final short tileId = stream.readShort();
+		final boolean discovered = stream.readBoolean();
+		final short size = stream.readShort();
+		final float posX = stream.readFloat();
+		final float posY = stream.readFloat();
+		final float rarity = stream.readFloat();
+		final byte hasCollision = stream.readByte();
+		final byte slows = stream.readByte();
+		final byte damaging = stream.readByte();
+		
+		return new Tile(tileId, new Vector2f(posX, posY), new TileData(rarity, hasCollision, slows, damaging), size, discovered);
 	}
 }

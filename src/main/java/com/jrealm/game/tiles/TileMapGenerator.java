@@ -20,16 +20,7 @@ public class TileMapGenerator {
 
 	private List<MaterialManager> materialManagers;
 
-	// could set this as enum however that seems a little too much.
-	// could have a class with all the different types of tiles but that also seems a little too much.
-	// could change tileset and would have to change the numbers anyways.
-	// the best way would probably create a program that labels tiles with a mouse click,
-	// however that's over kill.
-
-	private int[] grass = {52, 53, 54};
-	private int[] dirt = {46, 47, 48};
-
-	private TileData[] tiles = { new TileData(0.6f, 35, this.grass), new TileData(1f, 29, this.dirt) }; // change this later?
+	private TileData[] tiles = { new TileData(0.6f), new TileData(1f) }; // change this later?
 
 	public TileMapGenerator(int chuckSize, int tileSize, MaterialManager... mm) {
 		this.materialManagers = Arrays.asList(mm);
@@ -96,7 +87,8 @@ public class TileMapGenerator {
 							int rInt = r.nextInt(this.materialManagers.size());
 							this.materialManagers.get(rInt).add(MaterialManager.TYPE.TREE, j + (i * this.chuckSize));
 						}
-						data[j + (i * this.chuckSize)] = this.tiles[k].generate();
+						//TODO: Replace this code
+						//data[j + (i * this.chuckSize)] = this.tiles[k].generate();
 						break;
 					}
 				}

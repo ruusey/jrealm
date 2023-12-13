@@ -33,6 +33,7 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
+import com.jrealm.game.tiles.TileMapObj;
 import com.jrealm.game.ui.DamageText;
 import com.jrealm.game.ui.PlayerUI;
 import com.jrealm.game.ui.TextEffect;
@@ -253,21 +254,22 @@ public class PlayState extends GameState {
 	private void movePlayer(Player p) {
 		if (!p.isFallen()) {
 			p.move();
-			if (!p.getTc().collisionTile(this.getRealmManager().getRealm().getTileManager().getTm().get(1).getBlocks(), p.getDx(), 0)) {
+			TileMapObj tileMap = (TileMapObj) this.getRealmManager().getRealm().getTileManager().getTm().get(1);
+			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), p.getDx(), 0)) {
 				p.getPos().x += p.getDx();
 				p.xCol = false;
 			} else {
 				p.xCol = true;
 			}
-			if (!p.getTc().collisionTile(this.getRealmManager().getRealm().getTileManager().getTm().get(1).getBlocks(), 0, p.getDy())) {
+			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), 0, p.getDy())) {
 				p.getPos().y += p.getDy();
 				p.yCol = false;
 			} else {
 				p.yCol = true;
 			}
 
-			p.getTc().normalTile(p.getDx(), 0);
-			p.getTc().normalTile(0, p.getDy());
+			p.getTc().normalTile(tileMap, p.getDx(), 0);
+			p.getTc().normalTile(tileMap, 0, p.getDy());
 
 		} else {
 			p.xCol = true;

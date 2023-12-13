@@ -16,6 +16,7 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.realm.RealmManagerServer;
+import com.jrealm.game.tiles.TileMapObj;
 import com.jrealm.net.Streamable;
 
 import lombok.Data;
@@ -166,14 +167,14 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			return;
 		}
 		if (!this.isFallen()) {
-			if (!this.tc.collisionTile(mgr.getRealm().getTileManager().getTm().get(1).getBlocks(),
+			if (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1), mgr.getRealm().getTileManager().getTm().get(1).getBlocks(),
 					this.dx,
 					0)) {
 				this.sense.getPos().x += this.dx;
 				this.attackrange.getPos().x += this.dx;
 				this.pos.x += this.dx;
 			}
-			if (!this.tc.collisionTile(mgr.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
+			if (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1), mgr.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
 					this.dy)) {
 				this.sense.getPos().y += this.dy;
 				this.attackrange.getPos().y += this.dy;

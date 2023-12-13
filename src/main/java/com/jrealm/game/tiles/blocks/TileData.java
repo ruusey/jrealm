@@ -1,32 +1,39 @@
 package com.jrealm.game.tiles.blocks;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class TileData {
 	private float rarity;
-	private int spriteIndex;
-	private int[] vary;
 	private byte hasCollision;
 	private byte slows;
 	private byte damaging;
 
-	public TileData(float rarity, int spriteIndex) {
+	public TileData(float rarity) {
 		this.rarity = rarity;
-		this.spriteIndex = spriteIndex;
 	}
-
-	public TileData(float rarity, int spriteIndex, int[] vary) {
-		this.rarity = rarity;
-		this.spriteIndex = spriteIndex;
-		this.vary = vary;
+	
+	public boolean hasCollision() {
+		return this.hasCollision != 0;
 	}
-
-	public int generate() {
-		double random = Math.random();
-		if((this.vary != null) && (random > 0.9))
-			return this.vary[((int) (random * 100)) % (this.vary.length )];
-
-		return this.spriteIndex;
+	
+	public boolean slows() {
+		return this.slows != 0;
+	}
+	
+	public boolean damaging() {
+		return this.damaging!=0;
+	}
+	
+	public static TileData withCollision() {
+		return new TileData(0.0f, (byte)1, (byte)0, (byte)0);
+	}
+	
+	public static TileData withoutCollision() {
+		return new TileData(0.0f, (byte)0, (byte)0, (byte)0);
 	}
 }
