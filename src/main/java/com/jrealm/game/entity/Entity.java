@@ -388,4 +388,22 @@ public abstract class Entity extends GameObject {
 		this.left = left;
 	}
 
+	public boolean isUp() {
+		return up;
+	}
+
+	public boolean isDown() {
+		return down;
+	}
+
+	public boolean isRight() {
+		return right;
+	}
+
+	public boolean isLeft() {
+		return left;
+	}
+	
+	
+
 }

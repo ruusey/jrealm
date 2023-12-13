@@ -111,11 +111,13 @@ public class TileManager {
 //				return true;
 //
 //		}
+		Vector2f futurePos = e.getPos().clone(ax, ay);
 		
 		for(Tile t : this.getCollisionTile(e.getPos())) {
 			if(t==null || t.isVoid()) continue;
 			AABB tileBounds = new AABB(t.getPos(), t.getWidth(), t.getHeight());
-			if(e.getBounds().intersect(tileBounds)) {
+			AABB futurePosBounds = new AABB(futurePos, e.getSize(), e.getSize());
+			if(futurePosBounds.intersect(tileBounds)) {
 				return true;
 			}
 		}

@@ -416,11 +416,22 @@ public class RealmManagerServer implements Runnable {
 
 	private void movePlayer(final Player p) {
 		if (!p.isFallen()) {
-			p.move();
-			if(!this.getRealm().getTileManager().collisionTile(p, p.getDx(), p.getDy())) {
+			if(!this.getRealm().getTileManager().collisionTile(p, p.getDx(), 0)) {
+				p.xCol=false;
 				p.getPos().x += p.getDx();
-				p.getPos().y += p.getDy();
+			}else {
+				p.xCol=true;
 			}
+			
+			
+			if(!this.getRealm().getTileManager().collisionTile(p, 0, p.getDy())) {
+				p.yCol=false;
+				p.getPos().y += p.getDy();
+			}else {
+				p.yCol=true;
+			}
+
+			p.move();
 
 
 //			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), p.getDx(), 0)) {
@@ -566,18 +577,18 @@ public class RealmManagerServer implements Runnable {
 
 	private void proccessTerrainHit(final Player p) {
 		final List<Bullet> toRemove = new ArrayList<>();
-		final TileMap currentMap = this.realm.getTileManager().getMapLayers().get(1);
+		final TileMap currentMap = this.realm.getTileManager().getCollisionLayer();
 		Tile[] viewportTiles = null;
 		if (currentMap == null)
 			return;
-		viewportTiles = currentMap.getBlocksInBounds(this.getRealm().getTileManager().getRenderViewPort(p));
+		viewportTiles = this.realm.getTileManager().getCollisionTile(p.getPos());
 		for (final Bullet b : this.getBullets(p)) {
 			if (b.remove()) {
 				toRemove.add(b);
 				continue;
 			}
 			for (final Tile tile : viewportTiles) {
-				if (tile == null) {
+				if (tile == null || tile.isVoid()) {
 					continue;
 				}
 				if (b.getBounds().intersect(new AABB(tile.getPos(), tile.getWidth(), tile.getHeight()))) {
