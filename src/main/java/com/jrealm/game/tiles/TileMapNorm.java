@@ -17,17 +17,9 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class TileMapNorm extends TileMap {
-	private Tile[] blocks;
-	private int tileSize;
-	private int width;
-	private int height;
 
 	public TileMapNorm(String data, SpriteSheet sprite, int width, int height, int tileSize) {
-		this.blocks = new Tile[width * height];
-		this.tileSize = tileSize;
-		this.width = width;
-		this.height = height;
-		
+		super((short)1, new Tile[width * height], tileSize, width, height );
 		String[] block = data.split(",");
 
 		for(int i = 0; i < (width * height); i++) {
@@ -37,8 +29,8 @@ public class TileMapNorm extends TileMap {
 				boolean discovered = false;
 				short size = (short)tileSize;
 				Vector2f pos = new Vector2f((int) (i % width) * tileSize, (int) (i / height) * tileSize);
-				Sprite image =  sprite.getNewSprite((int) ((temp - 1) % this.width), (int) ((temp - 1) / this.width) );
-				this.blocks[i] = new Tile(tileId, image, pos, TileData.withoutCollision(), size, discovered);
+				Sprite image =  sprite.getNewSprite((int) ((temp - 1) % this.getWidth()), (int) ((temp - 1) / this.getWidth()) );
+				this.getBlocks()[i] = new Tile(tileId, image, pos, TileData.withoutCollision(), size, discovered);
 			}
 		}
 	}
@@ -48,12 +40,12 @@ public class TileMapNorm extends TileMap {
 		int i = 0;
 		for (int x = 5; x > -5; x--) {
 			for (int y = 5; y > -5; y--) {
-				if (((id + (y + (x * this.tileSize))) < 0)
-						|| ((id + (y + (x * this.tileSize))) > ((this.tileSize * this.width) - 2))) {
+				if (((id + (y + (x * this.getTileSize()))) < 0)
+						|| ((id + (y + (x * this.getTileSize()))) > ((this.getTileSize() * this.getWidth()) - 2))) {
 					continue;
 				}
 
-				block[i] = (Tile) this.getBlocks()[id + (y + (x * this.tileSize))];
+				block[i] = (Tile) this.getBlocks()[id + (y + (x * this.getTileSize()))];
 				i++;
 			}
 		}
@@ -61,17 +53,17 @@ public class TileMapNorm extends TileMap {
 	}
 
 	@Override
-	public Tile[] getBlocks() { return this.blocks; }
+	public Tile[] getBlocks() { return this.getBlocks(); }
 
 	public Tile[] getBlocksInBounds(AABB cam) {
-		int x = (int) ((cam.getPos().x) / this.tileSize);
-		int y = (int) ((cam.getPos().y) / this.tileSize);
+		int x = (int) ((cam.getPos().x) / this.getTileSize());
+		int y = (int) ((cam.getPos().y) / this.getTileSize());
 		List<Tile> results = new ArrayList<>();
-		for (int i = x; i < (x + (cam.getWidth() / this.tileSize)); i++) {
-			for (int j = y; j < (y + (cam.getHeight() / this.tileSize)); j++) {
-				if (((i + (j * this.height)) > -1) && ((i + (j * this.height)) < this.blocks.length)
-						&& (this.blocks[i + (j * this.height)] != null)) {
-					Tile toAdd = this.blocks[i + (j * this.height)];
+		for (int i = x; i < (x + (cam.getWidth() / this.getTileSize())); i++) {
+			for (int j = y; j < (y + (cam.getHeight() / this.getTileSize())); j++) {
+				if (((i + (j * this.getHeight())) > -1) && ((i + (j * this.getHeight())) < this.getBlocks().length)
+						&& (this.getBlocks()[i + (j * this.getHeight())] != null)) {
+					Tile toAdd = this.getBlocks()[i + (j * this.getHeight())];
 					results.add(toAdd);
 				}
 			}

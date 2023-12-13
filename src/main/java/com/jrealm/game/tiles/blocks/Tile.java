@@ -10,8 +10,10 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class Tile implements Streamable<Tile> {
 	private short tileId;
 	private boolean discovered = false;
@@ -20,7 +22,7 @@ public class Tile implements Streamable<Tile> {
 	private TileData data;
 
 	public Sprite img;
-
+	
 	public Tile(short tileId, Sprite img, Vector2f pos, TileData data, short size, boolean discovered) {
 		this.tileId = tileId;
 		this.img = img;
