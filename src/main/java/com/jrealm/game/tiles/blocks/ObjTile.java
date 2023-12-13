@@ -13,8 +13,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper=true)
 public class ObjTile extends Tile {
 
-	public ObjTile(Sprite img, Vector2f pos, int w, int h) {
-		super(img, pos, w, h);
+	public ObjTile(short tileId, Sprite img, Vector2f pos, short size) {
+		super(tileId, img, pos, size);
 	}
 
 	@Override
@@ -36,5 +36,4 @@ public class ObjTile extends Tile {
 	public void render(Graphics2D g){
 		super.render(g);
 	}
-
 }

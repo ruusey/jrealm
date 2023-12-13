@@ -33,10 +33,9 @@ public class TileMapObj extends TileMap {
 		for (int i = 0; i < (width * height); i++) {
 			int temp = Integer.parseInt(block[i].replaceAll("\\s+", ""));
 			if (temp != 0) {
-				this.blocks[i] = new ObjTile(
+				this.blocks[i] = new ObjTile((short) 0,
 						sprite.getNewSprite((int) ((temp - 1) % tileColumns), (int) ((temp - 1) / tileColumns)),
-						new Vector2f((int) (i % width) * tileWidth, (int) (i / height) * tileHeight), tileWidth,
-						tileHeight);
+						new Vector2f((int) (i % width) * tileWidth, (int) (i / height) * tileHeight), (short)tileWidth);
 			}
 		}
 	}

@@ -13,8 +13,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper=true)
 public class NormTile extends Tile {
 
-	public NormTile(Sprite img, Vector2f pos, int w, int h) {
-		super(img, pos, w, h);
+	public NormTile(short tileId, Sprite img, Vector2f pos, short size) {
+		super(tileId, img, pos, size);
 
 		img.setEffect(Sprite.EffectEnum.NORMAL);
 	}
@@ -41,6 +41,6 @@ public class NormTile extends Tile {
 
 	@Override
 	public String toString() {
-		return "position: " + this.pos;
+		return "position: " + this.getPos();
 	}
 }

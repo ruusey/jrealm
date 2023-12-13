@@ -1,9 +1,15 @@
-package com.jrealm.game.tiles;
-public class TileData {
-	public float rarity;
-	public int spriteIndex;
-	public int[] vary;
+package com.jrealm.game.tiles.blocks;
 
+import lombok.Data;
+
+@Data
+public class TileData {
+	private float rarity;
+	private int spriteIndex;
+	private int[] vary;
+	private byte hasCollision;
+	private byte slows;
+	private byte damaging;
 
 	public TileData(float rarity, int spriteIndex) {
 		this.rarity = rarity;

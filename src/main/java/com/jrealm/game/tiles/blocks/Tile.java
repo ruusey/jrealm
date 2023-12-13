@@ -10,24 +10,29 @@ import lombok.Data;
 
 @Data
 public abstract class Tile {
-
-	protected boolean discovered = false;
-
-	protected int w;
-	protected int h;
+	private short tileId;
+	private boolean discovered = false;
+	private short size;
+	private Vector2f pos;
+	private TileData data;
 
 	public Sprite img;
-	public Vector2f pos;
 
-	public Tile(Sprite img, Vector2f pos, int w, int h) {
+	public Tile(short tileId, Sprite img, Vector2f pos, short size) {
+		this.tileId = tileId;
 		this.img = img;
 		this.pos = pos;
-		this.w = w;
-		this.h = h;
+		this.size = size;
+	}
+	
+	public Tile(short tileId, Vector2f pos, short size) {
+		this.tileId = tileId;
+		this.pos = pos;
+		this.size = size;
 	}
 
-	public int getWidth() { return this.w; }
-	public int getHeight() { return this.h; }
+	public int getWidth() { return this.size; }
+	public int getHeight() { return this.size; }
 
 	public abstract boolean update(AABB p);
 	public abstract boolean isInside(AABB p);
@@ -36,7 +41,7 @@ public abstract class Tile {
 	public Vector2f getPos() { return this.pos; }
 
 	public void render(Graphics2D g) {
-		g.drawImage(this.img.image, (int) this.pos.getWorldVar().x, (int) this.pos.getWorldVar().y, this.w, this.h, null);
+		g.drawImage(this.img.image, (int) this.pos.getWorldVar().x, (int) this.pos.getWorldVar().y, this.size, this.size, null);
 
 	}
 }

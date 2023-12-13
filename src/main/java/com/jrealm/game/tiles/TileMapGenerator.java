@@ -6,6 +6,7 @@ import java.util.Random;
 
 import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.noise.SimplexNoise;
+import com.jrealm.game.tiles.blocks.TileData;
 
 public class TileMapGenerator {
 
@@ -90,7 +91,7 @@ public class TileMapGenerator {
 				result[i][j] = 0.5 * (1 + simplexNoise.getNoise(x, y));
 
 				for(int k = 0; k < this.tiles.length; k++) {
-					if(result[i][j] < this.tiles[k].rarity) {
+					if(result[i][j] < this.tiles[k].getRarity()) {
 						if ((k == 0) && (result[i][j] < (Math.random() * 0.35))) {
 							int rInt = r.nextInt(this.materialManagers.size());
 							this.materialManagers.get(rInt).add(MaterialManager.TYPE.TREE, j + (i * this.chuckSize));
