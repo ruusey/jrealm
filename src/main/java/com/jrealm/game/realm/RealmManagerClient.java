@@ -1,14 +1,11 @@
 package com.jrealm.game.realm;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
 import com.jrealm.game.GameLauncher;
-import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
@@ -31,18 +28,7 @@ public class RealmManagerClient implements Runnable {
 	private PlayState state;
 	private Realm realm;
 	private boolean shutdown = false;
-
 	private final Map<Byte, BiConsumer<RealmManagerClient, Packet>> packetCallbacksClient = new HashMap<>();
-	private List<Vector2f> shotDestQueue;
-	private long lastUpdateTime;
-	private long now;
-	private long lastRenderTime;
-	private long lastSecondTime;
-
-	private int oldFrameCount;
-	private int oldTickCount;
-	private int tickCount;
-
 	private long currentPlayerId;
 
 	public RealmManagerClient(PlayState state, Realm realm) {
@@ -54,7 +40,6 @@ public class RealmManagerClient implements Runnable {
 			this.client = new SocketClient(SocketClient.SERVER_ADDR, 2222);
 		}
 		this.state = state;
-		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.client);
 	}
 
