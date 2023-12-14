@@ -59,29 +59,39 @@ public class TileManager {
 
 	}
 
-	public synchronized Tile[] getNormalTile(Vector2f pos) {
+	public Tile[] getNormalTile(Vector2f pos) {
 		Tile[] block = new Tile[144];
 		Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE, pos.y / GlobalConstants.BASE_TILE_SIZE);
 		this.normalizeToBounds(posNormalized);
 		int i = 0;
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-				block[i] = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
-				i++;
+				// Temp fix. Aint nobody got time for array math.
+				try {
+					block[i] = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
+					i++;
+				}catch(Exception e) {
+					
+				}
 			}
 		}
 		return block;
 	}
 	
-	public synchronized Tile[] getCollisionTile(Vector2f pos) {
+	public Tile[] getCollisionTile(Vector2f pos) {
 		Tile[] block = new Tile[144];
 		Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE, pos.y / GlobalConstants.BASE_TILE_SIZE);
 		this.normalizeToBounds(posNormalized);
 		int i = 0;
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-				block[i] = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
-				i++;
+				// Temp fix. Aint nobody got time for array math.
+				try {
+					block[i] = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
+					i++;
+				}catch(Exception e) {
+					
+				}
 			}
 		}
 		return block;
@@ -100,14 +110,14 @@ public class TileManager {
 			pos.x = 0;
 		}
 		if(pos.x>this.getBaseLayer().getWidth()-1) {
-			pos.x = 0;
+			pos.x = this.getBaseLayer().getWidth()-1;
 		}
 		
 		if(pos.y< 0) {
 			pos.y = 0;
 		}
 		if(pos.y>this.getBaseLayer().getHeight()-1) {
-			pos.y = 0;
+			pos.y = this.getBaseLayer().getWidth()-1;
 		}
 	}
 	
