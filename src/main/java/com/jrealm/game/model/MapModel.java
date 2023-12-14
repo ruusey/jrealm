@@ -1,6 +1,5 @@
 package com.jrealm.game.model;
 
-import java.util.List;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
@@ -21,6 +20,5 @@ public class MapModel {
 	private int tileSize;
 	private int width;
 	private int height;
-	
 	private Map<String, int[][]> data;
 }

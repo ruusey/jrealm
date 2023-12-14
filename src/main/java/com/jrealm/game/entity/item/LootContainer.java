@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
@@ -24,6 +25,7 @@ import lombok.NoArgsConstructor;
 public class LootContainer implements Streamable<LootContainer> {
 	
 	private long lootContainerId;
+	private LootTier tier;
 	private Sprite sprite;
 	private String uid;
 	private GameItem[] items;
@@ -33,8 +35,9 @@ public class LootContainer implements Streamable<LootContainer> {
 
 	private boolean contentsChanged;
 
-	public LootContainer(Sprite sprite, Vector2f pos) {
-		this.sprite = sprite;
+	public LootContainer(LootTier tier, Vector2f pos) {
+		this.tier = tier;
+		this.sprite = LootTier.getLootSprite(tier.tierId);
 		this.uid = UUID.randomUUID().toString();
 		this.items = new GameItem[8];
 		this.pos = pos;
@@ -50,8 +53,9 @@ public class LootContainer implements Streamable<LootContainer> {
 		return this.contentsChanged;
 	}
 
-	public LootContainer(Vector2f pos, GameItem loot) {
-		this.sprite = GameDataManager.getLootSprite(2);
+	public LootContainer(LootTier tier, Vector2f pos, GameItem loot) {
+		this.tier = tier;
+		this.sprite = LootTier.getLootSprite(tier.tierId);
 		this.pos = pos;
 		this.uid = UUID.randomUUID().toString();
 		this.items = new GameItem[8];
@@ -59,8 +63,9 @@ public class LootContainer implements Streamable<LootContainer> {
 		this.spawnedTime = System.currentTimeMillis();
 	}
 	
-	public LootContainer(Vector2f pos, GameItem[] loot) {
-		this.sprite = GameDataManager.getLootSprite(2);
+	public LootContainer(LootTier tier, Vector2f pos, GameItem[] loot) {
+		this.tier = tier;
+		this.sprite = LootTier.getLootSprite(tier.tierId);
 		this.pos = pos;
 		this.uid = UUID.randomUUID().toString();
 		this.items = loot;
@@ -118,6 +123,7 @@ public class LootContainer implements Streamable<LootContainer> {
 		stream.writeLong(this.getLootContainerId());
 		stream.writeUTF(this.getUid());
 		stream.writeBoolean(this instanceof Chest);
+		stream.writeByte(this.getTier().tierId);
 		GameItem[] toWrite = getCondensedItems(this);
 		stream.writeInt(toWrite.length);
 		for (int i = 0; i < toWrite.length; i++) {
@@ -136,6 +142,7 @@ public class LootContainer implements Streamable<LootContainer> {
 		long lootContainerId = stream.readLong();
 		String uid = stream.readUTF();
 		boolean isChest = stream.readBoolean();
+		byte tier = stream.readByte();
 		int itemsSize = stream.readInt();
 		GameItem[] items = new GameItem[8];
 		for (int i = 0; i < itemsSize; i++) {
@@ -146,7 +153,7 @@ public class LootContainer implements Streamable<LootContainer> {
 
 		long spawnedTime = stream.readLong();
 		boolean contentsChanged = stream.readBoolean();
-		LootContainer container = LootContainer.builder().lootContainerId(lootContainerId).uid(uid).items(items)
+		LootContainer container = LootContainer.builder().lootContainerId(lootContainerId).tier(LootTier.valueOf(tier)).uid(uid).items(items)
 				.pos(new Vector2f(posX, posY)).spawnedTime(spawnedTime).contentsChanged(contentsChanged)
 				.sprite(null).build();
 		if(isChest) {
@@ -174,7 +181,7 @@ public class LootContainer implements Streamable<LootContainer> {
 		GameItem[] otherLoot = getCondensedItems(other);
 		boolean basic = this.lootContainerId == other.getLootContainerId()  && this.pos.equals(other.getPos());
 		boolean loot = thisLoot.length == otherLoot.length;
-
+		boolean tier = this.getTier().equals(other.getTier());
 		if(loot) {
 			for(int i = 0; i < thisLoot.length; i++) {
 				if(!thisLoot[i].equals(otherLoot[i])) {
@@ -183,6 +190,6 @@ public class LootContainer implements Streamable<LootContainer> {
 				}
 			}
 		}
-		return basic && loot;
+		return basic && loot && tier;
 	}
 }

@@ -12,6 +12,7 @@ import java.util.concurrent.Semaphore;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -269,12 +270,7 @@ public class Realm {
 
 	public long addLootContainerIfNotExists(LootContainer lc) {
 		if(!this.loot.containsKey(lc.getLootContainerId())) {
-			Sprite lootSprite = null;
-			if(lc instanceof Chest) {
-				lootSprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(2, 0, 8, 8);
-			}else {
-				lootSprite = GameDataManager.getLootSprite(2);
-			}
+			Sprite lootSprite = LootTier.getLootSprite(lc.getTier().tierId);
 			lc.setSprite(lootSprite.clone());
 			for(GameItem item : lc.getItems()) {
 				if(item!=null) {
@@ -486,7 +482,7 @@ public class Realm {
 		for (int i = 0; i < this.tileManager.getMapLayers().get(0).getHeight(); i++) {
 			for (int j = 0; j < this.tileManager.getMapLayers().get(0).getWidth(); j++) {
 				int doSpawn = r.nextInt(200);
-				if ((doSpawn > 195) && (i > 0) && (j > 0)) {
+				if ((doSpawn > 180) && (i > 0) && (j > 0)) {
 					Vector2f spawnPos = new Vector2f(j * 64, i * 64);
 					AABB bounds = new AABB(spawnPos, 64, 64);
 					if (bounds.distance(v) < 500) {

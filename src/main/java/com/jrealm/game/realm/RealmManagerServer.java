@@ -19,6 +19,7 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -652,7 +653,7 @@ public class RealmManagerServer implements Runnable {
 				this.realm.spawnRandomEnemy();
 				this.realm.removeEnemy(e);
 				this.realm.addLootContainer(new LootContainer(
-						GameDataManager.getLootSprite(2),
+						LootTier.BLUE,
 						e.getPos()));
 			}
 		}

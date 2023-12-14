@@ -3,7 +3,7 @@ package com.jrealm.game.entity.item;
 import java.awt.Graphics2D;
 import java.util.UUID;
 
-import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.Data;
@@ -14,18 +14,17 @@ import lombok.EqualsAndHashCode;
 public class Chest extends LootContainer {
 	private boolean visible = true;
 	public Chest(Vector2f pos) {
-		super(GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(2, 0, 8, 8), pos);
+		super(LootTier.CHEST, pos);
 		this.setUid(UUID.randomUUID().toString());
 	}
 
 	public Chest(Vector2f pos, GameItem loot) {
-		super(pos, loot);
+		super(LootTier.CHEST, pos, loot);
 		this.setUid(UUID.randomUUID().toString());
-		super.setSprite(GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(2, 0, 8, 8));
 	}
 	
 	public Chest(LootContainer c) {
-		super(c.getPos(), c.getItems());
+		super(LootTier.CHEST, c.getPos(), c.getItems());
 		this.setLootContainerId(c.getLootContainerId());
 		this.visible = true;
 		this.setContentsChanged(c.getContentsChanged());

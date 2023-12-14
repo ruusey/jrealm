@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Player;
@@ -154,7 +155,7 @@ public class ServerGameLogic {
 			if(moveItemPacket.isDrop() && from!=null) {
 				LootContainer nearLoot = mgr.getClosestLootContainer(player.getPos(), 32);
 				if(nearLoot==null) {
-					mgr.getRealm().addLootContainer(new LootContainer(player.getPos().clone(), from.clone()));
+					mgr.getRealm().addLootContainer(new LootContainer(LootTier.BROWN, player.getPos().clone(), from.clone()));
 					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
 				}else if(nearLoot.getFirstNullIdx()>-1){
 					nearLoot.setItem(nearLoot.getFirstNullIdx(), from.clone());
