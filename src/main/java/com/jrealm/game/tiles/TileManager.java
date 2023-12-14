@@ -3,6 +3,7 @@ package com.jrealm.game.tiles;
 import java.awt.Graphics2D;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
@@ -29,25 +30,29 @@ public class TileManager {
 	}
 	
 	private List<TileMap> getLayersFromData(MapModel model) {
-		int[][] data = model.getData();
+		Map<String, int[][]> layerMap = model.getData();
 		TileMap baseLayer = new TileMap((short)model.getMapId(), model.getTileSize(), model.getWidth(), model.getHeight());
 		TileMap collisionLayer = new TileMap((short)model.getMapId(), model.getTileSize(), model.getWidth(), model.getHeight());
+		
+		final int[][] baseData = layerMap.get("0");
+		final int[][] collisionData = layerMap.get("1");
 
-		for(int i = 0; i< data.length; i++) {
-			for(int j = 0; j<data[i].length; j++) {
-				int tileIdToCreate = data[i][j];
+		
+		for(int i = 0; i< baseData.length; i++) {
+			for(int j = 0; j<baseData[i].length; j++) {
+				int tileIdToCreate = baseData[i][j];
 				TileData tileData = GameDataManager.TILES.get(tileIdToCreate).getData();
-				if(tileData.hasCollision()) {
-					collisionLayer.setBlockAt(i, j, (short)data[i][j], GameDataManager.TILES.get(tileIdToCreate).getData());
-					//Add a 'void' tile underneath the 
-					baseLayer.setBlockAt(i, j, (short)0, GameDataManager.TILES.get(0).getData());
-
-				}else {
-					baseLayer.setBlockAt(i, j, (short)data[i][j], GameDataManager.TILES.get(tileIdToCreate).getData());
-					collisionLayer.setBlockAt(i, j, (short)0, GameDataManager.TILES.get(0).getData());
-
-				
-				}
+				baseLayer.setBlockAt(i, j, (short)tileIdToCreate, tileData);
+				//collisionLayer.setBlockAt(i, j, (short)0, GameDataManager.TILES.get(0).getData());
+			}
+		}
+		
+		for(int i = 0; i< collisionData.length; i++) {
+			for(int j = 0; j<collisionData[i].length; j++) {
+				int tileIdToCreate = collisionData[i][j];
+				TileData tileData = GameDataManager.TILES.get(tileIdToCreate).getData();
+				collisionLayer.setBlockAt(i, j, (short)tileIdToCreate, tileData);
+				//collisionLayer.setBlockAt(i, j, (short)0, GameDataManager.TILES.get(0).getData());
 			}
 		}
 		return Arrays.asList(baseLayer, collisionLayer);
