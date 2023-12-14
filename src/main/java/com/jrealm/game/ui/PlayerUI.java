@@ -235,7 +235,6 @@ public class PlayerUI {
 			b.onHoverOut(event -> {
 				this.tooltips.clear();
 				PlayerUI.DRAGGING_ITEM = false;
-
 			});
 
 			b.onRightClick(event->{

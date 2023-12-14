@@ -33,7 +33,7 @@ public class GameDataManager {
 	public static Map<Integer, MapModel> MAPS = null;
 
 
-	private static final String[] SPRITE_SHEET_LOCATIONS = { "material/trees.png", "tile/overworldOP.png",
+	private static final String[] SPRITE_SHEET_LOCATIONS = {
 			"entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png",
 			"entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png" };
