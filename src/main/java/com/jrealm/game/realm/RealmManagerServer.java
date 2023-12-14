@@ -99,18 +99,20 @@ public class RealmManagerServer implements Runnable {
 	}
 	// Adds a headless player for each of CharacterClass in available classes
 	// Will wait briefly after adding each player to avoid client buffer overflow.
-	private void spawnTestPlayers() {
+	private void spawnTestPlayers(final int count) {
 		final Runnable spawnTestPlayers = ()-> {
 			final Random random = new Random(Instant.now().toEpochMilli());
-			for(int i = 0 ; i < CharacterClass.getCharacterClasses().size(); i++) {
-				final CharacterClass classToSpawn = CharacterClass.getCharacterClasses().get(i);
+			for(int i = 0 ; i < count; i++) {
+				final CharacterClass classToSpawn = CharacterClass.getCharacterClasses().get(random.nextInt(CharacterClass.getCharacterClasses().size()));
+				final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				try {
-					final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 					final Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(classToSpawn),
 							new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 									(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 							GlobalConstants.PLAYER_SIZE, classToSpawn);
-					player.setName(UUID.randomUUID().toString().replaceAll("-", ""));
+					String playerName = UUID.randomUUID().toString().replaceAll("-", "");
+					playerName = playerName.substring(playerName.length()/2);
+					player.setName(playerName);
 					player.equipSlots(PlayState.getStartingEquipment(classToSpawn));
 					player.setMaxSpeed(random.nextFloat()/2);
 					
@@ -151,7 +153,7 @@ public class RealmManagerServer implements Runnable {
 		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
-		this.spawnTestPlayers();
+		this.spawnTestPlayers(7);
 	}
 
 	private void tick() {
