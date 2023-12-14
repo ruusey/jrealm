@@ -136,6 +136,7 @@ public class ServerGameLogic {
 		}
 	}
 	// TODO: Isolate Move Item logic into its own helper class
+	// I like spaghetti, what about you?
 	public static void handleMoveItemServer(RealmManagerServer mgr, Packet packet) {
 		MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
 		log.info("[SERVER] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
