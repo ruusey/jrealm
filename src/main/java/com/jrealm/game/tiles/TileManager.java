@@ -62,18 +62,13 @@ public class TileManager {
 	public synchronized Tile[] getNormalTile(Vector2f pos) {
 		Tile[] block = new Tile[144];
 		Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE, pos.y / GlobalConstants.BASE_TILE_SIZE);
-
+		this.normalizeToBounds(posNormalized);
 		int i = 0;
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-				if ((x != pos.x) || (y != pos.y)) {
-					block[i] = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
-					i++;
-				}
+				block[i] = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
+				i++;
 			}
-//			if(i==100) {
-//				break;
-//			}
 		}
 		return block;
 	}
@@ -81,17 +76,13 @@ public class TileManager {
 	public synchronized Tile[] getCollisionTile(Vector2f pos) {
 		Tile[] block = new Tile[144];
 		Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE, pos.y / GlobalConstants.BASE_TILE_SIZE);
+		this.normalizeToBounds(posNormalized);
 		int i = 0;
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-				//if ((x != pos.x) || (y != pos.y)) {
-					block[i] = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
-					i++;
-				//}
+				block[i] = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
+				i++;
 			}
-//			if(i==100) {
-//				break;
-//			}
 		}
 		return block;
 	}
@@ -102,6 +93,22 @@ public class TileManager {
 	
 	public TileMap getBaseLayer() {
 		return this.mapLayers.get(0);
+	}
+	
+	private void normalizeToBounds(Vector2f pos) {
+		if(pos.x< 0) {
+			pos.x = 0;
+		}
+		if(pos.x>this.getBaseLayer().getWidth()-1) {
+			pos.x = 0;
+		}
+		
+		if(pos.y< 0) {
+			pos.y = 0;
+		}
+		if(pos.y>this.getBaseLayer().getHeight()-1) {
+			pos.y = 0;
+		}
 	}
 	
 	public boolean collisionTile(Entity e, float ax, float ay) {
