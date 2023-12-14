@@ -151,7 +151,7 @@ public class RealmManagerServer implements Runnable {
 		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
-		//this.spawnTestPlayers();
+		this.spawnTestPlayers();
 	}
 
 	private void tick() {
@@ -167,7 +167,9 @@ public class RealmManagerServer implements Runnable {
 			final Runnable sendGameData = () -> {
 				this.sendGameData();
 			};
-
+			// We dont necessarily care what order these three tasks take place in
+			// rather that all three are completed at least once per tick, so run them 
+			// asynchronously
 			WorkerThread.submitAndRun(enqueueGameData, processServerPackets, sendGameData);
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to sleep");
@@ -176,7 +178,7 @@ public class RealmManagerServer implements Runnable {
 
 	private void sendGameData() {
 		final List<Packet> packetsToBroadcast = new ArrayList<>();
-
+		
 		while(!this.outboundPacketQueue.isEmpty()) {
 			packetsToBroadcast.add(this.outboundPacketQueue.remove());
 		}
@@ -289,6 +291,9 @@ public class RealmManagerServer implements Runnable {
 		});
 	}
 
+	// For each connected client, dequeue all pending packets 
+	// pass the packet and RealmManager context to the handler
+	// script
 	public void processServerPackets() {
 		for(final Map.Entry<String, ProcessingThread> thread : this.getServer().getClients().entrySet()) {
 			if(!thread.getValue().isShutdownProcessing()) {
@@ -366,7 +371,9 @@ public class RealmManagerServer implements Runnable {
 		this.packetCallbacksServer.put(packetId, callback);
 	}
 
+	// Updates all game objects on the server
 	public void update(double time) {
+		// Update player specific game objects (bullets, the players themselves)
 		for (final Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 			final Player p = this.realm.getPlayer(player.getValue().getId());
 			if (p == null) {
@@ -388,13 +395,16 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 			};
-			final Runnable updatePlayerAndUi = () -> {
+			
+			final Runnable updatePlayer = () -> {
 				p.update(time);
 				this.movePlayer(p);
 			};
-			WorkerThread.submitAndRun(processGameObjects, updatePlayerAndUi, checkAbilityUsage);
+			// Run the player update tasks Asynchronously
+			WorkerThread.submitAndRun(processGameObjects, updatePlayer, checkAbilityUsage);
 		}
-
+		// Once per tick update all non player game objects
+		// (bullets, enemies)
 		final Runnable processGameObjects = () -> {
 			final GameObject[] gameObject = this.realm.getAllGameObjects();
 			for (int i = 0; i < gameObject.length; i++) {
@@ -423,7 +433,6 @@ public class RealmManagerServer implements Runnable {
 				p.xCol=true;
 			}
 			
-			
 			if(!this.getRealm().getTileManager().collisionTile(p, 0, p.getDy())) {
 				p.yCol=false;
 				p.getPos().y += p.getDy();
@@ -432,20 +441,6 @@ public class RealmManagerServer implements Runnable {
 			}
 
 			p.move();
-
-
-//			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), p.getDx(), 0)) {
-//				p.xCol = false;
-//			} else {
-//				p.xCol = true;
-//			}
-//			if (!p.getTc().collisionTile(tileMap, tileMap.getBlocks(), 0, p.getDy())) {
-//				p.yCol = false;
-//			} else {
-//				p.yCol = true;
-//			}
-//			p.getTc().normalTile(tileMap, p.getDx(), 0);
-//			p.getTc().normalTile(tileMap, 0, p.getDy());
 		} else {
 			p.xCol = true;
 			p.yCol = true;
@@ -458,6 +453,8 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
+	// Invokes an ability usage server side for the given player at the
+	// desired location if aplicable
 	public void useAbility(final long playerId, final Vector2f pos) {
 		final Player player = this.realm.getPlayer(playerId);
 		final GameItem abilityItem = player.getAbility();
@@ -467,7 +464,7 @@ public class RealmManagerServer implements Runnable {
 		if (player.getMana() < effect.getMpCost())
 			return;
 		player.setMana(player.getMana() - effect.getMpCost());
-
+		// If the ability is damaging (knight stun, archer arrow, wizard spell)
 		if (((abilityItem.getDamage() != null) && (abilityItem.getEffect() != null))) {
 			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
 					.get(abilityItem.getDamage().getProjectileGroupId());
@@ -498,7 +495,6 @@ public class RealmManagerServer implements Runnable {
 				}
 
 			}
-
 		} else if ((abilityItem.getDamage() != null)) {
 			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
 					.get(abilityItem.getDamage().getProjectileGroupId());
@@ -515,7 +511,7 @@ public class RealmManagerServer implements Runnable {
 						dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
 						p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
 			}
-
+		// If the ability is non damaging (rogue cloak, priest tome)
 		} else if (abilityItem.getEffect() != null) {
 			player.addEffect(effect.getEffectId(), effect.getDuration());
 			if (abilityItem.getEffect().getEffectId().equals(EffectType.HEAL)) {
@@ -537,7 +533,7 @@ public class RealmManagerServer implements Runnable {
 //		return results;
 //	}
 
-	public synchronized void removeExpiredBullets() {
+	public void removeExpiredBullets() {
 		final List<Bullet> toRemove = new ArrayList<>();
 
 		for(final Bullet b : this.realm.getBullets().values()) {
@@ -552,7 +548,7 @@ public class RealmManagerServer implements Runnable {
 		});
 	}
 
-	public synchronized void processBulletHit(final Player p) {
+	public void processBulletHit(final Player p) {
 		final List<Bullet> results = this.getBullets(p);
 		final GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort(p));
 		final Player player = this.realm.getPlayer(p.getId());
@@ -570,7 +566,7 @@ public class RealmManagerServer implements Runnable {
 		}
 		this.proccessTerrainHit(p);
 	}
-
+	// This may not need to be synchronized
 	public synchronized void enqueueServerPacket(final Packet packet) {
 		this.outboundPacketQueue.add(packet);
 	}
@@ -602,7 +598,7 @@ public class RealmManagerServer implements Runnable {
 		});
 	}
 
-	private synchronized void processPlayerHit(final Bullet b, final Player p) {
+	private  void processPlayerHit(final Bullet b, final Player p) {
 		final Player player = this.realm.getPlayer(p.getId());
 		if (player == null)
 			return;
@@ -620,7 +616,7 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	private synchronized void proccessEnemyHit(final Bullet b, final Enemy e) {
+	private void proccessEnemyHit(final Bullet b, final Enemy e) {
 		if (this.realm.hasHitEnemy(b.getId(), e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
@@ -660,7 +656,7 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	public synchronized void addProjectile(final long id, final long targetPlayerId, final int projectileId, final int projectileGroupId,
+	public void addProjectile(final long id, final long targetPlayerId, final int projectileId, final int projectileGroupId,
 			final Vector2f src, final Vector2f dest, final short size, final float magnitude, final float range, short damage, final boolean isEnemy,
 			final List<Short> flags) {
 		final Player player = this.realm.getPlayer(targetPlayerId);
@@ -684,7 +680,7 @@ public class RealmManagerServer implements Runnable {
 		this.realm.addBullet(b);
 	}
 
-	public synchronized void addProjectile(final long id, final long targetPlayerId, final int projectileId, final int projectileGroupId,
+	public void addProjectile(final long id, final long targetPlayerId, final int projectileId, final int projectileGroupId,
 			final Vector2f src, final float angle, final short size, final float magnitude, final float range, short damage, final boolean isEnemy,
 			final List<Short> flags, final short amplitude, final short frequency) {
 		final Player player = this.realm.getPlayer(targetPlayerId);
