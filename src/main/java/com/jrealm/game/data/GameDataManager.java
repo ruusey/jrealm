@@ -32,11 +32,10 @@ public class GameDataManager {
 	public static Map<Integer, TileModel> TILES = null;
 	public static Map<Integer, MapModel> MAPS = null;
 
-
-	private static final String[] SPRITE_SHEET_LOCATIONS = {
+	private static final String[] SPRITE_SHEET_LOCATIONS = { 
 			"entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png",
-			"entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png" };
+			"entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png", "entity/rotmg-misc.png" };
 
 	private static void loadMaps() throws Exception {
 		GameDataManager.log.info("Loading Maps..");
@@ -120,6 +119,11 @@ public class GameDataManager {
 		GameDataManager.log.info("Loading Game Items... DONE");
 
 	}
+	
+	// TODO: Add loot tier in LootContainer
+	public static Sprite getLootSprite(int tier) {
+		return GameDataManager.SPRITE_SHEETS.get("entity/rotmg-misc.png").getSprite(tier, 9, 8, 8);
+	}
 
 	private static void loadSpriteSheets() throws Exception {
 		GameDataManager.log.info("Loading Sprite Sheets...");
@@ -147,6 +151,10 @@ public class GameDataManager {
 			case "entity/rotmg-items.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-items.png",
 						new SpriteSheet("entity/rotmg-items.png", 8, 8, 0));
+				break;
+			case "entity/rotmg-misc.png":
+				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-misc.png",
+						new SpriteSheet("entity/rotmg-misc.png", 8, 8, 0));
 				break;
 			case "tile/rotmg-tiles.png":
 				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles.png",

@@ -22,6 +22,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class LootContainer implements Streamable<LootContainer> {
+	
 	private long lootContainerId;
 	private Sprite sprite;
 	private String uid;
@@ -50,7 +51,7 @@ public class LootContainer implements Streamable<LootContainer> {
 	}
 
 	public LootContainer(Vector2f pos, GameItem loot) {
-		this.sprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8);
+		this.sprite = GameDataManager.getLootSprite(2);
 		this.pos = pos;
 		this.uid = UUID.randomUUID().toString();
 		this.items = new GameItem[8];
@@ -59,7 +60,7 @@ public class LootContainer implements Streamable<LootContainer> {
 	}
 	
 	public LootContainer(Vector2f pos, GameItem[] loot) {
-		this.sprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8);
+		this.sprite = GameDataManager.getLootSprite(2);
 		this.pos = pos;
 		this.uid = UUID.randomUUID().toString();
 		this.items = loot;

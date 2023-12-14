@@ -153,7 +153,7 @@ public class RealmManagerServer implements Runnable {
 		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
-		this.spawnTestPlayers(7);
+		//this.spawnTestPlayers(7);
 	}
 
 	private void tick() {
@@ -652,7 +652,7 @@ public class RealmManagerServer implements Runnable {
 				this.realm.spawnRandomEnemy();
 				this.realm.removeEnemy(e);
 				this.realm.addLootContainer(new LootContainer(
-						GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8),
+						GameDataManager.getLootSprite(2),
 						e.getPos()));
 			}
 		}

@@ -99,7 +99,7 @@ public class Realm {
 		this.materials = new ConcurrentHashMap<>();
 		this.materialManagers = new ConcurrentHashMap<>();
 		this.tileManager = new TileManager(1);
-		if (!path.toLowerCase().contains("vault") && this.isServer) {
+		if (this.isServer) {
 			this.spawnRandomEnemies();
 		}
 
@@ -273,7 +273,7 @@ public class Realm {
 			if(lc instanceof Chest) {
 				lootSprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(2, 0, 8, 8);
 			}else {
-				lootSprite = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-items-1.png").getSprite(6, 7, 8, 8);
+				lootSprite = GameDataManager.getLootSprite(2);
 			}
 			lc.setSprite(lootSprite.clone());
 			for(GameItem item : lc.getItems()) {
