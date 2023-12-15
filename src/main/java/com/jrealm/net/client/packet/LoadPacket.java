@@ -171,17 +171,10 @@ public class LoadPacket extends Packet {
 	}
 	
 	public LoadPacket combine(LoadPacket other) throws Exception {
-		List<Long> playerIdsThis = Stream.of(this.players).map(player->player.getId()).collect(Collectors.toList());
-		List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(player->player.getId()).collect(Collectors.toList());
-		
+		List<Long> playerIdsThis = Stream.of(this.players).map(player->player.getId()).collect(Collectors.toList());		
 		List<Long> lootIdsThis =Stream.of(this.containers).map(container->container.getLootContainerId()).collect(Collectors.toList());
-		List<Long> lootIdsOther =Stream.of(other.getContainers()).map(container->container.getLootContainerId()).collect(Collectors.toList());
-		
 		List<Long> enemyIdsThis =Stream.of(this.enemies).map(enemy->enemy.getId()).collect(Collectors.toList());
-		List<Long> enemyIdsOther =Stream.of(other.getEnemies()).map(enemy->enemy.getId()).collect(Collectors.toList());
-
 		List<Long> bulletIdsThis =Stream.of(this.bullets).map(bullet->bullet.getId()).collect(Collectors.toList());
-		List<Long> bulletIdsOther =Stream.of(other.getBullets()).map(bullet->bullet.getId()).collect(Collectors.toList());
 		
 		List<Bullet> bullets = Arrays.asList(other.getBullets());
 		List<Player> players = Arrays.asList(other.getPlayers());
@@ -194,7 +187,6 @@ public class LoadPacket extends Packet {
 				bulletsDiff.add(b);
 			}
 		}
-		
 
 		List<Player> playersDiff = new ArrayList<>();
 		for(Player p : players) {
@@ -218,5 +210,52 @@ public class LoadPacket extends Packet {
 		}
 		
 		return LoadPacket.from(playersDiff.toArray(new Player[0]), lootDiff.toArray(new LootContainer[0]), bulletsDiff.toArray(new Bullet[0]), enemyDiff.toArray(new Enemy[0]));
+	}
+	
+	public UnloadPacket difference(LoadPacket other) throws Exception {
+		List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(player->player.getId()).collect(Collectors.toList());
+		List<Long> lootIdsOther = Stream.of(other.getContainers()).map(container->container.getLootContainerId()).collect(Collectors.toList());
+		List<Long> enemyIdsOther = Stream.of(other.getEnemies()).map(enemy->enemy.getId()).collect(Collectors.toList());
+		List<Long> bulletIdsOther = Stream.of(other.getBullets()).map(bullet->bullet.getId()).collect(Collectors.toList());
+		
+		List<Bullet> bullets = Arrays.asList(this.getBullets());
+		List<Player> players = Arrays.asList(this.getPlayers());
+		List<LootContainer> loot = Arrays.asList(this.getContainers());
+		List<Enemy> enemies = Arrays.asList(this.getEnemies());
+
+		
+		List<Long> bulletsDiff = new ArrayList<>();
+		// Dont diff the bullets as this could cause bad player
+		// experience when bullets randomly despawn
+		// (bullets will despawn when the owner enemy is unloaded)
+//		for(Bullet b : bullets) {
+//			if(!!bulletIdsOther.contains(b.getId())) {
+//				bulletsDiff.add(b.getId());
+//			}
+//		}
+		
+
+		List<Long> playersDiff = new ArrayList<>();
+		for(Player p : players) {
+			if(!playerIdsOther.contains(p.getId())) {
+				playersDiff.add(p.getId());
+			}
+		}
+		
+		List<Long> lootDiff = new ArrayList<>();
+		for(LootContainer p : loot) {
+			if(!lootIdsOther.contains(p.getLootContainerId()) || p.getContentsChanged()) {
+				lootDiff.add(p.getLootContainerId());
+			}
+		}
+		
+		List<Long> enemyDiff = new ArrayList<>();
+		for(Enemy e : enemies) {
+			if(!enemyIdsOther.contains(e.getId())) {
+				enemyDiff.add(e.getId());
+			}
+		}
+		
+		return UnloadPacket.from(playersDiff.toArray(new Long[0]), lootDiff.toArray(new Long[0]), bulletsDiff.toArray(new Long[0]), enemyDiff.toArray(new Long[0]));
 	}
 }

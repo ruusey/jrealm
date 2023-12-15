@@ -122,16 +122,6 @@ public class TileManager {
 	}
 	
 	public boolean collisionTile(Entity e, float ax, float ay) {
-//		for (int c = 0; c < 4; c++) {
-//			xt = (int) ((e.getPos().x + ax) + ((c % 2) * e.getBounds().getWidth()) + e.getBounds().getXOffset())
-//					/ GlobalConstants.BASE_SIZE;
-//			yt = (int) ((e.getPos().y + ay) + ((c / 2) * e.getBounds().getHeight()) + e.getBounds().getYOffset())
-//					/ GlobalConstants.BASE_SIZE;
-//			if ((xt <= 0) || (yt <= 0) || ((xt + (yt * this.getHeight())) < 0)
-//					|| ((xt + (yt * this.getHeight())) > ((this.getHeight() * this.getWidth()) - 2)))
-//				return true;
-//
-//		}
 		Vector2f futurePos = e.getPos().clone(ax, ay);
 		
 		for(Tile t : this.getCollisionTile(e.getPos())) {

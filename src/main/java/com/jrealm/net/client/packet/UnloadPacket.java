@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Arrays;
+import java.util.List;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
@@ -93,6 +94,8 @@ public class UnloadPacket extends Packet{
 			stream.writeLong(e);
 		}
 	}
+	
+
 	
 	public static UnloadPacket from(Long[] players, Long[] containers, Long[] bullets, Long[] enemies) throws Exception{
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();

@@ -84,6 +84,7 @@ public class RealmManagerServer implements Runnable {
 	private Map<String, Long> remoteAddresses = new HashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
 	private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
+	private Map<Long, UnloadPacket> playerUnloadState = new HashMap<>();
 	private UnloadPacket lastUnload;
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 
@@ -98,7 +99,7 @@ public class RealmManagerServer implements Runnable {
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap("tile/vault.xml", null);
 	}
-	// Adds a headless player for each of CharacterClass in available classes
+	// Adds a specified amount of random headless players
 	// Will wait briefly after adding each player to avoid client buffer overflow.
 	private void spawnTestPlayers(final int count) {
 		final Runnable spawnTestPlayers = ()-> {
@@ -211,6 +212,8 @@ public class RealmManagerServer implements Runnable {
 
 	public void enqueueGameData() {
 		// Holds 'dead' or expired entities (old bullets, DC'd players, dead enemies)
+	
+		final List<String> disconnectedClients = new ArrayList<>();
 		UnloadPacket unload = null;
 		try {
 			unload = this.getUnloadPacket();
@@ -218,8 +221,6 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.error("Failed to create unload packet. Reason: {}", e);
 		}
 		final UnloadPacket unloadToBroadcast = unload;
-		final List<String> disconnectedClients = new ArrayList<>();
-
 		// For each player currently connected
 		for (final Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
 			try {
@@ -232,6 +233,10 @@ public class RealmManagerServer implements Runnable {
 				// Contains newly spawned bullets, entities, players
 				final LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
 
+				
+
+				
+				
 				// Get the posX, posY, dX, dY of all Entities in this players viewport
 				final ObjectMovePacket mPacket = this.realm
 						.getGameObjectsAsPackets(player.getValue().getCam().getBounds());
@@ -252,6 +257,7 @@ public class RealmManagerServer implements Runnable {
 						}
 					}
 				}
+				
 				// Only transmit the LoadPacket if its state is changed (it can potentially be
 				// large).
 				// If the state is changed, only transmit the DELTA data
@@ -265,6 +271,13 @@ public class RealmManagerServer implements Runnable {
 						final LoadPacket toSend = old.combine(load);
 						this.playerLoadState.put(player.getKey(), load);
 						this.enqueueServerPacket(toSend);
+						
+						// Unload the delta objcets that were in the old LoadPacket
+						// but are NOT in the new LoadPacket
+						final UnloadPacket unloadDelta = old.difference(load);
+						if(unloadDelta.getEnemies().length>0 || unloadDelta.getContainers().length>0){
+							this.enqueueServerPacket(unloadDelta);
+						}
 					}
 				}
 
@@ -345,6 +358,8 @@ public class RealmManagerServer implements Runnable {
 		return bestLoot;
 	}
 
+	//TODO: Make this player specific so we can tell the client
+	// to unload objects that move outside of their render range
 	private UnloadPacket getUnloadPacket() throws Exception {
 		final Long[] expiredBullets = this.expiredBullets.toArray(new Long[0]);
 		final Long[] expiredEnemies = this.expiredEnemies.toArray(new Long[0]);
@@ -356,6 +371,8 @@ public class RealmManagerServer implements Runnable {
 		for(final Long lcId: lootContainers) {
 			this.realm.getLoot().remove(lcId);
 		}
+		
+		
 		return UnloadPacket.from(expiredPlayers, lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies);
 	}
 
