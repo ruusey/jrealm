@@ -34,7 +34,7 @@ public class GameDataManager {
 
 	private static final String[] SPRITE_SHEET_LOCATIONS = { 
 			"entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
-			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png",
+			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png", "tile/rotmg-tiles-2.png",
 			"entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png", "entity/rotmg-misc.png" };
 
 	private static void loadMaps() throws Exception {
@@ -159,6 +159,14 @@ public class GameDataManager {
 			case "tile/rotmg-tiles.png":
 				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles.png",
 						new SpriteSheet("tile/rotmg-tiles.png", 8, 8, 0));
+				break;
+			case "tile/rotmg-tiles-1.png":
+				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles-1.png",
+						new SpriteSheet("tile/rotmg-tiles-1.png", 8, 8, 0));
+				break;
+			case "tile/rotmg-tiles-2.png":
+				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles-2.png",
+						new SpriteSheet("tile/rotmg-tiles-2.png", 8, 8, 0));
 				break;
 			case "tile/rotmg-tiles-all.png":
 				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles-all.png",

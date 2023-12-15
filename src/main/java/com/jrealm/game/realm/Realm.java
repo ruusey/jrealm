@@ -482,7 +482,7 @@ public class Realm {
 		for (int i = 0; i < this.tileManager.getMapLayers().get(0).getHeight(); i++) {
 			for (int j = 0; j < this.tileManager.getMapLayers().get(0).getWidth(); j++) {
 				int doSpawn = r.nextInt(200);
-				if ((doSpawn > 180) && (i > 0) && (j > 0)) {
+				if ((doSpawn > 190) && (i > 0) && (j > 0)) {
 					Vector2f spawnPos = new Vector2f(j * 64, i * 64);
 					AABB bounds = new AABB(spawnPos, 64, 64);
 					if (bounds.distance(v) < 500) {

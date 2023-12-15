@@ -64,7 +64,7 @@
 			"damaging": 0
 		}
 	},
-		{
+	{
 		"tileId": 5,
 		"name": "Wood_Chair_Left",
 		"spriteKey": "tile/rotmg-tiles-all.png",
@@ -73,6 +73,19 @@
 		"size": 32, 
 		"data": {
 			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 6,
+		"name": "Nexus_Tile_1",
+		"spriteKey": "tile/rotmg-tiles-2.png",
+		"row": 9,
+		"col": 4,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 0,
 			"slows": 0,
 			"damaging": 0
 		}
