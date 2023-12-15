@@ -155,7 +155,7 @@ public class RealmManagerServer implements Runnable {
 		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
-		//this.spawnTestPlayers(7);
+		this.spawnTestPlayers(3);
 	}
 
 	private void tick() {
@@ -275,7 +275,7 @@ public class RealmManagerServer implements Runnable {
 						// Unload the delta objcets that were in the old LoadPacket
 						// but are NOT in the new LoadPacket
 						final UnloadPacket unloadDelta = old.difference(load);
-						if(unloadDelta.getEnemies().length>0 || unloadDelta.getContainers().length>0){
+						if(unloadDelta.getEnemies().length>0 || unloadDelta.getContainers().length>0 || unloadDelta.getPlayers().length>0){
 							this.enqueueServerPacket(unloadDelta);
 						}
 					}

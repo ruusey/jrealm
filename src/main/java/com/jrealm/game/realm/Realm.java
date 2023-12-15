@@ -399,44 +399,41 @@ public class Realm {
 	public LoadPacket getLoadPacket(AABB cam) {
 		LoadPacket load = null;
 		try {
-			final Player[] playersToLoad = this.getPlayers().values().toArray(new Player[0]);
-			//			final List<Player> playersToLoad = new ArrayList<>();
-			//			for(Player p : this.players.values()) {
-			//				final boolean inViewport = cam.inside((int)p.getPos().x, (int)p.getPos().y);
-			//				if(inViewport) {
-			//					playersToLoad.add(p);
-			//				}
-			//
-			//			}
-			final List<LootContainer> containersToLoad = new ArrayList<>();
+			//final Player[] playersToLoad = this.getPlayers().values().toArray(new Player[0]);
+			final List<Player> playersToLoadList = new ArrayList<>();
+			for(Player p : this.players.values()) {
+				final boolean inViewport = cam.inside((int)p.getPos().x, (int)p.getPos().y);
+				if(inViewport) {
+					playersToLoadList.add(p);
+				}
 
-			final LootContainer[] allContainers = this.getLoot().values().toArray(new LootContainer[0]);
-			for(LootContainer c : allContainers) {
+			}
+			final List<LootContainer> containersToLoad = new ArrayList<>();
+			for(LootContainer c : this.loot.values()) {
 				final boolean inViewport = cam.inside((int)c.getPos().x, (int)c.getPos().y);
 				if(inViewport) {
 					containersToLoad.add(c);
 				}
 
 			}
+			
 			final List<Bullet> bulletsToLoad = new ArrayList<>();
-
 			for(Bullet b : this.bullets.values()) {
 				final boolean inViewport = cam.inside((int)b.getPos().x, (int)b.getPos().y);
 				if(inViewport) {
 					bulletsToLoad.add(b);
 				}
 			}
-			// Maybe dont send all 500 enemies in the same packet??
-			// final Enemy[] enemiesToLoad = this.getEnemies().values().toArray(new Enemy[0]);
+
 			final List<Enemy> enemiesToLoad = new ArrayList<>();
-			for(Enemy e : this.getEnemies().values()) {
+			for(Enemy e : this.enemies.values()) {
 				final boolean inViewport = cam.inside((int)e.getPos().x, (int)e.getPos().y);
 				if(inViewport) {
 					enemiesToLoad.add(e);
 				}
 			}
 
-			load = LoadPacket.from(playersToLoad, containersToLoad.toArray(new LootContainer[0]),
+			load = LoadPacket.from(playersToLoadList.toArray(new Player[0]), containersToLoad.toArray(new LootContainer[0]),
 					bulletsToLoad.toArray(new Bullet[0]), enemiesToLoad.toArray(new Enemy[0]));
 		} catch (Exception e) {
 			Realm.log.error("Failed to get load Packet. Reason: {}");
