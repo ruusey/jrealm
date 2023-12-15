@@ -45,26 +45,26 @@ public class ServerGameLogic {
 	}
 
 	public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
-		PlayerMovePacket heartbeatPacket = (PlayerMovePacket) packet;
-		Player toMove = mgr.getRealm().getPlayer(heartbeatPacket.getEntityId());
-		boolean doMove = heartbeatPacket.isMove();
-		if (heartbeatPacket.getDirection().equals(Cardinality.NORTH)) {
+		PlayerMovePacket playerMovePacket = (PlayerMovePacket) packet;
+		Player toMove = mgr.getRealm().getPlayer(playerMovePacket.getEntityId());
+		boolean doMove = playerMovePacket.isMove();
+		if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
 			toMove.setUp(doMove);
 			toMove.setDy(doMove ? -toMove.getMaxSpeed() : 0.0f);
 		}
-		if (heartbeatPacket.getDirection().equals(Cardinality.SOUTH)) {
+		if (playerMovePacket.getDirection().equals(Cardinality.SOUTH)) {
 			toMove.setDown(doMove);
 			toMove.setDy(doMove ? toMove.getMaxSpeed() : 0.0f);
 		}
-		if (heartbeatPacket.getDirection().equals(Cardinality.EAST)) {
+		if (playerMovePacket.getDirection().equals(Cardinality.EAST)) {
 			toMove.setRight(doMove);
 			toMove.setDx(doMove ? -toMove.getMaxSpeed() : 0.0f);
 		}
-		if (heartbeatPacket.getDirection().equals(Cardinality.WEST)) {
+		if (playerMovePacket.getDirection().equals(Cardinality.WEST)) {
 			toMove.setLeft(doMove);
 			toMove.setDx(doMove ? toMove.getMaxSpeed() : 0.0f);
 		}
-		if (heartbeatPacket.getDirection().equals(Cardinality.NONE)) {
+		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setLeft(false);
 			toMove.setRight(false);
 			toMove.setDown(false);
