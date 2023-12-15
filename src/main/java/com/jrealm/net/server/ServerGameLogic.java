@@ -58,11 +58,11 @@ public class ServerGameLogic {
 		}
 		if (playerMovePacket.getDirection().equals(Cardinality.EAST)) {
 			toMove.setRight(doMove);
-			toMove.setDx(doMove ? -toMove.getMaxSpeed() : 0.0f);
+			toMove.setDx(doMove ? toMove.getMaxSpeed() : 0.0f);
 		}
 		if (playerMovePacket.getDirection().equals(Cardinality.WEST)) {
 			toMove.setLeft(doMove);
-			toMove.setDx(doMove ? toMove.getMaxSpeed() : 0.0f);
+			toMove.setDx(doMove ? -toMove.getMaxSpeed() : 0.0f);
 		}
 		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setLeft(false);
