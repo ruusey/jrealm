@@ -50,7 +50,7 @@ public class ServerGameLogic {
 		boolean doMove = heartbeatPacket.isMove();
 		if (heartbeatPacket.getDirection().equals(Cardinality.NORTH)) {
 			toMove.setUp(doMove);
-			toMove.setDy(doMove ? toMove.getMaxSpeed() : 0.0f);
+			toMove.setDy(doMove ? -toMove.getMaxSpeed() : 0.0f);
 		}
 		if (heartbeatPacket.getDirection().equals(Cardinality.SOUTH)) {
 			toMove.setDown(doMove);
@@ -58,7 +58,7 @@ public class ServerGameLogic {
 		}
 		if (heartbeatPacket.getDirection().equals(Cardinality.EAST)) {
 			toMove.setRight(doMove);
-			toMove.setDx(doMove ? toMove.getMaxSpeed() : 0.0f);
+			toMove.setDx(doMove ? -toMove.getMaxSpeed() : 0.0f);
 		}
 		if (heartbeatPacket.getDirection().equals(Cardinality.WEST)) {
 			toMove.setLeft(doMove);
