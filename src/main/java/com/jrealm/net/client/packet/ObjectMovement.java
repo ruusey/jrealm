@@ -24,7 +24,12 @@ public class ObjectMovement implements Streamable<ObjectMovement> {
 	private float posY;
 	private float velX;
 	private float velY;
-
+	
+	public ObjectMovement(float posX, float posY) {
+		this.posX = posX;
+		this.posY = posY;
+	}
+	
 	public ObjectMovement(GameObject obj) {
 		this.entityId = obj.getId();
 		if (obj instanceof Enemy) {

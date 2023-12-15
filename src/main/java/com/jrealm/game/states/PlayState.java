@@ -42,6 +42,7 @@ import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.Tuple;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
@@ -253,14 +254,15 @@ public class PlayState extends GameState {
 		if (!p.isFallen()) {
 			if(!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)) {
 				p.xCol=false;
-				p.getPos().x += p.getDx();
+				p.applyMovementLerp(new ObjectMovement(p.getPos().x + p.getDx(), p.getPos().y));
+				//p.getPos().x += p.getDx();
 			}else {
 				p.xCol=true;
 			}
 			
 			if(!this.getRealmManager().getRealm().getTileManager().collisionTile(p, 0, p.getDy())) {
 				p.yCol=false;
-				p.getPos().y += p.getDy();
+				p.applyMovementLerp(new ObjectMovement(p.getPos().x, p.getPos().y+p.getDy()));
 			}else {
 				p.yCol=true;
 			}
