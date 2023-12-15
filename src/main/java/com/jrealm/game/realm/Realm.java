@@ -415,7 +415,7 @@ public class Realm {
 				}
 
 			}
-			
+
 			final List<Bullet> bulletsToLoad = new ArrayList<>();
 			for(Bullet b : this.bullets.values()) {
 				final boolean inViewport = cam.inside((int)b.getPos().x, (int)b.getPos().y);
@@ -446,7 +446,10 @@ public class Realm {
 		for (GameObject obj : gameObjects) {
 			try {
 				if(((obj.getDx()>0) || (obj.getDy()>0)) || ((obj.getDx()<0) || (obj.getDy()<0))) {
-					validObjects.add(obj);
+					final boolean inViewport = cam.inside((int) obj.getPos().x, (int) obj.getPos().y);
+					if (inViewport) {
+						validObjects.add(obj);
+					}
 				}
 			} catch (Exception e) {
 				Realm.log.error("Failed to create ObjectMove Packet. Reason: {}", e.getMessage());
