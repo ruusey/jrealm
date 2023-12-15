@@ -98,9 +98,10 @@ public class RealmManagerServer implements Runnable {
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap("tile/vault.xml", null);
+		this.spawnTestPlayers(2);
+
 	}
 	// Adds a specified amount of random headless players
-	// Will wait briefly after adding each player to avoid client buffer overflow.
 	private void spawnTestPlayers(final int count) {
 		final Runnable spawnTestPlayers = ()-> {
 			final Random random = new Random(Instant.now().toEpochMilli());
@@ -134,7 +135,7 @@ public class RealmManagerServer implements Runnable {
 					
 					player.setHeadless(true);
 					final long newId = this.getRealm().addPlayer(player);
-					Thread.sleep(500);
+					//Thread.sleep(500);
 				}catch(Exception e) {
 					log.error("Failed to spawn test character of class type {}. Reason: {}", classToSpawn, e);
 				}
@@ -155,7 +156,6 @@ public class RealmManagerServer implements Runnable {
 		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
-		this.spawnTestPlayers(2);
 	}
 
 	private void tick() {
