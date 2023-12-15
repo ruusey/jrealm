@@ -155,7 +155,7 @@ public class RealmManagerServer implements Runnable {
 		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
-		this.spawnTestPlayers(3);
+		//this.spawnTestPlayers(3);
 	}
 
 	private void tick() {
