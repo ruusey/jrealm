@@ -205,7 +205,6 @@ public class Realm {
 				bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
 			}
 
-
 			b.setImage(bulletImage);
 			this.bullets.put(b.getId(), b);
 		}

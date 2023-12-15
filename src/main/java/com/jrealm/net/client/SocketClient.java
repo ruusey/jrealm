@@ -32,7 +32,7 @@ public class SocketClient implements Runnable {
 	public static String SERVER_ADDR = null;
 	public static int CLASS_ID = 0;
 
-	private static final int BUFFER_CAPACITY = 65536 * 10;
+	private static final int BUFFER_CAPACITY = 65536 * 100;
 
 	private Socket clientSocket;
 	private boolean shutdown = false;

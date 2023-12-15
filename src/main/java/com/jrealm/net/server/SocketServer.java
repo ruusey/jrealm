@@ -16,19 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = false)
 public class SocketServer implements Runnable {
 	public static final String LOCALHOST = "127.0.0.1";
-	private static final int BUFFER_CAPACITY = 65536 * 10;
 
 	private ServerSocket serverSocket;
 	private boolean shutdownSocketAccept = false;
 	private boolean shutdownProcessing = false;
-	private byte[] localBuffer = new byte[SocketServer.BUFFER_CAPACITY];
-	private int localBufferIndex = 0;
-	private byte[] remoteBuffer = new byte[SocketServer.BUFFER_CAPACITY];
-	private int remoteBufferIndex = 0;
-	private long lastUpdate = 0;
-	private long previousTime = 0;
-	private long localNoDataTime = System.currentTimeMillis();
-	private long remoteNoDataTime = System.currentTimeMillis();
 
 	private volatile Map<String, ProcessingThread> clients = new ConcurrentHashMap<>();
 

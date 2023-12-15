@@ -155,7 +155,7 @@ public class RealmManagerServer implements Runnable {
 		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
-		//this.spawnTestPlayers(3);
+		this.spawnTestPlayers(2);
 	}
 
 	private void tick() {
@@ -211,11 +211,10 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void enqueueGameData() {
-		// Holds 'dead' or expired entities (old bullets, DC'd players, dead enemies)
-	
 		final List<String> disconnectedClients = new ArrayList<>();
 		UnloadPacket unload = null;
 		try {
+			// Holds 'dead' or expired entities (old bullets, DC'd players, dead enemies)
 			unload = this.getUnloadPacket();
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to create unload packet. Reason: {}", e);
@@ -233,10 +232,6 @@ public class RealmManagerServer implements Runnable {
 				// Contains newly spawned bullets, entities, players
 				final LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
 
-				
-
-				
-				
 				// Get the posX, posY, dX, dY of all Entities in this players viewport
 				final ObjectMovePacket mPacket = this.realm
 						.getGameObjectsAsPackets(player.getValue().getCam().getBounds());

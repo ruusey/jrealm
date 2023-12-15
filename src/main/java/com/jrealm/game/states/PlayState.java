@@ -32,7 +32,6 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
-import com.jrealm.game.tiles.TileMap;
 import com.jrealm.game.ui.DamageText;
 import com.jrealm.game.ui.PlayerUI;
 import com.jrealm.game.ui.TextEffect;
