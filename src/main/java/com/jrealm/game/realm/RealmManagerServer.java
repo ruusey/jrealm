@@ -97,7 +97,7 @@ public class RealmManagerServer implements Runnable {
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap("tile/vault.xml", null);
-		this.spawnTestPlayers(8);
+		// this.spawnTestPlayers(8);
 
 	}
 	// Adds a specified amount of random headless players

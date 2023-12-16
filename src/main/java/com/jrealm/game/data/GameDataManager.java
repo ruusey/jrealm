@@ -32,10 +32,10 @@ public class GameDataManager {
 	public static Map<Integer, TileModel> TILES = null;
 	public static Map<Integer, MapModel> MAPS = null;
 
-	private static final String[] SPRITE_SHEET_LOCATIONS = { 
-			"entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
+	private static final String[] SPRITE_SHEET_LOCATIONS = { "entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png", "tile/rotmg-tiles-2.png",
-			"entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png", "entity/rotmg-misc.png" };
+			"tile/rotmg-tiles-1.png", "entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png",
+	"entity/rotmg-misc.png" };
 
 	private static void loadMaps() throws Exception {
 		GameDataManager.log.info("Loading Maps..");
@@ -43,42 +43,42 @@ public class GameDataManager {
 		InputStream inputStream = GameDataManager.class.getClassLoader()
 				.getResourceAsStream("data/maps.json");
 		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-		
+
 		MapModel[] maps = GameDataManager.mapper.readValue(text, MapModel[].class);
 		for(MapModel map : maps) {
 			GameDataManager.MAPS.put(map.getMapId(), map);
 		}
 		GameDataManager.log.info("Loading Maps... DONE");
 	}
-	
+
 	private static void loadTiles() throws Exception {
 		GameDataManager.log.info("Loading Tiles..");
 		GameDataManager.TILES = new HashMap<>();
 		InputStream inputStream = GameDataManager.class.getClassLoader()
 				.getResourceAsStream("data/tiles.json");
 		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-		
+
 		TileModel[] tiles = GameDataManager.mapper.readValue(text, TileModel[].class);
 		for(TileModel tile : tiles) {
 			GameDataManager.TILES.put(tile.getTileId(), tile);
 		}
 		GameDataManager.log.info("Loading Tiles... DONE");
 	}
-	
+
 	private static void loadEnemies() throws Exception {
 		GameDataManager.log.info("Loading Enemies..");
 		GameDataManager.ENEMIES = new HashMap<>();
 		InputStream inputStream = GameDataManager.class.getClassLoader()
 				.getResourceAsStream("data/enemies.json");
 		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-		
+
 		EnemyModel[] enemies = GameDataManager.mapper.readValue(text, EnemyModel[].class);
 		for(EnemyModel enemy : enemies) {
 			GameDataManager.ENEMIES.put(enemy.getEnemyId(), enemy);
 		}
 		GameDataManager.log.info("Loading Enemies... DONE");
 	}
-	
+
 	private static void loadProjectileGroups() throws Exception {
 		GameDataManager.log.info("Loading Projectile Groups...");
 
@@ -119,7 +119,7 @@ public class GameDataManager {
 		GameDataManager.log.info("Loading Game Items... DONE");
 
 	}
-	
+
 	// TODO: Add loot tier in LootContainer
 	public static Sprite getLootSprite(int tier) {
 		return GameDataManager.SPRITE_SHEETS.get("entity/rotmg-misc.png").getSprite(tier, 9, 8, 8);
@@ -222,12 +222,11 @@ public class GameDataManager {
 
 	public static Sprite getSubSprite(String spriteKey, int col, int row, int size) {
 		SpriteSheet sheet = GameDataManager.SPRITE_SHEETS.get(spriteKey);
-		if(sheet==null) {
+		if(sheet==null)
 			return null;
-		}
 		return sheet.getSprite(col, row, size, size);
 	}
-	
+
 	public static void loadSpriteModel(GameItem item){
 		if(item.getItemId()>-1) {
 			item.applySpriteModel(GameDataManager.GAME_ITEMS.get(item.getItemId()));
@@ -256,7 +255,7 @@ public class GameDataManager {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}
 	}
-	
+
 	public static void main(String[] args) {
 		String data = "";
 		for(int i = 0; i < 32 ; i++) {
