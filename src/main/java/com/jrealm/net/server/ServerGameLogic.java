@@ -39,9 +39,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServerGameLogic {
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
-//		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
-//		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
-//				heartbeatPacket.getTimestamp());
+		//		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
+		//		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
+		//				heartbeatPacket.getTimestamp());
 	}
 
 	public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
@@ -73,13 +73,13 @@ public class ServerGameLogic {
 			toMove.setDx(0);
 			toMove.setDy(0);
 		}
-//		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
+		//		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
 	}
 
 	public static void handleUseAbilityServer(RealmManagerServer mgr, Packet packet) {
 		UseAbilityPacket useAbilityPacket = (UseAbilityPacket) packet;
 		mgr.useAbility(useAbilityPacket.getPlayerId(), new Vector2f(useAbilityPacket.getPosX(), useAbilityPacket.getPosY()));
-		log.info("[SERVER] Recieved UseAbility Packet For Player {}", useAbilityPacket.getPlayerId());
+		ServerGameLogic.log.info("[SERVER] Recieved UseAbility Packet For Player {}", useAbilityPacket.getPlayerId());
 	}
 
 	public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {
@@ -102,36 +102,36 @@ public class ServerGameLogic {
 					proj.getSize(), proj.getMagnitude(), proj.getRange(), rolledDamage, false, proj.getFlags(),
 					proj.getAmplitude(), proj.getFrequency());
 		}
-//		log.info("[SERVER] Recieved PlayerShoot Packet For Player {}, BulletId: {}", shootPacket.getEntityId(),
-//				shootPacket.getProjectileId());
+		//		log.info("[SERVER] Recieved PlayerShoot Packet For Player {}, BulletId: {}", shootPacket.getEntityId(),
+		//				shootPacket.getProjectileId());
 	}
 
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
 		try {
-			log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}", textPacket.getTo(),
+			ServerGameLogic.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}", textPacket.getTo(),
 					textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
 
 			TextPacket toBroadcast = TextPacket.create(textPacket.getFrom(), textPacket.getTo(), textPacket.getMessage());
 			mgr.enqueueServerPacket(toBroadcast);
-			log.info("[SERVER] Broadcasted player chat message from {}", textPacket.getSrcIp());
+			ServerGameLogic.log.info("[SERVER] Broadcasted player chat message from {}", textPacket.getSrcIp());
 		} catch (Exception e) {
-			log.error("Failed to send welcome message. Reason: {}", e);
+			ServerGameLogic.log.error("Failed to send welcome message. Reason: {}", e);
 		}
 	}
 
 	public static void handleCommandServer(RealmManagerServer mgr, Packet packet) {
 		CommandPacket commandPacket = (CommandPacket) packet;
-		log.info("[SERVER] Recieved Command Packet For Player {}. Command={}. SrcIp={}", commandPacket.getPlayerId(),
+		ServerGameLogic.log.info("[SERVER] Recieved Command Packet For Player {}. Command={}. SrcIp={}", commandPacket.getPlayerId(),
 				commandPacket.getCommand(), commandPacket.getSrcIp());
 		try {
 			switch (commandPacket.getCommandId()) {
 			case 1:
-				doLogin(mgr, CommandType.fromPacket(commandPacket), commandPacket);
+				ServerGameLogic.doLogin(mgr, CommandType.fromPacket(commandPacket), commandPacket);
 				break;
 			}
 		} catch (Exception e) {
-			log.error("Failed to perform Server command for Player {}. Reason: {}", commandPacket.getPlayerId(),
+			ServerGameLogic.log.error("Failed to perform Server command for Player {}. Reason: {}", commandPacket.getPlayerId(),
 					e.getMessage());
 		}
 	}
@@ -139,7 +139,7 @@ public class ServerGameLogic {
 	// I like spaghetti, what about you?
 	public static void handleMoveItemServer(RealmManagerServer mgr, Packet packet) {
 		MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
-		log.info("[SERVER] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
+		ServerGameLogic.log.info("[SERVER] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
 
 		try {
 			Player player = mgr.getRealm().getPlayer(moveItemPacket.getPlayerId());
@@ -152,8 +152,8 @@ public class ServerGameLogic {
 				LootContainer nearLoot = mgr.getClosestLootContainer(player.getPos(), 32);
 				from = nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20];
 			}
-			
-			if(moveItemPacket.isDrop() && from!=null) {
+
+			if(moveItemPacket.isDrop() && (from!=null)) {
 				LootContainer nearLoot = mgr.getClosestLootContainer(player.getPos(), 32);
 				if(nearLoot==null) {
 					mgr.getRealm().addLootContainer(new LootContainer(LootTier.BROWN, player.getPos().clone(), from.clone()));
@@ -162,7 +162,7 @@ public class ServerGameLogic {
 					nearLoot.setItem(nearLoot.getFirstNullIdx(), from.clone());
 					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
 				}
-			}else if(from!=null && from.isConsumable()&& !MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
+			}else if((from!=null) && from.isConsumable()&& !MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
 				Stats newStats = player.getStats().concat(from.getStats());
 				player.setStats(newStats);
 
@@ -172,12 +172,12 @@ public class ServerGameLogic {
 					player.drinkMp();
 				}
 				player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
-			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isEquipment(moveItemPacket.getTargetSlotIndex()) && from!=null) {
-				
+			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isEquipment(moveItemPacket.getTargetSlotIndex()) && (from!=null)) {
+
 				player.getInventory()[moveItemPacket.getFromSlotIndex()] = currentEquip.clone();
-				player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();	
-				
-			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && moveItemPacket.getTargetSlotIndex()==-1) {
+				player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();
+
+			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && (moveItemPacket.getTargetSlotIndex()==-1)) {
 				if(from==null) return;
 				if(from.isConsumable() && moveItemPacket.isConsume()) {
 					Stats newStats = player.getStats().concat(from.getStats());
@@ -200,16 +200,16 @@ public class ServerGameLogic {
 					}
 				}
 			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
-				
+
 				LootContainer nearLoot = mgr.getClosestLootContainer(player.getPos(), 32);
 				GameItem lootItem = nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20];
 				GameItem currentInvItem = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
-				
-				if(lootItem!=null && currentInvItem == null) {
+
+				if((lootItem!=null) && (currentInvItem == null)) {
 					player.getInventory()[player.firstEmptyInvSlot()] = lootItem.clone();
 					nearLoot.setItem(moveItemPacket.getFromSlotIndex()-20, null);
 					nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
-				}else if(lootItem != null & currentInvItem !=null) {
+				}else if((lootItem != null) & (currentInvItem !=null)) {
 					GameItem lootClone = lootItem.clone();
 					//GameItem currentInvItemClone = currentInvItem.clone();
 					player.getInventory()[player.firstEmptyInvSlot()] = lootClone;
@@ -217,9 +217,9 @@ public class ServerGameLogic {
 					nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
 				}
 			}
-			
+
 		} catch (Exception e) {
-			log.error("Failed to handle MoveItem packet from Player {}. Reason: {}", moveItemPacket.getPlayerId(),
+			ServerGameLogic.log.error("Failed to handle MoveItem packet from Player {}. Reason: {}", moveItemPacket.getPlayerId(),
 					e);
 		}
 	}
@@ -228,13 +228,13 @@ public class ServerGameLogic {
 		LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
 		try {
 			Player player = mgr.getRealm().getPlayer(loadMapPacket.getPlayerId());
-			mgr.getRealm().loadMap(loadMapPacket.getMapKey(), player);
+			mgr.getRealm().loadMap(1, player);
 
 		} catch (Exception e) {
-			log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
+			ServerGameLogic.log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
 					e.getMessage());
 		}
-		log.info("[SERVER] Recieved Load Map packet from Player {}. Map={}", loadMapPacket.getPlayerId(),
+		ServerGameLogic.log.info("[SERVER] Recieved Load Map packet from Player {}. Map={}", loadMapPacket.getPlayerId(),
 				loadMapPacket.getMapKey());
 	}
 
@@ -262,7 +262,7 @@ public class ServerGameLogic {
 			mgr.getRealm().addPlayer(player);
 			mgr.getServer().getClients().get(command.getSrcIp()).setHandshakeComplete(true);
 		} catch (Exception e) {
-			log.error("Failed to perform Client Login. Reason: {}", e);
+			ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
 		}
 	}
 }

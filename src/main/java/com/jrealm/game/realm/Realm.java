@@ -66,7 +66,7 @@ public class Realm {
 		this.isServer = isServer;
 		this.realmCamera = cam;
 
-		this.loadMap("tile/vault.xml", null);
+		this.loadMap(2, null);
 		if(this.isServer) {
 			this.setupChests();
 			WorkerThread.submit(this.getStatsThread());
@@ -85,7 +85,7 @@ public class Realm {
 		}
 	}
 
-	public void loadMap(String path, Player player) {
+	public void loadMap(int mapId, Player player) {
 		List<Chest> curr = this.getChests();
 
 		this.bullets = new ConcurrentHashMap<>();
@@ -99,7 +99,7 @@ public class Realm {
 		this.bulletHits = new ConcurrentHashMap<>();
 		this.materials = new ConcurrentHashMap<>();
 		this.materialManagers = new ConcurrentHashMap<>();
-		this.tileManager = new TileManager(1);
+		this.tileManager = new TileManager(mapId);
 		if (this.isServer) {
 			this.spawnRandomEnemies();
 		}

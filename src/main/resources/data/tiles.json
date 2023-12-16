@@ -224,8 +224,8 @@
 		"tileId": 17,
 		"name": "Red_Wall_0",
 		"spriteKey": "tile/rotmg-tiles-1.png",
-		"row": 0,
-		"col": 3,
+		"row": 3,
+		"col": 0,
 		"size": 32, 
 		"data": {
 			"hasCollision" : 1,

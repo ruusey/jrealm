@@ -72,7 +72,7 @@ public class PlayState extends GameState {
 	private Tuple<Cardinality, Boolean> lastDirection;
 	private boolean sentChat = false;
 	private Map<Cardinality, Boolean> lastDirectionMap;
-	
+
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 		PlayState.map = new Vector2f();
@@ -235,7 +235,7 @@ public class PlayState extends GameState {
 				Runnable processGameObjects = () -> {
 					this.processBulletHit();
 				};
-				
+
 				Runnable updatePlayerAndUi = () -> {
 					player.update(time);
 					this.movePlayer(player);
@@ -248,7 +248,7 @@ public class PlayState extends GameState {
 			this.cam.update();
 		}
 	}
-	
+
 	@SuppressWarnings("unused")
 	private void movePlayer(Player p) {
 		if (!p.isFallen()) {
@@ -259,7 +259,7 @@ public class PlayState extends GameState {
 			}else {
 				p.xCol=true;
 			}
-			
+
 			if(!this.getRealmManager().getRealm().getTileManager().collisionTile(p, 0, p.getDy())) {
 				p.yCol=false;
 				p.applyMovementLerp(new ObjectMovement(p.getPos().x, p.getPos().y+p.getDy()));
@@ -341,7 +341,7 @@ public class PlayState extends GameState {
 			}
 		}
 	}
-	
+
 	private synchronized void processPlayerHit(Bullet b, Player p) {
 		if (b.getBounds().collides(0, 0, p.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
 			Stats stats = p.getComputedStats();
@@ -417,7 +417,7 @@ public class PlayState extends GameState {
 				}else {
 					lastDirectionTempMap.put(Cardinality.NORTH, false);
 				}
-				
+
 				if (player.getIsDown()) {
 					player.setDy(player.getMaxSpeed());
 					c = Cardinality.SOUTH;
@@ -433,7 +433,7 @@ public class PlayState extends GameState {
 				}else {
 					lastDirectionTempMap.put(Cardinality.WEST, false);
 				}
-				
+
 				if (player.getIsRight()) {
 					player.setDx(player.getMaxSpeed());
 					c = Cardinality.EAST;
@@ -441,7 +441,7 @@ public class PlayState extends GameState {
 				}else {
 					lastDirectionTempMap.put(Cardinality.EAST, false);
 				}
-				
+
 				if(c==null) {
 					player.setDx(0);
 					player.setDy(0);
@@ -452,15 +452,15 @@ public class PlayState extends GameState {
 				if(this.lastDirectionMap == null) {
 					this.lastDirectionMap = lastDirectionTempMap;
 				}
-				
+
 				if(!this.lastDirectionMap.equals(lastDirectionTempMap)) {
 					for(Map.Entry<Cardinality, Boolean> entry : lastDirectionTempMap.entrySet()) {
-						if(lastDirectionMap.get(entry.getKey())!=entry.getValue()) {
+						if(this.lastDirectionMap.get(entry.getKey())!=entry.getValue()) {
 							try {
 								PlayerMovePacket packet = PlayerMovePacket.from(player, entry.getKey(), entry.getValue());
 								this.realmManager.getClient().sendRemote(packet);
 							}catch(Exception e) {
-								log.error("Failed to create player move packet. Reason: {}", e);
+								PlayState.log.error("Failed to create player move packet. Reason: {}", e);
 							}
 						}
 					}
@@ -476,7 +476,7 @@ public class PlayState extends GameState {
 					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/vault.xml", e.getMessage());
 				}
 				this.playerLocation = PlayerLocation.VAULT;
-				this.realmManager.getRealm().loadMap("tile/vault.xml", this.getPlayer());
+				this.realmManager.getRealm().loadMap(1, this.getPlayer());
 				this.loadClass(this.getPlayer(), this.currentPlayerCharacterClass(), false);
 			}
 			if (key.f1.clicked && !this.playerLocation.equals(PlayerLocation.REALM)) {
@@ -488,7 +488,7 @@ public class PlayState extends GameState {
 				}
 
 				this.playerLocation = PlayerLocation.REALM;
-				this.realmManager.getRealm().loadMap("tile/nexus2.xml", this.getPlayer());
+				this.realmManager.getRealm().loadMap(2, this.getPlayer());
 				this.loadClass(this.getPlayer(), this.currentPlayerCharacterClass(), false);
 
 			}
@@ -547,7 +547,7 @@ public class PlayState extends GameState {
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
-				}			
+				}
 			}
 			if (key.seven.clicked) {
 				try {
@@ -556,7 +556,7 @@ public class PlayState extends GameState {
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
-				}			
+				}
 			}
 			if (key.eight.clicked) {
 				try {
@@ -565,9 +565,9 @@ public class PlayState extends GameState {
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
-				}			
+				}
 			}
-			
+
 		} else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
 			this.gsm.pop(GameStateManager.EDIT);
 			this.cam.target(player);
@@ -583,8 +583,8 @@ public class PlayState extends GameState {
 		if (key.t.down && !this.sentChat) {
 			try {
 				this.sentChat = true;
-//				MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), (byte)0, (byte)4, false, false);
-//				this.realmManager.getClient().sendRemote(moveItem);
+				//				MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), (byte)0, (byte)4, false, false);
+				//				this.realmManager.getClient().sendRemote(moveItem);
 
 			} catch (Exception e) {
 				PlayState.log.error("Failed to send test text packet: {}", e);
@@ -749,7 +749,7 @@ public class PlayState extends GameState {
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
 			this.getPui().setGroundLoot(new GameItem[8], g);
 
-		} else if(closeLoot!=null && closeLoot.getContentsChanged()) {
+		} else if((closeLoot!=null) && closeLoot.getContentsChanged()) {
 			this.getPui().setGroundLoot(closeLoot.getItems(), g);
 			closeLoot.setContentsChanged(false);
 		}
