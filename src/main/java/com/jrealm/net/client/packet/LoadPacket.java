@@ -244,7 +244,7 @@ public class LoadPacket extends Packet {
 		
 		List<Long> lootDiff = new ArrayList<>();
 		for(LootContainer p : loot) {
-			if(!lootIdsOther.contains(p.getLootContainerId()) || p.getContentsChanged()) {
+			if(!lootIdsOther.contains(p.getLootContainerId())) {
 				lootDiff.add(p.getLootContainerId());
 			}
 		}
