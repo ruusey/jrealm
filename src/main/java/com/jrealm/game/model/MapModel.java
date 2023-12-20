@@ -20,5 +20,6 @@ public class MapModel {
 	private int tileSize;
 	private int width;
 	private int height;
+	private int terrainId;
 	private Map<String, int[][]> data;
 }

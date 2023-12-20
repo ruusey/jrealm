@@ -20,6 +20,13 @@ public class TileMap {
 	private int width;
 	private int height;
 
+	public TileMap(int tileSize, int width, int height) {
+		this.tileSize = tileSize;
+		this.width = width;
+		this.height = height;
+		this.blocks = new Tile[height][width];
+	}
+
 	public TileMap(short mapId, int tileSize, int width, int height) {
 		this.mapId = mapId;
 		this.tileSize = tileSize;
@@ -27,9 +34,8 @@ public class TileMap {
 		this.height = height;
 		this.blocks = new Tile[height][width];
 	}
-	
+
 	public TileMap(short mapId, Tile[][] blocks, int tileSize, int width, int height) {
-		super();
 		this.mapId = mapId;
 		this.blocks = blocks;
 		this.tileSize = tileSize;
@@ -40,7 +46,7 @@ public class TileMap {
 	public Tile[][] getBlocks() {
 		return this.blocks;
 	}
-	
+
 	public void setBlockAt(int row, int col, short tileId, TileData data) {
 		Vector2f tilePos = new Vector2f(col*this.tileSize, row*this.tileSize);
 		this.blocks[row][col] = new Tile(tileId, tilePos, data, (short)GlobalConstants.BASE_TILE_SIZE, false);

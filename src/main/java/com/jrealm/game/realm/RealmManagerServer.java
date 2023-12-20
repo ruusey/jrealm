@@ -100,7 +100,7 @@ public class RealmManagerServer implements Runnable {
 		this.expiredPlayers = new ArrayList<>();
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
-		this.getRealm().loadMap(1, null);
+		// this.getRealm().loadMap(1, null);
 		// this.spawnTestPlayers(4);
 
 	}

@@ -66,13 +66,15 @@ public class Realm {
 		this.players = new ConcurrentHashMap<>();
 		this.isServer = isServer;
 		this.realmCamera = cam;
+		this.loadMap(2, null);
 
 		if(this.isServer) {
-			this.loadMap(2, null);
+			// this.loadMap(2, null);
 			this.setupChests();
 			WorkerThread.submit(this.getStatsThread());
 		} else {
-			this.loadMap(1);
+			// this.loadMap(2);
+
 		}
 	}
 
@@ -102,9 +104,12 @@ public class Realm {
 		this.bulletHits = new ConcurrentHashMap<>();
 		this.materials = new ConcurrentHashMap<>();
 		this.materialManagers = new ConcurrentHashMap<>();
-		this.tileManager = new TileManager(mapId);
 		if (this.isServer) {
+			this.tileManager = new TileManager(mapId);
 			this.spawnRandomEnemies();
+		} else {
+			this.tileManager = new TileManager(GameDataManager.MAPS.get(mapId));
+
 		}
 
 		if (player != null) {
@@ -126,11 +131,12 @@ public class Realm {
 		this.bulletHits = new ConcurrentHashMap<>();
 		this.materials = new ConcurrentHashMap<>();
 		this.materialManagers = new ConcurrentHashMap<>();
-		this.tileManager = new TileManager(mapModel);
 		if (this.isServer) {
+			this.tileManager = new TileManager(mapId);
 			this.spawnRandomEnemies();
+		} else {
+			this.tileManager = new TileManager(mapModel);
 		}
-
 	}
 
 	public long addMaterial(Material m) {

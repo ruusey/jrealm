@@ -1,10 +1,13 @@
 package com.jrealm.game.tiles;
 
 import java.awt.Graphics2D;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
@@ -13,6 +16,9 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.MapModel;
+import com.jrealm.game.model.TerrainGenerationParameters;
+import com.jrealm.game.model.TileGroup;
+import com.jrealm.game.model.TileModel;
 import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.tiles.blocks.TileData;
 import com.jrealm.game.util.Camera;
@@ -28,8 +34,18 @@ public class TileManager {
 	// Server side constructor
 	public TileManager(int mapId) {
 		MapModel model = GameDataManager.MAPS.get(mapId);
-		this.mapLayers = this.getLayersFromData(model);
+		if (model.getData() != null) {
+			this.mapLayers = this.getLayersFromData(model);
 
+		} else {
+			TerrainGenerationParameters params = GameDataManager.TERRAINS.get(model.getTerrainId());
+			this.mapLayers = this.getLayersFromTerrain(model.getWidth(), model.getHeight(), model.getTileSize(),
+					params);
+		}
+	}
+
+	public TileManager(int width, int height, int tileSize, TerrainGenerationParameters params) {
+		this.mapLayers = this.getLayersFromTerrain(width, height, tileSize, params);
 	}
 
 	// Client side constructor
@@ -41,6 +57,42 @@ public class TileManager {
 				model.getHeight());
 		this.mapLayers.add(baseLayer);
 		this.mapLayers.add(collisionLayer);
+	}
+
+	private List<TileMap> getLayersFromTerrain(int width, int height, int tileSize,
+			TerrainGenerationParameters params) {
+		final Random random = new Random(Instant.now().toEpochMilli());
+		TileMap baseLayer = new TileMap(tileSize, width, height);
+		TileMap collisionLayer = new TileMap(tileSize, width, height);
+
+		for (TileGroup group : params.getTileGroups()) {
+			List<TileModel> tileIdsCollision = group.getTileIds().stream().map(id -> GameDataManager.TILES.get(id))
+					.filter(tm -> tm.getData().hasCollision()).collect(Collectors.toList());
+			List<TileModel> tileIdsNormal = group.getTileIds().stream().map(id -> GameDataManager.TILES.get(id))
+					.filter(tm -> !tm.getData().hasCollision()).collect(Collectors.toList());
+
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					TileModel tileIdToCreate = tileIdsNormal.get(random.nextInt(tileIdsNormal.size()));
+					baseLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+				}
+			}
+
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					TileModel tileIdToCreate = tileIdsCollision.get(random.nextInt(tileIdsNormal.size()));
+					float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
+					if (random.nextFloat() <= rarity) {
+						collisionLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+					} else {
+						collisionLayer.setBlockAt(i, j, (short) 0, tileIdToCreate.getData());
+					}
+				}
+			}
+		}
+
+		return Arrays.asList(baseLayer, collisionLayer);
+
 	}
 
 	private List<TileMap> getLayersFromData(MapModel model) {

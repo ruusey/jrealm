@@ -17,6 +17,7 @@ import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.SpriteModel;
+import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileModel;
 
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +32,25 @@ public class GameDataManager {
 	public static Map<String, SpriteSheet> SPRITE_SHEETS = null;
 	public static Map<Integer, TileModel> TILES = null;
 	public static Map<Integer, MapModel> MAPS = null;
-
+	public static Map<Integer, TerrainGenerationParameters> TERRAINS = null;
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png", "tile/rotmg-tiles-2.png",
 			"tile/rotmg-tiles-1.png", "entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png",
 	"entity/rotmg-misc.png" };
+
+	private static void loadTerrains() throws Exception {
+		GameDataManager.log.info("Loading Terrains..");
+		GameDataManager.TERRAINS = new HashMap<>();
+		InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/terrains.json");
+		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+		TerrainGenerationParameters[] maps = GameDataManager.mapper.readValue(text,
+				TerrainGenerationParameters[].class);
+		for (TerrainGenerationParameters map : maps) {
+			GameDataManager.TERRAINS.put(map.getTerrainId(), map);
+		}
+		GameDataManager.log.info("Loading Terrains... DONE");
+	}
 
 	private static void loadMaps() throws Exception {
 		GameDataManager.log.info("Loading Maps..");
@@ -251,6 +266,7 @@ public class GameDataManager {
 			GameDataManager.loadEnemies();
 			GameDataManager.loadTiles();
 			GameDataManager.loadMaps();
+			GameDataManager.loadTerrains();
 		}catch(Exception e) {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}
