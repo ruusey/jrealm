@@ -40,7 +40,6 @@ import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.Tuple;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
@@ -468,23 +467,23 @@ public class PlayState extends GameState {
 			}
 			this.cam.input(mouse, key);
 			if (key.f2.clicked && !this.playerLocation.equals(PlayerLocation.VAULT)) {
-				try {
-					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/vault.xml");
-					this.realmManager.getClient().sendRemote(loadMap);
-				}catch(Exception e) {
-					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/vault.xml", e.getMessage());
-				}
+				//				try {
+				//					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/vault.xml");
+				//					this.realmManager.getClient().sendRemote(loadMap);
+				//				}catch(Exception e) {
+				//					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/vault.xml", e.getMessage());
+				//				}
 				this.playerLocation = PlayerLocation.VAULT;
 				this.realmManager.getRealm().loadMap(1, this.getPlayer());
 				this.loadClass(this.getPlayer(), this.currentPlayerCharacterClass(), false);
 			}
 			if (key.f1.clicked && !this.playerLocation.equals(PlayerLocation.REALM)) {
-				try {
-					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/nexus2.xml");
-					this.realmManager.getClient().sendRemote(loadMap);
-				}catch(Exception e) {
-					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/nexus2.xml", e.getMessage());
-				}
+				//				try {
+				//					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/nexus2.xml");
+				//					this.realmManager.getClient().sendRemote(loadMap);
+				//				}catch(Exception e) {
+				//					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/nexus2.xml", e.getMessage());
+				//				}
 
 				this.playerLocation = PlayerLocation.REALM;
 				this.realmManager.getRealm().loadMap(2, this.getPlayer());
@@ -715,28 +714,21 @@ public class PlayState extends GameState {
 	}
 
 	public void renderCloseLoot(Graphics2D g) {
-		List<LootContainer> toRemove = new ArrayList<>();
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if (player == null)
 			return;
-		final LootContainer closeLoot = this.getClosestLootContainer(player.getPos(), player.getSize()*2);
+		final LootContainer closeLoot = this.getClosestLootContainer(player.getPos(), player.getSize() / 2);
 		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
 			lc.render(g);
 		}
-		if ((this.getPui().isGroundLootEmpty() && (closeLoot != null))) {
+
+		if ((this.getPui().isGroundLootEmpty() && (closeLoot != null)) || ((closeLoot != null) && closeLoot.getContentsChanged())) {
 			this.getPui().setGroundLoot(closeLoot.getItems(), g);
 
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
 			this.getPui().setGroundLoot(new GameItem[8], g);
-
-		} else if((closeLoot!=null) && closeLoot.getContentsChanged()) {
-			this.getPui().setGroundLoot(closeLoot.getItems(), g);
-			closeLoot.setContentsChanged(false);
 		}
 
-		for (LootContainer tr : toRemove) {
-			this.realmManager.getRealm().removeLootContainer(tr);
-		}
 	}
 
 	public Player getPlayer() {

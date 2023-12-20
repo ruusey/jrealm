@@ -37,6 +37,7 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.states.PlayState;
+import com.jrealm.game.tiles.NetTile;
 import com.jrealm.game.tiles.TileMap;
 import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.util.Camera;
@@ -44,6 +45,7 @@ import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
+import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UnloadPacket;
@@ -84,6 +86,8 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
 	private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
 	private Map<Long, UnloadPacket> playerUnloadState = new HashMap<>();
+	private Map<Long, LoadMapPacket> playerLoadMapState = new HashMap<>();
+
 	private UnloadPacket lastUnload;
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 
@@ -97,7 +101,7 @@ public class RealmManagerServer implements Runnable {
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
 		this.getRealm().loadMap(1, null);
-		// this.spawnTestPlayers(8);
+		// this.spawnTestPlayers(4);
 
 	}
 	// Adds a specified amount of random headless players
@@ -226,7 +230,19 @@ public class RealmManagerServer implements Runnable {
 				// Contains, player stat info, inventory, status effects, health and mana data
 				final List<UpdatePacket> uPackets = this.realm
 						.getPlayersAsPackets(player.getValue().getCam().getBounds());
+				final NetTile[] netTilesForPlayer = this.realm.getTileManager().getLoadMapTiles(player.getValue());
+				final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(netTilesForPlayer);
 
+				if (this.playerLoadMapState.get(player.getKey()) == null) {
+					this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
+					this.enqueueServerPacket(newLoadMapPacket);
+				} else {
+					final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
+					if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
+						this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
+						// this.enqueueServerPacket(newLoadMapPacket);
+					}
+				}
 				// Get LoadPacket for this player
 				// Contains newly spawned bullets, entities, players
 				final LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));

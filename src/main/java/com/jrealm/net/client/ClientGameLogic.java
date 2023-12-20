@@ -17,6 +17,7 @@ import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.util.Camera;
 import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.ObjectMovement;
@@ -29,12 +30,22 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientGameLogic {
+	public static void handleLoadMapClient(RealmManagerClient cli, Packet packet) {
+		LoadMapPacket loadPacket = (LoadMapPacket) packet;
+		try {
+			//			log.info("[CLIENT] Recieved Load Packet \nPlayers: {}\nEnemies: {}\nBullets: {}\nLootContainers: {}",
+			//
+			cli.getRealm().getTileManager().mergeMap(loadPacket);
+		} catch (Exception e) {
+			ClientGameLogic.log.error("Failed to handle LoadMap Packet. Reason: {}", e);
+		}
+	}
 	public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
 		LoadPacket loadPacket = (LoadPacket) packet;
 		try {
-//			log.info("[CLIENT] Recieved Load Packet \nPlayers: {}\nEnemies: {}\nBullets: {}\nLootContainers: {}",
-//					textPacket.getPlayers().length, textPacket.getEnemies().length, textPacket.getBullets().length,
-//					textPacket.getContainers().length);
+			//			log.info("[CLIENT] Recieved Load Packet \nPlayers: {}\nEnemies: {}\nBullets: {}\nLootContainers: {}",
+			//					textPacket.getPlayers().length, textPacket.getEnemies().length, textPacket.getBullets().length,
+			//					textPacket.getContainers().length);
 
 			for(Player p : loadPacket.getPlayers()) {
 				if(p.getId()==cli.getCurrentPlayerId()) {
@@ -60,7 +71,7 @@ public class ClientGameLogic {
 				cli.getRealm().addEnemyIfNotExists(e);
 			}
 		}catch(Exception e) {
-			log.error("Failed to handle Load Packet. Reason: {}", e);
+			ClientGameLogic.log.error("Failed to handle Load Packet. Reason: {}", e);
 		}
 	}
 
@@ -88,24 +99,24 @@ public class ClientGameLogic {
 			}
 
 		}catch(Exception e) {
-			log.error("Failed to handle Unload Packet. Reason: {}", e);
+			ClientGameLogic.log.error("Failed to handle Unload Packet. Reason: {}", e);
 		}
 	}
 
 	public static void handleTextClient(RealmManagerClient cli, Packet packet) {
 		TextPacket textPacket = (TextPacket) packet;
-		log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
+		ClientGameLogic.log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
 		try {
 			cli.getState().getPui().enqueueChat(textPacket.clone());
 		}catch(Exception e) {
-			log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
+			ClientGameLogic.log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
 		}
 	}
 
 	public static void handleCommandClient(RealmManagerClient cli, Packet packet) {
 		CommandPacket commandPacket = (CommandPacket) packet;
-		log.info("[CLIENT] Recieved Command Packet for Player {} Command={}", commandPacket.getPlayerId(), commandPacket.getCommand());
+		ClientGameLogic.log.info("[CLIENT] Recieved Command Packet for Player {} Command={}", commandPacket.getPlayerId(), commandPacket.getCommand());
 		try {
 			switch(commandPacket.getCommandId()) {
 			case 2:
@@ -114,7 +125,7 @@ public class ClientGameLogic {
 				break;
 			}
 		}catch(Exception e) {
-			log.error("Failed to handle client command packet. Reason: {}", e.getMessage());
+			ClientGameLogic.log.error("Failed to handle client command packet. Reason: {}", e.getMessage());
 		}
 	}
 
@@ -122,7 +133,9 @@ public class ClientGameLogic {
 		ObjectMovePacket objectMovePacket = (ObjectMovePacket) packet;
 		for(ObjectMovement movement : objectMovePacket.getMovements()) {
 			EntityType type = movement.getTargetEntityType();
-			if(type==null) continue;
+			if(type==null) {
+				continue;
+			}
 			switch(type) {
 			case PLAYER:
 				Player playerToUpdate = cli.getRealm().getPlayer(movement.getEntityId());
@@ -173,7 +186,7 @@ public class ClientGameLogic {
 						new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 								(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
 						GlobalConstants.PLAYER_SIZE, cls);
-				log.info("Login succesful, added Player ID {}", player.getId());
+				ClientGameLogic.log.info("Login succesful, added Player ID {}", player.getId());
 				player.getCam().target(player);
 
 				cli.getState().loadClass(player, cls, true);
@@ -184,7 +197,7 @@ public class ClientGameLogic {
 				cli.getState().getPui().enqueueChat(packet);
 			}
 		}catch(Exception e) {
-			log.error("Failed to response to login response. Reason: {}", e.getMessage());
+			ClientGameLogic.log.error("Failed to response to login response. Reason: {}", e.getMessage());
 		}
 	}
 }

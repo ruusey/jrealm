@@ -201,7 +201,7 @@ public class ServerGameLogic {
 				}
 			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
 
-				LootContainer nearLoot = mgr.getClosestLootContainer(player.getPos(), 32);
+				LootContainer nearLoot = mgr.getClosestLootContainer(player.getPos(), player.getSize() / 2);
 				GameItem lootItem = nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20];
 				GameItem currentInvItem = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
 
@@ -226,16 +226,16 @@ public class ServerGameLogic {
 
 	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {
 		LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
-		try {
-			Player player = mgr.getRealm().getPlayer(loadMapPacket.getPlayerId());
-			mgr.getRealm().loadMap(1, player);
-
-		} catch (Exception e) {
-			ServerGameLogic.log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
-					e.getMessage());
-		}
-		ServerGameLogic.log.info("[SERVER] Recieved Load Map packet from Player {}. Map={}", loadMapPacket.getPlayerId(),
-				loadMapPacket.getMapKey());
+//		try {
+//			Player player = mgr.getRealm().getPlayer(loadMapPacket.getPlayerId());
+//			mgr.getRealm().loadMap(1, player);
+//
+//		} catch (Exception e) {
+//			ServerGameLogic.log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
+//					e.getMessage());
+//		}
+//		ServerGameLogic.log.info("[SERVER] Recieved Load Map packet from Player {}. Map={}", loadMapPacket.getPlayerId(),
+//				loadMapPacket.getMapKey());
 	}
 
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {

@@ -23,7 +23,7 @@ public class Tile implements Streamable<Tile> {
 	private TileData data;
 
 	public Sprite img;
-	
+
 	public Tile(short tileId, Sprite img, Vector2f pos, TileData data, short size, boolean discovered) {
 		this.tileId = tileId;
 		this.img = img;
@@ -57,7 +57,7 @@ public class Tile implements Streamable<Tile> {
 	public Vector2f getPos() {
 		return this.pos;
 	}
-	
+
 	public boolean isVoid() {
 		return this.tileId == 0;
 	}
@@ -74,7 +74,6 @@ public class Tile implements Streamable<Tile> {
 		stream.writeShort(this.size);
 		stream.writeFloat(this.pos.x);
 		stream.writeFloat(this.pos.y);
-		stream.writeFloat(this.data.getRarity());
 		stream.writeByte(this.data.getHasCollision());
 		stream.writeByte(this.data.getSlows());
 		stream.writeByte(this.data.getDamaging());
@@ -87,11 +86,11 @@ public class Tile implements Streamable<Tile> {
 		final short size = stream.readShort();
 		final float posX = stream.readFloat();
 		final float posY = stream.readFloat();
-		final float rarity = stream.readFloat();
 		final byte hasCollision = stream.readByte();
 		final byte slows = stream.readByte();
 		final byte damaging = stream.readByte();
-		
-		return new Tile(tileId, new Vector2f(posX, posY), new TileData(rarity, hasCollision, slows, damaging), size, discovered);
+
+		return new Tile(tileId, new Vector2f(posX, posY), new TileData(hasCollision, slows, damaging), size,
+				discovered);
 	}
 }

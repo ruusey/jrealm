@@ -4,9 +4,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.List;
 
-import com.jrealm.game.entity.Player;
-import com.jrealm.game.tiles.TileMap;
+import com.jrealm.game.tiles.NetTile;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 
@@ -19,12 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LoadMapPacket extends Packet {
 
-	private long playerId;
-	private String mapKey;
-//	private short tileSize;
-//	private short width;
-//	private short height;
-//	private Tile[] tiles;
+	private NetTile[] tiles;
 
 
 	public LoadMapPacket() {
@@ -36,7 +31,7 @@ public class LoadMapPacket extends Packet {
 		try {
 			this.readData(data);
 		} catch (Exception e) {
-			log.error("Failed to parse ObjectMove packet, Reason: {}", e);
+			LoadMapPacket.log.error("Failed to parse ObjectMove packet, Reason: {}", e);
 		}
 	}
 
@@ -44,64 +39,67 @@ public class LoadMapPacket extends Packet {
 	public void readData(byte[] data) throws Exception {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		DataInputStream dis = new DataInputStream(bis);
-		if (dis == null || dis.available() < 5)
+		if ((dis == null) || (dis.available() < 5))
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
-		
-		this.playerId = dis.readLong();
-		this.mapKey = dis.readUTF();
-//		this.tileSize = dis.readShort();
-//		this.width = dis.readShort();
-//		this.height = dis.readShort();
-//		
-//		short tilesSize = dis.readShort();
-//		this.tiles = new Tile[tilesSize];
-//		
-//		for(int i = 0; i < tilesSize; i++) {
-//			this.tiles[i] = new Tile().read(dis);
-//		}
 
+		short tilesSize = dis.readShort();
+		if (tilesSize > 0) {
+			this.tiles = new NetTile[tilesSize];
+			for(int i = 0; i< tilesSize; i ++) {
+				this.tiles[i] = new NetTile().read(dis);
+			}
+		}
 	}
 
 	@Override
 	public void serializeWrite(DataOutputStream stream) throws Exception {
-		if (this.getId() < 1 || this.getData() == null || this.getData().length < 5)
+		if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
 			throw new IllegalStateException("No Packet data available to write to DataOutputStream");
 
 		this.addHeader(stream);
-		stream.writeLong(this.playerId);
-		stream.writeUTF(this.mapKey);
-//		stream.writeShort(this.tileSize);
-//		stream.writeShort(this.width);
-//		stream.writeShort(this.height);
-//		
-//		short tilesSize = this.tiles != null ?  (short) this.tiles.length : (short) 0;
-//		stream.writeShort(tilesSize);
-//		
-//		for(Tile tile : this.tiles) {
-//			tile.write(stream);
-//		}
+		stream.writeShort(this.tiles.length);
+		for (NetTile tile : this.tiles) {
+			tile.write(stream);
+		}
 	}
 
-	public static LoadMapPacket from(Player player, String mapKey) throws Exception {
+	public static LoadMapPacket from(List<NetTile> tiles) throws Exception {
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-
 		DataOutputStream stream = new DataOutputStream(byteStream);
 
-		stream.writeLong(player.getId());
-		stream.writeUTF(mapKey);
+		stream.writeShort(tiles.size());
+		for (NetTile tile : tiles) {
+			tile.write(stream);
+		}
 
 		return new LoadMapPacket(PacketType.LOAD_MAP.getPacketId(), byteStream.toByteArray());
 	}
-	
-	public static LoadMapPacket from(Player player, String mapKey, TileMap map) throws Exception {
-		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 
+	public static LoadMapPacket from(NetTile[] tiles) throws Exception {
+		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 		DataOutputStream stream = new DataOutputStream(byteStream);
 
-		stream.writeLong(player.getId());
-		stream.writeUTF(mapKey);
-		//stream.writeShort(map.getTileSize());
+		stream.writeShort(tiles.length);
+		for (NetTile tile : tiles) {
+			tile.write(stream);
+		}
 
 		return new LoadMapPacket(PacketType.LOAD_MAP.getPacketId(), byteStream.toByteArray());
+	}
+
+	public boolean equals(LoadMapPacket other) {
+		NetTile[] myTiles = this.getTiles();
+		NetTile[] otherTiles = other.getTiles();
+		if (myTiles.length != otherTiles.length)
+			return false;
+
+		for (int i = 0; i < myTiles.length; i++) {
+			NetTile myTile = myTiles[i];
+			NetTile otherTile = otherTiles[i];
+			if (!myTile.equals(otherTile))
+				return false;
+		}
+
+		return true;
 	}
 }

@@ -16,6 +16,7 @@ import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -93,6 +94,7 @@ public class RealmManagerClient implements Runnable {
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), ClientGameLogic::handleTextClient);
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), ClientGameLogic::handleCommandClient);
 		this.registerPacketCallback(PacketType.LOAD.getPacketId(), ClientGameLogic::handleLoadClient);
+		this.registerPacketCallback(PacketType.LOAD_MAP.getPacketId(), ClientGameLogic::handleLoadMapClient);
 		this.registerPacketCallback(PacketType.UNLOAD.getPacketId(), ClientGameLogic::handleUnloadClient);
 	}
 
@@ -121,13 +123,13 @@ public class RealmManagerClient implements Runnable {
 		};
 		WorkerThread.submitAndForkRun(sendHeartbeat);
 	}
-	
+
 	public void moveItem(int toSlotIndex, int fromSlotIndex, boolean drop, boolean consume) {
 		try {
 			MoveItemPacket moveItem = MoveItemPacket.from(this.state.getPlayer().getId(), (byte)toSlotIndex, (byte)fromSlotIndex, drop, consume);
 			this.getClient().sendRemote(moveItem);
 		}catch(Exception e) {
-			log.error("Failed to send MoveItem packet. Reason: {}", e);
+			RealmManagerClient.log.error("Failed to send MoveItem packet. Reason: {}", e);
 		}
 	}
 }

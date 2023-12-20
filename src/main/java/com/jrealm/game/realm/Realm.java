@@ -30,6 +30,7 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
+import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
@@ -66,10 +67,12 @@ public class Realm {
 		this.isServer = isServer;
 		this.realmCamera = cam;
 
-		this.loadMap(2, null);
 		if(this.isServer) {
+			this.loadMap(2, null);
 			this.setupChests();
 			WorkerThread.submit(this.getStatsThread());
+		} else {
+			this.loadMap(1);
 		}
 	}
 
@@ -107,6 +110,27 @@ public class Realm {
 		if (player != null) {
 			player.resetPosition();
 		}
+	}
+
+	public void loadMap(int mapId) {
+		List<Chest> curr = this.getChests();
+		MapModel mapModel = GameDataManager.MAPS.get(mapId);
+		this.bullets = new ConcurrentHashMap<>();
+		this.enemies = new ConcurrentHashMap<>();
+		this.loot = new ConcurrentHashMap<>();
+		if (curr.size() > 0) {
+			curr.forEach(chest -> {
+				this.addLootContainer(chest);
+			});
+		}
+		this.bulletHits = new ConcurrentHashMap<>();
+		this.materials = new ConcurrentHashMap<>();
+		this.materialManagers = new ConcurrentHashMap<>();
+		this.tileManager = new TileManager(mapModel);
+		if (this.isServer) {
+			this.spawnRandomEnemies();
+		}
+
 	}
 
 	public long addMaterial(Material m) {
