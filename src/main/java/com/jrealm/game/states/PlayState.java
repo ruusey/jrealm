@@ -20,7 +20,6 @@ import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.entity.item.Chest;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
@@ -656,21 +655,17 @@ public class PlayState extends GameState {
 		}
 	}
 
-	public Chest getNearestChest() {
-		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
-			if ((this.realmManager.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= (GlobalConstants.PLAYER_SIZE*2))
-					&& (lc instanceof Chest) && !this.playerLocation.equals(PlayerLocation.REALM))
-				return (Chest) lc;
+	public LootContainer getClosestLootContainer(final Vector2f pos, final float limit) {
+		float best = Float.MAX_VALUE;
+		LootContainer bestLoot = null;
+		for (final LootContainer lootContainer : this.realmManager.getRealm().getLoot().values()) {
+			float dist = lootContainer.getPos().distanceTo(pos);
+			if ((dist < best) && (dist <= limit)) {
+				best = dist;
+				bestLoot = lootContainer;
+			}
 		}
-		return null;
-	}
-
-	public LootContainer getNearestLootContainer() {
-		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
-			if ((this.realmManager.getRealm().getPlayer(this.playerId).getBounds().distance(lc.getPos()) <= (GlobalConstants.PLAYER_SIZE*2)))
-				return lc;
-		}
-		return null;
+		return bestLoot;
 	}
 
 	@Override
@@ -724,25 +719,10 @@ public class PlayState extends GameState {
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if (player == null)
 			return;
-		AABB renderBounds = this.realmManager.getRealm().getTileManager().getRenderViewPort(player);
-		LootContainer closeLoot = null;
+		final LootContainer closeLoot = this.getClosestLootContainer(player.getPos(), player.getSize()*2);
 		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
-			if ((lc instanceof Chest) && this.playerLocation.equals(PlayerLocation.REALM)) {
-				continue;
-			}
-			if ((player.getBounds().distance(lc.getPos()) < GlobalConstants.PLAYER_SIZE)) {
-				closeLoot = lc;
-			}
-			AABB lcBounds = new AABB(lc.getPos(), 32, 32);
-			if (!lc.isEmpty() && lcBounds.intersect(renderBounds)) {
-				lc.render(g);
-
-			}
-			if (lc.isEmpty() || lc.isExpired()) {
-				toRemove.add(lc);
-			}
+			lc.render(g);
 		}
-
 		if ((this.getPui().isGroundLootEmpty() && (closeLoot != null))) {
 			this.getPui().setGroundLoot(closeLoot.getItems(), g);
 
