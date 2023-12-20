@@ -240,7 +240,7 @@ public class RealmManagerServer implements Runnable {
 					final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
 					if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
 						this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-						// this.enqueueServerPacket(newLoadMapPacket);
+						this.enqueueServerPacket(newLoadMapPacket);
 					}
 				}
 				// Get LoadPacket for this player

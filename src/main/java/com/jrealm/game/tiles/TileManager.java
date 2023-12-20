@@ -13,7 +13,6 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.MapModel;
-import com.jrealm.game.model.TileModel;
 import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.tiles.blocks.TileData;
 import com.jrealm.game.util.Camera;
@@ -180,11 +179,8 @@ public class TileManager {
 				try {
 					Tile collisionTile = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
 					Tile normalTile = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
-					TileModel collisionTileModel = GameDataManager.TILES.get((int) collisionTile.getTileId());
-					TileModel normalTileModel = GameDataManager.TILES.get((int) collisionTile.getTileId());
-					NetTile collisionNetTile = new NetTile(collisionTile.getTileId(), collisionTileModel.getSize(),
-							(byte) 1, y, x, collisionTileModel.getData());
-					NetTile normalNetTile = new NetTile(normalTile.getTileId(), normalTileModel.getSize(), (byte)0, y, x, normalTileModel.getData());
+					NetTile collisionNetTile = new NetTile(collisionTile.getTileId(), (byte) 1, y, x);
+					NetTile normalNetTile = new NetTile(normalTile.getTileId(), (byte) 0, y, x);
 
 					tiles.add(normalNetTile);
 					tiles.add(collisionNetTile);
