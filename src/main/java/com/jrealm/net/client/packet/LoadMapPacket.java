@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.jrealm.game.tiles.NetTile;
@@ -87,6 +88,20 @@ public class LoadMapPacket extends Packet {
 		return new LoadMapPacket(PacketType.LOAD_MAP.getPacketId(), byteStream.toByteArray());
 	}
 
+	// TODO: Implement difference for delta tiles
+	public LoadMapPacket difference(LoadMapPacket other) throws Exception {
+		List<NetTile> diff = new ArrayList<>();
+
+		for (NetTile tileOther : other.getTiles()) {
+			if (!LoadMapPacket.tilesContains(tileOther, this.getTiles())) {
+				diff.add(tileOther);
+			}
+		}
+		if (diff.size() == 0)
+			return null;
+		return LoadMapPacket.from(diff);
+	}
+
 	public boolean equals(LoadMapPacket other) {
 		NetTile[] myTiles = this.getTiles();
 		NetTile[] otherTiles = other.getTiles();
@@ -101,5 +116,14 @@ public class LoadMapPacket extends Packet {
 		}
 
 		return true;
+	}
+
+	public static boolean tilesContains(NetTile tile, NetTile[] array) {
+		for (NetTile netTile : array) {
+			if (tile.equals(netTile))
+				return true;
+		}
+
+		return false;
 	}
 }
