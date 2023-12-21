@@ -183,10 +183,15 @@ public class PlayState extends GameState {
 
 	@Override
 	public void update(double time) {
-		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
+
 		Player player = this.realmManager.getRealm().getPlayer(this.realmManager.getCurrentPlayerId());
+
 		if (player == null)
 			return;
+		PlayState.map.x = player.getPos().x - (GamePanel.width / 2);
+		PlayState.map.y = player.getPos().y - (GamePanel.height / 2);
+
+		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
 			if (!this.gsm.isStateActive(GameStateManager.EDIT)) {
 
