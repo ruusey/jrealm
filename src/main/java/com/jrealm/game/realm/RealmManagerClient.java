@@ -53,7 +53,7 @@ public class RealmManagerClient implements Runnable {
 			this.update(0);
 		};
 
-		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
+		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 64);
 		WorkerThread.submitAndForkRun(workerThread);
 
 		RealmManagerClient.log.info("RealmManager exiting run().");

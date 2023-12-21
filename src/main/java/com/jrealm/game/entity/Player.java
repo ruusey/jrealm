@@ -102,12 +102,11 @@ public class Player extends Entity implements Streamable<Player>{
 	private void resetInventory() {
 		this.inventory = new GameItem[20];
 	}
-	
+
 	public int firstEmptyInvSlot() {
 		for(int i = 4; i<this.inventory.length; i++) {
-			if(this.inventory[i]==null) {
+			if(this.inventory[i]==null)
 				return i;
-			}
 		}
 		return -1;
 	}
@@ -187,7 +186,7 @@ public class Player extends Entity implements Streamable<Player>{
 				this.setMana(this.getMaxMana());
 			}
 		}
-		
+
 
 		if (((System.currentTimeMillis() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
@@ -308,7 +307,7 @@ public class Player extends Entity implements Streamable<Player>{
 				this.right = false;
 			}
 
-			float maxSpeed = 2.2f + (stats.getSpd() * 0.05f);
+			float maxSpeed = 0.5f + (stats.getSpd() * 0.05f);
 			if (this.hasEffect(EffectType.SPEEDY)) {
 				maxSpeed *= 1.5;
 			}

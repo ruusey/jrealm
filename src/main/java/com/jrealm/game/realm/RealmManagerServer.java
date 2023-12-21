@@ -114,7 +114,7 @@ public class RealmManagerServer implements Runnable {
 		this.expiredPlayers = new ArrayList<>();
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
-		// this.spawnTestPlayers(5);
+		this.spawnTestPlayers(5);
 
 	}
 	// Adds a specified amount of random headless players
@@ -169,7 +169,7 @@ public class RealmManagerServer implements Runnable {
 			this.update(0);
 		};
 
-		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 32);
+		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 64);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("RealmManager exiting run().");
 	}
@@ -350,7 +350,7 @@ public class RealmManagerServer implements Runnable {
 						e);
 			}
 		}
-			// }
+		// }
 
 		// Used to dynamically re-render changed loot containers (chests) on the client
 		// if their
