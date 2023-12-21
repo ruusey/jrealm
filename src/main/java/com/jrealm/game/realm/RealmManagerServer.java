@@ -90,6 +90,7 @@ public class RealmManagerServer implements Runnable {
 
 	private UnloadPacket lastUnload;
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
+	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
 
 	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
@@ -101,7 +102,7 @@ public class RealmManagerServer implements Runnable {
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
 		// this.getRealm().loadMap(1, null);
-		// this.spawnTestPlayers(4);
+		this.spawnTestPlayers(5);
 
 	}
 	// Adds a specified amount of random headless players
@@ -193,10 +194,22 @@ public class RealmManagerServer implements Runnable {
 		final List<String> disconnectedClients = new ArrayList<>();
 		for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
 			try {
+				// Dequeue and send any player specific packets
+				final List<Packet> playerPackets = new ArrayList<>();
+				final ConcurrentLinkedQueue<Packet> playerPacketsToSend = this.playerOutboundPacketQueue
+						.get(this.remoteAddresses.get(client.getKey()));
+
+				while ((playerPacketsToSend != null) && !playerPacketsToSend.isEmpty()) {
+					playerPackets.add(playerPacketsToSend.remove());
+				}
 				final OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
 				final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 
 				for (final Packet packet : packetsToBroadcast) {
+					packet.serializeWrite(dosToClient);
+				}
+
+				for (final Packet packet : playerPackets) {
 					packet.serializeWrite(dosToClient);
 				}
 			}catch(Exception e) {
@@ -230,19 +243,29 @@ public class RealmManagerServer implements Runnable {
 				// Contains, player stat info, inventory, status effects, health and mana data
 				final List<UpdatePacket> uPackets = this.realm
 						.getPlayersAsPackets(player.getValue().getCam().getBounds());
+
+				// Get the background + collision tiles in this players viewport
+				// condensed into a single array
 				final NetTile[] netTilesForPlayer = this.realm.getTileManager().getLoadMapTiles(player.getValue());
+				// Build those tiles into a load map packet (NetTile[] wrapper)
 				final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(netTilesForPlayer);
 
+				// If we dont have load map state for this player, map it and
+				// then transmit all the tiles
 				if (this.playerLoadMapState.get(player.getKey()) == null) {
 					this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-					this.enqueueServerPacket(newLoadMapPacket);
+
+					this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
 				} else {
+					// Get the previous loadMap packet and check for Delta,
+					// only send the delta to the client
 					final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
+					// Custom equals impl
 					if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
 						final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
 						this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
 						if (loadMapDiff != null) {
-							this.enqueueServerPacket(loadMapDiff);
+							this.enqueueServerPacket(player.getValue(), loadMapDiff);
 						}
 					}
 				}
@@ -261,12 +284,12 @@ public class RealmManagerServer implements Runnable {
 					}
 					if(this.playerUpdateState.get(player.getKey())==null) {
 						this.playerUpdateState.put(player.getKey(), packet);
-						this.enqueueServerPacket(packet);
+						this.enqueueServerPacket(player.getValue(), packet);
 					}else {
 						final UpdatePacket old = this.playerUpdateState.get(player.getKey());
 						if(!old.equals(packet)) {
 							this.playerUpdateState.put(player.getKey(), packet);
-							this.enqueueServerPacket(packet);
+							this.enqueueServerPacket(player.getValue(), packet);
 						}
 					}
 				}
@@ -276,20 +299,20 @@ public class RealmManagerServer implements Runnable {
 				// If the state is changed, only transmit the DELTA data
 				if(this.playerLoadState.get(player.getKey())==null) {
 					this.playerLoadState.put(player.getKey(), load);
-					this.enqueueServerPacket(load);
+					this.enqueueServerPacket(player.getValue(), load);
 				}else {
 					final LoadPacket old = this.playerLoadState.get(player.getKey());
 					if(!old.equals(load)) {
 						// Get the LoadPacket delta
 						final LoadPacket toSend = old.combine(load);
 						this.playerLoadState.put(player.getKey(), load);
-						this.enqueueServerPacket(toSend);
+						this.enqueueServerPacket(player.getValue(), toSend);
 
 						// Unload the delta objcets that were in the old LoadPacket
 						// but are NOT in the new LoadPacket
 						final UnloadPacket unloadDelta = old.difference(load);
 						if((unloadDelta.getEnemies().length>0) || (unloadDelta.getContainers().length>0) || (unloadDelta.getPlayers().length>0)){
-							this.enqueueServerPacket(unloadDelta);
+							this.enqueueServerPacket(player.getValue(), unloadDelta);
 						}
 					}
 				}
@@ -304,7 +327,7 @@ public class RealmManagerServer implements Runnable {
 				}
 				// If the ObjectMove packet isnt empty
 				if (mPacket != null) {
-					this.enqueueServerPacket(mPacket);
+					this.enqueueServerPacket(player.getValue(), mPacket);
 				}
 
 			} catch (Exception e) {
@@ -600,8 +623,21 @@ public class RealmManagerServer implements Runnable {
 		this.proccessTerrainHit(p);
 	}
 	// This may not need to be synchronized
+	// Enqueues a server packet to be transmitted to all players
 	public synchronized void enqueueServerPacket(final Packet packet) {
 		this.outboundPacketQueue.add(packet);
+	}
+
+	// This may not need to be synchronized
+	// Enqueues a packet to be transmitted to only Player player
+	public synchronized void enqueueServerPacket(final Player player, final Packet packet) {
+		if (this.playerOutboundPacketQueue.get(player.getId()) == null) {
+			final ConcurrentLinkedQueue<Packet> packets = new ConcurrentLinkedQueue<>();
+			packets.add(packet);
+			this.playerOutboundPacketQueue.put(player.getId(), packets);
+		} else {
+			this.playerOutboundPacketQueue.get(player.getId()).add(packet);
+		}
 	}
 
 	private void proccessTerrainHit(final Player p) {

@@ -67,7 +67,7 @@ public class Realm {
 		this.players = new ConcurrentHashMap<>();
 		this.isServer = isServer;
 		this.realmCamera = cam;
-		this.loadMap(3, null);
+		this.loadMap(2, null);
 
 		if(this.isServer) {
 			// this.loadMap(2, null);
