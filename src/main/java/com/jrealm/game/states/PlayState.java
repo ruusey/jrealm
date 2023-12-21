@@ -670,6 +670,7 @@ public class PlayState extends GameState {
 	@Override
 	public void render(Graphics2D g) {
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
+		// TODO: Translate everything to screen coordinates to keep it centered
 		if(player==null) return;
 		this.realmManager.getRealm().getTileManager().render(player, g);
 
@@ -677,11 +678,6 @@ public class PlayState extends GameState {
 			p.render(g);
 			p.updateAnimation();
 		}
-
-
-		// AABB test = new AABB(new Vector2f(this.getPlayerPos().x * 0.5f,
-		// this.getPlayerPos().y * 0.5f),
-		// (int) 32 * 8, (int) 32 * 8);
 
 		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort(player));
 
@@ -710,7 +706,7 @@ public class PlayState extends GameState {
 		String tps = GamePanel.oldTickCount + " TPS";
 		g.drawString(tps, 0 + (6 * 32), 64);
 
-		this.cam.render(g);
+		// this.cam.render(g);
 	}
 
 	public void renderCloseLoot(Graphics2D g) {

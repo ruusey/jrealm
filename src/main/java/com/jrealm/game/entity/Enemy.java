@@ -36,13 +36,13 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 	public long lastShotTick = 0;
 
-	
+
 	private int enemyId;
 	private int weaponId = -1;
 
 	public Enemy(long id, int enemyId, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
 		super(id, sprite, origin, size);
-		
+
 		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
 				(origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);
 		this.attackrange = new AABB(new Vector2f(
@@ -52,7 +52,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		this.enemyId = enemyId;
 		this.weaponId = weaponId;
 	}
-	
+
 	public Enemy(long id, int enemyId, Vector2f origin, int size, int weaponId) {
 		super(id, origin, size);
 		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
@@ -166,18 +166,18 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			return;
 		}
 		if (!this.isFallen()) {
-//			if (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1), mgr.getRealm().getTileManager().getTm().get(1).getBlocks(),
-//					this.dx,0)) {
-				this.sense.getPos().x += this.dx;
-				this.attackrange.getPos().x += this.dx;
-				this.pos.x += this.dx;
-//			}
-//			if (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1), mgr.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
-//					this.dy)) {
-				this.sense.getPos().y += this.dy;
-				this.attackrange.getPos().y += this.dy;
-				this.pos.y += this.dy;
-//			}
+			//			if (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1), mgr.getRealm().getTileManager().getTm().get(1).getBlocks(),
+			//					this.dx,0)) {
+			this.sense.getPos().x += this.dx;
+			this.attackrange.getPos().x += this.dx;
+			this.pos.x += this.dx;
+			//			}
+			//			if (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1), mgr.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
+			//					this.dy)) {
+			this.sense.getPos().y += this.dy;
+			this.attackrange.getPos().y += this.dy;
+			this.pos.y += this.dy;
+			//			}
 		} else if (this.ani.hasPlayedOnce()) {
 			this.die = true;
 		}
@@ -188,7 +188,8 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 		Color c = new Color(0f, 0f, 0f, .4f);
 		g.setColor(c);
-		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 45, this.size, this.size / 2);
+		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + (this.size / 2), this.size,
+				this.size / 2);
 		if (this.useRight && this.left) {
 			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x) + this.size,
 					(int) (this.pos.getWorldVar().y), -this.size, this.size, null);
@@ -225,7 +226,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 				(int) (24 * this.healthpercent), 5);
 
 	}
-	
+
 	// TODO: Add enemy type identifier
 	@Override
 	public void write(DataOutputStream stream) throws Exception{
@@ -238,7 +239,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		stream.writeFloat(this.dx);
 		stream.writeFloat(this.dy);
 	}
-	
+
 	@Override
 	public Enemy read(DataInputStream stream) throws Exception {
 		final long id = stream.readLong();
@@ -249,13 +250,13 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		final float posY = stream.readFloat();
 		final float dx = stream.readFloat();
 		final float dy = stream.readFloat();
-		
+
 		final Enemy newEnemy = new Monster(id, enemyId, new Vector2f(posX, posY), size, weaponId);
 		newEnemy.setDy(dy);
 		newEnemy.setDx(dx);
 		return newEnemy;
 	}
-	
+
 	public static Enemy fromStream(DataInputStream stream) throws Exception{
 		final long id = stream.readLong();
 		final int enemyId = stream.readInt();
@@ -265,7 +266,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		final float posY = stream.readFloat();
 		final float dx = stream.readFloat();
 		final float dy = stream.readFloat();
-		
+
 		final Enemy newEnemy = new Monster(id, enemyId, new Vector2f(posX, posY), size, weaponId);
 		newEnemy.setDy(dy);
 		newEnemy.setDx(dx);

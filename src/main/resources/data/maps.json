@@ -77,11 +77,20 @@
 	},
 	{
 		"mapId": 2,
-		"mapName": "World_1",
-		"mapKey": "overworld.world1",
+		"mapName": "World_1_Beach",
+		"mapKey": "overworld.world1.beach",
 		"tileSize" : 32,
 		"width": 64,
 		"height": 64,
 		"terrainId": 0
+	},
+	{
+		"mapId": 3,
+		"mapName": "World_1_Cave",
+		"mapKey": "overworld.world1.cave",
+		"tileSize" : 32,
+		"width": 64,
+		"height": 64,
+		"terrainId": 1
 	}
 ]

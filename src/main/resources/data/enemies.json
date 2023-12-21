@@ -12,7 +12,7 @@
 		"health": 1000,
 		"maxSpeed": 1.4,
 		"chaseRange": 650.0,
-		"attackRange": 450.0,
+		"attackRange": 100.0,
 		"stats": {
 			"def": 5
 		}
@@ -30,7 +30,7 @@
 		"health": 1000,
 		"maxSpeed": 1.4,
 		"chaseRange": 650.0,
-		"attackRange": 450.0,
+		"attackRange": 350.0,
 		"stats": {
 			"def": 5
 		}
@@ -48,7 +48,7 @@
 		"health": 1000,
 		"maxSpeed": 1.4,
 		"chaseRange": 650.0,
-		"attackRange": 450.0,
+		"attackRange": 350.0,
 		"stats": {
 			"def": 5
 		}
@@ -66,7 +66,7 @@
 		"health": 1000,
 		"maxSpeed": 1.4,
 		"chaseRange": 650.0,
-		"attackRange": 450.0,
+		"attackRange": 350.0,
 		"stats": {
 			"def": 5
 		}
@@ -84,7 +84,7 @@
 		"health": 1000,
 		"maxSpeed": 1.4,
 		"chaseRange": 650.0,
-		"attackRange": 450.0,
+		"attackRange": 350.0,
 		"stats": {
 			"def": 5
 		}

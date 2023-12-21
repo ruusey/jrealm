@@ -2,12 +2,9 @@ package com.jrealm.game.util;
 
 import java.awt.Graphics;
 
-import com.jrealm.game.GamePanel;
-import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.states.PlayState;
 
 import lombok.Data;
 
@@ -27,10 +24,7 @@ public class Camera {
 	private float acc = 3f;
 	private float deacc = 0.3f;
 
-	private int widthLimit;
 	private int heightLimit;
-
-	private int tileSize = GlobalConstants.BASE_TILE_SIZE;
 
 	private Entity e;
 
@@ -38,14 +32,6 @@ public class Camera {
 		this.collisionCam = collisionCam;
 	}
 
-	public void setLimit(int widthLimit, int heightLimit) {
-		this.widthLimit = widthLimit;
-		this.heightLimit = heightLimit;
-	}
-
-	public void setTileSize(int tileSize) {
-		this.tileSize = tileSize;
-	}
 
 	public Entity getTarget() { return this.e; }
 
@@ -60,43 +46,14 @@ public class Camera {
 		this.move();
 		if(this.e != null) {
 			if (!this.e.xCol) {
-				if (((this.e.getPos().getWorldVar().x
-						+ this.dy) < (Vector2f.getWorldVarX(this.widthLimit - (this.collisionCam.getWidth() / 2))
-								+ this.tileSize))
-						&& ((this.e.getPos().getWorldVar().x + this.dy) > Vector2f
-								.getWorldVarX((GamePanel.width / 2) - (this.tileSize * 2)))) {
-					PlayState.map.x += this.dx;
-					this.collisionCam.getPos().x += this.dx;
-					//bounds.getPos().x += dx;
-				}
-			}
-			if (!this.e.yCol) {
-				if (((this.e.getPos().getWorldVar().y
-						+ this.dy) < (Vector2f.getWorldVarY(this.heightLimit - (this.collisionCam.getHeight() / 2))
-								+ this.tileSize))
-						&& ((this.e.getPos().getWorldVar().y + this.dy) > Vector2f
-								.getWorldVarY((GamePanel.height / 2) - (this.tileSize * 2)))) {
-					PlayState.map.y += this.dy;
-					this.collisionCam.getPos().y += this.dy;
-					//bounds.getPos().y += dy;
-				}
-			}
-		} else {
-			if(((this.collisionCam.getPos().x + this.dx) > 0)
-					&& ((this.collisionCam.getPos().getWorldVar().x
-							+ this.dx) < (Vector2f.getWorldVarX(this.widthLimit - this.collisionCam.getWidth())
-									- this.tileSize))) {
-				PlayState.map.x += this.dx;
 				this.collisionCam.getPos().x += this.dx;
 			}
-
-			if(((this.collisionCam.getPos().y + this.dy) > 0)
-					&& ((this.collisionCam.getPos().getWorldVar().y
-							+ this.dy) < (Vector2f.getWorldVarY(this.heightLimit - this.collisionCam.getHeight())
-									- this.tileSize))) {
-				PlayState.map.y += this.dy;
+			if (!this.e.yCol) {
 				this.collisionCam.getPos().y += this.dy;
 			}
+		} else {
+			this.collisionCam.getPos().x += this.dx;
+			this.collisionCam.getPos().y += this.dy;
 		}
 	}
 

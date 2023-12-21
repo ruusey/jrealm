@@ -67,7 +67,7 @@ public class Realm {
 		this.players = new ConcurrentHashMap<>();
 		this.isServer = isServer;
 		this.realmCamera = cam;
-		this.loadMap(2, null);
+		this.loadMap(3, null);
 
 		if(this.isServer) {
 			// this.loadMap(2, null);
@@ -509,7 +509,7 @@ public class Realm {
 		Vector2f v = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 		List<EnemyModel> enemyToSpawn = new ArrayList<>();
-		
+
 		TerrainGenerationParameters params = GameDataManager.TERRAINS.get(GameDataManager.MAPS.get(mapId).getTerrainId());
 		for(int enemyId: params.getEnemyGroups().get(0).getEnemyIds()) {
 			enemyToSpawn.add(GameDataManager.ENEMIES.get(enemyId));

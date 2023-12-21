@@ -310,6 +310,136 @@
 			"slows": 0,
 			"damaging": 0
 		}
+	},
+	{
+		"tileId": 24,
+		"name": "Sand_Tile_4",
+		"spriteKey": "tile/rotmg-tiles.png",
+		"row": 17,
+		"col": 0,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 0,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 25,
+		"name": "Sand_Tile_5",
+		"spriteKey": "tile/rotmg-tiles.png",
+		"row": 17,
+		"col": 1,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 0,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 26,
+		"name": "Sand_Tile_6",
+		"spriteKey": "tile/rotmg-tiles.png",
+		"row": 16,
+		"col": 14,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 0,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 27,
+		"name": "Mushroom_Small",
+		"spriteKey": "tile/rotmg-tiles-1.png",
+		"row": 6,
+		"col": 12,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 28,
+		"name": "Mushroom_Large",
+		"spriteKey": "tile/rotmg-tiles-1.png",
+		"row": 6,
+		"col": 13,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 29,
+		"name": "Cave_Floor_0",
+		"spriteKey": "tile/rotmg-tiles-1.png",
+		"row": 6,
+		"col": 0,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 0,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 30,
+		"name": "Cave_Floor_1",
+		"spriteKey": "tile/rotmg-tiles-1.png",
+		"row": 6,
+		"col": 2,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 0,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 31,
+		"name": "Cave_Wall_0",
+		"spriteKey": "tile/rotmg-tiles-2.png",
+		"row": 10,
+		"col": 11,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 32,
+		"name": "Cave_Wall_1",
+		"spriteKey": "tile/rotmg-tiles-2.png",
+		"row": 10,
+		"col": 12,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 33,
+		"name": "Rock_Large",
+		"spriteKey": "tile/rotmg-tiles-1.png",
+		"row": 6,
+		"col": 9,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
 	}
 ]
 
