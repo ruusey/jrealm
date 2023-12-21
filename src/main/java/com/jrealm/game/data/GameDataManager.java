@@ -14,6 +14,7 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.MapModel;
+import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.SpriteModel;
@@ -33,11 +34,25 @@ public class GameDataManager {
 	public static Map<Integer, TileModel> TILES = null;
 	public static Map<Integer, MapModel> MAPS = null;
 	public static Map<Integer, TerrainGenerationParameters> TERRAINS = null;
+	public static Map<Integer, PortalModel> PORTALS = null;
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 			"entity/rotmg-bosses-1.png",
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png", "tile/rotmg-tiles-2.png",
 			"tile/rotmg-tiles-1.png", "entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png",
 	"entity/rotmg-misc.png" };
+
+	private static void loadPortals() throws Exception {
+		GameDataManager.log.info("Loading Portals..");
+		GameDataManager.PORTALS = new HashMap<>();
+		InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/portals.json");
+		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+		PortalModel[] maps = GameDataManager.mapper.readValue(text, PortalModel[].class);
+		for (PortalModel map : maps) {
+			GameDataManager.PORTALS.put(map.getPortalId(), map);
+		}
+		GameDataManager.log.info("Loading Portals... DONE");
+	}
 
 	private static void loadTerrains() throws Exception {
 		GameDataManager.log.info("Loading Terrains..");
@@ -272,6 +287,7 @@ public class GameDataManager {
 			GameDataManager.loadTiles();
 			GameDataManager.loadMaps();
 			GameDataManager.loadTerrains();
+			GameDataManager.loadPortals();
 		}catch(Exception e) {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}

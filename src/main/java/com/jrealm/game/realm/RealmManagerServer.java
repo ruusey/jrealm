@@ -18,13 +18,13 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
-import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
+import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.Effect;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
@@ -101,8 +101,7 @@ public class RealmManagerServer implements Runnable {
 		this.expiredPlayers = new ArrayList<>();
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
-		// this.getRealm().loadMap(1, null);
-		this.spawnTestPlayers(5);
+		// this.spawnTestPlayers(5);
 
 	}
 	// Adds a specified amount of random headless players
@@ -409,7 +408,8 @@ public class RealmManagerServer implements Runnable {
 		}
 
 
-		return UnloadPacket.from(expiredPlayers, lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies);
+		return UnloadPacket.from(expiredPlayers, lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies,
+				new Long[0]);
 	}
 
 	private void registerPacketCallbacks() {
@@ -712,15 +712,17 @@ public class RealmManagerServer implements Runnable {
 			}
 
 			if (e.getDeath()) {
+				Random random = new Random(Instant.now().toEpochMilli());
 				e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
 				this.expiredBullets.add(b.getId());
 				this.expiredEnemies.add(e.getId());
 				this.realm.clearHitMap();
 				this.realm.spawnRandomEnemy();
 				this.realm.removeEnemy(e);
-				this.realm.addLootContainer(new LootContainer(
-						LootTier.BLUE,
-						e.getPos()));
+				this.realm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().clone()));
+//				this.realm.addLootContainer(new LootContainer(
+				//						LootTier.BLUE,
+				//						e.getPos()));
 			}
 		}
 	}

@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
+import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
@@ -692,6 +694,12 @@ public class PlayState extends GameState {
 				toRender.render(g);
 			}
 		}
+
+		Collection<Portal> portals = this.realmManager.getRealm().getPortals().values();
+		for (Portal portal : portals) {
+			portal.render(g);
+		}
+
 		if(this.pui==null) return;
 		this.pui.render(g);
 

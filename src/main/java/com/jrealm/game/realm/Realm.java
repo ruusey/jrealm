@@ -18,12 +18,11 @@ import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
+import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.enemy.Monster;
 import com.jrealm.game.entity.item.Chest;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
-import com.jrealm.game.entity.material.Material;
-import com.jrealm.game.entity.material.MaterialManager;
 import com.jrealm.game.graphics.Animation;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
@@ -31,6 +30,7 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.MapModel;
+import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.tiles.TileManager;
@@ -55,8 +55,7 @@ public class Realm {
 	private Map<Long, List<Long>> bulletHits;
 	private Map<Long, Enemy> enemies;
 	private Map<Long, LootContainer> loot;
-	private Map<Long, Material> materials;
-	private Map<Integer, MaterialManager> materialManagers;
+	private Map<Long, Portal> portals;
 
 	private TileManager tileManager;
 	private Camera realmCamera = null;
@@ -97,14 +96,13 @@ public class Realm {
 		this.bullets = new ConcurrentHashMap<>();
 		this.enemies = new ConcurrentHashMap<>();
 		this.loot = new ConcurrentHashMap<>();
+		this.portals = new ConcurrentHashMap<>();
 		if (curr.size() > 0) {
 			curr.forEach(chest -> {
 				this.addLootContainer(chest);
 			});
 		}
 		this.bulletHits = new ConcurrentHashMap<>();
-		this.materials = new ConcurrentHashMap<>();
-		this.materialManagers = new ConcurrentHashMap<>();
 		if (this.isServer) {
 			this.tileManager = new TileManager(mapId);
 			this.spawnRandomEnemies(mapId);
@@ -124,25 +122,21 @@ public class Realm {
 		this.bullets = new ConcurrentHashMap<>();
 		this.enemies = new ConcurrentHashMap<>();
 		this.loot = new ConcurrentHashMap<>();
+		this.portals = new ConcurrentHashMap<>();
+
 		if (curr.size() > 0) {
 			curr.forEach(chest -> {
 				this.addLootContainer(chest);
 			});
 		}
 		this.bulletHits = new ConcurrentHashMap<>();
-		this.materials = new ConcurrentHashMap<>();
-		this.materialManagers = new ConcurrentHashMap<>();
+
 		if (this.isServer) {
 			this.tileManager = new TileManager(mapId);
 			this.spawnRandomEnemies(mapId);
 		} else {
 			this.tileManager = new TileManager(mapModel);
 		}
-	}
-
-	public long addMaterial(Material m) {
-		this.materials.put(m.getId(), m);
-		return m.getId();
 	}
 
 	public long addPlayer(Player player) {
@@ -203,6 +197,7 @@ public class Realm {
 		}
 	}
 
+
 	public boolean removePlayer(long playerId) {
 		this.acquirePlayerLock();
 		Player p = this.players.remove(playerId);
@@ -254,6 +249,32 @@ public class Realm {
 			this.bulletHits.remove(l);
 		}
 		return true;
+	}
+
+	public long addPortal(Portal portal) {
+		this.portals.put(portal.getId(), portal);
+		return portal.getId();
+	}
+
+	public boolean removePortal(long portalId) {
+		Portal removed = this.portals.remove(portalId);
+		return removed != null;
+	}
+
+	public boolean removePortal(Portal portal) {
+		Portal removed = this.portals.remove(portal.getId());
+		return removed != null;
+	}
+
+	public long addPortalIfNotExists(Portal portal) {
+		Portal existing = this.portals.get(portal.getId());
+		if (existing == null) {
+			PortalModel portalModel = GameDataManager.PORTALS.get((int) portal.getPortalId());
+			Sprite portalSprite = GameDataManager.getSubSprite(portalModel, 8);
+			portal.setSprite(portalSprite);
+			this.portals.put(portal.getId(), portal);
+		}
+		return portal.getId();
 	}
 
 	public long addEnemy(Enemy enemy) {
@@ -360,12 +381,6 @@ public class Realm {
 			}
 		}
 
-		for (Material e : this.materials.values()) {
-			if (e.getBounds().intersect(cam)) {
-				objs.add(e);
-			}
-		}
-
 		return objs.toArray(new GameObject[0]);
 	}
 
@@ -381,10 +396,6 @@ public class Realm {
 		}
 
 		for (Enemy e : this.enemies.values()) {
-			objs.add(e);
-		}
-
-		for (Material e : this.materials.values()) {
 			objs.add(e);
 		}
 
@@ -406,9 +417,6 @@ public class Realm {
 			objs.add(e);
 		}
 
-		for (Material e : this.materials.values()) {
-			objs.add(e);
-		}
 		return objs.toArray(new GameObject[0]);
 	}
 
@@ -464,8 +472,17 @@ public class Realm {
 				}
 			}
 
+			final List<Portal> portalsToLoad = new ArrayList<>();
+			for (Portal p : this.portals.values()) {
+				final boolean inViewport = cam.inside((int) p.getPos().x, (int) p.getPos().y);
+				if (inViewport) {
+					portalsToLoad.add(p);
+				}
+			}
+
 			load = LoadPacket.from(playersToLoadList.toArray(new Player[0]), containersToLoad.toArray(new LootContainer[0]),
-					bulletsToLoad.toArray(new Bullet[0]), enemiesToLoad.toArray(new Enemy[0]));
+					bulletsToLoad.toArray(new Bullet[0]), enemiesToLoad.toArray(new Enemy[0]),
+					portalsToLoad.toArray(new Portal[0]));
 		} catch (Exception e) {
 			Realm.log.error("Failed to get load Packet. Reason: {}");
 		}

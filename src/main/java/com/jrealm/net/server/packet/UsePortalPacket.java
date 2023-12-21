@@ -5,33 +5,29 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import com.jrealm.game.entity.Player;
-import com.jrealm.game.util.Cardinality;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
 @Slf4j
-public class PlayerMovePacket extends Packet {
-	private long entityId;
-	private byte dir;
-	private boolean move;
+public class UsePortalPacket extends Packet {
+	private String portalUuid;
 
-	public PlayerMovePacket() {
+	public UsePortalPacket() {
 
 	}
 
-	public PlayerMovePacket(final byte id, final byte[] data) {
+	public UsePortalPacket(final byte id, final byte[] data) {
 		super(id, data);
 		try {
 			this.readData(data);
 		} catch (Exception e) {
-			PlayerMovePacket.log.error("Failed to parse PlayerMove packet, Reason: {}", e);
+			UsePortalPacket.log.error("Failed to parse UsePortal packet, Reason: {}", e);
 		}
 	}
 
@@ -42,9 +38,6 @@ public class PlayerMovePacket extends Packet {
 		if ((dis == null) || (dis.available() < 5))
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
 
-		this.entityId = dis.readLong();
-		this.dir = dis.readByte();
-		this.move = dis.readBoolean();
 	}
 
 	@Override
@@ -52,21 +45,13 @@ public class PlayerMovePacket extends Packet {
 		if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
 			throw new IllegalStateException("No Packet data available to write to DataOutputStream");
 		this.addHeader(stream);
-		stream.writeLong(this.entityId);
-		stream.writeByte(this.dir);
-		stream.writeBoolean(this.move);
+
 	}
 
-	public static PlayerMovePacket from(Player player, Cardinality direction, boolean move) throws Exception {
+	public static UsePortalPacket from(String portalUuid) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
-		dos.writeLong(player.getId());
-		dos.writeByte(direction.cardinalityId);
-		dos.writeBoolean(move);
-		return new PlayerMovePacket(PacketType.PLAYER_MOVE.getPacketId(), baos.toByteArray());
-	}
-
-	public Cardinality getDirection() {
-		return Cardinality.valueOf(this.dir);
+		dos.writeUTF(portalUuid);
+		return new UsePortalPacket(PacketType.USE_PORTAL.getPacketId(), baos.toByteArray());
 	}
 }

@@ -8,6 +8,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
+import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
@@ -70,6 +71,10 @@ public class ClientGameLogic {
 			for(Enemy e : loadPacket.getEnemies()) {
 				cli.getRealm().addEnemyIfNotExists(e);
 			}
+
+			for (Portal p : loadPacket.getPortals()) {
+				cli.getRealm().addPortalIfNotExists(p);
+			}
 		}catch(Exception e) {
 			ClientGameLogic.log.error("Failed to handle Load Packet. Reason: {}", e);
 		}
@@ -96,6 +101,10 @@ public class ClientGameLogic {
 
 			for(Long e : unloadPacket.getEnemies()) {
 				cli.getRealm().getEnemies().remove(e);
+			}
+
+			for (Long p : unloadPacket.getPortals()) {
+				// cli.getRealm().getPortals().remove(p);
 			}
 
 		}catch(Exception e) {
