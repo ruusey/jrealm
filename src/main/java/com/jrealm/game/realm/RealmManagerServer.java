@@ -64,6 +64,8 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings("unused")
 public class RealmManagerServer implements Runnable {
 	private SocketServer server;
+	private Map<Long, Realm> realms = new HashMap<>();
+
 	private Realm realm;
 	private boolean shutdown = false;
 
@@ -91,6 +93,17 @@ public class RealmManagerServer implements Runnable {
 	private UnloadPacket lastUnload;
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
+
+	public RealmManagerServer() {
+		this.registerPacketCallbacks();
+		this.server = new SocketServer(2222);
+		this.shotDestQueue = new ArrayList<>();
+		this.expiredEnemies = new ArrayList<>();
+		this.expiredPlayers = new ArrayList<>();
+		this.expiredBullets = new ArrayList<>();
+		WorkerThread.submitAndForkRun(this.server);
+		// this.spawnTestPlayers(5);
+	}
 
 	public RealmManagerServer(Realm realm) {
 		this.registerPacketCallbacks();
@@ -236,104 +249,109 @@ public class RealmManagerServer implements Runnable {
 		}
 		final UnloadPacket unloadToBroadcast = unload;
 		// For each player currently connected
-		for (final Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
-			try {
-				// Get UpdatePacket for this player and all players in this players viewport
-				// Contains, player stat info, inventory, status effects, health and mana data
-				final List<UpdatePacket> uPackets = this.realm
-						.getPlayersAsPackets(player.getValue().getCam().getBounds());
+		for (final Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
+			for (final Map.Entry<Long, Player> player : realm.getValue().getPlayers().entrySet()) {
+				try {
+					// Get UpdatePacket for this player and all players in this players viewport
+					// Contains, player stat info, inventory, status effects, health and mana data
+					final List<UpdatePacket> uPackets = this.realm
+							.getPlayersAsPackets(player.getValue().getCam().getBounds());
 
-				// Get the background + collision tiles in this players viewport
-				// condensed into a single array
-				final NetTile[] netTilesForPlayer = this.realm.getTileManager().getLoadMapTiles(player.getValue());
-				// Build those tiles into a load map packet (NetTile[] wrapper)
-				final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(netTilesForPlayer);
+					// Get the background + collision tiles in this players viewport
+					// condensed into a single array
+					final NetTile[] netTilesForPlayer = this.realm.getTileManager().getLoadMapTiles(player.getValue());
+					// Build those tiles into a load map packet (NetTile[] wrapper)
+					final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(netTilesForPlayer);
 
-				// If we dont have load map state for this player, map it and
-				// then transmit all the tiles
-				if (this.playerLoadMapState.get(player.getKey()) == null) {
-					this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-
-					this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
-				} else {
-					// Get the previous loadMap packet and check for Delta,
-					// only send the delta to the client
-					final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
-					// Custom equals impl
-					if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
-						final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
+					// If we dont have load map state for this player, map it and
+					// then transmit all the tiles
+					if (this.playerLoadMapState.get(player.getKey()) == null) {
 						this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-						if (loadMapDiff != null) {
-							this.enqueueServerPacket(player.getValue(), loadMapDiff);
+
+						this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
+					} else {
+						// Get the previous loadMap packet and check for Delta,
+						// only send the delta to the client
+						final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
+						// Custom equals impl
+						if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
+							final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
+							this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
+							if (loadMapDiff != null) {
+								this.enqueueServerPacket(player.getValue(), loadMapDiff);
+							}
 						}
 					}
-				}
-				// Get LoadPacket for this player
-				// Contains newly spawned bullets, entities, players
-				final LoadPacket load = this.realm.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
+					// Get LoadPacket for this player
+					// Contains newly spawned bullets, entities, players
+					final LoadPacket load = this.realm
+							.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
 
-				// Get the posX, posY, dX, dY of all Entities in this players viewport
-				final ObjectMovePacket mPacket = this.realm
-						.getGameObjectsAsPackets(this.realm.getTileManager().getRenderViewPort(player.getValue()));
+					// Get the posX, posY, dX, dY of all Entities in this players viewport
+					final ObjectMovePacket mPacket = this.realm
+							.getGameObjectsAsPackets(this.realm.getTileManager().getRenderViewPort(player.getValue()));
 
-				for (final UpdatePacket packet : uPackets) {
-					// Only transmit THIS players UpdatePacket if the state has changed
-					if(packet.getPlayerId()!=player.getKey()) {
-						continue;
-					}
-					if(this.playerUpdateState.get(player.getKey())==null) {
-						this.playerUpdateState.put(player.getKey(), packet);
-						this.enqueueServerPacket(player.getValue(), packet);
-					}else {
-						final UpdatePacket old = this.playerUpdateState.get(player.getKey());
-						if(!old.equals(packet)) {
+					for (final UpdatePacket packet : uPackets) {
+						// Only transmit THIS players UpdatePacket if the state has changed
+						if (packet.getPlayerId() != player.getKey()) {
+							continue;
+						}
+						if (this.playerUpdateState.get(player.getKey()) == null) {
 							this.playerUpdateState.put(player.getKey(), packet);
 							this.enqueueServerPacket(player.getValue(), packet);
+						} else {
+							final UpdatePacket old = this.playerUpdateState.get(player.getKey());
+							if (!old.equals(packet)) {
+								this.playerUpdateState.put(player.getKey(), packet);
+								this.enqueueServerPacket(player.getValue(), packet);
+							}
 						}
 					}
-				}
 
-				// Only transmit the LoadPacket if its state is changed (it can potentially be
-				// large).
-				// If the state is changed, only transmit the DELTA data
-				if(this.playerLoadState.get(player.getKey())==null) {
-					this.playerLoadState.put(player.getKey(), load);
-					this.enqueueServerPacket(player.getValue(), load);
-				}else {
-					final LoadPacket old = this.playerLoadState.get(player.getKey());
-					if(!old.equals(load)) {
-						// Get the LoadPacket delta
-						final LoadPacket toSend = old.combine(load);
+					// Only transmit the LoadPacket if its state is changed (it can potentially be
+					// large).
+					// If the state is changed, only transmit the DELTA data
+					if (this.playerLoadState.get(player.getKey()) == null) {
 						this.playerLoadState.put(player.getKey(), load);
-						this.enqueueServerPacket(player.getValue(), toSend);
+						this.enqueueServerPacket(player.getValue(), load);
+					} else {
+						final LoadPacket old = this.playerLoadState.get(player.getKey());
+						if (!old.equals(load)) {
+							// Get the LoadPacket delta
+							final LoadPacket toSend = old.combine(load);
+							this.playerLoadState.put(player.getKey(), load);
+							this.enqueueServerPacket(player.getValue(), toSend);
 
-						// Unload the delta objcets that were in the old LoadPacket
-						// but are NOT in the new LoadPacket
-						final UnloadPacket unloadDelta = old.difference(load);
-						if ((unloadDelta.getEnemies().length > 0) || (unloadDelta.getContainers().length > 0)
-								|| (unloadDelta.getPlayers().length > 0) || (unloadDelta.getPortals().length > 0)) {
-							this.enqueueServerPacket(player.getValue(), unloadDelta);
+							// Unload the delta objcets that were in the old LoadPacket
+							// but are NOT in the new LoadPacket
+							final UnloadPacket unloadDelta = old.difference(load);
+							if ((unloadDelta.getEnemies().length > 0) || (unloadDelta.getContainers().length > 0)
+									|| (unloadDelta.getPlayers().length > 0) || (unloadDelta.getPortals().length > 0)) {
+								this.enqueueServerPacket(player.getValue(), unloadDelta);
+							}
 						}
 					}
-				}
 
-				// Only transmit the UnloadPacket if it is non-empty and
-				// does not equal the previous Unload state (it can potentially be large)
-				if (unloadToBroadcast != null) {
-					if((this.lastUnload==null) || !this.lastUnload.equals(unloadToBroadcast)) {
-						this.lastUnload = unloadToBroadcast;
-						this.enqueueServerPacket(unloadToBroadcast);
+					// Only transmit the UnloadPacket if it is non-empty and
+					// does not equal the previous Unload state (it can potentially be large)
+					if (unloadToBroadcast != null) {
+						if ((this.lastUnload == null) || !this.lastUnload.equals(unloadToBroadcast)) {
+							this.lastUnload = unloadToBroadcast;
+							this.enqueueServerPacket(unloadToBroadcast);
+						}
 					}
-				}
-				// If the ObjectMove packet isnt empty
-				if (mPacket != null) {
-					this.enqueueServerPacket(player.getValue(), mPacket);
-				}
+					// If the ObjectMove packet isnt empty
+					if (mPacket != null) {
+						this.enqueueServerPacket(player.getValue(), mPacket);
+					}
 
-			} catch (Exception e) {
-				RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(), e);
+				} catch (Exception e) {
+					RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(),
+							e);
+				}
 			}
 		}
+
 		// Used to dynamically re-render changed loot containers (chests) on the client
 		// if their
 		// contents change in a server tick (receive MoveItem packet from client this
@@ -366,6 +384,19 @@ public class RealmManagerServer implements Runnable {
 				this.realm.removePlayer(dcPlayerId);
 			}
 		}
+	}
+
+	public Portal getClosestPortal(final Vector2f pos, final float limit) {
+		float best = Float.MAX_VALUE;
+		Portal bestPortal = null;
+		for (final Portal portal : this.realm.getPortals().values()) {
+			float dist = portal.getPos().distanceTo(pos);
+			if ((dist < best) && (dist <= limit)) {
+				best = dist;
+				bestPortal = portal;
+			}
+		}
+		return bestPortal;
 	}
 
 	public Player getClosestPlayer(final Vector2f pos, final float limit) {
@@ -407,8 +438,6 @@ public class RealmManagerServer implements Runnable {
 		for(final Long lcId: lootContainers) {
 			this.realm.getLoot().remove(lcId);
 		}
-
-
 		return UnloadPacket.from(expiredPlayers, lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies,
 				new Long[0]);
 	}
@@ -422,6 +451,7 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(PacketType.LOAD_MAP.getPacketId(), ServerGameLogic::handleLoadMapServer);
 		this.registerPacketCallback(PacketType.USE_ABILITY.getPacketId(), ServerGameLogic::handleUseAbilityServer);
 		this.registerPacketCallback(PacketType.MOVE_ITEM.getPacketId(), ServerGameLogic::handleMoveItemServer);
+		this.registerPacketCallback(PacketType.USE_PORTAL.getPacketId(), ServerGameLogic::handleUsePortalServer);
 	}
 
 	private void registerPacketCallback(final byte packetId, final BiConsumer<RealmManagerServer, Packet> callback) {

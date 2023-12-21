@@ -16,7 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Slf4j
 public class UsePortalPacket extends Packet {
-	private String portalUuid;
+	private long portalId;
+	private long fromRealmId;
+	private long playerId;
 
 	public UsePortalPacket() {
 
@@ -38,6 +40,9 @@ public class UsePortalPacket extends Packet {
 		if ((dis == null) || (dis.available() < 5))
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
 
+		this.portalId = dis.readLong();
+		this.fromRealmId = dis.readLong();
+		this.playerId = dis.readLong();
 	}
 
 	@Override
@@ -45,13 +50,17 @@ public class UsePortalPacket extends Packet {
 		if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
 			throw new IllegalStateException("No Packet data available to write to DataOutputStream");
 		this.addHeader(stream);
-
+		stream.writeLong(this.portalId);
+		stream.writeLong(this.fromRealmId);
+		stream.writeLong(this.playerId);
 	}
 
-	public static UsePortalPacket from(String portalUuid) throws Exception {
+	public static UsePortalPacket from(long portalId, long fromRealmId, long playerId) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
-		dos.writeUTF(portalUuid);
+		dos.writeLong(portalId);
+		dos.writeLong(fromRealmId);
+		dos.writeLong(playerId);
 		return new UsePortalPacket(PacketType.USE_PORTAL.getPacketId(), baos.toByteArray());
 	}
 }

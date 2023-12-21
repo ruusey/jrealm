@@ -78,7 +78,7 @@ public class PlayState extends GameState {
 		PlayState.map = new Vector2f();
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		this.cam = cam;
-		this.realmManager = new RealmManagerClient(this, new Realm(this.cam, false));
+		this.realmManager = new RealmManagerClient(this, new Realm(false, 2));
 
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
@@ -480,9 +480,7 @@ public class PlayState extends GameState {
 				//				}catch(Exception e) {
 				//					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/vault.xml", e.getMessage());
 				//				}
-				this.playerLocation = PlayerLocation.VAULT;
-				this.realmManager.getRealm().loadMap(1, this.getPlayer());
-				this.loadClass(this.getPlayer(), this.currentPlayerCharacterClass(), false);
+
 			}
 			if (key.f1.clicked && !this.playerLocation.equals(PlayerLocation.REALM)) {
 				//				try {
@@ -492,9 +490,6 @@ public class PlayState extends GameState {
 				//					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/nexus2.xml", e.getMessage());
 				//				}
 
-				this.playerLocation = PlayerLocation.REALM;
-				this.realmManager.getRealm().loadMap(2, this.getPlayer());
-				this.loadClass(this.getPlayer(), this.currentPlayerCharacterClass(), false);
 
 			}
 			if(this.pui!=null) {
@@ -672,6 +667,19 @@ public class PlayState extends GameState {
 			}
 		}
 		return bestLoot;
+	}
+
+	public Portal getClosestPortal(final Vector2f pos, final float limit) {
+		float best = Float.MAX_VALUE;
+		Portal bestPortal = null;
+		for (final Portal portal : this.realmManager.getRealm().getPortals().values()) {
+			float dist = portal.getPos().distanceTo(pos);
+			if ((dist < best) && (dist <= limit)) {
+				best = dist;
+				bestPortal = portal;
+			}
+		}
+		return bestPortal;
 	}
 
 	@Override

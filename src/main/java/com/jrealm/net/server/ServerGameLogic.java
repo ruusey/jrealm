@@ -33,11 +33,17 @@ import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
+import com.jrealm.net.server.packet.UsePortalPacket;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ServerGameLogic {
+	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
+		UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
+		Player user = mgr.getRealm().getPlayer(usePortalPacket.getPlayerId());
+	}
+
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
 		//		HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
 		//		log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}", heartbeatPacket.getPlayerId(),
@@ -226,16 +232,16 @@ public class ServerGameLogic {
 
 	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {
 		LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
-//		try {
-//			Player player = mgr.getRealm().getPlayer(loadMapPacket.getPlayerId());
-//			mgr.getRealm().loadMap(1, player);
-//
-//		} catch (Exception e) {
-//			ServerGameLogic.log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
-//					e.getMessage());
-//		}
-//		ServerGameLogic.log.info("[SERVER] Recieved Load Map packet from Player {}. Map={}", loadMapPacket.getPlayerId(),
-//				loadMapPacket.getMapKey());
+		//		try {
+		//			Player player = mgr.getRealm().getPlayer(loadMapPacket.getPlayerId());
+		//			mgr.getRealm().loadMap(1, player);
+		//
+		//		} catch (Exception e) {
+		//			ServerGameLogic.log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
+		//					e.getMessage());
+		//		}
+		//		ServerGameLogic.log.info("[SERVER] Recieved Load Map packet from Player {}. Map={}", loadMapPacket.getPlayerId(),
+		//				loadMapPacket.getMapKey());
 	}
 
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {

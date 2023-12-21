@@ -29,12 +29,10 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
-import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.tiles.TileManager;
-import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
@@ -49,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Realm {
 	public static final transient SecureRandom RANDOM = new SecureRandom();
-
+	private long realmId;
 	private Map<Long, Player> players;
 	private Map<Long, Bullet> bullets;
 	private Map<Long, List<Long>> bulletHits;
@@ -58,15 +56,15 @@ public class Realm {
 	private Map<Long, Portal> portals;
 
 	private TileManager tileManager;
-	private Camera realmCamera = null;
 	private Semaphore playerLock = new Semaphore(1);
 
 	private boolean isServer;
-	public Realm(Camera cam, boolean isServer) {
+
+	public Realm(boolean isServer, int mapId) {
+		this.realmId = RANDOM.nextLong();
 		this.players = new ConcurrentHashMap<>();
 		this.isServer = isServer;
-		this.realmCamera = cam;
-		this.loadMap(2, null);
+		this.loadMap(mapId);
 
 		if(this.isServer) {
 			// this.loadMap(2, null);
@@ -90,13 +88,13 @@ public class Realm {
 		}
 	}
 
-	public void loadMap(int mapId, Player player) {
+	public void loadMap(int mapId) {
 		List<Chest> curr = this.getChests();
-
 		this.bullets = new ConcurrentHashMap<>();
 		this.enemies = new ConcurrentHashMap<>();
 		this.loot = new ConcurrentHashMap<>();
 		this.portals = new ConcurrentHashMap<>();
+
 		if (curr.size() > 0) {
 			curr.forEach(chest -> {
 				this.addLootContainer(chest);
@@ -108,34 +106,6 @@ public class Realm {
 			this.spawnRandomEnemies(mapId);
 		} else {
 			this.tileManager = new TileManager(GameDataManager.MAPS.get(mapId));
-
-		}
-
-		if (player != null) {
-			player.resetPosition();
-		}
-	}
-
-	public void loadMap(int mapId) {
-		List<Chest> curr = this.getChests();
-		MapModel mapModel = GameDataManager.MAPS.get(mapId);
-		this.bullets = new ConcurrentHashMap<>();
-		this.enemies = new ConcurrentHashMap<>();
-		this.loot = new ConcurrentHashMap<>();
-		this.portals = new ConcurrentHashMap<>();
-
-		if (curr.size() > 0) {
-			curr.forEach(chest -> {
-				this.addLootContainer(chest);
-			});
-		}
-		this.bulletHits = new ConcurrentHashMap<>();
-
-		if (this.isServer) {
-			this.tileManager = new TileManager(mapId);
-			this.spawnRandomEnemies(mapId);
-		} else {
-			this.tileManager = new TileManager(mapModel);
 		}
 	}
 

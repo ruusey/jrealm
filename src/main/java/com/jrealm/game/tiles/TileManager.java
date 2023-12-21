@@ -28,7 +28,6 @@ import lombok.Data;
 
 @Data
 public class TileManager {
-
 	private List<TileMap> mapLayers;
 
 	// Server side constructor
@@ -81,7 +80,7 @@ public class TileManager {
 				for (int j = 0; j < width; j++) {
 					TileModel tileIdToCreate = tileIdsNormal.get(random.nextInt(tileIdsNormal.size()));
 					float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
-					if(rarity>0.0 && random.nextFloat() <= rarity) {
+					if((rarity>0.0) && (random.nextFloat() <= rarity)) {
 						baseLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
 					}else {
 						tileIdToCreate = tileIdsNormal.get(0);
@@ -96,7 +95,7 @@ public class TileManager {
 				for (int j = 0; j < width; j++) {
 					TileModel tileIdToCreate = tileIdsCollision.get(random.nextInt(tileIdsCollision.size()));
 					float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
-					if (rarity>0.0 && random.nextFloat() <= rarity) {
+					if ((rarity>0.0) && (random.nextFloat() <= rarity)) {
 						collisionLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
 					} else {
 						collisionLayer.setBlockAt(i, j, (short) 0, tileIdToCreate.getData());
@@ -220,7 +219,6 @@ public class TileManager {
 				cam.getTarget().getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
 						-(6 * GlobalConstants.BASE_TILE_SIZE)),
 				(12 * GlobalConstants.BASE_TILE_SIZE), (12 * GlobalConstants.BASE_TILE_SIZE));
-
 	}
 
 	public AABB getRenderViewPort(Player p) {
@@ -228,7 +226,6 @@ public class TileManager {
 				p.getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
 						-(6 * GlobalConstants.BASE_TILE_SIZE)),
 				(12 * GlobalConstants.BASE_TILE_SIZE), (12 * GlobalConstants.BASE_TILE_SIZE));
-
 	}
 
 	public NetTile[] getLoadMapTiles(Player player) {
