@@ -2,21 +2,23 @@
 	{
 		"name": "World_0_Beach_0",
 		"terrainId": 0,
-		"width": 32,
-		"height": 32,
+		"width": 64,
+		"height": 64,
 		"tileSize": 32,
 		"tileGroups": [
 			{
 				"ordinal": 0,
 				"tileIds": [
-					7,
+					9,
+					10,
 					8,
 					22,
 					23
 				],
 				"rarities": {
-					"7": 0.5,
-					"8": 0.5,
+					"9": 1.0,
+					"10": 0.1,
+					"8": 0.1,
 					"22": 0.05,
 					"23": 0.05
 				}
@@ -27,7 +29,7 @@
 				"name": "World_0_Beach_0_Enemies",
 				"ordinal": 0,
 				"enemyIds": [
-					1
+					6
 				]
 			}
 		]

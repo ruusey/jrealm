@@ -80,8 +80,8 @@
 		"mapName": "World_1",
 		"mapKey": "overworld.world1",
 		"tileSize" : 32,
-		"width": 32,
-		"height": 32,
+		"width": 64,
+		"height": 64,
 		"terrainId": 0
 	}
 ]

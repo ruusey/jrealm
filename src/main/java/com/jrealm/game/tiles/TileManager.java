@@ -59,30 +59,44 @@ public class TileManager {
 		this.mapLayers.add(collisionLayer);
 	}
 
+	// Generates a random terrain of size with the given parameters
 	private List<TileMap> getLayersFromTerrain(int width, int height, int tileSize,
 			TerrainGenerationParameters params) {
 		final Random random = new Random(Instant.now().toEpochMilli());
+		// Build empty base and collision layers with given size
 		TileMap baseLayer = new TileMap(tileSize, width, height);
 		TileMap collisionLayer = new TileMap(tileSize, width, height);
 
+		// For each group to attempt to populate in the given area (WIP, only expects one group right now)
 		for (TileGroup group : params.getTileGroups()) {
+			// Separate tiles having collision from background tiles
 			List<TileModel> tileIdsCollision = group.getTileIds().stream().map(id -> GameDataManager.TILES.get(id))
 					.filter(tm -> tm.getData().hasCollision()).collect(Collectors.toList());
 			List<TileModel> tileIdsNormal = group.getTileIds().stream().map(id -> GameDataManager.TILES.get(id))
 					.filter(tm -> !tm.getData().hasCollision()).collect(Collectors.toList());
 
+			// Iterate over every potential tile space and build the background layer
+			// using the tiles defined in this TileGroup that do NOT have collision data
 			for (int i = 0; i < height; i++) {
 				for (int j = 0; j < width; j++) {
 					TileModel tileIdToCreate = tileIdsNormal.get(random.nextInt(tileIdsNormal.size()));
-					baseLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+					float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
+					if(rarity>0.0 && random.nextFloat() <= rarity) {
+						baseLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+					}else {
+						tileIdToCreate = tileIdsNormal.get(0);
+						baseLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+					}
+				
 				}
 			}
-
+			// Iterate over every potential tile space and build the collision layer
+			// using the tiles defined in this TileGroup that have collision data
 			for (int i = 0; i < height; i++) {
 				for (int j = 0; j < width; j++) {
-					TileModel tileIdToCreate = tileIdsCollision.get(random.nextInt(tileIdsNormal.size()));
+					TileModel tileIdToCreate = tileIdsCollision.get(random.nextInt(tileIdsCollision.size()));
 					float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
-					if (random.nextFloat() <= rarity) {
+					if (rarity>0.0 && random.nextFloat() <= rarity) {
 						collisionLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
 					} else {
 						collisionLayer.setBlockAt(i, j, (short) 0, tileIdToCreate.getData());

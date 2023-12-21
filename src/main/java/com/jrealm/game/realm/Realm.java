@@ -32,6 +32,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.ProjectileGroup;
+import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.tiles.TileManager;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.WorkerThread;
@@ -106,7 +107,7 @@ public class Realm {
 		this.materialManagers = new ConcurrentHashMap<>();
 		if (this.isServer) {
 			this.tileManager = new TileManager(mapId);
-			this.spawnRandomEnemies();
+			this.spawnRandomEnemies(mapId);
 		} else {
 			this.tileManager = new TileManager(GameDataManager.MAPS.get(mapId));
 
@@ -133,7 +134,7 @@ public class Realm {
 		this.materialManagers = new ConcurrentHashMap<>();
 		if (this.isServer) {
 			this.tileManager = new TileManager(mapId);
-			this.spawnRandomEnemies();
+			this.spawnRandomEnemies(mapId);
 		} else {
 			this.tileManager = new TileManager(mapModel);
 		}
@@ -501,16 +502,19 @@ public class Realm {
 		return objs.toArray(new LootContainer[0]);
 	}
 
-	public void spawnRandomEnemies() {
+	public void spawnRandomEnemies(int mapId) {
 		if(this.enemies==null) {
 			this.enemies = new ConcurrentHashMap<>();
 		}
 		Vector2f v = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 		List<EnemyModel> enemyToSpawn = new ArrayList<>();
-		GameDataManager.ENEMIES.values().forEach(enemy -> {
-			enemyToSpawn.add(enemy);
-		});
+		
+		TerrainGenerationParameters params = GameDataManager.TERRAINS.get(GameDataManager.MAPS.get(mapId).getTerrainId());
+		for(int enemyId: params.getEnemyGroups().get(0).getEnemyIds()) {
+			enemyToSpawn.add(GameDataManager.ENEMIES.get(enemyId));
+		}
+
 		Random r = new Random(System.nanoTime());
 		for (int i = 0; i < this.tileManager.getMapLayers().get(0).getHeight(); i++) {
 			for (int j = 0; j < this.tileManager.getMapLayers().get(0).getWidth(); j++) {
@@ -523,9 +527,7 @@ public class Realm {
 					}
 
 					EnemyModel toSpawn = enemyToSpawn.get(r.nextInt(enemyToSpawn.size()));
-					if (toSpawn.getEnemyId() == 6) {
-						System.out.println();
-					}
+
 					SpriteSheet enemySprite = new SpriteSheet(
 							enemySheet.getSprite(toSpawn.getCol(), toSpawn.getRow(), toSpawn.getSpriteSize(),
 									toSpawn.getSpriteSize()),
