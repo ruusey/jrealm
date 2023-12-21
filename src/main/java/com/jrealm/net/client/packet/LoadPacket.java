@@ -251,10 +251,10 @@ public class LoadPacket extends Packet {
 		List<Long> enemyIdsOther = Stream.of(other.getEnemies()).map(Enemy::getId).collect(Collectors.toList());
 		List<Long> portalIdsOther = Stream.of(other.getPortals()).map(Portal::getId).collect(Collectors.toList());
 
-		List<Portal> portals = Arrays.asList(this.getPortals());
 		List<Player> players = Arrays.asList(this.getPlayers());
 		List<LootContainer> loot = Arrays.asList(this.getContainers());
 		List<Enemy> enemies = Arrays.asList(this.getEnemies());
+		List<Portal> portals = Arrays.asList(this.getPortals());
 
 
 		List<Long> bulletsDiff = new ArrayList<>();
@@ -263,7 +263,7 @@ public class LoadPacket extends Packet {
 		// experience when bullets randomly despawn
 		// (bullets will despawn when the owner enemy is unloaded)
 		for (Portal p : portals) {
-			if (portalIdsOther.contains(p.getId())) {
+			if (!portalIdsOther.contains(p.getId())) {
 				portalsDiff.add(p.getId());
 			}
 		}

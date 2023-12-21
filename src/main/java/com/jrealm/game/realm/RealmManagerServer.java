@@ -310,7 +310,8 @@ public class RealmManagerServer implements Runnable {
 						// Unload the delta objcets that were in the old LoadPacket
 						// but are NOT in the new LoadPacket
 						final UnloadPacket unloadDelta = old.difference(load);
-						if((unloadDelta.getEnemies().length>0) || (unloadDelta.getContainers().length>0) || (unloadDelta.getPlayers().length>0)){
+						if ((unloadDelta.getEnemies().length > 0) || (unloadDelta.getContainers().length > 0)
+								|| (unloadDelta.getPlayers().length > 0) || (unloadDelta.getPortals().length > 0)) {
 							this.enqueueServerPacket(player.getValue(), unloadDelta);
 						}
 					}
@@ -720,7 +721,7 @@ public class RealmManagerServer implements Runnable {
 				this.realm.spawnRandomEnemy();
 				this.realm.removeEnemy(e);
 				this.realm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().clone()));
-//				this.realm.addLootContainer(new LootContainer(
+				//				this.realm.addLootContainer(new LootContainer(
 				//						LootTier.BLUE,
 				//						e.getPos()));
 			}

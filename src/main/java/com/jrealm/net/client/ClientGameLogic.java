@@ -104,7 +104,7 @@ public class ClientGameLogic {
 			}
 
 			for (Long p : unloadPacket.getPortals()) {
-				// cli.getRealm().getPortals().remove(p);
+				cli.getRealm().getPortals().remove(p);
 			}
 
 		}catch(Exception e) {
