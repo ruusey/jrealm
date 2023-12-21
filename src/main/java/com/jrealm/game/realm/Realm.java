@@ -264,9 +264,10 @@ public class Realm {
 		Enemy existing = this.enemies.get(enemy.getId());
 		if(existing==null) {
 			EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
-			SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
-			SpriteSheet sheet = new SpriteSheet(enemySheet.getSprite(model.getCol(), model.getRow(), 16, 16),
-					enemy.getName(), 16, 16, 0);
+			SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get(model.getSpriteKey());
+			SpriteSheet sheet = new SpriteSheet(
+					enemySheet.getSprite(model.getCol(), model.getRow(), model.getSpriteSize(), model.getSpriteSize()),
+					enemy.getName(), model.getSpriteSize(), model.getSpriteSize(), 0);
 
 			enemy.setSprite(sheet);
 			enemy.setAni(new Animation());
@@ -506,7 +507,10 @@ public class Realm {
 		}
 		Vector2f v = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
-
+		List<EnemyModel> enemyToSpawn = new ArrayList<>();
+		GameDataManager.ENEMIES.values().forEach(enemy -> {
+			enemyToSpawn.add(enemy);
+		});
 		Random r = new Random(System.nanoTime());
 		for (int i = 0; i < this.tileManager.getMapLayers().get(0).getHeight(); i++) {
 			for (int j = 0; j < this.tileManager.getMapLayers().get(0).getWidth(); j++) {
@@ -517,14 +521,16 @@ public class Realm {
 					if (bounds.distance(v) < 500) {
 						continue;
 					}
-					List<EnemyModel> enemyToSpawn = new ArrayList<>();
-					GameDataManager.ENEMIES.values().forEach(enemy->{
-						enemyToSpawn.add(enemy);
-					});
+
 					EnemyModel toSpawn = enemyToSpawn.get(r.nextInt(enemyToSpawn.size()));
-					Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
-							new SpriteSheet(enemySheet.getSprite(toSpawn.getCol(), toSpawn.getRow(), 16, 16),
-									toSpawn.getName(), 16, 16, 0),
+					if (toSpawn.getEnemyId() == 6) {
+						System.out.println();
+					}
+					SpriteSheet enemySprite = new SpriteSheet(
+							enemySheet.getSprite(toSpawn.getCol(), toSpawn.getRow(), toSpawn.getSpriteSize(),
+									toSpawn.getSpriteSize()),
+							toSpawn.getName(), toSpawn.getSpriteSize(), toSpawn.getSpriteSize(), 0);
+					Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(), enemySprite,
 							new Vector2f(j * 64, i * 64), toSpawn.getSize(), toSpawn.getAttackId());
 					enemy.setPos(spawnPos);
 					this.addEnemy(enemy);
@@ -544,9 +550,11 @@ public class Realm {
 			enemyToSpawn.add(enemy);
 		});
 		EnemyModel toSpawn = enemyToSpawn.get(r.nextInt(enemyToSpawn.size()));
-		Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
-				new SpriteSheet(enemySheet.getSprite(toSpawn.getCol(), toSpawn.getRow(), 16, 16),
-						toSpawn.getName(), 16, 16, 0),
+		SpriteSheet enemySprite = new SpriteSheet(
+				enemySheet.getSprite(toSpawn.getCol(), toSpawn.getRow(), toSpawn.getSpriteSize(),
+						toSpawn.getSpriteSize()),
+				toSpawn.getName(), toSpawn.getSpriteSize(), toSpawn.getSpriteSize(), 0);
+		Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(), enemySprite,
 				spawnPos, toSpawn.getSize(), toSpawn.getAttackId());
 		enemy.setPos(spawnPos);
 		this.addEnemy(enemy);

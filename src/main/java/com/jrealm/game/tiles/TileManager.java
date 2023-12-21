@@ -90,9 +90,7 @@ public class TileManager {
 				}
 			}
 		}
-
 		return Arrays.asList(baseLayer, collisionLayer);
-
 	}
 
 	private List<TileMap> getLayersFromData(MapModel model) {

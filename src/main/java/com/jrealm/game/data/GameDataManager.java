@@ -34,6 +34,7 @@ public class GameDataManager {
 	public static Map<Integer, MapModel> MAPS = null;
 	public static Map<Integer, TerrainGenerationParameters> TERRAINS = null;
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
+			"entity/rotmg-bosses-1.png",
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png", "tile/rotmg-tiles-2.png",
 			"tile/rotmg-tiles-1.png", "entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png",
 	"entity/rotmg-misc.png" };
@@ -198,6 +199,10 @@ public class GameDataManager {
 			case "entity/rotmg-bosses.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-bosses.png",
 						new SpriteSheet("entity/rotmg-bosses.png", 16, 16, 0));
+				break;
+			case "entity/rotmg-bosses-1.png":
+				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-bosses-1.png",
+						new SpriteSheet("entity/rotmg-bosses-1.png", 8, 8, 0));
 				break;
 			}
 		}
