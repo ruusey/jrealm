@@ -25,6 +25,7 @@ public class GameLauncher {
 			Realm realm = new Realm(true, 2);
 			RealmManagerServer server = new RealmManagerServer();
 			server.getRealms().put(realm.getRealmId(), realm);
+			// server.spawnTestPlayers(realm.getRealmId(), 2);
 			WorkerThread.submitAndForkRun(server);
 		}
 		if (GameLauncher.LOCAL_CLIENT) {

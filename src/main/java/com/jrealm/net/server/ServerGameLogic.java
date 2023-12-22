@@ -42,24 +42,28 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServerGameLogic {
 	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
-		UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
+		final UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
+		final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
+		final Realm targetRealm = mgr.getRealms().get(usePortalPacket.getPortalId());
 
-		Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
-		Realm targetRealm = mgr.getRealms().get(usePortalPacket.getPortalId());
-
-		Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
+		final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 		// Player user = currentRealm.getPlayer(usePortalPacket.getPlayerId());
-		Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
+		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
 		// Generate target, remove player from current, add to target.
 		if (targetRealm == null) {
-			PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
-			Realm generatedRealm = new Realm(true, portalUsed.getMapId());
+			final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
+			final Realm generatedRealm = new Realm(true, portalUsed.getMapId());
+			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 1,
+					generatedRealm.getTileManager().randomPos());
+			exitPortal.setId(currentRealm.getRealmId());
+			generatedRealm.addPortal(exitPortal);
 			generatedRealm.addPlayer(user);
 			mgr.getRealms().put(generatedRealm.getRealmId(), generatedRealm);
+			// mgr.spawnTestPlayers(generatedRealm.getRealmId(), 2);
 		}
 		// Remove player from current, add to target ( realm already exists)
 		else {
-
+			targetRealm.addPlayer(user);
 		}
 	}
 

@@ -19,6 +19,7 @@ import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileGroup;
 import com.jrealm.game.model.TileModel;
+import com.jrealm.game.realm.Realm;
 import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.game.tiles.blocks.TileData;
 import com.jrealm.game.util.Camera;
@@ -86,7 +87,7 @@ public class TileManager {
 						tileIdToCreate = tileIdsNormal.get(0);
 						baseLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
 					}
-				
+
 				}
 			}
 			// Iterate over every potential tile space and build the collision layer
@@ -212,6 +213,13 @@ public class TileManager {
 		}
 
 		return false;
+	}
+
+	public Vector2f randomPos() {
+		final float x = Realm.RANDOM.nextInt(this.getBaseLayer().getWidth()) * this.getBaseLayer().getTileSize();
+		final float y = Realm.RANDOM.nextInt(this.getBaseLayer().getHeight()) * this.getBaseLayer().getTileSize();
+
+		return new Vector2f(x, y);
 	}
 
 	public AABB getRenderViewPort(Camera cam) {

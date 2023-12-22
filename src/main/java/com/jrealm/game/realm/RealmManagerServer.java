@@ -103,11 +103,11 @@ public class RealmManagerServer implements Runnable {
 		this.expiredPlayers = new ArrayList<>();
 		this.expiredBullets = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
-		// this.spawnTestPlayers(5);
 	}
 
 	// Adds a specified amount of random headless players
-	private void spawnTestPlayers(final int count) {
+	public void spawnTestPlayers(final long realmId, final int count) {
+		final Realm targetRealm = this.realms.get(realmId);
 		final Runnable spawnTestPlayers = ()-> {
 			final Random random = new Random(Instant.now().toEpochMilli());
 			for(int i = 0 ; i < count; i++) {
@@ -140,7 +140,7 @@ public class RealmManagerServer implements Runnable {
 
 					player.setHeadless(true);
 					// TODO:
-					// final long newId = this.getRealm().addPlayer(player);
+					final long newId = targetRealm.addPlayer(player);
 					//Thread.sleep(500);
 				}catch(Exception e) {
 					RealmManagerServer.log.error("Failed to spawn test character of class type {}. Reason: {}", classToSpawn, e);
@@ -231,8 +231,7 @@ public class RealmManagerServer implements Runnable {
 
 	public void enqueueGameData() {
 		final List<String> disconnectedClients = new ArrayList<>();
-
-		// For each player currently connected
+		// For each realm we have to do work for
 		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
 			final Realm realm = realmEntry.getValue();
 			UnloadPacket unload = null;
@@ -243,6 +242,7 @@ public class RealmManagerServer implements Runnable {
 				RealmManagerServer.log.error("Failed to create unload packet. Reason: {}", e);
 			}
 			final UnloadPacket unloadToBroadcast = unload;
+			// For each player currently connected
 			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
 				try {
 					// Get UpdatePacket for this player and all players in this players viewport
@@ -260,7 +260,6 @@ public class RealmManagerServer implements Runnable {
 					// then transmit all the tiles
 					if (this.playerLoadMapState.get(player.getKey()) == null) {
 						this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-
 						this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
 					} else {
 						// Get the previous loadMap packet and check for Delta,
@@ -343,16 +342,15 @@ public class RealmManagerServer implements Runnable {
 							e);
 				}
 			}
+
+			// Used to dynamically re-render changed loot containers (chests) on the client
+			// if their
+			// contents change in a server tick (receive MoveItem packet from client this
+			// tick)
 			for (LootContainer lc : realm.getLoot().values()) {
 				lc.setContentsChanged(false);
 			}
 		}
-
-		// Used to dynamically re-render changed loot containers (chests) on the client
-		// if their
-		// contents change in a server tick (receive MoveItem packet from client this
-		// tick)
-
 	}
 
 	// For each connected client, dequeue all pending packets
