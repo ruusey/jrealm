@@ -49,11 +49,13 @@ public class ServerGameLogic {
 
 		Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 		// Player user = currentRealm.getPlayer(usePortalPacket.getPlayerId());
-		Portal used = currentRealm.getPortals().get(usePortalPacket.getPlayerId());
+		Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
 		// Generate target, remove player from current, add to target.
 		if (targetRealm == null) {
 			PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 			Realm generatedRealm = new Realm(true, portalUsed.getMapId());
+			generatedRealm.addPlayer(user);
+			mgr.getRealms().put(generatedRealm.getRealmId(), generatedRealm);
 		}
 		// Remove player from current, add to target ( realm already exists)
 		else {
