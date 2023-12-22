@@ -28,6 +28,7 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
@@ -472,9 +473,11 @@ public class PlayState extends GameState {
 				try {
 					Portal closestPortal = this.realmManager.getState().getClosestPortal(this.getPlayerPos(), 32);
 					if (closestPortal != null) {
+						PortalModel portalModel = GameDataManager.PORTALS.get((int) closestPortal.getPortalId());
 						UsePortalPacket usePortal = UsePortalPacket.from(closestPortal.getId(),
 								this.realmManager.getRealm().getRealmId(), this.getPlayerId());
 						this.realmManager.getClient().sendRemote(usePortal);
+						this.realmManager.getRealm().loadMap(portalModel.getMapId());
 					}
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test UsePortalPacket", e.getMessage());

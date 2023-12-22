@@ -48,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Realm {
 	public static final transient SecureRandom RANDOM = new SecureRandom();
 	private long realmId;
+	private int mapId;
 	private Map<Long, Player> players;
 	private Map<Long, Bullet> bullets;
 	private Map<Long, List<Long>> bulletHits;
@@ -55,6 +56,10 @@ public class Realm {
 	private Map<Long, LootContainer> loot;
 	private Map<Long, Portal> portals;
 
+	private List<Long> expiredEnemies;
+	private List<Long> expiredBullets;
+	private List<Long> expiredPlayers;
+	
 	private TileManager tileManager;
 	private Semaphore playerLock = new Semaphore(1);
 
@@ -64,6 +69,9 @@ public class Realm {
 		this.realmId = RANDOM.nextLong();
 		this.players = new ConcurrentHashMap<>();
 		this.isServer = isServer;
+		this.expiredEnemies = new ArrayList<>();
+		this.expiredPlayers = new ArrayList<>();
+		this.expiredBullets = new ArrayList<>();
 		this.loadMap(mapId);
 
 		if(this.isServer) {
@@ -82,6 +90,7 @@ public class Realm {
 	}
 
 	public void loadMap(int mapId) {
+		this.mapId = mapId;
 		List<Chest> curr = this.getChests();
 		this.bullets = new ConcurrentHashMap<>();
 		this.enemies = new ConcurrentHashMap<>();
@@ -546,12 +555,13 @@ public class Realm {
 		Runnable r = () -> {
 			while (true) {
 				double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
-
+				Realm.log.info("--- Realm: {} | MapId: {} ---", this.getRealmId(), this.getMapId());
 				Realm.log.info("Enemies: {}", this.enemies.size());
 				Realm.log.info("Players: {}", this.players.size());
 				Realm.log.info("Loot: {}", this.loot.size());
 				Realm.log.info("Bullets: {}", this.bullets.size());
 				Realm.log.info("BulletHits: {}", this.bulletHits.size());
+				Realm.log.info("Portals: {}", this.portals.size());
 				Realm.log.info("Heap Mem: {}", heapSize);
 
 				try {

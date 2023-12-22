@@ -47,7 +47,7 @@ public class ServerGameLogic {
 		final Realm targetRealm = mgr.getRealms().get(usePortalPacket.getPortalId());
 
 		final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
-		// Player user = currentRealm.getPlayer(usePortalPacket.getPlayerId());
+		mgr.clearPlayerState(user.getId());
 		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
 		// Generate target, remove player from current, add to target.
 		if (targetRealm == null) {
