@@ -67,23 +67,16 @@ public class Realm {
 		this.loadMap(mapId);
 
 		if(this.isServer) {
-			// this.loadMap(2, null);
 			this.setupChests();
 			WorkerThread.submit(this.getStatsThread());
-		} else {
-			// this.loadMap(2);
-
-		}
+		} 
 	}
 
 	private void setupChests() {
 		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 450, (0 + (GamePanel.height / 2)) - 200);
 		if (this.getChests().size() == 0) {
-			this.await(100);
 			this.addLootContainer(new Chest(chestLoc));
-			this.await(100);
 			this.addLootContainer(new Chest(chestLoc.clone(-128, 0)));
-			this.await(100);
 			this.addLootContainer(new Chest(chestLoc.clone(-256, 0)));
 		}
 	}
@@ -584,14 +577,6 @@ public class Realm {
 			this.playerLock.release();
 		} catch (Exception e) {
 			Realm.log.error(e.getMessage());
-		}
-	}
-
-	private void await(long ms) {
-		try {
-			Thread.sleep(ms);
-		} catch (Exception e) {
-
 		}
 	}
 }

@@ -15,7 +15,6 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
-import com.jrealm.game.contants.PlayerLocation;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -40,13 +39,13 @@ import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
-import com.jrealm.game.util.Tuple;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
+import com.jrealm.net.server.packet.UsePortalPacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -68,10 +67,8 @@ public class PlayState extends GameState {
 
 	public long playerId = -1l;
 
-	private PlayerLocation playerLocation = PlayerLocation.VAULT;
-	private Tuple<Cardinality, Boolean> lastDirection;
-	private boolean sentChat = false;
 	private Map<Cardinality, Boolean> lastDirectionMap;
+	private boolean sentChat = false;
 
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
@@ -79,13 +76,10 @@ public class PlayState extends GameState {
 		Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
 		this.cam = cam;
 		this.realmManager = new RealmManagerClient(this, new Realm(false, 2));
-
 		this.shotDestQueue = new ArrayList<>();
 		this.damageText = new ConcurrentLinkedQueue<>();
-		//this.lastDirectionMap = new HashMap<>();
 		WorkerThread.submitAndForkRun(this.realmManager);
 	}
-
 
 	public void loadClass(Player player, CharacterClass cls, boolean setEquipment) {
 		if (setEquipment || (this.playerId == -1l)) {
@@ -260,7 +254,6 @@ public class PlayState extends GameState {
 			if(!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)) {
 				p.xCol=false;
 				p.applyMovementLerp(new ObjectMovement(p.getPos().x + p.getDx(), p.getPos().y));
-				//p.getPos().x += p.getDx();
 			}else {
 				p.xCol=true;
 			}
@@ -410,6 +403,9 @@ public class PlayState extends GameState {
 
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if(player==null) return;
+
+		this.cam.input(mouse, key);
+
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
 			if (this.cam.getTarget() == player) {
 				final Map<Cardinality, Boolean > lastDirectionTempMap = new HashMap<>();
@@ -472,17 +468,20 @@ public class PlayState extends GameState {
 					this.lastDirectionMap = lastDirectionTempMap;
 				}
 			}
-			this.cam.input(mouse, key);
-			if (key.f2.clicked && !this.playerLocation.equals(PlayerLocation.VAULT)) {
-				//				try {
-				//					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/vault.xml");
-				//					this.realmManager.getClient().sendRemote(loadMap);
-				//				}catch(Exception e) {
-				//					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/vault.xml", e.getMessage());
-				//				}
+			if (key.f2.clicked) {
+				try {
+					Portal closestPortal = this.realmManager.getState().getClosestPortal(this.getPlayerPos(), 32);
+					if (closestPortal != null) {
+						UsePortalPacket usePortal = UsePortalPacket.from(closestPortal.getId(),
+								this.realmManager.getRealm().getRealmId(), this.getPlayerId());
+						this.realmManager.getClient().sendRemote(usePortal);
+					}
+				} catch (Exception e) {
+					PlayState.log.error("Failed to send test UsePortalPacket", e.getMessage());
+				}
 
 			}
-			if (key.f1.clicked && !this.playerLocation.equals(PlayerLocation.REALM)) {
+			if (key.f1.clicked) {
 				//				try {
 				//					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/nexus2.xml");
 				//					this.realmManager.getClient().sendRemote(loadMap);
@@ -620,6 +619,7 @@ public class PlayState extends GameState {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private CharacterClass currentPlayerCharacterClass() {
 		return CharacterClass.valueOf(this.getPlayer().getClassId());
 	}

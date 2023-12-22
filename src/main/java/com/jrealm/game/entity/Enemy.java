@@ -15,6 +15,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.ProjectilePositionMode;
+import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.net.Streamable;
 
@@ -106,8 +107,9 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		}
 	}
 
-	public void update(RealmManagerServer mgr, double time) {
-		Player player = mgr.getClosestPlayer(this.getPos(), this.r_sense);
+	public void update(long realmId, RealmManagerServer mgr, double time) {
+		final Realm targetRealm = mgr.getRealms().get(realmId);
+		Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.r_sense);
 		super.update(time);
 		if (player == null)
 			return;
@@ -145,11 +147,15 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 				for (Projectile p : group.getProjectiles()) {
 					if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
-						mgr.addProjectile(0l, player.getId(), this.getWeaponId(), p.getProjectileId(), source.clone(),
+						mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
+								p.getProjectileId(),
+								source.clone(),
 								angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
 								p.getDamage(), true, p.getFlags(), p.getAmplitude(), p.getFrequency());
 					} else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
-						mgr.addProjectile(0l, player.getId(), this.getWeaponId(), p.getProjectileId(), source.clone(), Float.parseFloat(p.getAngle()),
+						mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
+								p.getProjectileId(),
+								source.clone(), Float.parseFloat(p.getAngle()),
 								p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
 								p.getAmplitude(), p.getFrequency());
 					}

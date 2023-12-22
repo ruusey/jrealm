@@ -64,9 +64,10 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings("unused")
 public class RealmManagerServer implements Runnable {
 	private SocketServer server;
+
 	private Map<Long, Realm> realms = new HashMap<>();
 
-	private Realm realm;
+	// private Realm realm;
 	private boolean shutdown = false;
 
 	private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
@@ -105,18 +106,6 @@ public class RealmManagerServer implements Runnable {
 		// this.spawnTestPlayers(5);
 	}
 
-	public RealmManagerServer(Realm realm) {
-		this.registerPacketCallbacks();
-		this.realm = realm;
-		this.server = new SocketServer(2222);
-		this.shotDestQueue = new ArrayList<>();
-		this.expiredEnemies = new ArrayList<>();
-		this.expiredPlayers = new ArrayList<>();
-		this.expiredBullets = new ArrayList<>();
-		WorkerThread.submitAndForkRun(this.server);
-		this.spawnTestPlayers(5);
-
-	}
 	// Adds a specified amount of random headless players
 	private void spawnTestPlayers(final int count) {
 		final Runnable spawnTestPlayers = ()-> {
@@ -150,7 +139,8 @@ public class RealmManagerServer implements Runnable {
 					}
 
 					player.setHeadless(true);
-					final long newId = this.getRealm().addPlayer(player);
+					// TODO:
+					// final long newId = this.getRealm().addPlayer(player);
 					//Thread.sleep(500);
 				}catch(Exception e) {
 					RealmManagerServer.log.error("Failed to spawn test character of class type {}. Reason: {}", classToSpawn, e);
@@ -233,132 +223,136 @@ public class RealmManagerServer implements Runnable {
 		for(final String disconnectedClient : disconnectedClients) {
 			final Long dcPlayerId = this.getRemoteAddresses().get(disconnectedClient);
 			this.expiredPlayers.add(dcPlayerId);
-			this.realm.getPlayers().remove(dcPlayerId);
+			final Realm playerLocation = this.searchRealmsForPlayers(dcPlayerId);
+			playerLocation.getPlayers().remove(dcPlayerId);
 			this.server.getClients().remove(disconnectedClient);
 		}
 	}
 
 	public void enqueueGameData() {
 		final List<String> disconnectedClients = new ArrayList<>();
-		UnloadPacket unload = null;
-		try {
-			// Holds 'dead' or expired entities (old bullets, DC'd players, dead enemies)
-			unload = this.getUnloadPacket();
-		} catch (Exception e) {
-			RealmManagerServer.log.error("Failed to create unload packet. Reason: {}", e);
-		}
-		final UnloadPacket unloadToBroadcast = unload;
+
 		// For each player currently connected
-		// for (final Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
-		for (final Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
+		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+			final Realm realm = realmEntry.getValue();
+			UnloadPacket unload = null;
 			try {
-				// Get UpdatePacket for this player and all players in this players viewport
-				// Contains, player stat info, inventory, status effects, health and mana data
-				final List<UpdatePacket> uPackets = this.realm
-						.getPlayersAsPackets(player.getValue().getCam().getBounds());
+				// Holds 'dead' or expired entities (old bullets, DC'd players, dead enemies)
+				unload = this.getUnloadPacket(realm.getRealmId());
+			} catch (Exception e) {
+				RealmManagerServer.log.error("Failed to create unload packet. Reason: {}", e);
+			}
+			final UnloadPacket unloadToBroadcast = unload;
+			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
+				try {
+					// Get UpdatePacket for this player and all players in this players viewport
+					// Contains, player stat info, inventory, status effects, health and mana data
+					final List<UpdatePacket> uPackets = realm
+							.getPlayersAsPackets(player.getValue().getCam().getBounds());
 
-				// Get the background + collision tiles in this players viewport
-				// condensed into a single array
-				final NetTile[] netTilesForPlayer = this.realm.getTileManager().getLoadMapTiles(player.getValue());
-				// Build those tiles into a load map packet (NetTile[] wrapper)
-				final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(netTilesForPlayer);
+					// Get the background + collision tiles in this players viewport
+					// condensed into a single array
+					final NetTile[] netTilesForPlayer = realm.getTileManager().getLoadMapTiles(player.getValue());
+					// Build those tiles into a load map packet (NetTile[] wrapper)
+					final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(), netTilesForPlayer);
 
-				// If we dont have load map state for this player, map it and
-				// then transmit all the tiles
-				if (this.playerLoadMapState.get(player.getKey()) == null) {
-					this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-
-					this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
-				} else {
-					// Get the previous loadMap packet and check for Delta,
-					// only send the delta to the client
-					final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
-					// Custom equals impl
-					if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
-						final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
+					// If we dont have load map state for this player, map it and
+					// then transmit all the tiles
+					if (this.playerLoadMapState.get(player.getKey()) == null) {
 						this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-						if (loadMapDiff != null) {
-							this.enqueueServerPacket(player.getValue(), loadMapDiff);
+
+						this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
+					} else {
+						// Get the previous loadMap packet and check for Delta,
+						// only send the delta to the client
+						final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
+						// Custom equals impl
+						if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
+							final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
+							this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
+							if (loadMapDiff != null) {
+								this.enqueueServerPacket(player.getValue(), loadMapDiff);
+							}
 						}
 					}
-				}
-				// Get LoadPacket for this player
-				// Contains newly spawned bullets, entities, players
-				final LoadPacket load = this.realm
-						.getLoadPacket(this.realm.getTileManager().getRenderViewPort(player.getValue()));
+					// Get LoadPacket for this player
+					// Contains newly spawned bullets, entities, players
+					final LoadPacket load = realm
+							.getLoadPacket(realm.getTileManager().getRenderViewPort(player.getValue()));
 
-				// Get the posX, posY, dX, dY of all Entities in this players viewport
-				final ObjectMovePacket mPacket = this.realm
-						.getGameObjectsAsPackets(this.realm.getTileManager().getRenderViewPort(player.getValue()));
+					// Get the posX, posY, dX, dY of all Entities in this players viewport
+					final ObjectMovePacket mPacket = realm
+							.getGameObjectsAsPackets(realm.getTileManager().getRenderViewPort(player.getValue()));
 
-				for (final UpdatePacket packet : uPackets) {
-					// Only transmit THIS players UpdatePacket if the state has changed
-					if (packet.getPlayerId() != player.getKey()) {
-						continue;
-					}
-					if (this.playerUpdateState.get(player.getKey()) == null) {
-						this.playerUpdateState.put(player.getKey(), packet);
-						this.enqueueServerPacket(player.getValue(), packet);
-					} else {
-						final UpdatePacket old = this.playerUpdateState.get(player.getKey());
-						if (!old.equals(packet)) {
+					for (final UpdatePacket packet : uPackets) {
+						// Only transmit THIS players UpdatePacket if the state has changed
+						if (packet.getPlayerId() != player.getKey()) {
+							continue;
+						}
+						if (this.playerUpdateState.get(player.getKey()) == null) {
 							this.playerUpdateState.put(player.getKey(), packet);
 							this.enqueueServerPacket(player.getValue(), packet);
+						} else {
+							final UpdatePacket old = this.playerUpdateState.get(player.getKey());
+							if (!old.equals(packet)) {
+								this.playerUpdateState.put(player.getKey(), packet);
+								this.enqueueServerPacket(player.getValue(), packet);
+							}
 						}
 					}
-				}
 
-				// Only transmit the LoadPacket if its state is changed (it can potentially be
-				// large).
-				// If the state is changed, only transmit the DELTA data
-				if (this.playerLoadState.get(player.getKey()) == null) {
-					this.playerLoadState.put(player.getKey(), load);
-					this.enqueueServerPacket(player.getValue(), load);
-				} else {
-					final LoadPacket old = this.playerLoadState.get(player.getKey());
-					if (!old.equals(load)) {
-						// Get the LoadPacket delta
-						final LoadPacket toSend = old.combine(load);
+					// Only transmit the LoadPacket if its state is changed (it can potentially be
+					// large).
+					// If the state is changed, only transmit the DELTA data
+					if (this.playerLoadState.get(player.getKey()) == null) {
 						this.playerLoadState.put(player.getKey(), load);
-						this.enqueueServerPacket(player.getValue(), toSend);
+						this.enqueueServerPacket(player.getValue(), load);
+					} else {
+						final LoadPacket old = this.playerLoadState.get(player.getKey());
+						if (!old.equals(load)) {
+							// Get the LoadPacket delta
+							final LoadPacket toSend = old.combine(load);
+							this.playerLoadState.put(player.getKey(), load);
+							this.enqueueServerPacket(player.getValue(), toSend);
 
-						// Unload the delta objcets that were in the old LoadPacket
-						// but are NOT in the new LoadPacket
-						final UnloadPacket unloadDelta = old.difference(load);
-						if ((unloadDelta.getEnemies().length > 0) || (unloadDelta.getContainers().length > 0)
-								|| (unloadDelta.getPlayers().length > 0) || (unloadDelta.getPortals().length > 0)) {
-							this.enqueueServerPacket(player.getValue(), unloadDelta);
+							// Unload the delta objcets that were in the old LoadPacket
+							// but are NOT in the new LoadPacket
+							final UnloadPacket unloadDelta = old.difference(load);
+							if ((unloadDelta.getEnemies().length > 0) || (unloadDelta.getContainers().length > 0)
+									|| (unloadDelta.getPlayers().length > 0) || (unloadDelta.getPortals().length > 0)) {
+								this.enqueueServerPacket(player.getValue(), unloadDelta);
+							}
 						}
 					}
-				}
 
-				// Only transmit the UnloadPacket if it is non-empty and
-				// does not equal the previous Unload state (it can potentially be large)
-				if (unloadToBroadcast != null) {
-					if ((this.lastUnload == null) || !this.lastUnload.equals(unloadToBroadcast)) {
-						this.lastUnload = unloadToBroadcast;
-						this.enqueueServerPacket(unloadToBroadcast);
+					// Only transmit the UnloadPacket if it is non-empty and
+					// does not equal the previous Unload state (it can potentially be large)
+					if (unloadToBroadcast != null) {
+						if ((this.lastUnload == null) || !this.lastUnload.equals(unloadToBroadcast)) {
+							this.lastUnload = unloadToBroadcast;
+							this.enqueueServerPacket(unloadToBroadcast);
+						}
 					}
-				}
-				// If the ObjectMove packet isnt empty
-				if (mPacket != null) {
-					this.enqueueServerPacket(player.getValue(), mPacket);
-				}
+					// If the ObjectMove packet isnt empty
+					if (mPacket != null) {
+						this.enqueueServerPacket(player.getValue(), mPacket);
+					}
 
-			} catch (Exception e) {
-				RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(),
-						e);
+				} catch (Exception e) {
+					RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(),
+							e);
+				}
+			}
+			for (LootContainer lc : realm.getLoot().values()) {
+				lc.setContentsChanged(false);
 			}
 		}
-		// }
 
 		// Used to dynamically re-render changed loot containers (chests) on the client
 		// if their
 		// contents change in a server tick (receive MoveItem packet from client this
 		// tick)
-		this.getRealm().getLoot().values().forEach(lootContainer->{
-			lootContainer.setContentsChanged(false);
-		});
+
 	}
 
 	// For each connected client, dequeue all pending packets
@@ -380,16 +374,18 @@ public class RealmManagerServer implements Runnable {
 			}else {
 				final Long dcPlayerId = this.getRemoteAddresses().get(thread.getKey());
 				this.expiredPlayers.add(dcPlayerId);
+				final Realm playerLocation = this.searchRealmsForPlayers(dcPlayerId);
 				this.server.getClients().remove(thread.getKey());
-				this.realm.removePlayer(dcPlayerId);
+				playerLocation.getPlayers().remove(dcPlayerId);
 			}
 		}
 	}
 
-	public Portal getClosestPortal(final Vector2f pos, final float limit) {
+	public Portal getClosestPortal(final long realmId, final Vector2f pos, final float limit) {
 		float best = Float.MAX_VALUE;
 		Portal bestPortal = null;
-		for (final Portal portal : this.realm.getPortals().values()) {
+		final Realm targetRealm = this.realms.get(realmId);
+		for (final Portal portal : targetRealm.getPortals().values()) {
 			float dist = portal.getPos().distanceTo(pos);
 			if ((dist < best) && (dist <= limit)) {
 				best = dist;
@@ -399,10 +395,11 @@ public class RealmManagerServer implements Runnable {
 		return bestPortal;
 	}
 
-	public Player getClosestPlayer(final Vector2f pos, final float limit) {
+	public Player getClosestPlayer(final long realmId, final Vector2f pos, final float limit) {
 		float best = Float.MAX_VALUE;
 		Player bestPlayer = null;
-		for (final Player player : this.realm.getPlayers().values()) {
+		final Realm targetRealm = this.realms.get(realmId);
+		for (final Player player : targetRealm.getPlayers().values()) {
 			final float dist = player.getPos().distanceTo(pos);
 			if ((dist < best) && (dist <= limit)) {
 				best = dist;
@@ -412,10 +409,11 @@ public class RealmManagerServer implements Runnable {
 		return bestPlayer;
 	}
 
-	public LootContainer getClosestLootContainer(final Vector2f pos, final float limit) {
+	public LootContainer getClosestLootContainer(final long realmId, final Vector2f pos, final float limit) {
 		float best = Float.MAX_VALUE;
 		LootContainer bestLoot = null;
-		for (final LootContainer lootContainer : this.realm.getLoot().values()) {
+		final Realm targetRealm = this.realms.get(realmId);
+		for (final LootContainer lootContainer : targetRealm.getLoot().values()) {
 			float dist = lootContainer.getPos().distanceTo(pos);
 			if ((dist < best) && (dist <= limit)) {
 				best = dist;
@@ -427,16 +425,20 @@ public class RealmManagerServer implements Runnable {
 
 	//TODO: Make this player specific so we can tell the client
 	// to unload objects that move outside of their render range
-	private UnloadPacket getUnloadPacket() throws Exception {
+	private UnloadPacket getUnloadPacket(long realmId) throws Exception {
+		final Realm targetRealm = this.realms.get(realmId);
+
 		final Long[] expiredBullets = this.expiredBullets.toArray(new Long[0]);
 		final Long[] expiredEnemies = this.expiredEnemies.toArray(new Long[0]);
 		final Long[] expiredPlayers = this.expiredPlayers.toArray(new Long[0]);
 		this.expiredPlayers.clear();
 		this.expiredBullets.clear();
 		this.expiredEnemies.clear();
-		final List<Long> lootContainers = this.realm.getLoot().values().stream().filter(lc->lc.isExpired() || lc.isEmpty()).map(LootContainer::getLootContainerId).collect(Collectors.toList());
+		final List<Long> lootContainers = targetRealm.getLoot().values().stream()
+				.filter(lc -> lc.isExpired() || lc.isEmpty()).map(LootContainer::getLootContainerId)
+				.collect(Collectors.toList());
 		for(final Long lcId: lootContainers) {
-			this.realm.getLoot().remove(lcId);
+			targetRealm.getLoot().remove(lcId);
 		}
 		return UnloadPacket.from(expiredPlayers, lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies,
 				new Long[0]);
@@ -461,66 +463,77 @@ public class RealmManagerServer implements Runnable {
 	// Updates all game objects on the server
 	public void update(double time) {
 		// Update player specific game objects (bullets, the players themselves)
-		for (final Map.Entry<Long, Player> player : this.realm.getPlayers().entrySet()) {
-			final Player p = this.realm.getPlayer(player.getValue().getId());
-			if (p == null) {
-				continue;
-			}
+		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+			final Realm realm = realmEntry.getValue();
+			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
+				final Player p = realm.getPlayer(player.getValue().getId());
+				if (p == null) {
+					continue;
+				}
 
+				final Runnable processGameObjects = () -> {
+					this.processBulletHit(realm.getRealmId(), p);
+				};
+				// Rewrite this asap
+				final Runnable checkAbilityUsage = () -> {
+
+					for (final GameObject e : realm
+							.getGameObjectsInBounds(realm.getTileManager().getRenderViewPort(p))) {
+						if ((e instanceof Entity) || (e instanceof Enemy)) {
+							Entity entCast = (Entity) e;
+							entCast.removeExpiredEffects();
+						}
+					}
+				};
+
+				final Runnable updatePlayer = () -> {
+					p.update(time);
+					this.movePlayer(realm.getRealmId(), p);
+				};
+				// Run the player update tasks Asynchronously
+				WorkerThread.submitAndRun(processGameObjects, updatePlayer, checkAbilityUsage);
+			}
+			// Once per tick update all non player game objects
+			// (bullets, enemies)
 			final Runnable processGameObjects = () -> {
-				this.processBulletHit(p);
-				this.removeExpiredBullets();
-			};
-			// Rewrite this asap
-			final Runnable checkAbilityUsage = () -> {
+				final GameObject[] gameObject = realm.getAllGameObjects();
+				for (int i = 0; i < gameObject.length; i++) {
+					if (gameObject[i] instanceof Enemy) {
+						final Enemy enemy = ((Enemy) gameObject[i]);
+						enemy.update(realm.getRealmId(), this, time);
+					}
 
-				for (final GameObject e : this.realm
-						.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort(p))) {
-					if ((e instanceof Entity) || (e instanceof Enemy)) {
-						Entity entCast = (Entity) e;
-						entCast.removeExpiredEffects();
+					if (gameObject[i] instanceof Bullet) {
+						final Bullet bullet = ((Bullet) gameObject[i]);
+						if (bullet != null) {
+							bullet.update();
+						}
 					}
 				}
 			};
-
-			final Runnable updatePlayer = () -> {
-				p.update(time);
-				this.movePlayer(p);
-			};
-			// Run the player update tasks Asynchronously
-			WorkerThread.submitAndRun(processGameObjects, updatePlayer, checkAbilityUsage);
+			WorkerThread.submitAndRun(processGameObjects);
 		}
-		// Once per tick update all non player game objects
-		// (bullets, enemies)
-		final Runnable processGameObjects = () -> {
-			final GameObject[] gameObject = this.realm.getAllGameObjects();
-			for (int i = 0; i < gameObject.length; i++) {
-				if (gameObject[i] instanceof Enemy) {
-					final Enemy enemy = ((Enemy) gameObject[i]);
-					enemy.update(this, time);
-				}
 
-				if (gameObject[i] instanceof Bullet) {
-					final Bullet bullet = ((Bullet) gameObject[i]);
-					if (bullet != null) {
-						bullet.update();
-					}
-				}
-			}
+		Runnable removeExpiredBullets = () -> {
+			this.removeExpiredBullets();
 		};
-		WorkerThread.submitAndRun(processGameObjects);
+
+		WorkerThread.submitAndRun(removeExpiredBullets);
+
 	}
 
-	private void movePlayer(final Player p) {
+	private void movePlayer(final long realmId, final Player p) {
+		final Realm targetRealm = this.realms.get(realmId);
+
 		if (!p.isFallen()) {
-			if(!this.getRealm().getTileManager().collisionTile(p, p.getDx(), 0)) {
+			if (!targetRealm.getTileManager().collisionTile(p, p.getDx(), 0)) {
 				p.xCol=false;
 				p.getPos().x += p.getDx();
 			}else {
 				p.xCol=true;
 			}
 
-			if(!this.getRealm().getTileManager().collisionTile(p, 0, p.getDy())) {
+			if (!targetRealm.getTileManager().collisionTile(p, 0, p.getDy())) {
 				p.yCol=false;
 				p.getPos().y += p.getDy();
 			}else {
@@ -542,8 +555,10 @@ public class RealmManagerServer implements Runnable {
 
 	// Invokes an ability usage server side for the given player at the
 	// desired location if aplicable
-	public void useAbility(final long playerId, final Vector2f pos) {
-		final Player player = this.realm.getPlayer(playerId);
+	public void useAbility(final long realmId, final long playerId, final Vector2f pos) {
+		final Realm targetRealm = this.realms.get(realmId);
+
+		final Player player = targetRealm.getPlayer(playerId);
 		final GameItem abilityItem = player.getAbility();
 		if ((abilityItem == null) || (abilityItem.getEffect() == null))
 			return;
@@ -567,14 +582,14 @@ public class RealmManagerServer implements Runnable {
 				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
 				if (p.getPositionMode() == ProjectilePositionMode.TARGET_PLAYER) {
-					this.addProjectile(0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+					this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
 							p.getProjectileId(),
 							source.clone(-offset, -offset), angle + Float.parseFloat(p.getAngle()), p.getSize(),
 							p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
 							p.getFrequency());
 				} else {
 					source = dest;
-					this.addProjectile(0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+					this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
 							p.getProjectileId(),
 							source.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
 							p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
@@ -593,7 +608,7 @@ public class RealmManagerServer implements Runnable {
 				final short offset = (short) (p.getSize() / (short) 2);
 				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
-				this.addProjectile(0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+				this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
 						p.getProjectileId(),
 						dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
 						p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
@@ -621,37 +636,41 @@ public class RealmManagerServer implements Runnable {
 	//	}
 
 	public void removeExpiredBullets() {
-		final List<Bullet> toRemove = new ArrayList<>();
+		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+			final Realm realm = realmEntry.getValue();
 
-		for(final Bullet b : this.realm.getBullets().values()) {
-			if(b.remove()) {
-				toRemove.add(b);
+			final List<Bullet> toRemove = new ArrayList<>();
+			for (final Bullet b : realm.getBullets().values()) {
+				if (b.remove()) {
+					toRemove.add(b);
+				}
 			}
+			toRemove.forEach(bullet -> {
+				this.expiredBullets.add(bullet.getId());
+				realm.removeBullet(bullet);
+			});
 		}
-
-		toRemove.forEach(bullet -> {
-			this.expiredBullets.add(bullet.getId());
-			this.realm.removeBullet(bullet);
-		});
 	}
 
-	public void processBulletHit(final Player p) {
-		final List<Bullet> results = this.getBullets(p);
-		final GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort(p));
-		final Player player = this.realm.getPlayer(p.getId());
+	public void processBulletHit(final long realmId, final Player p) {
+		final Realm targetRealm = this.realms.get(realmId);
+		final List<Bullet> results = this.getBullets(realmId, p);
+		final GameObject[] gameObject = targetRealm
+				.getGameObjectsInBounds(targetRealm.getTileManager().getRenderViewPort(p));
+		final Player player = targetRealm.getPlayer(p.getId());
 		for (final Bullet b : results) {
-			this.processPlayerHit(b, player);
+			this.processPlayerHit(realmId, b, player);
 		}
 
 		for (int i = 0; i < gameObject.length; i++) {
 			if (gameObject[i] instanceof Enemy) {
 				final Enemy enemy = ((Enemy) gameObject[i]);
 				for (final Bullet b : results) {
-					this.proccessEnemyHit(b, enemy);
+					this.proccessEnemyHit(realmId, b, enemy);
 				}
 			}
 		}
-		this.proccessTerrainHit(p);
+		this.proccessTerrainHit(realmId, p);
 	}
 	// This may not need to be synchronized
 	// Enqueues a server packet to be transmitted to all players
@@ -671,14 +690,16 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	private void proccessTerrainHit(final Player p) {
+	private void proccessTerrainHit(final long realmId, final Player p) {
+		final Realm targetRealm = this.realms.get(realmId);
+
 		final List<Bullet> toRemove = new ArrayList<>();
-		final TileMap currentMap = this.realm.getTileManager().getCollisionLayer();
+		final TileMap currentMap = targetRealm.getTileManager().getCollisionLayer();
 		Tile[] viewportTiles = null;
 		if (currentMap == null)
 			return;
-		viewportTiles = this.realm.getTileManager().getCollisionTile(p.getPos());
-		for (final Bullet b : this.getBullets(p)) {
+		viewportTiles = targetRealm.getTileManager().getCollisionTile(p.getPos());
+		for (final Bullet b : this.getBullets(realmId, p)) {
 			if (b.remove()) {
 				toRemove.add(b);
 				continue;
@@ -694,12 +715,14 @@ public class RealmManagerServer implements Runnable {
 		}
 		toRemove.forEach(bullet -> {
 			this.expiredBullets.add(bullet.getId());
-			this.realm.removeBullet(bullet);
+			targetRealm.removeBullet(bullet);
 		});
 	}
 
-	private  void processPlayerHit(final Bullet b, final Player p) {
-		final Player player = this.realm.getPlayer(p.getId());
+	private void processPlayerHit(final long realmId, final Bullet b, final Player p) {
+		final Realm targetRealm = this.realms.get(realmId);
+
+		final Player player = targetRealm.getPlayer(p.getId());
 		if (player == null)
 			return;
 		if (b.getBounds().collides(0, 0, player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
@@ -712,22 +735,24 @@ public class RealmManagerServer implements Runnable {
 			}
 			player.setHealth(player.getHealth() - dmgToInflict, 0, false);
 			this.expiredBullets.add(b.getId());
-			this.realm.removeBullet(b);
+			targetRealm.removeBullet(b);
 		}
 	}
 
-	private void proccessEnemyHit(final Bullet b, final Enemy e) {
-		if (this.realm.hasHitEnemy(b.getId(), e.getId()))
+	private void proccessEnemyHit(final long realmId, final Bullet b, final Enemy e) {
+		final Realm targetRealm = this.realms.get(realmId);
+
+		if (targetRealm.hasHitEnemy(b.getId(), e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
-			this.realm.hitEnemy(b.getId(), e.getId());
+			targetRealm.hitEnemy(b.getId(), e.getId());
 
 			e.setHealth(e.getHealth() - b.getDamage(), 0, false);
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {
 				this.expiredBullets.add(b.getId());
-				this.realm.removeBullet(b);
+				targetRealm.removeBullet(b);
 			}
 
 			if (b.hasFlag((short) 2)) {
@@ -747,10 +772,10 @@ public class RealmManagerServer implements Runnable {
 				e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
 				this.expiredBullets.add(b.getId());
 				this.expiredEnemies.add(e.getId());
-				this.realm.clearHitMap();
-				this.realm.spawnRandomEnemy();
-				this.realm.removeEnemy(e);
-				this.realm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().clone()));
+				targetRealm.clearHitMap();
+				targetRealm.spawnRandomEnemy();
+				targetRealm.removeEnemy(e);
+				targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().clone()));
 				//				this.realm.addLootContainer(new LootContainer(
 				//						LootTier.BLUE,
 				//						e.getPos()));
@@ -758,10 +783,12 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	public void addProjectile(final long id, final long targetPlayerId, final int projectileId, final int projectileGroupId,
+	public void addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
+			final int projectileGroupId,
 			final Vector2f src, final Vector2f dest, final short size, final float magnitude, final float range, short damage, final boolean isEnemy,
 			final List<Short> flags) {
-		final Player player = this.realm.getPlayer(targetPlayerId);
+		final Realm targetRealm = this.realms.get(realmId);
+		final Player player = targetRealm.getPlayer(targetPlayerId);
 		if (player == null)
 			return;
 		final ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
@@ -779,13 +806,15 @@ public class RealmManagerServer implements Runnable {
 		final long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
 		final Bullet b = new Bullet(id, projectileId, bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
 		b.setFlags(flags);
-		this.realm.addBullet(b);
+		targetRealm.addBullet(b);
 	}
 
-	public void addProjectile(final long id, final long targetPlayerId, final int projectileId, final int projectileGroupId,
+	public void addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
+			final int projectileGroupId,
 			final Vector2f src, final float angle, final short size, final float magnitude, final float range, short damage, final boolean isEnemy,
 			final List<Short> flags, final short amplitude, final short frequency) {
-		final Player player = this.realm.getPlayer(targetPlayerId);
+		final Realm targetRealm = this.realms.get(realmId);
+		final Player player = targetRealm.getPlayer(targetPlayerId);
 		if (player == null)
 			return;
 		final ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
@@ -805,11 +834,13 @@ public class RealmManagerServer implements Runnable {
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);
 		b.setFlags(flags);
-		this.realm.addBullet(b);
+		targetRealm.addBullet(b);
 	}
 
-	private List<Bullet> getBullets(final Player p) {
-		final GameObject[] gameObject = this.realm.getGameObjectsInBounds(this.realm.getTileManager().getRenderViewPort(p));
+	private List<Bullet> getBullets(final long realmId, final Player p) {
+		final Realm targetRealm = this.realms.get(realmId);
+		final GameObject[] gameObject = targetRealm
+				.getGameObjectsInBounds(targetRealm.getTileManager().getRenderViewPort(p));
 
 		final List<Bullet> results = new ArrayList<>();
 		for (int i = 0; i < gameObject.length; i++) {
@@ -818,6 +849,18 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 		return results;
+	}
+
+	public Realm searchRealmsForPlayers(long playerId) {
+		Realm found = null;
+		for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
+			for (Player player : realm.getValue().getPlayers().values()) {
+				if (player.getId() == playerId) {
+					found = realm.getValue();
+				}
+			}
+		}
+		return found;
 	}
 
 	private void broadcastPacket(final Packet packet) {

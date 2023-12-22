@@ -36,6 +36,7 @@ public class ClientGameLogic {
 		try {
 			//			log.info("[CLIENT] Recieved Load Packet \nPlayers: {}\nEnemies: {}\nBullets: {}\nLootContainers: {}",
 			//
+			cli.getRealm().setRealmId(loadPacket.getRealmId());
 			cli.getRealm().getTileManager().mergeMap(loadPacket);
 		} catch (Exception e) {
 			ClientGameLogic.log.error("Failed to handle LoadMap Packet. Reason: {}", e);

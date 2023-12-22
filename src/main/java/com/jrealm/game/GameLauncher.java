@@ -23,7 +23,7 @@ public class GameLauncher {
 		GameDataManager.loadGameData();
 		if(GameLauncher.LOCAL_SERVER) {
 			Realm realm = new Realm(true, 2);
-			RealmManagerServer server = new RealmManagerServer(realm);
+			RealmManagerServer server = new RealmManagerServer();
 			server.getRealms().put(realm.getRealmId(), realm);
 			WorkerThread.submitAndForkRun(server);
 		}
