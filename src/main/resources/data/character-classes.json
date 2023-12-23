@@ -1,0 +1,107 @@
+[
+	{
+		"spriteOffset": 0,
+		"classId": 0,
+		"className": "Rogue",
+		"baseStats": {
+			"spd": 15,
+			"att": 12,
+			"dex": 15,
+			"wis": 10,
+			"vit": 10,
+			"def": 0,
+			"hp": 200,
+			"mp": 100
+		}
+	},
+	{
+		"spriteOffset": 4,
+		"classId": 1,
+		"className": "Archer",
+		"baseStats": {
+			"spd": 15,
+			"att": 12,
+			"dex": 15,
+			"wis": 10,
+			"vit": 10,
+			"def": 0,
+			"hp": 200,
+			"mp": 100
+		}
+	},
+	{
+		"spriteOffset": 8,
+		"classId": 2,
+		"className": "Wizard",
+		"baseStats": {
+			"spd": 15,
+			"att": 12,
+			"dex": 15,
+			"wis": 10,
+			"vit": 10,
+			"def": 0,
+			"hp": 200,
+			"mp": 100
+		}
+	},
+	{
+		"spriteOffset": 12,
+		"classId": 3,
+		"className": "Priest",
+		"baseStats": {
+			"spd": 15,
+			"att": 12,
+			"dex": 15,
+			"wis": 10,
+			"vit": 10,
+			"def": 0,
+			"hp": 200,
+			"mp": 100
+		}
+	},
+	{
+		"spriteOffset": 16,
+		"classId": 4,
+		"className": "Warrior",
+		"baseStats": {
+			"spd": 10,
+			"att": 12,
+			"dex": 15,
+			"wis": 10,
+			"vit": 10,
+			"def": 0,
+			"hp": 200,
+			"mp": 100
+		}
+	},
+	{
+		"spriteOffset": 20,
+		"classId": 5,
+		"className": "Knight",
+		"baseStats": {
+			"spd": 10,
+			"att": 12,
+			"dex": 15,
+			"wis": 10,
+			"vit": 10,
+			"def": 0,
+			"hp": 200,
+			"mp": 100
+		}
+	},
+	{
+		"spriteOffset": 24,
+		"classId": 6,
+		"className": "Palladin",
+		"baseStats": {
+			"spd": 10,
+			"att": 12,
+			"dex": 15,
+			"wis": 10,
+			"vit": 10,
+			"def": 0,
+			"hp": 200,
+			"mp": 100
+		}
+	}
+]

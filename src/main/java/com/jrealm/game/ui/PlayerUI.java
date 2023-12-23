@@ -27,6 +27,7 @@ public class PlayerUI {
 	public static boolean DRAGGING_ITEM = false;
 	private FillBars hp;
 	private FillBars mp;
+	private FillBars xp;
 
 	private Slots[] inventory;
 	private Slots[] groundLoot;
@@ -44,12 +45,17 @@ public class PlayerUI {
 		BufferedImage[] barSpritesMp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 16, 7, 14),
 				bars.getSubimage(0, 0, 12, 20) };
 
+		BufferedImage[] barSpritesXp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(55, 0, 7, 14),
+				bars.getSubimage(0, 0, 12, 20) };
+
 		Vector2f posHp = new Vector2f(GamePanel.width - 356, 128);
 		Vector2f posMp = posHp.clone(0, 64);
+		Vector2f posXp = posHp.clone(0, -64);
 
 		this.playState = p;
 		this.hp = new FillBars(p.getPlayer(), barSpritesHp, posHp, 16, 16, false);
 		this.mp = new FillBars(p.getPlayer(), barSpritesMp, posMp, 16, 16, true);
+		// this.xp = new FillBars(p.getPlayer(), barSpritesXp, posXp, 16, 16, true);
 		this.groundLoot = new Slots[8];
 		this.inventory = new Slots[20];
 		this.tooltips = new HashMap<>();
@@ -131,19 +137,19 @@ public class PlayerUI {
 			b.onMouseUp(event -> {
 				PlayerUI.DRAGGING_ITEM = false;
 				this.tooltips.clear();
-//				if (this.overlapsEquipment(event)
-//						&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
-//					Slots currentEquip = this.inventory[item.getTargetSlot()];
-//					this.playState.replaceLootContainerItemByUid(item.getUid(), currentEquip.getItem());
-//					this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
-//					this.setEquipment(this.getPlayState().getPlayer().getInventory());
-//					this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
-//				} else 
-					
+				//				if (this.overlapsEquipment(event)
+				//						&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
+				//					Slots currentEquip = this.inventory[item.getTargetSlot()];
+				//					this.playState.replaceLootContainerItemByUid(item.getUid(), currentEquip.getItem());
+				//					this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
+				//					this.setEquipment(this.getPlayState().getPlayer().getInventory());
+				//					this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
+				//				} else
+
 				if (this.overlapsInventory(event) && this.canSwap()) {
 					this.setActionTime();
 					GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
-//					Slots groundLoot = this.groundLoot[actualIdx];
+					//					Slots groundLoot = this.groundLoot[actualIdx];
 					int idx = this.firstNullIdx(currentInv);
 					Slots currentEquip = this.inventory[idx + 4];
 
@@ -183,7 +189,7 @@ public class PlayerUI {
 			b.onRightClick(event->{
 
 				Slots dropped = this.getOverlapping(event);
-				if (dropped != null && this.canSwap()) {
+				if ((dropped != null) && this.canSwap()) {
 					this.setActionTime();
 					int dropIndex = this.getOverlapIdx(event);
 					this.playState.getRealmManager().moveItem(-1, dropIndex, true, false);
@@ -239,7 +245,7 @@ public class PlayerUI {
 
 			b.onRightClick(event->{
 				Slots dropped = this.getOverlapping(event);
-				if (dropped != null && this.canSwap()) {
+				if ((dropped != null) && this.canSwap()) {
 					this.setActionTime();
 					int idx = this.getOverlapIdx(event);
 					this.playState.getRealmManager().moveItem(-1, idx, true, false);
@@ -278,7 +284,7 @@ public class PlayerUI {
 		}
 		return false;
 	}
-	
+
 	@SuppressWarnings("unused")
 	private boolean overlapsGround(Vector2f pos) {
 		final int panelWidth = (GamePanel.width / 5);
@@ -350,14 +356,14 @@ public class PlayerUI {
 		try {
 			this.playerChat.input(mouse, key, this.playState.getRealmManager().getClient());
 		}catch(Exception e) {
-			
+
 		}
 	}
-	
+
 	public boolean canSwap() {
 		return (Instant.now().toEpochMilli() - this.lastAction) > 1500;
 	}
-	
+
 	public void setActionTime() {
 		this.lastAction = Instant.now().toEpochMilli();
 	}
@@ -491,6 +497,7 @@ public class PlayerUI {
 
 		this.hp.render(g);
 		this.mp.render(g);
+		// this.xp.render(g);
 		this.renderStats(g);
 		this.playerChat.render(g);
 	}

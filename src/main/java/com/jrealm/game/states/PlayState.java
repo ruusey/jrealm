@@ -97,7 +97,6 @@ public class PlayState extends GameState {
 		this.playerId = this.realmManager.getRealm().addPlayer(player);
 		this.realmManager.setCurrentPlayerId(this.playerId);
 		this.pui = new PlayerUI(this);
-		this.getPlayer().getStats().setDef((short)50);
 
 		this.getPui().setEquipment(player.getInventory());
 	}
@@ -605,7 +604,9 @@ public class PlayState extends GameState {
 		if (this.getPlayer().hasEffect(EffectType.SPEEDY)) {
 			stats.setDex((short) (stats.getDex() * 2));
 		}
-		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (400 - (stats.getDex() * 15)))
+
+		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (stats.getDex()
+				* (1000 / (stats.getDex() * 7))))
 				&& !this.gsm.isStateActive(GameStateManager.EDIT);
 		boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
 		if ((mouse.isPressed(MouseEvent.BUTTON1)) && canShoot) {

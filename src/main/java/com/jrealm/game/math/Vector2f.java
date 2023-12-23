@@ -1,5 +1,7 @@
 package com.jrealm.game.math;
 
+import com.jrealm.game.realm.Realm;
+
 public class Vector2f {
 
 	public float x;
@@ -63,9 +65,24 @@ public class Vector2f {
 
 		return this;
 	}
-	
+
 	public float distanceTo(Vector2f other) {
-		 return (float) Math.hypot(this.x-other.x, this.y-other.y);
+		return (float) Math.hypot(this.x-other.x, this.y-other.y);
+	}
+
+	public Vector2f withNoise(int xVariance, int yVariance) {
+		int xRandom = Realm.RANDOM.nextInt(xVariance / 2);
+		int yRandom = Realm.RANDOM.nextInt(yVariance / 2);
+
+		if (Realm.RANDOM.nextBoolean()) {
+			xRandom = -xRandom;
+		}
+
+		if (Realm.RANDOM.nextBoolean()) {
+			yRandom = -yRandom;
+		}
+
+		return new Vector2f(this.x + (float) xRandom, this.y + (float) yRandom);
 	}
 
 	@Override
@@ -85,9 +102,9 @@ public class Vector2f {
 	public String toString() {
 		return this.x + ", " + this.y;
 	}
-	
+
 	public boolean equals(Vector2f other) {
-		return this.x == other.x && this.y == other.y;
+		return (this.x == other.x) && (this.y == other.y);
 	}
 
 }

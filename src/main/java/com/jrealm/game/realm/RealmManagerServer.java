@@ -34,6 +34,7 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.ProjectilePositionMode;
@@ -765,6 +766,11 @@ public class RealmManagerServer implements Runnable {
 			}
 
 			if (e.getDeath()) {
+				for(Player player : targetRealm.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(e))){
+					EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
+					player.setExperience(player.getExperience() + model.getXp());
+				}
+
 				Random random = new Random(Instant.now().toEpochMilli());
 				e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
 				targetRealm.getExpiredBullets().add(b.getId());
@@ -772,8 +778,8 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.clearHitMap();
 				targetRealm.spawnRandomEnemy();
 				targetRealm.removeEnemy(e);
-				targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().clone()));
-				targetRealm.addLootContainer(new LootContainer(LootTier.BLUE, e.getPos()));
+				targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(128, 128)));
+				targetRealm.addLootContainer(new LootContainer(LootTier.BLUE, e.getPos().withNoise(128, 128)));
 			}
 		}
 	}

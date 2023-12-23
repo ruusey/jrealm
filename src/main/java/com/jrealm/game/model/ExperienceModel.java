@@ -30,6 +30,14 @@ public class ExperienceModel {
 		}
 	}
 
+	public int getBaseFame(int experience) {
+		int fame = 0;
+		if (experience > this.maxExperience()) {
+			fame = (experience - this.maxExperience()) / 2500;
+		}
+		return fame;
+	}
+
 	public int getLevel(int experience) {
 		if (experience > this.maxExperience())
 			return this.maxLevel();
@@ -64,8 +72,8 @@ public class ExperienceModel {
 		return best;
 	}
 
-	// Helper method to generate the e
-	public static void createExpModel() {
+	// Helper method to generate the exp-level curve
+	private static void createExpModel() {
 		int desiredLevels = 20;
 		int currentXp = 0;
 		int increment = 1000;

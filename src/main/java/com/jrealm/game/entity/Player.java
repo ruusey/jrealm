@@ -17,6 +17,7 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.states.PlayState;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
@@ -38,14 +39,17 @@ public class Player extends Entity implements Streamable<Player>{
 	private long lastStatsTime = 0l;
 	private LootContainer currentLootContainer;
 	private int classId;
+	private long experience;
 
 	private boolean headless = false;
 	public Player(long id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, CharacterClass characterClass) {
 		super(id, sprite, origin, size);
-		this.classId = characterClass.classId;
 		this.resetEffects();
+		this.resetInventory();
+		this.classId = characterClass.classId;
 		this.cam = cam;
 		this.size = size;
+		this.experience = 0;
 		this.bounds.setWidth(this.size);
 		this.bounds.setHeight(this.size);
 
@@ -62,23 +66,19 @@ public class Player extends Entity implements Streamable<Player>{
 		this.ani.setNumFrames(2, this.ATTACK + this.DOWN);
 
 		this.hasIdle = false;
-		this.health = this.maxHealth = this.defaultMaxHealth = 500;
-		this.mana = this.maxMana = this.defaultMaxMana = 100;
+		CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(this.classId);
+		this.health = this.maxHealth = this.defaultMaxHealth = classModel.getBaseStats().getHp();
+		this.mana = this.maxMana = this.defaultMaxMana = classModel.getBaseStats().getMp();
 
-		this.resetInventory();
-
-		this.stats = new Stats();
-		this.stats.setVit((short) 5);
-		this.stats.setDex((short) 5);
-		this.stats.setSpd((short) 5);
-		this.stats.setAtt((short) 5);
-		this.stats.setWis((short) 5);
+		this.stats = classModel.getBaseStats();
 	}
 
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
 		super(id, origin, size);
-		this.classId = characterClass.classId;
 		this.resetEffects();
+		this.resetInventory();
+		this.experience = 0;
+		this.classId = characterClass.classId;
 		this.size = size;
 		this.bounds.setWidth(this.size);
 		this.bounds.setHeight(this.size);
@@ -86,17 +86,12 @@ public class Player extends Entity implements Streamable<Player>{
 		this.hitBounds.setWidth(this.size);
 		this.hitBounds.setHeight(this.size);
 		this.hasIdle = false;
-		this.health = this.maxHealth = this.defaultMaxHealth = 500;
-		this.mana = this.maxMana = this.defaultMaxMana = 100;
 
-		this.resetInventory();
+		CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(this.classId);
+		this.health = this.maxHealth = this.defaultMaxHealth = classModel.getBaseStats().getHp();
+		this.mana = this.maxMana = this.defaultMaxMana = classModel.getBaseStats().getMp();
 
-		this.stats = new Stats();
-		this.stats.setVit((short) 5);
-		this.stats.setDex((short) 5);
-		this.stats.setSpd((short) 5);
-		this.stats.setAtt((short) 5);
-		this.stats.setWis((short) 5);
+		this.stats = classModel.getBaseStats();
 	}
 
 	private void resetInventory() {
@@ -331,6 +326,10 @@ public class Player extends Entity implements Streamable<Player>{
 		}
 	}
 
+	public Stats getStats() {
+		return this.stats;
+	}
+
 	public void applyUpdate(UpdatePacket packet, PlayState state) {
 		this.name = packet.getPlayerName();
 		this.stats = packet.getStats();
@@ -349,6 +348,7 @@ public class Player extends Entity implements Streamable<Player>{
 		if(packet.getPlayerId()==state.getPlayerId()) {
 			state.getPui().setEquipment(this.inventory);
 		}
+		this.experience = packet.getExperience();
 	}
 
 	public boolean getIsUp() {

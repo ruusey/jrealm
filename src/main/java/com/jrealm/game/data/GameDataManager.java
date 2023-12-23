@@ -12,6 +12,7 @@ import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
+import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.ExperienceModel;
 import com.jrealm.game.model.MapModel;
@@ -36,12 +37,28 @@ public class GameDataManager {
 	public static Map<Integer, MapModel> MAPS = null;
 	public static Map<Integer, TerrainGenerationParameters> TERRAINS = null;
 	public static Map<Integer, PortalModel> PORTALS = null;
+	public static Map<Integer, CharacterClassModel> CHARACTER_CLASSES = null;
 	public static ExperienceModel EXPERIENCE_LVLS = null;
+
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 			"entity/rotmg-bosses-1.png",
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png", "tile/rotmg-tiles-2.png",
 			"tile/rotmg-tiles-1.png", "entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png",
 	"entity/rotmg-misc.png" };
+
+	private static void loadCharacterClasses() throws Exception {
+		GameDataManager.log.info("Loading Character Classes..");
+		GameDataManager.CHARACTER_CLASSES = new HashMap<>();
+		InputStream inputStream = GameDataManager.class.getClassLoader()
+				.getResourceAsStream("data/character-classes.json");
+		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+		CharacterClassModel[] characterClasses = GameDataManager.mapper.readValue(text, CharacterClassModel[].class);
+		for (CharacterClassModel characterClass : characterClasses) {
+			GameDataManager.CHARACTER_CLASSES.put(characterClass.getClassId(), characterClass);
+		}
+		GameDataManager.log.info("Loading Character Classes... DONE");
+	}
 
 	private static void loadExperienceModel() throws Exception {
 		GameDataManager.log.info("Loading ExperienceModel..");
@@ -302,6 +319,7 @@ public class GameDataManager {
 			GameDataManager.loadTerrains();
 			GameDataManager.loadPortals();
 			GameDataManager.loadExperienceModel();
+			GameDataManager.loadCharacterClasses();
 		}catch(Exception e) {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}

@@ -199,6 +199,21 @@ public class TileManager {
 		}
 	}
 
+	public void getSafePosition(Vector2f pos) {
+		while(this.isCollisionTile(pos)) {
+			pos = pos.withNoise(128, 128);
+		}
+	}
+
+	public boolean isCollisionTile(Vector2f pos) {
+		final TileMap collisionLayer = this.getCollisionLayer();
+
+		int tileX = (int) pos.x / collisionLayer.getTileSize();
+		int tileY = (int) pos.y / collisionLayer.getTileSize();
+
+		return collisionLayer.getBlocks()[tileY][tileX].getData().hasCollision();
+	}
+
 	public boolean collidesXLimit(Entity e, float ax) {
 		Vector2f futurePos = e.getPos().clone(ax, 0);
 		return (futurePos.x <= 0)
@@ -243,7 +258,7 @@ public class TileManager {
 				(12 * GlobalConstants.BASE_TILE_SIZE), (12 * GlobalConstants.BASE_TILE_SIZE));
 	}
 
-	public AABB getRenderViewPort(Player p) {
+	public AABB getRenderViewPort(Entity p) {
 		return new AABB(
 				p.getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
 						-(6 * GlobalConstants.BASE_TILE_SIZE)),

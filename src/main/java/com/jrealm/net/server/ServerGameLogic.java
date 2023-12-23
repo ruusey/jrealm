@@ -247,6 +247,8 @@ public class ServerGameLogic {
 
 				LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(),
 						player.getSize() / 2);
+				if (nearLoot == null)
+					return;
 				GameItem lootItem = nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20];
 				GameItem currentInvItem = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
 
@@ -287,9 +289,11 @@ public class ServerGameLogic {
 		try {
 			Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 			CharacterClass cls = CharacterClass.valueOf(request.getClassId());
+
+			Vector2f playerPos = new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+					(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE);
 			Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
-					new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-							(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+					playerPos,
 					GlobalConstants.PLAYER_SIZE, cls);
 			player.equipSlots(PlayState.getStartingEquipment(cls));
 			player.setName(request.getUsername());

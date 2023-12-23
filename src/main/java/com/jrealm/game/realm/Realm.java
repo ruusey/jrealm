@@ -47,8 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Realm {
 	public static final transient SecureRandom RANDOM = new SecureRandom();
-	private long realmId;
 	private int mapId;
+	private long realmId;
 	private Map<Long, Player> players;
 	private Map<Long, Bullet> bullets;
 	private Map<Long, List<Long>> bulletHits;
@@ -59,14 +59,14 @@ public class Realm {
 	private List<Long> expiredEnemies;
 	private List<Long> expiredBullets;
 	private List<Long> expiredPlayers;
-	
+
 	private TileManager tileManager;
 	private Semaphore playerLock = new Semaphore(1);
 
 	private boolean isServer;
 
 	public Realm(boolean isServer, int mapId) {
-		this.realmId = RANDOM.nextLong();
+		this.realmId = Realm.RANDOM.nextLong();
 		this.players = new ConcurrentHashMap<>();
 		this.isServer = isServer;
 		this.expiredEnemies = new ArrayList<>();
@@ -77,7 +77,7 @@ public class Realm {
 		if(this.isServer) {
 			this.setupChests();
 			WorkerThread.submit(this.getStatsThread());
-		} 
+		}
 	}
 
 	private void setupChests() {
@@ -332,6 +332,18 @@ public class Realm {
 		return colBoxes.toArray(new AABB[0]);
 	}
 
+	public Player[] getPlayersInBounds(AABB cam) {
+		List<Player> objs = new ArrayList<>();
+
+		for (Player p : this.players.values()) {
+			if (p.getBounds().intersect(cam)) {
+				objs.add(p);
+			}
+		}
+		
+		return objs.toArray(new Player[0]);
+	}
+
 	public GameObject[] getGameObjectsInBounds(AABB cam) {
 
 		List<GameObject> objs = new ArrayList<>();
@@ -391,7 +403,7 @@ public class Realm {
 
 		return objs.toArray(new GameObject[0]);
 	}
-	
+
 	public UpdatePacket getPlayerAsPacket(long playerId) {
 		final Player p = this.players.get(playerId);
 		UpdatePacket pack = null;
