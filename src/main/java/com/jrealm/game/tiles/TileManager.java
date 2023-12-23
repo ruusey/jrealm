@@ -199,6 +199,20 @@ public class TileManager {
 		}
 	}
 
+	public boolean collidesXLimit(Entity e, float ax) {
+		Vector2f futurePos = e.getPos().clone(ax, 0);
+		return (futurePos.x <= 0)
+				|| (futurePos.x >= (this.getBaseLayer().getWidth() * this.getBaseLayer().getTileSize()));
+
+	}
+
+	public boolean collidesYLimit(Entity e, float dy) {
+		Vector2f futurePos = e.getPos().clone(0, dy);
+		return (futurePos.y <= 0)
+				|| (futurePos.y >= (this.getBaseLayer().getHeight() * this.getBaseLayer().getTileSize()));
+
+	}
+
 	public boolean collisionTile(Entity e, float ax, float ay) {
 		Vector2f futurePos = e.getPos().clone(ax, ay);
 

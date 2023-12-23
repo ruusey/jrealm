@@ -526,14 +526,16 @@ public class RealmManagerServer implements Runnable {
 		final Realm targetRealm = this.realms.get(realmId);
 
 		if (!p.isFallen()) {
-			if (!targetRealm.getTileManager().collisionTile(p, p.getDx(), 0)) {
+			if (!targetRealm.getTileManager().collisionTile(p, p.getDx(), 0)
+					&& !targetRealm.getTileManager().collidesXLimit(p, p.getDx())) {
 				p.xCol=false;
 				p.getPos().x += p.getDx();
 			}else {
 				p.xCol=true;
 			}
 
-			if (!targetRealm.getTileManager().collisionTile(p, 0, p.getDy())) {
+			if (!targetRealm.getTileManager().collisionTile(p, 0, p.getDy())
+					&& !targetRealm.getTileManager().collidesYLimit(p, p.getDy())) {
 				p.yCol=false;
 				p.getPos().y += p.getDy();
 			}else {

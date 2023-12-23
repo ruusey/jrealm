@@ -252,14 +252,16 @@ public class PlayState extends GameState {
 	@SuppressWarnings("unused")
 	private void movePlayer(Player p) {
 		if (!p.isFallen()) {
-			if(!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)) {
+			if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)
+					&& !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx())) {
 				p.xCol=false;
 				p.applyMovementLerp(new ObjectMovement(p.getPos().x + p.getDx(), p.getPos().y));
 			}else {
 				p.xCol=true;
 			}
 
-			if(!this.getRealmManager().getRealm().getTileManager().collisionTile(p, 0, p.getDy())) {
+			if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, 0, p.getDy())
+					&& !this.getRealmManager().getRealm().getTileManager().collidesYLimit(p, p.getDy())) {
 				p.yCol=false;
 				p.applyMovementLerp(new ObjectMovement(p.getPos().x, p.getPos().y+p.getDy()));
 			}else {
@@ -267,7 +269,6 @@ public class PlayState extends GameState {
 			}
 
 			p.move();
-
 		} else {
 			p.xCol = true;
 			p.yCol = true;
