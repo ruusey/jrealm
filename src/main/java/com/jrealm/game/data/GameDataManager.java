@@ -13,6 +13,7 @@ import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.model.EnemyModel;
+import com.jrealm.game.model.ExperienceModel;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
@@ -35,11 +36,23 @@ public class GameDataManager {
 	public static Map<Integer, MapModel> MAPS = null;
 	public static Map<Integer, TerrainGenerationParameters> TERRAINS = null;
 	public static Map<Integer, PortalModel> PORTALS = null;
+	public static ExperienceModel EXPERIENCE_LVLS = null;
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 			"entity/rotmg-bosses-1.png",
 			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png", "tile/rotmg-tiles-2.png",
 			"tile/rotmg-tiles-1.png", "entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png",
 	"entity/rotmg-misc.png" };
+
+	private static void loadExperienceModel() throws Exception {
+		GameDataManager.log.info("Loading ExperienceModel..");
+		InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/exp-levels.json");
+		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+		ExperienceModel expModel = GameDataManager.mapper.readValue(text, ExperienceModel.class);
+		expModel.parseMap();
+		GameDataManager.EXPERIENCE_LVLS = expModel;
+		GameDataManager.log.info("Loading ExperienceModel... DONE");
+	}
 
 	private static void loadPortals() throws Exception {
 		GameDataManager.log.info("Loading Portals..");
@@ -288,6 +301,7 @@ public class GameDataManager {
 			GameDataManager.loadMaps();
 			GameDataManager.loadTerrains();
 			GameDataManager.loadPortals();
+			GameDataManager.loadExperienceModel();
 		}catch(Exception e) {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}

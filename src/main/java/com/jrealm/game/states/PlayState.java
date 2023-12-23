@@ -445,6 +445,13 @@ public class PlayState extends GameState {
 					lastDirectionTempMap.put(Cardinality.EAST, false);
 				}
 
+				//				if (player.getIsRight() && player.getIsUp()) {
+				//					float rootTwoDx = (float) (player.getDx() / Math.sqrt(2));
+				//					float rootTwoDy = (float) (player.getDy() / Math.sqrt(2));
+				//					player.setDx(rootTwoDx);
+				//					player.setDy(rootTwoDy);
+				//				}
+
 				if(c==null) {
 					player.setDx(0);
 					player.setDy(0);

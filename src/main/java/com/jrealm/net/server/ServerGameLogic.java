@@ -95,6 +95,15 @@ public class ServerGameLogic {
 			toMove.setLeft(doMove);
 			toMove.setDx(doMove ? -toMove.getMaxSpeed() : 0.0f);
 		}
+
+		//		if (toMove.getIsRight() && toMove.getIsUp()) {
+		//			float rootTwoDx = (float) (toMove.getDx() / Math.sqrt(2));
+		//			float rootTwoDy = (float) (toMove.getDy() / Math.sqrt(2));
+		//
+		//			toMove.setDx(rootTwoDx);
+		//			toMove.setDy(rootTwoDy);
+		//
+		//		}
 		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setLeft(false);
 			toMove.setRight(false);

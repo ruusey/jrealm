@@ -391,6 +391,18 @@ public class Realm {
 
 		return objs.toArray(new GameObject[0]);
 	}
+	
+	public UpdatePacket getPlayerAsPacket(long playerId) {
+		final Player p = this.players.get(playerId);
+		UpdatePacket pack = null;
+		try {
+			pack = UpdatePacket.from(p);
+		} catch (Exception e) {
+			Realm.log.error("Failed to create update packet from Player. Reason: {}", e);
+		}
+
+		return pack;
+	}
 
 	public List<UpdatePacket> getPlayersAsPackets(AABB cam) {
 		List<UpdatePacket> playerUpdates = new ArrayList<>();

@@ -29,7 +29,9 @@
 				"name": "World_0_Beach_0_Enemies",
 				"ordinal": 0,
 				"enemyIds": [
-					6
+					6, 
+					7, 
+					8
 				]
 			}
 		]
@@ -64,7 +66,8 @@
 				"name": "World_0_Cave_0_Enemies",
 				"ordinal": 0,
 				"enemyIds": [
-					1
+					1,
+					5
 				]
 			}
 		]

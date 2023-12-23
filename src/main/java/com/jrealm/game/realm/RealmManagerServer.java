@@ -18,6 +18,7 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -249,8 +250,7 @@ public class RealmManagerServer implements Runnable {
 				try {
 					// Get UpdatePacket for this player and all players in this players viewport
 					// Contains, player stat info, inventory, status effects, health and mana data
-					final List<UpdatePacket> uPackets = realm
-							.getPlayersAsPackets(player.getValue().getCam().getBounds());
+					final UpdatePacket uPacket = realm.getPlayerAsPacket(player.getValue().getId());
 
 					// Get the background + collision tiles in this players viewport
 					// condensed into a single array
@@ -285,20 +285,15 @@ public class RealmManagerServer implements Runnable {
 					final ObjectMovePacket mPacket = realm
 							.getGameObjectsAsPackets(realm.getTileManager().getRenderViewPort(player.getValue()));
 
-					for (final UpdatePacket packet : uPackets) {
-						// Only transmit THIS players UpdatePacket if the state has changed
-						if (packet.getPlayerId() != player.getKey()) {
-							continue;
-						}
-						if (this.playerUpdateState.get(player.getKey()) == null) {
-							this.playerUpdateState.put(player.getKey(), packet);
-							this.enqueueServerPacket(player.getValue(), packet);
-						} else {
-							final UpdatePacket old = this.playerUpdateState.get(player.getKey());
-							if (!old.equals(packet)) {
-								this.playerUpdateState.put(player.getKey(), packet);
-								this.enqueueServerPacket(player.getValue(), packet);
-							}
+
+					if (this.playerUpdateState.get(player.getKey()) == null) {
+						this.playerUpdateState.put(player.getKey(), uPacket);
+						this.enqueueServerPacket(player.getValue(), uPacket);
+					} else {
+						final UpdatePacket old = this.playerUpdateState.get(player.getKey());
+						if (!old.equals(uPacket)) {
+							this.playerUpdateState.put(player.getKey(), uPacket);
+							this.enqueueServerPacket(player.getValue(), uPacket);
 						}
 					}
 
@@ -479,7 +474,7 @@ public class RealmManagerServer implements Runnable {
 
 					for (final GameObject e : realm
 							.getGameObjectsInBounds(realm.getTileManager().getRenderViewPort(p))) {
-						if ((e instanceof Entity) || (e instanceof Enemy)) {
+						if ((e instanceof Entity)) {
 							Entity entCast = (Entity) e;
 							entCast.removeExpiredEffects();
 						}
@@ -778,9 +773,7 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.spawnRandomEnemy();
 				targetRealm.removeEnemy(e);
 				targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().clone()));
-				//				this.realm.addLootContainer(new LootContainer(
-				//						LootTier.BLUE,
-				//						e.getPos()));
+				targetRealm.addLootContainer(new LootContainer(LootTier.BLUE, e.getPos()));
 			}
 		}
 	}
