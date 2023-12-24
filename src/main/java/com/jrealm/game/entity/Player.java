@@ -360,6 +360,10 @@ public class Player extends Entity implements Streamable<Player>{
 		return this.stats;
 	}
 
+	public void incrementExperience(long experience) {
+		this.setExperience(this.getExperience() + experience);
+	}
+
 	public void applyUpdate(UpdatePacket packet, PlayState state) {
 		this.name = packet.getPlayerName();
 		this.stats = packet.getStats();

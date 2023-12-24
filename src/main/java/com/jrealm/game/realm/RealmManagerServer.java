@@ -754,7 +754,7 @@ public class RealmManagerServer implements Runnable {
 			if (e.getDeath()) {
 				for(Player player : targetRealm.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(e))){
 					EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
-					player.setExperience(player.getExperience() + model.getXp());
+					player.incrementExperience(model.getXp());
 				}
 
 				Random random = new Random(Instant.now().toEpochMilli());

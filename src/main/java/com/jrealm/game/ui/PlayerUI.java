@@ -49,8 +49,8 @@ public class PlayerUI {
 				bars.getSubimage(0, 0, 12, 20) };
 
 		Vector2f posHp = new Vector2f(GamePanel.width - 356, 128);
-		Vector2f posMp = posHp.clone(0, 64);
-		Vector2f posXp = posHp.clone(0, -64);
+		Vector2f posMp = posHp.clone(0, 32);
+		Vector2f posXp = posHp.clone(0, -32);
 
 		this.playState = p;
 		this.hp = new FillBars(p.getPlayer(), barSpritesHp, posHp, 16, 16, "getHealthPercent");
@@ -382,8 +382,8 @@ public class PlayerUI {
 
 			Stats stats = this.playState.getPlayer().getComputedStats();
 			Vector2f posHp = new Vector2f(GamePanel.width - 64, 128 + 32);
-			Vector2f posMp = posHp.clone(0, 64);
-			Vector2f posXp = posHp.clone(-128, -64);
+			Vector2f posMp = posHp.clone(0, 32);
+			Vector2f posXp = posHp.clone(-128, -32);
 			Vector2f nameLvlPos = posHp.clone(-256, -128);
 
 			g.setColor(Color.WHITE);
