@@ -25,7 +25,6 @@ import lombok.Data;
 
 @Data
 public class PlayerUI {
-	public static boolean DRAGGING_ITEM = false;
 	private FillBars hp;
 	private FillBars mp;
 	private FillBars xp;
@@ -128,29 +127,14 @@ public class PlayerUI {
 			});
 
 			b.onHoverOut(event -> {
-				this.tooltips.remove(item.getUid());
-			});
-
-			b.onMouseDown(event -> {
-				PlayerUI.DRAGGING_ITEM = true;
+				this.tooltips.clear();
 			});
 
 			b.onMouseUp(event -> {
-				PlayerUI.DRAGGING_ITEM = false;
 				this.tooltips.clear();
-				//				if (this.overlapsEquipment(event)
-				//						&& CharacterClass.isValidUser(this.playState.getPlayer(), item.getTargetClass())) {
-				//					Slots currentEquip = this.inventory[item.getTargetSlot()];
-				//					this.playState.replaceLootContainerItemByUid(item.getUid(), currentEquip.getItem());
-				//					this.getPlayState().getPlayer().getInventory()[item.getTargetSlot()] = item;
-				//					this.setEquipment(this.getPlayState().getPlayer().getInventory());
-				//					this.setGroundLoot(this.getPlayState().getNearestLootContainer().getItems(), g);
-				//				} else
-
 				if (this.overlapsInventory(event) && this.canSwap()) {
 					this.setActionTime();
 					GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
-					//					Slots groundLoot = this.groundLoot[actualIdx];
 					int idx = this.firstNullIdx(currentInv);
 					Slots currentEquip = this.inventory[idx + 4];
 
@@ -187,6 +171,11 @@ public class PlayerUI {
 				this.tooltips.put(item.getUid(),
 						new ItemTooltip(item, new Vector2f((GamePanel.width / 2) + 75, 100), panelWidth, 400));
 			});
+
+			b.onHoverOut(event -> {
+				this.tooltips.clear();
+			});
+
 			b.onRightClick(event->{
 
 				Slots dropped = this.getOverlapping(event);
@@ -197,15 +186,6 @@ public class PlayerUI {
 				}
 			});
 			b.onHoverOut(event -> {
-				this.tooltips.clear();
-			});
-
-			b.onMouseDown(event -> {
-				PlayerUI.DRAGGING_ITEM = true;
-			});
-
-			b.onMouseUp(event -> {
-				PlayerUI.DRAGGING_ITEM = false;
 				this.tooltips.clear();
 			});
 
@@ -241,7 +221,6 @@ public class PlayerUI {
 
 			b.onHoverOut(event -> {
 				this.tooltips.clear();
-				PlayerUI.DRAGGING_ITEM = false;
 			});
 
 			b.onRightClick(event->{

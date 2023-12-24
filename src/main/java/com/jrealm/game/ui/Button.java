@@ -57,7 +57,6 @@ public class Button {
 		this.hoverOutEvents = new ArrayList<HoverOutEvent>();
 		this.mouseDownEvents = new ArrayList<MouseDownEvent>();
 		this.mouseUpEvents = new ArrayList<MouseUpEvent>();
-
 	}
 
 	public Button(BufferedImage icon, BufferedImage image, Vector2f pos, int width, int height, int iconsize) {
@@ -97,8 +96,6 @@ public class Button {
 
 		return result;
 	}
-
-	// ******************************************** LABEL TTF CUSTOM MIDDLE POS *******************************************
 
 	public Button(String label, BufferedImage image, Font font, Vector2f pos, int buttonSize) {
 		this(label, image, font, pos, buttonSize, -1);
@@ -201,7 +198,7 @@ public class Button {
 	}
 
 	public void input(MouseHandler mouse, KeyHandler key) {
-		if (this.bounds.inside(mouse.getX(), mouse.getY()) && !PlayerUI.DRAGGING_ITEM) {
+		if (this.bounds.inside(mouse.getX(), mouse.getY())) {
 			this.hovering = true;
 
 			if (this.hovering && this.canHover) {
@@ -213,7 +210,7 @@ public class Button {
 			if ((mouse.isPressed(MouseEvent.BUTTON1)) && !this.clicked) {
 				this.clicked = true;
 				this.pressed = true;
-				
+
 				this.pressedtime = System.nanoTime() / 1000000;
 				for (int i = 0; i < this.mouseDownEvents.size(); i++) {
 					this.mouseDownEvents.get(i).action(1);
@@ -237,9 +234,8 @@ public class Button {
 			for (int i = 0; i < this.hoverOutEvents.size(); i++) {
 				this.hoverOutEvents.get(i).action(1);
 			}
-		} else if ((!mouse.isPressed(MouseEvent.BUTTON1)) && this.clicked && PlayerUI.DRAGGING_ITEM) {
+		} else if ((!mouse.isPressed(MouseEvent.BUTTON1)) && this.clicked) {
 			this.clicked = false;
-			PlayerUI.DRAGGING_ITEM = false;
 			for (int i = 0; i < this.mouseUpEvents.size(); i++) {
 				this.mouseUpEvents.get(i).action(new Vector2f(mouse.getX(), mouse.getY()));
 			}
