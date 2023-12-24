@@ -2,8 +2,10 @@ package com.jrealm.game.ui;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Method;
 
 import com.jrealm.game.entity.Entity;
+import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.Data;
@@ -20,24 +22,28 @@ public class FillBars {
 	private int length;
 
 	private int energyLength;
-
+	private String field;
 	private int barWidthRatio;
 	private int energyWidthRatio;
 
 	private int barHeightRatio;
 
-	private boolean isMana;
-	public FillBars(Entity e, BufferedImage[] sprite, Vector2f pos, int size, int length, boolean isMana) {
+	public FillBars(Player e, BufferedImage[] sprite, Vector2f pos, int size, int length, String field) {
 		this.e = e;
 		this.bar = sprite;
 		this.pos = pos;
 		this.size = size;
 		this.length = length;
-		this.isMana = isMana;
-		// bars must have at least two sprites...
+		this.field = field;
+		Method method;
+		try {
+			method = e.getClass().getMethod(field);
+			float energy = (float) method.invoke(e);
 
-		this.energyLength = isMana ? (int) ((this.bar[0].getWidth() + size) * (length * e.getManapercent()))
-				: (int) ((this.bar[0].getWidth() + size) * (length * e.getHealthPercent()));
+			this.energyLength = (int) ((this.bar[0].getWidth() + size) * (length * energy));
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
 
 		this.barWidthRatio = ((this.bar[0].getWidth() + size) * length) / (this.bar[0].getWidth());
 		this.energyWidthRatio = this.energyLength / (this.bar[0].getWidth());
@@ -49,9 +55,15 @@ public class FillBars {
 		int endsWidth = 0;
 		int centerHeight = (int) (this.pos.y - this.barHeightRatio - (this.bar[0].getHeight() / 2));
 
-		this.energyLength = this.isMana
-				? (int) ((this.bar[0].getWidth() + this.size) * (this.length * this.e.getManapercent()))
-				: (int) ((this.bar[0].getWidth() + this.size) * (this.length * this.e.getHealthPercent()));
+		Method method;
+		try {
+			method = this.e.getClass().getMethod(this.field);
+			float energy = (float) method.invoke(this.e);
+			this.energyLength = (int) ((this.bar[0].getWidth() + this.size) * (this.length * energy));
+		} catch (Exception e1) {
+
+		}
+
 		this.energyWidthRatio = this.energyLength / (this.bar[0].getWidth());
 
 		if(this.bar[2] != null) {

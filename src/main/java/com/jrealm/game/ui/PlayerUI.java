@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.SpriteSheet;
@@ -45,7 +46,7 @@ public class PlayerUI {
 		BufferedImage[] barSpritesMp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 16, 7, 14),
 				bars.getSubimage(0, 0, 12, 20) };
 
-		BufferedImage[] barSpritesXp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(55, 0, 7, 14),
+		BufferedImage[] barSpritesXp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(59, 0, 7, 14),
 				bars.getSubimage(0, 0, 12, 20) };
 
 		Vector2f posHp = new Vector2f(GamePanel.width - 356, 128);
@@ -53,9 +54,9 @@ public class PlayerUI {
 		Vector2f posXp = posHp.clone(0, -64);
 
 		this.playState = p;
-		this.hp = new FillBars(p.getPlayer(), barSpritesHp, posHp, 16, 16, false);
-		this.mp = new FillBars(p.getPlayer(), barSpritesMp, posMp, 16, 16, true);
-		// this.xp = new FillBars(p.getPlayer(), barSpritesXp, posXp, 16, 16, true);
+		this.hp = new FillBars(p.getPlayer(), barSpritesHp, posHp, 16, 16, "getHealthPercent");
+		this.mp = new FillBars(p.getPlayer(), barSpritesMp, posMp, 16, 16, "getManaPercent");
+		this.xp = new FillBars(p.getPlayer(), barSpritesXp, posXp, 16, 16, "getExperiencePercent");
 		this.groundLoot = new Slots[8];
 		this.inventory = new Slots[20];
 		this.tooltips = new HashMap<>();
@@ -403,8 +404,16 @@ public class PlayerUI {
 			Stats stats = this.playState.getPlayer().getComputedStats();
 			Vector2f posHp = new Vector2f(GamePanel.width - 64, 128 + 32);
 			Vector2f posMp = posHp.clone(0, 64);
+			Vector2f posXp = posHp.clone(-128, -64);
+			Vector2f nameLvlPos = posHp.clone(-256, -128);
 
 			g.setColor(Color.WHITE);
+			g.drawString(
+					"" + this.playState.getPlayer().getName() + "   Lv. "
+							+ GameDataManager.EXPERIENCE_LVLS.getLevel(this.playState.getPlayer().getExperience()),
+							nameLvlPos.x, nameLvlPos.y);
+			g.drawString("" + this.playState.getPlayer().getExperience() + "/"
+					+ this.playState.getPlayer().getUpperExperienceBound(), posXp.x, posXp.y);
 			g.drawString("" + this.playState.getPlayer().getHealth(), posHp.x, posHp.y);
 			g.drawString("" + this.playState.getPlayer().getMana(), posMp.x, posMp.y);
 
@@ -497,7 +506,7 @@ public class PlayerUI {
 
 		this.hp.render(g);
 		this.mp.render(g);
-		// this.xp.render(g);
+		this.xp.render(g);
 		this.renderStats(g);
 		this.playerChat.render(g);
 	}

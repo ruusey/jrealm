@@ -189,10 +189,6 @@ public abstract class Entity extends GameObject {
 		return this.health;
 	}
 
-	public float getHealthPercent() {
-		return this.healthpercent;
-	}
-
 	public AABB getHitBounds() {
 		return this.hitBounds;
 	}
@@ -389,19 +385,19 @@ public abstract class Entity extends GameObject {
 	}
 
 	public boolean isUp() {
-		return up;
+		return this.up;
 	}
 
 	public boolean isDown() {
-		return down;
+		return this.down;
 	}
 
 	public boolean isRight() {
-		return right;
+		return this.right;
 	}
 
 	public boolean isLeft() {
-		return left;
+		return this.left;
 	}
 	
 	

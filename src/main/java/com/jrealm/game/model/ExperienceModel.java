@@ -30,15 +30,15 @@ public class ExperienceModel {
 		}
 	}
 
-	public int getBaseFame(int experience) {
-		int fame = 0;
+	public long getBaseFame(long experience) {
+		long fame = 0;
 		if (experience > this.maxExperience()) {
 			fame = (experience - this.maxExperience()) / 2500;
 		}
 		return fame;
 	}
 
-	public int getLevel(int experience) {
+	public int getLevel(long experience) {
 		if (experience > this.maxExperience())
 			return this.maxLevel();
 

@@ -23,6 +23,7 @@ import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
+import com.jrealm.game.util.Tuple;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.client.packet.UpdatePacket;
 
@@ -324,6 +325,35 @@ public class Player extends Entity implements Streamable<Player>{
 			this.right = false;
 			this.left = false;
 		}
+	}
+
+	public int getUpperExperienceBound() {
+		if (this.experience > GameDataManager.EXPERIENCE_LVLS.maxExperience())
+			return GameDataManager.EXPERIENCE_LVLS.maxExperience();
+
+		final Tuple<Integer, Integer> expRange = GameDataManager.EXPERIENCE_LVLS.getParsedMap()
+				.get(GameDataManager.EXPERIENCE_LVLS.getLevel(this.experience));
+
+		return expRange.getY();
+	}
+
+	public float getExperiencePercent() {
+		if(this.experience>GameDataManager.EXPERIENCE_LVLS.maxExperience())
+			return 1.0f;
+
+		final Tuple<Integer, Integer> expRange = GameDataManager.EXPERIENCE_LVLS
+				.getParsedMap().get(GameDataManager.EXPERIENCE_LVLS.getLevel(this.experience));
+
+
+		return ((float) this.experience / (float) expRange.getY());
+	}
+
+	public float getHealthPercent() {
+		return this.healthpercent;
+	}
+
+	public float getManaPercent() {
+		return this.manapercent;
 	}
 
 	public Stats getStats() {
