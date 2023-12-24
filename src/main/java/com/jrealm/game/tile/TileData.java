@@ -1,4 +1,4 @@
-package com.jrealm.game.tiles.blocks;
+package com.jrealm.game.tile;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

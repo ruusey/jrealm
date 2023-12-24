@@ -1,10 +1,9 @@
-package com.jrealm.game.tiles;
+package com.jrealm.game.tile;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.model.TileModel;
-import com.jrealm.game.tiles.blocks.Tile;
 import com.jrealm.net.Streamable;
 
 import lombok.AllArgsConstructor;

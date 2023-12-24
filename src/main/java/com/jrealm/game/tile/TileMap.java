@@ -1,4 +1,4 @@
-package com.jrealm.game.tiles;
+package com.jrealm.game.tile;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -7,8 +7,6 @@ import java.util.List;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.tiles.blocks.Tile;
-import com.jrealm.game.tiles.blocks.TileData;
 
 import lombok.Data;
 

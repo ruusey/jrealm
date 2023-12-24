@@ -1,6 +1,6 @@
 package com.jrealm.game.model;
 
-import com.jrealm.game.tiles.blocks.TileData;
+import com.jrealm.game.tile.TileData;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

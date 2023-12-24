@@ -1,4 +1,4 @@
-package com.jrealm.game.tiles;
+package com.jrealm.game.tile;
 
 import java.awt.Graphics2D;
 import java.time.Instant;
@@ -20,8 +20,6 @@ import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileGroup;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.game.realm.Realm;
-import com.jrealm.game.tiles.blocks.Tile;
-import com.jrealm.game.tiles.blocks.TileData;
 import com.jrealm.game.util.Camera;
 import com.jrealm.net.client.packet.LoadMapPacket;
 

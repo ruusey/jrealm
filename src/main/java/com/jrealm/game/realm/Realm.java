@@ -32,7 +32,7 @@ import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.TerrainGenerationParameters;
-import com.jrealm.game.tiles.TileManager;
+import com.jrealm.game.tile.TileManager;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;

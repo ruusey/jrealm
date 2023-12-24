@@ -7,7 +7,7 @@ import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jrealm.game.tiles.NetTile;
+import com.jrealm.game.tile.NetTile;
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
 

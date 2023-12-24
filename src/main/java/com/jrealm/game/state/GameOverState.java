@@ -1,4 +1,4 @@
-package com.jrealm.game.states;
+package com.jrealm.game.state;
 
 import java.awt.Font;
 import java.awt.Graphics2D;

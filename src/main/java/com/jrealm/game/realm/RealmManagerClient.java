@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import com.jrealm.game.GameLauncher;
-import com.jrealm.game.states.PlayState;
+import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;

@@ -38,10 +38,10 @@ import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.ProjectilePositionMode;
-import com.jrealm.game.states.PlayState;
-import com.jrealm.game.tiles.NetTile;
-import com.jrealm.game.tiles.TileMap;
-import com.jrealm.game.tiles.blocks.Tile;
+import com.jrealm.game.state.PlayState;
+import com.jrealm.game.tile.NetTile;
+import com.jrealm.game.tile.Tile;
+import com.jrealm.game.tile.TileMap;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
@@ -419,8 +419,6 @@ public class RealmManagerServer implements Runnable {
 		return bestLoot;
 	}
 
-	//TODO: Make this player specific so we can tell the client
-	// to unload objects that move outside of their render range
 	private UnloadPacket getUnloadPacket(long realmId) throws Exception {
 		final Realm targetRealm = this.realms.get(realmId);
 
@@ -458,9 +456,10 @@ public class RealmManagerServer implements Runnable {
 
 	// Updates all game objects on the server
 	public void update(double time) {
-		// Update player specific game objects (bullets, the players themselves)
+		// For each world on the server
 		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
 			final Realm realm = realmEntry.getValue();
+			// Update player specific game objects (bullets, the players themselves)
 			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
 				final Player p = realm.getPlayer(player.getValue().getId());
 				if (p == null) {
@@ -619,19 +618,6 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 	}
-
-	//	private List<Bullet> getBullets() {
-	//		final GameObject[] gameObject = this.getRealm()
-	//				.getGameObjectsInBounds(this.getRealm().getTileManager().getRenderViewPort());
-	//
-	//		final List<Bullet> results = new ArrayList<>();
-	//		for (int i = 0; i < gameObject.length; i++) {
-	//			if (gameObject[i] instanceof Bullet) {
-	//				results.add((Bullet) gameObject[i]);
-	//			}
-	//		}
-	//		return results;
-	//	}
 
 	public void removeExpiredBullets() {
 		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
