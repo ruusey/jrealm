@@ -488,34 +488,23 @@ public class RealmManagerServer implements Runnable {
 	private void movePlayer(final long realmId, final Player p) {
 		final Realm targetRealm = this.realms.get(realmId);
 
-		if (!p.isFallen()) {
-			if (!targetRealm.getTileManager().collisionTile(p, p.getDx(), 0)
-					&& !targetRealm.getTileManager().collidesXLimit(p, p.getDx())) {
-				p.xCol=false;
-				p.getPos().x += p.getDx();
-			}else {
-				p.xCol=true;
-			}
-
-			if (!targetRealm.getTileManager().collisionTile(p, 0, p.getDy())
-					&& !targetRealm.getTileManager().collidesYLimit(p, p.getDy())) {
-				p.yCol=false;
-				p.getPos().y += p.getDy();
-			}else {
-				p.yCol=true;
-			}
-
-			p.move();
+		if (!targetRealm.getTileManager().collisionTile(p, p.getDx(), 0)
+				&& !targetRealm.getTileManager().collidesXLimit(p, p.getDx())) {
+			p.xCol = false;
+			p.getPos().x += p.getDx();
 		} else {
 			p.xCol = true;
-			p.yCol = true;
-			if (p.getAni().hasPlayedOnce()) {
-				p.resetPosition();
-				p.setDx(0);
-				p.setDy(0);
-				p.setFallen(false);
-			}
 		}
+
+		if (!targetRealm.getTileManager().collisionTile(p, 0, p.getDy())
+				&& !targetRealm.getTileManager().collidesYLimit(p, p.getDy())) {
+			p.yCol = false;
+			p.getPos().y += p.getDy();
+		} else {
+			p.yCol = true;
+		}
+
+		p.move();
 	}
 
 	// Invokes an ability usage server side for the given player at the
