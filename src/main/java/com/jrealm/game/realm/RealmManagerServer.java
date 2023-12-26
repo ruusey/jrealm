@@ -222,22 +222,6 @@ public class RealmManagerServer implements Runnable {
 		// For each realm we have to do work for
 		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
 			final Realm realm = realmEntry.getValue();
-			UnloadPacket unload = null;
-			try {
-				// Holds 'dead' or expired entities (old bullets, DC'd players, dead enemies)
-				unload = this.getUnloadPacket(realm.getRealmId());
-			} catch (Exception e) {
-				RealmManagerServer.log.error("Failed to create unload packet. Reason: {}", e);
-			}
-			final UnloadPacket unloadToBroadcast = unload;
-			// For each player currently connected
-
-			if (unloadToBroadcast != null) {
-				if ((this.lastUnload == null) || !this.lastUnload.equals(unloadToBroadcast)) {
-					this.lastUnload = unloadToBroadcast;
-					this.enqueueServerPacket(unloadToBroadcast);
-				}
-			}
 			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
 				try {
 					// Get UpdatePacket for this player and all players in this players viewport
@@ -305,15 +289,12 @@ public class RealmManagerServer implements Runnable {
 
 							// Unload the delta objcets that were in the old LoadPacket
 							// but are NOT in the new LoadPacket
-							final UnloadPacket unloadDelta = old.difference(load);
+							UnloadPacket unloadDelta = old.difference(load);
 							if (unloadDelta.isNotEmpty()) {
 								this.enqueueServerPacket(player.getValue(), unloadDelta);
 							}
 						}
 					}
-
-					// Only transmit the UnloadPacket if it is non-empty and
-					// does not equal the previous Unload state (it can potentially be large)
 
 					// If the ObjectMove packet isnt empty
 					if (mPacket != null) {

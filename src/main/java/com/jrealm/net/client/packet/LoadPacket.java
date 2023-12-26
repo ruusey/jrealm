@@ -248,17 +248,28 @@ public class LoadPacket extends Packet {
 	public UnloadPacket difference(LoadPacket other) throws Exception {
 		List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(Player::getId).collect(Collectors.toList());
 		List<Long> lootIdsOther = Stream.of(other.getContainers()).map(LootContainer::getLootContainerId).collect(Collectors.toList());
+		List<Long> bulletIdsOther = Stream.of(other.getBullets()).map(Bullet::getId).collect(Collectors.toList());
+
 		List<Long> enemyIdsOther = Stream.of(other.getEnemies()).map(Enemy::getId).collect(Collectors.toList());
 		List<Long> portalIdsOther = Stream.of(other.getPortals()).map(Portal::getId).collect(Collectors.toList());
 
+
 		List<Player> players = Arrays.asList(this.getPlayers());
 		List<LootContainer> loot = Arrays.asList(this.getContainers());
+		List<Bullet> bullets = Arrays.asList(this.getBullets());
+
 		List<Enemy> enemies = Arrays.asList(this.getEnemies());
 		List<Portal> portals = Arrays.asList(this.getPortals());
 
 
 		List<Long> bulletsDiff = new ArrayList<>();
 		List<Long> portalsDiff = new ArrayList<>();
+
+		for (Bullet b : bullets) {
+			if (!bulletIdsOther.contains(b.getId())) {
+				bulletsDiff.add(b.getId());
+			}
+		}
 		// Dont diff the bullets as this could cause bad player
 		// experience when bullets randomly despawn
 		// (bullets will despawn when the owner enemy is unloaded)

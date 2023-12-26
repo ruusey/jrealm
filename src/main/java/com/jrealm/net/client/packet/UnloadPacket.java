@@ -142,7 +142,7 @@ public class UnloadPacket extends Packet{
 
 	public boolean isNotEmpty() {
 		return (this.getEnemies().length > 0) || (this.getContainers().length > 0)
-				|| (this.getPlayers().length > 0) || (this.getPortals().length > 0);
+				|| (this.getPlayers().length > 0) || (this.getPortals().length > 0) || (this.bullets.length > 0);
 	}
 
 	public boolean equals(UnloadPacket other) {
