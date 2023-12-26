@@ -23,10 +23,15 @@ PALLADIN(6);
 
 * `com.jrealm.game.states.PlayState`
 * `com.jrealm.game.realm.Realm`
+* `com.jrealm.game.realm.tile.TileManager`
 * `com.jrealm.game.realm.RealmManagerServer`
 * `com.jrealm.game.realm.RealmManagerClient`
 * `com.jrealm.game.entity.Enemy`
+* `com.jrealm.game.entity.Portal`
+* `com.jrealm.game.entity.LootContainer`
 * `com.jrealm.game.entity.Player`
 * `com.jrealm.game.entity.Bullet`
 * `com.jrealm.net.client.SocketClient`
+* `com.jrealm.net.client.ClientGameLogic`
 * `com.jrealm.net.server.SocketServer`
+* `com.jrealm.net.server.ServerGameLogic`
