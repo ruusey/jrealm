@@ -97,7 +97,10 @@ public class ClientGameLogic {
 			}
 
 			for(Long b : unloadPacket.getBullets()) {
-				cli.getRealm().getBullets().remove(b);
+				final Bullet removed = cli.getRealm().getBullets().remove(b);
+				if (removed == null) {
+					ClientGameLogic.log.error("Bullet does not exist");
+				}
 			}
 
 			for(Long e : unloadPacket.getEnemies()) {

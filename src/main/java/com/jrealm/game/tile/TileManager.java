@@ -142,7 +142,8 @@ public class TileManager {
 		int i = 0;
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-				if ((this.getBaseLayer().getWidth() == x) || (this.getBaseLayer().getHeight() == y)) {
+				if ((this.getBaseLayer().getWidth() == x) || (this.getBaseLayer().getHeight() == y) || (x < 0)
+						|| (y < 0)) {
 					continue;
 				}
 				try {
@@ -163,7 +164,8 @@ public class TileManager {
 		int i = 0;
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-				if ((this.getCollisionLayer().getWidth() == x) || (this.getCollisionLayer().getHeight() == y)) {
+				if ((this.getCollisionLayer().getWidth() == x) || (this.getCollisionLayer().getHeight() == y) || (x < 0)
+						|| (y < 0)) {
 					continue;
 				}
 				try {
@@ -278,7 +280,8 @@ public class TileManager {
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
 				// Temp fix. Aint nobody got time for array math.
-				if ((this.getBaseLayer().getWidth() == x) || (this.getBaseLayer().getHeight() == y)) {
+				if ((this.getBaseLayer().getWidth() == x) || (this.getBaseLayer().getHeight() == y) || (x < 0)
+						|| (y < 0)) {
 					continue;
 				}
 				try {

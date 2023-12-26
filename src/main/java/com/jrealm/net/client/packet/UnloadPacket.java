@@ -138,13 +138,17 @@ public class UnloadPacket extends Packet{
 		return new UnloadPacket(PacketType.UNLOAD.getPacketId(), byteStream.toByteArray());
 	}
 
+	public boolean isNotEmpty() {
+		return (this.getEnemies().length > 0) || (this.getContainers().length > 0)
+				|| (this.getPlayers().length > 0) || (this.getPortals().length > 0);
+	}
+
 	public boolean equals(UnloadPacket other) {
 		boolean players = Arrays.equals(this.players, other.getPlayers());
 		boolean enemies = Arrays.equals(this.enemies, other.getEnemies());
 		boolean loot = Arrays.equals(this.containers, other.getContainers());
 		boolean bullets = Arrays.equals(this.bullets, other.getBullets());
 		boolean portals = Arrays.equals(this.portals, other.getPortals());
-
 		return players && enemies && loot && bullets && portals;
 	}
 }

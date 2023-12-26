@@ -231,6 +231,13 @@ public class RealmManagerServer implements Runnable {
 			}
 			final UnloadPacket unloadToBroadcast = unload;
 			// For each player currently connected
+
+			if (unloadToBroadcast != null) {
+				if ((this.lastUnload == null) || !this.lastUnload.equals(unloadToBroadcast)) {
+					this.lastUnload = unloadToBroadcast;
+					this.enqueueServerPacket(unloadToBroadcast);
+				}
+			}
 			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
 				try {
 					// Get UpdatePacket for this player and all players in this players viewport
@@ -299,9 +306,7 @@ public class RealmManagerServer implements Runnable {
 							// Unload the delta objcets that were in the old LoadPacket
 							// but are NOT in the new LoadPacket
 							final UnloadPacket unloadDelta = old.difference(load);
-							if ((unloadDelta.getEnemies().length > 0) || (unloadDelta.getContainers().length > 0)
-									|| (unloadDelta.getPlayers().length > 0) || (unloadDelta.getPortals().length > 0)
-									|| (unloadDelta.getPortals().length > 0)) {
+							if (unloadDelta.isNotEmpty()) {
 								this.enqueueServerPacket(player.getValue(), unloadDelta);
 							}
 						}
@@ -309,12 +314,7 @@ public class RealmManagerServer implements Runnable {
 
 					// Only transmit the UnloadPacket if it is non-empty and
 					// does not equal the previous Unload state (it can potentially be large)
-					if (unloadToBroadcast != null) {
-						if ((this.lastUnload == null) || !this.lastUnload.equals(unloadToBroadcast)) {
-							this.lastUnload = unloadToBroadcast;
-							this.enqueueServerPacket(player.getValue(), unloadToBroadcast);
-						}
-					}
+
 					// If the ObjectMove packet isnt empty
 					if (mPacket != null) {
 						this.enqueueServerPacket(player.getValue(), mPacket);
@@ -325,6 +325,8 @@ public class RealmManagerServer implements Runnable {
 							e);
 				}
 			}
+
+
 
 			// Used to dynamically re-render changed loot containers (chests) on the client
 			// if their
