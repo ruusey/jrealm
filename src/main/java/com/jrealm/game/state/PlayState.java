@@ -492,13 +492,19 @@ public class PlayState extends GameState {
 
 			}
 			if (key.f1.clicked) {
-				//				try {
-				//					LoadMapPacket loadMap = LoadMapPacket.from(this.getPlayer(), "tile/nexus2.xml");
-				//					this.realmManager.getClient().sendRemote(loadMap);
-				//				}catch(Exception e) {
-				//					PlayState.log.error("Failed to send load map packet for map {}. Reason: {}", "tile/nexus2.xml", e.getMessage());
-				//				}
+				try {
+					Portal closestPortal = this.realmManager.getState().getClosestPortal(this.getPlayerPos(), 32);
+					if (closestPortal != null) {
+						PortalModel portalModel = GameDataManager.PORTALS.get((int) closestPortal.getPortalId());
+						UsePortalPacket usePortal = UsePortalPacket.from(-1, this.realmManager.getRealm().getRealmId(),
+								this.getPlayerId());
 
+						this.realmManager.getClient().sendRemote(usePortal);
+						this.realmManager.getRealm().loadMap(portalModel.getMapId());
+					}
+				} catch (Exception e) {
+					PlayState.log.error("Failed to send test UsePortalPacket", e.getMessage());
+				}
 
 			}
 			if(this.pui!=null) {

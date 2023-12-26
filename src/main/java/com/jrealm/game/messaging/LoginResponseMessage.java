@@ -13,4 +13,6 @@ public class LoginResponseMessage {
 	private long playerId;
 	private int classId;
 	private boolean success;
+	private float spawnX;
+	private float spawnY;
 }

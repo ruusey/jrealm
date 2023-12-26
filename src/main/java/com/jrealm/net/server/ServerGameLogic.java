@@ -19,6 +19,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.messaging.LoginResponseMessage;
+import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
@@ -49,12 +50,33 @@ public class ServerGameLogic {
 		final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 		mgr.clearPlayerState(user.getId());
 		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
+
+		// Send the player to the vault
+		if ((targetRealm == null) && (usePortalPacket.getPortalId() == -1l)) {
+			// Generate the vault dynamically
+			MapModel mapModel = GameDataManager.MAPS.get(1);
+			user.setPos(mapModel.getCenter());
+			final Realm generatedRealm = new Realm(true, 1);
+			generatedRealm.setupChests();
+
+			Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
+
+			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 1,
+					chestLoc);
+
+			exitPortal.setId(currentRealm.getRealmId());
+			generatedRealm.addPortal(exitPortal);
+			generatedRealm.addPlayer(user);
+			mgr.getRealms().put(generatedRealm.getRealmId(), generatedRealm);
+
+		}
 		// Generate target, remove player from current, add to target.
-		if (targetRealm == null) {
+		else if (targetRealm == null) {
 			final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 			final Realm generatedRealm = new Realm(true, portalUsed.getMapId());
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 1,
 					generatedRealm.getTileManager().randomPos());
+			user.setPos(generatedRealm.getTileManager().getSafePosition());
 			exitPortal.setId(currentRealm.getRealmId());
 			generatedRealm.addPortal(exitPortal);
 			generatedRealm.addPlayer(user);
@@ -64,6 +86,13 @@ public class ServerGameLogic {
 		// Remove player from current, add to target ( realm already exists)
 		else {
 			targetRealm.addPlayer(user);
+			user.setPos(targetRealm.getTileManager().getSafePosition());
+
+			// If we are coming from the vault, save the data and destroy the realm
+			// instance.
+			if (currentRealm.getMapId() == 1) {
+				mgr.getRealms().remove(currentRealm.getRealmId());
+			}
 		}
 	}
 
@@ -298,23 +327,28 @@ public class ServerGameLogic {
 			player.equipSlots(PlayState.getStartingEquipment(cls));
 			player.setName(request.getUsername());
 			player.setHeadless(false);
+			for (Realm test : mgr.getRealms().values()) {
+				if (test != null) {
+					player.setPos(test.getTileManager().getSafePosition());
+					test.addPlayer(player);
+					mgr.getServer().getClients().get(command.getSrcIp()).setHandshakeComplete(true);
+					break;
+				}
+			}
+
 			OutputStream toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getClientSocket()
 					.getOutputStream();
 			DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 			LoginResponseMessage message = LoginResponseMessage.builder().classId(request.getClassId())
+					.spawnX(player.getPos().x)
+					.spawnY(player.getPos().y)
 					.playerId(player.getId()).success(true)
 					.build();
 			mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
 
 			CommandPacket commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
 			commandResponse.serializeWrite(dosToClient);
-			for (Realm test : mgr.getRealms().values()) {
-				if (test != null) {
-					test.addPlayer(player);
-					mgr.getServer().getClients().get(command.getSrcIp()).setHandshakeComplete(true);
-					break;
-				}
-			}
+
 
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);

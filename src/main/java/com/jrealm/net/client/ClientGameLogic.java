@@ -153,7 +153,7 @@ public class ClientGameLogic {
 					break;
 				}
 				if(cli.getCurrentPlayerId()==movement.getEntityId()) {
-					playerToUpdate.applyMovementLerp(movement);
+					playerToUpdate.applyMovementLerp(movement, 1.0f);
 				}else {
 					playerToUpdate.applyMovementLerp(movement);
 				}
@@ -193,8 +193,7 @@ public class ClientGameLogic {
 				Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				CharacterClass cls = CharacterClass.valueOf(loginResponse.getClassId());
 				Player player = new Player(loginResponse.getPlayerId(), c, GameDataManager.loadClassSprites(cls),
-						new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-								(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
+						new Vector2f(loginResponse.getSpawnX(), loginResponse.getSpawnY()),
 						GlobalConstants.PLAYER_SIZE, cls);
 				ClientGameLogic.log.info("Login succesful, added Player ID {}", player.getId());
 				player.getCam().target(player);

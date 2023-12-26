@@ -11,6 +11,7 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Semaphore;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -74,15 +75,6 @@ public class RealmManagerServer implements Runnable {
 
 	private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
 	private List<Vector2f> shotDestQueue;
-	private long lastUpdateTime;
-	private long now;
-	private long lastRenderTime;
-	private long lastSecondTime;
-
-	private int oldFrameCount;
-	private int oldTickCount;
-	private int tickCount;
-
 
 	private Map<String, Long> remoteAddresses = new HashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
@@ -93,25 +85,19 @@ public class RealmManagerServer implements Runnable {
 	private UnloadPacket lastUnload;
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
+	private Semaphore realmLock = new Semaphore(1);
 
 	public RealmManagerServer() {
 		this.registerPacketCallbacks();
 		this.server = new SocketServer(2222);
 		this.shotDestQueue = new ArrayList<>();
-
 		WorkerThread.submitAndForkRun(this.server);
-	}
-
-	public void clearPlayerState(long playerId) {
-		this.playerLoadState.remove(playerId);
-		this.playerUpdateState.remove(playerId);
-		this.playerUnloadState.remove(playerId);
-		this.playerLoadMapState.remove(playerId);
 	}
 
 	// Adds a specified amount of random headless players
 	public void spawnTestPlayers(final long realmId, final int count) {
 		final Realm targetRealm = this.realms.get(realmId);
+		final Vector2f spawnPos = targetRealm.getTileManager().getSafePosition();
 		final Runnable spawnTestPlayers = ()-> {
 			final Random random = new Random(Instant.now().toEpochMilli());
 			for(int i = 0 ; i < count; i++) {
@@ -119,9 +105,7 @@ public class RealmManagerServer implements Runnable {
 				final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				try {
 					final Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(classToSpawn),
-							new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-									(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-							GlobalConstants.PLAYER_SIZE, classToSpawn);
+							spawnPos, GlobalConstants.PLAYER_SIZE, classToSpawn);
 					String playerName = UUID.randomUUID().toString().replaceAll("-", "");
 					playerName = playerName.substring(playerName.length()/2);
 					player.setName(playerName);
@@ -316,7 +300,8 @@ public class RealmManagerServer implements Runnable {
 							// but are NOT in the new LoadPacket
 							final UnloadPacket unloadDelta = old.difference(load);
 							if ((unloadDelta.getEnemies().length > 0) || (unloadDelta.getContainers().length > 0)
-									|| (unloadDelta.getPlayers().length > 0) || (unloadDelta.getPortals().length > 0)) {
+									|| (unloadDelta.getPlayers().length > 0) || (unloadDelta.getPortals().length > 0)
+									|| (unloadDelta.getPortals().length > 0)) {
 								this.enqueueServerPacket(player.getValue(), unloadDelta);
 							}
 						}
@@ -764,7 +749,7 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.clearHitMap();
 				targetRealm.spawnRandomEnemy();
 				targetRealm.removeEnemy(e);
-				targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(128, 128)));
+				targetRealm.addPortal(new Portal(random.nextLong(), (short) 2, e.getPos().withNoise(128, 128)));
 				targetRealm.addLootContainer(new LootContainer(LootTier.BLUE, e.getPos().withNoise(128, 128)));
 			}
 		}
@@ -836,6 +821,13 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 		return results;
+	}
+
+	public void clearPlayerState(long playerId) {
+		this.playerLoadState.remove(playerId);
+		this.playerUpdateState.remove(playerId);
+		this.playerUnloadState.remove(playerId);
+		this.playerLoadMapState.remove(playerId);
 	}
 
 	public Realm searchRealmsForPlayers(long playerId) {

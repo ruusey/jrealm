@@ -70,26 +70,36 @@ public abstract class GameObject {
 	public void update() {
 
 	}
-	
+
+	public void applyMovementLerp(ObjectMovement packet, float pct) {
+		final float lerpX = this.lerp(this.pos.x, packet.getPosX(), pct);
+		final float lerpY = this.lerp(this.pos.y, packet.getPosY(), pct);
+
+		this.pos = new Vector2f(lerpX, lerpY);
+		this.bounds = new AABB(this.pos, this.size, this.size);
+		this.dx = packet.getVelX();
+		this.dy = packet.getVelY();
+	}
+
 	public void applyMovementLerp(ObjectMovement packet) {
 		final float lerpX = this.lerp(this.pos.x, packet.getPosX(), 0.65f);
 		final float lerpY = this.lerp(this.pos.y, packet.getPosY(), 0.65f);
 
 		this.pos = new Vector2f(lerpX, lerpY);
-		this.bounds = new AABB(this.pos, size, size);
+		this.bounds = new AABB(this.pos, this.size, this.size);
 		this.dx = packet.getVelX();
 		this.dy = packet.getVelY();
 	}
-	
+
 	public void applyMovement(ObjectMovement packet) {
 		this.pos = new Vector2f(packet.getPosX(), packet.getPosY());
-		this.bounds = new AABB(this.pos, size, size);
+		this.bounds = new AABB(this.pos, this.size, this.size);
 		this.dx = packet.getVelX();
 		this.dy = packet.getVelY();
 	}
-	
+
 	private float lerp(float start, float end, float pct) {
-		return (start +(end -start) *pct);
+		return (start +((end -start) *pct));
 	}
 
 	@Override

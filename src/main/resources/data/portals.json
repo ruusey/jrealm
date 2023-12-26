@@ -12,5 +12,12 @@
 		"row": 3,
 		"col": 6,
 		"spriteKey": "tile/rotmg-tiles-2.png"
+	},
+	{
+		"portalId": 2,
+		"mapId": 1,
+		"row": 3,
+		"col": 7,
+		"spriteKey": "tile/rotmg-tiles-2.png"
 	}
 ]

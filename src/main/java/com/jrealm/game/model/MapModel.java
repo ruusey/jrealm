@@ -2,6 +2,8 @@ package com.jrealm.game.model;
 
 import java.util.Map;
 
+import com.jrealm.game.math.Vector2f;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,4 +24,8 @@ public class MapModel {
 	private int height;
 	private int terrainId;
 	private Map<String, int[][]> data;
+
+	public Vector2f getCenter() {
+		return new Vector2f((this.width / 2) * this.tileSize, ((this.height / 2) * (this.tileSize)));
+	}
 }

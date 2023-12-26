@@ -75,12 +75,11 @@ public class Realm {
 		this.loadMap(mapId);
 
 		if(this.isServer) {
-			this.setupChests();
 			WorkerThread.submit(this.getStatsThread());
 		}
 	}
 
-	private void setupChests() {
+	public void setupChests() {
 		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 450, (0 + (GamePanel.height / 2)) - 200);
 		if (this.getChests().size() == 0) {
 			this.addLootContainer(new Chest(chestLoc));
@@ -91,21 +90,14 @@ public class Realm {
 
 	public void loadMap(int mapId) {
 		this.mapId = mapId;
-		List<Chest> curr = this.getChests();
 		this.bullets = new ConcurrentHashMap<>();
 		this.enemies = new ConcurrentHashMap<>();
 		this.loot = new ConcurrentHashMap<>();
 		this.portals = new ConcurrentHashMap<>();
 
-		if (curr.size() > 0) {
-			curr.forEach(chest -> {
-				this.addLootContainer(chest);
-			});
-		}
 		this.bulletHits = new ConcurrentHashMap<>();
 		if (this.isServer) {
 			this.tileManager = new TileManager(mapId);
-			this.spawnRandomEnemies(mapId);
 		} else {
 			this.tileManager = new TileManager(GameDataManager.MAPS.get(mapId));
 		}

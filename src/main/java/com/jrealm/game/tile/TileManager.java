@@ -142,7 +142,9 @@ public class TileManager {
 		int i = 0;
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-				// Temp fix. Aint nobody got time for array math.
+				if ((this.getBaseLayer().getWidth() == x) || (this.getBaseLayer().getHeight() == y)) {
+					continue;
+				}
 				try {
 					block[i] = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
 					i++;
@@ -161,7 +163,9 @@ public class TileManager {
 		int i = 0;
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-				// Temp fix. Aint nobody got time for array math.
+				if ((this.getCollisionLayer().getWidth() == x) || (this.getCollisionLayer().getHeight() == y)) {
+					continue;
+				}
 				try {
 					block[i] = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
 					i++;
@@ -197,10 +201,12 @@ public class TileManager {
 		}
 	}
 
-	public void getSafePosition(Vector2f pos) {
+	public Vector2f getSafePosition() {
+		Vector2f pos = this.randomPos();
 		while(this.isCollisionTile(pos)) {
-			pos = pos.withNoise(128, 128);
+			pos = this.randomPos();
 		}
+		return pos;
 	}
 
 	public boolean isCollisionTile(Vector2f pos) {
@@ -209,7 +215,7 @@ public class TileManager {
 		int tileX = (int) pos.x / collisionLayer.getTileSize();
 		int tileY = (int) pos.y / collisionLayer.getTileSize();
 
-		return collisionLayer.getBlocks()[tileY][tileX].getData().hasCollision();
+		return !collisionLayer.getBlocks()[tileY][tileX].isVoid();
 	}
 
 	public boolean collidesXLimit(Entity e, float ax) {
@@ -272,6 +278,9 @@ public class TileManager {
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
 				// Temp fix. Aint nobody got time for array math.
+				if ((this.getBaseLayer().getWidth() == x) || (this.getBaseLayer().getHeight() == y)) {
+					continue;
+				}
 				try {
 					Tile collisionTile = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
 					Tile normalTile = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
