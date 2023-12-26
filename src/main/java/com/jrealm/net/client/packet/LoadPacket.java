@@ -26,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
 public class LoadPacket extends Packet {
-
 	private Player[] players;
 	private Enemy[] enemies;
 	private Bullet[] bullets;
@@ -147,20 +146,22 @@ public class LoadPacket extends Packet {
 	}
 
 	public boolean equals(LoadPacket other) {
-		List<Long> playerIdsThis = Stream.of(this.players).map(Player::getId).collect(Collectors.toList());
-		List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(Player::getId).collect(Collectors.toList());
+		final List<Long> playerIdsThis = Stream.of(this.players).map(Player::getId).collect(Collectors.toList());
+		final List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(Player::getId).collect(Collectors.toList());
 
-		List<Long> lootIdsThis =Stream.of(this.containers).map(LootContainer::getLootContainerId).collect(Collectors.toList());
-		List<Long> lootIdsOther =Stream.of(other.getContainers()).map(LootContainer::getLootContainerId).collect(Collectors.toList());
+		final List<Long> lootIdsThis = Stream.of(this.containers).map(LootContainer::getLootContainerId)
+				.collect(Collectors.toList());
+		final List<Long> lootIdsOther = Stream.of(other.getContainers()).map(LootContainer::getLootContainerId)
+				.collect(Collectors.toList());
 
-		List<Long> enemyIdsThis =Stream.of(this.enemies).map(Enemy::getId).collect(Collectors.toList());
-		List<Long> enemyIdsOther =Stream.of(other.getEnemies()).map(Enemy::getId).collect(Collectors.toList());
+		final List<Long> enemyIdsThis = Stream.of(this.enemies).map(Enemy::getId).collect(Collectors.toList());
+		final List<Long> enemyIdsOther = Stream.of(other.getEnemies()).map(Enemy::getId).collect(Collectors.toList());
 
-		List<Long> bulletIdsThis =Stream.of(this.bullets).map(Bullet::getId).collect(Collectors.toList());
-		List<Long> bulletIdsOther =Stream.of(other.getBullets()).map(Bullet::getId).collect(Collectors.toList());
+		final List<Long> bulletIdsThis = Stream.of(this.bullets).map(Bullet::getId).collect(Collectors.toList());
+		final List<Long> bulletIdsOther = Stream.of(other.getBullets()).map(Bullet::getId).collect(Collectors.toList());
 
-		List<Long> portalIdsThis = Stream.of(this.portals).map(Portal::getId).collect(Collectors.toList());
-		List<Long> portalIdsOther = Stream.of(other.getPortals()).map(Portal::getId).collect(Collectors.toList());
+		final List<Long> portalIdsThis = Stream.of(this.portals).map(Portal::getId).collect(Collectors.toList());
+		final List<Long> portalIdsOther = Stream.of(other.getPortals()).map(Portal::getId).collect(Collectors.toList());
 
 		boolean containersEq = true;
 		if(this.containers.length!=other.getContainers().length) {
@@ -193,109 +194,102 @@ public class LoadPacket extends Packet {
 
 	}
 
-	public LoadPacket combine(LoadPacket other) throws Exception {
-		List<Long> playerIdsThis = Stream.of(this.players).map(Player::getId).collect(Collectors.toList());
-		List<Long> lootIdsThis =Stream.of(this.containers).map(LootContainer::getLootContainerId).collect(Collectors.toList());
-		List<Long> enemyIdsThis =Stream.of(this.enemies).map(Enemy::getId).collect(Collectors.toList());
-		List<Long> bulletIdsThis = Stream.of(this.bullets).map(Bullet::getId).collect(Collectors.toList());
-		List<Long> portalIdsThis = Stream.of(this.portals).map(Portal::getId).collect(Collectors.toList());
+	public LoadPacket combine(final LoadPacket other) throws Exception {
+		final List<Long> playerIdsThis = Stream.of(this.players).map(Player::getId).collect(Collectors.toList());
+		final List<Long> lootIdsThis = Stream.of(this.containers).map(LootContainer::getLootContainerId)
+				.collect(Collectors.toList());
+		final List<Long> enemyIdsThis = Stream.of(this.enemies).map(Enemy::getId).collect(Collectors.toList());
+		final List<Long> bulletIdsThis = Stream.of(this.bullets).map(Bullet::getId).collect(Collectors.toList());
+		final List<Long> portalIdsThis = Stream.of(this.portals).map(Portal::getId).collect(Collectors.toList());
 
-		List<Bullet> bullets = Arrays.asList(other.getBullets());
-		List<Player> players = Arrays.asList(other.getPlayers());
-		List<LootContainer> loot = Arrays.asList(other.getContainers());
-		List<Enemy> enemies = Arrays.asList(other.getEnemies());
-		List<Portal> portals = Arrays.asList(other.getPortals());
+		final List<Bullet> bullets = Arrays.asList(other.getBullets());
+		final List<Player> players = Arrays.asList(other.getPlayers());
+		final List<LootContainer> loot = Arrays.asList(other.getContainers());
+		final List<Enemy> enemies = Arrays.asList(other.getEnemies());
+		final List<Portal> portals = Arrays.asList(other.getPortals());
 
-		List<Bullet> bulletsDiff = new ArrayList<>();
-		for(Bullet b : bullets) {
+		final List<Bullet> bulletsDiff = new ArrayList<>();
+		for (final Bullet b : bullets) {
 			if(!bulletIdsThis.contains(b.getId())) {
 				bulletsDiff.add(b);
 			}
 		}
 
-		List<Player> playersDiff = new ArrayList<>();
-		for(Player p : players) {
+		final List<Player> playersDiff = new ArrayList<>();
+		for (final Player p : players) {
 			if(!playerIdsThis.contains(p.getId())) {
 				playersDiff.add(p);
 			}
 		}
 
-		List<LootContainer> lootDiff = new ArrayList<>();
-		for(LootContainer p : loot) {
+		final List<LootContainer> lootDiff = new ArrayList<>();
+		for (final LootContainer p : loot) {
 			if(!lootIdsThis.contains(p.getLootContainerId()) || p.getContentsChanged()) {
 				lootDiff.add(p);
 			}
 		}
 
-		List<Enemy> enemyDiff = new ArrayList<>();
-		for(Enemy e : enemies) {
+		final List<Enemy> enemyDiff = new ArrayList<>();
+		for (final Enemy e : enemies) {
 			if(!enemyIdsThis.contains(e.getId())) {
 				enemyDiff.add(e);
 			}
 		}
 
-		List<Portal> portalDiff = new ArrayList<>();
-		for (Portal p : portals) {
+		final List<Portal> portalDiff = new ArrayList<>();
+		for (final Portal p : portals) {
 			if (!portalIdsThis.contains(p.getId())) {
 				portalDiff.add(p);
 			}
 		}
-
 		return LoadPacket.from(playersDiff.toArray(new Player[0]), lootDiff.toArray(new LootContainer[0]),
 				bulletsDiff.toArray(new Bullet[0]), enemyDiff.toArray(new Enemy[0]), portalDiff.toArray(new Portal[0]));
 	}
 
 	public UnloadPacket difference(LoadPacket other) throws Exception {
-		List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(Player::getId).collect(Collectors.toList());
-		List<Long> lootIdsOther = Stream.of(other.getContainers()).map(LootContainer::getLootContainerId).collect(Collectors.toList());
-		List<Long> bulletIdsOther = Stream.of(other.getBullets()).map(Bullet::getId).collect(Collectors.toList());
+		final List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(Player::getId).collect(Collectors.toList());
+		final List<Long> lootIdsOther = Stream.of(other.getContainers()).map(LootContainer::getLootContainerId)
+				.collect(Collectors.toList());
+		final List<Long> bulletIdsOther = Stream.of(other.getBullets()).map(Bullet::getId).collect(Collectors.toList());
+		final List<Long> enemyIdsOther = Stream.of(other.getEnemies()).map(Enemy::getId).collect(Collectors.toList());
+		final List<Long> portalIdsOther = Stream.of(other.getPortals()).map(Portal::getId).collect(Collectors.toList());
 
-		List<Long> enemyIdsOther = Stream.of(other.getEnemies()).map(Enemy::getId).collect(Collectors.toList());
-		List<Long> portalIdsOther = Stream.of(other.getPortals()).map(Portal::getId).collect(Collectors.toList());
+		final List<Player> players = Arrays.asList(this.getPlayers());
+		final List<LootContainer> loot = Arrays.asList(this.getContainers());
+		final List<Bullet> bullets = Arrays.asList(this.getBullets());
+		final List<Enemy> enemies = Arrays.asList(this.getEnemies());
+		final List<Portal> portals = Arrays.asList(this.getPortals());
 
-
-		List<Player> players = Arrays.asList(this.getPlayers());
-		List<LootContainer> loot = Arrays.asList(this.getContainers());
-		List<Bullet> bullets = Arrays.asList(this.getBullets());
-
-		List<Enemy> enemies = Arrays.asList(this.getEnemies());
-		List<Portal> portals = Arrays.asList(this.getPortals());
-
-
-		List<Long> bulletsDiff = new ArrayList<>();
-		List<Long> portalsDiff = new ArrayList<>();
-
-		for (Bullet b : bullets) {
+		final List<Long> bulletsDiff = new ArrayList<>();
+		for (final Bullet b : bullets) {
 			if (!bulletIdsOther.contains(b.getId())) {
 				bulletsDiff.add(b.getId());
 			}
 		}
-		// Dont diff the bullets as this could cause bad player
-		// experience when bullets randomly despawn
-		// (bullets will despawn when the owner enemy is unloaded)
-		for (Portal p : portals) {
+
+		final List<Long> portalsDiff = new ArrayList<>();
+		for (final Portal p : portals) {
 			if (!portalIdsOther.contains(p.getId())) {
 				portalsDiff.add(p.getId());
 			}
 		}
 
-
-		List<Long> playersDiff = new ArrayList<>();
-		for(Player p : players) {
+		final List<Long> playersDiff = new ArrayList<>();
+		for (final Player p : players) {
 			if(!playerIdsOther.contains(p.getId())) {
 				playersDiff.add(p.getId());
 			}
 		}
 
-		List<Long> lootDiff = new ArrayList<>();
-		for(LootContainer p : loot) {
+		final List<Long> lootDiff = new ArrayList<>();
+		for (final LootContainer p : loot) {
 			if(!lootIdsOther.contains(p.getLootContainerId())) {
 				lootDiff.add(p.getLootContainerId());
 			}
 		}
 
-		List<Long> enemyDiff = new ArrayList<>();
-		for(Enemy e : enemies) {
+		final List<Long> enemyDiff = new ArrayList<>();
+		for (final Enemy e : enemies) {
 			if(!enemyIdsOther.contains(e.getId())) {
 				enemyDiff.add(e.getId());
 			}
@@ -305,8 +299,8 @@ public class LoadPacket extends Packet {
 				bulletsDiff.toArray(new Long[0]), enemyDiff.toArray(new Long[0]), portalsDiff.toArray(new Long[0]));
 	}
 
-	public boolean containsPlayer(Long player) {
-		for (Player p : this.players) {
+	public boolean containsPlayer(final Long player) {
+		for (final Player p : this.players) {
 			if (p.getId() == player)
 				return true;
 		}
@@ -314,8 +308,8 @@ public class LoadPacket extends Packet {
 		return false;
 	}
 
-	public boolean containsEnemy(Long enemy) {
-		for (Enemy e : this.enemies) {
+	public boolean containsEnemy(final Long enemy) {
+		for (final Enemy e : this.enemies) {
 			if (e.getId() == enemy)
 				return true;
 		}
@@ -323,8 +317,8 @@ public class LoadPacket extends Packet {
 		return false;
 	}
 
-	public boolean containsBullet(Long bullet) {
-		for (Bullet b : this.bullets) {
+	public boolean containsBullet(final Long bullet) {
+		for (final Bullet b : this.bullets) {
 			if (b.getId() == bullet)
 				return true;
 		}
@@ -332,8 +326,8 @@ public class LoadPacket extends Packet {
 		return false;
 	}
 
-	public boolean containsLootContainer(Long container) {
-		for (LootContainer lc : this.containers) {
+	public boolean containsLootContainer(final Long container) {
+		for (final LootContainer lc : this.containers) {
 			if (lc.getLootContainerId() == container)
 				return true;
 		}
@@ -341,13 +335,11 @@ public class LoadPacket extends Packet {
 		return false;
 	}
 
-	public boolean containsPortal(Long portal) {
-		for (Portal p : this.portals) {
+	public boolean containsPortal(final Long portal) {
+		for (final Portal p : this.portals) {
 			if (p.getId() == portal)
 				return true;
 		}
-
 		return false;
 	}
-
 }

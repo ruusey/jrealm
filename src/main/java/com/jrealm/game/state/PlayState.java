@@ -242,43 +242,28 @@ public class PlayState extends GameState {
 				};
 				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText);
 			}
-
 			this.cam.target(player);
 			this.cam.update();
 		}
 	}
 
-	@SuppressWarnings("unused")
 	private void movePlayer(Player p) {
-		if (!p.isFallen()) {
-			if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)
-					&& !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx())) {
-				p.xCol=false;
-				p.applyMovementLerp(new ObjectMovement(p.getPos().x + p.getDx(), p.getPos().y));
-			}else {
-				p.xCol=true;
-			}
-
-			if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, 0, p.getDy())
-					&& !this.getRealmManager().getRealm().getTileManager().collidesYLimit(p, p.getDy())) {
-				p.yCol=false;
-				p.applyMovementLerp(new ObjectMovement(p.getPos().x, p.getPos().y+p.getDy()));
-			}else {
-				p.yCol=true;
-			}
-
-			p.move();
+		if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)
+				&& !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx())) {
+			p.xCol = false;
+			p.applyMovementLerp(new ObjectMovement(p.getPos().x + p.getDx(), p.getPos().y));
 		} else {
 			p.xCol = true;
-			p.yCol = true;
-			if (p.getAni().hasPlayedOnce()) {
-				p.resetPosition();
-				p.setDx(0);
-				p.setDy(0);
-				p.setFallen(false);
-			}
 		}
 
+		if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, 0, p.getDy())
+				&& !this.getRealmManager().getRealm().getTileManager().collidesYLimit(p, p.getDy())) {
+			p.yCol = false;
+			p.applyMovementLerp(new ObjectMovement(p.getPos().x, p.getPos().y + p.getDy()));
+		} else {
+			p.yCol = true;
+		}
+		p.move();
 	}
 
 	public synchronized void addProjectile(int projectileGroupId, int projectileId, Vector2f src, Vector2f dest, short size,

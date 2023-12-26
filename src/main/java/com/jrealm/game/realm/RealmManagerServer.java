@@ -176,7 +176,7 @@ public class RealmManagerServer implements Runnable {
 
 	private void sendGameData() {
 		final List<Packet> packetsToBroadcast = new ArrayList<>();
-
+		// TODO: Possibly rework this queue as we dont usually send stuff globally
 		while(!this.outboundPacketQueue.isEmpty()) {
 			packetsToBroadcast.add(this.outboundPacketQueue.remove());
 		}
@@ -219,6 +219,7 @@ public class RealmManagerServer implements Runnable {
 
 	public void enqueueGameData() {
 		final List<String> disconnectedClients = new ArrayList<>();
+		// TODO: Parallelize work for each realm
 		// For each realm we have to do work for
 		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
 			final Realm realm = realmEntry.getValue();
@@ -287,9 +288,9 @@ public class RealmManagerServer implements Runnable {
 							this.playerLoadState.put(player.getKey(), load);
 							this.enqueueServerPacket(player.getValue(), toSend);
 
-							// Unload the delta objcets that were in the old LoadPacket
+							// Unload the delta objects that were in the old LoadPacket
 							// but are NOT in the new LoadPacket
-							UnloadPacket unloadDelta = old.difference(load);
+							final UnloadPacket unloadDelta = old.difference(load);
 							if (unloadDelta.isNotEmpty()) {
 								this.enqueueServerPacket(player.getValue(), unloadDelta);
 							}
@@ -305,16 +306,6 @@ public class RealmManagerServer implements Runnable {
 					RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(),
 							e);
 				}
-			}
-
-
-
-			// Used to dynamically re-render changed loot containers (chests) on the client
-			// if their
-			// contents change in a server tick (receive MoveItem packet from client this
-			// tick)
-			for (LootContainer lc : realm.getLoot().values()) {
-				lc.setContentsChanged(false);
 			}
 		}
 	}
@@ -474,6 +465,15 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 			};
+
+			// Used to dynamically re-render changed loot containers (chests) on the client
+			// if their
+			// contents change in a server tick (receive MoveItem packet from client this
+			// tick)
+			for (LootContainer lc : realm.getLoot().values()) {
+				lc.setContentsChanged(false);
+			}
+
 			WorkerThread.submitAndRun(processGameObjects);
 		}
 

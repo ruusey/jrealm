@@ -146,11 +146,11 @@ public class UnloadPacket extends Packet{
 	}
 
 	public boolean equals(UnloadPacket other) {
-		boolean players = Arrays.equals(this.players, other.getPlayers());
-		boolean enemies = Arrays.equals(this.enemies, other.getEnemies());
-		boolean loot = Arrays.equals(this.containers, other.getContainers());
-		boolean bullets = Arrays.equals(this.bullets, other.getBullets());
-		boolean portals = Arrays.equals(this.portals, other.getPortals());
+		final boolean players = Arrays.equals(this.players, other.getPlayers());
+		final boolean enemies = Arrays.equals(this.enemies, other.getEnemies());
+		final boolean loot = Arrays.equals(this.containers, other.getContainers());
+		final boolean bullets = Arrays.equals(this.bullets, other.getBullets());
+		final boolean portals = Arrays.equals(this.portals, other.getPortals());
 		return players && enemies && loot && bullets && portals;
 	}
 
