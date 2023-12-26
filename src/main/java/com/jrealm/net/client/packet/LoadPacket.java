@@ -197,7 +197,7 @@ public class LoadPacket extends Packet {
 		List<Long> playerIdsThis = Stream.of(this.players).map(Player::getId).collect(Collectors.toList());
 		List<Long> lootIdsThis =Stream.of(this.containers).map(LootContainer::getLootContainerId).collect(Collectors.toList());
 		List<Long> enemyIdsThis =Stream.of(this.enemies).map(Enemy::getId).collect(Collectors.toList());
-		List<Long> bulletIdsThis =Stream.of(this.bullets).map(Bullet::getId).collect(Collectors.toList());
+		List<Long> bulletIdsThis = Stream.of(this.bullets).map(Bullet::getId).collect(Collectors.toList());
 		List<Long> portalIdsThis = Stream.of(this.portals).map(Portal::getId).collect(Collectors.toList());
 
 		List<Bullet> bullets = Arrays.asList(other.getBullets());
@@ -293,4 +293,50 @@ public class LoadPacket extends Packet {
 		return UnloadPacket.from(playersDiff.toArray(new Long[0]), lootDiff.toArray(new Long[0]),
 				bulletsDiff.toArray(new Long[0]), enemyDiff.toArray(new Long[0]), portalsDiff.toArray(new Long[0]));
 	}
+
+	public boolean containsPlayer(Long player) {
+		for (Player p : this.players) {
+			if (p.getId() == player)
+				return true;
+		}
+
+		return false;
+	}
+
+	public boolean containsEnemy(Long enemy) {
+		for (Enemy e : this.enemies) {
+			if (e.getId() == enemy)
+				return true;
+		}
+
+		return false;
+	}
+
+	public boolean containsBullet(Long bullet) {
+		for (Bullet b : this.bullets) {
+			if (b.getId() == bullet)
+				return true;
+		}
+
+		return false;
+	}
+
+	public boolean containsLootContainer(Long container) {
+		for (LootContainer lc : this.containers) {
+			if (lc.getLootContainerId() == container)
+				return true;
+		}
+
+		return false;
+	}
+
+	public boolean containsPortal(Long portal) {
+		for (Portal p : this.portals) {
+			if (p.getId() == portal)
+				return true;
+		}
+
+		return false;
+	}
+
 }

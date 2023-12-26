@@ -4,7 +4,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.PacketType;
@@ -150,5 +152,47 @@ public class UnloadPacket extends Packet{
 		boolean bullets = Arrays.equals(this.bullets, other.getBullets());
 		boolean portals = Arrays.equals(this.portals, other.getPortals());
 		return players && enemies && loot && bullets && portals;
+	}
+
+	// Removes entities that are not in the provided load state
+	public UnloadPacket cullFromLoadPacket(LoadPacket loadState) throws Exception {
+		final List<Long> players = new ArrayList<>();
+		for (final Long playerId : this.players) {
+			if (loadState.containsPlayer(playerId)) {
+				players.add(playerId);
+			}
+		}
+
+		final List<Long> enemies = new ArrayList<>();
+		for (final Long enemyId : this.enemies) {
+			if (loadState.containsEnemy(enemyId)) {
+				enemies.add(enemyId);
+			}
+		}
+
+		final List<Long> loot = new ArrayList<>();
+		for (final Long lootId : this.containers) {
+			if (loadState.containsLootContainer(lootId)) {
+				loot.add(lootId);
+			}
+		}
+
+		final List<Long> bullets = new ArrayList<>();
+		for (final Long bulletId : this.bullets) {
+			if (loadState.containsBullet(bulletId)) {
+				bullets.add(bulletId);
+			}
+		}
+
+		final List<Long> portals = new ArrayList<>();
+		for (final Long portalId : this.portals) {
+			if (loadState.containsPortal(portalId)) {
+				portals.add(portalId);
+			}
+		}
+
+		return UnloadPacket.from(players.toArray(new Long[0]), loot.toArray(new Long[0]), bullets.toArray(new Long[0]),
+				enemies.toArray(new Long[0]), portals.toArray(new Long[0]));
+
 	}
 }

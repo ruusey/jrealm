@@ -90,10 +90,16 @@ public class ClientGameLogic {
 				if(p==cli.getCurrentPlayerId()) {
 					continue;
 				}
-				cli.getRealm().getPlayers().remove(p);
+				Player removed =  cli.getRealm().getPlayers().remove(p);
+				if (removed == null) {
+					ClientGameLogic.log.error("Player does not exist");
+				}
 			}
 			for(Long lc : unloadPacket.getContainers()) {
-				cli.getRealm().getLoot().remove(lc);
+				LootContainer removed = cli.getRealm().getLoot().remove(lc);
+				if (removed == null) {
+					ClientGameLogic.log.error("LootContainer does not exist");
+				}
 			}
 
 			for(Long b : unloadPacket.getBullets()) {
@@ -104,11 +110,17 @@ public class ClientGameLogic {
 			}
 
 			for(Long e : unloadPacket.getEnemies()) {
-				cli.getRealm().getEnemies().remove(e);
+				Enemy removed = cli.getRealm().getEnemies().remove(e);
+				if (removed == null) {
+					ClientGameLogic.log.error("Enemy does not exist");
+				}
 			}
 
 			for (Long p : unloadPacket.getPortals()) {
-				cli.getRealm().getPortals().remove(p);
+				Portal removed = cli.getRealm().getPortals().remove(p);
+				if (removed == null) {
+					ClientGameLogic.log.error("Portal does not exist");
+				}
 			}
 
 		}catch(Exception e) {
