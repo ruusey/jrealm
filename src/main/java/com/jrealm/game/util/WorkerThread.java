@@ -8,8 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class WorkerThread extends Thread {
-	private static final int THREAD_POOL_COUNT = 50;
-	private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(THREAD_POOL_COUNT,
+	private static final int THREAD_POOL_COUNT = 70;
+	private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(WorkerThread.THREAD_POOL_COUNT,
 			Executors.privilegedThreadFactory());
 
 	public static CompletableFuture<?> submit(Runnable runnable) {
@@ -29,8 +29,8 @@ public class WorkerThread extends Thread {
 
 		CompletableFuture<Void> cf = CompletableFuture.allOf(futures);
 		try {
-//			 WorkerThread.log.info("Completing {} asynchronous tasks",
-//			futures.length);
+			//			 WorkerThread.log.info("Completing {} asynchronous tasks",
+			//			futures.length);
 			cf.get();
 		} catch (Exception e) {
 			WorkerThread.log.error("Failed to complete async tasks {}", e);
@@ -45,7 +45,7 @@ public class WorkerThread extends Thread {
 		}
 		WorkerThread.allOf(futures);
 	}
-	
+
 	/*
 	 * Submits runnables that execute in an newly forked thread (good for long running tasks)
 	 */

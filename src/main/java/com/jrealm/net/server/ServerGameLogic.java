@@ -75,7 +75,7 @@ public class ServerGameLogic {
 			final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 			final Realm generatedRealm = new Realm(true, portalUsed.getMapId());
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 1,
-					generatedRealm.getTileManager().randomPos());
+					generatedRealm.getTileManager().getSafePosition());
 			user.setPos(generatedRealm.getTileManager().getSafePosition());
 			exitPortal.setId(currentRealm.getRealmId());
 			generatedRealm.addPortal(exitPortal);
