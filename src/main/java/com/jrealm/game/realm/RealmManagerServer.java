@@ -207,14 +207,6 @@ public class RealmManagerServer implements Runnable {
 				RealmManagerServer.log.error("Failed to get OutputStream to Client. Reason: {}", e);
 			}
 		}
-
-		for(final String disconnectedClient : disconnectedClients) {
-			final Long dcPlayerId = this.getRemoteAddresses().get(disconnectedClient);
-			final Realm playerLocation = this.searchRealmsForPlayers(dcPlayerId);
-			playerLocation.getExpiredPlayers().add(dcPlayerId);
-			playerLocation.getPlayers().remove(dcPlayerId);
-			this.server.getClients().remove(disconnectedClient);
-		}
 	}
 
 	public void enqueueGameData() {
