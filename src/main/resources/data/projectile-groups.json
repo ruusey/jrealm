@@ -384,7 +384,7 @@
 		"projectileGroupId": 6,
 		"row": 4,
 		"col": 13,
-		"spriteKey": "tile/rotmg-tiles.png",
+		"spriteKey": "entity/rotmg-tiles.png",
 		"angleOffset": "{{PI/4}}",
 		"projectiles": [
 			{

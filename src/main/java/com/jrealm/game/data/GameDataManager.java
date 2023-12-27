@@ -41,10 +41,9 @@ public class GameDataManager {
 	public static ExperienceModel EXPERIENCE_LVLS = null;
 
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
-			"entity/rotmg-bosses-1.png",
-			"entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-items-1.png", "tile/rotmg-tiles-2.png",
-			"tile/rotmg-tiles-1.png", "entity/rotmg-abilities.png", "tile/rotmg-tiles.png", "tile/rotmg-tiles-all.png",
-	"entity/rotmg-misc.png" };
+			"entity/rotmg-bosses-1.png", "entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-tiles.png",
+			"entity/rotmg-tiles-1.png", "entity/rotmg-tiles-2.png", "entity/rotmg-tiles-all.png",
+			"entity/rotmg-items-1.png", "entity/rotmg-abilities.png", "entity/rotmg-misc.png" };
 
 	private static void loadCharacterClasses() throws Exception {
 		GameDataManager.log.info("Loading Character Classes..");
@@ -192,15 +191,6 @@ public class GameDataManager {
 		GameDataManager.SPRITE_SHEETS = new HashMap<>();
 		for (String loc : GameDataManager.SPRITE_SHEET_LOCATIONS) {
 			switch(loc) {
-			case "tile/overworldOP.png":
-				GameDataManager.SPRITE_SHEETS.put("tile/overworldOP.png",
-						new SpriteSheet("tile/overworldOP.png", 32, 32, 0));
-
-				break;
-			case "material/trees.png":
-				GameDataManager.SPRITE_SHEETS.put("material/trees.png",
-						new SpriteSheet("material/trees.png", 64, 96, 0));
-				break;
 			case "entity/rotmg-classes.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-classes.png",
 						GameDataManager.loadClassSprites(CharacterClass.ARCHER));
@@ -217,22 +207,6 @@ public class GameDataManager {
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-misc.png",
 						new SpriteSheet("entity/rotmg-misc.png", 8, 8, 0));
 				break;
-			case "tile/rotmg-tiles.png":
-				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles.png",
-						new SpriteSheet("tile/rotmg-tiles.png", 8, 8, 0));
-				break;
-			case "tile/rotmg-tiles-1.png":
-				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles-1.png",
-						new SpriteSheet("tile/rotmg-tiles-1.png", 8, 8, 0));
-				break;
-			case "tile/rotmg-tiles-2.png":
-				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles-2.png",
-						new SpriteSheet("tile/rotmg-tiles-2.png", 8, 8, 0));
-				break;
-			case "tile/rotmg-tiles-all.png":
-				GameDataManager.SPRITE_SHEETS.put("tile/rotmg-tiles-all.png",
-						new SpriteSheet("tile/rotmg-tiles-all.png", 8, 8, 0));
-				break;
 			case "entity/rotmg-abilities.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-abilities.png",
 						new SpriteSheet("entity/rotmg-abilities.png", 8, 8, 0));
@@ -248,6 +222,22 @@ public class GameDataManager {
 			case "entity/rotmg-bosses-1.png":
 				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-bosses-1.png",
 						new SpriteSheet("entity/rotmg-bosses-1.png", 8, 8, 0));
+				break;
+			case "entity/rotmg-tiles.png":
+				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-tiles.png",
+						new SpriteSheet("entity/rotmg-tiles.png", 8, 8, 0));
+				break;
+			case "entity/rotmg-tiles-1.png":
+				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-tiles-1.png",
+						new SpriteSheet("entity/rotmg-tiles-1.png", 8, 8, 0));
+				break;
+			case "entity/rotmg-tiles-2.png":
+				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-tiles-2.png",
+						new SpriteSheet("entity/rotmg-tiles-2.png", 8, 8, 0));
+				break;
+			case "entity/rotmg-tiles-all.png":
+				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-tiles-all.png",
+						new SpriteSheet("entity/rotmg-tiles-all.png", 8, 8, 0));
 				break;
 			}
 		}

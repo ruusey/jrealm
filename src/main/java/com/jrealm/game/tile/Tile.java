@@ -40,6 +40,9 @@ public class Tile implements Streamable<Tile> {
 		this.data = data;
 		this.discovered = discovered;
 		this.img = GameDataManager.getSubSprite(GameDataManager.TILES.get((int)this.tileId), 8);
+		if (this.img == null) {
+			System.out.println();
+		}
 	}
 
 	public boolean update(AABB bounds) {
