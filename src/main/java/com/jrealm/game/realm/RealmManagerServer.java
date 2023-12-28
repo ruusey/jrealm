@@ -45,6 +45,7 @@ import com.jrealm.game.tile.Tile;
 import com.jrealm.game.tile.TileMap;
 import com.jrealm.game.tile.decorators.Beach0Decorator;
 import com.jrealm.game.tile.decorators.RealmDecorator;
+import com.jrealm.game.ui.TextEffect;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
@@ -53,6 +54,7 @@ import com.jrealm.net.PacketType;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.ProcessingThread;
@@ -690,6 +692,12 @@ public class RealmManagerServer implements Runnable {
 			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
 			if (dmgToInflict < minDmg) {
 				dmgToInflict = minDmg;
+			}
+			try {
+				this.enqueueServerPacket(player, TextEffectPacket.from(TextEffect.DAMAGE, "-" + dmgToInflict));
+			} catch (Exception e) {
+				RealmManagerServer.log.error("Failed to send Damage TextEffect Packet to Player {}. Reason: {}",
+						p.getId(), e);
 			}
 			player.setHealth(player.getHealth() - dmgToInflict, 0, false);
 			targetRealm.getExpiredBullets().add(b.getId());

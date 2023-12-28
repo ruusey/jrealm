@@ -7,8 +7,8 @@ import com.jrealm.game.realm.Realm;
 import com.jrealm.game.tile.TileMap;
 
 public class Beach0Decorator implements RealmDecorator {
-	private static final Integer MIN_WATER_POOL_COUNT = 10;
-	private static final Integer MAX_WATER_POOL_COUNT = 20;
+	private static final Integer MIN_WATER_POOL_COUNT = 15;
+	private static final Integer MAX_WATER_POOL_COUNT = 25;
 	private static final TileModel WATER_TILE = GameDataManager.TILES.get(40);
 
 	public Beach0Decorator() {

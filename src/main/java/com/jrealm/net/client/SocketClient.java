@@ -17,6 +17,7 @@ import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
+import com.jrealm.net.PacketType;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
 
@@ -44,7 +45,7 @@ public class SocketClient implements Runnable {
 	private long currentBytesRecieved = 0;
 	private volatile Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
-	
+
 	public SocketClient(String targetHost, int port) {
 		try {
 			this.clientSocket = new Socket(targetHost, port);
@@ -60,20 +61,20 @@ public class SocketClient implements Runnable {
 		try {
 			this.doLogin();
 		} catch (Exception e) {
-			log.error("Failed to send initial LoginRequest. Reason: {}", e);
+			SocketClient.log.error("Failed to send initial LoginRequest. Reason: {}", e);
 		}
-		
+
 		Runnable readPackets = () -> {
 			this.readPackets();
 		};
 		Runnable sendPackets = () -> {
-			this.sendPackets();	
+			this.sendPackets();
 		};
 		TimedWorkerThread readThread = new TimedWorkerThread(readPackets, 32);
 		TimedWorkerThread sendThread = new TimedWorkerThread(sendPackets, 32);
 		sendThread.start();
 		readThread.start();
-}
+	}
 
 	private void readPackets() {
 		try {
@@ -103,6 +104,9 @@ public class SocketClient implements Runnable {
 					this.currentBytesRecieved += packetLength;
 					this.remoteBufferIndex -= packetLength;
 					BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
+					if (packetId == PacketType.TEXT_EFFECT.getPacketId()) {
+						SocketClient.log.info("");
+					}
 					newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
 					this.inboundPacketQueue.add(newPacket);
 				}
@@ -111,7 +115,7 @@ public class SocketClient implements Runnable {
 			SocketClient.log.error("Failed to parse client input. Reason {}", e);
 		}
 	}
-	
+
 	private void doLogin() throws Exception{
 		LoginRequestMessage login = LoginRequestMessage.builder().classId(SocketClient.CLASS_ID)
 				.username(SocketClient.PLAYER_USERNAME)
@@ -120,7 +124,7 @@ public class SocketClient implements Runnable {
 		CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
 		this.sendRemote(loginPacket);
 	}
-	
+
 	private void sendPackets() {
 		OutputStream stream = null;
 		try{
@@ -149,10 +153,10 @@ public class SocketClient implements Runnable {
 	public void sendRemote(Packet packet) throws Exception {
 		if (this.clientSocket == null)
 			throw new Exception("Client socket is null/not yet established");
-		
+
 		this.outboundPacketQueue.add(packet);
 	}
-	
+
 	@SuppressWarnings("unused")
 	private void monitorLastReceived() {
 		Runnable monitorLastRecieved = () ->{
@@ -162,23 +166,23 @@ public class SocketClient implements Runnable {
 						this.shutdown = true;
 					}
 				}catch(Exception e) {
-					
+
 				}
 			}
 		};
 		WorkerThread.submitAndForkRun(monitorLastRecieved);
 	}
-	
+
 	public void startBandwidthMonitor() {
 		Runnable run = () ->{
 			while(!this.shutdown) {
 				try {
 					long bytesRead = this.currentBytesRecieved;
-					log.info("[CLIENT] current read rate = {} kbit/s", (float)(bytesRead/1024.0f) * 8.0f);
+					SocketClient.log.info("[CLIENT] current read rate = {} kbit/s", (float)(bytesRead/1024.0f) * 8.0f);
 					this.currentBytesRecieved = 0;
 					Thread.sleep(1000);
 				}catch(Exception e) {
-					
+
 				}
 
 			}

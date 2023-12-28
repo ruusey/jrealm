@@ -313,9 +313,6 @@ public class PlayState extends GameState {
 	public synchronized void processBulletHit() {
 		List<Bullet> results = this.getBullets();
 		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort(this.getPlayer()));
-		for (Bullet b : results) {
-			this.processPlayerHit(b, this.getPlayer());
-		}
 		for (int i = 0; i < gameObject.length; i++) {
 			if (gameObject[i] instanceof Enemy) {
 				Enemy enemy = ((Enemy) gameObject[i]);
@@ -326,30 +323,13 @@ public class PlayState extends GameState {
 		}
 	}
 
-	private synchronized void processPlayerHit(Bullet b, Player p) {
-		if (b.getBounds().collides(0, 0, p.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
-			Stats stats = p.getComputedStats();
-			b.setPlayerHit(true);
-			short minDmg = (short) (b.getDamage() * 0.15);
-			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
-			if (dmgToInflict < minDmg) {
-				dmgToInflict = minDmg;
-			}
-			Vector2f sourcePos = p.getPos();
-			DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
-					.sourcePos(sourcePos).build();
-			this.damageText.add(hitText);
-		}
-	}
-
-
-	private synchronized void proccessEnemyHit(Bullet b, Enemy e) {
+	private synchronized void proccessEnemyHit(final Bullet b, final Enemy e) {
 		if (this.realmManager.getRealm().hasHitEnemy(b.getId(), e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			if (!this.realmManager.getRealm().hasHitEnemy(b.getId(), e.getId())) {
-				Vector2f sourcePos = e.getPos();
-				DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
+				final Vector2f sourcePos = e.getPos();
+				final DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
 						.sourcePos(sourcePos).build();
 				this.damageText.add(hitText);
 				this.realmManager.getRealm().hitEnemy(b.getId(), e.getId());
@@ -358,10 +338,10 @@ public class PlayState extends GameState {
 	}
 
 	private List<Bullet> getBullets() {
+		final GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(
+				this.realmManager.getRealm().getTileManager().getRenderViewPort(this.getPlayer()));
 
-		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort(this.getPlayer()));
-
-		List<Bullet> results = new ArrayList<>();
+		final List<Bullet> results = new ArrayList<>();
 		for (int i = 0; i < gameObject.length; i++) {
 			if (gameObject[i] instanceof Bullet) {
 				results.add((Bullet) gameObject[i]);

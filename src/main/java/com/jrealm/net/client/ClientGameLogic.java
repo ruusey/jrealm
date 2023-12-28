@@ -15,6 +15,8 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginResponseMessage;
 import com.jrealm.game.realm.RealmManagerClient;
+import com.jrealm.game.ui.DamageText;
+import com.jrealm.game.ui.TextEffect;
 import com.jrealm.game.util.Camera;
 import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
@@ -22,6 +24,7 @@ import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.ObjectMovement;
+import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.packet.CommandPacket;
@@ -31,6 +34,18 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientGameLogic {
+	public static void handleTextEffectClient(RealmManagerClient cli, Packet packet) {
+		TextEffectPacket textEffect = (TextEffectPacket) packet;
+		try {
+			Vector2f sourcePos = cli.getState().getPlayer().getPos();
+			DamageText hitText = DamageText.builder().damage(textEffect.getText())
+					.effect(TextEffect.fromOrdinal(textEffect.getTextEffectId())).sourcePos(sourcePos).build();
+			cli.getState().getDamageText().add(hitText);
+		} catch (Exception e) {
+			ClientGameLogic.log.error("Failed to handle LoadMap Packet. Reason: {}", e);
+		}
+	}
+
 	public static void handleLoadMapClient(RealmManagerClient cli, Packet packet) {
 		LoadMapPacket loadPacket = (LoadMapPacket) packet;
 		try {
