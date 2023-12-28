@@ -35,10 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ClientGameLogic {
 	public static void handleTextEffectClient(RealmManagerClient cli, Packet packet) {
-		TextEffectPacket textEffect = (TextEffectPacket) packet;
+		final TextEffectPacket textEffect = (TextEffectPacket) packet;
 		try {
-			Vector2f sourcePos = cli.getState().getPlayer().getPos();
-			DamageText hitText = DamageText.builder().damage(textEffect.getText())
+			final Vector2f sourcePos = cli.getState().getPlayer().getPos();
+			final DamageText hitText = DamageText.builder().damage(textEffect.getText())
 					.effect(TextEffect.fromOrdinal(textEffect.getTextEffectId())).sourcePos(sourcePos).build();
 			cli.getState().getDamageText().add(hitText);
 		} catch (Exception e) {
@@ -47,7 +47,7 @@ public class ClientGameLogic {
 	}
 
 	public static void handleLoadMapClient(RealmManagerClient cli, Packet packet) {
-		LoadMapPacket loadPacket = (LoadMapPacket) packet;
+		final LoadMapPacket loadPacket = (LoadMapPacket) packet;
 		try {
 			//			log.info("[CLIENT] Recieved Load Packet \nPlayers: {}\nEnemies: {}\nBullets: {}\nLootContainers: {}",
 			//
@@ -58,19 +58,19 @@ public class ClientGameLogic {
 		}
 	}
 	public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
-		LoadPacket loadPacket = (LoadPacket) packet;
+		final LoadPacket loadPacket = (LoadPacket) packet;
 		try {
 			//			log.info("[CLIENT] Recieved Load Packet \nPlayers: {}\nEnemies: {}\nBullets: {}\nLootContainers: {}",
 			//					textPacket.getPlayers().length, textPacket.getEnemies().length, textPacket.getBullets().length,
 			//					textPacket.getContainers().length);
 
-			for(Player p : loadPacket.getPlayers()) {
+			for (final Player p : loadPacket.getPlayers()) {
 				if(p.getId()==cli.getCurrentPlayerId()) {
 					continue;
 				}
 				cli.getRealm().addPlayerIfNotExists(p);
 			}
-			for(LootContainer lc : loadPacket.getContainers()) {
+			for (final LootContainer lc : loadPacket.getContainers()) {
 				if(lc.getContentsChanged()) {
 					LootContainer current = cli.getRealm().getLoot().get(lc.getLootContainerId());
 					current.setContentsChanged(true);
@@ -80,15 +80,15 @@ public class ClientGameLogic {
 				}
 			}
 
-			for(Bullet b : loadPacket.getBullets()) {
+			for (final Bullet b : loadPacket.getBullets()) {
 				cli.getRealm().addBulletIfNotExists(b);
 			}
 
-			for(Enemy e : loadPacket.getEnemies()) {
+			for (final Enemy e : loadPacket.getEnemies()) {
 				cli.getRealm().addEnemyIfNotExists(e);
 			}
 
-			for (Portal p : loadPacket.getPortals()) {
+			for (final Portal p : loadPacket.getPortals()) {
 				cli.getRealm().addPortalIfNotExists(p);
 			}
 		}catch(Exception e) {
@@ -97,42 +97,42 @@ public class ClientGameLogic {
 	}
 
 	public static void handleUnloadClient(RealmManagerClient cli, Packet packet) {
-		UnloadPacket unloadPacket = (UnloadPacket) packet;
+		final UnloadPacket unloadPacket = (UnloadPacket) packet;
 		//log.info("[CLIENT] Recieved Unload Packet");
 		try {
 
-			for(Long p : unloadPacket.getPlayers()) {
+			for (final Long p : unloadPacket.getPlayers()) {
 				if(p==cli.getCurrentPlayerId()) {
 					continue;
 				}
-				Player removed =  cli.getRealm().getPlayers().remove(p);
+				final Player removed = cli.getRealm().getPlayers().remove(p);
 				if (removed == null) {
 					ClientGameLogic.log.error("Player {} does not exist", p);
 				}
 			}
-			for(Long lc : unloadPacket.getContainers()) {
-				LootContainer removed = cli.getRealm().getLoot().remove(lc);
+			for (final Long lc : unloadPacket.getContainers()) {
+				final LootContainer removed = cli.getRealm().getLoot().remove(lc);
 				if (removed == null) {
 					ClientGameLogic.log.error("LootContainer {} does not exist", lc);
 				}
 			}
 
-			for(Long b : unloadPacket.getBullets()) {
+			for (final Long b : unloadPacket.getBullets()) {
 				final Bullet removed = cli.getRealm().getBullets().remove(b);
 				if (removed == null) {
 					ClientGameLogic.log.error("Bullet {} does not exist", b);
 				}
 			}
 
-			for(Long e : unloadPacket.getEnemies()) {
-				Enemy removed = cli.getRealm().getEnemies().remove(e);
+			for (final Long e : unloadPacket.getEnemies()) {
+				final Enemy removed = cli.getRealm().getEnemies().remove(e);
 				if (removed == null) {
 					ClientGameLogic.log.error("Enemy {} does not exist", e);
 				}
 			}
 
-			for (Long p : unloadPacket.getPortals()) {
-				Portal removed = cli.getRealm().getPortals().remove(p);
+			for (final Long p : unloadPacket.getPortals()) {
+				final Portal removed = cli.getRealm().getPortals().remove(p);
 				if (removed == null) {
 					ClientGameLogic.log.error("Portal {} does not exist", p);
 				}
@@ -144,7 +144,7 @@ public class ClientGameLogic {
 	}
 
 	public static void handleTextClient(RealmManagerClient cli, Packet packet) {
-		TextPacket textPacket = (TextPacket) packet;
+		final TextPacket textPacket = (TextPacket) packet;
 		ClientGameLogic.log.info("[CLIENT] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}", textPacket.getTo(),
 				textPacket.getFrom(), textPacket.getMessage());
 		try {
@@ -155,12 +155,12 @@ public class ClientGameLogic {
 	}
 
 	public static void handleCommandClient(RealmManagerClient cli, Packet packet) {
-		CommandPacket commandPacket = (CommandPacket) packet;
+		final CommandPacket commandPacket = (CommandPacket) packet;
 		ClientGameLogic.log.info("[CLIENT] Recieved Command Packet for Player {} Command={}", commandPacket.getPlayerId(), commandPacket.getCommand());
 		try {
 			switch(commandPacket.getCommandId()) {
 			case 2:
-				LoginResponseMessage loginResponse = CommandType.fromPacket(commandPacket);
+				final LoginResponseMessage loginResponse = CommandType.fromPacket(commandPacket);
 				ClientGameLogic.doLoginResponse(cli, loginResponse);
 				break;
 			}
@@ -170,15 +170,15 @@ public class ClientGameLogic {
 	}
 
 	public static void handleObjectMoveClient(RealmManagerClient cli, Packet packet) {
-		ObjectMovePacket objectMovePacket = (ObjectMovePacket) packet;
+		final ObjectMovePacket objectMovePacket = (ObjectMovePacket) packet;
 		for(ObjectMovement movement : objectMovePacket.getMovements()) {
-			EntityType type = movement.getTargetEntityType();
+			final EntityType type = movement.getTargetEntityType();
 			if(type==null) {
 				continue;
 			}
 			switch(type) {
 			case PLAYER:
-				Player playerToUpdate = cli.getRealm().getPlayer(movement.getEntityId());
+				final Player playerToUpdate = cli.getRealm().getPlayer(movement.getEntityId());
 				if(playerToUpdate==null) {
 					break;
 				}
@@ -189,14 +189,14 @@ public class ClientGameLogic {
 				}
 				break;
 			case ENEMY:
-				Enemy enemyToUpdate = cli.getRealm().getEnemy(movement.getEntityId());
+				final Enemy enemyToUpdate = cli.getRealm().getEnemy(movement.getEntityId());
 				if(enemyToUpdate == null) {
 					break;
 				}
 				enemyToUpdate.applyMovementLerp(movement);
 				break;
 			case BULLET:
-				Bullet bulletToUpdate = cli.getRealm().getBullet(movement.getEntityId());
+				final Bullet bulletToUpdate = cli.getRealm().getBullet(movement.getEntityId());
 				if(bulletToUpdate==null) {
 					break;
 				}

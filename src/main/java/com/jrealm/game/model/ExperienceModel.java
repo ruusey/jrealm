@@ -64,9 +64,9 @@ public class ExperienceModel {
 
 	public int maxLevel() {
 		int best = 0;
-		for (final Tuple<Integer, Integer> entry : this.parsedMap.values()) {
-			if (entry.getX() > best) {
-				best = entry.getX();
+		for (final Integer entry : this.parsedMap.keySet()) {
+			if (entry > best) {
+				best = entry;
 			}
 		}
 		return best;

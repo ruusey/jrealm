@@ -5,13 +5,23 @@
 		"className": "Rogue",
 		"baseStats": {
 			"spd": 15,
-			"att": 12,
+			"att": 10,
 			"dex": 15,
 			"wis": 10,
-			"vit": 10,
+			"vit": 15,
 			"def": 0,
-			"hp": 200,
+			"hp": 150,
 			"mp": 100
+		},
+		"maxStats": {
+			"spd": 75,
+			"att": 50,
+			"dex": 75,
+			"wis": 50,
+			"vit": 40,
+			"def": 25,
+			"hp": 720,
+			"mp": 252
 		}
 	},
 	{
@@ -19,14 +29,24 @@
 		"classId": 1,
 		"className": "Archer",
 		"baseStats": {
-			"spd": 15,
+			"spd": 12,
 			"att": 12,
-			"dex": 15,
+			"dex": 12,
 			"wis": 10,
 			"vit": 10,
 			"def": 0,
-			"hp": 200,
+			"hp": 130,
 			"mp": 100
+		},
+		"maxStats": {
+			"spd": 55,
+			"att": 75,
+			"dex": 50,
+			"wis": 50,
+			"vit": 40,
+			"def": 25,
+			"hp": 700,
+			"mp": 252
 		}
 	},
 	{
@@ -34,14 +54,24 @@
 		"classId": 2,
 		"className": "Wizard",
 		"baseStats": {
-			"spd": 15,
+			"spd": 10,
 			"att": 12,
 			"dex": 15,
-			"wis": 10,
-			"vit": 10,
+			"wis": 12,
+			"vit": 12,
 			"def": 0,
-			"hp": 200,
+			"hp": 100,
 			"mp": 100
+		},
+		"maxStats": {
+			"spd": 50,
+			"att": 75,
+			"dex": 75,
+			"wis": 60,
+			"vit": 40,
+			"def": 25,
+			"hp": 670,
+			"mp": 385
 		}
 	},
 	{
@@ -49,14 +79,24 @@
 		"classId": 3,
 		"className": "Priest",
 		"baseStats": {
-			"spd": 15,
+			"spd": 12,
 			"att": 12,
-			"dex": 15,
-			"wis": 10,
+			"dex": 12,
+			"wis": 15,
 			"vit": 10,
 			"def": 0,
-			"hp": 200,
+			"hp": 100,
 			"mp": 100
+		},
+		"maxStats": {
+			"spd": 55,
+			"att": 50,
+			"dex": 55,
+			"wis": 75,
+			"vit": 40,
+			"def": 25,
+			"hp": 670,
+			"mp": 385
 		}
 	},
 	{
@@ -64,14 +104,24 @@
 		"classId": 4,
 		"className": "Warrior",
 		"baseStats": {
-			"spd": 10,
-			"att": 12,
-			"dex": 15,
+			"spd": 7,
+			"att": 15,
+			"dex": 10,
 			"wis": 10,
 			"vit": 10,
 			"def": 0,
 			"hp": 200,
 			"mp": 100
+		},
+		"maxStats": {
+			"spd": 50,
+			"att": 75,
+			"dex": 50,
+			"wis": 50,
+			"vit": 75,
+			"def": 25,
+			"hp": 770,
+			"mp": 252
 		}
 	},
 	{
@@ -79,14 +129,24 @@
 		"classId": 5,
 		"className": "Knight",
 		"baseStats": {
-			"spd": 10,
-			"att": 12,
-			"dex": 15,
+			"spd": 7,
+			"att": 15,
+			"dex": 10,
 			"wis": 10,
 			"vit": 10,
 			"def": 0,
 			"hp": 200,
 			"mp": 100
+		},
+		"maxStats": {
+			"spd": 50,
+			"att": 50,
+			"dex": 50,
+			"wis": 50,
+			"vit": 75,
+			"def": 40,
+			"hp": 770,
+			"mp": 252
 		}
 	},
 	{
@@ -94,14 +154,24 @@
 		"classId": 6,
 		"className": "Palladin",
 		"baseStats": {
-			"spd": 10,
+			"spd": 12,
 			"att": 12,
-			"dex": 15,
+			"dex": 10,
 			"wis": 10,
 			"vit": 10,
 			"def": 0,
 			"hp": 200,
 			"mp": 100
+		},
+		"maxStats": {
+			"spd": 50,
+			"att": 50,
+			"dex": 50,
+			"wis": 75,
+			"vit": 60,
+			"def": 30,
+			"hp": 770,
+			"mp": 252
 		}
 	}
 ]

@@ -361,7 +361,14 @@ public class Player extends Entity implements Streamable<Player>{
 	}
 
 	public void incrementExperience(long experience) {
-		this.setExperience(this.getExperience() + experience);
+		long newExperience = this.getExperience() + experience;
+		int currentLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(this.experience);
+		int newLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(newExperience);
+		final CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(this.getClassId());
+		if (newLevel > currentLevel) {
+			this.setStats(this.getStats().concat(classModel.getRandomLevelUpStats()));
+		}
+		this.setExperience(newExperience);
 	}
 
 	public void applyUpdate(UpdatePacket packet, PlayState state) {

@@ -17,7 +17,6 @@ import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
-import com.jrealm.net.PacketType;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
 
@@ -104,9 +103,6 @@ public class SocketClient implements Runnable {
 					this.currentBytesRecieved += packetLength;
 					this.remoteBufferIndex -= packetLength;
 					BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
-					if (packetId == PacketType.TEXT_EFFECT.getPacketId()) {
-						SocketClient.log.info("");
-					}
 					newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
 					this.inboundPacketQueue.add(newPacket);
 				}
