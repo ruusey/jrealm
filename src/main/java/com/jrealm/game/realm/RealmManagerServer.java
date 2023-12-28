@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Random;
 import java.util.UUID;
@@ -716,10 +717,12 @@ public class RealmManagerServer implements Runnable {
 
 			if (p.getDeath()) {
 				try {
+					final String remoteAddrDeath = this.getRemoteAddressMapRevered().get(player.getId());
 					final LootContainer graveLoot = new LootContainer(LootTier.BROWN, p.getPos().clone(),
 							p.getSlots(4, 12));
 					targetRealm.addLootContainer(graveLoot);
 					targetRealm.getExpiredPlayers().add(player.getId());
+					this.getServer().getClients().remove(remoteAddrDeath);
 					targetRealm.removePlayer(player);
 				} catch (Exception e) {
 					RealmManagerServer.log.error("Failed to Remove dead Player {}. Reason: {}", e);
@@ -858,6 +861,14 @@ public class RealmManagerServer implements Runnable {
 		this.playerUpdateState.remove(playerId);
 		this.playerUnloadState.remove(playerId);
 		this.playerLoadMapState.remove(playerId);
+	}
+
+	public Map<Long, String> getRemoteAddressMapRevered() {
+		final Map<Long, String> result = new HashMap<>();
+		for (final Entry<String, Long> entry : this.remoteAddresses.entrySet()) {
+			result.put(entry.getValue(), entry.getKey());
+		}
+		return result;
 	}
 
 	// Adds a realm to the map of realms after trying to decorate
