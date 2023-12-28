@@ -223,14 +223,16 @@ public class TileManager {
 	public boolean collidesXLimit(Entity e, float ax) {
 		Vector2f futurePos = e.getPos().clone(ax, 0);
 		return (futurePos.x <= 0)
-				|| (futurePos.x >= (this.getBaseLayer().getWidth() * this.getBaseLayer().getTileSize()));
+				|| ((futurePos.x + e.getSize()) >= (this.getBaseLayer().getWidth()
+						* this.getBaseLayer().getTileSize()));
 
 	}
 
 	public boolean collidesYLimit(Entity e, float dy) {
 		Vector2f futurePos = e.getPos().clone(0, dy);
 		return (futurePos.y <= 0)
-				|| (futurePos.y >= (this.getBaseLayer().getHeight() * this.getBaseLayer().getTileSize()));
+				|| ((futurePos.y + e.getSize()) >= (this.getBaseLayer().getHeight()
+						* this.getBaseLayer().getTileSize()));
 
 	}
 
