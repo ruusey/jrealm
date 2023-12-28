@@ -43,6 +43,8 @@ import com.jrealm.game.state.PlayState;
 import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.Tile;
 import com.jrealm.game.tile.TileMap;
+import com.jrealm.game.tile.decorators.Beach0Decorator;
+import com.jrealm.game.tile.decorators.RealmDecorator;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
@@ -85,9 +87,11 @@ public class RealmManagerServer implements Runnable {
 	private UnloadPacket lastUnload;
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
+	private List<RealmDecorator> realmDecorators = new ArrayList<>();
 	private Semaphore realmLock = new Semaphore(1);
 
 	public RealmManagerServer() {
+		this.registerRealmDecorators();
 		this.registerPacketCallbacks();
 		this.server = new SocketServer(2222);
 		this.shotDestQueue = new ArrayList<>();
@@ -387,6 +391,27 @@ public class RealmManagerServer implements Runnable {
 		}
 		return UnloadPacket.from(expiredPlayers, lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies,
 				new Long[0]);
+	}
+
+	public void tryDecorate(final Realm realm) {
+		final RealmDecorator decorator = this.getRealmDecorator(realm.getMapId());
+		if (decorator != null) {
+			decorator.decorate(realm);
+		}
+	}
+
+	private RealmDecorator getRealmDecorator(int mapId) {
+		RealmDecorator result = null;
+		for (final RealmDecorator decorator : this.realmDecorators) {
+			if (decorator.getTargetMapId() == mapId) {
+				result = decorator;
+			}
+		}
+		return result;
+	}
+
+	private void registerRealmDecorators() {
+		this.realmDecorators.add(new Beach0Decorator());
 	}
 
 	private void registerPacketCallbacks() {
@@ -801,6 +826,13 @@ public class RealmManagerServer implements Runnable {
 		this.playerUpdateState.remove(playerId);
 		this.playerUnloadState.remove(playerId);
 		this.playerLoadMapState.remove(playerId);
+	}
+
+	// Adds a realm to the map of realms after trying to decorate
+	// the realm terrain using any decorators
+	public void addRealm(final Realm realm) {
+		this.tryDecorate(realm);
+		this.realms.put(realm.getRealmId(), realm);
 	}
 
 	public Realm searchRealmsForPlayers(long playerId) {

@@ -24,6 +24,7 @@ public class GameLauncher {
 		if(GameLauncher.LOCAL_SERVER) {
 			Realm realm = new Realm(true, 2);
 			RealmManagerServer server = new RealmManagerServer();
+			server.tryDecorate(realm);
 			server.getRealms().put(realm.getRealmId(), realm);
 			realm.spawnRandomEnemies(realm.getMapId());
 			// server.spawnTestPlayers(realm.getRealmId(), 2);

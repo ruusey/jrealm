@@ -1,0 +1,48 @@
+package com.jrealm.game.tile.decorators;
+
+import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.TileModel;
+import com.jrealm.game.realm.Realm;
+import com.jrealm.game.tile.TileMap;
+
+public class Beach0Decorator implements RealmDecorator {
+	private static final Integer MIN_WATER_POOL_COUNT = 10;
+	private static final Integer MAX_WATER_POOL_COUNT = 20;
+	private static final TileModel WATER_TILE = GameDataManager.TILES.get(40);
+
+	public Beach0Decorator() {
+		// TODO Auto-generated constructor stub
+	}
+
+	@Override
+	public void decorate(final Realm input) {
+		for (int i = 0; i < (Beach0Decorator.MIN_WATER_POOL_COUNT + Realm.RANDOM
+				.nextInt(Beach0Decorator.MAX_WATER_POOL_COUNT - Beach0Decorator.MIN_WATER_POOL_COUNT)); i++) {
+			final Vector2f pos = input.getTileManager().randomPos();
+			final TileMap baseLayer = input.getTileManager().getBaseLayer();
+			final int centerX = (int) (pos.x / baseLayer.getTileSize());
+			final int centerY = (int) (pos.y / baseLayer.getTileSize());
+
+			baseLayer.setBlockAt(centerX, centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
+					Beach0Decorator.WATER_TILE.getData());
+			baseLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
+					(short) Beach0Decorator.WATER_TILE.getTileId(),
+					Beach0Decorator.WATER_TILE.getData());
+			baseLayer.setBlockAt(centerX,
+					(centerY + 1) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerY + 1,
+							(short) Beach0Decorator.WATER_TILE.getTileId(),
+							Beach0Decorator.WATER_TILE.getData());
+			baseLayer.setBlockAt((centerX - 1) > -1 ? centerX - 1  : 0, centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
+					Beach0Decorator.WATER_TILE.getData());
+			baseLayer.setBlockAt((centerX + 1) >= baseLayer.getWidth() ? baseLayer.getWidth()-1 : centerX + 1 , centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
+					Beach0Decorator.WATER_TILE.getData());
+
+		}
+	}
+
+	@Override
+	public Integer getTargetMapId() {
+		return 2;
+	}
+}

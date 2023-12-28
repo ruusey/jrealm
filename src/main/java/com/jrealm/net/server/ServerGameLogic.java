@@ -46,30 +46,28 @@ public class ServerGameLogic {
 		final UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
 		final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
 		final Realm targetRealm = mgr.getRealms().get(usePortalPacket.getPortalId());
-
 		final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
-		mgr.clearPlayerState(user.getId());
 		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
+
+		mgr.clearPlayerState(user.getId());
 
 		// Send the player to the vault
 		if ((targetRealm == null) && (usePortalPacket.getPortalId() == -1l)) {
 			// Generate the vault dynamically
-			MapModel mapModel = GameDataManager.MAPS.get(1);
-			user.setPos(mapModel.getCenter());
+			final MapModel mapModel = GameDataManager.MAPS.get(1);
 			final Realm generatedRealm = new Realm(true, 1);
-			generatedRealm.setupChests();
-
-			Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
-
+			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 1,
 					chestLoc);
 
+			generatedRealm.setupChests();
+			user.setPos(mapModel.getCenter());
 			exitPortal.setId(currentRealm.getRealmId());
 			generatedRealm.addPortal(exitPortal);
 			generatedRealm.addPlayer(user);
-			mgr.getRealms().put(generatedRealm.getRealmId(), generatedRealm);
-
+			mgr.addRealm(generatedRealm);
 		}
+
 		// Generate target, remove player from current, add to target.
 		else if (targetRealm == null) {
 			final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
@@ -80,7 +78,7 @@ public class ServerGameLogic {
 			exitPortal.setId(currentRealm.getRealmId());
 			generatedRealm.addPortal(exitPortal);
 			generatedRealm.addPlayer(user);
-			mgr.getRealms().put(generatedRealm.getRealmId(), generatedRealm);
+			mgr.addRealm(generatedRealm);
 			// mgr.spawnTestPlayers(generatedRealm.getRealmId(), 2);
 		}
 		// Remove player from current, add to target ( realm already exists)
