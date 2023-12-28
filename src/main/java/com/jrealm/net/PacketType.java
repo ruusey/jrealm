@@ -7,6 +7,7 @@ import com.jrealm.game.util.Tuple;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
@@ -33,7 +34,8 @@ public enum PacketType {
 	USE_ABILITY    ((byte) 11, true, UseAbilityPacket.class),
 	MOVE_ITEM      ((byte) 12, true, MoveItemPacket.class),
 	USE_PORTAL     ((byte) 13, true, UsePortalPacket.class),
-	TEXT_EFFECT    ((byte) 14, true, TextEffectPacket.class);
+	TEXT_EFFECT    ((byte) 14, true, TextEffectPacket.class),
+	PLAYER_DEATH   ((byte) 15, true, PlayerDeathPacket.class);
 
 	private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
 

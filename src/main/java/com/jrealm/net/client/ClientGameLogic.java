@@ -15,6 +15,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginResponseMessage;
 import com.jrealm.game.realm.RealmManagerClient;
+import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.DamageText;
 import com.jrealm.game.ui.TextEffect;
 import com.jrealm.game.util.Camera;
@@ -24,6 +25,7 @@ import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.ObjectMovement;
+import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
@@ -34,6 +36,16 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientGameLogic {
+	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
+		final PlayerDeathPacket playerDeath = (PlayerDeathPacket) packet;
+		try {
+			cli.getState().gsm.add(GameStateManager.GAMEOVER);
+			cli.getState().gsm.pop(GameStateManager.PLAY);
+		} catch (Exception e) {
+			ClientGameLogic.log.error("Failed to handle LoadMap Packet. Reason: {}", e);
+		}
+	}
+
 	public static void handleTextEffectClient(RealmManagerClient cli, Packet packet) {
 		final TextEffectPacket textEffect = (TextEffectPacket) packet;
 		try {

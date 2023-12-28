@@ -191,10 +191,6 @@ public class PlayState extends GameState {
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
 			if (!this.gsm.isStateActive(GameStateManager.EDIT)) {
 
-				if (player.getDeath()) {
-					this.gsm.add(GameStateManager.GAMEOVER);
-					this.gsm.pop(GameStateManager.PLAY);
-				}
 				Runnable monitorDamageText = () -> {
 					List<DamageText> toRemove = new ArrayList<>();
 					for (DamageText text : this.getDamageText()) {

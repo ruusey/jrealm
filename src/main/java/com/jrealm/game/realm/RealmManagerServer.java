@@ -55,6 +55,7 @@ import com.jrealm.net.PacketType;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
@@ -720,10 +721,11 @@ public class RealmManagerServer implements Runnable {
 					final String remoteAddrDeath = this.getRemoteAddressMapRevered().get(player.getId());
 					final LootContainer graveLoot = new LootContainer(LootTier.BROWN, p.getPos().clone(),
 							p.getSlots(4, 12));
+					// this.getServer().getClients().remove(remoteAddrDeath);
 					targetRealm.addLootContainer(graveLoot);
 					targetRealm.getExpiredPlayers().add(player.getId());
-					this.getServer().getClients().remove(remoteAddrDeath);
 					targetRealm.removePlayer(player);
+					this.enqueueServerPacket(player, PlayerDeathPacket.from());
 				} catch (Exception e) {
 					RealmManagerServer.log.error("Failed to Remove dead Player {}. Reason: {}", e);
 				}
