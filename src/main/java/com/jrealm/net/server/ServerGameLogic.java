@@ -106,21 +106,22 @@ public class ServerGameLogic {
 		Player toMove = mgr.searchRealmsForPlayers(playerMovePacket.getEntityId())
 				.getPlayer(playerMovePacket.getEntityId());
 		boolean doMove = playerMovePacket.isMove();
+		final float spd = (float) ((5.6 * (toMove.getComputedStats().getSpd() + 53.5)) / 75.0f);
 		if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
 			toMove.setUp(doMove);
-			toMove.setDy(doMove ? -toMove.getMaxSpeed() : 0.0f);
+			toMove.setDy(doMove ? -spd : 0.0f);
 		}
 		if (playerMovePacket.getDirection().equals(Cardinality.SOUTH)) {
 			toMove.setDown(doMove);
-			toMove.setDy(doMove ? toMove.getMaxSpeed() : 0.0f);
+			toMove.setDy(doMove ? spd : 0.0f);
 		}
 		if (playerMovePacket.getDirection().equals(Cardinality.EAST)) {
 			toMove.setRight(doMove);
-			toMove.setDx(doMove ? toMove.getMaxSpeed() : 0.0f);
+			toMove.setDx(doMove ? spd : 0.0f);
 		}
 		if (playerMovePacket.getDirection().equals(Cardinality.WEST)) {
 			toMove.setLeft(doMove);
-			toMove.setDx(doMove ? -toMove.getMaxSpeed() : 0.0f);
+			toMove.setDx(doMove ? -spd : 0.0f);
 		}
 
 		//		if (toMove.getIsRight() && toMove.getIsUp()) {

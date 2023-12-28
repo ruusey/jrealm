@@ -55,11 +55,7 @@ public abstract class Entity extends GameObject {
 	protected boolean canAttack = true;
 	protected boolean attacking = false;
 
-	protected int maxHealth = 100;
-	protected int defaultMaxHealth = 100;
 	protected int health = 100;
-	protected int maxMana = 100;
-	protected int defaultMaxMana = 100;
 	protected int mana = 100;
 	protected float healthpercent = 1;
 	protected float manapercent = 1;
@@ -151,38 +147,8 @@ public abstract class Entity extends GameObject {
 		this.fallen = b;
 	}
 
-	public void setHealth(int i, float f, boolean dir) {
-		if (!this.isInvincible) {
-			this.health = i;
-			this.invincibletime = System.nanoTime();
-			if (this.health <= 0) {
-				this.die = true;
-			}
-
-			this.addForce(f, dir);
-			this.healthpercent = (float) this.health / (float) this.maxHealth;
-		}
-	}
-
-	public void addHealth(int health) {
-		if (this.health < this.maxHealth) {
-			int diff = this.maxHealth - this.health;
-			int diff2 = (this.getHealth() + health) - this.maxHealth;
-			if (diff > health) {
-				this.setHealth(this.getHealth() + health);
-			} else {
-				this.setHealth(this.getHealth() + (health - diff2));
-			}
-		}
-	}
-
-	public void setMana(int i) {
-		this.mana = i;
-		this.manapercent = (float) this.mana / (float) this.maxMana;
-	}
-
 	public boolean getDeath() {
-		return this.die;
+		return this.health <= 0;
 	}
 
 	public int getHealth() {
@@ -346,7 +312,7 @@ public abstract class Entity extends GameObject {
 			this.right=false;
 			this.left=false;
 		}
-		
+
 		if(this.dy>0) {
 			this.down=true;
 		}else if(this.dy<0) {
@@ -399,7 +365,7 @@ public abstract class Entity extends GameObject {
 	public boolean isLeft() {
 		return this.left;
 	}
-	
-	
+
+
 
 }

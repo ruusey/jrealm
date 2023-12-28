@@ -36,11 +36,11 @@ public class Player extends Entity implements Streamable<Player>{
 	private Camera cam;
 	private Cardinality cardinality = Cardinality.EAST;
 	private GameItem[] inventory;
-	private Stats stats;
 	private long lastStatsTime = 0l;
 	private LootContainer currentLootContainer;
 	private int classId;
 	private long experience;
+	private Stats stats;
 
 	private boolean headless = false;
 	public Player(long id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, CharacterClass characterClass) {
@@ -68,8 +68,8 @@ public class Player extends Entity implements Streamable<Player>{
 
 		this.hasIdle = false;
 		CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(this.classId);
-		this.health = this.maxHealth = this.defaultMaxHealth = classModel.getBaseStats().getHp();
-		this.mana = this.maxMana = this.defaultMaxMana = classModel.getBaseStats().getMp();
+		this.health = classModel.getBaseStats().getHp();
+		this.mana = classModel.getBaseStats().getMp();
 
 		this.stats = classModel.getBaseStats();
 	}
@@ -89,9 +89,8 @@ public class Player extends Entity implements Streamable<Player>{
 		this.hasIdle = false;
 
 		CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(this.classId);
-		this.health = this.maxHealth = this.defaultMaxHealth = classModel.getBaseStats().getHp();
-		this.mana = this.maxMana = this.defaultMaxMana = classModel.getBaseStats().getMp();
-
+		this.health = classModel.getBaseStats().getHp();
+		this.mana = classModel.getBaseStats().getMp();
 		this.stats = classModel.getBaseStats();
 	}
 
@@ -165,47 +164,40 @@ public class Player extends Entity implements Streamable<Player>{
 		Stats stats = this.getComputedStats();
 
 		this.cam.update();
-		if ((stats.getHp() > 0) && (this.getMaxHealth() == this.getDefaultMaxHealth())) {
-			this.setMaxHealth(this.getMaxHealth() + stats.getHp());
-		} else if (stats.getHp() == 0) {
-			this.setMaxHealth(this.getDefaultMaxHealth());
-			if (this.getHealth() > this.getMaxHealth()) {
-				this.setHealth(this.getMaxHealth(), 0, false);
-			}
-		}
-
-		if ((stats.getMp() > 0) && (this.getMaxMana() == this.getDefaultMaxMana())) {
-			this.setMaxMana(this.getMaxMana() + stats.getMp());
-		} else if (stats.getHp() == 0) {
-			this.setMaxMana(this.getDefaultMaxMana());
-			if (this.getMana() > this.getMaxMana()) {
-				this.setMana(this.getMaxMana());
-			}
-		}
-
-
 		if (((System.currentTimeMillis() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
-
+			float mult = 1.0f;
 			if (this.hasEffect(EffectType.HEALING)) {
-				stats.setVit((short) (stats.getVit() * 2));
+				mult = 1.5f;
 			}
-			if (this.getHealth() < this.getMaxHealth()) {
-				int targetHealth = this.getHealth() + stats.getVit();
-				if (targetHealth > this.getMaxHealth()) {
-					targetHealth = this.getMaxHealth();
+			final int vit = (int) ((0.24 * (stats.getVit() + 4.2)) * mult);
+			if (this.getHealth() < stats.getHp()) {
+				int targetHealth = this.getHealth() + vit;
+				if (targetHealth > stats.getHp()) {
+					targetHealth = stats.getHp();
 				}
-				this.setHealth(targetHealth, 0f, false);
+				this.setHealth(targetHealth);
 			}
-
-			if (this.getMana() < this.getMaxMana()) {
-				int targetMana = this.getMana() + stats.getWis();
-				if (targetMana > this.getMaxMana()) {
-					targetMana = this.getMaxMana();
+			final int wis = (int) ((0.12 * (stats.getWis() + 4.2)));
+			if (this.getMana() < stats.getMp()) {
+				int targetMana = this.getMana() + wis;
+				if (targetMana > stats.getMp()) {
+					targetMana = stats.getMp();
 				}
 				this.setMana(targetMana);
 			}
 		}
+	}
+
+	public Stats getBonusStats() {
+		Stats stats = new Stats();
+		final GameItem[] equipment = this.getSlots(0, 4);
+		for (GameItem item : equipment) {
+			if (item != null) {
+				stats = stats.concat(item.getStats());
+			}
+		}
+		return stats;
 	}
 
 	public Stats getComputedStats() {
@@ -220,13 +212,21 @@ public class Player extends Entity implements Streamable<Player>{
 	}
 
 	public void drinkHp() {
-		this.defaultMaxHealth += 5;
-		this.maxHealth += 5;
+		this.stats.setHp((short) (this.stats.getHp() + 5));
 	}
 
 	public void drinkMp() {
-		this.defaultMaxMana += 5;
-		this.maxMana += 5;
+		this.stats.setMp((short) (this.stats.getMp() + 5));
+	}
+
+	@Override
+	public int getHealth() {
+		return this.health;
+	}
+
+	@Override
+	public int getMana() {
+		return this.mana;
 	}
 
 	@Override
@@ -356,10 +356,6 @@ public class Player extends Entity implements Streamable<Player>{
 		return this.manapercent;
 	}
 
-	public Stats getStats() {
-		return this.stats;
-	}
-
 	public void incrementExperience(long experience) {
 		long newExperience = this.getExperience() + experience;
 		int currentLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(this.experience);
@@ -381,9 +377,7 @@ public class Player extends Entity implements Streamable<Player>{
 			}
 		}
 		this.health = packet.getHealth();
-		this.maxHealth = packet.getMaxHealth();
 		this.mana = packet.getMana();
-		this.maxMana = packet.getMaxMana();
 		this.setEffectIds(packet.getEffectIds());
 		this.setEffectTimes(packet.getEffectTimes());
 		if(packet.getPlayerId()==state.getPlayerId()) {

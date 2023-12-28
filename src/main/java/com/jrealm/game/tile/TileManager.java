@@ -135,14 +135,14 @@ public class TileManager {
 
 	}
 
-	public Tile[] getNormalTile(Vector2f pos) {
+	public Tile[] getBaseTiles(Vector2f pos) {
 		Tile[] block = new Tile[144];
 		Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE, pos.y / GlobalConstants.BASE_TILE_SIZE);
 		this.normalizeToBounds(posNormalized);
 		int i = 0;
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-				if ((this.getBaseLayer().getWidth() == x) || (this.getBaseLayer().getHeight() == y) || (x < 0)
+				if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
 						|| (y < 0)) {
 					continue;
 				}
@@ -157,14 +157,14 @@ public class TileManager {
 		return block;
 	}
 
-	public Tile[] getCollisionTile(Vector2f pos) {
+	public Tile[] getCollisionTiles(Vector2f pos) {
 		Tile[] block = new Tile[144];
 		Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE, pos.y / GlobalConstants.BASE_TILE_SIZE);
 		this.normalizeToBounds(posNormalized);
 		int i = 0;
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-				if ((this.getCollisionLayer().getWidth() == x) || (this.getCollisionLayer().getHeight() == y) || (x < 0)
+				if ((x >= this.getCollisionLayer().getWidth()) || (y >= this.getCollisionLayer().getHeight()) || (x < 0)
 						|| (y < 0)) {
 					continue;
 				}
@@ -236,10 +236,24 @@ public class TileManager {
 
 	}
 
+	public boolean collidesSlowTile(Entity e) {
+		final int startX = (int) (e.getPos().x
+				/ (float) this.getBaseLayer().getTileSize());
+		final int startY = (int) (e.getPos().y / (float) this.getBaseLayer().getTileSize());
+
+		final Tile currentTile = this.getBaseLayer().getBlocks()[startY][startX];
+
+		final AABB tileBounds = new AABB(currentTile.getPos(), currentTile.getWidth(), currentTile.getHeight());
+		final AABB futurePosBounds = new AABB(e.getPos(), (e.getSize()), e.getSize());
+
+		return currentTile.getData().slows() && tileBounds.intersect(futurePosBounds);
+
+	}
+
 	public boolean collisionTile(Entity e, float ax, float ay) {
 		Vector2f futurePos = e.getPos().clone(ax, ay);
 
-		for(Tile t : this.getCollisionTile(e.getPos())) {
+		for (Tile t : this.getCollisionTiles(e.getPos())) {
 			if((t==null) || t.isVoid()) {
 				continue;
 			}
@@ -282,7 +296,7 @@ public class TileManager {
 		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
 			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
 				// Temp fix. Aint nobody got time for array math.
-				if ((this.getBaseLayer().getWidth() == x) || (this.getBaseLayer().getHeight() == y) || (x < 0)
+				if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
 						|| (y < 0)) {
 					continue;
 				}
@@ -316,14 +330,14 @@ public class TileManager {
 
 	public void render(Player player, Graphics2D g) {
 
-		for(Tile tile : this.getNormalTile(player.getPos())) {
+		for (Tile tile : this.getBaseTiles(player.getPos())) {
 			if(tile==null) {
 				continue;
 			}
 			tile.render(g);
 		}
 
-		for(Tile tile : this.getCollisionTile(player.getPos())){
+		for (Tile tile : this.getCollisionTiles(player.getPos())) {
 			if(tile==null) {
 				continue;
 			}

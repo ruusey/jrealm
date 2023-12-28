@@ -13,6 +13,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,7 +24,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class LootContainer implements Streamable<LootContainer> {
-	
+
 	private long lootContainerId;
 	private LootTier tier;
 	private Sprite sprite;
@@ -47,6 +48,9 @@ public class LootContainer implements Streamable<LootContainer> {
 			this.items[i] = GameDataManager.GAME_ITEMS.get(r.nextInt(152) + 1);
 		}
 		this.spawnedTime = System.currentTimeMillis();
+		if (this.hasUntieredItem()) {
+			this.tier = LootTier.WHITE;
+		}
 	}
 
 	public boolean getContentsChanged() {
@@ -61,8 +65,11 @@ public class LootContainer implements Streamable<LootContainer> {
 		this.items = new GameItem[8];
 		this.items[0] = loot;
 		this.spawnedTime = System.currentTimeMillis();
+		if (this.hasUntieredItem()) {
+			this.tier = LootTier.WHITE;
+		}
 	}
-	
+
 	public LootContainer(LootTier tier, Vector2f pos, GameItem[] loot) {
 		this.tier = tier;
 		this.sprite = LootTier.getLootSprite(tier.tierId);
@@ -70,6 +77,9 @@ public class LootContainer implements Streamable<LootContainer> {
 		this.uid = UUID.randomUUID().toString();
 		this.items = loot;
 		this.spawnedTime = System.currentTimeMillis();
+		if (this.hasUntieredItem()) {
+			this.tier = LootTier.WHITE;
+		}
 	}
 
 	public boolean isExpired() {
@@ -83,12 +93,20 @@ public class LootContainer implements Streamable<LootContainer> {
 		}
 		return true;
 	}
-	
+
+	public boolean hasUntieredItem() {
+		for (GameItem item : this.items) {
+			if ((item != null) && (item.getTier() == (byte) -1))
+				return true;
+		}
+		return false;
+	}
+
 	public void setItems(GameItem[] items) {
 		this.items = items;
 		this.contentsChanged = true;
 	}
-	
+
 	public void setItemsUncondensed(GameItem[] items) {
 		this.items = new GameItem[8];
 		for(int i = 0 ; i<items.length; i++) {
@@ -124,7 +142,7 @@ public class LootContainer implements Streamable<LootContainer> {
 		stream.writeUTF(this.getUid());
 		stream.writeBoolean(this instanceof Chest);
 		stream.writeByte(this.getTier().tierId);
-		GameItem[] toWrite = getCondensedItems(this);
+		GameItem[] toWrite = LootContainer.getCondensedItems(this);
 		stream.writeInt(toWrite.length);
 		for (int i = 0; i < toWrite.length; i++) {
 			toWrite[i].write(stream);
@@ -160,10 +178,9 @@ public class LootContainer implements Streamable<LootContainer> {
 			Chest chest = new Chest(container);
 			chest.setPos(new Vector2f(posX, posY));
 			return chest;
-		}else {
-			return container;
 		}
-		
+		return container;
+
 	}
 
 	public static GameItem[] getCondensedItems(LootContainer container) {
@@ -175,11 +192,11 @@ public class LootContainer implements Streamable<LootContainer> {
 		}
 		return items.toArray(new GameItem[0]);
 	}
-	
+
 	public boolean equals(LootContainer other) {
-		GameItem[] thisLoot = getCondensedItems(this);
-		GameItem[] otherLoot = getCondensedItems(other);
-		boolean basic = this.lootContainerId == other.getLootContainerId()  && this.pos.equals(other.getPos());
+		GameItem[] thisLoot = LootContainer.getCondensedItems(this);
+		GameItem[] otherLoot = LootContainer.getCondensedItems(other);
+		boolean basic = (this.lootContainerId == other.getLootContainerId())  && this.pos.equals(other.getPos());
 		boolean loot = thisLoot.length == otherLoot.length;
 		boolean tier = this.getTier().equals(other.getTier());
 		if(loot) {

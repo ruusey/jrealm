@@ -9,7 +9,8 @@ import com.jrealm.game.tile.TileMap;
 public class Beach0Decorator implements RealmDecorator {
 	private static final Integer MIN_WATER_POOL_COUNT = 15;
 	private static final Integer MAX_WATER_POOL_COUNT = 25;
-	private static final TileModel WATER_TILE = GameDataManager.TILES.get(40);
+	private static final TileModel WATER_TILE = GameDataManager.TILES.get(41);
+	private static final TileModel WATER_TILE_DEEP = GameDataManager.TILES.get(42);
 
 	public Beach0Decorator() {
 		// TODO Auto-generated constructor stub
@@ -24,8 +25,8 @@ public class Beach0Decorator implements RealmDecorator {
 			final int centerX = (int) (pos.x / baseLayer.getTileSize());
 			final int centerY = (int) (pos.y / baseLayer.getTileSize());
 
-			baseLayer.setBlockAt(centerX, centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
-					Beach0Decorator.WATER_TILE.getData());
+			baseLayer.setBlockAt(centerX, centerY, (short) Beach0Decorator.WATER_TILE_DEEP.getTileId(),
+					Beach0Decorator.WATER_TILE_DEEP.getData());
 			baseLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
 					(short) Beach0Decorator.WATER_TILE.getTileId(),
 					Beach0Decorator.WATER_TILE.getData());

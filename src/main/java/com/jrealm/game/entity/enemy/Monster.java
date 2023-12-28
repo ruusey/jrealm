@@ -37,7 +37,6 @@ public class Monster extends Enemy {
 		this.LEFT = 1;
 		this.RIGHT = 1;
 		this.health = r.nextInt(1000) + model.getHealth();
-		this.maxHealth = this.health;
 		this.hasIdle = true;
 		this.useRight = true;
 
@@ -68,7 +67,6 @@ public class Monster extends Enemy {
 		this.LEFT = 1;
 		this.RIGHT = 1;
 		this.health = r.nextInt(1000) + 1000;
-		this.maxHealth = this.health;
 		this.hasIdle = true;
 		this.useRight = true;
 

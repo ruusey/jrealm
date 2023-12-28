@@ -23,9 +23,7 @@ public class UpdatePacket extends Packet {
 	private String playerName;
 	private Stats stats;
 	private int health;
-	private int maxHealth;
 	private int mana;
-	private int maxMana;
 	private GameItem[] inventory;
 	private short[] effectIds;
 	private long[] effectTimes;
@@ -52,9 +50,7 @@ public class UpdatePacket extends Packet {
 
 		stream.writeLong(this.playerId);
 		stream.writeInt(this.health);
-		stream.writeInt(this.maxHealth);
 		stream.writeInt(this.mana);
-		stream.writeInt(this.maxMana);
 		stream.writeUTF(this.playerName);
 
 		if (this.stats != null) {
@@ -96,9 +92,7 @@ public class UpdatePacket extends Packet {
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
 		this.playerId = dis.readLong();
 		this.health = dis.readInt();
-		this.maxHealth = dis.readInt();
 		this.mana = dis.readInt();
-		this.maxMana = dis.readInt();
 		this.playerName = dis.readUTF();
 
 		this.stats = new Stats().read(dis);
@@ -134,9 +128,7 @@ public class UpdatePacket extends Packet {
 		DataOutputStream stream = new DataOutputStream(byteStream);
 		stream.writeLong(player.getId());
 		stream.writeInt(player.getHealth());
-		stream.writeInt(player.getMaxHealth());
 		stream.writeInt(player.getMana());
-		stream.writeInt(player.getMaxMana());
 		stream.writeUTF(player.getName());
 
 		if (player.getStats() != null) {
@@ -175,8 +167,7 @@ public class UpdatePacket extends Packet {
 
 	public boolean equals(UpdatePacket other) {
 		boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
-				&& (this.health == other.getHealth()) && (this.maxHealth == other.getMaxHealth())
-				&& (this.mana == other.getMana()) && (this.maxMana == other.getMaxMana());
+				&& (this.health == other.getHealth()) && (this.mana == other.getMana());
 
 		boolean stats = this.stats.equals(other.getStats());
 

@@ -510,7 +510,12 @@ public class RealmManagerServer implements Runnable {
 		if (!targetRealm.getTileManager().collisionTile(p, p.getDx(), 0)
 				&& !targetRealm.getTileManager().collidesXLimit(p, p.getDx())) {
 			p.xCol = false;
-			p.getPos().x += p.getDx();
+			if (targetRealm.getTileManager().collidesSlowTile(p)) {
+				p.getPos().x += p.getDx() / 3.0f;
+
+			} else {
+				p.getPos().x += p.getDx();
+			}
 		} else {
 			p.xCol = true;
 		}
@@ -518,7 +523,13 @@ public class RealmManagerServer implements Runnable {
 		if (!targetRealm.getTileManager().collisionTile(p, 0, p.getDy())
 				&& !targetRealm.getTileManager().collidesYLimit(p, p.getDy())) {
 			p.yCol = false;
-			p.getPos().y += p.getDy();
+			if (targetRealm.getTileManager().collidesSlowTile(p)) {
+				p.getPos().y += p.getDy() / 3.0f;
+
+			} else {
+				p.getPos().y += p.getDy();
+
+			}
 		} else {
 			p.yCol = true;
 		}
@@ -590,7 +601,7 @@ public class RealmManagerServer implements Runnable {
 		} else if (abilityItem.getEffect() != null) {
 			player.addEffect(effect.getEffectId(), effect.getDuration());
 			if (abilityItem.getEffect().getEffectId().equals(EffectType.HEAL)) {
-				player.addHealth(50);
+				player.setHealth(player.getHealth() + 50);
 			}
 		}
 	}
@@ -658,7 +669,7 @@ public class RealmManagerServer implements Runnable {
 		Tile[] viewportTiles = null;
 		if (currentMap == null)
 			return;
-		viewportTiles = targetRealm.getTileManager().getCollisionTile(p.getPos());
+		viewportTiles = targetRealm.getTileManager().getCollisionTiles(p.getPos());
 		for (final Bullet b : this.getBullets(realmId, p)) {
 			if (b.remove()) {
 				toRemove.add(b);
@@ -699,9 +710,22 @@ public class RealmManagerServer implements Runnable {
 				RealmManagerServer.log.error("Failed to send Damage TextEffect Packet to Player {}. Reason: {}",
 						p.getId(), e);
 			}
-			player.setHealth(player.getHealth() - dmgToInflict, 0, false);
+			player.setHealth(player.getHealth() - dmgToInflict);
 			targetRealm.getExpiredBullets().add(b.getId());
 			targetRealm.removeBullet(b);
+
+			if (p.getDeath()) {
+				try {
+					final LootContainer graveLoot = new LootContainer(LootTier.BROWN, p.getPos().clone(),
+							p.getSlots(4, 12));
+					targetRealm.addLootContainer(graveLoot);
+					targetRealm.getExpiredPlayers().add(player.getId());
+					targetRealm.removePlayer(player);
+				} catch (Exception e) {
+					RealmManagerServer.log.error("Failed to Remove dead Player {}. Reason: {}", e);
+				}
+
+			}
 		}
 	}
 
@@ -713,7 +737,7 @@ public class RealmManagerServer implements Runnable {
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			targetRealm.hitEnemy(b.getId(), e.getId());
 
-			e.setHealth(e.getHealth() - b.getDamage(), 0, false);
+			e.setHealth(e.getHealth() - b.getDamage());
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {
