@@ -440,6 +440,84 @@
 			"slows": 0,
 			"damaging": 0
 		}
+	},
+	{
+		"tileId": 34,
+		"name": "Tree_6",
+		"spriteKey": "entity/rotmg-misc.png",
+		"row": 0,
+		"col": 0,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 35,
+		"name": "Tree_7",
+		"spriteKey": "entity/rotmg-misc.png",
+		"row": 0,
+		"col": 1,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 36,
+		"name": "Tree_8",
+		"spriteKey": "entity/rotmg-misc.png",
+		"row": 1,
+		"col": 0,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 37,
+		"name": "Tree_9",
+		"spriteKey": "entity/rotmg-misc.png",
+		"row": 1,
+		"col": 1,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 38,
+		"name": "Tree_10",
+		"spriteKey": "entity/rotmg-misc.png",
+		"row": 1,
+		"col": 3,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 39,
+		"name": "Tree_11",
+		"spriteKey": "entity/rotmg-misc.png",
+		"row": 1,
+		"col": 6,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
 	}
 ]
 

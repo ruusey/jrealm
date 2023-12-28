@@ -242,8 +242,8 @@ public class TileManager {
 				continue;
 			}
 			AABB tileBounds = new AABB(t.getPos(), t.getWidth(), t.getHeight());
-			AABB futurePosBounds = new AABB(futurePos, e.getSize(), e.getSize());
-			if(futurePosBounds.intersect(tileBounds))
+			AABB futurePosBounds = new AABB(futurePos, (int) (e.getSize() / 1.5), (int) (e.getSize() / 1.5));
+			if (tileBounds.intersect(futurePosBounds))
 				return true;
 		}
 
