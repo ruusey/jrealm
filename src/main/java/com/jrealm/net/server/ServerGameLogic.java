@@ -167,7 +167,7 @@ public class ServerGameLogic {
 		final Vector2f dest = new Vector2f(shootPacket.getDestX(), shootPacket.getDestY());
 		dest.addX(player.getCam().getPos().x);
 		dest.addY(player.getCam().getPos().y);
-		final Vector2f source = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+		final Vector2f source = player.getCenteredPosition();
 		final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
 		float angle = Bullet.getAngle(source, dest);
 		for (Projectile proj : group.getProjectiles()) {

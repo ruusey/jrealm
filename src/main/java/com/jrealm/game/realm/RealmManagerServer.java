@@ -682,6 +682,7 @@ public class RealmManagerServer implements Runnable {
 					continue;
 				}
 				if (b.getBounds().intersect(new AABB(tile.getPos(), tile.getWidth(), tile.getHeight()))) {
+					b.setRange(0);
 					toRemove.add(b);
 				}
 			}

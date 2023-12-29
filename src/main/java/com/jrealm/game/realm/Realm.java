@@ -46,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Slf4j
 public class Realm {
+	// Shared Secure Random instance for generating Ids and other random data
 	public static final transient SecureRandom RANDOM = new SecureRandom();
 	private int mapId;
 	private long realmId;

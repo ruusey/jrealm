@@ -206,7 +206,11 @@ public class PlayState extends GameState {
 					for (int i = 0; i < this.shotDestQueue.size(); i++) {
 						Vector2f dest = this.shotDestQueue.remove(i);
 
-						Vector2f source = this.getPlayerPos().clone(player.getSize() / 2, player.getSize() / 2);
+						Vector2f source = this.getPlayer().getCenteredPosition();
+						if (this.realmManager.getRealm().getTileManager().isCollisionTile(source)) {
+							PlayState.log.error("Failed to invoke player shoot. Projectile is out of bounds.");
+							continue;
+						}
 						ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
 						float angle = Bullet.getAngle(source, dest);
 						for (Projectile p : group.getProjectiles()) {
