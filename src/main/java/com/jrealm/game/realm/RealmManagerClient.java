@@ -31,7 +31,7 @@ public class RealmManagerClient implements Runnable {
 	private boolean shutdown = false;
 	private final Map<Byte, BiConsumer<RealmManagerClient, Packet>> packetCallbacksClient = new HashMap<>();
 	private long currentPlayerId;
-
+	private TimedWorkerThread workerThread;
 	public RealmManagerClient(PlayState state, Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
@@ -53,8 +53,8 @@ public class RealmManagerClient implements Runnable {
 			this.update(0);
 		};
 
-		TimedWorkerThread workerThread = new TimedWorkerThread(tick, 64);
-		WorkerThread.submitAndForkRun(workerThread);
+		this.workerThread = new TimedWorkerThread(tick, 64);
+		WorkerThread.submitAndForkRun(this.workerThread);
 
 		RealmManagerClient.log.info("[CLIENT] RealmManagerClient exiting run().");
 	}
