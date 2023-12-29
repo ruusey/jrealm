@@ -694,7 +694,6 @@ public class RealmManagerServer implements Runnable {
 
 	private void processPlayerHit(final long realmId, final Bullet b, final Player p) {
 		final Realm targetRealm = this.realms.get(realmId);
-
 		final Player player = targetRealm.getPlayer(p.getId());
 		if (player == null)
 			return;
@@ -746,6 +745,9 @@ public class RealmManagerServer implements Runnable {
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {
+				targetRealm.getExpiredBullets().add(b.getId());
+				targetRealm.removeBullet(b);
+			} else {
 				targetRealm.getExpiredBullets().add(b.getId());
 				targetRealm.removeBullet(b);
 			}

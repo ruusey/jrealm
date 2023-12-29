@@ -50,7 +50,9 @@ public class GameStateManager {
 
 		GameStateManager.cam = new Camera(new AABB(new Vector2f(-64, -64), GamePanel.width + 128, GamePanel.height + 128));
 
-		this.states[GameStateManager.PLAY] = new PlayState(this, GameStateManager.cam);
+		// this.states[GameStateManager.PLAY] = new PlayState(this,
+		// GameStateManager.cam);
+		this.add(GameStateManager.PLAY);
 	}
 
 	public boolean isStateActive(int state) {

@@ -39,6 +39,7 @@ public class ClientGameLogic {
 	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
 		final PlayerDeathPacket playerDeath = (PlayerDeathPacket) packet;
 		try {
+			cli.getState().getRealmManager().getClient().setShutdown(true);
 			cli.getState().gsm.add(GameStateManager.GAMEOVER);
 			cli.getState().gsm.pop(GameStateManager.PLAY);
 		} catch (Exception e) {

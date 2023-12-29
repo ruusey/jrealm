@@ -32,8 +32,8 @@ public class GameOverState extends GameState {
 		this.btnQuit.addHoverImage(this.btnQuit.createButton("QUIT", this.imgHover, this.font, this.btnQuit.getWidth(), this.btnQuit.getHeight(), 32, 20));
 
 		this.btnReset.onMouseDown(e -> {
-			gsm.add(GameStateManager.PLAY);
 			gsm.pop(GameStateManager.GAMEOVER);
+			gsm.add(GameStateManager.PLAY);
 		});
 
 		this.btnQuit.onMouseDown(e -> {

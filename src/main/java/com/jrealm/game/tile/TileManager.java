@@ -237,14 +237,14 @@ public class TileManager {
 	}
 
 	public boolean collidesSlowTile(Entity e) {
-		final int startX = (int) (e.getPos().x
-				/ (float) this.getBaseLayer().getTileSize());
-		final int startY = (int) (e.getPos().y / (float) this.getBaseLayer().getTileSize());
+		final Vector2f centerPos = e.getCenteredPosition();
+		final int startX = (int) (centerPos.x / (float) this.getBaseLayer().getTileSize());
+		final int startY = (int) (centerPos.y / (float) this.getBaseLayer().getTileSize());
 
 		final Tile currentTile = this.getBaseLayer().getBlocks()[startY][startX];
 
 		final AABB tileBounds = new AABB(currentTile.getPos(), currentTile.getWidth(), currentTile.getHeight());
-		final AABB futurePosBounds = new AABB(e.getPos(), (e.getSize()), e.getSize());
+		final AABB futurePosBounds = new AABB(e.getPos(), (e.getSize() / 2), e.getSize() / 2);
 
 		return currentTile.getData().slows() && tileBounds.intersect(futurePosBounds);
 
