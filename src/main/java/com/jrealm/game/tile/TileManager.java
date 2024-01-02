@@ -213,15 +213,14 @@ public class TileManager {
 
 	public boolean isCollisionTile(Vector2f pos) {
 		final TileMap collisionLayer = this.getCollisionLayer();
-
-		int tileX = (int) pos.x / collisionLayer.getTileSize();
-		int tileY = (int) pos.y / collisionLayer.getTileSize();
-
-		return !collisionLayer.getBlocks()[tileY][tileX].isVoid();
+		final int tileX = (int) pos.x / collisionLayer.getTileSize();
+		final int tileY = (int) pos.y / collisionLayer.getTileSize();
+		final Tile currentTile = collisionLayer.getBlocks()[tileY][tileX];
+		return (currentTile != null) && !currentTile.isVoid();
 	}
 
 	public boolean collidesXLimit(Entity e, float ax) {
-		Vector2f futurePos = e.getPos().clone(ax, 0);
+		final Vector2f futurePos = e.getPos().clone(ax, 0);
 		return (futurePos.x <= 0)
 				|| ((futurePos.x + e.getSize()) >= (this.getBaseLayer().getWidth()
 						* this.getBaseLayer().getTileSize()));
@@ -229,7 +228,7 @@ public class TileManager {
 	}
 
 	public boolean collidesYLimit(Entity e, float dy) {
-		Vector2f futurePos = e.getPos().clone(0, dy);
+		final Vector2f futurePos = e.getPos().clone(0, dy);
 		return (futurePos.y <= 0)
 				|| ((futurePos.y + e.getSize()) >= (this.getBaseLayer().getHeight()
 						* this.getBaseLayer().getTileSize()));
@@ -247,12 +246,10 @@ public class TileManager {
 		final AABB futurePosBounds = new AABB(e.getPos(), (e.getSize() / 2), e.getSize() / 2);
 
 		return currentTile.getData().slows() && tileBounds.intersect(futurePosBounds);
-
 	}
 
 	public boolean collisionTile(Entity e, float ax, float ay) {
-		Vector2f futurePos = e.getPos().clone(ax, ay);
-
+		final Vector2f futurePos = e.getPos().clone(ax, ay);
 		for (Tile t : this.getCollisionTiles(e.getPos())) {
 			if((t==null) || t.isVoid()) {
 				continue;
@@ -269,7 +266,6 @@ public class TileManager {
 	public Vector2f randomPos() {
 		final float x = Realm.RANDOM.nextInt(this.getBaseLayer().getWidth()) * this.getBaseLayer().getTileSize();
 		final float y = Realm.RANDOM.nextInt(this.getBaseLayer().getHeight()) * this.getBaseLayer().getTileSize();
-
 		return new Vector2f(x, y);
 	}
 
@@ -329,7 +325,6 @@ public class TileManager {
 	}
 
 	public void render(Player player, Graphics2D g) {
-
 		for (Tile tile : this.getBaseTiles(player.getPos())) {
 			if(tile==null) {
 				continue;
@@ -346,8 +341,5 @@ public class TileManager {
 				tile.render(g);
 			}
 		}
-		//		for (int i = 0; i < this.mapLayers.size(); i++) {
-		//			this.mapLayers.get(i).render(g, bounds);
-		//		}
 	}
 }
