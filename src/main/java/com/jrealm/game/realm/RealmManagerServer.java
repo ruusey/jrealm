@@ -228,7 +228,7 @@ public class RealmManagerServer implements Runnable {
 				try {
 					// Get UpdatePacket for this player and all players in this players viewport
 					// Contains, player stat info, inventory, status effects, health and mana data
-					final UpdatePacket uPacket = realm.getPlayerAsPacket(player.getValue().getId());
+					final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
 
 					// Get the background + collision tiles in this players viewport
 					// condensed into a single array
@@ -256,22 +256,22 @@ public class RealmManagerServer implements Runnable {
 					}
 					// Get LoadPacket for this player
 					// Contains newly spawned bullets, entities, players
-					final LoadPacket load = realm
+					final LoadPacket loadPacket = realm
 							.getLoadPacket(realm.getTileManager().getRenderViewPort(player.getValue()));
 
 					// Get the posX, posY, dX, dY of all Entities in this players viewport
-					final ObjectMovePacket mPacket = realm
+					final ObjectMovePacket movePacket = realm
 							.getGameObjectsAsPackets(realm.getTileManager().getRenderViewPort(player.getValue()));
 
 
 					if (this.playerUpdateState.get(player.getKey()) == null) {
-						this.playerUpdateState.put(player.getKey(), uPacket);
-						this.enqueueServerPacket(player.getValue(), uPacket);
+						this.playerUpdateState.put(player.getKey(), updatePacket);
+						this.enqueueServerPacket(player.getValue(), updatePacket);
 					} else {
-						final UpdatePacket old = this.playerUpdateState.get(player.getKey());
-						if (!old.equals(uPacket)) {
-							this.playerUpdateState.put(player.getKey(), uPacket);
-							this.enqueueServerPacket(player.getValue(), uPacket);
+						final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
+						if (!oldUpdate.equals(updatePacket)) {
+							this.playerUpdateState.put(player.getKey(), updatePacket);
+							this.enqueueServerPacket(player.getValue(), updatePacket);
 						}
 					}
 
@@ -279,19 +279,19 @@ public class RealmManagerServer implements Runnable {
 					// large).
 					// If the state is changed, only transmit the DELTA data
 					if (this.playerLoadState.get(player.getKey()) == null) {
-						this.playerLoadState.put(player.getKey(), load);
-						this.enqueueServerPacket(player.getValue(), load);
+						this.playerLoadState.put(player.getKey(), loadPacket);
+						this.enqueueServerPacket(player.getValue(), loadPacket);
 					} else {
-						final LoadPacket old = this.playerLoadState.get(player.getKey());
-						if (!old.equals(load)) {
+						final LoadPacket oldLoad = this.playerLoadState.get(player.getKey());
+						if (!oldLoad.equals(loadPacket)) {
 							// Get the LoadPacket delta
-							final LoadPacket toSend = old.combine(load);
-							this.playerLoadState.put(player.getKey(), load);
+							final LoadPacket toSend = oldLoad.combine(loadPacket);
+							this.playerLoadState.put(player.getKey(), loadPacket);
 							this.enqueueServerPacket(player.getValue(), toSend);
 
 							// Unload the delta objects that were in the old LoadPacket
 							// but are NOT in the new LoadPacket
-							final UnloadPacket unloadDelta = old.difference(load);
+							final UnloadPacket unloadDelta = oldLoad.difference(loadPacket);
 							if (unloadDelta.isNotEmpty()) {
 								this.enqueueServerPacket(player.getValue(), unloadDelta);
 							}
@@ -299,8 +299,8 @@ public class RealmManagerServer implements Runnable {
 					}
 
 					// If the ObjectMove packet isnt empty
-					if (mPacket != null) {
-						this.enqueueServerPacket(player.getValue(), mPacket);
+					if (movePacket != null) {
+						this.enqueueServerPacket(player.getValue(), movePacket);
 					}
 
 				} catch (Exception e) {
