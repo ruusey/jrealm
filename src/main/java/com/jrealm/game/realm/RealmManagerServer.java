@@ -775,6 +775,11 @@ public class RealmManagerServer implements Runnable {
 				for(Player player : targetRealm.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(e))){
 					EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
 					player.incrementExperience(model.getXp());
+					try {
+						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), TextEffect.PLAYER_INFO,  model.getXp()+"xp"));
+					}catch(Exception ex) {
+						log.error("Failed to create player experience text effect. Reason: {}", ex);
+					}
 				}
 
 				Random random = new Random(Instant.now().toEpochMilli());

@@ -72,7 +72,7 @@ public class ClientGameLogic {
 				}
 
 				final EffectText hitText = EffectText.builder().damage(textEffect.getText())
-						.effect(TextEffect.fromOrdinal(textEffect.getTextEffectId())).sourcePos(targetPos).build();
+						.effect(TextEffect.from(textEffect.getTextEffectId())).sourcePos(targetPos).build();
 				cli.getState().getDamageText().add(hitText);
 			}catch(Exception e) {
 				log.error("Failed to create client TextEffect. Reason: {}", e);
