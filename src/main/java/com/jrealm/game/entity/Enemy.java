@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.enemy.Monster;
 import com.jrealm.game.graphics.Sprite;
@@ -14,7 +15,6 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.net.Streamable;

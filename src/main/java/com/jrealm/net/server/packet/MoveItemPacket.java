@@ -7,8 +7,8 @@ import java.io.DataOutputStream;
 import java.util.Arrays;
 import java.util.List;
 
+import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
-import com.jrealm.net.PacketType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

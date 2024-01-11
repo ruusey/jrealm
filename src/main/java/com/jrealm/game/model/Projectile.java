@@ -2,6 +2,8 @@ package com.jrealm.game.model;
 
 import java.util.List;
 
+import com.jrealm.game.contants.ProjectilePositionMode;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

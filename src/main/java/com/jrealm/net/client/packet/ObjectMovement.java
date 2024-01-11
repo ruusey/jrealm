@@ -3,11 +3,11 @@ package com.jrealm.net.client.packet;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
-import com.jrealm.net.EntityType;
 import com.jrealm.net.Streamable;
 
 import lombok.AllArgsConstructor;

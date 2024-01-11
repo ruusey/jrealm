@@ -2,6 +2,7 @@ package com.jrealm.net;
 
 import java.io.DataOutputStream;
 
+import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.util.Tuple;
 
 import lombok.extern.slf4j.Slf4j;

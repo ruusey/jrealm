@@ -6,11 +6,11 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import com.jrealm.game.GameLauncher;
+import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
-import com.jrealm.net.PacketType;
 import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.server.SocketServer;

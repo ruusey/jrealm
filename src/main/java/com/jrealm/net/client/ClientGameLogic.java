@@ -3,7 +3,9 @@ package com.jrealm.net.client;
 import com.jrealm.game.GameLauncher;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
+import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -14,12 +16,11 @@ import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginResponseMessage;
+import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.state.GameStateManager;
-import com.jrealm.game.ui.DamageText;
-import com.jrealm.game.ui.TextEffect;
+import com.jrealm.game.ui.EffectText;
 import com.jrealm.game.util.Camera;
-import com.jrealm.net.EntityType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
@@ -37,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ClientGameLogic {
 	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
+		@SuppressWarnings("unused")
+		// Unused until this contains user spefic death data.
 		final PlayerDeathPacket playerDeath = (PlayerDeathPacket) packet;
 		try {
 			cli.getState().getRealmManager().getClient().setShutdown(true);
@@ -51,12 +54,32 @@ public class ClientGameLogic {
 	public static void handleTextEffectClient(RealmManagerClient cli, Packet packet) {
 		final TextEffectPacket textEffect = (TextEffectPacket) packet;
 		try {
-			final Vector2f sourcePos = cli.getState().getPlayer().getPos();
-			final DamageText hitText = DamageText.builder().damage(textEffect.getText())
-					.effect(TextEffect.fromOrdinal(textEffect.getTextEffectId())).sourcePos(sourcePos).build();
-			cli.getState().getDamageText().add(hitText);
+			final Realm clientRealm = cli.getState().getRealmManager().getRealm();
+			Vector2f targetPos = null;
+			try {
+				switch(EntityType.valueOf(textEffect.getEntityType())) {
+				case BULLET:
+					targetPos = clientRealm.getBullet(textEffect.getTargetEntityId()).getPos();
+					break;
+				case ENEMY:
+					targetPos = clientRealm.getEnemy(textEffect.getTargetEntityId()).getPos();
+					break;
+				case PLAYER:
+					targetPos = clientRealm.getPlayer(textEffect.getTargetEntityId()).getPos();
+					break;
+				default:
+					break;
+				}
+
+				final EffectText hitText = EffectText.builder().damage(textEffect.getText())
+						.effect(TextEffect.fromOrdinal(textEffect.getTextEffectId())).sourcePos(targetPos).build();
+				cli.getState().getDamageText().add(hitText);
+			}catch(Exception e) {
+				log.error("Failed to create client TextEffect. Reason: {}", e);
+			}
+
 		} catch (Exception e) {
-			ClientGameLogic.log.error("Failed to handle LoadMap Packet. Reason: {}", e);
+			ClientGameLogic.log.error("Failed to handle TextEffect Packet. Reason: {}", e);
 		}
 	}
 

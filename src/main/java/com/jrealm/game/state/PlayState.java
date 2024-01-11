@@ -15,6 +15,7 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -33,9 +34,8 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
-import com.jrealm.game.ui.DamageText;
+import com.jrealm.game.ui.EffectText;
 import com.jrealm.game.ui.PlayerUI;
-import com.jrealm.game.ui.TextEffect;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
@@ -57,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PlayState extends GameState {
 	private RealmManagerClient realmManager;
-	private Queue<DamageText> damageText;
+	private Queue<EffectText> damageText;
 	private List<Vector2f> shotDestQueue;
 
 	private Camera cam;
@@ -192,8 +192,8 @@ public class PlayState extends GameState {
 			if (!this.gsm.isStateActive(GameStateManager.EDIT)) {
 
 				Runnable monitorDamageText = () -> {
-					List<DamageText> toRemove = new ArrayList<>();
-					for (DamageText text : this.getDamageText()) {
+					List<EffectText> toRemove = new ArrayList<>();
+					for (EffectText text : this.getDamageText()) {
 						text.update();
 						if (text.getRemove()) {
 							toRemove.add(text);
@@ -329,7 +329,7 @@ public class PlayState extends GameState {
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			if (!this.realmManager.getRealm().hasHitEnemy(b.getId(), e.getId())) {
 				final Vector2f sourcePos = e.getPos();
-				final DamageText hitText = DamageText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
+				final EffectText hitText = EffectText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
 						.sourcePos(sourcePos).build();
 				this.damageText.add(hitText);
 				this.realmManager.getRealm().hitEnemy(b.getId(), e.getId());
@@ -694,7 +694,7 @@ public class PlayState extends GameState {
 
 		this.renderCloseLoot(g);
 
-		for (DamageText text : this.getDamageText()) {
+		for (EffectText text : this.getDamageText()) {
 			text.render(g);
 		}
 

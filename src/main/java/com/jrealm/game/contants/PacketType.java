@@ -1,9 +1,10 @@
-package com.jrealm.net;
+package com.jrealm.game.contants;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import com.jrealm.game.util.Tuple;
+import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;

@@ -307,6 +307,7 @@ public class ServerGameLogic {
 	}
 
 	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {
+		@SuppressWarnings("unused")
 		final LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
 		//		try {
 		//			Player player = mgr.getRealm().getPlayer(loadMapPacket.getPlayerId());

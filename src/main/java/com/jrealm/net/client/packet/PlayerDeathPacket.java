@@ -3,8 +3,8 @@ package com.jrealm.net.client.packet;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
-import com.jrealm.net.PacketType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

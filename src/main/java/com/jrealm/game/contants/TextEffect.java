@@ -1,4 +1,4 @@
-package com.jrealm.game.ui;
+package com.jrealm.game.contants;
 
 public enum TextEffect {
 

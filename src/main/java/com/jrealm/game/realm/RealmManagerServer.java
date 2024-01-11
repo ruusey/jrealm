@@ -19,8 +19,12 @@ import java.util.stream.Collectors;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
+import com.jrealm.game.contants.PacketType;
+import com.jrealm.game.contants.ProjectilePositionMode;
+import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -39,19 +43,16 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.model.ProjectilePositionMode;
 import com.jrealm.game.state.PlayState;
 import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.Tile;
 import com.jrealm.game.tile.TileMap;
 import com.jrealm.game.tile.decorators.Beach0Decorator;
 import com.jrealm.game.tile.decorators.RealmDecorator;
-import com.jrealm.game.ui.TextEffect;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
-import com.jrealm.net.PacketType;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
@@ -707,7 +708,7 @@ public class RealmManagerServer implements Runnable {
 				dmgToInflict = minDmg;
 			}
 			try {
-				this.enqueueServerPacket(player, TextEffectPacket.from(TextEffect.DAMAGE, "-" + dmgToInflict));
+				this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), TextEffect.DAMAGE, "-" + dmgToInflict));
 			} catch (Exception e) {
 				RealmManagerServer.log.error("Failed to send Damage TextEffect Packet to Player {}. Reason: {}",
 						p.getId(), e);
@@ -741,8 +742,13 @@ public class RealmManagerServer implements Runnable {
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			targetRealm.hitEnemy(b.getId(), e.getId());
-
 			e.setHealth(e.getHealth() - b.getDamage());
+			try {
+				this.enqueueServerPacket(TextEffectPacket.from(EntityType.ENEMY, e.getId(), TextEffect.DAMAGE, "-" + b.getDamage()));
+			} catch (Exception ex) {
+				RealmManagerServer.log.error("Failed to send Damage TextEffect Packet for Enemy {} hit. Reason: {}",
+						e.getId(), ex);
+			}
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {

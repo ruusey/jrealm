@@ -1,4 +1,4 @@
-package com.jrealm.net;
+package com.jrealm.game.contants;
 
 import java.util.HashMap;
 import java.util.Map;

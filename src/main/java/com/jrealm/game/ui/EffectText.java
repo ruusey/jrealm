@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 
+import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.AllArgsConstructor;
@@ -15,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DamageText {
+public class EffectText {
 	private static final float velY = -2.5f;
 
 	private Vector2f sourcePos;
@@ -27,9 +28,7 @@ public class DamageText {
 	private float animationDistance = 50.0f;
 
 	public void update() {
-		this.animationDistance += DamageText.velY;
-		// this.sourcePos.y += DamageText.velY;
-
+		this.animationDistance += EffectText.velY;
 		if (this.animationDistance <= 0.0f) {
 			this.remove = true;
 		}
@@ -39,21 +38,24 @@ public class DamageText {
 		switch (this.effect) {
 		case DAMAGE:
 			g.setColor(Color.RED);
-
 			break;
 		case HEAL:
 			g.setColor(Color.GREEN);
+			break;
+		case ARMOR_BREAK:
+			g.setColor(Color.BLUE);
+			break;
+		case ENVIRONMENT:
+			g.setColor(Color.BLUE);
 			break;
 		default:
 			break;
 
 		}
 
-		Font originalFont = g.getFont();
-		Font newFont = originalFont.deriveFont(originalFont.getSize() * 0.75F);
+		final Font originalFont = g.getFont();
+		final Font newFont = originalFont.deriveFont(originalFont.getSize() * 0.75F);
 		g.setFont(newFont);
-		g.setFont(null);
-
 		g.drawString(this.damage, this.sourcePos.x - (Vector2f.worldX),
 				this.sourcePos.y - (Vector2f.worldY) - (64 - this.animationDistance));
 		
@@ -64,5 +66,4 @@ public class DamageText {
 	public boolean getRemove() {
 		return this.remove;
 	}
-
 }

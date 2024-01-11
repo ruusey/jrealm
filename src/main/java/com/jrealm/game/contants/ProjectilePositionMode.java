@@ -1,4 +1,4 @@
-package com.jrealm.game.model;
+package com.jrealm.game.contants;
 
 public enum ProjectilePositionMode {
 	TARGET_PLAYER, RELATIVE, ABSOLUTE

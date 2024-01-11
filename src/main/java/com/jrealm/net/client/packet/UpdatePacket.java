@@ -5,11 +5,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Packet;
-import com.jrealm.net.PacketType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
