@@ -48,6 +48,9 @@ public class EffectText {
 		case ENVIRONMENT:
 			g.setColor(Color.BLUE);
 			break;
+		case PLAYER_INFO:
+			g.setColor(Color.ORANGE);
+			break;
 		default:
 			break;
 
@@ -58,7 +61,7 @@ public class EffectText {
 		g.setFont(newFont);
 		g.drawString(this.damage, this.sourcePos.x - (Vector2f.worldX),
 				this.sourcePos.y - (Vector2f.worldY) - (64 - this.animationDistance));
-		
+
 		g.setFont(originalFont);
 
 	}
