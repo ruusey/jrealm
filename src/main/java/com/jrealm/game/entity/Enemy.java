@@ -8,7 +8,6 @@ import java.io.DataOutputStream;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
-import com.jrealm.game.entity.enemy.Monster;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;

@@ -1,10 +1,9 @@
-package com.jrealm.game.entity.enemy;
+package com.jrealm.game.entity;
 
 import java.util.Random;
 import java.util.UUID;
 
 import com.jrealm.game.data.GameDataManager;
-import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
