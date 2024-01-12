@@ -177,17 +177,20 @@ public class LoadPacket extends Packet {
 			}
 		}
 
-		//		for(LootContainer c : this.containers) {
-		//			if(c.getContentsChanged()) {
-		//				return false;
-		//			}
-		//		}
-		//
-		//		for(LootContainer c : other.getContainers()) {
-		//			if(c.getContentsChanged()) {
-		//				return false;
-		//			}
-		//		}
+		for(LootContainer c : this.containers) {
+			if(c.getContentsChanged()) {
+				containersEq = false;
+				break;
+			}
+		}
+
+		for(LootContainer c : other.getContainers()) {
+			if(c.getContentsChanged()) {
+				containersEq = false;
+				break;
+			}
+		}
+		
 		return (playerIdsThis.equals(playerIdsOther) && lootIdsThis.equals(lootIdsOther)
 				&& enemyIdsThis.equals(enemyIdsOther) && bulletIdsThis.equals(bulletIdsOther) && containersEq
 				&& portalIdsThis.equals(portalIdsOther));

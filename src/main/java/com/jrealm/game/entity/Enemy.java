@@ -24,7 +24,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public abstract class Enemy extends Entity implements Streamable<Enemy>{
-
+	private static final int IDLE_FRAMES = 4;
 	protected AABB sense;
 	protected int r_sense;
 
@@ -39,7 +39,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 	private int enemyId;
 	private int weaponId = -1;
-
+	private int idleTime = 0;
 	public Enemy(long id, int enemyId, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
 		super(id, sprite, origin, size);
 
@@ -74,7 +74,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			this.left = false;
 			return;
 		}
-
+		
 		AABB playerBounds = player.getBounds();
 		if (this.sense.colCircleBox(playerBounds) && !this.attackrange.colCircleBox(playerBounds)) {
 			if (this.pos.y > (player.pos.y + 1)) {
@@ -98,11 +98,17 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			} else {
 				this.right = false;
 			}
-		} else {
-			this.up = false;
-			this.down = false;
-			this.left = false;
-			this.right = false;
+		} else if(this.sense.colCircleBox(playerBounds) ){
+			if(this.idleTime>=IDLE_FRAMES) {
+				this.up = Realm.RANDOM.nextBoolean();
+				this.down = Realm.RANDOM.nextBoolean();
+				this.left = Realm.RANDOM.nextBoolean();
+				this.right = Realm.RANDOM.nextBoolean();
+				this.idleTime = 0;
+			}else {
+				this.idleTime++;
+			}
+			
 		}
 	}
 
