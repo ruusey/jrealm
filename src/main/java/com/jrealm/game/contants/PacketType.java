@@ -22,26 +22,25 @@ import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
 
 public enum PacketType {
-	PLAYER_MOVE    ((byte) 1, false, PlayerMovePacket.class),
-	UPDATE         ((byte) 2, false, UpdatePacket.class),
-	OBJECT_MOVE    ((byte) 3, false, ObjectMovePacket.class),
-	TEXT           ((byte) 4, true, TextPacket.class),
-	HEARTBEAT      ((byte) 5, true, HeartbeatPacket.class),
-	PLAYER_SHOOT   ((byte) 6, true, PlayerShootPacket.class),
-	COMMAND		   ((byte) 7, true, CommandPacket.class),
-	LOAD_MAP	   ((byte) 8, true, LoadMapPacket.class),
-	LOAD	   	   ((byte) 9, true, LoadPacket.class),
-	UNLOAD         ((byte) 10, true, UnloadPacket.class),
-	USE_ABILITY    ((byte) 11, true, UseAbilityPacket.class),
-	MOVE_ITEM      ((byte) 12, true, MoveItemPacket.class),
-	USE_PORTAL     ((byte) 13, true, UsePortalPacket.class),
-	TEXT_EFFECT    ((byte) 14, true, TextEffectPacket.class),
-	PLAYER_DEATH   ((byte) 15, true, PlayerDeathPacket.class);
+	PLAYER_MOVE    ((byte) 1, PlayerMovePacket.class),
+	UPDATE         ((byte) 2, UpdatePacket.class),
+	OBJECT_MOVE    ((byte) 3, ObjectMovePacket.class),
+	TEXT           ((byte) 4, TextPacket.class),
+	HEARTBEAT      ((byte) 5, HeartbeatPacket.class),
+	PLAYER_SHOOT   ((byte) 6, PlayerShootPacket.class),
+	COMMAND		   ((byte) 7, CommandPacket.class),
+	LOAD_MAP	   ((byte) 8, LoadMapPacket.class),
+	LOAD	   	   ((byte) 9, LoadPacket.class),
+	UNLOAD         ((byte) 10, UnloadPacket.class),
+	USE_ABILITY    ((byte) 11, UseAbilityPacket.class),
+	MOVE_ITEM      ((byte) 12, MoveItemPacket.class),
+	USE_PORTAL     ((byte) 13, UsePortalPacket.class),
+	TEXT_EFFECT    ((byte) 14, TextEffectPacket.class),
+	PLAYER_DEATH   ((byte) 15, PlayerDeathPacket.class);
 
 	private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
 
 	private byte packetId;
-	private boolean isServer;
 	private Class<? extends Packet> packetClass;
 
 	static {
@@ -50,18 +49,13 @@ public enum PacketType {
 		}
 	}
 
-	private PacketType(byte entityTypeId, boolean isServer, Class<? extends Packet> packetClass) {
+	private PacketType(byte entityTypeId, Class<? extends Packet> packetClass) {
 		this.packetId = entityTypeId;
-		this.isServer = isServer;
 		this.packetClass = packetClass;
 	}
 
 	public byte getPacketId() {
 		return this.packetId;
-	}
-
-	public boolean getIsServer() {
-		return this.isServer;
 	}
 
 	public Class<? extends Packet> getPacketClass() {
@@ -74,13 +68,5 @@ public enum PacketType {
 
 	public static Tuple<Class<? extends Packet>, PacketType> valueOf(int value) {
 		return PacketType.map.get(Byte.valueOf((byte) value));
-	}
-
-	public static boolean isServerPacket(Packet packet) {
-		return PacketType.isServerPacket(packet.getId());
-	}
-
-	public static boolean isServerPacket(byte packetId) {
-		return PacketType.map.get(packetId).getY().getIsServer();
 	}
 }
