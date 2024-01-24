@@ -302,7 +302,9 @@ public class RealmManagerServer implements Runnable {
 					if (movePacket != null) {
 						this.enqueueServerPacket(player.getValue(), movePacket);
 					}
-
+					for (LootContainer lc : realm.getLoot().values()) {
+						lc.setContentsChanged(false);
+					}
 				} catch (Exception e) {
 					RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(),
 							e);
@@ -492,9 +494,7 @@ public class RealmManagerServer implements Runnable {
 			// if their
 			// contents change in a server tick (receive MoveItem packet from client this
 			// tick)
-			for (LootContainer lc : realm.getLoot().values()) {
-				lc.setContentsChanged(false);
-			}
+
 
 			WorkerThread.submitAndRun(processGameObjects);
 		}

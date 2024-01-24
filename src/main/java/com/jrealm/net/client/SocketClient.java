@@ -69,8 +69,8 @@ public class SocketClient implements Runnable {
 		Runnable sendPackets = () -> {
 			this.sendPackets();
 		};
-		TimedWorkerThread readThread = new TimedWorkerThread(readPackets, 32);
-		TimedWorkerThread sendThread = new TimedWorkerThread(sendPackets, 32);
+		TimedWorkerThread readThread = new TimedWorkerThread(readPackets, 48);
+		TimedWorkerThread sendThread = new TimedWorkerThread(sendPackets, 48);
 		sendThread.start();
 		readThread.start();
 	}
