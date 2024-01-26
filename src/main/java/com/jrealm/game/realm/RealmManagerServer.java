@@ -417,6 +417,10 @@ public class RealmManagerServer implements Runnable {
 		return result;
 	}
 
+	// Register any custom realm type decorators.
+	// Each time a realm of the target type is generated, an instance
+	// of it will be passed to the decorator for post processing
+	// (generate static enemies, terrain, events)
 	private void registerRealmDecorators() {
 		this.realmDecorators.add(new Beach0Decorator());
 	}
@@ -743,12 +747,7 @@ public class RealmManagerServer implements Runnable {
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			targetRealm.hitEnemy(b.getId(), e.getId());
 			e.setHealth(e.getHealth() - b.getDamage());
-			try {
-				this.enqueueServerPacket(TextEffectPacket.from(EntityType.ENEMY, e.getId(), TextEffect.DAMAGE, "-" + b.getDamage()));
-			} catch (Exception ex) {
-				RealmManagerServer.log.error("Failed to send Damage TextEffect Packet for Enemy {} hit. Reason: {}",
-						e.getId(), ex);
-			}
+
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {
@@ -770,7 +769,13 @@ public class RealmManagerServer implements Runnable {
 					e.addEffect(EffectType.STUNNED, 5000);
 				}
 			}
-
+			try {
+				this.enqueueServerPacket(
+						TextEffectPacket.from(EntityType.ENEMY, e.getId(), TextEffect.DAMAGE, "-" + b.getDamage()));
+			} catch (Exception ex) {
+				RealmManagerServer.log.error("Failed to send Damage TextEffect Packet dsfor Enemy {} hit. Reason: {}",
+						e.getId(), ex);
+			}
 			if (e.getDeath()) {
 				for(Player player : targetRealm.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(e))){
 					EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
@@ -778,12 +783,12 @@ public class RealmManagerServer implements Runnable {
 					try {
 						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), TextEffect.PLAYER_INFO,  model.getXp()+"xp"));
 					}catch(Exception ex) {
-						log.error("Failed to create player experience text effect. Reason: {}", ex);
+						RealmManagerServer.log.error("Failed to create player experience text effect. Reason: {}", ex);
 					}
 				}
 
 				Random random = new Random(Instant.now().toEpochMilli());
-				e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
+				// e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
 				targetRealm.getExpiredBullets().add(b.getId());
 				targetRealm.getExpiredEnemies().add(e.getId());
 				targetRealm.clearHitMap();

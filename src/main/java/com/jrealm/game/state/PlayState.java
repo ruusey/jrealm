@@ -15,10 +15,8 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
-import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
-import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
@@ -231,16 +229,13 @@ public class PlayState extends GameState {
 					}
 				};
 
-				Runnable processGameObjects = () -> {
-					this.processBulletHit();
-				};
 
 				Runnable updatePlayerAndUi = () -> {
 					player.update(time);
 					this.movePlayer(player);
 					this.pui.update(time);
 				};
-				WorkerThread.submitAndRun(playerShootDequeue, processGameObjects, updatePlayerAndUi, monitorDamageText);
+				WorkerThread.submitAndRun(playerShootDequeue, updatePlayerAndUi, monitorDamageText);
 			}
 			this.cam.target(player);
 			this.cam.update();
@@ -310,33 +305,7 @@ public class PlayState extends GameState {
 		return this.realmManager.getRealm().addBullet(b);
 	}
 
-	public synchronized void processBulletHit() {
-		List<Bullet> results = this.getBullets();
-		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort(this.getPlayer()));
-		for (int i = 0; i < gameObject.length; i++) {
-			if (gameObject[i] instanceof Enemy) {
-				Enemy enemy = ((Enemy) gameObject[i]);
-				for (Bullet b : results) {
-					this.proccessEnemyHit(b, enemy);
-				}
-			}
-		}
-	}
-
-	private synchronized void proccessEnemyHit(final Bullet b, final Enemy e) {
-		if (this.realmManager.getRealm().hasHitEnemy(b.getId(), e.getId()))
-			return;
-		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
-			if (!this.realmManager.getRealm().hasHitEnemy(b.getId(), e.getId())) {
-				final Vector2f sourcePos = e.getPos();
-				final EffectText hitText = EffectText.builder().damage("" + b.getDamage()).effect(TextEffect.DAMAGE)
-						.sourcePos(sourcePos).build();
-				this.damageText.add(hitText);
-				this.realmManager.getRealm().hitEnemy(b.getId(), e.getId());
-			}
-		}
-	}
-
+	@SuppressWarnings("unused")
 	private List<Bullet> getBullets() {
 		final GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(
 				this.realmManager.getRealm().getTileManager().getRenderViewPort(this.getPlayer()));
