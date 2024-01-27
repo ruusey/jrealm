@@ -1,5 +1,8 @@
 # jrealm
 ### Realm 2 in Java
+![alt text](https://i.imgur.com/GPpcD2I.png)
+![alt text](https://i.imgur.com/gf2c380.png)
+![alt text](https://i.imgur.com/7Z540Mb.png)
 ### Running
 * Server: <br />
 `java -jar ./jrealm-{version}-server.jar` <br />
