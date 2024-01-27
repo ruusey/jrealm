@@ -6,10 +6,14 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.http.HttpClient;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.jrealm.account.dto.LoginRequestDto;
+import com.jrealm.account.dto.SessionTokenDto;
+import com.jrealm.account.service.ClientAuthService;
 import com.jrealm.game.GameLauncher;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginRequestMessage;
@@ -35,6 +39,7 @@ public class SocketClient implements Runnable {
 	private static final int BUFFER_CAPACITY = 65536 * 100;
 
 	private Socket clientSocket;
+	private ClientAuthService clientAuthService;
 	private boolean shutdown = false;
 	private byte[] remoteBuffer = new byte[SocketClient.BUFFER_CAPACITY];
 	private int remoteBufferIndex = 0;
@@ -48,6 +53,7 @@ public class SocketClient implements Runnable {
 	public SocketClient(String targetHost, int port) {
 		try {
 			this.clientSocket = new Socket(targetHost, port);
+			this.clientAuthService = new ClientAuthService(HttpClient.newHttpClient(), "http://localhost:8085/");
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}
@@ -115,7 +121,9 @@ public class SocketClient implements Runnable {
 	private void doLogin() throws Exception{
 		LoginRequestMessage login = LoginRequestMessage.builder().classId(SocketClient.CLASS_ID)
 				.username(SocketClient.PLAYER_USERNAME)
-				.password("password123").build();
+				.password("password").build();
+		LoginRequestDto loginReq = new LoginRequestDto(login.getUsername(), login.getPassword());
+		SessionTokenDto response = this.clientAuthService.executePost("/admin/account/login", loginReq);
 
 		CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
 		this.sendRemote(loginPacket);
