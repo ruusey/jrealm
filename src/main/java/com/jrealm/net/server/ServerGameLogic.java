@@ -2,7 +2,11 @@ package com.jrealm.net.server;
 
 import java.io.DataOutputStream;
 import java.io.OutputStream;
+import java.net.http.HttpClient;
 
+import com.jrealm.account.dto.LoginRequestDto;
+import com.jrealm.account.dto.SessionTokenDto;
+import com.jrealm.account.service.ClientAuthService;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
@@ -42,6 +46,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ServerGameLogic {
+	private static final ClientAuthService AUTH_SERVICE = new ClientAuthService(HttpClient.newHttpClient(),
+			"http://localhost:8085/");
+
 	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
 		final UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
 		final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
@@ -323,6 +330,14 @@ public class ServerGameLogic {
 
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
 		try {
+			SessionTokenDto loginToken = null;
+			try {
+				loginToken = ServerGameLogic.doLoginRemote(request.getUsername(), request.getPassword());
+			} catch (Exception e) {
+				ServerGameLogic.log.error("Failed to perform remote login. Reason: {}", e);
+				// throw e;
+			}
+
 			final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 			final CharacterClass cls = CharacterClass.valueOf(request.getClassId());
 
@@ -360,5 +375,12 @@ public class ServerGameLogic {
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
 		}
+	}
+
+	private static SessionTokenDto doLoginRemote(final String userName, final String password) throws Exception {
+		final LoginRequestDto loginReq = new LoginRequestDto(userName, password);
+		final SessionTokenDto response = ServerGameLogic.AUTH_SERVICE.executePost("/admin/account/login",
+				loginReq);
+		return response;
 	}
 }
