@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class SocketClient implements Runnable {
-	public static String PLAYER_USERNAME = null;
+	public static String PLAYER_EMAIL = null;
 	public static String SERVER_ADDR = null;
 	public static int CLASS_ID = 0;
 
@@ -114,7 +114,7 @@ public class SocketClient implements Runnable {
 
 	private void doLogin() throws Exception{
 		LoginRequestMessage login = LoginRequestMessage.builder().classId(SocketClient.CLASS_ID)
-				.username(SocketClient.PLAYER_USERNAME)
+				.email(SocketClient.PLAYER_EMAIL)
 				.password("password").build();
 
 		CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);

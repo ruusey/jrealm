@@ -36,8 +36,8 @@ public class GameLauncher {
 						"Please set the player username server and classId. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_NAME} {CLASS_ID}]");
 				return;
 			}
-			SocketClient.PLAYER_USERNAME = args[1];
-			if(SocketClient.PLAYER_USERNAME==null) {
+			SocketClient.PLAYER_EMAIL = args[1];
+			if(SocketClient.PLAYER_EMAIL==null) {
 				GameLauncher.log.error(
 						"Please set the player username server and classId. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_NAME} {CLASS_ID}]");
 				return;

@@ -1,5 +1,9 @@
 package com.jrealm.net.client;
 
+import java.net.http.HttpClient;
+
+import com.jrealm.account.dto.PlayerAccountDto;
+import com.jrealm.account.service.JRealmDataService;
 import com.jrealm.game.GameLauncher;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
@@ -37,6 +41,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientGameLogic {
+	private static final JRealmDataService DATA_SERVICE = new JRealmDataService(HttpClient.newHttpClient(), "http://localhost:8085/");
+
 	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
 		@SuppressWarnings("unused")
 		// Unused until this contains user spefic death data.
@@ -257,6 +263,12 @@ public class ClientGameLogic {
 	private static void doLoginResponse(RealmManagerClient cli, LoginResponseMessage loginResponse) {
 		try {
 			if(loginResponse.isSuccess()) {
+				try {
+					PlayerAccountDto playerAccount = DATA_SERVICE.executeGet("/data/account/"+loginResponse.getAccountUuid(), null, PlayerAccountDto.class);
+					log.info(playerAccount+" ");
+				}catch(Exception e) {
+					log.error("Failed to get player account for account UUID "+loginResponse.getAccountUuid());
+				}
 				Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				CharacterClass cls = CharacterClass.valueOf(loginResponse.getClassId());
 				Player player = new Player(loginResponse.getPlayerId(), c, GameDataManager.loadClassSprites(cls),

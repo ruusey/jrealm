@@ -15,4 +15,6 @@ public class LoginResponseMessage {
 	private boolean success;
 	private float spawnX;
 	private float spawnY;
+	private String accountUuid;
+	private String token;
 }

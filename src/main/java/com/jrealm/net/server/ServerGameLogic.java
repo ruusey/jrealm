@@ -5,8 +5,9 @@ import java.io.OutputStream;
 import java.net.http.HttpClient;
 
 import com.jrealm.account.dto.LoginRequestDto;
+import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.account.dto.SessionTokenDto;
-import com.jrealm.account.service.ClientAuthService;
+import com.jrealm.account.service.JRealmDataService;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
@@ -45,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ServerGameLogic {
-	private static final ClientAuthService AUTH_SERVICE = new ClientAuthService(HttpClient.newHttpClient(),
+	private static final JRealmDataService DATA_SERVICE = new JRealmDataService(HttpClient.newHttpClient(),
 			"http://localhost:8085/");
 
 	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
@@ -329,9 +330,13 @@ public class ServerGameLogic {
 
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
 		try {
-			SessionTokenDto loginToken = null;
+			// TODO: TEMP to avoid null ptr when sending the login response
+			SessionTokenDto loginToken = new SessionTokenDto();
+			String accountName = request.getEmail();
 			try {
-				loginToken = ServerGameLogic.doLoginRemote(request.getUsername(), request.getPassword());
+				loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
+				PlayerAccountDto account = DATA_SERVICE.executeGet("/data/account/"+loginToken.getAccountGuid(), null, PlayerAccountDto.class);
+				accountName = account.getAccountName();
 			} catch (Exception e) {
 				ServerGameLogic.log.error("Failed to perform remote login. Reason: {}", e);
 				// throw e;
@@ -346,7 +351,7 @@ public class ServerGameLogic {
 					playerPos,
 					GlobalConstants.PLAYER_SIZE, cls);
 			player.equipSlots(GameDataManager.getStartingEquipment(cls));
-			player.setName(request.getUsername());
+			player.setName(accountName);
 			player.setHeadless(false);
 			for (final Realm test : mgr.getRealms().values()) {
 				if (test != null) {
@@ -364,6 +369,8 @@ public class ServerGameLogic {
 					.spawnX(player.getPos().x)
 					.spawnY(player.getPos().y)
 					.playerId(player.getId()).success(true)
+					.accountUuid(loginToken.getAccountGuid())
+					.token(loginToken.getToken())
 					.build();
 			mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
 
@@ -378,8 +385,8 @@ public class ServerGameLogic {
 
 	private static SessionTokenDto doLoginRemote(final String userName, final String password) throws Exception {
 		final LoginRequestDto loginReq = new LoginRequestDto(userName, password);
-		final SessionTokenDto response = ServerGameLogic.AUTH_SERVICE.executePost("/admin/account/login",
-				loginReq);
+		final SessionTokenDto response = ServerGameLogic.DATA_SERVICE.executePost("/admin/account/login",
+				loginReq, SessionTokenDto.class);
 		return response;
 	}
 }

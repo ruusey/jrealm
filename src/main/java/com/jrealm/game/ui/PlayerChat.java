@@ -69,7 +69,7 @@ public class PlayerChat {
 				try {
 					String messageToSend = key.getCapturedInput();
 					messageToSend = messageToSend.replace("\n", "").replace("\r", "");
-					TextPacket packet = TextPacket.create(SocketClient.PLAYER_USERNAME, "SYSTEM", messageToSend);
+					TextPacket packet = TextPacket.create(SocketClient.PLAYER_EMAIL, "SYSTEM", messageToSend);
 					client.sendRemote(packet);
 				}catch(Exception e) {
 					PlayerChat.log.error("Failed to send PlayerChat to server. Reason: {}", e);
