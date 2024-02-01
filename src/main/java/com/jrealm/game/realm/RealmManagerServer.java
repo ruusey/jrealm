@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.jrealm.account.dto.CharacterDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
@@ -921,13 +923,19 @@ public class RealmManagerServer implements Runnable {
 	}
 	
 	private boolean persistPlayers() {
-		
 		for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
 			for (Player player : realm.getValue().getPlayers().values()) {
 				try {
 					try {
-						PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executeGet("/data/account/"+player.getId(), null, PlayerAccountDto.class);
-	
+						PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executeGet("/data/account/"+player.getAccountUuid(), null, PlayerAccountDto.class);
+						Optional<CharacterDto> currentCharacter = account.getCharacters().stream().filter(character->character.getCharacterUuid().equals(player.getCharacterUuid())).findAny();
+						if(currentCharacter.isPresent()) {
+							CharacterDto character = currentCharacter.get();
+							character.setStats(player.serializeStats());
+							character.setItems(player.serializeItems());
+							PlayerAccountDto savedAccount = ServerGameLogic.DATA_SERVICE.executePost("/data/account", account, PlayerAccountDto.class);
+							log.info("Succesfully persisted user account {}", savedAccount.getAccountEmail());
+						}
 					} catch (Exception e) {
 						RealmManagerServer.log.error("Failed to get player account. Reason: {}", e);
 					}

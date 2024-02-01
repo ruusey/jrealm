@@ -5,8 +5,10 @@ import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.account.dto.GameItemRefDto;
@@ -43,6 +45,7 @@ public class Player extends Entity implements Streamable<Player>{
 	private long lastStatsTime = 0l;
 	private LootContainer currentLootContainer;
 	private int classId;
+	private String accountUuid;
 	private String characterUuid;
 	private long experience;
 	private Stats stats;
@@ -111,8 +114,8 @@ public class Player extends Entity implements Streamable<Player>{
 		this.stats.setWis(stats.getWis().shortValue());
 	}
 	
-	public List<GameItemRefDto> serializeItems(){
-		final List<GameItemRefDto> res = new ArrayList<>();
+	public Set<GameItemRefDto> serializeItems(){
+		final Set<GameItemRefDto> res = new HashSet<>();
 		for(int i=0;i<this.inventory.length; i++) {
 			GameItem item = this.inventory[i];
 			if(item!=null) {
@@ -448,7 +451,8 @@ public class Player extends Entity implements Streamable<Player>{
 	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.getId());
 		stream.writeUTF(this.getName());
-		//stream.writeUTF(this.characterUuid);
+		stream.writeUTF(this.accountUuid);
+		stream.writeUTF(this.characterUuid);
 		stream.writeInt(this.getClassId());
 		stream.writeShort(this.getSize());
 		stream.writeFloat(this.getPos().x);
@@ -461,7 +465,8 @@ public class Player extends Entity implements Streamable<Player>{
 	public Player read(DataInputStream stream) throws Exception {
 		long id = stream.readLong();
 		String name = stream.readUTF();
-		//String characterUuid = stream.readUTF();
+		String accountUuid = stream.readUTF();
+		String characterUuid = stream.readUTF();
 		int classId = stream.readInt();
 		short size = stream.readShort();
 		float posX = stream.readFloat();
@@ -472,7 +477,8 @@ public class Player extends Entity implements Streamable<Player>{
 		player.setDx(dX);
 		player.setDy(dY);
 		player.setName(name);
-		//player.setCharacterUuid(characterUuid);
+		player.setAccountUuid(accountUuid);
+		player.setCharacterUuid(characterUuid);
 		return player;
 	}
 
@@ -487,7 +493,8 @@ public class Player extends Entity implements Streamable<Player>{
 	public static Player fromStream(DataInputStream stream) throws Exception {
 		long id = stream.readLong();
 		String name = stream.readUTF();
-		//String characterUuid = stream.readUTF();
+		String accountUuid = stream.readUTF();
+		String characterUuid = stream.readUTF();
 		int classId = stream.readInt();
 		short size = stream.readShort();
 		float posX = stream.readFloat();
@@ -498,7 +505,8 @@ public class Player extends Entity implements Streamable<Player>{
 		player.setDx(dX);
 		player.setDy(dY);
 		player.setName(name);
-		//player.setCharacterUuid(characterUuid);
+		player.setAccountUuid(accountUuid);
+		player.setCharacterUuid(characterUuid);
 		return player;
 	}
 

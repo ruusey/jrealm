@@ -338,11 +338,13 @@ public class ServerGameLogic {
 			// TODO: TEMP to avoid null ptr when sending the login response
 			SessionTokenDto loginToken = new SessionTokenDto();
 			String accountName = request.getEmail();
+			String accountUuid = null;
 			Optional<CharacterDto> characterClass = null;
 			try {
 				loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
 				PlayerAccountDto account = DATA_SERVICE.executeGet("/data/account/"+loginToken.getAccountGuid(), null, PlayerAccountDto.class);
 				accountName = account.getAccountName();
+				accountUuid = account.getAccountUuid();
 				characterClass = account.getCharacters().stream().filter(character->character.getCharacterUuid().equals(request.getCharacterUuid())).findAny();
 				if(characterClass.isEmpty()) {
 					throw new Exception("Player character with UUID "+request.getCharacterUuid()+" does not exist");
@@ -364,6 +366,8 @@ public class ServerGameLogic {
 			final Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
 					playerPos,
 					GlobalConstants.PLAYER_SIZE, cls);
+			player.setAccountUuid(accountUuid);
+			player.setCharacterUuid(targetCharacter.getCharacterUuid());
 			player.equipSlots(loadedEquipment);
 			player.applyStats(targetCharacter.getStats());
 			player.setName(accountName);
