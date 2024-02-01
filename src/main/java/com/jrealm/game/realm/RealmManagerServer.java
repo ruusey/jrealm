@@ -118,7 +118,7 @@ public class RealmManagerServer implements Runnable {
 					String playerName = UUID.randomUUID().toString().replaceAll("-", "");
 					playerName = playerName.substring(playerName.length()/2);
 					player.setName(playerName);
-					player.equipSlots(PlayState.getStartingEquipment(classToSpawn));
+					player.equipSlots(GameDataManager.getStartingEquipment(classToSpawn));
 					player.setMaxSpeed(random.nextFloat()/2);
 
 					final boolean up = random.nextBoolean();

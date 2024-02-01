@@ -29,7 +29,6 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
-import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.net.Packet;
@@ -346,7 +345,7 @@ public class ServerGameLogic {
 			final Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
 					playerPos,
 					GlobalConstants.PLAYER_SIZE, cls);
-			player.equipSlots(PlayState.getStartingEquipment(cls));
+			player.equipSlots(GameDataManager.getStartingEquipment(cls));
 			player.setName(request.getUsername());
 			player.setHeadless(false);
 			for (final Realm test : mgr.getRealms().values()) {
