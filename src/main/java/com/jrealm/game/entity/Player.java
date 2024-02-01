@@ -4,8 +4,12 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import com.jrealm.account.dto.CharacterStatsDto;
+import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
@@ -39,6 +43,7 @@ public class Player extends Entity implements Streamable<Player>{
 	private long lastStatsTime = 0l;
 	private LootContainer currentLootContainer;
 	private int classId;
+	private String characterUuid;
 	private long experience;
 	private Stats stats;
 
@@ -92,6 +97,43 @@ public class Player extends Entity implements Streamable<Player>{
 		this.health = classModel.getBaseStats().getHp();
 		this.mana = classModel.getBaseStats().getMp();
 		this.stats = classModel.getBaseStats();
+	}
+	
+	public void applyStats(CharacterStatsDto stats) {
+		this.setExperience(stats.getXp());
+		this.stats.setHp(stats.getHp().shortValue());
+		this.stats.setMp(stats.getMp().shortValue());
+		this.stats.setDef(stats.getDef().shortValue());
+		this.stats.setAtt(stats.getAtt().shortValue());
+		this.stats.setSpd(stats.getSpd().shortValue());
+		this.stats.setDex(stats.getDex().shortValue());
+		this.stats.setVit(stats.getVit().shortValue());
+		this.stats.setWis(stats.getWis().shortValue());
+	}
+	
+	public List<GameItemRefDto> serializeItems(){
+		final List<GameItemRefDto> res = new ArrayList<>();
+		for(int i=0;i<this.inventory.length; i++) {
+			GameItem item = this.inventory[i];
+			if(item!=null) {
+				res.add(GameItemRefDto.builder().itemId(item.getItemId()).itemUuid(item.getUid()).slotIdx(i).build());
+			}
+		}
+		return res;
+	}
+	
+	public CharacterStatsDto serializeStats() {
+		return CharacterStatsDto.builder()
+				.xp(this.getExperience())
+				.hp(Integer.valueOf((int)this.stats.getHp()))
+				.mp(Integer.valueOf((int)this.stats.getMp()))
+				.def(Integer.valueOf((int)this.stats.getDef()))
+				.att(Integer.valueOf((int)this.stats.getAtt()))
+				.spd(Integer.valueOf((int)this.stats.getSpd()))
+				.dex(Integer.valueOf((int)this.stats.getDex()))
+				.vit(Integer.valueOf((int)this.stats.getVit()))
+				.wis(Integer.valueOf((int)this.stats.getWis()))
+				.build();
 	}
 
 	private void resetInventory() {
@@ -406,6 +448,7 @@ public class Player extends Entity implements Streamable<Player>{
 	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.getId());
 		stream.writeUTF(this.getName());
+		//stream.writeUTF(this.characterUuid);
 		stream.writeInt(this.getClassId());
 		stream.writeShort(this.getSize());
 		stream.writeFloat(this.getPos().x);
@@ -418,6 +461,7 @@ public class Player extends Entity implements Streamable<Player>{
 	public Player read(DataInputStream stream) throws Exception {
 		long id = stream.readLong();
 		String name = stream.readUTF();
+		//String characterUuid = stream.readUTF();
 		int classId = stream.readInt();
 		short size = stream.readShort();
 		float posX = stream.readFloat();
@@ -428,6 +472,7 @@ public class Player extends Entity implements Streamable<Player>{
 		player.setDx(dX);
 		player.setDy(dY);
 		player.setName(name);
+		//player.setCharacterUuid(characterUuid);
 		return player;
 	}
 
@@ -442,6 +487,7 @@ public class Player extends Entity implements Streamable<Player>{
 	public static Player fromStream(DataInputStream stream) throws Exception {
 		long id = stream.readLong();
 		String name = stream.readUTF();
+		//String characterUuid = stream.readUTF();
 		int classId = stream.readInt();
 		short size = stream.readShort();
 		float posX = stream.readFloat();
@@ -452,6 +498,7 @@ public class Player extends Entity implements Streamable<Player>{
 		player.setDx(dX);
 		player.setDy(dY);
 		player.setName(name);
+		//player.setCharacterUuid(characterUuid);
 		return player;
 	}
 

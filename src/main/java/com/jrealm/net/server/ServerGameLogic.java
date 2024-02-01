@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ServerGameLogic {
-	private static final JRealmDataService DATA_SERVICE = new JRealmDataService(HttpClient.newHttpClient(),
+	public static final JRealmDataService DATA_SERVICE = new JRealmDataService(HttpClient.newHttpClient(),
 			"http://localhost:8085/");
 
 	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
@@ -365,8 +365,10 @@ public class ServerGameLogic {
 					playerPos,
 					GlobalConstants.PLAYER_SIZE, cls);
 			player.equipSlots(loadedEquipment);
+			player.applyStats(targetCharacter.getStats());
 			player.setName(accountName);
 			player.setHeadless(false);
+			// TODO: Add a 'primary' realm where newly logged in users always spawn
 			for (final Realm test : mgr.getRealms().values()) {
 				if (test != null) {
 					player.setPos(test.getTileManager().getSafePosition());

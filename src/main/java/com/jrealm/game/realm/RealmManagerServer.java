@@ -14,8 +14,10 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
@@ -909,6 +911,33 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 		return found;
+	}
+	
+	public void persistsPlayersAsync() {
+		Supplier<Boolean> persist = ()->{
+			return this.persistPlayers();
+		};
+		WorkerThread.doAsync(persist);
+	}
+	
+	private boolean persistPlayers() {
+		
+		for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
+			for (Player player : realm.getValue().getPlayers().values()) {
+				try {
+					try {
+						PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executeGet("/data/account/"+player.getId(), null, PlayerAccountDto.class);
+	
+					} catch (Exception e) {
+						RealmManagerServer.log.error("Failed to get player account. Reason: {}", e);
+					}
+				} catch (Exception e) {
+					RealmManagerServer.log.error("Failed to persist player accounts. Reason: {}", e);
+					// throw e;
+				}
+			}
+		}
+		return true;
 	}
 
 	private void broadcastPacket(final Packet packet) {

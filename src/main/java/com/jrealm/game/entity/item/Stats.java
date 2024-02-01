@@ -42,7 +42,7 @@ public class Stats implements Streamable<Stats> {
 				.spd((short) (this.spd - other.getSpd())).dex((short) (this.dex - other.getDex()))
 				.vit((short) (this.vit - other.getVit())).wis((short) (this.wis - other.getWis())).build();
 	}
-
+	
 	@Override
 	public Stats clone() {
 		return Stats.builder().hp((short) (this.hp)).mp((short) (this.mp)).def((short) (this.def))
