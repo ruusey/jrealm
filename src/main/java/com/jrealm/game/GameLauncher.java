@@ -33,13 +33,13 @@ public class GameLauncher {
 		if (GameLauncher.LOCAL_CLIENT) {
 			if(args.length<2) {
 				GameLauncher.log.error(
-						"Please set the player username server and classId. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_NAME} {CLASS_ID}]");
+						"Please set the player username server and classId. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_EMAIL} {CLASS_UUID}]");
 				return;
 			}
 			SocketClient.PLAYER_EMAIL = args[1];
 			if(SocketClient.PLAYER_EMAIL==null) {
 				GameLauncher.log.error(
-						"Please set the player username server and classId. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_NAME} {CLASS_ID}]");
+						"Please set the player username server and classId. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_EMAIL} {CLASS_UUID}]");
 				return;
 			}
 			SocketClient.SERVER_ADDR = args[0];
@@ -47,10 +47,10 @@ public class GameLauncher {
 				SocketClient.SERVER_ADDR=SocketServer.LOCALHOST;
 			}
 			try {
-				SocketClient.CLASS_ID = Integer.parseInt(args[2]);
+				SocketClient.CHARACTER_UUID = args[2];
 			} catch (Exception e) {
 				GameLauncher.log.error(
-						"Please set the player username server and classId. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_NAME} {CLASS_ID}]");
+						"Please set the player username server and classId. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_EMAIL} {CLASS_UUID}]");
 			}
 			new GameLauncher();
 		}

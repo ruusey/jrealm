@@ -263,12 +263,12 @@ public class ClientGameLogic {
 	private static void doLoginResponse(RealmManagerClient cli, LoginResponseMessage loginResponse) {
 		try {
 			if(loginResponse.isSuccess()) {
-				try {
-					PlayerAccountDto playerAccount = DATA_SERVICE.executeGet("/data/account/"+loginResponse.getAccountUuid(), null, PlayerAccountDto.class);
-					log.info(playerAccount+" ");
-				}catch(Exception e) {
-					log.error("Failed to get player account for account UUID "+loginResponse.getAccountUuid());
-				}
+//				try {
+//					PlayerAccountDto playerAccount = DATA_SERVICE.executeGet("/data/account/"+loginResponse.getAccountUuid(), null, PlayerAccountDto.class);
+//					log.info(playerAccount.toString());
+//				}catch(Exception e) {
+//					log.error("Failed to get player account for account UUID "+loginResponse.getAccountUuid());
+//				}
 				Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				CharacterClass cls = CharacterClass.valueOf(loginResponse.getClassId());
 				Player player = new Player(loginResponse.getPlayerId(), c, GameDataManager.loadClassSprites(cls),

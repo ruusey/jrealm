@@ -3,7 +3,12 @@ package com.jrealm.net.server;
 import java.io.DataOutputStream;
 import java.io.OutputStream;
 import java.net.http.HttpClient;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
+import com.jrealm.account.dto.CharacterDto;
+import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.account.dto.LoginRequestDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.account.dto.SessionTokenDto;
@@ -333,24 +338,33 @@ public class ServerGameLogic {
 			// TODO: TEMP to avoid null ptr when sending the login response
 			SessionTokenDto loginToken = new SessionTokenDto();
 			String accountName = request.getEmail();
+			Optional<CharacterDto> characterClass = null;
 			try {
 				loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
 				PlayerAccountDto account = DATA_SERVICE.executeGet("/data/account/"+loginToken.getAccountGuid(), null, PlayerAccountDto.class);
 				accountName = account.getAccountName();
+				characterClass = account.getCharacters().stream().filter(character->character.getCharacterUuid().equals(request.getCharacterUuid())).findAny();
+				if(characterClass.isEmpty()) {
+					throw new Exception("Player character with UUID "+request.getCharacterUuid()+" does not exist");
+				}
 			} catch (Exception e) {
 				ServerGameLogic.log.error("Failed to perform remote login. Reason: {}", e);
 				// throw e;
 			}
-
+			final CharacterDto targetCharacter = characterClass.get();
+			final Map<Integer, GameItem> loadedEquipment = new HashMap<>();
+			for(final GameItemRefDto item : targetCharacter.getItems()) {
+				loadedEquipment.put(item.getSlotIdx(), GameItem.fromGameItemRef(item));
+			}
 			final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-			final CharacterClass cls = CharacterClass.valueOf(request.getClassId());
+			final CharacterClass cls = CharacterClass.valueOf(targetCharacter.getCharacterClass());
 
 			final Vector2f playerPos = new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 					(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE);
 			final Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
 					playerPos,
 					GlobalConstants.PLAYER_SIZE, cls);
-			player.equipSlots(GameDataManager.getStartingEquipment(cls));
+			player.equipSlots(loadedEquipment);
 			player.setName(accountName);
 			player.setHeadless(false);
 			for (final Realm test : mgr.getRealms().values()) {
@@ -365,7 +379,7 @@ public class ServerGameLogic {
 			final OutputStream toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getClientSocket()
 					.getOutputStream();
 			final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-			final LoginResponseMessage message = LoginResponseMessage.builder().classId(request.getClassId())
+			final LoginResponseMessage message = LoginResponseMessage.builder().classId(targetCharacter.getCharacterClass())
 					.spawnX(player.getPos().x)
 					.spawnY(player.getPos().y)
 					.playerId(player.getId()).success(true)

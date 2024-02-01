@@ -4,6 +4,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.UUID;
 
+import com.jrealm.account.dto.GameItemRefDto;
+import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.model.SpriteModel;
 import com.jrealm.net.Streamable;
 
@@ -152,5 +154,12 @@ public class GameItem extends SpriteModel implements Streamable<GameItem> {
 		this.setCol(model.getCol());
 		this.setAngleOffset(model.getAngleOffset());
 		this.setSpriteKey(model.getSpriteKey());
+	}
+	
+	public static GameItem fromGameItemRef(final GameItemRefDto gameItem) {
+		GameItem item = GameDataManager.GAME_ITEMS.get(gameItem.getItemId());
+		item.setUid(gameItem.getItemUuid());
+		GameDataManager.loadSpriteModel(item);	
+		return item;
 	}
 }

@@ -22,4 +22,5 @@ public class GameItemRefDto extends TemporalDto {
 	private Integer itemId;
 	private Integer slotIdx;
 	private String itemUuid;
+	
 }

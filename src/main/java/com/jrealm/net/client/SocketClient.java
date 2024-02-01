@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SocketClient implements Runnable {
 	public static String PLAYER_EMAIL = null;
 	public static String SERVER_ADDR = null;
-	public static int CLASS_ID = 0;
+	public static String CHARACTER_UUID = null;
 
 	private static final int BUFFER_CAPACITY = 65536 * 100;
 
@@ -113,7 +113,7 @@ public class SocketClient implements Runnable {
 	}
 
 	private void doLogin() throws Exception{
-		LoginRequestMessage login = LoginRequestMessage.builder().classId(SocketClient.CLASS_ID)
+		LoginRequestMessage login = LoginRequestMessage.builder().characterUuid(SocketClient.CHARACTER_UUID)
 				.email(SocketClient.PLAYER_EMAIL)
 				.password("password").build();
 

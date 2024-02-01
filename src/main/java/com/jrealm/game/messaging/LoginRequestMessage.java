@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class LoginRequestMessage {
 	private String email;
 	private String password;
-	private int classId;
+	private String characterUuid;
 }
