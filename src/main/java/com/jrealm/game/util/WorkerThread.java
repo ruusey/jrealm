@@ -1,11 +1,9 @@
 package com.jrealm.game.util;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.function.Supplier;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,14 +19,10 @@ public class WorkerThread extends Thread {
 		return CompletableFuture.runAsync(runnable, WorkerThread.executor);
 	}
 	
-	public static <T> CompletableFuture<T> doAsync(Supplier<T> task){
-		final Callable<T> publish = () -> {
-			return task.get();
-		};
-
-		final CompletableFuture<T> cf = CompletableFuture.supplyAsync(() -> {
+	public static CompletableFuture<Void> doAsync(Runnable task){
+		final CompletableFuture<Void> cf = CompletableFuture.runAsync(() -> {
 			try {
-				return publish.call();
+				task.run();
 			} catch (Exception ex) {
 				throw new CompletionException(ex);
 			}

@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
@@ -19,6 +20,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.jrealm.account.dto.CharacterDto;
+import com.jrealm.account.dto.CharacterStatsDto;
+import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
@@ -105,6 +108,7 @@ public class RealmManagerServer implements Runnable {
 		this.server = new SocketServer(2222);
 		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
+		this.beginPlayerSync();
 	}
 
 	// Adds a specified amount of random headless players
@@ -915,9 +919,23 @@ public class RealmManagerServer implements Runnable {
 		return found;
 	}
 	
+	private void beginPlayerSync() {
+		final Runnable playerSync = () ->{
+			try {
+				Thread.sleep(30000);
+				this.persistsPlayersAsync();
+			}catch(Exception e) {
+				log.error("Failed to perform player data sync.");
+			}
+		};
+		
+		//Thread syncThread = new Thread(playerSync);
+		WorkerThread.submitAndForkRun(playerSync);	
+	}
+	
 	public void persistsPlayersAsync() {
-		Supplier<Boolean> persist = ()->{
-			return this.persistPlayers();
+		Runnable persist = ()->{
+			this.persistPlayers();
 		};
 		WorkerThread.doAsync(persist);
 	}
@@ -931,10 +949,14 @@ public class RealmManagerServer implements Runnable {
 						Optional<CharacterDto> currentCharacter = account.getCharacters().stream().filter(character->character.getCharacterUuid().equals(player.getCharacterUuid())).findAny();
 						if(currentCharacter.isPresent()) {
 							CharacterDto character = currentCharacter.get();
-							character.setStats(player.serializeStats());
+							CharacterStatsDto newStats = player.serializeStats();
+							Set<GameItemRefDto> newItems = player.serializeItems();
 							character.setItems(player.serializeItems());
-							PlayerAccountDto savedAccount = ServerGameLogic.DATA_SERVICE.executePost("/data/account", account, PlayerAccountDto.class);
-							log.info("Succesfully persisted user account {}", savedAccount.getAccountEmail());
+							character.setStats(newStats);
+							CharacterDto savedStats = ServerGameLogic.DATA_SERVICE.executePost("/data/account/character/"+character.getCharacterUuid(), character, CharacterDto.class);
+
+							//PlayerAccountDto savedAccount = ServerGameLogic.DATA_SERVICE.executePost("/data/account", account, PlayerAccountDto.class);
+							log.info("Succesfully persisted user account {}", account.getAccountEmail());
 						}
 					} catch (Exception e) {
 						RealmManagerServer.log.error("Failed to get player account. Reason: {}", e);
