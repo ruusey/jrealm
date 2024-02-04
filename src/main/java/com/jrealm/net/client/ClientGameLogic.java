@@ -1,8 +1,5 @@
 package com.jrealm.net.client;
 
-import java.net.http.HttpClient;
-
-import com.jrealm.account.service.JRealmDataService;
 import com.jrealm.game.GameLauncher;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
@@ -40,8 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientGameLogic {
-	private static final JRealmDataService DATA_SERVICE = new JRealmDataService(HttpClient.newHttpClient(), "http://localhost:8085/");
-
 	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
 		@SuppressWarnings("unused")
 		// Unused until this contains user spefic death data.
