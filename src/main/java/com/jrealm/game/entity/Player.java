@@ -4,9 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -101,7 +99,7 @@ public class Player extends Entity implements Streamable<Player>{
 		this.mana = classModel.getBaseStats().getMp();
 		this.stats = classModel.getBaseStats();
 	}
-	
+
 	public void applyStats(CharacterStatsDto stats) {
 		this.setExperience(stats.getXp());
 		this.stats.setHp(stats.getHp().shortValue());
@@ -113,7 +111,7 @@ public class Player extends Entity implements Streamable<Player>{
 		this.stats.setVit(stats.getVit().shortValue());
 		this.stats.setWis(stats.getWis().shortValue());
 	}
-	
+
 	public Set<GameItemRefDto> serializeItems(){
 		final Set<GameItemRefDto> res = new HashSet<>();
 		for(int i=0;i<this.inventory.length; i++) {
@@ -124,7 +122,7 @@ public class Player extends Entity implements Streamable<Player>{
 		}
 		return res;
 	}
-	
+
 	public CharacterStatsDto serializeStats() {
 		return CharacterStatsDto.builder()
 				.xp(this.getExperience())
@@ -215,7 +213,7 @@ public class Player extends Entity implements Streamable<Player>{
 			if (this.hasEffect(EffectType.HEALING)) {
 				mult = 1.5f;
 			}
-			final int vit = (int) ((0.24 * (stats.getVit() + 4.2)) * mult);
+			final int vit = (int) ((0.24f * (stats.getVit() + 4.2f)) * mult);
 			if (this.getHealth() < stats.getHp()) {
 				int targetHealth = this.getHealth() + vit;
 				if (targetHealth > stats.getHp()) {
@@ -223,7 +221,7 @@ public class Player extends Entity implements Streamable<Player>{
 				}
 				this.setHealth(targetHealth);
 			}
-			final int wis = (int) ((0.12 * (stats.getWis() + 4.2)));
+			final int wis = (int) ((0.12f * (stats.getWis() + 4.2f)));
 			if (this.getMana() < stats.getMp()) {
 				int targetMana = this.getMana() + wis;
 				if (targetMana > stats.getMp()) {
