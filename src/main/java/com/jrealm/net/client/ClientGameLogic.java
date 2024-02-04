@@ -62,7 +62,7 @@ public class ClientGameLogic {
 					final Bullet b=clientRealm.getBullet(textEffect.getTargetEntityId());
 					if (b == null) {
 						ClientGameLogic.log.warn("Bullet with id {} was not found for targeted TextEffect", textEffect.getTargetEntityId());
-						break;
+						return;
 					}
 					targetPos = b.getPos();
 
@@ -71,7 +71,7 @@ public class ClientGameLogic {
 					final Enemy e = clientRealm.getEnemy(textEffect.getTargetEntityId());
 					if (e == null) {
 						ClientGameLogic.log.warn("Enemy with id {} was not found for targeted TextEffect", textEffect.getTargetEntityId());
-						break;
+						return;
 					}
 					targetPos = e.getPos();
 					break;
@@ -79,7 +79,7 @@ public class ClientGameLogic {
 					final Player p = clientRealm.getPlayer(textEffect.getTargetEntityId());
 					if (p == null) {
 						ClientGameLogic.log.warn("Player with id {} was not found for targeted TextEffect", textEffect.getTargetEntityId());
-						break;
+						return;
 					}
 					targetPos = p.getPos();
 					break;

@@ -53,6 +53,7 @@ import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.Tile;
 import com.jrealm.game.tile.TileMap;
 import com.jrealm.game.tile.decorators.Beach0Decorator;
+import com.jrealm.game.tile.decorators.Grasslands0Decorator;
 import com.jrealm.game.tile.decorators.RealmDecorator;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
@@ -429,6 +430,7 @@ public class RealmManagerServer implements Runnable {
 	// (generate static enemies, terrain, events)
 	private void registerRealmDecorators() {
 		this.realmDecorators.add(new Beach0Decorator());
+		this.realmDecorators.add(new Grasslands0Decorator());
 	}
 
 	private void registerPacketCallbacks() {
@@ -578,7 +580,7 @@ public class RealmManagerServer implements Runnable {
 
 			for (final Projectile p : group.getProjectiles()) {
 				final short offset = (short) (p.getSize() / (short) 2);
-				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
+				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
 				if (p.getPositionMode() == ProjectilePositionMode.TARGET_PLAYER) {
 					this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
