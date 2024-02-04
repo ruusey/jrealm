@@ -1,5 +1,5 @@
-# jrealm
-### Realm 2 in Java
+# JRealm
+### An 8bit Dungeon Crawler Rogue-Like Game written entirely in Java
 ![alt text](https://i.imgur.com/GPpcD2I.png) </br>
 ![alt text](https://i.imgur.com/gf2c380.png) </br>
 ![alt text](https://i.imgur.com/7Z540Mb.png) </br>
