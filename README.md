@@ -4,6 +4,9 @@
 ![alt text](https://i.imgur.com/gf2c380.png) </br>
 ![alt text](https://i.imgur.com/7Z540Mb.png) </br>
 ### Running
+#### *NOTE: As of release 0.3.0 You are now required to run JRealm-Data alongside JRealm-Server
+#### see: https://github.com/ruusey/jrealm-data*
+
 * Server: <br />
 `java -jar ./jrealm-{version}-server.jar` <br />
 The server requires port 2222 to be available
