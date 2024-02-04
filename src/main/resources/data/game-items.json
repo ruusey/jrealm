@@ -813,7 +813,7 @@
 			"mp": 100
 		},
 		"consumable": false,
-		"tier": 15,
+		"tier": -1,
 		"targetSlot": 3,
 		"targetClass": -4,
 		"fameBonus": 8
@@ -834,7 +834,7 @@
 			"max": 400
 		},
 		"consumable": false,
-		"tier": 15,
+		"tier": -1,
 		"targetSlot": 0,
 		"targetClass": 0,
 		"fameBonus": 8
@@ -1511,7 +1511,7 @@
 			"max": 150
 		},
 		"consumable": false,
-		"tier": 13,
+		"tier": -1,
 		"targetSlot": 0,
 		"targetClass": -3,
 		"fameBonus": 7
