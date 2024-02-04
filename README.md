@@ -1,5 +1,5 @@
-# jrealm
-### Realm 2 in Java
+# JRealm
+### An 8bit Dungeon Crawler Rogue-Like Game written entirely in Java
 ![alt text](https://i.imgur.com/GPpcD2I.png) </br>
 ![alt text](https://i.imgur.com/gf2c380.png) </br>
 ![alt text](https://i.imgur.com/7Z540Mb.png) </br>
@@ -9,10 +9,10 @@
 The server requires port 2222 to be available
 
 * Client: <br />
-`java -jar ./jrealm-{version}-client.jar {SERVER_ADDRESS} {USERNAME} {CLASS_ID}` <br />
+`java -jar ./jrealm-{version}-client.jar {SERVER_ADDRESS} {ACCOUNT_EMAIL} {CHARACTER_UUID}` <br />
 Replace `{SERVER_ADDRESS}` with the IP Address of the server you wish to connect to <br />
-Replace `{USERNAME}` with your desired in game username <br />
-Replace `{CLASS_ID}` with your desired in game character class:
+Replace `{ACCOUNT_EMAIL}` with your account's email <br />
+Replace `{CHARACTER_UUID}` with the UUID of your character 
 ```	
 ROGUE(0),
 ARCHER(1),
