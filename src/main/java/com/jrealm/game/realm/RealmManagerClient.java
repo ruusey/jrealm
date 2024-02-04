@@ -7,6 +7,9 @@ import java.util.function.BiConsumer;
 
 import com.jrealm.game.GameLauncher;
 import com.jrealm.game.contants.PacketType;
+import com.jrealm.game.entity.Player;
+import com.jrealm.game.entity.item.LootContainer;
+import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
@@ -134,5 +137,33 @@ public class RealmManagerClient implements Runnable {
 		}catch(Exception e) {
 			RealmManagerClient.log.error("Failed to send MoveItem packet. Reason: {}", e);
 		}
+	}
+
+	public Player getClosestPlayer(final Vector2f pos, final float limit) {
+		float best = Float.MAX_VALUE;
+		Player bestPlayer = null;
+		final Realm targetRealm = this.realm;
+		for (final Player player : targetRealm.getPlayers().values()) {
+			final float dist = player.getPos().distanceTo(pos);
+			if ((dist < best) && (dist <= limit)) {
+				best = dist;
+				bestPlayer = player;
+			}
+		}
+		return bestPlayer;
+	}
+
+	public LootContainer getClosestLootContainer(final Vector2f pos, final float limit) {
+		float best = Float.MAX_VALUE;
+		LootContainer bestLoot = null;
+		final Realm targetRealm = this.realm;
+		for (final LootContainer lootContainer : targetRealm.getLoot().values()) {
+			float dist = lootContainer.getPos().distanceTo(pos);
+			if ((dist < best) && (dist <= limit)) {
+				best = dist;
+				bestLoot = lootContainer;
+			}
+		}
+		return bestLoot;
 	}
 }

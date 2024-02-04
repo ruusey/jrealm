@@ -16,7 +16,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.jrealm.account.dto.CharacterDto;
@@ -50,7 +49,6 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.state.PlayState;
 import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.Tile;
 import com.jrealm.game.tile.TileMap;
@@ -502,6 +500,7 @@ public class RealmManagerServer implements Runnable {
 				}
 			};
 
+
 			// Used to dynamically re-render changed loot containers (chests) on the client
 			// if their
 			// contents change in a server tick (receive MoveItem packet from client this
@@ -511,11 +510,12 @@ public class RealmManagerServer implements Runnable {
 			WorkerThread.submitAndRun(processGameObjects);
 		}
 
-		Runnable removeExpiredBullets = () -> {
+		Runnable removeExpiredObjects = () -> {
 			this.removeExpiredBullets();
+			this.removeExpiredLootContainers();
 		};
 
-		WorkerThread.submitAndRun(removeExpiredBullets);
+		WorkerThread.submitAndRun(removeExpiredObjects);
 
 	}
 
@@ -634,6 +634,22 @@ public class RealmManagerServer implements Runnable {
 			toRemove.forEach(bullet -> {
 				realm.getExpiredBullets().add(bullet.getId());
 				realm.removeBullet(bullet);
+			});
+		}
+	}
+
+	public void removeExpiredLootContainers() {
+		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+			final Realm realm = realmEntry.getValue();
+
+			final List<LootContainer> toRemove = new ArrayList<>();
+			for (final LootContainer lc : realm.getLoot().values()) {
+				if (lc.isExpired() || lc.isEmpty()) {
+					toRemove.add(lc);
+				}
+			}
+			toRemove.forEach(lc -> {
+				realm.removeLootContainer(lc);
 			});
 		}
 	}
@@ -918,45 +934,51 @@ public class RealmManagerServer implements Runnable {
 		}
 		return found;
 	}
-	
+
 	private void beginPlayerSync() {
 		final Runnable playerSync = () ->{
 			try {
-				Thread.sleep(30000);
-				this.persistsPlayersAsync();
+				while (!this.shutdown) {
+					Thread.sleep(20000);
+					RealmManagerServer.log.info("Performing asynchronous player data sync.");
+					this.persistsPlayersAsync();
+				}
 			}catch(Exception e) {
-				log.error("Failed to perform player data sync.");
+				RealmManagerServer.log.error("Failed to perform player data sync.");
 			}
 		};
-		
+
 		//Thread syncThread = new Thread(playerSync);
-		WorkerThread.submitAndForkRun(playerSync);	
+		WorkerThread.submitAndForkRun(playerSync);
 	}
-	
+
 	public void persistsPlayersAsync() {
-		Runnable persist = ()->{
+		final Runnable persist = () -> {
 			this.persistPlayers();
 		};
 		WorkerThread.doAsync(persist);
 	}
-	
+
 	private boolean persistPlayers() {
-		for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
-			for (Player player : realm.getValue().getPlayers().values()) {
+		for (final Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
+			for (final Player player : realm.getValue().getPlayers().values()) {
 				try {
 					try {
-						PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executeGet("/data/account/"+player.getAccountUuid(), null, PlayerAccountDto.class);
-						Optional<CharacterDto> currentCharacter = account.getCharacters().stream().filter(character->character.getCharacterUuid().equals(player.getCharacterUuid())).findAny();
+						final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
+								.executeGet("/data/account/" + player.getAccountUuid(), null, PlayerAccountDto.class);
+						final Optional<CharacterDto> currentCharacter = account.getCharacters().stream()
+								.filter(character -> character.getCharacterUuid().equals(player.getCharacterUuid()))
+								.findAny();
 						if(currentCharacter.isPresent()) {
-							CharacterDto character = currentCharacter.get();
-							CharacterStatsDto newStats = player.serializeStats();
-							Set<GameItemRefDto> newItems = player.serializeItems();
+							final CharacterDto character = currentCharacter.get();
+							final CharacterStatsDto newStats = player.serializeStats();
+							final Set<GameItemRefDto> newItems = player.serializeItems();
 							character.setItems(player.serializeItems());
 							character.setStats(newStats);
-							CharacterDto savedStats = ServerGameLogic.DATA_SERVICE.executePost("/data/account/character/"+character.getCharacterUuid(), character, CharacterDto.class);
-
-							//PlayerAccountDto savedAccount = ServerGameLogic.DATA_SERVICE.executePost("/data/account", account, PlayerAccountDto.class);
-							log.info("Succesfully persisted user account {}", account.getAccountEmail());
+							final CharacterDto savedStats = ServerGameLogic.DATA_SERVICE.executePost(
+									"/data/account/character/" + character.getCharacterUuid(), character,
+									CharacterDto.class);
+							RealmManagerServer.log.info("Succesfully persisted user account {}", account.getAccountEmail());
 						}
 					} catch (Exception e) {
 						RealmManagerServer.log.error("Failed to get player account. Reason: {}", e);

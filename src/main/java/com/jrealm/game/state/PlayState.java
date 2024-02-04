@@ -17,6 +17,7 @@ import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
+import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
@@ -108,7 +109,7 @@ public class PlayState extends GameState {
 		this.loadClass(player, cls, setEquipment);
 	}
 
-	
+
 
 	public long getPlayerId() {
 		return this.playerId;
@@ -171,14 +172,31 @@ public class PlayState extends GameState {
 						}
 					}
 				};
+				// Testing out optimistic update of enemies/bullets
+				final Runnable processGameObjects = () -> {
+					final Realm clientRealm = this.realmManager.getRealm();
+					final GameObject[] gameObject = clientRealm.getAllGameObjects();
+					for (int i = 0; i < gameObject.length; i++) {
+						if (gameObject[i] instanceof Enemy) {
+							final Enemy enemy = ((Enemy) gameObject[i]);
+							enemy.update(this.getRealmManager(), time);
+						}
 
+						if (gameObject[i] instanceof Bullet) {
+							final Bullet bullet = ((Bullet) gameObject[i]);
+							if (bullet != null) {
+								bullet.update();
+							}
+						}
+					}
+				};
 
 				Runnable updatePlayerAndUi = () -> {
 					player.update(time);
 					this.movePlayer(player);
 					this.pui.update(time);
 				};
-				WorkerThread.submitAndRun(playerShootDequeue, updatePlayerAndUi, monitorDamageText);
+				WorkerThread.submitAndRun(processGameObjects, playerShootDequeue, updatePlayerAndUi, monitorDamageText);
 			}
 			this.cam.target(player);
 			this.cam.update();

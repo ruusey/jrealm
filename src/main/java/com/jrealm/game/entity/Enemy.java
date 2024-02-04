@@ -15,6 +15,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
+import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.net.Streamable;
 
@@ -74,7 +75,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			this.left = false;
 			return;
 		}
-		
+
 		AABB playerBounds = player.getBounds();
 		if (this.sense.colCircleBox(playerBounds) && !this.attackrange.colCircleBox(playerBounds)) {
 			if (this.pos.y > (player.pos.y + 1)) {
@@ -99,7 +100,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 				this.right = false;
 			}
 		} else if(this.sense.colCircleBox(playerBounds) ){
-			if(this.idleTime>=IDLE_FRAMES) {
+			if(this.idleTime>=Enemy.IDLE_FRAMES) {
 				this.up = Realm.RANDOM.nextBoolean();
 				this.down = Realm.RANDOM.nextBoolean();
 				this.left = Realm.RANDOM.nextBoolean();
@@ -108,7 +109,57 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			}else {
 				this.idleTime++;
 			}
-			
+
+		}
+	}
+
+	public void update(RealmManagerClient mgr, double time) {
+		Player player = mgr.getClosestPlayer(this.getPos(), this.r_sense);
+		super.update(time);
+		if (player == null)
+			return;
+		this.chase(player);
+		this.move();
+
+		if (this.teleported) {
+			this.teleported = false;
+
+			this.hitBounds = new AABB(this.pos, this.size, this.size);
+
+			this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2),
+					(this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
+			this.attackrange = new AABB(new Vector2f(
+					(this.pos.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
+					(this.pos.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
+					this.r_attackrange);
+		}
+
+		if (this.hasEffect(EffectType.PARALYZED)) {
+			this.up = false;
+			this.down = false;
+			this.right = false;
+			this.left = false;
+			return;
+		}
+		if (!this.isFallen()) {
+			// if
+			// (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1),
+			// mgr.getRealm().getTileManager().getTm().get(1).getBlocks(),
+			// this.dx,0)) {
+			this.sense.getPos().x += this.dx;
+			this.attackrange.getPos().x += this.dx;
+			this.pos.x += this.dx;
+			// }
+			// if
+			// (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1),
+			// mgr.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
+			// this.dy)) {
+			this.sense.getPos().y += this.dy;
+			this.attackrange.getPos().y += this.dy;
+			this.pos.y += this.dy;
+			// }
+		} else if (this.ani.hasPlayedOnce()) {
+			this.die = true;
 		}
 	}
 
@@ -193,6 +244,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			this.die = true;
 		}
 	}
+
 
 	@Override
 	public void render(Graphics2D g) {
