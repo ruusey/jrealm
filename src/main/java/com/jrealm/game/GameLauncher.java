@@ -22,7 +22,7 @@ public class GameLauncher {
 		GameLauncher.log.info("Starting JRealm...");
 		GameDataManager.loadGameData();
 		if(GameLauncher.LOCAL_SERVER) {
-			Realm realm = new Realm(true, 2);
+			Realm realm = new Realm(true, 4);
 			RealmManagerServer server = new RealmManagerServer();
 			server.addRealm(realm);
 			realm.spawnRandomEnemies(realm.getMapId());

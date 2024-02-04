@@ -92,5 +92,14 @@
 		"width": 64,
 		"height": 64,
 		"terrainId": 1
+	},
+	{
+		"mapId": 4,
+		"mapName": "Grasslands_0",
+		"mapKey": "overworld.grasslands0",
+		"tileSize" : 32,
+		"width": 64,
+		"height": 64,
+		"terrainId": 2
 	}
 ]
