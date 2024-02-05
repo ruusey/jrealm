@@ -306,7 +306,7 @@ public class TileManager {
 					tiles.add(collisionNetTile);
 
 				}catch(Exception e) {
-
+					e.printStackTrace();
 				}
 			}
 		}

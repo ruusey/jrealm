@@ -37,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientGameLogic {
+	private static Integer lastMapId = 0;
 	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
 		@SuppressWarnings("unused")
 		// Unused until this contains user spefic death data.
@@ -104,6 +105,14 @@ public class ClientGameLogic {
 		try {
 			//			log.info("[CLIENT] Recieved Load Packet \nPlayers: {}\nEnemies: {}\nBullets: {}\nLootContainers: {}",
 			//
+			// cli.getState().getPui().getMinimap().initializeMap();
+			//			if ((cli.getRealm() != null) && (cli.getRealm().getMapId() != ClientGameLogic.lastMapId)) {
+			if (ClientGameLogic.lastMapId != cli.getRealm().getMapId()) {
+				ClientGameLogic.lastMapId = cli.getRealm().getMapId();
+				cli.getState().getPui().getMinimap().initializeMap(cli.getRealm().getMapId());
+
+			}
+			//			}
 			cli.getRealm().setRealmId(loadPacket.getRealmId());
 			cli.getRealm().getTileManager().mergeMap(loadPacket);
 		} catch (Exception e) {

@@ -392,7 +392,6 @@ public class RealmManagerServer implements Runnable {
 
 	private UnloadPacket getUnloadPacket(long realmId) throws Exception {
 		final Realm targetRealm = this.realms.get(realmId);
-
 		final Long[] expiredBullets = targetRealm.getExpiredBullets().toArray(new Long[0]);
 		final Long[] expiredEnemies = targetRealm.getExpiredEnemies().toArray(new Long[0]);
 		final Long[] expiredPlayers = targetRealm.getExpiredPlayers().toArray(new Long[0]);
@@ -427,7 +426,7 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	// Register any custom realm type decorators.
-	// Each time a realm of the target type is generated, an instance
+	// Each time a realm of the target type is added, an instance
 	// of it will be passed to the decorator for post processing
 	// (generate static enemies, terrain, events)
 	private void registerRealmDecorators() {
@@ -503,24 +502,18 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 			};
+			WorkerThread.submitAndRun(processGameObjects);
+		}
 
-
+		final Runnable removeExpiredObjects = () -> {
+			this.removeExpiredBullets();
 			// Used to dynamically re-render changed loot containers (chests) on the client
 			// if their
 			// contents change in a server tick (receive MoveItem packet from client this
 			// tick)
-
-
-			WorkerThread.submitAndRun(processGameObjects);
-		}
-
-		Runnable removeExpiredObjects = () -> {
-			this.removeExpiredBullets();
 			this.removeExpiredLootContainers();
 		};
-
 		WorkerThread.submitAndRun(removeExpiredObjects);
-
 	}
 
 	private void movePlayer(final long realmId, final Player p) {

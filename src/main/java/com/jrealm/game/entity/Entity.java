@@ -215,22 +215,6 @@ public abstract class Entity extends GameObject {
 		}
 	}
 
-	private void setHitBoxDirection() {
-		if (this.up && !this.attacking) {
-			this.hitBounds.setXOffset((this.size - this.hitBounds.getWidth()) / 2);
-			this.hitBounds.setYOffset((-this.hitBounds.getHeight() / 2) + this.hitBounds.getXOffset());
-		} else if (this.down && !this.attacking) {
-			this.hitBounds.setXOffset((this.size - this.hitBounds.getWidth()) / 2);
-			this.hitBounds.setYOffset((this.hitBounds.getHeight() / 2) + this.hitBounds.getXOffset());
-		} else if (this.left && !this.attacking) {
-			this.hitBounds.setYOffset((this.size - this.hitBounds.getHeight()) / 2);
-			this.hitBounds.setXOffset((-this.hitBounds.getWidth() / 2) + this.hitBounds.getYOffset());
-		} else if (this.right && !this.attacking) {
-			this.hitBounds.setYOffset((this.size - this.hitBounds.getHeight()) / 2);
-			this.hitBounds.setXOffset((this.hitBounds.getWidth() / 2) + this.hitBounds.getYOffset());
-		}
-	}
-
 	public void move() {
 		if (this.hasEffect(EffectType.PARALYZED)) {
 			this.up = false;
@@ -299,7 +283,6 @@ public abstract class Entity extends GameObject {
 			}
 		}
 		this.animate();
-		this.setHitBoxDirection();
 		this.ani.update();
 	}
 

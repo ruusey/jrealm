@@ -1254,7 +1254,7 @@
 		"name": "Short Sword",
 		"description": "A steel short sword.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 45,
 			"max": 90
 		},
@@ -1272,7 +1272,7 @@
 		"name": "Broad Sword",
 		"description": "A broad-bladed steel sword.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 60,
 			"max": 105
 		},
@@ -1290,7 +1290,7 @@
 		"name": "Saber",
 		"description": "A single-edged light sword.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 75,
 			"max": 105
 		},
@@ -1308,7 +1308,7 @@
 		"name": "Long Sword",
 		"description": "A well-made sword with a double edged blade.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 75,
 			"max": 120
 		},
@@ -1326,7 +1326,7 @@
 		"name": "Falchion",
 		"description": "A single-edged broad-bladed sword.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 75,
 			"max": 135
 		},
@@ -1344,7 +1344,7 @@
 		"name": "Fire Sword",
 		"description": "A fiery blade capable of burning flesh and bone.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 90,
 			"max": 135
 		},
@@ -1362,7 +1362,7 @@
 		"name": "Glass Sword",
 		"description": "A sword formed from a single shard of unbreakable glass.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 110,
 			"max": 160
 		},
@@ -1380,7 +1380,7 @@
 		"name": "Golden Sword",
 		"description": "A sharp sword plated with gold, clearly intended for the use of a great lord.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 150,
 			"max": 180
 		},
@@ -1398,7 +1398,7 @@
 		"name": "Ravenheart Sword",
 		"description": "A powerful sword infused with the spirit of dark rituals.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 180,
 			"max": 255
 		},
@@ -1416,7 +1416,7 @@
 		"name": "Dragonsoul Sword",
 		"description": "A sword forged in a great volcano and consecrated with dragon magic.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 195,
 			"max": 255
 		},
@@ -1434,7 +1434,7 @@
 		"name": "Archon Sword",
 		"description": "A sword pulsing with the powerful magic of ancient beings.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 210,
 			"max": 255
 		},
@@ -1452,7 +1452,7 @@
 		"name": "Skysplitter Sword",
 		"description": "An unfathomably powerful sword wielded by titanic air elementals in their great war of revolution.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 210,
 			"max": 270
 		},
@@ -1470,7 +1470,7 @@
 		"name": "Sword of Acclaim",
 		"description": "A great sword of recognition, forged by the gods for the champions of humankind.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 220,
 			"max": 275
 		},
@@ -1488,7 +1488,7 @@
 		"name": "Sword of Splendor",
 		"description": "An exalted weapon of the august kings of old, hallowed with the spirit of nations and yearning to grant power anew.",
 		"damage": {
-			"projectileGroupId": 12,
+			"projectileGroupId": 22,
 			"min": 235,
 			"max": 290
 		},

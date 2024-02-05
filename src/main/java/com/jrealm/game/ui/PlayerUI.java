@@ -34,7 +34,7 @@ public class PlayerUI {
 
 	private PlayState playState;
 	private PlayerChat playerChat;
-
+	private Minimap minimap;
 	private Map<String, ItemTooltip> tooltips;
 	private Graphics2D tempGraphics;
 	private long lastAction = Instant.now().toEpochMilli();
@@ -60,6 +60,7 @@ public class PlayerUI {
 		this.inventory = new Slots[20];
 		this.tooltips = new HashMap<>();
 		this.playerChat = new PlayerChat();
+		this.minimap = new Minimap(p);
 	}
 
 	public Slots getSlot(int slot) {
@@ -488,5 +489,9 @@ public class PlayerUI {
 		this.xp.render(g);
 		this.renderStats(g);
 		this.playerChat.render(g);
+		if (this.minimap.isInitialized()) {
+			this.minimap.update();
+			this.minimap.render(g);
+		}
 	}
 }
