@@ -123,7 +123,7 @@ public class ServerGameLogic {
 		final Player toMove = realm
 				.getPlayer(playerMovePacket.getEntityId());
 		boolean doMove = playerMovePacket.isMove();
-		final float spd = (float) ((5.6 * (toMove.getComputedStats().getSpd() + 53.5)) / 75.0f);
+		float spd = (float) ((5.6 * (toMove.getComputedStats().getSpd() + 53.5)) / 75.0f);
 		if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
 			toMove.setUp(doMove);
 			toMove.setDy(doMove ? -spd : 0.0f);
@@ -138,6 +138,30 @@ public class ServerGameLogic {
 		}
 		if (playerMovePacket.getDirection().equals(Cardinality.WEST)) {
 			toMove.setLeft(doMove);
+			toMove.setDx(doMove ? -spd : 0.0f);
+		}
+
+		if (toMove.getIsUp() && toMove.getIsRight()) {
+			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
+			toMove.setDy(doMove ? -spd : 0.0f);
+			toMove.setDx(doMove ? spd : 0.0f);
+		}
+
+		if (toMove.getIsUp() && toMove.getIsLeft()) {
+			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
+			toMove.setDy(doMove ? -spd : 0.0f);
+			toMove.setDx(doMove ? -spd : 0.0f);
+		}
+
+		if (toMove.getIsDown() && toMove.getIsRight()) {
+			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
+			toMove.setDy(doMove ? spd : 0.0f);
+			toMove.setDx(doMove ? spd : 0.0f);
+		}
+
+		if (toMove.getIsDown() && toMove.getIsLeft()) {
+			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
+			toMove.setDy(doMove ? spd : 0.0f);
 			toMove.setDx(doMove ? -spd : 0.0f);
 		}
 
@@ -342,13 +366,12 @@ public class ServerGameLogic {
 			Optional<CharacterDto> characterClass = null;
 			try {
 				loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
-				PlayerAccountDto account = DATA_SERVICE.executeGet("/data/account/"+loginToken.getAccountGuid(), null, PlayerAccountDto.class);
+				PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executeGet("/data/account/"+loginToken.getAccountGuid(), null, PlayerAccountDto.class);
 				accountName = account.getAccountName();
 				accountUuid = account.getAccountUuid();
 				characterClass = account.getCharacters().stream().filter(character->character.getCharacterUuid().equals(request.getCharacterUuid())).findAny();
-				if(characterClass.isEmpty()) {
+				if(characterClass.isEmpty())
 					throw new Exception("Player character with UUID "+request.getCharacterUuid()+" does not exist");
-				}
 			} catch (Exception e) {
 				ServerGameLogic.log.error("Failed to perform remote login. Reason: {}", e);
 				// throw e;

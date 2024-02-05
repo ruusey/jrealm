@@ -207,7 +207,9 @@ public class PlayState extends GameState {
 		if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)
 				&& !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx())) {
 			p.xCol = false;
-			p.applyMovementLerp(new ObjectMovement(p.getPos().x + p.getDx(), p.getPos().y));
+			if (p.getDx() > 0) {
+				p.applyMovementLerp(new ObjectMovement(p.getPos().x + p.getDx(), p.getPos().y));
+			}
 		} else {
 			p.xCol = true;
 		}
@@ -215,7 +217,9 @@ public class PlayState extends GameState {
 		if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, 0, p.getDy())
 				&& !this.getRealmManager().getRealm().getTileManager().collidesYLimit(p, p.getDy())) {
 			p.yCol = false;
-			p.applyMovementLerp(new ObjectMovement(p.getPos().x, p.getPos().y + p.getDy()));
+			if (p.getDy() > 0) {
+				p.applyMovementLerp(new ObjectMovement(p.getPos().x, p.getPos().y + p.getDy()));
+			}
 		} else {
 			p.yCol = true;
 		}
@@ -307,8 +311,9 @@ public class PlayState extends GameState {
 				final Map<Cardinality, Boolean > lastDirectionTempMap = new HashMap<>();
 				player.input(mouse, key);
 				Cardinality c = null;
+				float spd = (float) ((5.6 * (player.getComputedStats().getSpd() + 53.5)) / 75.0f);
 				if (player.getIsUp()) {
-					player.setDy(-player.getMaxSpeed());
+					player.setDy(-spd);
 					c = Cardinality.NORTH;
 					lastDirectionTempMap.put(Cardinality.NORTH, true);
 				}else {
@@ -316,7 +321,7 @@ public class PlayState extends GameState {
 				}
 
 				if (player.getIsDown()) {
-					player.setDy(player.getMaxSpeed());
+					player.setDy(spd);
 					c = Cardinality.SOUTH;
 					lastDirectionTempMap.put(Cardinality.SOUTH, true);
 				}else {
@@ -324,7 +329,7 @@ public class PlayState extends GameState {
 				}
 
 				if (player.getIsLeft()) {
-					player.setDx(-player.getMaxSpeed());
+					player.setDx(-spd);
 					c = Cardinality.WEST;
 					lastDirectionTempMap.put(Cardinality.WEST, true);
 				}else {
@@ -332,19 +337,33 @@ public class PlayState extends GameState {
 				}
 
 				if (player.getIsRight()) {
-					player.setDx(player.getMaxSpeed());
+					player.setDx(spd);
 					c = Cardinality.EAST;
 					lastDirectionTempMap.put(Cardinality.EAST, true);
 				}else {
 					lastDirectionTempMap.put(Cardinality.EAST, false);
 				}
+				spd = (float) (spd * Math.sqrt(2)) / 2.0f;
 
-				//				if (player.getIsRight() && player.getIsUp()) {
-				//					float rootTwoDx = (float) (player.getDx() / Math.sqrt(2));
-				//					float rootTwoDy = (float) (player.getDy() / Math.sqrt(2));
-				//					player.setDx(rootTwoDx);
-				//					player.setDy(rootTwoDy);
-				//				}
+				if (player.getIsUp() && player.getIsRight()) {
+					player.setDy(-spd);
+					player.setDx(spd);
+				}
+
+				if (player.getIsUp() && player.getIsLeft()) {
+					player.setDy(-spd);
+					player.setDx(-spd);
+				}
+
+				if (player.getIsDown() && player.getIsRight()) {
+					player.setDy(spd);
+					player.setDx(spd);
+				}
+
+				if (player.getIsDown() && player.getIsLeft()) {
+					player.setDy(spd);
+					player.setDx(-spd);
+				}
 
 				if(c==null) {
 					player.setDx(0);
