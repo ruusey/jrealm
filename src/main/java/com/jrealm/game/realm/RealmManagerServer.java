@@ -956,6 +956,16 @@ public class RealmManagerServer implements Runnable {
 		WorkerThread.submitAndForkRun(playerSync);
 	}
 
+	public Thread shutdownHook() {
+		RealmManagerServer.log.info("Performing pre-shutdown player sync...");
+		final Runnable shutdownTask = () -> {
+			this.persistsPlayersAsync();
+			RealmManagerServer.log.info("Shutdown player sync complete");
+
+		};
+		return new Thread(shutdownTask);
+	}
+
 	public void persistsPlayersAsync() {
 		final Runnable persist = () -> {
 			for (final Map.Entry<Long, Realm> realm : this.realms.entrySet()) {

@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GameLauncher {
 	public static final String GAME_VERSION = "0.3.0";
-	public static final boolean LOCAL_SERVER = false;
+	public static final boolean LOCAL_SERVER = true;
 	public static final boolean LOCAL_CLIENT = true;
 	public GameLauncher() {
 		new Window();
@@ -24,6 +24,8 @@ public class GameLauncher {
 		if(GameLauncher.LOCAL_SERVER) {
 			Realm realm = new Realm(true, 4);
 			RealmManagerServer server = new RealmManagerServer();
+			Runtime.getRuntime().addShutdownHook(server.shutdownHook());
+
 			server.addRealm(realm);
 			realm.spawnRandomEnemies(realm.getMapId());
 			//server.spawnTestPlayers(realm.getRealmId(), 2);
