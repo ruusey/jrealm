@@ -289,8 +289,8 @@ public class TileManager {
 		final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
 				pos.y / GlobalConstants.BASE_TILE_SIZE);
 		this.normalizeToBounds(posNormalized);
-		for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
-			for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
+		for (int x = (int) (posNormalized.x - 6); x < (posNormalized.x + 7); x++) {
+			for (int y = (int) (posNormalized.y - 6); y < (int) (posNormalized.y + 7); y++) {
 				// Temp fix. Aint nobody got time for array math.
 				if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
 						|| (y < 0)) {

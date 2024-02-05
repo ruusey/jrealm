@@ -956,38 +956,43 @@ public class RealmManagerServer implements Runnable {
 
 	public void persistsPlayersAsync() {
 		final Runnable persist = () -> {
-			this.persistPlayers();
+			for (final Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
+				for (final Player player : realm.getValue().getPlayers().values()) {
+					this.persistPlayer(player);
+
+				}
+			}
 		};
 		WorkerThread.doAsync(persist);
 	}
 
-	private boolean persistPlayers() {
-		for (final Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
-			for (final Player player : realm.getValue().getPlayers().values()) {
-				if (player.isHeadless()) {
-					continue;
-				}
-				try {
-					final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
-							.executeGet("/data/account/" + player.getAccountUuid(), null, PlayerAccountDto.class);
-					final Optional<CharacterDto> currentCharacter = account.getCharacters().stream()
-							.filter(character -> character.getCharacterUuid().equals(player.getCharacterUuid()))
-							.findAny();
-					if (currentCharacter.isPresent()) {
-						final CharacterDto character = currentCharacter.get();
-						final CharacterStatsDto newStats = player.serializeStats();
-						final Set<GameItemRefDto> newItems = player.serializeItems();
-						character.setItems(player.serializeItems());
-						character.setStats(newStats);
-						final CharacterDto savedStats = ServerGameLogic.DATA_SERVICE.executePost(
-								"/data/account/character/" + character.getCharacterUuid(), character,
-								CharacterDto.class);
-						RealmManagerServer.log.info("Succesfully persisted user account {}", account.getAccountEmail());
-					}
-				} catch (Exception e) {
-					RealmManagerServer.log.error("Failed to get player account. Reason: {}", e);
-				}
+	private void persistPlayerAsync(final Player player) {
+		final Runnable persist = () -> {
+			this.persistPlayer(player);
+		};
+		WorkerThread.doAsync(persist);
+	}
+
+	private boolean persistPlayer(final Player player) {
+		if (player.isHeadless())
+			return false;
+		try {
+			final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
+					.executeGet("/data/account/" + player.getAccountUuid(), null, PlayerAccountDto.class);
+			final Optional<CharacterDto> currentCharacter = account.getCharacters().stream()
+					.filter(character -> character.getCharacterUuid().equals(player.getCharacterUuid())).findAny();
+			if (currentCharacter.isPresent()) {
+				final CharacterDto character = currentCharacter.get();
+				final CharacterStatsDto newStats = player.serializeStats();
+				final Set<GameItemRefDto> newItems = player.serializeItems();
+				character.setItems(player.serializeItems());
+				character.setStats(newStats);
+				final CharacterDto savedStats = ServerGameLogic.DATA_SERVICE.executePost(
+						"/data/account/character/" + character.getCharacterUuid(), character, CharacterDto.class);
+				RealmManagerServer.log.info("Succesfully persisted user account {}", account.getAccountEmail());
 			}
+		} catch (Exception e) {
+			RealmManagerServer.log.error("Failed to get player account. Reason: {}", e);
 		}
 		return true;
 	}
