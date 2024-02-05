@@ -19,8 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Minimap {
 	private static final int MINIMAP_SIZE = 350;
-	private static final int X_PADDING = 10;
-	private static final int Y_PADDING = 50;
+	private static final int X_PADDING = 0;
+	private static final int Y_PADDING = 0;
 
 	private PlayState playState;
 	private NetTile[][] currentBaseTiles;
@@ -108,7 +108,8 @@ public class Minimap {
 		float xRatio = playerPos.x / (float) mapWidth;
 		float yRatio = playerPos.y/(float)mapHeight;
 
-		Vector2f projectedPos = new Vector2f(xRatio * Minimap.MINIMAP_SIZE, yRatio * Minimap.MINIMAP_SIZE);
+		Vector2f projectedPos = new Vector2f(xRatio * (Minimap.X_PADDING + Minimap.MINIMAP_SIZE),
+				yRatio * (Minimap.Y_PADDING + Minimap.MINIMAP_SIZE));
 		g.setColor(Color.RED);
 
 		g.fillOval((int) (Minimap.X_PADDING + projectedPos.x), (int) (Minimap.Y_PADDING + projectedPos.y),
