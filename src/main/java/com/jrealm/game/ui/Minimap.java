@@ -99,22 +99,26 @@ public class Minimap {
 						null);
 			}
 		}
+		for (final Player player : this.playState.getRealmManager().getRealm().getPlayers().values()) {
+			final Vector2f playerPos = player.getPos().clone();
+			final TileManager tm = this.playState.getRealmManager().getRealm().getTileManager();
+			int mapWidth = tm.getBaseLayer().getWidth() * tm.getBaseLayer().getTileSize();
+			int mapHeight = tm.getBaseLayer().getHeight() * tm.getBaseLayer().getTileSize();
 
-		final Vector2f playerPos = this.playState.getPlayer().getPos().clone();
-		final TileManager tm = this.playState.getRealmManager().getRealm().getTileManager();
-		int mapWidth = tm.getBaseLayer().getWidth() * tm.getBaseLayer().getTileSize();
-		int mapHeight = tm.getBaseLayer().getHeight() * tm.getBaseLayer().getTileSize();
+			float xRatio = playerPos.x / (float) mapWidth;
+			float yRatio = playerPos.y / (float) mapHeight;
 
-		float xRatio = playerPos.x / (float) mapWidth;
-		float yRatio = playerPos.y/(float)mapHeight;
+			Vector2f projectedPos = new Vector2f(xRatio * (-25 + Minimap.MINIMAP_SIZE),
+					yRatio * (-25 + Minimap.MINIMAP_SIZE));
 
-		Vector2f projectedPos = new Vector2f(xRatio * (-25 + Minimap.MINIMAP_SIZE),
-				yRatio * (-25 + Minimap.MINIMAP_SIZE));
-		g.setColor(Color.RED);
+			if (player.getId() == this.playState.getPlayer().getId()) {
+				g.setColor(Color.RED);
+			} else {
+				g.setColor(Color.YELLOW);
+			}
 
-		g.fillOval((int) (Minimap.X_PADDING + projectedPos.x), (int) (Minimap.Y_PADDING + projectedPos.y),
-				tileSize,
-				tileSize);
+			g.fillOval((int) (Minimap.X_PADDING + projectedPos.x), (int) (Minimap.Y_PADDING + projectedPos.y), tileSize,
+					tileSize);
+		}
 	}
-
 }

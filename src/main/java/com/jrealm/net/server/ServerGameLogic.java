@@ -165,24 +165,14 @@ public class ServerGameLogic {
 			toMove.setDx(doMove ? -spd : 0.0f);
 		}
 
-		//		if (toMove.getIsRight() && toMove.getIsUp()) {
-		//			float rootTwoDx = (float) (toMove.getDx() / Math.sqrt(2));
-		//			float rootTwoDy = (float) (toMove.getDy() / Math.sqrt(2));
-		//
-		//			toMove.setDx(rootTwoDx);
-		//			toMove.setDy(rootTwoDy);
-		//
-		//		}
 		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setLeft(false);
 			toMove.setRight(false);
 			toMove.setDown(false);
 			toMove.setUp(false);
-
 			toMove.setDx(0);
 			toMove.setDy(0);
 		}
-		//		log.info("[SERVER] Recieved PlayerMove Packet For Player {}", heartbeatPacket.getEntityId());
 	}
 
 	public static void handleUseAbilityServer(RealmManagerServer mgr, Packet packet) {
@@ -374,7 +364,7 @@ public class ServerGameLogic {
 					throw new Exception("Player character with UUID "+request.getCharacterUuid()+" does not exist");
 			} catch (Exception e) {
 				ServerGameLogic.log.error("Failed to perform remote login. Reason: {}", e);
-				// throw e;
+				throw e;
 			}
 			final CharacterDto targetCharacter = characterClass.get();
 			final Map<Integer, GameItem> loadedEquipment = new HashMap<>();

@@ -113,20 +113,21 @@ public class RealmManagerServer implements Runnable {
 	// Adds a specified amount of random headless players
 	public void spawnTestPlayers(final long realmId, final int count) {
 		final Realm targetRealm = this.realms.get(realmId);
-		final Vector2f spawnPos = targetRealm.getTileManager().getSafePosition();
 		final Runnable spawnTestPlayers = ()-> {
 			final Random random = new Random(Instant.now().toEpochMilli());
 			for(int i = 0 ; i < count; i++) {
 				final CharacterClass classToSpawn = CharacterClass.getCharacterClasses().get(random.nextInt(CharacterClass.getCharacterClasses().size()));
 				final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				try {
+					final Vector2f spawnPos = targetRealm.getTileManager().getSafePosition();
 					final Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(classToSpawn),
 							spawnPos, GlobalConstants.PLAYER_SIZE, classToSpawn);
 					String playerName = UUID.randomUUID().toString().replaceAll("-", "");
 					playerName = playerName.substring(playerName.length()/2);
 					player.setName(playerName);
 					player.equipSlots(GameDataManager.getStartingEquipment(classToSpawn));
-					player.setMaxSpeed(random.nextFloat()/2);
+					player.setCharacterUuid(UUID.randomUUID().toString());
+					player.setAccountUuid(UUID.randomUUID().toString());
 
 					final boolean up = random.nextBoolean();
 					final boolean right = random.nextBoolean();
@@ -232,6 +233,9 @@ public class RealmManagerServer implements Runnable {
 		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
 			final Realm realm = realmEntry.getValue();
 			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
+				if (player.getValue().isHeadless()) {
+					continue;
+				}
 				try {
 					// Get UpdatePacket for this player and all players in this players viewport
 					// Contains, player stat info, inventory, status effects, health and mana data

@@ -299,12 +299,15 @@ public class TileManager {
 				try {
 					Tile collisionTile = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
 					Tile normalTile = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
-					NetTile collisionNetTile = new NetTile(collisionTile.getTileId(), (byte) 1, y, x);
-					NetTile normalNetTile = new NetTile(normalTile.getTileId(), (byte) 0, y, x);
+					if (collisionTile != null) {
+						NetTile collisionNetTile = new NetTile(collisionTile.getTileId(), (byte) 1, y, x);
+						tiles.add(collisionNetTile);
+					}
 
-					tiles.add(normalNetTile);
-					tiles.add(collisionNetTile);
-
+					if (normalTile != null) {
+						NetTile normalNetTile = new NetTile(normalTile.getTileId(), (byte) 0, y, x);
+						tiles.add(normalNetTile);
+					}
 				}catch(Exception e) {
 					e.printStackTrace();
 				}

@@ -28,7 +28,7 @@ public class GameLauncher {
 
 			server.addRealm(realm);
 			realm.spawnRandomEnemies(realm.getMapId());
-			//server.spawnTestPlayers(realm.getRealmId(), 2);
+			// server.spawnTestPlayers(realm.getRealmId(), 10);
 			WorkerThread.submitAndForkRun(server);
 		}
 		if (GameLauncher.LOCAL_CLIENT) {

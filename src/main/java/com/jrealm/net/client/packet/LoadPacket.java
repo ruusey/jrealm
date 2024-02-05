@@ -190,14 +190,14 @@ public class LoadPacket extends Packet {
 				break;
 			}
 		}
-		
+
 		for(LootContainer c : this.getContainers()) {
 			if(c.getContentsChanged()) {
 				containersEq = false;
 				break;
 			}
 		}
-		
+
 		return (playerIdsThis.equals(playerIdsOther) && lootIdsThis.equals(lootIdsOther)
 				&& enemyIdsThis.equals(enemyIdsOther) && bulletIdsThis.equals(bulletIdsOther) && containersEq
 				&& portalIdsThis.equals(portalIdsOther));
