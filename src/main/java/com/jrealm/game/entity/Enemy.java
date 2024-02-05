@@ -25,7 +25,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public abstract class Enemy extends Entity implements Streamable<Enemy>{
-	private static final int IDLE_FRAMES = 4;
+	private static final int IDLE_FRAMES = 12;
 	protected AABB sense;
 	protected int r_sense;
 

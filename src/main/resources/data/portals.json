@@ -1,7 +1,7 @@
 [
 	{
 		"portalId": 0,
-		"mapId": 3,
+		"mapId": 2,
 		"row": 8,
 		"col": 12,
 		"spriteKey": "entity/rotmg-tiles-2.png"
@@ -18,6 +18,13 @@
 		"mapId": 1,
 		"row": 3,
 		"col": 7,
+		"spriteKey": "entity/rotmg-tiles-2.png"
+	},	
+	{
+		"portalId": 3,
+		"mapId": 3,
+		"row": 9,
+		"col": 12,
 		"spriteKey": "entity/rotmg-tiles-2.png"
 	}
 ]

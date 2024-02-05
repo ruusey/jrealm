@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientGameLogic {
-	private static Integer lastMapId = 0;
+	private static short lastMapId = 0;
 	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
 		@SuppressWarnings("unused")
 		// Unused until this contains user spefic death data.
@@ -107,13 +107,14 @@ public class ClientGameLogic {
 			//
 			// cli.getState().getPui().getMinimap().initializeMap();
 			//			if ((cli.getRealm() != null) && (cli.getRealm().getMapId() != ClientGameLogic.lastMapId)) {
-			if (ClientGameLogic.lastMapId != cli.getRealm().getMapId()) {
-				ClientGameLogic.lastMapId = cli.getRealm().getMapId();
+			if (ClientGameLogic.lastMapId != loadPacket.getMapId()) {
+				ClientGameLogic.lastMapId = loadPacket.getMapId();
 				cli.getState().getPui().getMinimap().initializeMap(cli.getRealm().getMapId());
 
 			}
 			//			}
 			cli.getRealm().setRealmId(loadPacket.getRealmId());
+			cli.getRealm().setMapId(loadPacket.getMapId());
 			cli.getRealm().getTileManager().mergeMap(loadPacket);
 		} catch (Exception e) {
 			ClientGameLogic.log.error("Failed to handle LoadMap Packet. Reason: {}", e);

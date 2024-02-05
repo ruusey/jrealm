@@ -144,9 +144,7 @@ public class RealmManagerServer implements Runnable {
 					}
 
 					player.setHeadless(true);
-					// TODO:
 					final long newId = targetRealm.addPlayer(player);
-					//Thread.sleep(500);
 				}catch(Exception e) {
 					RealmManagerServer.log.error("Failed to spawn test character of class type {}. Reason: {}", classToSpawn, e);
 				}
@@ -245,7 +243,9 @@ public class RealmManagerServer implements Runnable {
 					// condensed into a single array
 					final NetTile[] netTilesForPlayer = realm.getTileManager().getLoadMapTiles(player.getValue());
 					// Build those tiles into a load map packet (NetTile[] wrapper)
-					final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(), netTilesForPlayer);
+					final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(),
+							(short) realm.getMapId(),
+							netTilesForPlayer);
 
 					// If we dont have load map state for this player, map it and
 					// then transmit all the tiles
@@ -823,11 +823,16 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.removeEnemy(e);
 
 				// TODO: Maybe find a better way to introduce randomness to drops.
-				if(Realm.RANDOM.nextInt(20)<1) {
-					targetRealm.addPortal(new Portal(random.nextLong(), (short) 2, e.getPos().withNoise(128, 128)));
+				if (Realm.RANDOM.nextInt(15) < 1) {
+					if (targetRealm.getMapId() == 4) {
+						targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(128, 128)));
+					} else if (targetRealm.getMapId() == 2) {
+						targetRealm.addPortal(new Portal(random.nextLong(), (short) 3, e.getPos().withNoise(128, 128)));
+					}
 				}
 				if ((targetRealm.getMapId() != 3) && (Realm.RANDOM.nextInt(20) < 5)) {
-					targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(128, 128)));
+					// targetRealm.addPortal(new Portal(random.nextLong(), (short) 0,
+					// e.getPos().withNoise(128, 128)));
 				}
 				if (Realm.RANDOM.nextInt(20) < 10) {
 					targetRealm.addLootContainer(new LootContainer(LootTier.BLUE, e.getPos().withNoise(128, 128)));

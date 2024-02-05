@@ -388,12 +388,20 @@ public class PlayerUI {
 			Vector2f nameLvlPos = posHp.clone(-256, -128);
 
 			g.setColor(Color.WHITE);
-			g.drawString(
-					"" + this.playState.getPlayer().getName() + "   Lv. "
-							+ GameDataManager.EXPERIENCE_LVLS.getLevel(this.playState.getPlayer().getExperience()),
-							nameLvlPos.x, nameLvlPos.y);
-			g.drawString("" + this.playState.getPlayer().getExperience() + "/"
-					+ this.playState.getPlayer().getUpperExperienceBound(), posXp.x, posXp.y);
+
+			long fame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(this.playState.getPlayer().getExperience());
+			if(fame==0l) {
+				g.drawString(this.playState.getPlayer().getExperience() + "/"
+						+ this.playState.getPlayer().getUpperExperienceBound(), posXp.x, posXp.y);
+				g.drawString(
+						this.playState.getPlayer().getName() + "   Lv. "
+								+ GameDataManager.EXPERIENCE_LVLS.getLevel(this.playState.getPlayer().getExperience()),
+						nameLvlPos.x, nameLvlPos.y);
+			} else {
+				g.drawString("Fame: " + fame, posXp.x, posXp.y);
+				g.drawString(this.playState.getPlayer().getName() + "   Lv. 20", nameLvlPos.x, nameLvlPos.y);
+			}
+
 			g.drawString("" + this.playState.getPlayer().getHealth(), posHp.x, posHp.y);
 			g.drawString("" + this.playState.getPlayer().getMana(), posMp.x, posMp.y);
 

@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LoadMapPacket extends Packet {
 	private long realmId;
+	private short mapId;
 	private NetTile[] tiles;
 
 
@@ -43,7 +44,9 @@ public class LoadMapPacket extends Packet {
 		if ((dis == null) || (dis.available() < 5))
 			throw new IllegalStateException("No Packet data available to read from DataInputStream");
 		final long realmId = dis.readLong();
+		final short mapId = dis.readShort();
 		this.realmId = realmId;
+		this.mapId = mapId;
 		short tilesSize = dis.readShort();
 		if (tilesSize > 0) {
 			this.tiles = new NetTile[tilesSize];
@@ -60,16 +63,18 @@ public class LoadMapPacket extends Packet {
 
 		this.addHeader(stream);
 		stream.writeLong(this.realmId);
+		stream.writeShort(this.mapId);
 		stream.writeShort(this.tiles.length);
 		for (NetTile tile : this.tiles) {
 			tile.write(stream);
 		}
 	}
 
-	public static LoadMapPacket from(long realmId, List<NetTile> tiles) throws Exception {
+	public static LoadMapPacket from(long realmId, short mapId, List<NetTile> tiles) throws Exception {
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 		DataOutputStream stream = new DataOutputStream(byteStream);
 		stream.writeLong(realmId);
+		stream.writeShort(mapId);
 		stream.writeShort(tiles.size());
 		for (NetTile tile : tiles) {
 			tile.write(stream);
@@ -78,10 +83,11 @@ public class LoadMapPacket extends Packet {
 		return new LoadMapPacket(PacketType.LOAD_MAP.getPacketId(), byteStream.toByteArray());
 	}
 
-	public static LoadMapPacket from(long realmId, NetTile[] tiles) throws Exception {
+	public static LoadMapPacket from(long realmId, short mapId, NetTile[] tiles) throws Exception {
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 		DataOutputStream stream = new DataOutputStream(byteStream);
 		stream.writeLong(realmId);
+		stream.writeShort(mapId);
 		stream.writeShort(tiles.length);
 		for (NetTile tile : tiles) {
 			tile.write(stream);
@@ -101,7 +107,7 @@ public class LoadMapPacket extends Packet {
 		}
 		if (diff.size() == 0)
 			return null;
-		return LoadMapPacket.from(other.getRealmId(), diff);
+		return LoadMapPacket.from(other.getRealmId(), other.getMapId(), diff);
 	}
 
 	public boolean equals(LoadMapPacket other) {

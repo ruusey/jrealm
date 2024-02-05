@@ -33,8 +33,11 @@
 				"name": "World_0_Beach_0_Enemies",
 				"ordinal": 0,
 				"enemyIds": [
-					6, 
-					7, 
+					3,
+					4,
+					5,
+					6,
+					7,
 					8
 				]
 			}
@@ -71,6 +74,9 @@
 				"ordinal": 0,
 				"enemyIds": [
 					1,
+					2,
+					3,
+					4,
 					5
 				]
 			}
@@ -110,9 +116,6 @@
 				"name": "Grasslands_0_Enemies",
 				"ordinal": 0,
 				"enemyIds": [
-					3,
-					4,
-					5,
 					6,
 					7,
 					8
