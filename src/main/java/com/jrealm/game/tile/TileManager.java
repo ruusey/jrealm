@@ -313,14 +313,11 @@ public class TileManager {
 		return tiles.toArray(new NetTile[0]);
 	}
 
-	// TODO: Merges the current tiles with the updated
-	// ones from the server
 	public void mergeMap(LoadMapPacket packet) {
 		for(NetTile tile : packet.getTiles()) {
 			TileData data = GameDataManager.TILES.get((int) tile.getTileId()).getData();
 			this.mapLayers.get((int) tile.getLayer()).setBlockAt(tile.getXIndex(), tile.getYIndex(), tile.getTileId(),
 					data);
-
 		}
 	}
 

@@ -339,6 +339,8 @@ public class RealmManagerServer implements Runnable {
 			}else {
 				final Long dcPlayerId = this.getRemoteAddresses().get(thread.getKey());
 				final Realm playerLocation = this.searchRealmsForPlayers(dcPlayerId);
+				final Player dcPlayer = playerLocation.getPlayer(dcPlayerId);
+				this.persistPlayerAsync(dcPlayer);
 				playerLocation.getExpiredPlayers().add(dcPlayerId);
 				this.server.getClients().remove(thread.getKey());
 				playerLocation.getPlayers().remove(dcPlayerId);
@@ -959,7 +961,6 @@ public class RealmManagerServer implements Runnable {
 			for (final Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
 				for (final Player player : realm.getValue().getPlayers().values()) {
 					this.persistPlayer(player);
-
 				}
 			}
 		};

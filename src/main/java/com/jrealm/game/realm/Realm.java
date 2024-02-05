@@ -79,6 +79,10 @@ public class Realm {
 			WorkerThread.submit(this.getStatsThread());
 		}
 	}
+	
+	public List<Long> getExpiredPlayers(){
+		return this.expiredPlayers;
+	}
 
 	public void setupChests() {
 		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 450, (0 + (GamePanel.height / 2)) - 200);
