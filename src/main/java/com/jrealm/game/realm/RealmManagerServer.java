@@ -707,7 +707,9 @@ public class RealmManagerServer implements Runnable {
 				if ((tile == null) || tile.isVoid()) {
 					continue;
 				}
-				if (b.getBounds().intersect(new AABB(tile.getPos(), tile.getWidth(), tile.getHeight()))) {
+				AABB tileBounds = new AABB(tile.getPos(), tile.getWidth(), tile.getHeight());
+				Vector2f bulletPosCenter = b.getPos().clone(b.getSize()/2, b.getSize()/2);
+				if (tileBounds.inside((int) bulletPosCenter.x, (int) bulletPosCenter.y)) {
 					b.setRange(0);
 					toRemove.add(b);
 				}

@@ -108,8 +108,8 @@ public class Minimap {
 		float xRatio = playerPos.x / (float) mapWidth;
 		float yRatio = playerPos.y/(float)mapHeight;
 
-		Vector2f projectedPos = new Vector2f(xRatio * (Minimap.X_PADDING + Minimap.MINIMAP_SIZE),
-				yRatio * (Minimap.Y_PADDING + Minimap.MINIMAP_SIZE));
+		Vector2f projectedPos = new Vector2f(xRatio * (-25 + Minimap.MINIMAP_SIZE),
+				yRatio * (-25 + Minimap.MINIMAP_SIZE));
 		g.setColor(Color.RED);
 
 		g.fillOval((int) (Minimap.X_PADDING + projectedPos.x), (int) (Minimap.Y_PADDING + projectedPos.y),
