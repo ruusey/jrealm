@@ -823,7 +823,7 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.removeEnemy(e);
 
 				// TODO: Maybe find a better way to introduce randomness to drops.
-				if (Realm.RANDOM.nextInt(15) < 1) {
+				if (Realm.RANDOM.nextInt(20) < 1) {
 					if (targetRealm.getMapId() == 4) {
 						targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(128, 128)));
 					} else if (targetRealm.getMapId() == 2) {
@@ -834,7 +834,7 @@ public class RealmManagerServer implements Runnable {
 					// targetRealm.addPortal(new Portal(random.nextLong(), (short) 0,
 					// e.getPos().withNoise(128, 128)));
 				}
-				if (Realm.RANDOM.nextInt(20) < 10) {
+				if (Realm.RANDOM.nextInt(30) < 10) {
 					targetRealm.addLootContainer(new LootContainer(LootTier.BLUE, e.getPos().withNoise(128, 128)));
 				}
 			}
