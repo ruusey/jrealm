@@ -7,24 +7,20 @@
 #### *NOTE: As of release 0.3.0 You are now required to run JRealm-Data alongside JRealm-Server
 #### see: https://github.com/ruusey/jrealm-data*
 
+* General: <br/>
+`java -jar ./jrealm-{version}.jar {-client | -server | -embedded} {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}`
+
 * Server: <br />
-`java -jar ./jrealm-{version}-server.jar` <br />
+`java -jar ./jrealm-{version}.jar -server` <br />
 The server requires port 2222 to be available
 
 * Client: <br />
-`java -jar ./jrealm-{version}-client.jar {SERVER_ADDRESS} {ACCOUNT_EMAIL} {CHARACTER_UUID}` <br />
+`java -jar ./jrealm-{version}.jar -client {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}` <br />
 Replace `{SERVER_ADDRESS}` with the IP Address of the server you wish to connect to <br />
-Replace `{ACCOUNT_EMAIL}` with your account's email <br />
+Replace `{PLAYER_EMAIL}` with your account's email <br />
+Replace `{PLAYER_PASSWORD}` with your account's password <br />
 Replace `{CHARACTER_UUID}` with the UUID of your character 
-```	
-ROGUE(0),
-ARCHER(1),
-WIZARD(2),
-PRIEST(3),
-WARRIOR(4),
-KNIGHT(5),
-PALLADIN(6);
-```
+
 # Important classes:
 
 * `com.jrealm.game.states.PlayState`
