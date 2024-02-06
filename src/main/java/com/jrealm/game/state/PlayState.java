@@ -40,7 +40,6 @@ import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
@@ -108,8 +107,6 @@ public class PlayState extends GameState {
 				GlobalConstants.PLAYER_SIZE, cls);
 		this.loadClass(player, cls, setEquipment);
 	}
-
-
 
 	public long getPlayerId() {
 		return this.playerId;
@@ -207,8 +204,8 @@ public class PlayState extends GameState {
 		if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)
 				&& !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx())) {
 			p.xCol = false;
-			if (p.getDx() > 0) {
-				p.applyMovementLerp(new ObjectMovement(p.getPos().x + p.getDx(), p.getPos().y));
+			if (p.getDx() != 0.0f) {
+				p.getPos().x += p.getDx() / 3;
 			}
 		} else {
 			p.xCol = true;
@@ -217,8 +214,8 @@ public class PlayState extends GameState {
 		if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, 0, p.getDy())
 				&& !this.getRealmManager().getRealm().getTileManager().collidesYLimit(p, p.getDy())) {
 			p.yCol = false;
-			if (p.getDy() > 0) {
-				p.applyMovementLerp(new ObjectMovement(p.getPos().x, p.getPos().y + p.getDy()));
+			if (p.getDy() != 0.0f) {
+				p.getPos().y += p.getDy() / 3;
 			}
 		} else {
 			p.yCol = true;
