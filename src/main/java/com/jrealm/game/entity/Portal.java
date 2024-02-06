@@ -65,5 +65,4 @@ public class Portal implements Streamable<Portal> {
 				null);
 
 	}
-
 }

@@ -16,7 +16,6 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
 @Slf4j
 public class LoadMapPacket extends Packet {
 	private long realmId;
@@ -125,7 +124,6 @@ public class LoadMapPacket extends Packet {
 			if (!myTile.equals(otherTile))
 				return false;
 		}
-
 		return true;
 	}
 
@@ -134,7 +132,6 @@ public class LoadMapPacket extends Packet {
 			if (tile.equals(netTile))
 				return true;
 		}
-
 		return false;
 	}
 }
