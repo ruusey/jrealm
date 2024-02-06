@@ -10,14 +10,12 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.jrealm.game.GameLauncher;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
-import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
 
 import lombok.Data;
@@ -188,7 +186,6 @@ public class SocketClient implements Runnable {
 	}
 
 	public static String getLocalAddr() throws Exception{
-		if(GameLauncher.LOCAL_SERVER) return SocketServer.LOCALHOST;
 		String[] split = InetAddress.getLocalHost().toString().split("/");
 		String addr = null;
 		if(split.length>1) {

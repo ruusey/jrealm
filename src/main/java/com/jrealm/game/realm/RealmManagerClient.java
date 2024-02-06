@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import com.jrealm.game.GameLauncher;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.LootContainer;
@@ -16,7 +15,6 @@ import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.net.client.SocketClient;
-import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 
@@ -38,11 +36,7 @@ public class RealmManagerClient implements Runnable {
 	public RealmManagerClient(PlayState state, Realm realm) {
 		this.registerPacketCallbacks();
 		this.realm = realm;
-		if(GameLauncher.LOCAL_SERVER) {
-			this.client = new SocketClient(SocketServer.LOCALHOST, 2222);
-		}else {
-			this.client = new SocketClient(SocketClient.SERVER_ADDR, 2222);
-		}
+		this.client = new SocketClient(SocketClient.SERVER_ADDR, 2222);
 		this.state = state;
 		WorkerThread.submitAndForkRun(this.client);
 	}

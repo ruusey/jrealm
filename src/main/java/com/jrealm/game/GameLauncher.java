@@ -11,9 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GameLauncher {
-	public static final String GAME_VERSION = "0.3.0";
-	public static final boolean LOCAL_SERVER = true;
-	public static final boolean LOCAL_CLIENT = true;
+	public static final String GAME_VERSION = "0.3.1";
+	private static final String HELP_MSG = "Please set the player email, password, server and character UUID. [java -jar ./jrealm-{version}.jar {-client | -server| -embedded} {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}]";
+
 	public GameLauncher() {
 		new Window();
 	}
@@ -21,47 +21,64 @@ public class GameLauncher {
 	public static void main(String[] args) {
 		GameLauncher.log.info("Starting JRealm...");
 		GameDataManager.loadGameData();
-		if(GameLauncher.LOCAL_SERVER) {
-			Realm realm = new Realm(true, 4);
-			RealmManagerServer server = new RealmManagerServer();
-			Runtime.getRuntime().addShutdownHook(server.shutdownHook());
+		if (GameLauncher.argsContains(args, "-server")) {
+			GameLauncher.startServer();
+		}
+		else if (GameLauncher.argsContains(args, "-client")) {
+			GameLauncher.startClient(args);
+		} else if (GameLauncher.argsContains(args, "-embedded")) {
+			GameLauncher.startServer();
+			GameLauncher.startClient(args);
+		}
+	}
 
-			server.addRealm(realm);
-			realm.spawnRandomEnemies(realm.getMapId());
-			// server.spawnTestPlayers(realm.getRealmId(), 10);
-			WorkerThread.submitAndForkRun(server);
+	private static void startServer() {
+		Realm realm = new Realm(true, 4);
+		RealmManagerServer server = new RealmManagerServer();
+		Runtime.getRuntime().addShutdownHook(server.shutdownHook());
+
+		server.addRealm(realm);
+		realm.spawnRandomEnemies(realm.getMapId());
+		// server.spawnTestPlayers(realm.getRealmId(), 10);
+		WorkerThread.submitAndForkRun(server);
+	}
+
+	private static void startClient(String[] args) {
+		SocketClient.SERVER_ADDR = args[1];
+		if (SocketClient.SERVER_ADDR == null) {
+			SocketClient.SERVER_ADDR = SocketServer.LOCALHOST;
+			GameLauncher.log.error("Server address not set");
+			GameLauncher.log.error(GameLauncher.HELP_MSG);
+			return;
 		}
-		if (GameLauncher.LOCAL_CLIENT) {
-			if(args.length<2) {
-				GameLauncher.log.error(
-						"Please set the player email, password, server and character UUID. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}]");
-				return;
-			}
-			SocketClient.PLAYER_EMAIL = args[1];
-			if(SocketClient.PLAYER_EMAIL==null) {
-				GameLauncher.log.error(
-						"Please set the player email, password, server and character UUID. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}]");
-				return;
-			}
-			try {
-				SocketClient.PLAYER_PASSWORD = args[2];
-			} catch (Exception e) {
-				GameLauncher.log.error(
-						"Please set the player email, password, server and character UUID. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}]");
-				return;
-			}
-			SocketClient.SERVER_ADDR = args[0];
-			if(SocketClient.SERVER_ADDR==null) {
-				SocketClient.SERVER_ADDR=SocketServer.LOCALHOST;
-			}
-			try {
-				SocketClient.CHARACTER_UUID = args[3];
-			} catch (Exception e) {
-				GameLauncher.log.error(
-						"Please set the player email, password, server and character UUID. [java -jar ./jrealm-client.jar {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}]");
-				return;
-			}
-			new GameLauncher();
+		SocketClient.PLAYER_EMAIL = args[2];
+		if (SocketClient.PLAYER_EMAIL == null) {
+			GameLauncher.log.error("Player email not set");
+			GameLauncher.log.error(GameLauncher.HELP_MSG);
+			return;
 		}
+		try {
+			SocketClient.PLAYER_PASSWORD = args[3];
+		} catch (Exception e) {
+			GameLauncher.log.error("Player password not set");
+			GameLauncher.log.error(GameLauncher.HELP_MSG);
+			return;
+		}
+		try {
+			SocketClient.CHARACTER_UUID = args[4];
+		} catch (Exception e) {
+			GameLauncher.log.error("Player character UUID not set");
+			GameLauncher.log.error(GameLauncher.HELP_MSG);
+			return;
+		}
+		new GameLauncher();
+	}
+
+	private static boolean argsContains(final String[] args, String arg) {
+		for (String s : args) {
+			if (s.equals(arg))
+				return true;
+		}
+		return false;
 	}
 }
