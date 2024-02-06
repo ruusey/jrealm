@@ -17,10 +17,10 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GameItemRefDto extends TemporalDto {
 	private static final long serialVersionUID = -5119762736198793613L;
-	
-	private Integer gameItemRefId;
+
+	private String gameItemRefId;
 	private Integer itemId;
 	private Integer slotIdx;
 	private String itemUuid;
-	
+
 }

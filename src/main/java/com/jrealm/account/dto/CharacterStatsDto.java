@@ -19,8 +19,8 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CharacterStatsDto extends TemporalDto{
 	private static final long serialVersionUID = -966774703891631356L;
-	
-	private Integer characterStatsId;
+
+	private String characterStatsId;
 	private Long xp;
 	private Integer classId;
 	private Integer hp;
@@ -31,8 +31,8 @@ public class CharacterStatsDto extends TemporalDto{
 	private Integer dex;
 	private Integer vit;
 	private Integer wis;
-	
-	
+
+
 	public static CharacterStatsDto characterDefaults(final Integer characterClass) {
 		final CharacterClassModel model = GameDataManager.CHARACTER_CLASSES.get(characterClass);
 		return CharacterStatsDto.builder()
