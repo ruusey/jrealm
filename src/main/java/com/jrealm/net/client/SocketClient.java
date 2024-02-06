@@ -31,6 +31,7 @@ public class SocketClient implements Runnable {
 	public static String PLAYER_EMAIL = null;
 	public static String SERVER_ADDR = null;
 	public static String CHARACTER_UUID = null;
+	public static String PLAYER_PASSWORD = null;
 
 	private static final int BUFFER_CAPACITY = 65536 * 100;
 
@@ -115,7 +116,7 @@ public class SocketClient implements Runnable {
 	private void doLogin() throws Exception{
 		LoginRequestMessage login = LoginRequestMessage.builder().characterUuid(SocketClient.CHARACTER_UUID)
 				.email(SocketClient.PLAYER_EMAIL)
-				.password("password").build();
+				.password(SocketClient.PLAYER_PASSWORD).build();
 
 		CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
 		this.sendRemote(loginPacket);
