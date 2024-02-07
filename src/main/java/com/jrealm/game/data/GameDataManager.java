@@ -15,6 +15,7 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.ExperienceModel;
+import com.jrealm.game.model.LootTableModel;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
@@ -38,12 +39,26 @@ public class GameDataManager {
 	public static Map<Integer, TerrainGenerationParameters> TERRAINS = null;
 	public static Map<Integer, PortalModel> PORTALS = null;
 	public static Map<Integer, CharacterClassModel> CHARACTER_CLASSES = null;
+	public static Map<Integer, LootTableModel> LOOT_TABLES = null;
 	public static ExperienceModel EXPERIENCE_LVLS = null;
 
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
 			"entity/rotmg-bosses-1.png", "entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-tiles.png",
 			"entity/rotmg-tiles-1.png", "entity/rotmg-tiles-2.png", "entity/rotmg-tiles-all.png",
 			"entity/rotmg-items-1.png", "entity/rotmg-abilities.png", "entity/rotmg-misc.png" };
+
+	private static void loadLootTables() throws Exception {
+		GameDataManager.log.info("Loading Loot Tables..");
+		GameDataManager.LOOT_TABLES = new HashMap<>();
+		InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/loot-tables.json");
+		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+		LootTableModel[] lootTables = GameDataManager.mapper.readValue(text, LootTableModel[].class);
+		for (LootTableModel lootTable : lootTables) {
+			GameDataManager.LOOT_TABLES.put(lootTable.getEnemyId(), lootTable);
+		}
+		GameDataManager.log.info("Loading Loot Tables... DONE");
+	}
 
 	private static void loadCharacterClasses() throws Exception {
 		GameDataManager.log.info("Loading Character Classes..");
@@ -243,7 +258,7 @@ public class GameDataManager {
 		}
 		GameDataManager.log.info("Loading Sprite Sheets... DONE");
 	}
-	
+
 	public static Map<Integer, GameItem> getStartingEquipment(final CharacterClass characterClass) {
 		Map<Integer, GameItem> result = new HashMap<>();
 
@@ -369,6 +384,7 @@ public class GameDataManager {
 			GameDataManager.loadPortals();
 			GameDataManager.loadExperienceModel();
 			GameDataManager.loadCharacterClasses();
+			GameDataManager.loadLootTables();
 		}catch(Exception e) {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}

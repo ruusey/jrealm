@@ -834,8 +834,11 @@ public class RealmManagerServer implements Runnable {
 					// targetRealm.addPortal(new Portal(random.nextLong(), (short) 0,
 					// e.getPos().withNoise(128, 128)));
 				}
-				if (Realm.RANDOM.nextInt(30) < 10) {
-					targetRealm.addLootContainer(new LootContainer(LootTier.BLUE, e.getPos().withNoise(128, 128)));
+				final List<GameItem> lootToDrop = GameDataManager.LOOT_TABLES.get(e.getEnemyId()).getLootDrop();
+				if (lootToDrop.size() > 0) {
+					final LootContainer dropsBag = new LootContainer(LootTier.BLUE, e.getPos().withNoise(128, 128),
+							lootToDrop.toArray(new GameItem[0]));
+					targetRealm.addLootContainer(dropsBag);
 				}
 			}
 		}
