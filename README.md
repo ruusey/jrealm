@@ -1,8 +1,10 @@
 # JRealm
 ### An 8bit Dungeon Crawler Rogue-Like Game written entirely in Java
 ![alt text](https://i.imgur.com/GPpcD2I.png) </br>
-![alt text](https://i.imgur.com/gf2c380.png) </br>
+![alt text](https://i.imgur.com/2dLIVu6.png) </br>
 ![alt text](https://i.imgur.com/7Z540Mb.png) </br>
+![alt text](https://i.imgur.com/fa6dt5V.png) </br>
+![alt text](https://i.imgur.com/9xfBgZ4.png) </br>
 ### Running
 #### *NOTE: As of release 0.3.0 You are now required to run JRealm-Data alongside JRealm-Server
 #### see: https://github.com/ruusey/jrealm-data*
