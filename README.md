@@ -2,7 +2,7 @@
 ### An 8bit Dungeon Crawler Rogue-Like Game written entirely in Java
 ![alt text](https://i.imgur.com/GPpcD2I.png) </br>
 ![alt text](https://i.imgur.com/2dLIVu6.png) </br>
-![alt text](https://i.imgur.com/7Z540Mb.png) </br>
+![alt text](https://i.imgur.com/ln8uzmg.png) </br>
 ![alt text](https://i.imgur.com/fa6dt5V.png) </br>
 ![alt text](https://i.imgur.com/9xfBgZ4.png) </br>
 ### Running
