@@ -52,7 +52,7 @@ public class GameDataManager {
 	private static void loadLootGroups() throws Exception {
 		GameDataManager.log.info("Loading Loot Groups..");
 		GameDataManager.LOOT_GROUPS = new HashMap<>();
-		InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/loot-tables.json");
+		InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/loot-groups.json");
 		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
 
 		LootGroupModel[] lootGroups = GameDataManager.mapper.readValue(text, LootGroupModel[].class);
