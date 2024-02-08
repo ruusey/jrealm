@@ -1,0 +1,58 @@
+[
+	{
+		"lootGroupId": 0,
+		"lootGroupName": "Potions Base",
+		"potentialDrops":[
+			0,
+			1,
+			2,
+			3,
+			4,
+			5
+		]
+	},
+	{
+		"lootGroupId": 1,
+		"lootGroupName": "Potions Special",
+		"potentialDrops": [
+			6,
+			7
+		]
+	},
+	{
+		"lootGroupId": 2,
+		"lootGroupName": "Exalted Rings",
+		"potentialDrops": [
+			8,
+			9,
+			10,
+			11,
+			12,
+			13,
+			14,
+			15
+		]
+	},
+	{
+		"lootGroupId": 3,
+		"lootGroupName": "Tier 0 Weapons",
+		"potentialDrops": [
+			17,
+			75,
+			91,
+			121,
+			137
+		]
+	},
+	{
+		"lootGroupId": 4,
+		"lootGroupName": "Tier 1 Weapons",
+		"potentialDrops": [
+			18,
+			76,
+			92,
+			122,
+			138
+		]
+	}
+]

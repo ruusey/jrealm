@@ -1,6 +1,7 @@
 [
 	{
 		"portalId": 0,
+		"portalName": "Beach_0_Portal",
 		"mapId": 2,
 		"row": 8,
 		"col": 12,
@@ -8,20 +9,23 @@
 	},
 	{
 		"portalId": 1,
-		"mapId": 2,
+		"portalName": "Vault_Portal",
+		"mapId": 1,
 		"row": 3,
 		"col": 6,
 		"spriteKey": "entity/rotmg-tiles-2.png"
 	},
 	{
 		"portalId": 2,
-		"mapId": 1,
+		"portalName": "Exit_Portal",
+		"mapId": -1,
 		"row": 3,
 		"col": 7,
 		"spriteKey": "entity/rotmg-tiles-2.png"
-	},	
+	},
 	{
 		"portalId": 3,
+		"portalName": "Cave_0_Portal",
 		"mapId": 3,
 		"row": 9,
 		"col": 12,

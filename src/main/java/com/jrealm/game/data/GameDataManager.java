@@ -15,6 +15,7 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.ExperienceModel;
+import com.jrealm.game.model.LootGroupModel;
 import com.jrealm.game.model.LootTableModel;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
@@ -40,6 +41,7 @@ public class GameDataManager {
 	public static Map<Integer, PortalModel> PORTALS = null;
 	public static Map<Integer, CharacterClassModel> CHARACTER_CLASSES = null;
 	public static Map<Integer, LootTableModel> LOOT_TABLES = null;
+	public static Map<Integer, LootGroupModel> LOOT_GROUPS = null;
 	public static ExperienceModel EXPERIENCE_LVLS = null;
 
 	private static final String[] SPRITE_SHEET_LOCATIONS = { "entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
@@ -47,6 +49,19 @@ public class GameDataManager {
 			"entity/rotmg-tiles-1.png", "entity/rotmg-tiles-2.png", "entity/rotmg-tiles-all.png",
 			"entity/rotmg-items-1.png", "entity/rotmg-abilities.png", "entity/rotmg-misc.png" };
 
+	private static void loadLootGroups() throws Exception {
+		GameDataManager.log.info("Loading Loot Groups..");
+		GameDataManager.LOOT_GROUPS = new HashMap<>();
+		InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/loot-tables.json");
+		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+		LootGroupModel[] lootGroups = GameDataManager.mapper.readValue(text, LootGroupModel[].class);
+		for (LootGroupModel lootGroup : lootGroups) {
+			GameDataManager.LOOT_GROUPS.put(lootGroup.getLootGroupId(), lootGroup);
+		}
+		GameDataManager.log.info("Loading Loot Groups... DONE");
+	}
+	
 	private static void loadLootTables() throws Exception {
 		GameDataManager.log.info("Loading Loot Tables..");
 		GameDataManager.LOOT_TABLES = new HashMap<>();
@@ -385,6 +400,7 @@ public class GameDataManager {
 			GameDataManager.loadExperienceModel();
 			GameDataManager.loadCharacterClasses();
 			GameDataManager.loadLootTables();
+			GameDataManager.loadLootGroups();
 		}catch(Exception e) {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}

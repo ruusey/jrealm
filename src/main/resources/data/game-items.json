@@ -1529,7 +1529,7 @@
 			"max": 305
 		},
 		"consumable": false,
-		"tier": 0,
+		"tier": 14,
 		"targetSlot": 0,
 		"targetClass": -3,
 		"fameBonus": 8
