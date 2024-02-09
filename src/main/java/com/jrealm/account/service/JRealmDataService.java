@@ -29,7 +29,6 @@ public class JRealmDataService {
 				.DELETE().build();
 
 		HttpResponse<String> response = this.httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
 		if (response.statusCode() != 200)
 			throw new IOException("Response was non 200.");
 
@@ -44,7 +43,6 @@ public class JRealmDataService {
 				.POST(body).build();
 
 		HttpResponse<String> response = this.httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
 		if (response.statusCode() != 200)
 			throw new IOException("Response was non 200.");
 

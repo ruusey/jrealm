@@ -759,7 +759,7 @@ public class RealmManagerServer implements Runnable {
 					targetRealm.removePlayer(player);
 					this.enqueueServerPacket(player, PlayerDeathPacket.from());
 					if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
-						ServerGameLogic.DATA_SERVICE.executeDelete("/account/character/" + p.getCharacterUuid(),
+						ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + p.getCharacterUuid(),
 								String.class);
 					}
 
