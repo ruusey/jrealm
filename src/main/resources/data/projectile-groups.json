@@ -737,12 +737,11 @@
 				"positionMode": 0,
 				"damage": 25,
 				"angle": 0.2,
-				"range": 250,
+				"range": 120,
 				"size": 24,
 				"magnitude": 5.0,
 				"flags": [
-					0,
-					10
+					0
 				]
 			},
 			{
@@ -750,12 +749,11 @@
 				"positionMode": 0,
 				"damage": 25,
 				"angle": -0.2,
-				"range": 250,
+				"range": 120,
 				"size": 24,
 				"magnitude": 5.0,
 				"flags": [
-					0,
-					10
+					0
 				]
 			}
 		]

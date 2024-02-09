@@ -61,8 +61,6 @@ public class ServerGameLogic {
 		final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
 
-		mgr.clearPlayerState(user.getId());
-
 		// Send the player to the vault
 		if ((targetRealm == null) && (usePortalPacket.getPortalId() == -1l)) {
 			// Generate the vault dynamically
@@ -105,6 +103,9 @@ public class ServerGameLogic {
 				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
 		}
+
+		mgr.clearPlayerState(user.getId());
+
 	}
 
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
@@ -366,6 +367,8 @@ public class ServerGameLogic {
 				throw e;
 			}
 			final CharacterDto targetCharacter = characterClass.get();
+			if (targetCharacter.isDeleted())
+				throw new Exception("Character "+targetCharacter.getCharacterUuid()+" is deleted!");
 			final Map<Integer, GameItem> loadedEquipment = new HashMap<>();
 			for(final GameItemRefDto item : targetCharacter.getItems()) {
 				loadedEquipment.put(item.getSlotIdx(), GameItem.fromGameItemRef(item));

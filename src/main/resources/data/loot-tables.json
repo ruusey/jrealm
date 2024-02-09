@@ -2,10 +2,12 @@
 	{
 		"enemyId": 1,
 		"drops": {
-			"group:16": 0.40,
-			"group:17": 0.40,
-			"group:29": 0.40,
-			"group:30": 0.40,
+			"group:0": 0.80,
+			"group:1": 0.80,
+			"group:16": 0.20,
+			"group:17": 0.20,
+			"group:29": 0.20,
+			"group:30": 0.20,
 			"item:48": 0.05
 			
 		}
@@ -13,70 +15,84 @@
 	{
 		"enemyId": 2,
 		"drops": {
-			"group:16": 0.40,
-			"group:17": 0.40,
-			"group:29": 0.40,
-			"group:30": 0.40,
+			"group:0": 0.80,
+			"group:1": 0.80,
+			"group:16": 0.20,
+			"group:17": 0.20,
+			"group:29": 0.20,
+			"group:30": 0.20,
 			"item:48": 0.05
 		}
 	},
 	{
 		"enemyId": 3,
 		"drops": {
-			"group:16": 0.40,
-			"group:17": 0.40,
-			"group:29": 0.40,
-			"group:30": 0.40,
+			"group:0": 0.80,
+			"group:1": 0.80,
+			"group:16": 0.20,
+			"group:17": 0.20,
+			"group:29": 0.20,
+			"group:30": 0.20,
 			"item:48": 0.05
 		}
 	},
 	{
 		"enemyId": 4,
 		"drops": {
-			"group:16": 0.40,
-			"group:17": 0.40,
-			"group:29": 0.40,
-			"group:30": 0.40,
+			"group:0": 0.80,
+			"group:1": 0.80,
+			"group:16": 0.20,
+			"group:17": 0.20,
+			"group:29": 0.20,
+			"group:30": 0.20,
 			"item:48": 0.05
 		}
 	},
 	{
 		"enemyId": 5,
 		"drops": {
-			"group:16": 0.40,
-			"group:17": 0.40,
-			"group:29": 0.40,
-			"group:30": 0.40,
+			"group:0": 0.80,
+			"group:1": 0.80,
+			"group:16": 0.20,
+			"group:17": 0.20,
+			"group:29": 0.20,
+			"group:30": 0.20,
 			"item:48": 0.05
 		}
 	},
 	{
 		"enemyId": 6,
 		"drops": {
-			"group:16": 0.40,
-			"group:17": 0.40,
-			"group:29": 0.40,
-			"group:30": 0.40,
+			"group:0": 0.80,
+			"group:1": 0.80,
+			"group:16": 0.20,
+			"group:17": 0.20,
+			"group:29": 0.20,
+			"group:30": 0.20,
 			"item:48": 0.05
 		}
 	},
 	{
 		"enemyId": 7,
 		"drops": {
-			"group:16": 0.40,
-			"group:17": 0.40,
-			"group:29": 0.40,
-			"group:30": 0.40,
+			"group:0": 0.80,
+			"group:1": 0.80,
+			"group:16": 0.20,
+			"group:17": 0.20,
+			"group:29": 0.20,
+			"group:30": 0.20,
 			"item:48": 0.05
 		}
 	},
 	{
 		"enemyId": 8,
 		"drops": {
-			"group:16": 0.40,
-			"group:17": 0.40,
-			"group:29": 0.40,
-			"group:30": 0.40,
+			"group:0": 0.80,
+			"group:1": 0.80,
+			"group:16": 0.20,
+			"group:17": 0.20,
+			"group:29": 0.20,
+			"group:30": 0.20,
 			"item:48": 0.05
 		}
 	}

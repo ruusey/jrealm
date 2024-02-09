@@ -12,7 +12,6 @@ import com.jrealm.game.tile.NetTile;
 import com.jrealm.net.Packet;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
@@ -95,10 +94,11 @@ public class LoadMapPacket extends Packet {
 		return new LoadMapPacket(PacketType.LOAD_MAP.getPacketId(), byteStream.toByteArray());
 	}
 
-	// TODO: Implement difference for delta tiles
 	public LoadMapPacket difference(LoadMapPacket other) throws Exception {
 		List<NetTile> diff = new ArrayList<>();
-
+		// If the player is changing realms, force the new tiles to be sent
+		if (this.realmId != other.getRealmId())
+			return other;
 		for (NetTile tileOther : other.getTiles()) {
 			if (!LoadMapPacket.tilesContains(tileOther, this.getTiles())) {
 				diff.add(tileOther);

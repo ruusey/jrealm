@@ -758,6 +758,11 @@ public class RealmManagerServer implements Runnable {
 					targetRealm.getExpiredPlayers().add(player.getId());
 					targetRealm.removePlayer(player);
 					this.enqueueServerPacket(player, PlayerDeathPacket.from());
+					if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
+						ServerGameLogic.DATA_SERVICE.executeDelete("/account/character/" + p.getCharacterUuid(),
+								String.class);
+					}
+
 				} catch (Exception e) {
 					RealmManagerServer.log.error("Failed to Remove dead Player {}. Reason: {}", e);
 				}
@@ -823,7 +828,7 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.removeEnemy(e);
 
 				// TODO: Maybe find a better way to introduce randomness to drops.
-				if (Realm.RANDOM.nextInt(20) < 1) {
+				if (Realm.RANDOM.nextInt(10) < 1) {
 					if (targetRealm.getMapId() == 4) {
 						targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(128, 128)));
 					} else if (targetRealm.getMapId() == 2) {
