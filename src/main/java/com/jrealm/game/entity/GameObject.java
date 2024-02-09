@@ -105,7 +105,7 @@ public abstract class GameObject {
 	// Returns the players position adjusted to the center of its
 	// on-screen sprite image
 	public Vector2f getCenteredPosition() {
-		return this.pos.clone(this.getSize() / 2, this.getSize() / 2);
+		return this.pos.clone((this.getSize() / 2), this.getSize() / 2);
 	}
 
 	@Override

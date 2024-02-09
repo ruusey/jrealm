@@ -192,10 +192,145 @@
 		"lootGroupName": "Tier 14 Weapons",
 		"potentialDrops": [
 			31,
-			89,
+			90,
 			105,
 			135,
 			151
+		]
+	},
+	{
+		"lootGroupId": 18,
+		"lootGroupName": "Tier 1 Armor",
+		"potentialDrops": [
+			32,
+			60,
+			106
+		]
+	},
+	{
+		"lootGroupId": 19,
+		"lootGroupName": "Tier 2 Armor",
+		"potentialDrops": [
+			33,
+			61,
+			107
+		]
+	},
+	{
+		"lootGroupId": 20,
+		"lootGroupName": "Tier 3 Armor",
+		"potentialDrops": [
+			34,
+			63,
+			108
+		]
+	},
+	{
+		"lootGroupId": 21,
+		"lootGroupName": "Tier 4 Armor",
+		"potentialDrops": [
+			35,
+			64,
+			109
+		]
+	},
+	{
+		"lootGroupId": 22,
+		"lootGroupName": "Tier 5 Armor",
+		"potentialDrops": [
+			36,
+			65,
+			110
+		]
+	},
+	{
+		"lootGroupId": 23,
+		"lootGroupName": "Tier 6 Armor",
+		"potentialDrops": [
+			37,
+			66,
+			111
+		]
+	},
+	{
+		"lootGroupId": 22,
+		"lootGroupName": "Tier 7 Armor",
+		"potentialDrops": [
+			38,
+			66,
+			112
+		]
+	},
+	{
+		"lootGroupId": 23,
+		"lootGroupName": "Tier 8 Armor",
+		"potentialDrops": [
+			39,
+			67,
+			113
+		]
+	},
+	{
+		"lootGroupId": 24,
+		"lootGroupName": "Tier 9 Armor",
+		"potentialDrops": [
+			40,
+			68,
+			114
+		]
+	},
+	{
+		"lootGroupId": 25,
+		"lootGroupName": "Tier 10 Armor",
+		"potentialDrops": [
+			41,
+			69,
+			115
+		]
+	},
+	{
+		"lootGroupId": 26,
+		"lootGroupName": "Tier 11 Armor",
+		"potentialDrops": [
+			42,
+			70,
+			116
+		]
+	},
+	{
+		"lootGroupId": 27,
+		"lootGroupName": "Tier 12 Armor",
+		"potentialDrops": [
+			43,
+			71,
+			117
+		]
+	},
+	{
+		"lootGroupId": 28,
+		"lootGroupName": "Tier 13 Armor",
+		"potentialDrops": [
+			44,
+			72,
+			118
+		]
+	},
+	{
+		"lootGroupId": 29,
+		"lootGroupName": "Tier 14 Armor",
+		"potentialDrops": [
+			45,
+			73,
+			119
+		]
+	},
+	{
+		"lootGroupId": 30,
+		"lootGroupName": "Tier 15 Armor",
+		"potentialDrops": [
+			46,
+			74,
+			120
 		]
 	}
 ]
