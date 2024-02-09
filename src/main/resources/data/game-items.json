@@ -1507,8 +1507,8 @@
 		"description": "An exalted weapon of the august kings of old, hallowed with the spirit of nations and yearning to grant power anew.",
 		"damage": {
 			"projectileGroupId": 14,
-			"min": 100,
-			"max": 150
+			"min": 120,
+			"max": 170
 		},
 		"consumable": false,
 		"tier": -1,
