@@ -197,7 +197,6 @@ public class Player extends Entity implements Streamable<Player>{
 		this.pos.y = (GamePanel.height / 2) - (this.size / 2);
 		PlayState.map.y = 0;
 		this.cam.getPos().y = 0;
-		// sprite.getSprite(spriteX, spriteY)
 		this.setAnimation(this.RIGHT, this.sprite.getSpriteArray(this.RIGHT), 10);
 	}
 
@@ -263,10 +262,6 @@ public class Player extends Entity implements Streamable<Player>{
 
 	@Override
 	public void render(Graphics2D g) {
-		// g.setColor(Color.green);
-		// g.drawRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int)
-		// (this.pos.getWorldVar().y + this.bounds.getYOffset()), (int)
-		// this.bounds.getWidth(), (int) this.bounds.getHeight());
 		Color c = new Color(0f, 0f, 0f, 1f);
 		g.setColor(c);
 		java.awt.Font currentFont = g.getFont();
@@ -398,6 +393,7 @@ public class Player extends Entity implements Streamable<Player>{
 		}
 		this.setExperience(newExperience);
 	}
+
 
 	public void applyUpdate(UpdatePacket packet, PlayState state) {
 		this.name = packet.getPlayerName();

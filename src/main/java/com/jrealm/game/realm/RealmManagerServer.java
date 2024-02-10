@@ -820,7 +820,6 @@ public class RealmManagerServer implements Runnable {
 				}
 
 				Random random = new Random(Instant.now().toEpochMilli());
-				// e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
 				targetRealm.getExpiredBullets().add(b.getId());
 				targetRealm.getExpiredEnemies().add(e.getId());
 				targetRealm.clearHitMap();
