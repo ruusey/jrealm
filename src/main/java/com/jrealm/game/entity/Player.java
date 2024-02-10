@@ -232,17 +232,6 @@ public class Player extends Entity implements Streamable<Player>{
 		}
 	}
 
-	public Stats getBonusStats() {
-		Stats stats = new Stats();
-		final GameItem[] equipment = this.getSlots(0, 4);
-		for (GameItem item : equipment) {
-			if (item != null) {
-				stats = stats.concat(item.getStats());
-			}
-		}
-		return stats;
-	}
-
 	public Stats getComputedStats() {
 		Stats stats = this.stats.clone();
 		GameItem[] equipment = this.getSlots(0, 4);

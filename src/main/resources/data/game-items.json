@@ -2708,7 +2708,7 @@
 			"mpCost": 50
 		},
 		"damage": {
-			"projectileGroupId": 17,
+			"projectileGroupId": 23,
 			"min": 300,
 			"max": 400
 		},

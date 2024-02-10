@@ -996,7 +996,7 @@
 			}
 		]
 	},
-		{
+	{
 		"projectileGroupId": 17,
 		"row": 10,
 		"col": 2,
@@ -1245,6 +1245,142 @@
 				"angle": 0,
 				"range": 150,
 				"size": 24,
+				"magnitude": 5.0,
+				"flags": [
+					0
+				]
+			}
+		]
+	},
+	{
+		"projectileGroupId": 23,
+		"row": 4,
+		"col": 14,
+		"spriteKey": "entity/rotmg-tiles.png",
+		"angleOffset": "{{PI/4}}",
+		"projectiles": [
+			{
+				"projectileId": 23,
+				"positionMode": 0,
+				"damage": 125,
+				"angle": 0,
+				"range": 450,
+				"size": 24,
+				"magnitude": 8.0,
+				"flags": [
+					2,
+					10
+				]
+			}
+		]
+	},
+	{
+		"projectileGroupId": 24,
+		"row": 4,
+		"col": 15,
+		"spriteKey": "entity/rotmg-tiles.png",
+		"angleOffset": "{{PI/4}}",
+		"projectiles": [
+			{
+				"projectileId": 24,
+				"positionMode": 2,
+				"damage": 75,
+				"angle": "{{PI/4}}",
+				"range": 450,
+				"size": 32,
+				"magnitude": 5.0,
+				"flags": [
+					0
+				]
+			},
+			{
+				"projectileId": 24,
+				"positionMode": 2,
+				"damage": 75,
+				"angle": "{{3PI/4}}",
+				"range": 450,
+				"size": 32,
+				"magnitude": 5.0,
+				"flags": [
+					0
+				]
+			},
+			{
+				"projectileId": 24,
+				"positionMode": 2,
+				"damage": 75,
+				"angle": "{{5PI/4}}",
+				"range": 450,
+				"size": 32,
+				"magnitude": 5.0,
+				"flags": [
+					0
+				]
+			},
+			{
+				"projectileId": 24,
+				"positionMode": 2,
+				"damage": 75,
+				"angle": "{{7PI/4}}",
+				"range": 450,
+				"size": 32,
+				"magnitude": 5.0,
+				"flags": [
+					0
+				]
+			}
+		]
+	},
+	{
+		"projectileGroupId": 25,
+		"row": 4,
+		"col": 12,
+		"spriteKey": "entity/rotmg-tiles.png",
+		"angleOffset": "{{PI/4}}",
+		"projectiles": [
+			{
+				"projectileId": 25,
+				"positionMode": 2,
+				"damage": 75,
+				"angle": 0,
+				"range": 450,
+				"size": 32,
+				"magnitude": 5.0,
+				"flags": [
+					0
+				]
+			},
+			{
+				"projectileId": 25,
+				"positionMode": 2,
+				"damage": 75,
+				"angle": "{{PI/2}}",
+				"range": 450,
+				"size": 32,
+				"magnitude": 5.0,
+				"flags": [
+					0
+				]
+			},
+			{
+				"projectileId": 25,
+				"positionMode": 2,
+				"damage": 75,
+				"angle": "{{PI}}",
+				"range": 450,
+				"size": 32,
+				"magnitude": 5.0,
+				"flags": [
+					0
+				]
+			},
+			{
+				"projectileId": 25,
+				"positionMode": 2,
+				"damage": 75,
+				"angle": "{{3PI/2}}",
+				"range": 450,
+				"size": 32,
 				"magnitude": 5.0,
 				"flags": [
 					0

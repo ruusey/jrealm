@@ -142,5 +142,41 @@
 		"stats": {
 			"def": 5
 		}
+	},
+	{
+		"enemyId": 9,
+		"name": "Minotaur",
+		"spriteKey": "entity/rotmg-bosses.png",
+		"row": 1,
+		"col": 0,
+		"spriteSize": 16,
+		"size": 64,
+		"attackId": 24,
+		"xp": 500,
+		"health": 1000,
+		"maxSpeed": 1.4,
+		"chaseRange": 650.0,
+		"attackRange": 500.0,
+		"stats": {
+			"def": 5
+		}
+	},
+	{
+		"enemyId": 10,
+		"name": "Cyclops",
+		"spriteKey": "entity/rotmg-bosses.png",
+		"row": 0,
+		"col": 2,
+		"spriteSize": 16,
+		"size": 64,
+		"attackId": 25,
+		"xp": 500,
+		"health": 1000,
+		"maxSpeed": 1.4,
+		"chaseRange": 650.0,
+		"attackRange": 500.0,
+		"stats": {
+			"def": 5
+		}
 	}
 ]

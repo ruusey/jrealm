@@ -367,7 +367,7 @@ public class ServerGameLogic {
 				throw e;
 			}
 			final CharacterDto targetCharacter = characterClass.get();
-			if (targetCharacter.isDeleted())
+			if (targetCharacter.isDeleted() && false)
 				throw new Exception("Character "+targetCharacter.getCharacterUuid()+" is deleted!");
 			final Map<Integer, GameItem> loadedEquipment = new HashMap<>();
 			for(final GameItemRefDto item : targetCharacter.getItems()) {

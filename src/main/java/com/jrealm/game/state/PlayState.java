@@ -67,7 +67,6 @@ public class PlayState extends GameState {
 
 	private Map<Cardinality, Boolean> lastDirectionMap;
 	private boolean sentChat = false;
-
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 		PlayState.map = new Vector2f();
@@ -143,31 +142,17 @@ public class PlayState extends GameState {
 				Runnable playerShootDequeue = () -> {
 					for (int i = 0; i < this.shotDestQueue.size(); i++) {
 						Vector2f dest = this.shotDestQueue.remove(i);
-
 						Vector2f source = this.getPlayer().getCenteredPosition();
 						if (this.realmManager.getRealm().getTileManager().isCollisionTile(source)) {
 							PlayState.log.error("Failed to invoke player shoot. Projectile is out of bounds.");
 							continue;
 						}
-						ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
-						float angle = Bullet.getAngle(source, dest);
-
 						try {
 							PlayerShootPacket packet = PlayerShootPacket.from(Realm.RANDOM.nextLong(), player, dest);
 							this.realmManager.getClient().sendRemote(packet);
 						} catch (Exception e) {
 							PlayState.log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
 						}
-						//						for (Projectile p : group.getProjectiles()) {
-						//							short offset = (short) (p.getSize() / (short) 2);
-						//							short rolledDamage = player.getInventory()[0].getDamage().getInRange();
-						//							rolledDamage += player.getComputedStats().getAtt();
-						//
-						//							long newProj = this.addProjectile(player.getWeaponId(), p.getProjectileId(), source.clone(-offset, -offset),
-						//									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
-						//									rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
-						//
-						//						}
 					}
 				};
 				// Testing out optimistic update of enemies/bullets
@@ -663,12 +648,13 @@ public class PlayState extends GameState {
 		if (player == null)
 			return;
 		final LootContainer closeLoot = this.getClosestLootContainer(player.getPos(), player.getSize() / 2);
+
 		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
 			lc.render(g);
 		}
 
 		if ((this.getPui().isGroundLootEmpty() && (closeLoot != null)) || ((closeLoot != null) && closeLoot.getContentsChanged())) {
-			this.getPui().setGroundLoot(closeLoot.getItems(), g);
+			this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot), g);
 
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
 			this.getPui().setGroundLoot(new GameItem[8], g);

@@ -61,7 +61,7 @@ public class GameDataManager {
 		}
 		GameDataManager.log.info("Loading Loot Groups... DONE");
 	}
-	
+
 	private static void loadLootTables() throws Exception {
 		GameDataManager.log.info("Loading Loot Tables..");
 		GameDataManager.LOOT_TABLES = new HashMap<>();
@@ -180,11 +180,12 @@ public class GameDataManager {
 		ProjectileGroup[] projectileGroups = GameDataManager.mapper.readValue(text, ProjectileGroup[].class);
 
 		for (ProjectileGroup group : projectileGroups) {
+			if ((group.getAngleOffset() != null) && group.getAngleOffset().contains("{{")) {
+				group.setAngleOffset(GameDataManager.replaceInjectVariables(group.getAngleOffset()));
+			}
 			for(Projectile p : group.getProjectiles()) {
 				if(p.getAngle().contains("{{")) {
 					p.setAngle(GameDataManager.replaceInjectVariables(p.getAngle()));
-				} else if ((group.getAngleOffset() != null) && group.getAngleOffset().contains("{{")) {
-					group.setAngleOffset(GameDataManager.replaceInjectVariables(group.getAngleOffset()));
 				}
 			}
 			GameDataManager.PROJECTILE_GROUPS.put(group.getProjectileGroupId(), group);
@@ -200,14 +201,12 @@ public class GameDataManager {
 		InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/game-items.json");
 		String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
 
-		// replaceInjectVariables(text);
 		GameItem[] gameItems = GameDataManager.mapper.readValue(text, GameItem[].class);
 
 		for (GameItem item : gameItems) {
 			GameDataManager.GAME_ITEMS.put(item.getItemId(), item);
 		}
 		GameDataManager.log.info("Loading Game Items... DONE");
-
 	}
 
 	// TODO: Add loot tier in LootContainer
