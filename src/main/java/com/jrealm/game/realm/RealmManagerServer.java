@@ -554,7 +554,7 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	// Invokes an ability usage server side for the given player at the
-	// desired location if aplicable
+	// desired location if applicable
 	public void useAbility(final long realmId, final long playerId, final Vector2f pos) {
 		final Realm targetRealm = this.realms.get(realmId);
 
@@ -838,6 +838,9 @@ public class RealmManagerServer implements Runnable {
 					// targetRealm.addPortal(new Portal(random.nextLong(), (short) 0,
 					// e.getPos().withNoise(128, 128)));
 				}
+				/**
+				 * Loot drops are determined by the LootTableModel mapped by this enemyId
+				 */
 				final List<GameItem> lootToDrop = GameDataManager.LOOT_TABLES.get(e.getEnemyId()).getLootDrop();
 				if (lootToDrop.size() > 0) {
 					final LootContainer dropsBag = new LootContainer(LootTier.BLUE, e.getPos().withNoise(128, 128),

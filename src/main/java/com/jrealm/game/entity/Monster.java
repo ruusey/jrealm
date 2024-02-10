@@ -1,12 +1,12 @@
 package com.jrealm.game.entity;
 
-import java.util.Random;
 import java.util.UUID;
 
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
+import com.jrealm.game.realm.Realm;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,7 +21,6 @@ public class Monster extends Enemy {
 		EnemyModel model = GameDataManager.ENEMIES.get(enemyId);
 		// this.xOffset = size / 4;
 		// this.yOffset = size / 4;
-		Random r = new Random(System.nanoTime());
 		this.acc = 1f;
 		this.deacc = 2f;
 		this.maxSpeed = 1.4f;
@@ -35,7 +34,7 @@ public class Monster extends Enemy {
 		this.DOWN = 1;
 		this.LEFT = 1;
 		this.RIGHT = 1;
-		this.health = r.nextInt(1000) + model.getHealth();
+		this.health = Realm.RANDOM.nextInt(1000) + model.getHealth();
 		this.hasIdle = true;
 		this.useRight = true;
 
@@ -51,7 +50,6 @@ public class Monster extends Enemy {
 		super(id, enemyId, origin, size, weaponId);
 		// this.xOffset = size / 4;
 		// this.yOffset = size / 4;
-		Random r = new Random(System.nanoTime());
 		this.acc = 1f;
 		this.deacc = 2f;
 		this.maxSpeed = 1.4f;
@@ -65,7 +63,7 @@ public class Monster extends Enemy {
 		this.DOWN = 1;
 		this.LEFT = 1;
 		this.RIGHT = 1;
-		this.health = r.nextInt(1000) + 1000;
+		this.health = Realm.RANDOM.nextInt(1000) + 1000;
 		this.hasIdle = true;
 		this.useRight = true;
 

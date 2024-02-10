@@ -51,6 +51,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ServerGameLogic {
+	/**
+	 * As of release 0.3.0 DATA_SERVICE static member is required for Game
+	 * functionality
+	 */
 	public static final JRealmDataService DATA_SERVICE = new JRealmDataService(HttpClient.newHttpClient(),
 			"http://localhost:8085/");
 
