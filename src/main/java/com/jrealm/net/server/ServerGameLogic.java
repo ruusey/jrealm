@@ -107,7 +107,6 @@ public class ServerGameLogic {
 				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
 		}
-
 		mgr.clearPlayerState(user.getId());
 
 	}

@@ -59,7 +59,7 @@ public class ProcessingThread extends Thread{
 			if (bytesRead > 0) {
 				this.remoteBufferIndex += bytesRead;
 				while (this.remoteBufferIndex >= 5) {
-					int packetLength = ((ByteBuffer) ByteBuffer.allocate(4).put(this.remoteBuffer[1])
+					int packetLength = (ByteBuffer.allocate(4).put(this.remoteBuffer[1])
 							.put(this.remoteBuffer[2]).put(this.remoteBuffer[3]).put(this.remoteBuffer[4]).rewind())
 							.getInt();
 					if (this.remoteBufferIndex < (packetLength)) {
@@ -83,7 +83,7 @@ public class ProcessingThread extends Thread{
 			ProcessingThread.log.error("Failed to parse client input {}", e.getMessage());
 		}
 	}
-	
+
 	@SuppressWarnings("unused")
 	private void monitorLastReceived() {
 		Runnable monitorLastRecieved = () ->{
@@ -94,9 +94,9 @@ public class ProcessingThread extends Thread{
 						this.shutdownProcessing = true;
 					}
 				}catch(Exception e) {
-					
+
 				}
-				
+
 			}
 		};
 		WorkerThread.submitAndForkRun(monitorLastRecieved);
