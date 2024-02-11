@@ -81,15 +81,12 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings("unused")
 public class RealmManagerServer implements Runnable {
 	private SocketServer server;
-
-	private Map<Long, Realm> realms = new HashMap<>();
-
-	// private Realm realm;
 	private boolean shutdown = false;
 
 	private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
-	private List<Vector2f> shotDestQueue;
 
+	private List<Vector2f> shotDestQueue;
+	private Map<Long, Realm> realms = new HashMap<>();
 	private Map<String, Long> remoteAddresses = new HashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
 	private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
@@ -257,7 +254,7 @@ public class RealmManagerServer implements Runnable {
 						// Get the previous loadMap packet and check for Delta,
 						// only send the delta to the client
 						final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
-						// Custom equals impl
+
 						if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
 							final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
 							this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);

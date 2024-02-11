@@ -71,7 +71,7 @@ public class ServerGameLogic {
 			final MapModel mapModel = GameDataManager.MAPS.get(1);
 			final Realm generatedRealm = new Realm(true, 1);
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
-			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 1,
+			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
 					chestLoc);
 
 			generatedRealm.setupChests();
@@ -86,7 +86,7 @@ public class ServerGameLogic {
 		else if (targetRealm == null) {
 			final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 			final Realm generatedRealm = new Realm(true, portalUsed.getMapId());
-			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 1,
+			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
 					generatedRealm.getTileManager().getSafePosition());
 			user.setPos(generatedRealm.getTileManager().getSafePosition());
 			generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
@@ -107,7 +107,7 @@ public class ServerGameLogic {
 				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
 		}
-		mgr.clearPlayerState(user.getId());
+		// mgr.clearPlayerState(user.getId());
 
 	}
 
