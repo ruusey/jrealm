@@ -20,7 +20,7 @@ public class GameLauncher {
 
 	public static void main(String[] args) {
 		GameLauncher.log.info("Starting JRealm...");
-		GameDataManager.loadGameData();
+		GameDataManager.loadGameData(true);
 		if (GameLauncher.argsContains(args, "-server")) {
 			GameLauncher.startServer();
 		}

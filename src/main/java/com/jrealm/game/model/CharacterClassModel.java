@@ -35,7 +35,7 @@ public class CharacterClassModel {
 	}
 
 	public static void main(String[] args) {
-		GameDataManager.loadGameData();
+		GameDataManager.loadGameData(true);
 		CharacterClassModel model = GameDataManager.CHARACTER_CLASSES.get(0);
 		final ExperienceModel expModel = GameDataManager.EXPERIENCE_LVLS;
 		Stats startStats = model.getBaseStats();
