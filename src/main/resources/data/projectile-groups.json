@@ -485,7 +485,7 @@
 			{
 				"projectileId": 8,
 				"positionMode": 0,
-				"damage": 40,
+				"damage": 60,
 				"angle": 0.0,
 				"range": 400.0,
 				"size": 24,
@@ -500,7 +500,7 @@
 			{
 				"projectileId": 8,
 				"positionMode": 0,
-				"damage": 40,
+				"damage": 60,
 				"angle": -0.1,
 				"range": 400.0,
 				"size": 24,
@@ -515,7 +515,7 @@
 			{
 				"projectileId": 8,
 				"positionMode": 0,
-				"damage": 40,
+				"damage": 60,
 				"angle": -0.2,
 				"range": 400.0,
 				"size": 24,
@@ -530,7 +530,7 @@
 			{
 				"projectileId": 8,
 				"positionMode": 0,
-				"damage": 40,
+				"damage": 60,
 				"angle": 0.2,
 				"range": 400.0,
 				"size": 24,
@@ -545,7 +545,7 @@
 			{
 				"projectileId": 8,
 				"positionMode": 0,
-				"damage": 40,
+				"damage": 60,
 				"angle": 0.1,
 				"range": 400.0,
 				"size": 24,
@@ -560,8 +560,8 @@
 			{
 				"projectileId": 8,
 				"positionMode": 0,
-				"damage": 40,
-				"angle": 0,
+				"damage": 60,
+				"angle": 0.3,
 				"range": 400.0,
 				"size": 24,
 				"amplitude": -7,
