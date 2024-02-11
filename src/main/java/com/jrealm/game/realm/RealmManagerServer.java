@@ -752,7 +752,7 @@ public class RealmManagerServer implements Runnable {
 			if (p.getDeath()) {
 				try {
 					final String remoteAddrDeath = this.getRemoteAddressMapRevered().get(player.getId());
-					final LootContainer graveLoot = new LootContainer(LootTier.BROWN, p.getPos().clone(),
+					final LootContainer graveLoot = new LootContainer(LootTier.GRAVE, p.getPos().clone(),
 							p.getSlots(4, 12));
 					// this.getServer().getClients().remove(remoteAddrDeath);
 					targetRealm.addLootContainer(graveLoot);

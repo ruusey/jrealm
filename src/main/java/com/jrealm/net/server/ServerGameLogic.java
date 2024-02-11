@@ -286,7 +286,11 @@ public class ServerGameLogic {
 							player.getId());
 					return;
 				}
-				player.getInventory()[moveItemPacket.getFromSlotIndex()] = currentEquip.clone();
+				if (currentEquip != null) {
+					player.getInventory()[moveItemPacket.getFromSlotIndex()] = currentEquip.clone();
+				} else {
+					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
+				}
 				player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();
 
 			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && (moveItemPacket.getTargetSlotIndex()==-1)) {

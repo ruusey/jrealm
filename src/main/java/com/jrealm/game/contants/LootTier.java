@@ -12,7 +12,8 @@ public enum LootTier {
 	PURPLE(1),
 	CYAN(2),
 	BLUE(3),
-	WHITE(4), GRAVE(5);
+	WHITE(4), 
+	GRAVE(5);
 
 	public static Map<Byte, LootTier> map = new HashMap<>();
 	static {
