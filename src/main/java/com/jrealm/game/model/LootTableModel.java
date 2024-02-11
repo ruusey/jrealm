@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
@@ -74,9 +73,9 @@ public class LootTableModel {
 		return res;
 	}
 
-	private List<GameItem> getPossibleGameItems() {
-		return this.drops.keySet().stream().filter(key -> !this.isLootGroup(key))
-				.map(key -> Integer.parseInt(key.split(":")[1])).map(itemId -> GameDataManager.GAME_ITEMS.get(itemId))
-				.collect(Collectors.toList());
-	}
+	//	private List<GameItem> getPossibleGameItems() {
+	//		return this.drops.keySet().stream().filter(key -> !this.isLootGroup(key))
+	//				.map(key -> Integer.parseInt(key.split(":")[1])).map(itemId -> GameDataManager.GAME_ITEMS.get(itemId))
+	//				.collect(Collectors.toList());
+	//	}
 }
