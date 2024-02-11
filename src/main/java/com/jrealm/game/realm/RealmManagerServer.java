@@ -69,6 +69,7 @@ import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.ProcessingThread;
 import com.jrealm.net.server.ServerGameLogic;
 import com.jrealm.net.server.SocketServer;
+import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -761,6 +762,14 @@ public class RealmManagerServer implements Runnable {
 					if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
 						ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + p.getCharacterUuid(),
 								Map.class);
+					}else {
+						// Remove their amulet and let them respawn
+						TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
+								player.getName()
+								+ "'s Amulet shatters as they dissapear.");
+						this.enqueueServerPacket(toBroadcast);
+						player.getInventory()[3] = null;
+						this.persistPlayerAsync(player);
 					}
 
 				} catch (Exception e) {
@@ -774,7 +783,7 @@ public class RealmManagerServer implements Runnable {
 	private void proccessEnemyHit(final long realmId, final Bullet b, final Enemy e) {
 		final Realm targetRealm = this.realms.get(realmId);
 
-		if (targetRealm.hasHitEnemy(b.getId(), e.getId()))
+		if (targetRealm.hasHitEnemy(b.getId(), e.getId()) || targetRealm.getExpiredEnemies().contains(e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			targetRealm.hitEnemy(b.getId(), e.getId());

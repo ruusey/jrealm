@@ -281,7 +281,11 @@ public class ServerGameLogic {
 				}
 				player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
 			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isEquipment(moveItemPacket.getTargetSlotIndex()) && (from!=null)) {
-
+				if (!CharacterClass.isValidUser(player, from.getTargetClass())) {
+					ServerGameLogic.log.warn("Player {} attempted to equip an item not useable by their class",
+							player.getId());
+					return;
+				}
 				player.getInventory()[moveItemPacket.getFromSlotIndex()] = currentEquip.clone();
 				player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();
 
@@ -414,8 +418,6 @@ public class ServerGameLogic {
 
 			final CommandPacket commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
 			commandResponse.serializeWrite(dosToClient);
-
-
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
 		}

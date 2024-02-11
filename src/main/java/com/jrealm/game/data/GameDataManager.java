@@ -214,6 +214,14 @@ public class GameDataManager {
 		return GameDataManager.SPRITE_SHEETS.get("entity/rotmg-misc.png").getSprite(tier, 9, 8, 8);
 	}
 
+	public static Sprite getGraveSprite() {
+		return GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png").getSprite(5, 5, 16, 16);
+	}
+
+	public static Sprite getChestSprite() {
+		return GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(2, 0, 8, 8);
+	}
+
 	private static void loadSpriteSheets() throws Exception {
 		GameDataManager.log.info("Loading Sprite Sheets...");
 

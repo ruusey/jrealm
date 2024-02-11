@@ -557,6 +557,32 @@
 			"slows": 1,
 			"damaging": 0
 		}
+	},
+	{
+		"tileId": 43,
+		"name": "Rock_Small_0",
+		"spriteKey": "entity/rotmg-tiles-2.png",
+		"row": 6,
+		"col": 14,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
+	},
+	{
+		"tileId": 44,
+		"name": "Rock_Small_1",
+		"spriteKey": "entity/rotmg-tiles-2.png",
+		"row": 6,
+		"col": 15,
+		"size": 32, 
+		"data": {
+			"hasCollision" : 1,
+			"slows": 0,
+			"damaging": 0
+		}
 	}
 ]
 
