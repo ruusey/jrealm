@@ -55,8 +55,9 @@ public class ServerGameLogic {
 	 * As of release 0.3.0 DATA_SERVICE static member is required for Game
 	 * functionality
 	 */
+	public static final String DATA_HOST = "http://localhost:8085/";
 	public static final JRealmDataService DATA_SERVICE = new JRealmDataService(HttpClient.newHttpClient(),
-			"http://localhost:8085/");
+			DATA_HOST);
 
 	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
 		final UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
