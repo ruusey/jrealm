@@ -34,7 +34,6 @@ import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
-import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
@@ -118,7 +117,8 @@ public class RealmManagerServer implements Runnable {
 				final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				try {
 					final Vector2f spawnPos = targetRealm.getTileManager().getSafePosition();
-					final Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(classToSpawn),
+					final Player player = new Player(Realm.RANDOM.nextLong(), c,
+							GameDataManager.loadClassSprites(classToSpawn),
 							spawnPos, GlobalConstants.PLAYER_SIZE, classToSpawn);
 					String playerName = UUID.randomUUID().toString().replaceAll("-", "");
 					playerName = playerName.substring(playerName.length()/2);
@@ -222,6 +222,8 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
+	// Enqueues outbound game packets every tick. Manages
+	// when/if packets should be broadcast and to who
 	public void enqueueGameData() {
 		final List<String> disconnectedClients = new ArrayList<>();
 		// TODO: Parallelize work for each realm
@@ -272,7 +274,8 @@ public class RealmManagerServer implements Runnable {
 					final ObjectMovePacket movePacket = realm
 							.getGameObjectsAsPackets(realm.getTileManager().getRenderViewPort(player.getValue()));
 
-
+					// Only transmit this players update data if it has not been sent
+					// or if it has changed since last tick
 					if (this.playerUpdateState.get(player.getKey()) == null) {
 						this.playerUpdateState.put(player.getKey(), updatePacket);
 						this.enqueueServerPacket(player.getValue(), updatePacket);
@@ -311,6 +314,10 @@ public class RealmManagerServer implements Runnable {
 					if (movePacket != null) {
 						this.enqueueServerPacket(player.getValue(), movePacket);
 					}
+
+					// Used to dynamically re-render changed loot containers (chests) on the client
+					// if their contents change in a server tick (receive MoveItem packet from
+					// client this tick)
 					for (LootContainer lc : realm.getLoot().values()) {
 						lc.setContentsChanged(false);
 					}
@@ -328,17 +335,20 @@ public class RealmManagerServer implements Runnable {
 	public void processServerPackets() {
 		for(final Map.Entry<String, ProcessingThread> thread : this.getServer().getClients().entrySet()) {
 			if(!thread.getValue().isShutdownProcessing()) {
+				// Read all packets from the ProcessingThread (client's) queue
 				while(!thread.getValue().getPacketQueue().isEmpty()) {
 					final Packet packet = thread.getValue().getPacketQueue().remove();
 					try {
 						final Packet created = Packet.newInstance(packet.getId(), packet.getData());
 						created.setSrcIp(packet.getSrcIp());
+						// Invoke packet callback
 						this.packetCallbacksServer.get(created.getId()).accept(this, created);
 					} catch (Exception e) {
 						RealmManagerServer.log.error("Failed to process server packets {}", e);
 					}
 				}
 			}else {
+				// Player Disconnect routine
 				final Long dcPlayerId = this.getRemoteAddresses().get(thread.getKey());
 				final Realm playerLocation = this.searchRealmsForPlayers(dcPlayerId);
 				final Player dcPlayer = playerLocation.getPlayer(dcPlayerId);
@@ -468,23 +478,13 @@ public class RealmManagerServer implements Runnable {
 					this.processBulletHit(realm.getRealmId(), p);
 				};
 				// Rewrite this asap
-				final Runnable checkAbilityUsage = () -> {
-
-					for (final GameObject e : realm
-							.getGameObjectsInBounds(realm.getTileManager().getRenderViewPort(p))) {
-						if ((e instanceof Entity)) {
-							Entity entCast = (Entity) e;
-							entCast.removeExpiredEffects();
-						}
-					}
-				};
 
 				final Runnable updatePlayer = () -> {
 					p.update(time);
 					this.movePlayer(realm.getRealmId(), p);
 				};
 				// Run the player update tasks Asynchronously
-				WorkerThread.submitAndRun(processGameObjects, updatePlayer, checkAbilityUsage);
+				WorkerThread.submitAndRun(processGameObjects, updatePlayer);
 			}
 			// Once per tick update all non player game objects
 			// (bullets, enemies)
@@ -494,6 +494,7 @@ public class RealmManagerServer implements Runnable {
 					if (gameObject[i] instanceof Enemy) {
 						final Enemy enemy = ((Enemy) gameObject[i]);
 						enemy.update(realm.getRealmId(), this, time);
+						enemy.removeExpiredEffects();
 					}
 
 					if (gameObject[i] instanceof Bullet) {
@@ -509,10 +510,6 @@ public class RealmManagerServer implements Runnable {
 
 		final Runnable removeExpiredObjects = () -> {
 			this.removeExpiredBullets();
-			// Used to dynamically re-render changed loot containers (chests) on the client
-			// if their
-			// contents change in a server tick (receive MoveItem packet from client this
-			// tick)
 			this.removeExpiredLootContainers();
 		};
 		WorkerThread.submitAndRun(removeExpiredObjects);

@@ -32,7 +32,7 @@ public class SpriteSheet {
 		this.w = this.TILE_SIZE;
 		this.h = this.TILE_SIZE;
 		SpriteSheet.log.info("Loading Sprite File {}", file);
-		this.SPRITESHEET = new Sprite(this.loadSpriteRemote(file));
+		this.SPRITESHEET = new Sprite(this.loadSprite(file));
 		this.wSprite = this.SPRITESHEET.image.getWidth() / this.w;
 		this.hSprite = this.SPRITESHEET.image.getHeight() / this.h;
 		this.rowOffset = rowOffset;
@@ -54,7 +54,7 @@ public class SpriteSheet {
 		this.h = h;
 		this.file = file;
 		SpriteSheet.log.info("Loading Sprite File {}", file);
-		this.SPRITESHEET = new Sprite(this.loadSpriteRemote(file));
+		this.SPRITESHEET = new Sprite(this.loadSprite(file));
 
 		this.wSprite = this.SPRITESHEET.image.getWidth() / w;
 		this.hSprite = this.SPRITESHEET.image.getHeight() / h;
@@ -114,7 +114,7 @@ public class SpriteSheet {
 		}
 		return sprite;
 	}
-	
+
 	private BufferedImage loadSpriteRemote(String file) {
 		BufferedImage sprite = null;
 		try {

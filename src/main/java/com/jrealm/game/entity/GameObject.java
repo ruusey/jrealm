@@ -71,6 +71,13 @@ public abstract class GameObject {
 
 	}
 
+	public void applyMovementLerp(float velX, float velY, float pct) {
+		final float lerpX = this.lerp(this.pos.x, this.pos.x + velX, pct);
+		final float lerpY = this.lerp(this.pos.y, this.pos.y + velY, pct);
+
+		this.pos = new Vector2f(lerpX, lerpY);
+	}
+
 	public void applyMovementLerp(ObjectMovement packet, float pct) {
 		final float lerpX = this.lerp(this.pos.x, packet.getPosX(), pct);
 		final float lerpY = this.lerp(this.pos.y, packet.getPosY(), pct);

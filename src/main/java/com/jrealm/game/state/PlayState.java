@@ -191,7 +191,8 @@ public class PlayState extends GameState {
 				&& !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx())) {
 			p.xCol = false;
 			if (p.getDx() != 0.0f) {
-				p.getPos().x += p.getDx() / 3;
+				// p.applyMovementLerp(p.getDx(), 0, 0.65f);
+				p.getPos().x += p.getDx() / 4;
 			}
 		} else {
 			p.xCol = true;
@@ -201,7 +202,8 @@ public class PlayState extends GameState {
 				&& !this.getRealmManager().getRealm().getTileManager().collidesYLimit(p, p.getDy())) {
 			p.yCol = false;
 			if (p.getDy() != 0.0f) {
-				p.getPos().y += p.getDy() / 3;
+				// p.applyMovementLerp(0, p.getDy(), 0.65f);
+				p.getPos().y += p.getDy() / 4;
 			}
 		} else {
 			p.yCol = true;
