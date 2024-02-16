@@ -126,8 +126,8 @@ public class Player extends Entity implements Streamable<Player>{
 	public CharacterStatsDto serializeStats() {
 		return CharacterStatsDto.builder()
 				.xp(this.getExperience())
-				.hp(Integer.valueOf((int)this.stats.getHp()))
-				.mp(Integer.valueOf((int)this.stats.getMp()))
+				.hp(this.getHealth())
+				.mp(this.getMana())
 				.def(Integer.valueOf((int)this.stats.getDef()))
 				.att(Integer.valueOf((int)this.stats.getAtt()))
 				.spd(Integer.valueOf((int)this.stats.getSpd()))
