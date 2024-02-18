@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -102,6 +103,8 @@ public class Player extends Entity implements Streamable<Player>{
 
 	public void applyStats(CharacterStatsDto stats) {
 		this.setExperience(stats.getXp());
+		this.health = stats.getHp();
+		this.mana = stats.getMp();
 		this.stats.setHp(stats.getHp().shortValue());
 		this.stats.setMp(stats.getMp().shortValue());
 		this.stats.setDef(stats.getDef().shortValue());
@@ -126,8 +129,8 @@ public class Player extends Entity implements Streamable<Player>{
 	public CharacterStatsDto serializeStats() {
 		return CharacterStatsDto.builder()
 				.xp(this.getExperience())
-				.hp(this.getHealth())
-				.mp(this.getMana())
+				.hp(Integer.valueOf((int)this.stats.getHp()))
+				.mp(Integer.valueOf((int) this.stats.getMp()))
 				.def(Integer.valueOf((int)this.stats.getDef()))
 				.att(Integer.valueOf((int)this.stats.getAtt()))
 				.spd(Integer.valueOf((int)this.stats.getSpd()))
@@ -193,9 +196,8 @@ public class Player extends Entity implements Streamable<Player>{
 	public void update(double time) {
 		super.update(time);
 		Stats stats = this.getComputedStats();
-
 		this.cam.update();
-		if (((System.currentTimeMillis() - this.lastStatsTime) >= 1000)) {
+		if (((Instant.now().toEpochMilli() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
 			float mult = 1.0f;
 			if (this.hasEffect(EffectType.HEALING)) {
@@ -208,6 +210,9 @@ public class Player extends Entity implements Streamable<Player>{
 					targetHealth = stats.getHp();
 				}
 				this.setHealth(targetHealth);
+			} else if (this.getHealth() > stats.getHp()) {
+				int targetHealth = this.getHealth() - stats.getHp();
+				this.setHealth(this.getHealth() - targetHealth);
 			}
 			final int wis = (int) ((0.12f * (stats.getWis() + 4.2f)));
 			if (this.getMana() < stats.getMp()) {

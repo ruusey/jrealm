@@ -274,7 +274,7 @@ public class PlayerUI {
 	}
 
 	private Slots getOverlapping(Vector2f pos) {
-		Slots[] equipSlots = this.getSlots(4, 12);
+		Slots[] equipSlots = this.getSlots(0, 12);
 		for (Slots s : equipSlots) {
 			if ((s == null) || (s.getButton() == null)) {
 				continue;

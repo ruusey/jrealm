@@ -57,7 +57,7 @@ public class ServerGameLogic {
 	 */
 	public static final String DATA_HOST = "http://localhost:8085/";
 	public static final JRealmDataService DATA_SERVICE = new JRealmDataService(HttpClient.newHttpClient(),
-			DATA_HOST);
+			ServerGameLogic.DATA_HOST);
 
 	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
 		final UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
@@ -255,7 +255,8 @@ public class ServerGameLogic {
 			final GameItem currentEquip = moveItemPacket.getTargetSlotIndex() == -1 ? null
 					: player.getInventory()[moveItemPacket.getTargetSlotIndex()];
 			GameItem from = null;
-			if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())) {
+			if (MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())
+					|| MoveItemPacket.isEquipment(moveItemPacket.getFromSlotIndex())) {
 				from = player.getInventory()[moveItemPacket.getFromSlotIndex()];
 			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
 				LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(), 32);
