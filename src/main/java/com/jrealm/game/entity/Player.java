@@ -189,17 +189,6 @@ public class Player extends Entity implements Streamable<Player>{
 		return this.cardinality;
 	}
 
-	public void resetPosition() {
-		this.pos.x = (GamePanel.width / 2) - (this.size / 2);
-		PlayState.map.x = 0;
-		this.cam.getPos().x = 0;
-
-		this.pos.y = (GamePanel.height / 2) - (this.size / 2);
-		PlayState.map.y = 0;
-		this.cam.getPos().y = 0;
-		this.setAnimation(this.RIGHT, this.sprite.getSpriteArray(this.RIGHT), 10);
-	}
-
 	@Override
 	public void update(double time) {
 		super.update(time);
