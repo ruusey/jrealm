@@ -86,7 +86,7 @@ public class SocketClient implements Runnable {
 				this.remoteBufferIndex += bytesRead;
 
 				while (this.remoteBufferIndex >= 5) {
-					int packetLength = ((ByteBuffer) ByteBuffer.allocate(4).put(this.remoteBuffer[1])
+					int packetLength = (ByteBuffer.allocate(4).put(this.remoteBuffer[1])
 							.put(this.remoteBuffer[2]).put(this.remoteBuffer[3]).put(this.remoteBuffer[4]).rewind())
 							.getInt();
 					if (this.remoteBufferIndex < (packetLength)) {

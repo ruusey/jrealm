@@ -37,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientGameLogic {
-	private static short lastMapId = 0;
 	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
 		@SuppressWarnings("unused")
 		// Unused until this contains user spefic death data.
@@ -103,16 +102,7 @@ public class ClientGameLogic {
 	public static void handleLoadMapClient(RealmManagerClient cli, Packet packet) {
 		final LoadMapPacket loadPacket = (LoadMapPacket) packet;
 		try {
-			//			log.info("[CLIENT] Recieved Load Packet \nPlayers: {}\nEnemies: {}\nBullets: {}\nLootContainers: {}",
-			//
-			// cli.getState().getPui().getMinimap().initializeMap();
-			//			if ((cli.getRealm() != null) && (cli.getRealm().getMapId() != ClientGameLogic.lastMapId)) {
-			if (ClientGameLogic.lastMapId != loadPacket.getMapId()) {
-				ClientGameLogic.lastMapId = loadPacket.getMapId();
-				cli.getState().getPui().getMinimap().initializeMap(cli.getRealm().getMapId());
-
-			}
-			//			}
+			cli.getState().getPui().getMinimap().initializeMap(cli.getRealm().getMapId());
 			cli.getRealm().setRealmId(loadPacket.getRealmId());
 			cli.getRealm().setMapId(loadPacket.getMapId());
 			cli.getRealm().getTileManager().mergeMap(loadPacket);
@@ -120,13 +110,10 @@ public class ClientGameLogic {
 			ClientGameLogic.log.error("Failed to handle LoadMap Packet. Reason: {}", e);
 		}
 	}
+
 	public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
 		final LoadPacket loadPacket = (LoadPacket) packet;
 		try {
-			//			log.info("[CLIENT] Recieved Load Packet \nPlayers: {}\nEnemies: {}\nBullets: {}\nLootContainers: {}",
-			//					textPacket.getPlayers().length, textPacket.getEnemies().length, textPacket.getBullets().length,
-			//					textPacket.getContainers().length);
-
 			for (final Player p : loadPacket.getPlayers()) {
 				if(p.getId()==cli.getCurrentPlayerId()) {
 					continue;
@@ -161,9 +148,7 @@ public class ClientGameLogic {
 
 	public static void handleUnloadClient(RealmManagerClient cli, Packet packet) {
 		final UnloadPacket unloadPacket = (UnloadPacket) packet;
-		//log.info("[CLIENT] Recieved Unload Packet");
 		try {
-
 			for (final Long p : unloadPacket.getPlayers()) {
 				if(p==cli.getCurrentPlayerId()) {
 					continue;
@@ -179,21 +164,18 @@ public class ClientGameLogic {
 					ClientGameLogic.log.error("LootContainer {} does not exist", lc);
 				}
 			}
-
 			for (final Long b : unloadPacket.getBullets()) {
 				final Bullet removed = cli.getRealm().getBullets().remove(b);
 				if (removed == null) {
 					ClientGameLogic.log.error("Bullet {} does not exist", b);
 				}
 			}
-
 			for (final Long e : unloadPacket.getEnemies()) {
 				final Enemy removed = cli.getRealm().getEnemies().remove(e);
 				if (removed == null) {
 					ClientGameLogic.log.error("Enemy {} does not exist", e);
 				}
 			}
-
 			for (final Long p : unloadPacket.getPortals()) {
 				final Portal removed = cli.getRealm().getPortals().remove(p);
 				if (removed == null) {
@@ -277,18 +259,11 @@ public class ClientGameLogic {
 		if (toUpdate == null)
 			return;
 		toUpdate.applyUpdate(updatePacket, cli.getState());
-		//log.info("[CLIENT] Recieved PlayerUpdate Packet for Player ID {}", updatePacket.getPlayerId());
 	}
 
 	private static void doLoginResponse(RealmManagerClient cli, LoginResponseMessage loginResponse) {
 		try {
 			if(loginResponse.isSuccess()) {
-				//				try {
-				//					PlayerAccountDto playerAccount = DATA_SERVICE.executeGet("/data/account/"+loginResponse.getAccountUuid(), null, PlayerAccountDto.class);
-				//					log.info(playerAccount.toString());
-				//				}catch(Exception e) {
-				//					log.error("Failed to get player account for account UUID "+loginResponse.getAccountUuid());
-				//				}
 				Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				CharacterClass cls = CharacterClass.valueOf(loginResponse.getClassId());
 				Player player = new Player(loginResponse.getPlayerId(), c, GameDataManager.loadClassSprites(cls),

@@ -29,7 +29,6 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.PortalModel;
-import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
@@ -68,7 +67,6 @@ public class PlayState extends GameState {
 
 	private Map<Cardinality, Boolean> lastDirectionMap;
 	private boolean sentChat = false;
-
 	public PlayState(GameStateManager gsm, Camera cam) {
 		super(gsm);
 		PlayState.map = new Vector2f();
@@ -144,28 +142,16 @@ public class PlayState extends GameState {
 				Runnable playerShootDequeue = () -> {
 					for (int i = 0; i < this.shotDestQueue.size(); i++) {
 						Vector2f dest = this.shotDestQueue.remove(i);
-
 						Vector2f source = this.getPlayer().getCenteredPosition();
 						if (this.realmManager.getRealm().getTileManager().isCollisionTile(source)) {
 							PlayState.log.error("Failed to invoke player shoot. Projectile is out of bounds.");
 							continue;
 						}
-						ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
-						float angle = Bullet.getAngle(source, dest);
-						for (Projectile p : group.getProjectiles()) {
-							short offset = (short) (p.getSize() / (short) 2);
-							short rolledDamage = player.getInventory()[0].getDamage().getInRange();
-							rolledDamage += player.getComputedStats().getAtt();
-
-							long newProj = this.addProjectile(player.getWeaponId(), p.getProjectileId(), source.clone(-offset, -offset),
-									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
-									rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
-							try {
-								PlayerShootPacket packet = PlayerShootPacket.from(newProj, player, dest);
-								this.realmManager.getClient().sendRemote(packet);
-							}catch(Exception e) {
-								PlayState.log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
-							}
+						try {
+							PlayerShootPacket packet = PlayerShootPacket.from(Realm.RANDOM.nextLong(), player, dest);
+							this.realmManager.getClient().sendRemote(packet);
+						} catch (Exception e) {
+							PlayState.log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
 						}
 					}
 				};
@@ -189,6 +175,7 @@ public class PlayState extends GameState {
 				};
 
 				Runnable updatePlayerAndUi = () -> {
+					player.removeExpiredEffects();
 					player.update(time);
 					this.movePlayer(player);
 					this.pui.update(time);
@@ -205,7 +192,8 @@ public class PlayState extends GameState {
 				&& !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx())) {
 			p.xCol = false;
 			if (p.getDx() != 0.0f) {
-				p.getPos().x += p.getDx() / 3;
+				// p.applyMovementLerp(p.getDx(), 0, 0.65f);
+				p.getPos().x += p.getDx() / 4;
 			}
 		} else {
 			p.xCol = true;
@@ -215,7 +203,8 @@ public class PlayState extends GameState {
 				&& !this.getRealmManager().getRealm().getTileManager().collidesYLimit(p, p.getDy())) {
 			p.yCol = false;
 			if (p.getDy() != 0.0f) {
-				p.getPos().y += p.getDy() / 3;
+				// p.applyMovementLerp(0, p.getDy(), 0.65f);
+				p.getPos().y += p.getDy() / 4;
 			}
 		} else {
 			p.yCol = true;
@@ -662,12 +651,13 @@ public class PlayState extends GameState {
 		if (player == null)
 			return;
 		final LootContainer closeLoot = this.getClosestLootContainer(player.getPos(), player.getSize() / 2);
+
 		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
 			lc.render(g);
 		}
 
 		if ((this.getPui().isGroundLootEmpty() && (closeLoot != null)) || ((closeLoot != null) && closeLoot.getContentsChanged())) {
-			this.getPui().setGroundLoot(closeLoot.getItems(), g);
+			this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot), g);
 
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
 			this.getPui().setGroundLoot(new GameItem[8], g);

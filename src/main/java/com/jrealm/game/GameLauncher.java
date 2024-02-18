@@ -1,17 +1,19 @@
 package com.jrealm.game;
 
+import com.jrealm.account.dto.PingResponseDto;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.SocketClient;
+import com.jrealm.net.server.ServerGameLogic;
 import com.jrealm.net.server.SocketServer;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GameLauncher {
-	public static final String GAME_VERSION = "0.3.1";
+	public static final String GAME_VERSION = "0.3.2";
 	private static final String HELP_MSG = "Please set the player email, password, server and character UUID. [java -jar ./jrealm-{version}.jar {-client | -server| -embedded} {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}]";
 
 	public GameLauncher() {
@@ -20,13 +22,24 @@ public class GameLauncher {
 
 	public static void main(String[] args) {
 		GameLauncher.log.info("Starting JRealm...");
-		GameDataManager.loadGameData();
+		try {
+			PingResponseDto dataServerOnline = ServerGameLogic.DATA_SERVICE.executeGet("ping", null,
+					PingResponseDto.class);
+			GameLauncher.log.info("Data server online. Response: {}", dataServerOnline);
+		} catch (Exception e) {
+			GameLauncher.log.error("FATAL. Unable to reach data server at {}. Reason: {}", ServerGameLogic.DATA_HOST,
+					e.getMessage());
+			System.exit(-1);
+		}
 		if (GameLauncher.argsContains(args, "-server")) {
+			GameDataManager.loadGameData(false);
 			GameLauncher.startServer();
 		}
 		else if (GameLauncher.argsContains(args, "-client")) {
+			GameDataManager.loadGameData(true);
 			GameLauncher.startClient(args);
 		} else if (GameLauncher.argsContains(args, "-embedded")) {
+			GameDataManager.loadGameData(true);
 			GameLauncher.startServer();
 			GameLauncher.startClient(args);
 		}

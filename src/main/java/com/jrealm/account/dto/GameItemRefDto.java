@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonInclude(Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@EqualsAndHashCode(callSuper=false)
 public class GameItemRefDto extends TemporalDto {
 	private static final long serialVersionUID = -5119762736198793613L;
 

@@ -34,7 +34,6 @@ import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
-import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
@@ -69,6 +68,7 @@ import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.ProcessingThread;
 import com.jrealm.net.server.ServerGameLogic;
 import com.jrealm.net.server.SocketServer;
+import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -80,15 +80,12 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings("unused")
 public class RealmManagerServer implements Runnable {
 	private SocketServer server;
-
-	private Map<Long, Realm> realms = new HashMap<>();
-
-	// private Realm realm;
 	private boolean shutdown = false;
 
 	private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
-	private List<Vector2f> shotDestQueue;
 
+	private List<Vector2f> shotDestQueue;
+	private Map<Long, Realm> realms = new HashMap<>();
 	private Map<String, Long> remoteAddresses = new HashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
 	private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
@@ -120,7 +117,8 @@ public class RealmManagerServer implements Runnable {
 				final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				try {
 					final Vector2f spawnPos = targetRealm.getTileManager().getSafePosition();
-					final Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(classToSpawn),
+					final Player player = new Player(Realm.RANDOM.nextLong(), c,
+							GameDataManager.loadClassSprites(classToSpawn),
 							spawnPos, GlobalConstants.PLAYER_SIZE, classToSpawn);
 					String playerName = UUID.randomUUID().toString().replaceAll("-", "");
 					playerName = playerName.substring(playerName.length()/2);
@@ -224,6 +222,8 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
+	// Enqueues outbound game packets every tick. Manages
+	// when/if packets should be broadcast and to who
 	public void enqueueGameData() {
 		final List<String> disconnectedClients = new ArrayList<>();
 		// TODO: Parallelize work for each realm
@@ -256,7 +256,7 @@ public class RealmManagerServer implements Runnable {
 						// Get the previous loadMap packet and check for Delta,
 						// only send the delta to the client
 						final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
-						// Custom equals impl
+
 						if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
 							final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
 							this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
@@ -274,7 +274,8 @@ public class RealmManagerServer implements Runnable {
 					final ObjectMovePacket movePacket = realm
 							.getGameObjectsAsPackets(realm.getTileManager().getRenderViewPort(player.getValue()));
 
-
+					// Only transmit this players update data if it has not been sent
+					// or if it has changed since last tick
 					if (this.playerUpdateState.get(player.getKey()) == null) {
 						this.playerUpdateState.put(player.getKey(), updatePacket);
 						this.enqueueServerPacket(player.getValue(), updatePacket);
@@ -313,6 +314,10 @@ public class RealmManagerServer implements Runnable {
 					if (movePacket != null) {
 						this.enqueueServerPacket(player.getValue(), movePacket);
 					}
+
+					// Used to dynamically re-render changed loot containers (chests) on the client
+					// if their contents change in a server tick (receive MoveItem packet from
+					// client this tick)
 					for (LootContainer lc : realm.getLoot().values()) {
 						lc.setContentsChanged(false);
 					}
@@ -330,17 +335,20 @@ public class RealmManagerServer implements Runnable {
 	public void processServerPackets() {
 		for(final Map.Entry<String, ProcessingThread> thread : this.getServer().getClients().entrySet()) {
 			if(!thread.getValue().isShutdownProcessing()) {
+				// Read all packets from the ProcessingThread (client's) queue
 				while(!thread.getValue().getPacketQueue().isEmpty()) {
 					final Packet packet = thread.getValue().getPacketQueue().remove();
 					try {
 						final Packet created = Packet.newInstance(packet.getId(), packet.getData());
 						created.setSrcIp(packet.getSrcIp());
+						// Invoke packet callback
 						this.packetCallbacksServer.get(created.getId()).accept(this, created);
 					} catch (Exception e) {
 						RealmManagerServer.log.error("Failed to process server packets {}", e);
 					}
 				}
 			}else {
+				// Player Disconnect routine
 				final Long dcPlayerId = this.getRemoteAddresses().get(thread.getKey());
 				final Realm playerLocation = this.searchRealmsForPlayers(dcPlayerId);
 				final Player dcPlayer = playerLocation.getPlayer(dcPlayerId);
@@ -470,23 +478,13 @@ public class RealmManagerServer implements Runnable {
 					this.processBulletHit(realm.getRealmId(), p);
 				};
 				// Rewrite this asap
-				final Runnable checkAbilityUsage = () -> {
-
-					for (final GameObject e : realm
-							.getGameObjectsInBounds(realm.getTileManager().getRenderViewPort(p))) {
-						if ((e instanceof Entity)) {
-							Entity entCast = (Entity) e;
-							entCast.removeExpiredEffects();
-						}
-					}
-				};
 
 				final Runnable updatePlayer = () -> {
 					p.update(time);
 					this.movePlayer(realm.getRealmId(), p);
 				};
 				// Run the player update tasks Asynchronously
-				WorkerThread.submitAndRun(processGameObjects, updatePlayer, checkAbilityUsage);
+				WorkerThread.submitAndRun(processGameObjects, updatePlayer);
 			}
 			// Once per tick update all non player game objects
 			// (bullets, enemies)
@@ -496,6 +494,7 @@ public class RealmManagerServer implements Runnable {
 					if (gameObject[i] instanceof Enemy) {
 						final Enemy enemy = ((Enemy) gameObject[i]);
 						enemy.update(realm.getRealmId(), this, time);
+						enemy.removeExpiredEffects();
 					}
 
 					if (gameObject[i] instanceof Bullet) {
@@ -511,10 +510,6 @@ public class RealmManagerServer implements Runnable {
 
 		final Runnable removeExpiredObjects = () -> {
 			this.removeExpiredBullets();
-			// Used to dynamically re-render changed loot containers (chests) on the client
-			// if their
-			// contents change in a server tick (receive MoveItem packet from client this
-			// tick)
 			this.removeExpiredLootContainers();
 		};
 		WorkerThread.submitAndRun(removeExpiredObjects);
@@ -554,7 +549,7 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	// Invokes an ability usage server side for the given player at the
-	// desired location if aplicable
+	// desired location if applicable
 	public void useAbility(final long realmId, final long playerId, final Vector2f pos) {
 		final Realm targetRealm = this.realms.get(realmId);
 
@@ -751,13 +746,26 @@ public class RealmManagerServer implements Runnable {
 			if (p.getDeath()) {
 				try {
 					final String remoteAddrDeath = this.getRemoteAddressMapRevered().get(player.getId());
-					final LootContainer graveLoot = new LootContainer(LootTier.BROWN, p.getPos().clone(),
+					final LootContainer graveLoot = new LootContainer(LootTier.GRAVE, p.getPos().clone(),
 							p.getSlots(4, 12));
 					// this.getServer().getClients().remove(remoteAddrDeath);
 					targetRealm.addLootContainer(graveLoot);
 					targetRealm.getExpiredPlayers().add(player.getId());
 					targetRealm.removePlayer(player);
 					this.enqueueServerPacket(player, PlayerDeathPacket.from());
+					if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
+						ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + p.getCharacterUuid(),
+								Map.class);
+					}else {
+						// Remove their amulet and let them respawn
+						TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
+								player.getName()
+								+ "'s Amulet shatters as they dissapear.");
+						this.enqueueServerPacket(toBroadcast);
+						player.getInventory()[3] = null;
+						this.persistPlayerAsync(player);
+					}
+
 				} catch (Exception e) {
 					RealmManagerServer.log.error("Failed to Remove dead Player {}. Reason: {}", e);
 				}
@@ -769,7 +777,7 @@ public class RealmManagerServer implements Runnable {
 	private void proccessEnemyHit(final long realmId, final Bullet b, final Enemy e) {
 		final Realm targetRealm = this.realms.get(realmId);
 
-		if (targetRealm.hasHitEnemy(b.getId(), e.getId()))
+		if (targetRealm.hasHitEnemy(b.getId(), e.getId()) || targetRealm.getExpiredEnemies().contains(e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			targetRealm.hitEnemy(b.getId(), e.getId());
@@ -815,7 +823,6 @@ public class RealmManagerServer implements Runnable {
 				}
 
 				Random random = new Random(Instant.now().toEpochMilli());
-				// e.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
 				targetRealm.getExpiredBullets().add(b.getId());
 				targetRealm.getExpiredEnemies().add(e.getId());
 				targetRealm.clearHitMap();
@@ -823,7 +830,7 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.removeEnemy(e);
 
 				// TODO: Maybe find a better way to introduce randomness to drops.
-				if (Realm.RANDOM.nextInt(20) < 1) {
+				if (Realm.RANDOM.nextInt(10) < 1) {
 					if (targetRealm.getMapId() == 4) {
 						targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(128, 128)));
 					} else if (targetRealm.getMapId() == 2) {
@@ -834,8 +841,14 @@ public class RealmManagerServer implements Runnable {
 					// targetRealm.addPortal(new Portal(random.nextLong(), (short) 0,
 					// e.getPos().withNoise(128, 128)));
 				}
-				if (Realm.RANDOM.nextInt(30) < 10) {
-					targetRealm.addLootContainer(new LootContainer(LootTier.BLUE, e.getPos().withNoise(128, 128)));
+				/**
+				 * Loot drops are determined by the LootTableModel mapped by this enemyId
+				 */
+				final List<GameItem> lootToDrop = GameDataManager.LOOT_TABLES.get(e.getEnemyId()).getLootDrop();
+				if (lootToDrop.size() > 0) {
+					final LootContainer dropsBag = new LootContainer(LootTier.BLUE, e.getPos().withNoise(128, 128),
+							lootToDrop.toArray(new GameItem[0]));
+					targetRealm.addLootContainer(dropsBag);
 				}
 			}
 		}

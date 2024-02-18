@@ -274,7 +274,7 @@ public class PlayerUI {
 	}
 
 	private Slots getOverlapping(Vector2f pos) {
-		Slots[] equipSlots = this.getSlots(4, 12);
+		Slots[] equipSlots = this.getSlots(0, 12);
 		for (Slots s : equipSlots) {
 			if ((s == null) || (s.getButton() == null)) {
 				continue;
@@ -342,7 +342,7 @@ public class PlayerUI {
 	}
 
 	public boolean canSwap() {
-		return (Instant.now().toEpochMilli() - this.lastAction) > 1500;
+		return (Instant.now().toEpochMilli() - this.lastAction) > 1000;
 	}
 
 	public void setActionTime() {
@@ -396,7 +396,7 @@ public class PlayerUI {
 				g.drawString(
 						this.playState.getPlayer().getName() + "   Lv. "
 								+ GameDataManager.EXPERIENCE_LVLS.getLevel(this.playState.getPlayer().getExperience()),
-						nameLvlPos.x, nameLvlPos.y);
+								nameLvlPos.x, nameLvlPos.y);
 			} else {
 				g.drawString("Fame: " + fame, posXp.x, posXp.y);
 				g.drawString(this.playState.getPlayer().getName() + "   Lv. 20", nameLvlPos.x, nameLvlPos.y);

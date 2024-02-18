@@ -22,6 +22,19 @@ public class JRealmDataService {
 	private HttpClient httpClient;
 	private String baseUrl;
 
+
+	public <T> T executeDelete(String path, Class<T> responseClass) throws Exception {
+		URI targetURI = new URI(this.baseUrl + path);
+		HttpRequest httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
+				.DELETE().build();
+
+		HttpResponse<String> response = this.httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+		if (response.statusCode() != 200)
+			throw new IOException("Response was non 200.");
+
+		return JRealmDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
+	}
+
 	public <T> T executePost(String path, Object object, Class<T> responseClass) throws Exception {
 		URI targetURI = new URI(this.baseUrl + path);
 		BodyPublisher body = HttpRequest.BodyPublishers
@@ -30,11 +43,22 @@ public class JRealmDataService {
 				.POST(body).build();
 
 		HttpResponse<String> response = this.httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
 		if (response.statusCode() != 200)
 			throw new IOException("Response was non 200.");
 
 		return JRealmDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
+	}
+
+	public String executeGet(String path, Map<String, String> queryParams) throws Exception {
+		URI targetURI = new URI(this.baseUrl + path);
+		HttpRequest httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
+				.GET().build();
+		HttpResponse<String> response = this.httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+		// TODO: Add query params
+		if (response.statusCode() != 200)
+			throw new IOException("Response was non 200.");
+
+		return response.body();
 	}
 
 	public <T> T executeGet(String path, Map<String, String> queryParams, Class<T> responseClass) throws Exception {

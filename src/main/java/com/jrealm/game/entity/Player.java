@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -102,6 +103,8 @@ public class Player extends Entity implements Streamable<Player>{
 
 	public void applyStats(CharacterStatsDto stats) {
 		this.setExperience(stats.getXp());
+		this.health = stats.getHp();
+		this.mana = stats.getMp();
 		this.stats.setHp(stats.getHp().shortValue());
 		this.stats.setMp(stats.getMp().shortValue());
 		this.stats.setDef(stats.getDef().shortValue());
@@ -127,7 +130,7 @@ public class Player extends Entity implements Streamable<Player>{
 		return CharacterStatsDto.builder()
 				.xp(this.getExperience())
 				.hp(Integer.valueOf((int)this.stats.getHp()))
-				.mp(Integer.valueOf((int)this.stats.getMp()))
+				.mp(Integer.valueOf((int) this.stats.getMp()))
 				.def(Integer.valueOf((int)this.stats.getDef()))
 				.att(Integer.valueOf((int)this.stats.getAtt()))
 				.spd(Integer.valueOf((int)this.stats.getSpd()))
@@ -189,25 +192,12 @@ public class Player extends Entity implements Streamable<Player>{
 		return this.cardinality;
 	}
 
-	public void resetPosition() {
-		this.pos.x = (GamePanel.width / 2) - (this.size / 2);
-		PlayState.map.x = 0;
-		this.cam.getPos().x = 0;
-
-		this.pos.y = (GamePanel.height / 2) - (this.size / 2);
-		PlayState.map.y = 0;
-		this.cam.getPos().y = 0;
-		// sprite.getSprite(spriteX, spriteY)
-		this.setAnimation(this.RIGHT, this.sprite.getSpriteArray(this.RIGHT), 10);
-	}
-
 	@Override
 	public void update(double time) {
 		super.update(time);
 		Stats stats = this.getComputedStats();
-
 		this.cam.update();
-		if (((System.currentTimeMillis() - this.lastStatsTime) >= 1000)) {
+		if (((Instant.now().toEpochMilli() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
 			float mult = 1.0f;
 			if (this.hasEffect(EffectType.HEALING)) {
@@ -220,6 +210,9 @@ public class Player extends Entity implements Streamable<Player>{
 					targetHealth = stats.getHp();
 				}
 				this.setHealth(targetHealth);
+			} else if (this.getHealth() > stats.getHp()) {
+				int targetHealth = this.getHealth() - stats.getHp();
+				this.setHealth(this.getHealth() - targetHealth);
 			}
 			final int wis = (int) ((0.12f * (stats.getWis() + 4.2f)));
 			if (this.getMana() < stats.getMp()) {
@@ -230,17 +223,6 @@ public class Player extends Entity implements Streamable<Player>{
 				this.setMana(targetMana);
 			}
 		}
-	}
-
-	public Stats getBonusStats() {
-		Stats stats = new Stats();
-		final GameItem[] equipment = this.getSlots(0, 4);
-		for (GameItem item : equipment) {
-			if (item != null) {
-				stats = stats.concat(item.getStats());
-			}
-		}
-		return stats;
 	}
 
 	public Stats getComputedStats() {
@@ -274,10 +256,6 @@ public class Player extends Entity implements Streamable<Player>{
 
 	@Override
 	public void render(Graphics2D g) {
-		// g.setColor(Color.green);
-		// g.drawRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int)
-		// (this.pos.getWorldVar().y + this.bounds.getYOffset()), (int)
-		// this.bounds.getWidth(), (int) this.bounds.getHeight());
 		Color c = new Color(0f, 0f, 0f, 1f);
 		g.setColor(c);
 		java.awt.Font currentFont = g.getFont();
@@ -409,6 +387,7 @@ public class Player extends Entity implements Streamable<Player>{
 		}
 		this.setExperience(newExperience);
 	}
+
 
 	public void applyUpdate(UpdatePacket packet, PlayState state) {
 		this.name = packet.getPlayerName();

@@ -51,8 +51,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ServerGameLogic {
+	/**
+	 * As of release 0.3.0 DATA_SERVICE static member is required for Game
+	 * functionality
+	 */
+	public static final String DATA_HOST = "http://localhost:8085/";
 	public static final JRealmDataService DATA_SERVICE = new JRealmDataService(HttpClient.newHttpClient(),
-			"http://localhost:8085/");
+			ServerGameLogic.DATA_HOST);
 
 	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
 		final UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
@@ -61,15 +66,13 @@ public class ServerGameLogic {
 		final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
 
-		mgr.clearPlayerState(user.getId());
-
 		// Send the player to the vault
 		if ((targetRealm == null) && (usePortalPacket.getPortalId() == -1l)) {
 			// Generate the vault dynamically
 			final MapModel mapModel = GameDataManager.MAPS.get(1);
 			final Realm generatedRealm = new Realm(true, 1);
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
-			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 1,
+			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
 					chestLoc);
 
 			generatedRealm.setupChests();
@@ -84,7 +87,7 @@ public class ServerGameLogic {
 		else if (targetRealm == null) {
 			final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 			final Realm generatedRealm = new Realm(true, portalUsed.getMapId());
-			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 1,
+			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
 					generatedRealm.getTileManager().getSafePosition());
 			user.setPos(generatedRealm.getTileManager().getSafePosition());
 			generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
@@ -105,6 +108,8 @@ public class ServerGameLogic {
 				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
 		}
+		// mgr.clearPlayerState(user.getId());
+
 	}
 
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
@@ -192,17 +197,16 @@ public class ServerGameLogic {
 		}
 		final Player player = realm.getPlayer(shootPacket.getEntityId());
 		final Vector2f dest = new Vector2f(shootPacket.getDestX(), shootPacket.getDestY());
-		dest.addX(player.getCam().getPos().x);
-		dest.addY(player.getCam().getPos().y);
 		final Vector2f source = player.getCenteredPosition();
 		final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
 		float angle = Bullet.getAngle(source, dest);
 		for (Projectile proj : group.getProjectiles()) {
 			short offset = (short) (player.getSize() / (short) 2);
 			short rolledDamage = player.getInventory()[0].getDamage().getInRange();
+			float shootAngle = angle + Float.parseFloat(proj.getAngle());
 			rolledDamage += player.getComputedStats().getAtt();
-			mgr.addProjectile(realm.getRealmId(), shootPacket.getProjectileId(), player.getId(), proj.getProjectileId(),
-					player.getWeaponId(), source.clone(-offset, -offset), angle + Float.parseFloat(proj.getAngle()),
+			mgr.addProjectile(realm.getRealmId(), Realm.RANDOM.nextLong(), player.getId(), proj.getProjectileId(),
+					player.getWeaponId(), source.clone(-offset, -offset), shootAngle,
 					proj.getSize(), proj.getMagnitude(), proj.getRange(), rolledDamage, false, proj.getFlags(),
 					proj.getAmplitude(), proj.getFrequency());
 		}
@@ -251,7 +255,8 @@ public class ServerGameLogic {
 			final GameItem currentEquip = moveItemPacket.getTargetSlotIndex() == -1 ? null
 					: player.getInventory()[moveItemPacket.getTargetSlotIndex()];
 			GameItem from = null;
-			if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())) {
+			if (MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())
+					|| MoveItemPacket.isEquipment(moveItemPacket.getFromSlotIndex())) {
 				from = player.getInventory()[moveItemPacket.getFromSlotIndex()];
 			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
 				LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(), 32);
@@ -278,8 +283,16 @@ public class ServerGameLogic {
 				}
 				player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
 			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isEquipment(moveItemPacket.getTargetSlotIndex()) && (from!=null)) {
-
-				player.getInventory()[moveItemPacket.getFromSlotIndex()] = currentEquip.clone();
+				if (!CharacterClass.isValidUser(player, from.getTargetClass())) {
+					ServerGameLogic.log.warn("Player {} attempted to equip an item not useable by their class",
+							player.getId());
+					return;
+				}
+				if (currentEquip != null) {
+					player.getInventory()[moveItemPacket.getFromSlotIndex()] = currentEquip.clone();
+				} else {
+					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
+				}
 				player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();
 
 			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && (moveItemPacket.getTargetSlotIndex()==-1)) {
@@ -367,6 +380,8 @@ public class ServerGameLogic {
 				throw e;
 			}
 			final CharacterDto targetCharacter = characterClass.get();
+			if (targetCharacter.isDeleted() && false)
+				throw new Exception("Character "+targetCharacter.getCharacterUuid()+" is deleted!");
 			final Map<Integer, GameItem> loadedEquipment = new HashMap<>();
 			for(final GameItemRefDto item : targetCharacter.getItems()) {
 				loadedEquipment.put(item.getSlotIdx(), GameItem.fromGameItemRef(item));
@@ -409,8 +424,6 @@ public class ServerGameLogic {
 
 			final CommandPacket commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
 			commandResponse.serializeWrite(dosToClient);
-
-
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
 		}
