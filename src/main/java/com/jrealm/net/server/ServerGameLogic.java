@@ -4,10 +4,12 @@ import java.io.DataOutputStream;
 import java.io.OutputStream;
 import java.net.http.HttpClient;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import com.jrealm.account.dto.CharacterDto;
+import com.jrealm.account.dto.ChestDto;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.account.dto.LoginRequestDto;
 import com.jrealm.account.dto.PlayerAccountDto;
@@ -61,30 +63,32 @@ public class ServerGameLogic {
 
 	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
 		final UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
-		final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
-		final Realm targetRealm = mgr.getRealms().get(usePortalPacket.getPortalId());
-		final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
-		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
 
-		// Send the player to the vault
-		if ((targetRealm == null) && (usePortalPacket.getPortalId() == -1l)) {
-			// Generate the vault dynamically
+		if (usePortalPacket.isToVault()) {
+			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
+			final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 			final MapModel mapModel = GameDataManager.MAPS.get(1);
 			final Realm generatedRealm = new Realm(true, 1);
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
 					chestLoc);
 
-			generatedRealm.setupChests();
+			generatedRealm.setupChests(user);
 			user.setPos(mapModel.getCenter());
 			exitPortal.setId(currentRealm.getRealmId());
 			generatedRealm.addPortal(exitPortal);
 			generatedRealm.addPlayer(user);
 			mgr.addRealm(generatedRealm);
+			return;
 		}
 
+		final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
+		final Realm targetRealm = mgr.getRealms().get(usePortalPacket.getPortalId());
+		final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
+		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
+
 		// Generate target, remove player from current, add to target.
-		else if (targetRealm == null) {
+		if (targetRealm == null) {
 			final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 			final Realm generatedRealm = new Realm(true, portalUsed.getMapId());
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
@@ -105,7 +109,16 @@ public class ServerGameLogic {
 			// If we are coming from the vault, save the data and destroy the realm
 			// instance.
 			if (currentRealm.getMapId() == 1) {
+				List<ChestDto> chestsToSave = currentRealm.serializeChests();
 				mgr.getRealms().remove(currentRealm.getRealmId());
+				try {
+					final PlayerAccountDto savedAccount = ServerGameLogic.DATA_SERVICE.executePost(
+							"/data/account/" + user.getAccountUuid() + "/chest", chestsToSave, PlayerAccountDto.class);
+					ServerGameLogic.log.info("Succesfully saved chests for account {}", savedAccount.getAccountUuid());
+				} catch (Exception e) {
+					ServerGameLogic.log.error("Failed to save account chests for account {}. Reason: {}",
+							user.getAccountUuid(), e);
+				}
 			}
 		}
 		// mgr.clearPlayerState(user.getId());

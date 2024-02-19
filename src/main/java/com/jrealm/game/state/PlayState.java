@@ -393,15 +393,10 @@ public class PlayState extends GameState {
 			}
 			if (key.f1.clicked) {
 				try {
-					Portal closestPortal = this.realmManager.getState().getClosestPortal(this.getPlayerPos(), 32);
-					if (closestPortal != null) {
-						PortalModel portalModel = GameDataManager.PORTALS.get((int) closestPortal.getPortalId());
-						UsePortalPacket usePortal = UsePortalPacket.from(-1, this.realmManager.getRealm().getRealmId(),
-								this.getPlayerId());
-
-						this.realmManager.getClient().sendRemote(usePortal);
-						this.realmManager.getRealm().loadMap(portalModel.getMapId());
-					}
+					UsePortalPacket usePortal = UsePortalPacket.toVault(this.realmManager.getRealm().getRealmId(),
+							this.getPlayerId());
+					this.realmManager.getClient().sendRemote(usePortal);
+					this.realmManager.getRealm().loadMap(1);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test UsePortalPacket", e.getMessage());
 				}

@@ -12,7 +12,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper=true)
 public class Chest extends LootContainer {
-	private boolean visible = true;
 	public Chest(Vector2f pos) {
 		super(LootTier.CHEST, pos);
 		this.setUid(UUID.randomUUID().toString());
@@ -22,11 +21,16 @@ public class Chest extends LootContainer {
 		super(LootTier.CHEST, pos, loot);
 		this.setUid(UUID.randomUUID().toString());
 	}
-	
+
+	public Chest(Vector2f pos, GameItem[] loot) {
+		super(LootTier.CHEST, pos, loot);
+		this.setUid(UUID.randomUUID().toString());
+	}
+
 	public Chest(LootContainer c) {
 		super(LootTier.CHEST, c.getPos(), c.getItems());
 		this.setLootContainerId(c.getLootContainerId());
-		this.visible = true;
+		boolean visible = true;
 		this.setContentsChanged(c.getContentsChanged());
 	}
 
@@ -42,6 +46,7 @@ public class Chest extends LootContainer {
 		}
 	}
 
+
 	@Override
 	public boolean isExpired() {
 		return false;
@@ -56,7 +61,7 @@ public class Chest extends LootContainer {
 	public void render(Graphics2D g) {
 		super.render(g);
 	}
-	
+
 	@Override
 	public String toString() {
 		return (this.getLootContainerId()+" "+this.getPos()+" isChest="+(this instanceof Chest));

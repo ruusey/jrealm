@@ -8,7 +8,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
+import com.jrealm.account.dto.ChestDto;
+import com.jrealm.account.dto.GameItemRefDto;
+import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
@@ -37,6 +41,7 @@ import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.server.ServerGameLogic;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -48,8 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 public class Realm {
 	// Shared Secure Random instance for generating Ids and other random data
 	public static final transient SecureRandom RANDOM = new SecureRandom();
-	private int mapId;
 	private long realmId;
+	private int mapId;
 	private Map<Long, Player> players;
 	private Map<Long, Bullet> bullets;
 	private Map<Long, List<Long>> bulletHits;
@@ -84,13 +89,41 @@ public class Realm {
 		return this.expiredPlayers;
 	}
 
-	public void setupChests() {
+	public void setupChests(final Player player) {
 		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 450, (0 + (GamePanel.height / 2)) - 200);
-		if (this.getChests().size() == 0) {
-			this.addLootContainer(new Chest(chestLoc));
-			this.addLootContainer(new Chest(chestLoc.clone(-128, 0)));
-			this.addLootContainer(new Chest(chestLoc.clone(-256, 0)));
+		try {
+			final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
+					.executeGet("/data/account/" + player.getAccountUuid(), null, PlayerAccountDto.class);
+			for(ChestDto chest : account.getPlayerVault()) {
+				List<GameItem> itemsInChest = chest.getItems().stream().map(GameItem::fromGameItemRef).collect(Collectors.toList());
+				Chest toSpawn = new Chest(chestLoc, itemsInChest.toArray(new GameItem[8]));
+				this.addLootContainer(toSpawn);
+			}
+		}catch(Exception e) {
+			Realm.log.error("Failed to get player account for chests. Reason: {}", e);
 		}
+	}
+
+	public List<ChestDto> serializeChests() {
+		List<ChestDto> result = new ArrayList<ChestDto>();
+		int ordinal = 0;
+		for (LootContainer container : this.loot.values()) {
+			if (container instanceof Chest) {
+				ChestDto chest = ChestDto.builder().chestId(container.getUid()).ordinal(ordinal++).build();
+				List<GameItemRefDto> itemRefs = new ArrayList<>();
+				for (int i = 0; i < container.getItems().length; i++) {
+					GameItem toCopy = container.getItems()[i];
+					if (toCopy != null) {
+						itemRefs.add(GameItemRefDto.builder().itemId(toCopy.getItemId()).itemUuid(toCopy.getUid())
+								.slotIdx(i).build());
+
+					}
+				}
+				chest.setItems(itemRefs);
+				result.add(chest);
+			}
+		}
+		return result;
 	}
 
 	public void loadMap(int mapId) {
@@ -164,6 +197,10 @@ public class Realm {
 			curr.add(enemyId);
 			this.bulletHits.put(bulletId, curr);
 		}
+	}
+
+	public void asd() {
+		System.out.println(this.mapId + this.realmId);
 	}
 
 

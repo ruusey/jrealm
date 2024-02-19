@@ -95,6 +95,8 @@ public class LootContainer implements Streamable<LootContainer> {
 	}
 
 	public boolean hasUntieredItem() {
+		if (this.tier.equals(LootTier.CHEST))
+			return false;
 		for (GameItem item : this.items) {
 			if ((item != null) && (item.getTier() == (byte) -1))
 				return true;
