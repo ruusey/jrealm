@@ -408,6 +408,47 @@ public class Player extends Entity implements Streamable<Player>{
 		this.experience = packet.getExperience();
 	}
 
+	public boolean isStatMaxed(int statIdx) {
+		CharacterClassModel characterClass = GameDataManager.CHARACTER_CLASSES.get(this.classId);
+		Stats maxStats = characterClass.getMaxStats();
+		boolean maxed = false;
+		switch(statIdx) {
+		case 0:
+			maxed = this.stats.getHp() >= maxStats.getHp();
+			break;
+		case 1:
+			maxed = this.stats.getMp() >= maxStats.getMp();
+			break;
+		case 2:
+			maxed = this.stats.getDef() >= maxStats.getDef();
+			break;
+		case 3:
+			maxed = this.stats.getAtt() >= maxStats.getAtt();
+			break;
+		case 4:
+			maxed = this.stats.getSpd() >= maxStats.getSpd();
+			break;
+		case 5:
+			maxed = this.stats.getDex() >= maxStats.getDex();
+			break;
+		case 6:
+			maxed = this.stats.getVit() >= maxStats.getVit();
+			break;
+		case 7:
+			maxed = this.stats.getWis() >= maxStats.getWis();
+			break;
+		}
+		return maxed;
+	}
+
+	public boolean canConsume(final GameItem item) {
+		for (int i = 0; i < 8; i++) {
+			if (this.isStatMaxed(i))
+				return false;
+		}
+		return true;
+	}
+
 	public boolean getIsUp() {
 		return this.up;
 	}

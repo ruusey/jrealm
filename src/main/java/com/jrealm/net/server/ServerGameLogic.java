@@ -298,15 +298,11 @@ public class ServerGameLogic {
 			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && (moveItemPacket.getTargetSlotIndex()==-1)) {
 				if(from==null) return;
 				if(from.isConsumable() && moveItemPacket.isConsume()) {
-					Stats newStats = player.getStats().concat(from.getStats());
-					player.setStats(newStats);
-
-					if (from.getStats().getHp() > 0) {
-						player.drinkHp();
-					} else if (from.getStats().getMp() > 0) {
-						player.drinkMp();
+					if (player.canConsume(from)) {
+						Stats newStats = player.getStats().concat(from.getStats());
+						player.setStats(newStats);
+						player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
 					}
-					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
 				}else if(MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())){
 					GameItem to = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
 					if(to==null) {

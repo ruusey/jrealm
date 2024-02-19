@@ -121,18 +121,18 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		this.chase(player);
 		this.move();
 
-		if (this.teleported) {
-			this.teleported = false;
-
-			this.hitBounds = new AABB(this.pos, this.size, this.size);
-
-			this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2),
-					(this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
-			this.attackrange = new AABB(new Vector2f(
-					(this.pos.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
-					(this.pos.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
-					this.r_attackrange);
-		}
+		//		if (this.teleported) {
+		//			this.teleported = false;
+		//
+		//			this.hitBounds = new AABB(this.pos, this.size, this.size);
+		//
+		//			this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2),
+		//					(this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
+		//			this.attackrange = new AABB(new Vector2f(
+		//					(this.pos.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
+		//					(this.pos.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
+		//					this.r_attackrange);
+		//		}
 
 		if (this.hasEffect(EffectType.PARALYZED)) {
 			this.up = false;

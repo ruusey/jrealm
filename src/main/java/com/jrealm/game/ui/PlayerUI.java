@@ -401,16 +401,53 @@ public class PlayerUI {
 				g.drawString("Fame: " + fame, posXp.x, posXp.y);
 				g.drawString(this.playState.getPlayer().getName() + "   Lv. 20", nameLvlPos.x, nameLvlPos.y);
 			}
-
+			if (this.playState.getPlayer().isStatMaxed(0)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("" + this.playState.getPlayer().getHealth(), posHp.x, posHp.y);
+			if (this.playState.getPlayer().isStatMaxed(1)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("" + this.playState.getPlayer().getMana(), posMp.x, posMp.y);
-
+			if (this.playState.getPlayer().isStatMaxed(3)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("att :" + stats.getAtt(), startX, startY);
+			if (this.playState.getPlayer().isStatMaxed(4)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("spd :" + stats.getSpd(), startX, startY + (1 * yOffset));
+			if (this.playState.getPlayer().isStatMaxed(6)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("vit :" + stats.getVit(), startX, startY + (2 * yOffset));
-
+			if (this.playState.getPlayer().isStatMaxed(2)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("def :" + stats.getDef(), startX + xOffset, startY);
+			if (this.playState.getPlayer().isStatMaxed(5)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("dex :" + stats.getDex(), startX + xOffset, startY + (1 * yOffset));
+			if (this.playState.getPlayer().isStatMaxed(7)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("wis :" + stats.getWis(), startX + xOffset, startY + (2 * yOffset));
 		}
 	}
