@@ -100,15 +100,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 				this.right = false;
 			}
 		} else if(this.sense.colCircleBox(playerBounds) ){
-			if(this.idleTime>=Enemy.IDLE_FRAMES) {
-				this.up = Realm.RANDOM.nextBoolean();
-				this.down = Realm.RANDOM.nextBoolean();
-				this.left = Realm.RANDOM.nextBoolean();
-				this.right = Realm.RANDOM.nextBoolean();
-				this.idleTime = 0;
-			}else {
-				this.idleTime++;
-			}
+
 
 		}
 	}
@@ -116,23 +108,23 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	public void update(RealmManagerClient mgr, double time) {
 		Player player = mgr.getClosestPlayer(this.getPos(), this.r_sense);
 		super.update(time);
+		this.move();
 		if (player == null)
 			return;
 		this.chase(player);
-		this.move();
 
-		//		if (this.teleported) {
-		//			this.teleported = false;
-		//
-		//			this.hitBounds = new AABB(this.pos, this.size, this.size);
-		//
-		//			this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2),
-		//					(this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
-		//			this.attackrange = new AABB(new Vector2f(
-		//					(this.pos.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
-		//					(this.pos.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
-		//					this.r_attackrange);
-		//		}
+		if (this.teleported) {
+			this.teleported = false;
+
+			this.hitBounds = new AABB(this.pos, this.size, this.size);
+
+			this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2),
+					(this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
+			this.attackrange = new AABB(new Vector2f(
+					(this.pos.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
+					(this.pos.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
+					this.r_attackrange);
+		}
 
 		if (this.hasEffect(EffectType.PARALYZED)) {
 			this.up = false;
@@ -142,24 +134,14 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			return;
 		}
 		if (!this.isFallen()) {
-			// if
-			// (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1),
-			// mgr.getRealm().getTileManager().getTm().get(1).getBlocks(),
-			// this.dx,0)) {
+
 			this.sense.getPos().x += this.dx;
 			this.attackrange.getPos().x += this.dx;
 			this.pos.x += this.dx;
-			// }
-			// if
-			// (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1),
-			// mgr.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
-			// this.dy)) {
+
 			this.sense.getPos().y += this.dy;
 			this.attackrange.getPos().y += this.dy;
 			this.pos.y += this.dy;
-			// }
-		} else if (this.ani.hasPlayedOnce()) {
-			this.die = true;
 		}
 	}
 
@@ -167,10 +149,11 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		final Realm targetRealm = mgr.getRealms().get(realmId);
 		Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.r_sense);
 		super.update(time);
+		this.move();
 		if (player == null)
 			return;
 		this.chase(player);
-		this.move();
+
 
 		if (this.teleported) {
 			this.teleported = false;
@@ -240,8 +223,16 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			this.attackrange.getPos().y += this.dy;
 			this.pos.y += this.dy;
 			//			}
-		} else if (this.ani.hasPlayedOnce()) {
-			this.die = true;
+		}
+
+		if (this.idleTime >= Enemy.IDLE_FRAMES) {
+			this.up = Realm.RANDOM.nextBoolean();
+			this.down = Realm.RANDOM.nextBoolean();
+			this.left = Realm.RANDOM.nextBoolean();
+			this.right = Realm.RANDOM.nextBoolean();
+			this.idleTime = 0;
+		} else {
+			this.idleTime++;
 		}
 	}
 

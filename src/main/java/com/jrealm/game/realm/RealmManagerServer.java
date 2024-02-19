@@ -244,8 +244,7 @@ public class RealmManagerServer implements Runnable {
 					final NetTile[] netTilesForPlayer = realm.getTileManager().getLoadMapTiles(player.getValue());
 					// Build those tiles into a load map packet (NetTile[] wrapper)
 					final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(),
-							(short) realm.getMapId(),
-							netTilesForPlayer);
+							(short) realm.getMapId(), netTilesForPlayer);
 
 					// If we dont have load map state for this player, map it and
 					// then transmit all the tiles

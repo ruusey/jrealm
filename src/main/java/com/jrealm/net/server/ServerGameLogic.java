@@ -110,7 +110,6 @@ public class ServerGameLogic {
 			// instance.
 			if (currentRealm.getMapId() == 1) {
 				List<ChestDto> chestsToSave = currentRealm.serializeChests();
-				mgr.getRealms().remove(currentRealm.getRealmId());
 				try {
 					final PlayerAccountDto savedAccount = ServerGameLogic.DATA_SERVICE.executePost(
 							"/data/account/" + user.getAccountUuid() + "/chest", chestsToSave, PlayerAccountDto.class);
@@ -119,9 +118,10 @@ public class ServerGameLogic {
 					ServerGameLogic.log.error("Failed to save account chests for account {}. Reason: {}",
 							user.getAccountUuid(), e);
 				}
+				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
 		}
-		// mgr.clearPlayerState(user.getId());
+		mgr.clearPlayerState(user.getId());
 
 	}
 
