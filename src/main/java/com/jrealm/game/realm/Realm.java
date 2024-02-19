@@ -96,7 +96,8 @@ public class Realm {
 					.executeGet("/data/account/" + player.getAccountUuid(), null, PlayerAccountDto.class);
 			for(ChestDto chest : account.getPlayerVault()) {
 				List<GameItem> itemsInChest = chest.getItems().stream().map(GameItem::fromGameItemRef).collect(Collectors.toList());
-				Chest toSpawn = new Chest(chestLoc, itemsInChest.toArray(new GameItem[8]));
+				Chest toSpawn = new Chest(chestLoc.clone(-64 * chest.getOrdinal(), 0),
+						itemsInChest.toArray(new GameItem[8]));
 				this.addLootContainer(toSpawn);
 			}
 		}catch(Exception e) {
@@ -109,7 +110,8 @@ public class Realm {
 		int ordinal = 0;
 		for (LootContainer container : this.loot.values()) {
 			if (container instanceof Chest) {
-				ChestDto chest = ChestDto.builder().chestId(container.getUid()).ordinal(ordinal++).build();
+				ChestDto chest = ChestDto.builder().chestId(container.getUid()).chestUuid(container.getUid())
+						.ordinal(ordinal++).build();
 				List<GameItemRefDto> itemRefs = new ArrayList<>();
 				for (int i = 0; i < container.getItems().length; i++) {
 					GameItem toCopy = container.getItems()[i];

@@ -23,6 +23,7 @@ public class ChestDto extends TemporalDto {
 	private static final long serialVersionUID = 4633372389187160480L;
 
 	private String chestId;
+	private String chestUuid;
 	private Integer ordinal;
 	private List<GameItemRefDto> items;
 }
