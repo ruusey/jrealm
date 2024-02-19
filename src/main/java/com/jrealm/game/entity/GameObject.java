@@ -58,6 +58,13 @@ public abstract class GameObject {
 		this.teleported = true;
 	}
 
+	public boolean getTeleported() {
+		return this.teleported;
+	}
+
+	public void setTeleported(final boolean teleported) {
+		this.teleported = teleported;
+	}
 
 	public void addForce(float a, boolean vertical) {
 		if(!vertical) {

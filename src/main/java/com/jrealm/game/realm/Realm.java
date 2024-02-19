@@ -79,7 +79,7 @@ public class Realm {
 			WorkerThread.submit(this.getStatsThread());
 		}
 	}
-	
+
 	public List<Long> getExpiredPlayers(){
 		return this.expiredPlayers;
 	}
@@ -337,7 +337,7 @@ public class Realm {
 				objs.add(p);
 			}
 		}
-		
+
 		return objs.toArray(new Player[0]);
 	}
 
@@ -487,10 +487,13 @@ public class Realm {
 		List<GameObject> validObjects = new ArrayList<>();
 		for (GameObject obj : gameObjects) {
 			try {
-				if(((obj.getDx()>0) || (obj.getDy()>0)) || ((obj.getDx()<0) || (obj.getDy()<0))) {
+				if(((obj.getDx()>0) || (obj.getDy()>0)) || ((obj.getDx()<0) || (obj.getDy()<0)) || obj.getTeleported()) {
 					final boolean inViewport = cam.inside((int) obj.getPos().x, (int) obj.getPos().y);
 					if (inViewport) {
 						validObjects.add(obj);
+					}
+					if(obj.getTeleported()) {
+						obj.setTeleported(false);
 					}
 				}
 			} catch (Exception e) {

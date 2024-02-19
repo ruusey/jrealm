@@ -974,8 +974,8 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public Thread shutdownHook() {
-		RealmManagerServer.log.info("Performing pre-shutdown player sync...");
 		final Runnable shutdownTask = () -> {
+			RealmManagerServer.log.info("Performing pre-shutdown player sync...");
 			this.persistsPlayersAsync();
 			RealmManagerServer.log.info("Shutdown player sync complete");
 
