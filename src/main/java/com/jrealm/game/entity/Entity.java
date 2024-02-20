@@ -1,6 +1,7 @@
 package com.jrealm.game.entity;
 
 import java.awt.Graphics2D;
+import java.time.Instant;
 
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.graphics.Animation;
@@ -98,7 +99,7 @@ public abstract class Entity extends GameObject {
 	public void removeExpiredEffects() {
 		for (int i = 0; i < this.effectIds.length; i++) {
 			if (this.effectIds[i] != -1) {
-				if (System.currentTimeMillis() > this.effectTimes[i]) {
+				if (Instant.now().toEpochMilli() > this.effectTimes[i]) {
 					this.effectIds[i] = -1;
 					this.effectTimes[i] = -1;
 				}
@@ -133,7 +134,7 @@ public abstract class Entity extends GameObject {
 		for (int i = 0; i < this.effectIds.length; i++) {
 			if (this.effectIds[i] == -1) {
 				this.effectIds[i] = effect.effectId;
-				this.effectTimes[i] = System.currentTimeMillis() + duration;
+				this.effectTimes[i] = (Instant.now().toEpochMilli() + duration);
 				return;
 			}
 		}

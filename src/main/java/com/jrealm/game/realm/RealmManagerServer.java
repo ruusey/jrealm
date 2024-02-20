@@ -480,6 +480,7 @@ public class RealmManagerServer implements Runnable {
 
 				final Runnable updatePlayer = () -> {
 					p.update(time);
+					p.removeExpiredEffects();
 					this.movePlayer(realm.getRealmId(), p);
 				};
 				// Run the player update tasks Asynchronously

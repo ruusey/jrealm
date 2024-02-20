@@ -175,7 +175,7 @@ public class PlayState extends GameState {
 				};
 
 				Runnable updatePlayerAndUi = () -> {
-					player.removeExpiredEffects();
+					// player.removeExpiredEffects();
 					player.update(time);
 					this.movePlayer(player);
 					this.pui.update(time);
