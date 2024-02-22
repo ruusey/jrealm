@@ -17,19 +17,23 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.realm.RealmManagerServer;
+import com.jrealm.game.script.ScriptBase;
+import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Streamable;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@Slf4j
 public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	private static final int IDLE_FRAMES = 12;
-	protected AABB sense;
+	// protected AABB sense;
 	protected int r_sense;
 
-	protected AABB attackrange;
+	// protected AABB attackrange;
 	protected int r_attackrange;
 
 	protected int xOffset;
@@ -44,24 +48,14 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	public Enemy(long id, int enemyId, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
 		super(id, sprite, origin, size);
 
-		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
-				(origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);
-		this.attackrange = new AABB(new Vector2f(
-				(origin.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
-				(origin.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
-				this.r_attackrange);
 		this.enemyId = enemyId;
 		this.weaponId = weaponId;
 	}
 
 	public Enemy(long id, int enemyId, Vector2f origin, int size, int weaponId) {
 		super(id, origin, size);
-		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
-				(origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);
-		this.attackrange = new AABB(new Vector2f(
-				(origin.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
-				(origin.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
-				this.r_attackrange);
+
+
 		this.enemyId = enemyId;
 		this.weaponId = weaponId;
 	}
@@ -77,7 +71,8 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		}
 
 		AABB playerBounds = player.getBounds();
-		if (this.sense.colCircleBox(playerBounds) && !this.attackrange.colCircleBox(playerBounds)) {
+		if ((this.getPos().distanceTo(player.getPos()) < this.r_sense)
+				&& (this.getPos().distanceTo(player.getPos()) >= this.r_attackrange)) {
 			if (this.pos.y > (player.pos.y + 1)) {
 				this.up = true;
 			} else {
@@ -99,9 +94,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			} else {
 				this.right = false;
 			}
-		} else if(this.sense.colCircleBox(playerBounds) ){
-
-
 		}
 	}
 
@@ -113,19 +105,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			return;
 		this.chase(player);
 
-		if (this.teleported) {
-			this.teleported = false;
-
-			this.hitBounds = new AABB(this.pos, this.size, this.size);
-
-			this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2),
-					(this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
-			this.attackrange = new AABB(new Vector2f(
-					(this.pos.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
-					(this.pos.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
-					this.r_attackrange);
-		}
-
 		if (this.hasEffect(EffectType.PARALYZED)) {
 			this.up = false;
 			this.down = false;
@@ -134,13 +113,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			return;
 		}
 		if (!this.isFallen()) {
-
-			this.sense.getPos().x += this.dx;
-			this.attackrange.getPos().x += this.dx;
 			this.pos.x += this.dx;
-
-			this.sense.getPos().y += this.dy;
-			this.attackrange.getPos().y += this.dy;
 			this.pos.y += this.dy;
 		}
 	}
@@ -155,21 +128,12 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		this.chase(player);
 
 
-		if (this.teleported) {
-			this.teleported = false;
-
-			this.hitBounds = new AABB(this.pos, this.size, this.size);
-
-			this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2),
-					(this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
-			this.attackrange = new AABB(new Vector2f(
-					(this.pos.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
-					(this.pos.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
-					this.r_attackrange);
+		final boolean notInvisible = !player.hasEffect(EffectType.INVISIBLE);
+		if (!notInvisible) {
+			int i = 1;
 		}
-
-		if (this.attackrange.colCircleBox(player.getBounds()) && !this.isInvincible
-				&& !player.hasEffect(EffectType.INVISIBLE)) {
+		if ((this.getPos().distanceTo(player.getPos()) < this.r_attackrange)
+				&& notInvisible) {
 			this.attack = true;
 
 			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 1500)
@@ -178,27 +142,40 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			if (canShoot) {
 				this.lastShotTick = System.currentTimeMillis();
 				Player target = player;
-				Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
+				ScriptBase script = mgr.getEnemyScript(this.enemyId);
+				if(script==null) {
+					Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
 
-				Vector2f source = this.getPos().clone(this.getSize() / 2, this.getSize() / 2);
-				float angle = Bullet.getAngle(source, dest);
-				ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
+					Vector2f source = this.getPos().clone(this.getSize() / 2, this.getSize() / 2);
+					float angle = Bullet.getAngle(source, dest);
+					ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
 
-				for (Projectile p : group.getProjectiles()) {
-					if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
-						mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
-								p.getProjectileId(),
-								source.clone(),
-								angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
-								p.getDamage(), true, p.getFlags(), p.getAmplitude(), p.getFrequency());
-					} else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
-						mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
-								p.getProjectileId(),
-								source.clone(), Float.parseFloat(p.getAngle()),
-								p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
-								p.getAmplitude(), p.getFrequency());
+					for (Projectile p : group.getProjectiles()) {
+						if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
+							mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
+									p.getProjectileId(),
+									source.clone(),
+									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
+									p.getDamage(), true, p.getFlags(), p.getAmplitude(), p.getFrequency());
+						} else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
+							mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
+									p.getProjectileId(),
+									source.clone(), Float.parseFloat(p.getAngle()),
+									p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
+									p.getAmplitude(), p.getFrequency());
+						}
 					}
+				}else {
+					final Runnable enemyAttack = () -> {
+						try {
+							script.attack(targetRealm, this, target);
+						} catch (Exception e) {
+							Enemy.log.error("Failed to invoke enemy attack script. Reason: {}", e);
+						}
+					};
+					WorkerThread.doAsync(enemyAttack);
 				}
+
 			}
 		} else {
 			this.attack = false;
@@ -210,20 +187,9 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			this.left = false;
 			return;
 		}
-		if (!this.isFallen()) {
-			//			if (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1), mgr.getRealm().getTileManager().getTm().get(1).getBlocks(),
-			//					this.dx,0)) {
-			this.sense.getPos().x += this.dx;
-			this.attackrange.getPos().x += this.dx;
-			this.pos.x += this.dx;
-			//			}
-			//			if (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1), mgr.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
-			//					this.dy)) {
-			this.sense.getPos().y += this.dy;
-			this.attackrange.getPos().y += this.dy;
-			this.pos.y += this.dy;
-			//			}
-		}
+
+		this.pos.x += this.dx;
+		this.pos.y += this.dy;
 
 		if (this.idleTime >= Enemy.IDLE_FRAMES) {
 			this.up = Realm.RANDOM.nextBoolean();
@@ -234,6 +200,12 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		} else {
 			this.idleTime++;
 		}
+	}
+
+	@Override
+	public void move() {
+		super.move();
+
 	}
 
 

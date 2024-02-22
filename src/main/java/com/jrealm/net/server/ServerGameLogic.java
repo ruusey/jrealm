@@ -17,6 +17,7 @@ import com.jrealm.account.dto.SessionTokenDto;
 import com.jrealm.account.service.JRealmDataService;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
+import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
@@ -409,6 +410,7 @@ public class ServerGameLogic {
 			player.applyStats(targetCharacter.getStats());
 			player.setName(accountName);
 			player.setHeadless(false);
+			player.addEffect(EffectType.INVINCIBLE, 60000l * 60l);
 			// TODO: Add a 'primary' realm where newly logged in users always spawn
 			for (final Realm test : mgr.getRealms().values()) {
 				if (test != null) {

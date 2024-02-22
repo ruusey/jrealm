@@ -48,6 +48,8 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
+import com.jrealm.game.script.Enemy10Script;
+import com.jrealm.game.script.ScriptBase;
 import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.Tile;
 import com.jrealm.game.tile.TileMap;
@@ -96,10 +98,12 @@ public class RealmManagerServer implements Runnable {
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
 	private List<RealmDecorator> realmDecorators = new ArrayList<>();
+	private List<ScriptBase> enemyScripts = new ArrayList<>();
 	private Semaphore realmLock = new Semaphore(1);
 
 	public RealmManagerServer() {
 		this.registerRealmDecorators();
+		this.registerEnemyScripts();
 		this.registerPacketCallbacks();
 		this.server = new SocketServer(2222);
 		this.shotDestQueue = new ArrayList<>();
@@ -436,6 +440,16 @@ public class RealmManagerServer implements Runnable {
 		return result;
 	}
 
+	public ScriptBase getEnemyScript(int enemyId) {
+		ScriptBase result = null;
+		for (final ScriptBase enemyScript : this.enemyScripts) {
+			if (enemyScript.getTargetEnemyId() == enemyId) {
+				result = enemyScript;
+			}
+		}
+		return result;
+	}
+
 	// Register any custom realm type decorators.
 	// Each time a realm of the target type is added, an instance
 	// of it will be passed to the decorator for post processing
@@ -443,6 +457,10 @@ public class RealmManagerServer implements Runnable {
 	private void registerRealmDecorators() {
 		this.realmDecorators.add(new Beach0Decorator());
 		this.realmDecorators.add(new Grasslands0Decorator());
+	}
+
+	private void registerEnemyScripts() {
+		this.enemyScripts.add(new Enemy10Script(this));
 	}
 
 	private void registerPacketCallbacks() {
@@ -477,7 +495,6 @@ public class RealmManagerServer implements Runnable {
 					this.processBulletHit(realm.getRealmId(), p);
 				};
 				// Rewrite this asap
-
 				final Runnable updatePlayer = () -> {
 					p.update(time);
 					p.removeExpiredEffects();
@@ -656,9 +673,13 @@ public class RealmManagerServer implements Runnable {
 		final GameObject[] gameObject = targetRealm
 				.getGameObjectsInBounds(targetRealm.getTileManager().getRenderViewPort(p));
 		final Player player = targetRealm.getPlayer(p.getId());
-		for (final Bullet b : results) {
-			this.processPlayerHit(realmId, b, player);
+
+		if (!player.hasEffect(EffectType.INVINCIBLE)) {
+			for (final Bullet b : results) {
+				this.processPlayerHit(realmId, b, player);
+			}
 		}
+
 
 		for (int i = 0; i < gameObject.length; i++) {
 			if (gameObject[i] instanceof Enemy) {
