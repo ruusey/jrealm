@@ -24,8 +24,8 @@ public class Monster extends Enemy {
 		this.acc = 1f;
 		this.deacc = 2f;
 		this.maxSpeed = 1.4f;
-		this.r_sense = (int) model.getChaseRange();
-		this.r_attackrange = (int) model.getAttackRange();
+		this.chaseRange = (int) model.getChaseRange();
+		this.attackRange = (int) model.getAttackRange();
 
 		this.ATTACK = 0;
 		this.IDLE = 0;
@@ -53,8 +53,8 @@ public class Monster extends Enemy {
 		this.acc = 1f;
 		this.deacc = 2f;
 		this.maxSpeed = 1.4f;
-		this.r_sense = 650;
-		this.r_attackrange = 450;
+		this.chaseRange = 650;
+		this.attackRange = 450;
 
 		this.ATTACK = 0;
 		this.IDLE = 0;

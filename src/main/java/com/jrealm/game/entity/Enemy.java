@@ -10,7 +10,6 @@ import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
@@ -30,21 +29,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	private static final int IDLE_FRAMES = 12;
-	// protected AABB sense;
-	protected int r_sense;
-
-	// protected AABB attackrange;
-	protected int r_attackrange;
-
+	protected int chaseRange;
+	protected int attackRange;
 	protected int xOffset;
 	protected int yOffset;
 
-	public long lastShotTick = 0;
-
-
+	private long lastShotTick = 0;
 	private int enemyId;
 	private int weaponId = -1;
 	private int idleTime = 0;
+
 	public Enemy(long id, int enemyId, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
 		super(id, sprite, origin, size);
 
@@ -70,9 +64,8 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			return;
 		}
 
-		AABB playerBounds = player.getBounds();
-		if ((this.getPos().distanceTo(player.getPos()) < this.r_sense)
-				&& (this.getPos().distanceTo(player.getPos()) >= this.r_attackrange)) {
+		if ((this.getPos().distanceTo(player.getPos()) < this.chaseRange)
+				&& (this.getPos().distanceTo(player.getPos()) >= this.attackRange)) {
 			if (this.pos.y > (player.pos.y + 1)) {
 				this.up = true;
 			} else {
@@ -98,7 +91,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	}
 
 	public void update(RealmManagerClient mgr, double time) {
-		Player player = mgr.getClosestPlayer(this.getPos(), this.r_sense);
+		Player player = mgr.getClosestPlayer(this.getPos(), this.chaseRange);
 		super.update(time);
 		this.move();
 		if (player == null)
@@ -120,19 +113,15 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 	public void update(long realmId, RealmManagerServer mgr, double time) {
 		final Realm targetRealm = mgr.getRealms().get(realmId);
-		Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.r_sense);
+		Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.chaseRange);
 		super.update(time);
 		this.move();
 		if (player == null)
 			return;
 		this.chase(player);
 
-
 		final boolean notInvisible = !player.hasEffect(EffectType.INVISIBLE);
-		if (!notInvisible) {
-			int i = 1;
-		}
-		if ((this.getPos().distanceTo(player.getPos()) < this.r_attackrange)
+		if ((this.getPos().distanceTo(player.getPos()) < this.attackRange)
 				&& notInvisible) {
 			this.attack = true;
 
@@ -201,13 +190,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			this.idleTime++;
 		}
 	}
-
-	@Override
-	public void move() {
-		super.move();
-
-	}
-
 
 	@Override
 	public void render(Graphics2D g) {

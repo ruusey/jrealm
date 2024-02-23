@@ -801,9 +801,11 @@ public class RealmManagerServer implements Runnable {
 		if (targetRealm.hasHitEnemy(b.getId(), e.getId()) || targetRealm.getExpiredEnemies().contains(e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
+			EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
+
 			targetRealm.hitEnemy(b.getId(), e.getId());
 			e.setHealth(e.getHealth() - b.getDamage());
-
+			e.setHealthpercent(e.getHealth() / model.getHealth());
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {
@@ -834,7 +836,6 @@ public class RealmManagerServer implements Runnable {
 			}
 			if (e.getDeath()) {
 				for(Player player : targetRealm.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(e))){
-					EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
 					player.incrementExperience(model.getXp());
 					try {
 						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), TextEffect.PLAYER_INFO,  model.getXp()+"xp"));
@@ -850,7 +851,6 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.spawnRandomEnemy();
 				targetRealm.removeEnemy(e);
 
-				// TODO: Maybe find a better way to introduce randomness to drops.
 				if (Realm.RANDOM.nextInt(10) < 1) {
 					if (targetRealm.getMapId() == 4) {
 						targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(128, 128)));
@@ -858,10 +858,7 @@ public class RealmManagerServer implements Runnable {
 						targetRealm.addPortal(new Portal(random.nextLong(), (short) 3, e.getPos().withNoise(128, 128)));
 					}
 				}
-				if ((targetRealm.getMapId() != 3) && (Realm.RANDOM.nextInt(20) < 5)) {
-					// targetRealm.addPortal(new Portal(random.nextLong(), (short) 0,
-					// e.getPos().withNoise(128, 128)));
-				}
+
 				/**
 				 * Loot drops are determined by the LootTableModel mapped by this enemyId
 				 */
@@ -872,6 +869,8 @@ public class RealmManagerServer implements Runnable {
 					targetRealm.addLootContainer(dropsBag);
 				}
 			}
+
+
 		}
 	}
 
