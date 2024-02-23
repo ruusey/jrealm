@@ -781,7 +781,7 @@ public class RealmManagerServer implements Runnable {
 						// Remove their amulet and let them respawn
 						TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
 								player.getName()
-								+ "'s Amulet shatters as they dissapear.");
+										+ "'s Amulet shatters as they disappear.");
 						this.enqueueServerPacket(toBroadcast);
 						player.getInventory()[3] = null;
 						this.persistPlayerAsync(player);

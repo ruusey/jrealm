@@ -133,7 +133,7 @@ public class PlayerUI {
 
 			b.onMouseUp(event -> {
 				this.tooltips.clear();
-				if (this.overlapsInventory(event) && this.canSwap()) {
+				if (this.canSwap()) {
 					this.setActionTime();
 					GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
 					int idx = this.firstNullIdx(currentInv);

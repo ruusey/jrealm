@@ -275,8 +275,8 @@ public class ServerGameLogic {
 				LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(), 32);
 				from = nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20];
 			}
-
-			if(moveItemPacket.isDrop() && (from!=null)) {
+			// If the player requested to drop an item from their inventory
+			if ((from != null) && moveItemPacket.isDrop()) {
 				final LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(), 32);
 				if(nearLoot==null) {
 					realm.addLootContainer(new LootContainer(LootTier.BROWN, player.getPos().clone(), from.clone()));
@@ -285,7 +285,9 @@ public class ServerGameLogic {
 					nearLoot.setItem(nearLoot.getFirstNullIdx(), from.clone());
 					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
 				}
-			}else if((from!=null) && from.isConsumable()&& !MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
+				// If the Item isnt ground loot and is consumable
+			} else if ((from != null) && from.isConsumable() && moveItemPacket.isConsume()
+					&& !MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
 				final Stats newStats = player.getStats().concat(from.getStats());
 				player.setStats(newStats);
 
@@ -295,6 +297,8 @@ public class ServerGameLogic {
 					player.drinkMp();
 				}
 				player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
+				// If an item is being moved from the inventory slots 4-12 to the players
+				// equiment slots
 			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isEquipment(moveItemPacket.getTargetSlotIndex()) && (from!=null)) {
 				if (!CharacterClass.isValidUser(player, from.getTargetClass())) {
 					ServerGameLogic.log.warn("Player {} attempted to equip an item not useable by their class",
@@ -307,25 +311,20 @@ public class ServerGameLogic {
 					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
 				}
 				player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();
+				// If the player is swapping items in their inventory (not impl cuz my client is
+				// garabage)
+			} else if (MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())
+					&& MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
 
-			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && (moveItemPacket.getTargetSlotIndex()==-1)) {
-				if(from==null) return;
-				if(from.isConsumable() && moveItemPacket.isConsume()) {
-					if (player.canConsume(from)) {
-						Stats newStats = player.getStats().concat(from.getStats());
-						player.setStats(newStats);
-						player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
-					}
-				}else if(MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())){
-					GameItem to = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
-					if(to==null) {
-						player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from;
-					}else {
-						GameItem fromClone = from.clone();
-						player.getInventory()[moveItemPacket.getFromSlotIndex()] = to;
-						player.getInventory()[moveItemPacket.getTargetSlotIndex()] = fromClone;
-					}
+				GameItem to = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
+				if(to==null) {
+					player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from;
+				}else {
+					GameItem fromClone = from.clone();
+					player.getInventory()[moveItemPacket.getFromSlotIndex()] = to;
+					player.getInventory()[moveItemPacket.getTargetSlotIndex()] = fromClone;
 				}
+				// If the player is attempting to pick up ground loot into their inventory
 			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
 
 				final LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(),
@@ -357,22 +356,12 @@ public class ServerGameLogic {
 	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {
 		@SuppressWarnings("unused")
 		final LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
-		//		try {
-		//			Player player = mgr.getRealm().getPlayer(loadMapPacket.getPlayerId());
-		//			mgr.getRealm().loadMap(1, player);
-		//
-		//		} catch (Exception e) {
-		//			ServerGameLogic.log.error("Failed to  Load Map packet from Player {}. Reason: {}", loadMapPacket.getPlayerId(),
-		//					e.getMessage());
-		//		}
-		//		ServerGameLogic.log.info("[SERVER] Recieved Load Map packet from Player {}. Map={}", loadMapPacket.getPlayerId(),
-		//				loadMapPacket.getMapKey());
 	}
 
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
 		try {
 			// TODO: TEMP to avoid null ptr when sending the login response
-			SessionTokenDto loginToken = new SessionTokenDto();
+			SessionTokenDto loginToken = null;
 			String accountName = request.getEmail();
 			String accountUuid = null;
 			Optional<CharacterDto> characterClass = null;
@@ -389,6 +378,7 @@ public class ServerGameLogic {
 				throw e;
 			}
 			final CharacterDto targetCharacter = characterClass.get();
+			// TODO: Character death currently disabled
 			if (targetCharacter.isDeleted() && false)
 				throw new Exception("Character "+targetCharacter.getCharacterUuid()+" is deleted!");
 			final Map<Integer, GameItem> loadedEquipment = new HashMap<>();

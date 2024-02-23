@@ -408,7 +408,12 @@ public class PlayState extends GameState {
 			if (key.one.clicked) {
 				try {
 					GameItem from = this.getPlayer().getInventory()[4];
+
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)4, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 4, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
@@ -418,6 +423,10 @@ public class PlayState extends GameState {
 				try {
 					GameItem from = this.getPlayer().getInventory()[5];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)5, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 5, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
@@ -427,6 +436,10 @@ public class PlayState extends GameState {
 				try {
 					GameItem from = this.getPlayer().getInventory()[6];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)6, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 6, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
@@ -436,6 +449,10 @@ public class PlayState extends GameState {
 				try {
 					GameItem from = this.getPlayer().getInventory()[7];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)7, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 7, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
@@ -445,6 +462,10 @@ public class PlayState extends GameState {
 				try {
 					GameItem from = this.getPlayer().getInventory()[8];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)8, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 8, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
@@ -454,6 +475,10 @@ public class PlayState extends GameState {
 				try {
 					GameItem from = this.getPlayer().getInventory()[9];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)9, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 9, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
@@ -463,6 +488,10 @@ public class PlayState extends GameState {
 				try {
 					GameItem from = this.getPlayer().getInventory()[10];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)10, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 10, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
@@ -472,6 +501,10 @@ public class PlayState extends GameState {
 				try {
 					GameItem from = this.getPlayer().getInventory()[11];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)11, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 11, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test move item packet: {}", e);
@@ -651,7 +684,8 @@ public class PlayState extends GameState {
 			lc.render(g);
 		}
 
-		if ((this.getPui().isGroundLootEmpty() && (closeLoot != null)) || ((closeLoot != null) && closeLoot.getContentsChanged())) {
+		if ((this.getPui().isGroundLootEmpty() && (closeLoot != null))
+				|| ((closeLoot != null) && closeLoot.getContentsChanged())) {
 			this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot), g);
 
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
