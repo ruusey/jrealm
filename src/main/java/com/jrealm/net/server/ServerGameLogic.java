@@ -66,6 +66,9 @@ public class ServerGameLogic {
 
 		if (usePortalPacket.isToVault()) {
 			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
+			if (currentRealm.getMapId() == 1)
+				return;
+
 			final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 			final MapModel mapModel = GameDataManager.MAPS.get(1);
 			final Realm generatedRealm = new Realm(true, 1);
@@ -286,8 +289,9 @@ public class ServerGameLogic {
 					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
 				}
 				// If the Item isnt ground loot and is consumable
-			} else if ((from != null) && from.isConsumable() && moveItemPacket.isConsume()
+			} else if ((from != null) && from.isConsumable() && moveItemPacket.isConsume() && player.canConsume(from)
 					&& !MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
+
 				final Stats newStats = player.getStats().concat(from.getStats());
 				player.setStats(newStats);
 

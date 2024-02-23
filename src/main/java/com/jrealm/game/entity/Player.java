@@ -442,11 +442,25 @@ public class Player extends Entity implements Streamable<Player>{
 	}
 
 	public boolean canConsume(final GameItem item) {
-		for (int i = 0; i < 8; i++) {
-			if (this.isStatMaxed(i))
-				return false;
+		boolean canConsume = true;
+		if(((item.getStats().getHp()>0) && this.isStatMaxed(0)) || ((item.getStats().getMp()>0) && this.isStatMaxed(1))) {
+			canConsume = false;
+		} else if((item.getStats().getMp()>0) && this.isStatMaxed(1)) {
+			canConsume = false;
+		}else if((item.getStats().getDef()>0) && this.isStatMaxed(2)) {
+			canConsume = false;
+		}else if((item.getStats().getAtt()>0) && this.isStatMaxed(3)) {
+			canConsume = false;
+		}else if((item.getStats().getSpd()>0) && this.isStatMaxed(4)) {
+			canConsume = false;
+		}else if((item.getStats().getDex()>0) && this.isStatMaxed(5)) {
+			canConsume = false;
+		}else if((item.getStats().getVit()>0) && this.isStatMaxed(6)) {
+			canConsume = false;
+		}else if((item.getStats().getWis()>0) && this.isStatMaxed(7)) {
+			canConsume = false;
 		}
-		return true;
+		return canConsume;
 	}
 
 	public boolean getIsUp() {

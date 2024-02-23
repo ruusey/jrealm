@@ -393,10 +393,12 @@ public class PlayState extends GameState {
 			}
 			if (key.f1.clicked) {
 				try {
-					UsePortalPacket usePortal = UsePortalPacket.toVault(this.realmManager.getRealm().getRealmId(),
-							this.getPlayerId());
-					this.realmManager.getClient().sendRemote(usePortal);
-					this.realmManager.getRealm().loadMap(1);
+					if (this.realmManager.getRealm().getMapId() != 1) {
+						UsePortalPacket usePortal = UsePortalPacket.toVault(this.realmManager.getRealm().getRealmId(),
+								this.getPlayerId());
+						this.realmManager.getClient().sendRemote(usePortal);
+						this.realmManager.getRealm().loadMap(1);
+					}
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test UsePortalPacket", e.getMessage());
 				}
