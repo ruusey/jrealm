@@ -83,7 +83,7 @@ public class LootContainer implements Streamable<LootContainer> {
 	}
 
 	public boolean isExpired() {
-		return (System.currentTimeMillis() - this.spawnedTime) > 60000;
+		return (System.currentTimeMillis() - this.spawnedTime) > 45000;
 	}
 
 	public boolean isEmpty() {

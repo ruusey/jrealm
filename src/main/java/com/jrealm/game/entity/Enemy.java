@@ -120,7 +120,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		if (player == null)
 			return;
 		this.chase(player);
-
 		final boolean notInvisible = !player.hasEffect(EffectType.INVISIBLE);
 		if ((this.getPos().distanceTo(player.getPos()) < this.attackRange)
 				&& notInvisible) {

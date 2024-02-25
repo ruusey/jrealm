@@ -51,6 +51,7 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.script.Enemy10Script;
 import com.jrealm.game.script.Enemy11Script;
 import com.jrealm.game.script.Enemy12Script;
+import com.jrealm.game.script.Enemy13Script;
 import com.jrealm.game.script.ScriptBase;
 import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.Tile;
@@ -428,11 +429,17 @@ public class RealmManagerServer implements Runnable {
 		final List<Long> lootContainers = targetRealm.getLoot().values().stream()
 				.filter(lc -> lc.isExpired() || lc.isEmpty()).map(LootContainer::getLootContainerId)
 				.collect(Collectors.toList());
+		final List<Long> portals = targetRealm.getPortals().values().stream()
+				.filter(Portal::isExpired).map(Portal::getId)
+				.collect(Collectors.toList());
 		for(final Long lcId: lootContainers) {
 			targetRealm.getLoot().remove(lcId);
 		}
+		for (final Long pId : portals) {
+			targetRealm.getPortals().remove(pId);
+		}
 		return UnloadPacket.from(expiredPlayers, lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies,
-				new Long[0]);
+				portals.toArray(new Long[0]));
 	}
 
 	public void tryDecorate(final Realm realm) {
@@ -475,6 +482,7 @@ public class RealmManagerServer implements Runnable {
 		this.enemyScripts.add(new Enemy10Script(this));
 		this.enemyScripts.add(new Enemy11Script(this));
 		this.enemyScripts.add(new Enemy12Script(this));
+		this.enemyScripts.add(new Enemy13Script(this));
 	}
 
 	private void registerPacketCallbacks() {
@@ -542,6 +550,7 @@ public class RealmManagerServer implements Runnable {
 		final Runnable removeExpiredObjects = () -> {
 			this.removeExpiredBullets();
 			this.removeExpiredLootContainers();
+			this.removeExpiredPortals();
 		};
 		WorkerThread.submitAndRun(removeExpiredObjects);
 	}
@@ -681,6 +690,22 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
+	public void removeExpiredPortals() {
+		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+			final Realm realm = realmEntry.getValue();
+
+			final List<Portal> toRemove = new ArrayList<>();
+			for (final Portal portal : realm.getPortals().values()) {
+				if (portal.isExpired()) {
+					toRemove.add(portal);
+				}
+			}
+			toRemove.forEach(portal -> {
+				realm.removePortal(portal);
+			});
+		}
+	}
+
 	public void processBulletHit(final long realmId, final Player p) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final List<Bullet> results = this.getBullets(realmId, p);
@@ -741,8 +766,9 @@ public class RealmManagerServer implements Runnable {
 				if ((tile == null) || tile.isVoid()) {
 					continue;
 				}
-				AABB tileBounds = new AABB(tile.getPos(), tile.getWidth(), tile.getHeight());
-				Vector2f bulletPosCenter = b.getPos().clone(b.getSize()/2, b.getSize()/2);
+				AABB tileBounds = new AABB(tile.getPos(), GlobalConstants.BASE_TILE_SIZE,
+						GlobalConstants.BASE_TILE_SIZE);
+				Vector2f bulletPosCenter = b.getCenteredPosition();
 				if (tileBounds.inside((int) bulletPosCenter.x, (int) bulletPosCenter.y)) {
 					b.setRange(0);
 					toRemove.add(b);
@@ -777,7 +803,17 @@ public class RealmManagerServer implements Runnable {
 			player.setHealth(player.getHealth() - dmgToInflict);
 			targetRealm.getExpiredBullets().add(b.getId());
 			targetRealm.removeBullet(b);
+			if (b.hasFlag((short) 2)) {
+				if (!p.hasEffect(EffectType.PARALYZED)) {
+					p.addEffect(EffectType.PARALYZED, 5000);
+				}
+			}
 
+			if (b.hasFlag((short) 3)) {
+				if (!p.hasEffect(EffectType.STUNNED)) {
+					p.addEffect(EffectType.STUNNED, 5000);
+				}
+			}
 			if (p.getDeath()) {
 				try {
 					final String remoteAddrDeath = this.getRemoteAddressMapRevered().get(player.getId());
@@ -790,7 +826,7 @@ public class RealmManagerServer implements Runnable {
 					this.enqueueServerPacket(player, PlayerDeathPacket.from());
 					if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
 						ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + p.getCharacterUuid(),
-								String.class);
+								Object.class);
 					}else {
 						// Remove their amulet and let them respawn
 						TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
@@ -864,14 +900,18 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.getExpiredBullets().add(b.getId());
 				targetRealm.getExpiredEnemies().add(e.getId());
 				targetRealm.clearHitMap();
-				targetRealm.spawnRandomEnemy();
+				if (targetRealm.getMapId() != 5) {
+					targetRealm.spawnRandomEnemy();
+				}
 				targetRealm.removeEnemy(e);
 
 				if (Realm.RANDOM.nextInt(11) < 1) {
 					if (targetRealm.getMapId() == 4) {
-						targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(128, 128)));
+						targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(64, 64)));
 					} else if (targetRealm.getMapId() == 2) {
-						targetRealm.addPortal(new Portal(random.nextLong(), (short) 3, e.getPos().withNoise(128, 128)));
+						targetRealm.addPortal(new Portal(random.nextLong(), (short) 3, e.getPos().withNoise(64, 64)));
+					} else if (targetRealm.getMapId() == 3) {
+						targetRealm.addPortal(new Portal(random.nextLong(), (short) 4, e.getPos().withNoise(64, 64)));
 					}
 				}
 
@@ -880,13 +920,11 @@ public class RealmManagerServer implements Runnable {
 				 */
 				final List<GameItem> lootToDrop = GameDataManager.LOOT_TABLES.get(e.getEnemyId()).getLootDrop();
 				if (lootToDrop.size() > 0) {
-					final LootContainer dropsBag = new LootContainer(LootTier.BLUE, e.getPos().withNoise(128, 128),
+					final LootContainer dropsBag = new LootContainer(LootTier.BLUE, e.getPos().withNoise(64, 64),
 							lootToDrop.toArray(new GameItem[0]));
 					targetRealm.addLootContainer(dropsBag);
 				}
 			}
-
-
 		}
 	}
 

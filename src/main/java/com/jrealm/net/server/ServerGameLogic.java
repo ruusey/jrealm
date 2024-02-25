@@ -17,20 +17,25 @@ import com.jrealm.account.dto.SessionTokenDto;
 import com.jrealm.account.service.JRealmDataService;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
+import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
+import com.jrealm.game.entity.Enemy;
+import com.jrealm.game.entity.Monster;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
+import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.messaging.LoginResponseMessage;
+import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
@@ -100,14 +105,39 @@ public class ServerGameLogic {
 			if (realmAtDepth.isEmpty()) {
 				final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 				final Realm generatedRealm = new Realm(true, portalUsed.getMapId());
-				generatedRealm.setDepth(currentRealm.getDepth() + 1);
-				final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
-						generatedRealm.getTileManager().getSafePosition());
-				user.setPos(generatedRealm.getTileManager().getSafePosition());
-				generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
-				exitPortal.setId(currentRealm.getRealmId());
-				generatedRealm.addPortal(exitPortal);
-				generatedRealm.addPlayer(user);
+				if (portalUsed.getMapId() == 5) {
+					final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
+							GlobalConstants.BASE_TILE_SIZE * 13);
+					generatedRealm.setDepth(currentRealm.getDepth() + 1);
+					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
+							spawnPos.clone(250, 0));
+					user.setPos(spawnPos);
+					EnemyModel toSpawn = GameDataManager.ENEMIES.get(13);
+					SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
+					SpriteSheet enemySprite = new SpriteSheet(
+							enemySheet.getSprite(toSpawn.getCol(), toSpawn.getRow(), toSpawn.getSpriteSize(),
+									toSpawn.getSpriteSize()),
+							toSpawn.getName(), toSpawn.getSpriteSize(), toSpawn.getSpriteSize(), 0);
+					Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(), enemySprite, spawnPos,
+							toSpawn.getSize(), toSpawn.getAttackId());
+					int healthMult = (4);
+					enemy.setHealth(enemy.getHealth() * healthMult);
+					enemy.setPos(spawnPos.clone(100, 0));
+					generatedRealm.addEnemy(enemy);
+					exitPortal.setId(mgr.getTopRealm().getRealmId());
+					generatedRealm.addPortal(exitPortal);
+					generatedRealm.addPlayer(user);
+				} else {
+					generatedRealm.setDepth(currentRealm.getDepth() + 1);
+					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
+							generatedRealm.getTileManager().getSafePosition());
+					user.setPos(generatedRealm.getTileManager().getSafePosition());
+					generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
+					exitPortal.setId(currentRealm.getRealmId());
+					generatedRealm.addPortal(exitPortal);
+					generatedRealm.addPlayer(user);
+				}
+
 				mgr.addRealm(generatedRealm);
 			} else {
 				realmAtDepth.get().addPlayer(user);
@@ -132,6 +162,9 @@ public class ServerGameLogic {
 					ServerGameLogic.log.error("Failed to save account chests for account {}. Reason: {}",
 							user.getAccountUuid(), e);
 				}
+				mgr.getRealms().remove(currentRealm.getRealmId());
+			} else if ((currentRealm.getMapId() == 5) && (currentRealm.getEnemies().size() == 0)
+					&& (currentRealm.getPlayers().size() == 0)) {
 				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
 		}
@@ -416,7 +449,7 @@ public class ServerGameLogic {
 			player.applyStats(targetCharacter.getStats());
 			player.setName(accountName);
 			player.setHeadless(false);
-			// player.addEffect(EffectType.INVINCIBLE, 60000l * 60l);
+			player.addEffect(EffectType.INVINCIBLE, 60000l * 60l);
 			Realm targetRealm = mgr.getTopRealm();
 			player.setPos(targetRealm.getTileManager().getSafePosition());
 			targetRealm.addPlayer(player);
