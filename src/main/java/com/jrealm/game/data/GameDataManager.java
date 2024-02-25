@@ -332,53 +332,39 @@ public class GameDataManager {
 
 		switch (characterClass) {
 		case ROGUE:
-			result.put(0, GameDataManager.GAME_ITEMS.get(49));
+			result.put(0, GameDataManager.GAME_ITEMS.get(91));
 			result.put(1, GameDataManager.GAME_ITEMS.get(152));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
-			result.put(3, GameDataManager.GAME_ITEMS.get(48));
-			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case ARCHER:
 			result.put(0, GameDataManager.GAME_ITEMS.get(17));
 			result.put(1, GameDataManager.GAME_ITEMS.get(154));
 			result.put(2, GameDataManager.GAME_ITEMS.get(32));
-			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(0));
 			break;
 		case WIZARD:
 			result.put(0, GameDataManager.GAME_ITEMS.get(121));
 			result.put(1, GameDataManager.GAME_ITEMS.get(136));
 			result.put(2, GameDataManager.GAME_ITEMS.get(106));
-			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case PRIEST:
 			result.put(0, GameDataManager.GAME_ITEMS.get(137));
 			result.put(1, GameDataManager.GAME_ITEMS.get(157));
 			result.put(2, GameDataManager.GAME_ITEMS.get(106));
-			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case WARRIOR:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
 			result.put(1, GameDataManager.GAME_ITEMS.get(156));
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
-			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case KNIGHT:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
 			result.put(1, GameDataManager.GAME_ITEMS.get(155));
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
-			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		case PALLADIN:
 			result.put(0, GameDataManager.GAME_ITEMS.get(75));
 			result.put(1, GameDataManager.GAME_ITEMS.get(153));
 			result.put(2, GameDataManager.GAME_ITEMS.get(60));
-			result.put(3, GameDataManager.GAME_ITEMS.get(56));
-			result.put(4, GameDataManager.GAME_ITEMS.get(2));
 			break;
 		default:
 			break;

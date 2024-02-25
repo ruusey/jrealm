@@ -11,6 +11,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
@@ -29,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	private static final int IDLE_FRAMES = 12;
+	protected EnemyModel model;
 	protected int chaseRange;
 	protected int attackRange;
 	protected int xOffset;
@@ -41,15 +43,14 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 	public Enemy(long id, int enemyId, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
 		super(id, sprite, origin, size);
-
+		this.model = GameDataManager.ENEMIES.get(enemyId);
 		this.enemyId = enemyId;
 		this.weaponId = weaponId;
 	}
 
 	public Enemy(long id, int enemyId, Vector2f origin, int size, int weaponId) {
 		super(id, origin, size);
-
-
+		this.model = GameDataManager.ENEMIES.get(enemyId);
 		this.enemyId = enemyId;
 		this.weaponId = weaponId;
 	}
@@ -125,8 +126,8 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 				&& notInvisible) {
 			this.attack = true;
 
-			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 1500)
-					&& !this.hasEffect(EffectType.STUNNED);
+			int dex = (int) ((6.5 * (this.model.getStats().getDex() + 17.3)) / 75);
+			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (1000 / dex));
 
 			if (canShoot) {
 				this.lastShotTick = System.currentTimeMillis();

@@ -418,7 +418,7 @@ public class PlayState extends GameState {
 					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.two.clicked) {
@@ -431,7 +431,7 @@ public class PlayState extends GameState {
 					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.three.clicked) {
@@ -444,7 +444,7 @@ public class PlayState extends GameState {
 					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.four.clicked) {
@@ -457,7 +457,7 @@ public class PlayState extends GameState {
 					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.five.clicked) {
@@ -470,7 +470,7 @@ public class PlayState extends GameState {
 					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.six.clicked) {
@@ -483,7 +483,7 @@ public class PlayState extends GameState {
 					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.seven.clicked) {
@@ -496,7 +496,7 @@ public class PlayState extends GameState {
 					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.eight.clicked) {
@@ -509,7 +509,7 @@ public class PlayState extends GameState {
 					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 

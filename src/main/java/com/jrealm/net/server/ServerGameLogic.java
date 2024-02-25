@@ -72,6 +72,7 @@ public class ServerGameLogic {
 			final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 			final MapModel mapModel = GameDataManager.MAPS.get(1);
 			final Realm generatedRealm = new Realm(true, 1);
+			generatedRealm.setDepth(-1);
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
 					chestLoc);
@@ -82,6 +83,7 @@ public class ServerGameLogic {
 			generatedRealm.addPortal(exitPortal);
 			generatedRealm.addPlayer(user);
 			mgr.addRealm(generatedRealm);
+			currentRealm.removePlayer(user);
 			return;
 		}
 
@@ -92,16 +94,25 @@ public class ServerGameLogic {
 
 		// Generate target, remove player from current, add to target.
 		if (targetRealm == null) {
-			final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
-			final Realm generatedRealm = new Realm(true, portalUsed.getMapId());
-			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
-					generatedRealm.getTileManager().getSafePosition());
-			user.setPos(generatedRealm.getTileManager().getSafePosition());
-			generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
-			exitPortal.setId(currentRealm.getRealmId());
-			generatedRealm.addPortal(exitPortal);
-			generatedRealm.addPlayer(user);
-			mgr.addRealm(generatedRealm);
+			// Try to find the realm at the correct depth
+			Optional<Realm> realmAtDepth = mgr.getRealms().values().stream()
+					.filter(realm -> realm.getDepth() == (currentRealm.getDepth() + 1)).findAny();
+			if (realmAtDepth.isEmpty()) {
+				final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
+				final Realm generatedRealm = new Realm(true, portalUsed.getMapId());
+				generatedRealm.setDepth(currentRealm.getDepth() + 1);
+				final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
+						generatedRealm.getTileManager().getSafePosition());
+				user.setPos(generatedRealm.getTileManager().getSafePosition());
+				generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
+				exitPortal.setId(currentRealm.getRealmId());
+				generatedRealm.addPortal(exitPortal);
+				generatedRealm.addPlayer(user);
+				mgr.addRealm(generatedRealm);
+			} else {
+				realmAtDepth.get().addPlayer(user);
+			}
+
 			// mgr.spawnTestPlayers(generatedRealm.getRealmId(), 2);
 		}
 		// Remove player from current, add to target ( realm already exists)
@@ -124,6 +135,8 @@ public class ServerGameLogic {
 				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
 		}
+		currentRealm.removePlayer(user);
+
 		mgr.clearPlayerState(user.getId());
 
 	}
@@ -404,15 +417,11 @@ public class ServerGameLogic {
 			player.setName(accountName);
 			player.setHeadless(false);
 			// player.addEffect(EffectType.INVINCIBLE, 60000l * 60l);
-			// TODO: Add a 'primary' realm where newly logged in users always spawn
-			for (final Realm test : mgr.getRealms().values()) {
-				if (test != null) {
-					player.setPos(test.getTileManager().getSafePosition());
-					test.addPlayer(player);
-					mgr.getServer().getClients().get(command.getSrcIp()).setHandshakeComplete(true);
-					break;
-				}
-			}
+			Realm targetRealm = mgr.getTopRealm();
+			player.setPos(targetRealm.getTileManager().getSafePosition());
+			targetRealm.addPlayer(player);
+			mgr.getServer().getClients().get(command.getSrcIp()).setHandshakeComplete(true);
+
 
 			final OutputStream toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getClientSocket()
 					.getOutputStream();

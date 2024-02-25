@@ -15,7 +15,6 @@ import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
-import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
@@ -55,6 +54,7 @@ public class Realm {
 	public static final transient SecureRandom RANDOM = new SecureRandom();
 	private long realmId;
 	private int mapId;
+	private int depth;
 	private Map<Long, Player> players;
 	private Map<Long, Bullet> bullets;
 	private Map<Long, List<Long>> bulletHits;
@@ -72,6 +72,7 @@ public class Realm {
 	private boolean isServer;
 
 	public Realm(boolean isServer, int mapId) {
+		this.depth = 0;
 		this.realmId = Realm.RANDOM.nextLong();
 		this.players = new ConcurrentHashMap<>();
 		this.isServer = isServer;
@@ -83,6 +84,10 @@ public class Realm {
 		if(this.isServer) {
 			WorkerThread.submit(this.getStatsThread());
 		}
+	}
+
+	public int getDepth() {
+		return this.depth;
 	}
 
 	public List<Long> getExpiredPlayers(){
@@ -558,7 +563,6 @@ public class Realm {
 		if(this.enemies==null) {
 			this.enemies = new ConcurrentHashMap<>();
 		}
-		Vector2f v = new Vector2f((0 + (GamePanel.width / 2)) - 32, (0 + (GamePanel.height / 2)) - 32);
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 		List<EnemyModel> enemyToSpawn = new ArrayList<>();
 
@@ -571,13 +575,9 @@ public class Realm {
 		for (int i = 0; i < this.tileManager.getMapLayers().get(0).getHeight(); i++) {
 			for (int j = 0; j < this.tileManager.getMapLayers().get(0).getWidth(); j++) {
 				int doSpawn = r.nextInt(200);
-				if ((doSpawn > 190) && (i > 0) && (j > 0)) {
-					Vector2f spawnPos = new Vector2f(j * 64, i * 64);
-					AABB bounds = new AABB(spawnPos, 64, 64);
-					if (bounds.distance(v) < 500) {
-						continue;
-					}
-
+				if ((doSpawn > 198) && (i > 0) && (j > 0)) {
+					Vector2f spawnPos = new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
+							i * this.tileManager.getMapLayers().get(0).getTileSize());
 					EnemyModel toSpawn = enemyToSpawn.get(r.nextInt(enemyToSpawn.size()));
 
 					SpriteSheet enemySprite = new SpriteSheet(
@@ -585,7 +585,11 @@ public class Realm {
 									toSpawn.getSpriteSize()),
 							toSpawn.getName(), toSpawn.getSpriteSize(), toSpawn.getSpriteSize(), 0);
 					Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(), enemySprite,
-							new Vector2f(j * 64, i * 64), toSpawn.getSize(), toSpawn.getAttackId());
+							new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
+									i * this.tileManager.getMapLayers().get(0).getTileSize()),
+							toSpawn.getSize(), toSpawn.getAttackId());
+					int healthMult = (this.getDepth() == 0 ? 1 : this.getDepth() + 1);
+					enemy.setHealth(enemy.getHealth() * healthMult);
 					enemy.setPos(spawnPos);
 					this.addEnemy(enemy);
 				}
@@ -596,8 +600,11 @@ public class Realm {
 	public void spawnRandomEnemy() {
 		SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
 		Random r = new Random(System.nanoTime());
-		Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getMapLayers().get(0).getWidth()),
-				GlobalConstants.BASE_SIZE * r.nextInt(this.tileManager.getMapLayers().get(0).getHeight()));
+		Vector2f spawnPos = new Vector2f(
+				this.tileManager.getMapLayers().get(0).getTileSize()
+				* r.nextInt(this.tileManager.getMapLayers().get(0).getWidth()),
+				this.tileManager.getMapLayers().get(0).getTileSize()
+				* r.nextInt(this.tileManager.getMapLayers().get(0).getHeight()));
 
 		List<EnemyModel> enemyToSpawn = new ArrayList<>();
 		GameDataManager.ENEMIES.values().forEach(enemy->{
@@ -610,6 +617,8 @@ public class Realm {
 				toSpawn.getName(), toSpawn.getSpriteSize(), toSpawn.getSpriteSize(), 0);
 		Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(), enemySprite,
 				spawnPos, toSpawn.getSize(), toSpawn.getAttackId());
+		int healthMult = (this.getDepth() == 0 ? 1 : this.getDepth() + 1);
+		enemy.setHealth(enemy.getHealth() * healthMult);
 		enemy.setPos(spawnPos);
 		this.addEnemy(enemy);
 	}

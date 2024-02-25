@@ -271,26 +271,26 @@ public class TileManager {
 
 	public AABB getRenderViewPort(Camera cam) {
 		return new AABB(
-				cam.getTarget().getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
-						-(6 * GlobalConstants.BASE_TILE_SIZE)),
-				(12 * GlobalConstants.BASE_TILE_SIZE), (12 * GlobalConstants.BASE_TILE_SIZE));
+				cam.getTarget().getPos().clone(-(7 * GlobalConstants.BASE_TILE_SIZE),
+						-(7 * GlobalConstants.BASE_TILE_SIZE)),
+				(13 * GlobalConstants.BASE_TILE_SIZE), (13 * GlobalConstants.BASE_TILE_SIZE));
 	}
 
 	public AABB getRenderViewPort(Entity p) {
 		return new AABB(
-				p.getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
-						-(6 * GlobalConstants.BASE_TILE_SIZE)),
-				(12 * GlobalConstants.BASE_TILE_SIZE), (12 * GlobalConstants.BASE_TILE_SIZE));
+				p.getPos().clone(-(7 * GlobalConstants.BASE_TILE_SIZE), -(7 * GlobalConstants.BASE_TILE_SIZE)),
+				(13 * GlobalConstants.BASE_TILE_SIZE), (13 * GlobalConstants.BASE_TILE_SIZE));
 	}
 
 	public NetTile[] getLoadMapTiles(Player player) {
-		final Vector2f pos = player.getPos();
+		final int playerSize = player.getSize() / 2;
+		final Vector2f pos = player.getPos().clone(playerSize, playerSize);
 		final List<NetTile> tiles = new ArrayList<>();
 		final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
 				pos.y / GlobalConstants.BASE_TILE_SIZE);
 		this.normalizeToBounds(posNormalized);
-		for (int x = (int) (posNormalized.x - 6); x < (posNormalized.x + 7); x++) {
-			for (int y = (int) (posNormalized.y - 6); y < (int) (posNormalized.y + 7); y++) {
+		for (int x = (int) (posNormalized.x - 7); x < (posNormalized.x + 7); x++) {
+			for (int y = (int) (posNormalized.y - 7); y < (int) (posNormalized.y + 7); y++) {
 				// Temp fix. Aint nobody got time for array math.
 				if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
 						|| (y < 0)) {

@@ -49,6 +49,8 @@ import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.script.Enemy10Script;
+import com.jrealm.game.script.Enemy11Script;
+import com.jrealm.game.script.Enemy12Script;
 import com.jrealm.game.script.ScriptBase;
 import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.Tile;
@@ -363,6 +365,16 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
+	public Realm getTopRealm() {
+		Realm result = null;
+		for (final Realm realm : this.realms.values()) {
+			if (realm.getDepth() == 0) {
+				result = realm;
+			}
+		}
+		return result;
+	}
+
 	public Portal getClosestPortal(final long realmId, final Vector2f pos, final float limit) {
 		float best = Float.MAX_VALUE;
 		Portal bestPortal = null;
@@ -461,6 +473,8 @@ public class RealmManagerServer implements Runnable {
 
 	private void registerEnemyScripts() {
 		this.enemyScripts.add(new Enemy10Script(this));
+		this.enemyScripts.add(new Enemy11Script(this));
+		this.enemyScripts.add(new Enemy12Script(this));
 	}
 
 	private void registerPacketCallbacks() {
@@ -776,12 +790,12 @@ public class RealmManagerServer implements Runnable {
 					this.enqueueServerPacket(player, PlayerDeathPacket.from());
 					if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
 						ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + p.getCharacterUuid(),
-								Map.class);
+								String.class);
 					}else {
 						// Remove their amulet and let them respawn
 						TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
 								player.getName()
-										+ "'s Amulet shatters as they disappear.");
+								+ "'s Amulet shatters as they disappear.");
 						this.enqueueServerPacket(toBroadcast);
 						player.getInventory()[3] = null;
 						this.persistPlayerAsync(player);
@@ -836,9 +850,11 @@ public class RealmManagerServer implements Runnable {
 			}
 			if (e.getDeath()) {
 				for(Player player : targetRealm.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(e))){
-					player.incrementExperience(model.getXp());
+					int xpToGive = model.getXp() * (targetRealm.getDepth() == 0 ? 1 : targetRealm.getDepth() + 1);
+					player.incrementExperience(xpToGive);
 					try {
-						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), TextEffect.PLAYER_INFO,  model.getXp()+"xp"));
+						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
+								TextEffect.PLAYER_INFO, xpToGive + "xp"));
 					}catch(Exception ex) {
 						RealmManagerServer.log.error("Failed to create player experience text effect. Reason: {}", ex);
 					}
@@ -851,7 +867,7 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.spawnRandomEnemy();
 				targetRealm.removeEnemy(e);
 
-				if (Realm.RANDOM.nextInt(10) < 1) {
+				if (Realm.RANDOM.nextInt(11) < 1) {
 					if (targetRealm.getMapId() == 4) {
 						targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(128, 128)));
 					} else if (targetRealm.getMapId() == 2) {
