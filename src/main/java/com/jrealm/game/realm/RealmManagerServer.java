@@ -803,11 +803,11 @@ public class RealmManagerServer implements Runnable {
 			player.setHealth(player.getHealth() - dmgToInflict);
 			targetRealm.getExpiredBullets().add(b.getId());
 			targetRealm.removeBullet(b);
-			if (b.hasFlag((short) 2)) {
-				if (!p.hasEffect(EffectType.PARALYZED)) {
-					p.addEffect(EffectType.PARALYZED, 5000);
-				}
-			}
+			//			if (b.hasFlag((short) 2)) {
+			//				if (!p.hasEffect(EffectType.PARALYZED)) {
+			//					p.addEffect(EffectType.PARALYZED, 2500);
+			//				}
+			//			}
 
 			if (b.hasFlag((short) 3)) {
 				if (!p.hasEffect(EffectType.STUNNED)) {
@@ -900,14 +900,14 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.getExpiredBullets().add(b.getId());
 				targetRealm.getExpiredEnemies().add(e.getId());
 				targetRealm.clearHitMap();
-				if (targetRealm.getMapId() != 5) {
+				if ((targetRealm.getMapId() != 5) && (targetRealm.getMapId() != 1)) {
 					targetRealm.spawnRandomEnemy();
 				}
 				targetRealm.removeEnemy(e);
 
-				if (Realm.RANDOM.nextInt(1) < 1) {
+				if (Realm.RANDOM.nextInt(11) < 1) {
 					if (targetRealm.getMapId() == 4) {
-						targetRealm.addPortal(new Portal(random.nextLong(), (short) 4, e.getPos().withNoise(64, 64)));
+						targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(64, 64)));
 					} else if (targetRealm.getMapId() == 2) {
 						targetRealm.addPortal(new Portal(random.nextLong(), (short) 3, e.getPos().withNoise(64, 64)));
 					} else if (targetRealm.getMapId() == 3) {

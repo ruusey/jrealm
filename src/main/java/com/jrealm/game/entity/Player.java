@@ -203,6 +203,10 @@ public class Player extends Entity implements Streamable<Player>{
 			if (this.hasEffect(EffectType.HEALING)) {
 				mult = 1.5f;
 			}
+
+			if (this.hasEffect(EffectType.SPEEDY)) {
+				System.out.println();
+			}
 			final int vit = (int) ((0.24f * (stats.getVit() + 4.2f)) * mult);
 			if (this.getHealth() < stats.getHp()) {
 				int targetHealth = this.getHealth() + vit;
@@ -300,8 +304,6 @@ public class Player extends Entity implements Streamable<Player>{
 	}
 
 	public void input(MouseHandler mouse, KeyHandler key) {
-		Stats stats = this.getComputedStats();
-
 		if (!this.isFallen()) {
 			if (key.up.down) {
 				this.up = true;
@@ -323,13 +325,6 @@ public class Player extends Entity implements Streamable<Player>{
 			} else {
 				this.right = false;
 			}
-
-			float maxSpeed = 0.5f + (stats.getSpd() * 0.05f);
-			if (this.hasEffect(EffectType.SPEEDY)) {
-				maxSpeed *= 1.5;
-			}
-			this.maxSpeed = maxSpeed;
-			this.cam.setMaxSpeed(maxSpeed);
 
 			if (this.up && this.down) {
 				this.up = false;
@@ -445,19 +440,13 @@ public class Player extends Entity implements Streamable<Player>{
 		boolean canConsume = true;
 		if(((item.getStats().getHp()>0) && this.isStatMaxed(0)) || ((item.getStats().getMp()>0) && this.isStatMaxed(1))) {
 			canConsume = false;
-		} else if((item.getStats().getMp()>0) && this.isStatMaxed(1)) {
+		} else if(((item.getStats().getMp()>0) && this.isStatMaxed(1)) || ((item.getStats().getDef()>0) && this.isStatMaxed(2))) {
 			canConsume = false;
-		}else if((item.getStats().getDef()>0) && this.isStatMaxed(2)) {
+		} else if(((item.getStats().getAtt()>0) && this.isStatMaxed(3)) || ((item.getStats().getSpd()>0) && this.isStatMaxed(4))) {
 			canConsume = false;
-		}else if((item.getStats().getAtt()>0) && this.isStatMaxed(3)) {
+		} else if(((item.getStats().getDex()>0) && this.isStatMaxed(5)) || ((item.getStats().getVit()>0) && this.isStatMaxed(6))) {
 			canConsume = false;
-		}else if((item.getStats().getSpd()>0) && this.isStatMaxed(4)) {
-			canConsume = false;
-		}else if((item.getStats().getDex()>0) && this.isStatMaxed(5)) {
-			canConsume = false;
-		}else if((item.getStats().getVit()>0) && this.isStatMaxed(6)) {
-			canConsume = false;
-		}else if((item.getStats().getWis()>0) && this.isStatMaxed(7)) {
+		} else if((item.getStats().getWis()>0) && this.isStatMaxed(7)) {
 			canConsume = false;
 		}
 		return canConsume;

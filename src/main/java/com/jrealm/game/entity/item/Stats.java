@@ -42,7 +42,7 @@ public class Stats implements Streamable<Stats> {
 				.spd((short) (this.spd - other.getSpd())).dex((short) (this.dex - other.getDex()))
 				.vit((short) (this.vit - other.getVit())).wis((short) (this.wis - other.getWis())).build();
 	}
-	
+
 	@Override
 	public Stats clone() {
 		return Stats.builder().hp((short) (this.hp)).mp((short) (this.mp)).def((short) (this.def))
@@ -50,7 +50,11 @@ public class Stats implements Streamable<Stats> {
 				.wis((short) (this.wis)).build();
 	}
 
-	
+	public short getSpd() {
+		return this.spd;
+	}
+
+
 	@Override
 	public Stats read(DataInputStream stream) throws Exception{
 		short att = stream.readShort();
@@ -64,7 +68,7 @@ public class Stats implements Streamable<Stats> {
 
 		short mp = stream.readShort();
 		short hp = stream.readShort();
-		
+
 		return new Stats(hp,mp,def,att,spd,dex,vit,wis);
 	}
 
@@ -81,6 +85,6 @@ public class Stats implements Streamable<Stats> {
 
 		stream.writeShort(this.getMp());
 		stream.writeShort(this.getHp());
-		
+
 	}
 }

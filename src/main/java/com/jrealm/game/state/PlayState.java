@@ -292,8 +292,9 @@ public class PlayState extends GameState {
 
 		this.cam.input(mouse, key);
 
+
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
-			if (this.cam.getTarget() == player) {
+			if ((this.cam.getTarget() == player) && !player.hasEffect(EffectType.PARALYZED)) {
 				final Map<Cardinality, Boolean > lastDirectionTempMap = new HashMap<>();
 				player.input(mouse, key);
 				Cardinality c = null;
@@ -537,9 +538,7 @@ public class PlayState extends GameState {
 
 		}
 		Stats stats = player.getComputedStats();
-		if (this.getPlayer().hasEffect(EffectType.SPEEDY)) {
-			stats.setDex((short) (stats.getDex() * 2));
-		}
+
 		int dex = (int) ((6.5 * (this.getPlayer().getComputedStats().getDex() + 17.3)) / 75);
 		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (1000 / dex));
 		boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;

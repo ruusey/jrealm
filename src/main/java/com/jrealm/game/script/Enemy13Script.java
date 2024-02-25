@@ -31,7 +31,7 @@ public class Enemy13Script extends ScriptBase {
 		float angle = Bullet.getAngle(source, dest);
 		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
 				.get(Realm.RANDOM.nextInt(GameDataManager.PROJECTILE_GROUPS.size()));
-		if ((group == null) || (group.getProjectileGroupId() == -1))
+		if ((group == null) || (group.getProjectileGroupId() == -1) || (group.getProjectileGroupId() == 6))
 			return;
 		for (Projectile p : group.getProjectiles()) {
 			this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),

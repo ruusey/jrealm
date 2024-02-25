@@ -59,7 +59,7 @@ public class PlayerUI {
 		this.groundLoot = new Slots[8];
 		this.inventory = new Slots[20];
 		this.tooltips = new HashMap<>();
-		this.playerChat = new PlayerChat();
+		this.playerChat = new PlayerChat(p);
 		this.minimap = new Minimap(p);
 	}
 

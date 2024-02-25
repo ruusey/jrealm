@@ -19,20 +19,18 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
-import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
-import com.jrealm.game.entity.item.LootContainer;
-import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.messaging.LoginResponseMessage;
+import com.jrealm.game.messaging.ServerCommandMessage;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
@@ -45,7 +43,6 @@ import com.jrealm.game.util.GameObjectUtils;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.server.packet.CommandPacket;
-import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
@@ -178,6 +175,8 @@ public class ServerGameLogic {
 		}
 		final Player toMove = realm
 				.getPlayer(playerMovePacket.getEntityId());
+		if (toMove.hasEffect(EffectType.PARALYZED))
+			return;
 		boolean doMove = playerMovePacket.isMove();
 		float spd = (float) ((5.6 * (toMove.getComputedStats().getSpd() + 53.5)) / 75.0f);
 		if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
@@ -247,6 +246,8 @@ public class ServerGameLogic {
 			return;
 		}
 		final Player player = realm.getPlayer(shootPacket.getEntityId());
+		if (player.hasEffect(EffectType.STUNNED))
+			return;
 		final Vector2f dest = new Vector2f(shootPacket.getDestX(), shootPacket.getDestY());
 		final Vector2f source = player.getCenteredPosition();
 		final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
@@ -265,11 +266,14 @@ public class ServerGameLogic {
 
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		final TextPacket textPacket = (TextPacket) packet;
+		final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
+		final Realm from = mgr.searchRealmsForPlayers(fromPlayerId);
 		try {
 			ServerGameLogic.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}", textPacket.getTo(),
 					textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
 
-			TextPacket toBroadcast = TextPacket.create(textPacket.getFrom(), textPacket.getTo(), textPacket.getMessage());
+			TextPacket toBroadcast = TextPacket.create(from.getPlayer(fromPlayerId).getName(), textPacket.getTo(),
+					textPacket.getMessage());
 			mgr.enqueueServerPacket(toBroadcast);
 			ServerGameLogic.log.info("[SERVER] Broadcasted player chat message from {}", textPacket.getSrcIp());
 		} catch (Exception e) {
@@ -286,115 +290,44 @@ public class ServerGameLogic {
 			case 1:
 				ServerGameLogic.doLogin(mgr, CommandType.fromPacket(commandPacket), commandPacket);
 				break;
+			case 3:
+				ServerGameLogic.handleServerCommand(mgr, CommandType.fromPacket(commandPacket), commandPacket);
+				break;
 			}
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to perform Server command for Player {}. Reason: {}", commandPacket.getPlayerId(),
 					e.getMessage());
 		}
 	}
-	// TODO: Isolate Move Item logic into its own helper class
-	// I like spaghetti, what about you?
+
 	public static void handleMoveItemServer(RealmManagerServer mgr, Packet packet) {
-		final MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
-		ServerGameLogic.log.info("[SERVER] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
-
 		try {
-			final Realm realm = mgr.searchRealmsForPlayers(moveItemPacket.getPlayerId());
-
-			final Player player = realm.getPlayer(moveItemPacket.getPlayerId());
-			// if moving item from inventory
-			final GameItem currentEquip = moveItemPacket.getTargetSlotIndex() == -1 ? null
-					: player.getInventory()[moveItemPacket.getTargetSlotIndex()];
-			GameItem from = null;
-			if (MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())
-					|| MoveItemPacket.isEquipment(moveItemPacket.getFromSlotIndex())) {
-				from = player.getInventory()[moveItemPacket.getFromSlotIndex()];
-			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
-				LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(), 32);
-				from = nearLoot.getItems()[moveItemPacket.getFromSlotIndex()-20];
-			}
-			// If the player requested to drop an item from their inventory
-			if ((from != null) && moveItemPacket.isDrop()) {
-				final LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(), 32);
-				if(nearLoot==null) {
-					realm.addLootContainer(new LootContainer(LootTier.BROWN, player.getPos().clone(), from.clone()));
-					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
-				}else if(nearLoot.getFirstNullIdx()>-1){
-					nearLoot.setItem(nearLoot.getFirstNullIdx(), from.clone());
-					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
-				}
-				// If the Item isnt ground loot and is consumable
-			} else if ((from != null) && from.isConsumable() && moveItemPacket.isConsume() && player.canConsume(from)
-					&& !MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
-
-				final Stats newStats = player.getStats().concat(from.getStats());
-				player.setStats(newStats);
-
-				if (from.getStats().getHp() > 0) {
-					player.drinkHp();
-				} else if (from.getStats().getMp() > 0) {
-					player.drinkMp();
-				}
-				player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
-				// If an item is being moved from the inventory slots 4-12 to the players
-				// equiment slots
-			}else if(MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isEquipment(moveItemPacket.getTargetSlotIndex()) && (from!=null)) {
-				if (!CharacterClass.isValidUser(player, from.getTargetClass())) {
-					ServerGameLogic.log.warn("Player {} attempted to equip an item not useable by their class",
-							player.getId());
-					return;
-				}
-				if (currentEquip != null) {
-					player.getInventory()[moveItemPacket.getFromSlotIndex()] = currentEquip.clone();
-				} else {
-					player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
-				}
-				player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();
-				// If the player is swapping items in their inventory (not impl cuz my client is
-				// garabage)
-			} else if (MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())
-					&& MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
-
-				GameItem to = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
-				if(to==null) {
-					player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from;
-				}else {
-					GameItem fromClone = from.clone();
-					player.getInventory()[moveItemPacket.getFromSlotIndex()] = to;
-					player.getInventory()[moveItemPacket.getTargetSlotIndex()] = fromClone;
-				}
-				// If the player is attempting to pick up ground loot into their inventory
-			}else if(MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex()) && MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
-
-				final LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(),
-						player.getSize() / 2);
-				if (nearLoot == null)
-					return;
-				final GameItem lootItem = nearLoot.getItems()[moveItemPacket.getFromSlotIndex() - 20];
-				final GameItem currentInvItem = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
-
-				if((lootItem!=null) && (currentInvItem == null)) {
-					player.getInventory()[player.firstEmptyInvSlot()] = lootItem.clone();
-					nearLoot.setItem(moveItemPacket.getFromSlotIndex()-20, null);
-					nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
-				}else if((lootItem != null) & (currentInvItem !=null)) {
-					GameItem lootClone = lootItem.clone();
-					//GameItem currentInvItemClone = currentInvItem.clone();
-					player.getInventory()[player.firstEmptyInvSlot()] = lootClone;
-					//nearLoot.setItem(moveItemPacket.getFromSlotIndex()-20, currentInvItemClone);
-					nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
-				}
-			}
-
+			ServerItemHelper.handleMoveItemPacket(mgr, packet);
 		} catch (Exception e) {
-			ServerGameLogic.log.error("Failed to handle MoveItem packet from Player {}. Reason: {}", moveItemPacket.getPlayerId(),
-					e);
+			ServerGameLogic.log.error("Failed to handle MoveItem packet. Reason: {}", e);
 		}
 	}
 
 	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {
 		@SuppressWarnings("unused")
 		final LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
+	}
+
+	private static void handleServerCommand(RealmManagerServer mgr, ServerCommandMessage message,
+			CommandPacket command) {
+		final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
+		final Realm from = mgr.searchRealmsForPlayers(fromPlayerId);
+		final Player fromPlayer = from.getPlayer(fromPlayerId);
+		try {
+			if (message.getCommand().equalsIgnoreCase("spawn")) {
+				ServerGameLogic.log.info("Player {} spawn enemy {} at {}", fromPlayer.getName(),
+						message.getArgs().get(0), fromPlayer.getPos());
+				int enemyId = Integer.parseInt(message.getArgs().get(0));
+				from.addEnemy(GameObjectUtils.getEnemyFromId(enemyId, fromPlayer.getPos().clone()));
+			}
+		} catch (Exception e) {
+			ServerGameLogic.log.error("Failed to handle server command. Reason: {}", e);
+		}
 	}
 
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
@@ -438,7 +371,7 @@ public class ServerGameLogic {
 			player.applyStats(targetCharacter.getStats());
 			player.setName(accountName);
 			player.setHeadless(false);
-			player.addEffect(EffectType.INVINCIBLE, 60000l * 60l);
+			// player.addEffect(EffectType.INVINCIBLE, 60000l * 60l);
 			Realm targetRealm = mgr.getTopRealm();
 			player.setPos(targetRealm.getTileManager().getSafePosition());
 			targetRealm.addPlayer(player);
