@@ -102,7 +102,7 @@ public class ClientGameLogic {
 	public static void handleLoadMapClient(RealmManagerClient cli, Packet packet) {
 		final LoadMapPacket loadPacket = (LoadMapPacket) packet;
 		try {
-			cli.getState().getPui().getMinimap().initializeMap(cli.getRealm().getMapId());
+			cli.getState().getPui().getMinimap().initializeMap((int) loadPacket.getMapId());
 			cli.getRealm().setRealmId(loadPacket.getRealmId());
 			cli.getRealm().setMapId(loadPacket.getMapId());
 			cli.getRealm().getTileManager().mergeMap(loadPacket);

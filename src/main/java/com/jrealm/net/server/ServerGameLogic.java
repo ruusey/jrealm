@@ -23,19 +23,16 @@ import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
-import com.jrealm.game.entity.Monster;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
-import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.messaging.LoginResponseMessage;
-import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
@@ -44,6 +41,7 @@ import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
+import com.jrealm.game.util.GameObjectUtils;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.server.packet.CommandPacket;
@@ -108,18 +106,11 @@ public class ServerGameLogic {
 				if (portalUsed.getMapId() == 5) {
 					final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
 							GlobalConstants.BASE_TILE_SIZE * 13);
-					generatedRealm.setDepth(currentRealm.getDepth() + 1);
+					generatedRealm.setDepth(-1);
 					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
 							spawnPos.clone(250, 0));
 					user.setPos(spawnPos);
-					EnemyModel toSpawn = GameDataManager.ENEMIES.get(13);
-					SpriteSheet enemySheet = GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png");
-					SpriteSheet enemySprite = new SpriteSheet(
-							enemySheet.getSprite(toSpawn.getCol(), toSpawn.getRow(), toSpawn.getSpriteSize(),
-									toSpawn.getSpriteSize()),
-							toSpawn.getName(), toSpawn.getSpriteSize(), toSpawn.getSpriteSize(), 0);
-					Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(), enemySprite, spawnPos,
-							toSpawn.getSize(), toSpawn.getAttackId());
+					Enemy enemy = GameObjectUtils.getEnemyFromId(13, spawnPos);
 					int healthMult = (4);
 					enemy.setHealth(enemy.getHealth() * healthMult);
 					enemy.setPos(spawnPos.clone(100, 0));
@@ -143,7 +134,6 @@ public class ServerGameLogic {
 				realmAtDepth.get().addPlayer(user);
 			}
 
-			// mgr.spawnTestPlayers(generatedRealm.getRealmId(), 2);
 		}
 		// Remove player from current, add to target ( realm already exists)
 		else {
@@ -169,7 +159,6 @@ public class ServerGameLogic {
 			}
 		}
 		currentRealm.removePlayer(user);
-
 		mgr.clearPlayerState(user.getId());
 
 	}

@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 public class Minimap {
-	private static final int MINIMAP_SIZE = 350;
+	private static int MINIMAP_SIZE = 350;
 	private static final int X_PADDING = 0;
 	private static final int Y_PADDING = 0;
 
@@ -41,6 +41,7 @@ public class Minimap {
 		final MapModel mapModel = GameDataManager.MAPS.get(mapId);
 		this.mapWidth = mapModel.getWidth();
 		this.mapHeight = mapModel.getHeight();
+		Minimap.MINIMAP_SIZE = 3 * mapModel.getWidth();
 		this.currentBaseTiles = new NetTile[mapModel.getHeight()][mapModel.getWidth()];
 		this.currentCollisionTiles = new NetTile[mapModel.getHeight()][mapModel.getWidth()];
 
@@ -66,7 +67,7 @@ public class Minimap {
 	public void render(Graphics2D g) {
 		g.setColor(Color.GRAY);
 		g.fillRect(0, 0, Minimap.MINIMAP_SIZE, Minimap.MINIMAP_SIZE);
-		final int tileSize = Minimap.MINIMAP_SIZE / this.getMapHeight();
+		final int tileSize = Minimap.MINIMAP_SIZE / this.getMapWidth();
 
 		for (NetTile[] row : this.currentBaseTiles) {
 			if (row == null) {
@@ -99,26 +100,24 @@ public class Minimap {
 						null);
 			}
 		}
-		for (final Player player : this.playState.getRealmManager().getRealm().getPlayers().values()) {
-			final Vector2f playerPos = player.getPos().clone();
-			final TileManager tm = this.playState.getRealmManager().getRealm().getTileManager();
-			int mapWidth = tm.getBaseLayer().getWidth() * tm.getBaseLayer().getTileSize();
-			int mapHeight = tm.getBaseLayer().getHeight() * tm.getBaseLayer().getTileSize();
+		final Vector2f playerPos = this.playState.getPlayer().getPos().clone();
+		final TileManager tm = this.playState.getRealmManager().getRealm().getTileManager();
+		int mapWidth = tm.getBaseLayer().getWidth() * tm.getBaseLayer().getTileSize();
+		int mapHeight = tm.getBaseLayer().getHeight() * tm.getBaseLayer().getTileSize();
 
-			float xRatio = playerPos.x / (float) mapWidth;
-			float yRatio = playerPos.y / (float) mapHeight;
+		float xRatio = playerPos.x / (float) mapWidth;
+		float yRatio = playerPos.y / (float) mapHeight;
 
-			Vector2f projectedPos = new Vector2f(xRatio * (-25 + Minimap.MINIMAP_SIZE),
-					yRatio * (-25 + Minimap.MINIMAP_SIZE));
+		Vector2f projectedPos = new Vector2f(xRatio * (+Minimap.MINIMAP_SIZE), yRatio * (Minimap.MINIMAP_SIZE));
 
-			if (player.getId() == this.playState.getPlayer().getId()) {
-				g.setColor(Color.RED);
-			} else {
-				g.setColor(Color.YELLOW);
-			}
 
-			g.fillOval((int) (Minimap.X_PADDING + projectedPos.x), (int) (Minimap.Y_PADDING + projectedPos.y), tileSize,
-					tileSize);
-		}
+		g.setColor(Color.RED);
+
+		g.fillOval((int) (Minimap.X_PADDING + projectedPos.x), (int) (Minimap.Y_PADDING + projectedPos.y), tileSize,
+				tileSize);
+
+		// g.drawString(playerPos.toString(), Minimap.MINIMAP_SIZE - 42,
+		// Minimap.MINIMAP_SIZE - 32);
+
 	}
 }
