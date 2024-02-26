@@ -44,6 +44,10 @@ public class Portal implements Streamable<Portal> {
 		return Instant.now().toEpochMilli() >= this.expires;
 	}
 
+	public void setNeverExpires() {
+		this.expires = Long.MAX_VALUE;
+	}
+
 	@Override
 	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.id);

@@ -76,7 +76,7 @@ public class ServerGameLogic {
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
 					chestLoc);
-
+			exitPortal.setNeverExpires();
 			generatedRealm.setupChests(user);
 			user.setPos(mapModel.getCenter());
 			exitPortal.setId(currentRealm.getRealmId());
@@ -113,6 +113,7 @@ public class ServerGameLogic {
 					enemy.setPos(spawnPos.clone(100, 0));
 					generatedRealm.addEnemy(enemy);
 					exitPortal.setId(mgr.getTopRealm().getRealmId());
+					exitPortal.setNeverExpires();
 					generatedRealm.addPortal(exitPortal);
 					generatedRealm.addPlayer(user);
 				} else {
@@ -120,6 +121,7 @@ public class ServerGameLogic {
 					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2,
 							generatedRealm.getTileManager().getSafePosition());
 					user.setPos(generatedRealm.getTileManager().getSafePosition());
+					exitPortal.setNeverExpires();
 					generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
 					exitPortal.setId(currentRealm.getRealmId());
 					generatedRealm.addPortal(exitPortal);
@@ -219,6 +221,7 @@ public class ServerGameLogic {
 			toMove.setDy(doMove ? spd : 0.0f);
 			toMove.setDx(doMove ? -spd : 0.0f);
 		}
+		ServerGameLogic.log.info(toMove.getDx() + ", " + toMove.getDy());
 
 		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setLeft(false);
