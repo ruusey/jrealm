@@ -616,20 +616,15 @@ public class RealmManagerServer implements Runnable {
 				final short offset = (short) (p.getSize() / (short) 2);
 				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
-				if (p.getPositionMode() == ProjectilePositionMode.TARGET_PLAYER) {
-					this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
-							p.getProjectileId(),
-							source.clone(-offset, -offset), angle + Float.parseFloat(p.getAngle()), p.getSize(),
-							p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
-							p.getFrequency());
-				} else {
+				if (p.getPositionMode() != ProjectilePositionMode.TARGET_PLAYER) {
 					source = dest;
-					this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
-							p.getProjectileId(),
-							source.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
-							p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
-							p.getFrequency());
 				}
+				this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+						p.getProjectileId(),
+						source.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
+						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
+						p.getFrequency());
+
 
 			}
 		} else if ((abilityItem.getDamage() != null)) {
