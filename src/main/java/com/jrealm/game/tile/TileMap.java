@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jrealm.game.contants.GlobalConstants;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.Data;
@@ -50,7 +50,7 @@ public class TileMap {
 		this.blocks[row][col] = new Tile(tileId, tilePos, data, (short)GlobalConstants.BASE_TILE_SIZE, false);
 	}
 
-	public Tile[] getBlocksInBounds(AABB cam) {
+	public Tile[] getBlocksInBounds(Rectangle cam) {
 		int x = (int) ((cam.getPos().x) / this.getTileSize());
 		int y = (int) ((cam.getPos().y) / this.getTileSize());
 		List<Tile> results = new ArrayList<>();
@@ -66,7 +66,7 @@ public class TileMap {
 		return results.toArray(new Tile[0]);
 	}
 
-	public void render(Graphics2D g, AABB cam) {
+	public void render(Graphics2D g, Rectangle cam) {
 		for (Tile t : this.getBlocksInBounds(cam)) {
 			t.render(g);
 		}

@@ -6,7 +6,7 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.graphics.Font;
 import com.jrealm.game.graphics.Fontf;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.KeyHandler;
@@ -48,7 +48,7 @@ public class GameStateManager {
 		GameStateManager.button = new SpriteSheet("ui/buttons.png", 122, 57, 0);
 
 
-		GameStateManager.cam = new Camera(new AABB(new Vector2f(-64, -64), GamePanel.width + 128, GamePanel.height + 128));
+		GameStateManager.cam = new Camera(new Rectangle(new Vector2f(-64, -64), GamePanel.width + 128, GamePanel.height + 128));
 
 		// this.states[GameStateManager.PLAY] = new PlayState(this,
 		// GameStateManager.cam);
@@ -73,7 +73,7 @@ public class GameStateManager {
 
 		switch (state) {
 		case GameStateManager.PLAY:
-			GameStateManager.cam = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+			GameStateManager.cam = new Camera(new Rectangle(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 			this.states[GameStateManager.PLAY] = new PlayState(this, GameStateManager.cam);
 			break;
 		case GameStateManager.MENU:

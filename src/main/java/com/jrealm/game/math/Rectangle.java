@@ -7,8 +7,7 @@ import com.jrealm.game.entity.GameObject;
 import lombok.Data;
 
 @Data
-public class AABB {
-
+public class Rectangle {
 	private Vector2f pos;
 	private float xOffset = 0;
 	private float yOffset = 0;
@@ -17,22 +16,16 @@ public class AABB {
 	private float r;
 	private int size;
 
-	private float surfaceArea;
-
-	public AABB(Vector2f pos, int w, int h) {
+	public Rectangle(Vector2f pos, int w, int h) {
 		this.pos = pos;
 		this.w = w;
 		this.h = h;
-		this.surfaceArea = w * h;
-
 		this.size = Math.max(w, h);
 	}
 
-	public AABB(Vector2f pos, int r) {
+	public Rectangle(Vector2f pos, int r) {
 		this.pos = pos;
 		this.r = r;
-		this.surfaceArea = (float) Math.PI * (r * r);
-
 		this.size = r;
 	}
 
@@ -42,20 +35,17 @@ public class AABB {
 	public float getSize() { return this.size; }
 	public float getWidth() { return this.w; }
 	public float getHeight() { return this.h; }
-	public float getSurfaceArea() { return this.surfaceArea; }
 
 	public void setBox(Vector2f pos, int w, int h) {
 		this.pos = pos;
 		this.w = w;
 		this.h = h;
-
 		this.size = Math.max(w, h);
 	}
 
 	public void setCircle(Vector2f pos, int r) {
 		this.pos = pos;
 		this.r = r;
-
 		this.size = r;
 	}
 
@@ -67,7 +57,7 @@ public class AABB {
 	public float getXOffset() { return this.xOffset; }
 	public float getYOffset() { return this.yOffset; }
 
-	public boolean collides(AABB bBox) {
+	public boolean collides(Rectangle bBox) {
 		return this.collides(0, 0, bBox);
 	}
 
@@ -82,11 +72,10 @@ public class AABB {
 				return collides;
 			}
 		}
-
 		return collides;
 	}
 
-	public boolean collides(float dx, float dy, AABB bBox) {
+	public boolean collides(float dx, float dy, Rectangle bBox) {
 		float ax = ((this.pos.x + (this.xOffset)) + (this.w / 2)) + dx;
 		float ay = ((this.pos.y + (this.yOffset)) + (this.h / 2)) + dy;
 		float bx = ((bBox.getPos().x + (bBox.getXOffset())) + (bBox.getWidth() / 2));
@@ -96,7 +85,6 @@ public class AABB {
 			if (Math.abs(ay - by) < ((this.h / 2) + (bBox.getHeight() / 2)))
 				return true;
 		}
-
 		return false;
 	}
 
@@ -116,8 +104,7 @@ public class AABB {
 		return (((wTemp < x) || (wTemp > xp)) && ((hTemp < y) || (hTemp > yp)));
 	}
 
-	public boolean intersect(AABB aBox)
-	{
+	public boolean intersect(Rectangle aBox) {
 
 		if(((this.pos.x + this.xOffset) > (aBox.getPos().x + aBox.getXOffset() + aBox.getSize()))
 				|| ((aBox.getPos().x + this.xOffset) > (this.pos.x + aBox.getXOffset() + aBox.getSize())))
@@ -130,8 +117,7 @@ public class AABB {
 		return true;
 	}
 
-	public boolean colCircle(AABB circle) {
-
+	public boolean colCircle(Rectangle circle) {
 		float totalRadius = this.r + circle.getRadius();
 		totalRadius *= totalRadius;
 
@@ -141,8 +127,7 @@ public class AABB {
 		return totalRadius < ((dx * dx) + (dy * dy));
 	}
 
-	public boolean colCircleBox(AABB aBox) {
-
+	public boolean colCircleBox(Rectangle aBox) {
 		float dx = Math.max(aBox.getPos().x + aBox.getXOffset(), Math.min(this.pos.x + (this.r / 2), aBox.getPos().x + aBox.getXOffset() + aBox.getWidth()));
 		float dy = Math.max(aBox.getPos().y + aBox.getYOffset(), Math.min(this.pos.y + (this.r / 2), aBox.getPos().y + aBox.getYOffset() + aBox.getHeight()));
 
@@ -161,7 +146,7 @@ public class AABB {
 		return (float) Math.sqrt((dx * dx) + (dy * dy));
 	}
 
-	public AABB merge(AABB other) {
+	public Rectangle merge(Rectangle other) {
 		float minX = Math.min(this.pos.x, other.getPos().x);
 		float minY = Math.min(this.pos.y, other.getPos().y);
 
@@ -169,13 +154,11 @@ public class AABB {
 		int maxH = (int) Math.max(this.h, other.getHeight());
 
 		Vector2f pos = new Vector2f(minX, minY);
-		return new AABB(pos, maxW, maxH);
+		return new Rectangle(pos, maxW, maxH);
 	}
-
 
 	@Override
 	public String toString() {
-
 		String x = Float.toString(this.pos.x);
 		String y = Float.toString(this.pos.y);
 		String w = Float.toString(this.w);
@@ -183,6 +166,4 @@ public class AABB {
 
 		return "{" + x + ", " + y + " : " + w + ", " + h + "}";
 	}
-
-
 }

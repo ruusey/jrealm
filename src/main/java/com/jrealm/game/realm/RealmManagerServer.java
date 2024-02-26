@@ -43,7 +43,7 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
@@ -121,7 +121,7 @@ public class RealmManagerServer implements Runnable {
 			final Random random = new Random(Instant.now().toEpochMilli());
 			for(int i = 0 ; i < count; i++) {
 				final CharacterClass classToSpawn = CharacterClass.getCharacterClasses().get(random.nextInt(CharacterClass.getCharacterClasses().size()));
-				final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+				final Camera c = new Camera(new Rectangle(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				try {
 					final Vector2f spawnPos = targetRealm.getTileManager().getSafePosition();
 					final Player player = new Player(Realm.RANDOM.nextLong(), c,
@@ -761,7 +761,7 @@ public class RealmManagerServer implements Runnable {
 				if ((tile == null) || tile.isVoid()) {
 					continue;
 				}
-				AABB tileBounds = new AABB(tile.getPos(), GlobalConstants.BASE_TILE_SIZE,
+				Rectangle tileBounds = new Rectangle(tile.getPos(), GlobalConstants.BASE_TILE_SIZE,
 						GlobalConstants.BASE_TILE_SIZE);
 				Vector2f bulletPosCenter = b.getCenteredPosition();
 				if (tileBounds.inside((int) bulletPosCenter.x, (int) bulletPosCenter.y)) {

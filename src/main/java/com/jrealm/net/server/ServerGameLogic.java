@@ -25,7 +25,7 @@ import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginRequestMessage;
@@ -359,7 +359,7 @@ public class ServerGameLogic {
 			for(final GameItemRefDto item : targetCharacter.getItems()) {
 				loadedEquipment.put(item.getSlotIdx(), GameItem.fromGameItemRef(item));
 			}
-			final Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+			final Camera c = new Camera(new Rectangle(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 			final CharacterClass cls = CharacterClass.valueOf(targetCharacter.getCharacterClass());
 
 			final Vector2f playerPos = new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,

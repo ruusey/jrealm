@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 import javax.imageio.ImageIO;
 
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.server.ServerGameLogic;
 
@@ -17,7 +18,6 @@ public class SpriteSheet {
 
 	private Sprite SPRITESHEET = null;
 	private Sprite[][] spriteArray;
-	private final int TILE_SIZE = 32;
 	public int w;
 	public int h;
 	private int wSprite;
@@ -29,8 +29,8 @@ public class SpriteSheet {
 
 	public SpriteSheet(String file, int rowOffset) {
 		this.file = file;
-		this.w = this.TILE_SIZE;
-		this.h = this.TILE_SIZE;
+		this.w = GlobalConstants.BASE_TILE_SIZE;
+		this.h = GlobalConstants.BASE_TILE_SIZE;
 		SpriteSheet.log.info("Loading Sprite File {}", file);
 		this.SPRITESHEET = new Sprite(this.loadSprite(file));
 		this.wSprite = this.SPRITESHEET.image.getWidth() / this.w;

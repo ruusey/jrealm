@@ -20,7 +20,7 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.state.PlayState;
@@ -504,7 +504,7 @@ public class Player extends Entity implements Streamable<Player>{
 	}
 
 	public static Player fromData(long id, String name, Vector2f origin, int size, CharacterClass characterClass) {
-		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+		Camera c = new Camera(new Rectangle(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 		SpriteSheet sheet = GameDataManager.loadClassSprites(characterClass);
 		Player player =  new Player(id, c, sheet, origin, size, characterClass);
 		player.setName(name);

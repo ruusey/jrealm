@@ -4,7 +4,7 @@ import java.awt.Graphics2D;
 
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.client.packet.ObjectMovement;
 
@@ -15,7 +15,7 @@ public abstract class GameObject {
 	protected long id;
 	protected SpriteSheet sprite;
 	protected Sprite image;
-	protected AABB bounds;
+	protected Rectangle bounds;
 	protected Vector2f pos;
 	protected int size;
 	protected int spriteX;
@@ -45,16 +45,14 @@ public abstract class GameObject {
 
 	public GameObject(long id, Vector2f origin, int size) {
 		this.id = id;
-		this.bounds = new AABB(origin, size, size);
+		this.bounds = new Rectangle(origin, size, size);
 		this.pos = origin;
 		this.size = size;
 	}
 
 	public void setPos(Vector2f pos) {
 		this.pos = pos;
-		// pos.clone(this.size / 2, this.size / 2)
-		//pos.addX(this.size / 2)
-		this.bounds = new AABB(pos, this.size, this.size);
+		this.bounds = new Rectangle(pos, this.size, this.size);
 		this.teleported = true;
 	}
 
@@ -90,7 +88,7 @@ public abstract class GameObject {
 		final float lerpY = this.lerp(this.pos.y, packet.getPosY(), pct);
 
 		this.pos = new Vector2f(lerpX, lerpY);
-		this.bounds = new AABB(this.pos, this.size, this.size);
+		this.bounds = new Rectangle(this.pos, this.size, this.size);
 		this.dx = packet.getVelX();
 		this.dy = packet.getVelY();
 	}
@@ -100,14 +98,14 @@ public abstract class GameObject {
 		final float lerpY = this.lerp(this.pos.y, packet.getPosY(), 0.65f);
 
 		this.pos = new Vector2f(lerpX, lerpY);
-		this.bounds = new AABB(this.pos, this.size, this.size);
+		this.bounds = new Rectangle(this.pos, this.size, this.size);
 		this.dx = packet.getVelX();
 		this.dy = packet.getVelY();
 	}
 
 	public void applyMovement(ObjectMovement packet) {
 		this.pos = new Vector2f(packet.getPosX(), packet.getPosY());
-		this.bounds = new AABB(this.pos, this.size, this.size);
+		this.bounds = new Rectangle(this.pos, this.size, this.size);
 		this.dx = packet.getVelX();
 		this.dy = packet.getVelY();
 	}

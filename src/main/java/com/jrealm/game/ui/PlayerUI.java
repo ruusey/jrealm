@@ -13,7 +13,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ItemTooltip;
 import com.jrealm.game.state.PlayState;
@@ -269,7 +269,7 @@ public class PlayerUI {
 	@SuppressWarnings("unused")
 	private boolean overlapsGround(Vector2f pos) {
 		final int panelWidth = (GamePanel.width / 5);
-		AABB currBounds = new AABB(new Vector2f(0, 0), GamePanel.width - panelWidth, GamePanel.height);
+		Rectangle currBounds = new Rectangle(new Vector2f(0, 0), GamePanel.width - panelWidth, GamePanel.height);
 		return currBounds.inside((int) pos.x, (int) pos.y);
 	}
 
@@ -290,8 +290,8 @@ public class PlayerUI {
 		final int startX = GamePanel.width - panelWidth;
 		final int startY = 450;
 
-		AABB currBounds = new AABB(new Vector2f(startX, startY), panelWidth, 128);
-		AABB bounds = new AABB(currBounds.getPos().clone(), (int) currBounds.getWidth() * 4,
+		Rectangle currBounds = new Rectangle(new Vector2f(startX, startY), panelWidth, 128);
+		Rectangle bounds = new Rectangle(currBounds.getPos().clone(), (int) currBounds.getWidth() * 4,
 				(int) currBounds.getHeight() * 4);
 
 		return bounds.inside((int) pos.x, (int) pos.y);

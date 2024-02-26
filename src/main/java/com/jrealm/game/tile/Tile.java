@@ -6,7 +6,7 @@ import java.io.DataOutputStream;
 
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
 
@@ -45,7 +45,7 @@ public class Tile implements Streamable<Tile> {
 		}
 	}
 
-	public boolean update(AABB bounds) {
+	public boolean update(Rectangle bounds) {
 		return false;
 	}
 

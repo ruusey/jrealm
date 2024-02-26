@@ -4,24 +4,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jrealm.game.entity.GameObject;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 
 import lombok.Data;
 
 @Data
 public class AABBTree {
-	private ArrayList<AABB> nodeList;
+	private ArrayList<Rectangle> nodeList;
 	private int rootIndex = 0;
 
 	public AABBTree() {
-		this.nodeList = new ArrayList<AABB>();
+		this.nodeList = new ArrayList<Rectangle>();
 	}
 
 	public void insert(GameObject go) {
 		this.nodeList.add(go.getBounds());
 	}
 
-	public AABB insertLeaf(AABB newNode) {
+	public Rectangle insertLeaf(Rectangle newNode) {
 		//		while(!this.nodeList.get(treeIndex).isLeaf()) {
 		//
 		//			AABB aabb = newNode.aabb; // node to insert
@@ -64,7 +64,7 @@ public class AABBTree {
 		return newNode;
 	}
 
-	public List<AABB> getAllNodes() {
+	public List<Rectangle> getAllNodes() {
 		return this.nodeList;
 	}
 

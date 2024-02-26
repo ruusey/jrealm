@@ -13,7 +13,7 @@ import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.TerrainGenerationParameters;
@@ -242,8 +242,8 @@ public class TileManager {
 
 		final Tile currentTile = this.getBaseLayer().getBlocks()[startY][startX];
 
-		final AABB tileBounds = new AABB(currentTile.getPos(), currentTile.getWidth(), currentTile.getHeight());
-		final AABB futurePosBounds = new AABB(e.getPos(), (e.getSize() / 2), e.getSize() / 2);
+		final Rectangle tileBounds = new Rectangle(currentTile.getPos(), currentTile.getWidth(), currentTile.getHeight());
+		final Rectangle futurePosBounds = new Rectangle(e.getPos(), (e.getSize() / 2), e.getSize() / 2);
 
 		return currentTile.getData().slows() && tileBounds.intersect(futurePosBounds);
 	}
@@ -254,8 +254,8 @@ public class TileManager {
 			if((t==null) || t.isVoid()) {
 				continue;
 			}
-			AABB tileBounds = new AABB(t.getPos(), t.getWidth(), t.getHeight());
-			AABB futurePosBounds = new AABB(futurePos, (int) (e.getSize() / 1.5), (int) (e.getSize() / 1.5));
+			Rectangle tileBounds = new Rectangle(t.getPos(), t.getWidth(), t.getHeight());
+			Rectangle futurePosBounds = new Rectangle(futurePos, (int) (e.getSize() / 1.5), (int) (e.getSize() / 1.5));
 			if (tileBounds.intersect(futurePosBounds))
 				return true;
 		}
@@ -269,15 +269,15 @@ public class TileManager {
 		return new Vector2f(x, y);
 	}
 
-	public AABB getRenderViewPort(Camera cam) {
-		return new AABB(
+	public Rectangle getRenderViewPort(Camera cam) {
+		return new Rectangle(
 				cam.getTarget().getPos().clone(-(7 * GlobalConstants.BASE_TILE_SIZE),
 						-(7 * GlobalConstants.BASE_TILE_SIZE)),
 				(13 * GlobalConstants.BASE_TILE_SIZE), (13 * GlobalConstants.BASE_TILE_SIZE));
 	}
 
-	public AABB getRenderViewPort(Entity p) {
-		return new AABB(
+	public Rectangle getRenderViewPort(Entity p) {
+		return new Rectangle(
 				p.getPos().clone(-(7 * GlobalConstants.BASE_TILE_SIZE), -(7 * GlobalConstants.BASE_TILE_SIZE)),
 				(13 * GlobalConstants.BASE_TILE_SIZE), (13 * GlobalConstants.BASE_TILE_SIZE));
 	}

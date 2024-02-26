@@ -7,7 +7,7 @@ import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.graphics.Animation;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.Data;
@@ -61,7 +61,7 @@ public abstract class Entity extends GameObject {
 	protected float healthpercent = 1;
 	protected float manapercent = 1;
 
-	protected AABB hitBounds;
+	protected Rectangle hitBounds;
 
 	private short[] effectIds;
 	private long[] effectTimes;
@@ -70,7 +70,7 @@ public abstract class Entity extends GameObject {
 		super(id, sprite, origin, 0, 0, size);
 		this.hitsize = size;
 
-		this.hitBounds = new AABB(origin, size, size);
+		this.hitBounds = new Rectangle(origin, size, size);
 		// this.hitBounds.setXOffset(size / 2);
 
 		this.ani = new Animation();
@@ -83,7 +83,7 @@ public abstract class Entity extends GameObject {
 		super(id, origin, size);
 		this.hitsize = size;
 
-		this.hitBounds = new AABB(origin, size, size);
+		this.hitBounds = new Rectangle(origin, size, size);
 		this.resetEffects();
 	}
 
@@ -156,7 +156,7 @@ public abstract class Entity extends GameObject {
 		return this.health;
 	}
 
-	public AABB getHitBounds() {
+	public Rectangle getHitBounds() {
 		return this.hitBounds;
 	}
 	public int getDirection() {

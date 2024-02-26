@@ -29,7 +29,7 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.graphics.Animation;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.PortalModel;
@@ -364,16 +364,16 @@ public class Realm {
 		return objs;
 	}
 
-	public AABB[] getCollisionBoxesInBounds(AABB cam) {
-		List<AABB> colBoxes = new ArrayList<>();
+	public Rectangle[] getCollisionBoxesInBounds(Rectangle cam) {
+		List<Rectangle> colBoxes = new ArrayList<>();
 		GameObject[] go = this.getGameObjectsInBounds(cam);
 		for (GameObject g : go) {
 			colBoxes.add(g.getBounds());
 		}
-		return colBoxes.toArray(new AABB[0]);
+		return colBoxes.toArray(new Rectangle[0]);
 	}
 
-	public Player[] getPlayersInBounds(AABB cam) {
+	public Player[] getPlayersInBounds(Rectangle cam) {
 		List<Player> objs = new ArrayList<>();
 
 		for (Player p : this.players.values()) {
@@ -385,7 +385,7 @@ public class Realm {
 		return objs.toArray(new Player[0]);
 	}
 
-	public GameObject[] getGameObjectsInBounds(AABB cam) {
+	public GameObject[] getGameObjectsInBounds(Rectangle cam) {
 
 		List<GameObject> objs = new ArrayList<>();
 		for (Player p : this.players.values()) {
@@ -457,7 +457,7 @@ public class Realm {
 		return pack;
 	}
 
-	public List<UpdatePacket> getPlayersAsPackets(AABB cam) {
+	public List<UpdatePacket> getPlayersAsPackets(Rectangle cam) {
 		List<UpdatePacket> playerUpdates = new ArrayList<>();
 		for (Player p : this.players.values()) {
 			// if (p.getBounds().intersect(cam)) {
@@ -472,7 +472,7 @@ public class Realm {
 		return playerUpdates;
 	}
 
-	public LoadPacket getLoadPacket(AABB cam) {
+	public LoadPacket getLoadPacket(Rectangle cam) {
 		LoadPacket load = null;
 		try {
 			//final Player[] playersToLoad = this.getPlayers().values().toArray(new Player[0]);
@@ -526,7 +526,7 @@ public class Realm {
 		return load;
 	}
 
-	public ObjectMovePacket getGameObjectsAsPackets(AABB cam) throws Exception{
+	public ObjectMovePacket getGameObjectsAsPackets(Rectangle cam) throws Exception{
 		GameObject[] gameObjects = this.getAllGameObjects();
 		List<GameObject> validObjects = new ArrayList<>();
 		for (GameObject obj : gameObjects) {
@@ -549,7 +549,7 @@ public class Realm {
 		return null;
 	}
 
-	public LootContainer[] getLootInBounds(AABB cam) {
+	public LootContainer[] getLootInBounds(Rectangle cam) {
 		List<LootContainer> objs = new ArrayList<>();
 		for (LootContainer lc : this.loot.values()) {
 			if (cam.inside((int) lc.getPos().x, (int) lc.getPos().y)) {

@@ -1,7 +1,7 @@
 package com.jrealm.game.util;
 
 import com.jrealm.game.entity.GameObject;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 
 import lombok.Data;
 
@@ -16,5 +16,5 @@ public class GameObjectKey {
 		this.go = go;
 	}
 
-	public AABB getBounds() { return this.go.getBounds(); }
+	public Rectangle getBounds() { return this.go.getBounds(); }
 }

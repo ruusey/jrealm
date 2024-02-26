@@ -26,7 +26,7 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.ProjectileGroup;
@@ -703,9 +703,9 @@ public class PlayState extends GameState {
 	private void renderCollisionBoxes(Graphics2D g) {
 
 		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.cam.getBounds());
-		AABB[] colBoxes = this.realmManager.getRealm().getCollisionBoxesInBounds(this.cam.getBounds());
+		Rectangle[] colBoxes = this.realmManager.getRealm().getCollisionBoxesInBounds(this.cam.getBounds());
 		for (GameObject go : gameObject) {
-			AABB node = go.getBounds();
+			Rectangle node = go.getBounds();
 
 			g.setColor(Color.BLUE);
 			Vector2f pos = node.getPos().getWorldVar();
@@ -723,7 +723,7 @@ public class PlayState extends GameState {
 			g.drawLine((int) pos.x, (int) pos.y, (int) pos.x, (int) pos.y + (int) node.getHeight());
 		}
 
-		for (AABB node : colBoxes) {
+		for (Rectangle node : colBoxes) {
 
 			g.setColor(Color.BLUE);
 			Vector2f pos = node.getPos().getWorldVar();
