@@ -9,7 +9,7 @@ import javax.imageio.ImageIO;
 
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.net.server.ServerGameLogic;
+import com.jrealm.net.client.SocketClient;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -119,7 +119,7 @@ public class SpriteSheet {
 		BufferedImage sprite = null;
 		try {
 			int lastSlashIdx = file.lastIndexOf("/");
-			final java.net.URL imageUrl = new java.net.URL(ServerGameLogic.DATA_HOST+file.substring(lastSlashIdx+1));
+			final java.net.URL imageUrl = new java.net.URL(SocketClient.SERVER_ADDR + file.substring(lastSlashIdx + 1));
 			sprite = ImageIO.read(imageUrl);
 		} catch (Exception e) {
 			SpriteSheet.log.error("ERROR: could not load file: {}", file);

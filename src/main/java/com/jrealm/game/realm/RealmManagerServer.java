@@ -1059,7 +1059,6 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.info("Performing pre-shutdown player sync...");
 			this.persistsPlayersAsync();
 			RealmManagerServer.log.info("Shutdown player sync complete");
-
 		};
 		return new Thread(shutdownTask);
 	}
