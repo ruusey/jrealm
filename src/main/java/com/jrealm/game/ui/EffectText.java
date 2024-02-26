@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class EffectText {
-	private static final float velY = -2.0f;
+	private static final float velY = -1.75f;
 
 	private Vector2f sourcePos;
 	private TextEffect effect;

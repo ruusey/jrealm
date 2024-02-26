@@ -714,7 +714,6 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 
-
 		for (int i = 0; i < gameObject.length; i++) {
 			if (gameObject[i] instanceof Enemy) {
 				final Enemy enemy = ((Enemy) gameObject[i]);
@@ -789,52 +788,29 @@ public class RealmManagerServer implements Runnable {
 			if (dmgToInflict < minDmg) {
 				dmgToInflict = minDmg;
 			}
-			try {
-				this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), TextEffect.DAMAGE, "-" + dmgToInflict));
-			} catch (Exception e) {
-				RealmManagerServer.log.error("Failed to send Damage TextEffect Packet to Player {}. Reason: {}",
-						p.getId(), e);
-			}
+			this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "-" + dmgToInflict);
+
 			player.setHealth(player.getHealth() - dmgToInflict);
 			targetRealm.getExpiredBullets().add(b.getId());
 			targetRealm.removeBullet(b);
-			//			if (b.hasFlag((short) 2)) {
-			//				if (!p.hasEffect(EffectType.PARALYZED)) {
-			//					p.addEffect(EffectType.PARALYZED, 2500);
-			//				}
-			//			}
+			if (b.hasFlag((short) 2)) {
+				if (!p.hasEffect(EffectType.PARALYZED)) {
+					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "PARALYZED");
+					p.setDx(0);
+					p.setDy(0);
+					p.addEffect(EffectType.PARALYZED, 2500);
+				}
+			}
 
 			if (b.hasFlag((short) 3)) {
 				if (!p.hasEffect(EffectType.STUNNED)) {
-					p.addEffect(EffectType.STUNNED, 5000);
+					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "STUNNED");
+					p.addEffect(EffectType.STUNNED, 2500);
 				}
 			}
-			if (p.getDeath()) {
-				try {
-					final String remoteAddrDeath = this.getRemoteAddressMapRevered().get(player.getId());
-					final LootContainer graveLoot = new LootContainer(LootTier.GRAVE, p.getPos().clone(),
-							p.getSlots(4, 12));
-					// this.getServer().getClients().remove(remoteAddrDeath);
-					targetRealm.addLootContainer(graveLoot);
-					targetRealm.getExpiredPlayers().add(player.getId());
-					targetRealm.removePlayer(player);
-					this.enqueueServerPacket(player, PlayerDeathPacket.from());
-					if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
-						ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + p.getCharacterUuid(),
-								Object.class);
-					}else {
-						// Remove their amulet and let them respawn
-						TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
-								player.getName()
-								+ "'s Amulet shatters as they disappear.");
-						this.enqueueServerPacket(toBroadcast);
-						player.getInventory()[3] = null;
-						this.persistPlayerAsync(player);
-					}
 
-				} catch (Exception e) {
-					RealmManagerServer.log.error("Failed to Remove dead Player {}. Reason: {}", e);
-				}
+			if (p.getDeath()) {
+				this.playerDeath(targetRealm, player);
 
 			}
 		}
@@ -842,14 +818,17 @@ public class RealmManagerServer implements Runnable {
 
 	private void proccessEnemyHit(final long realmId, final Bullet b, final Enemy e) {
 		final Realm targetRealm = this.realms.get(realmId);
-
+		final EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
 		if (targetRealm.hasHitEnemy(b.getId(), e.getId()) || targetRealm.getExpiredEnemies().contains(e.getId()))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
-			EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
-
+			final short minDmg = (short) (b.getDamage() * 0.15);
+			short dmgToInflict = (short) (b.getDamage() - model.getStats().getDef());
+			if (dmgToInflict < minDmg) {
+				dmgToInflict = minDmg;
+			}
 			targetRealm.hitEnemy(b.getId(), e.getId());
-			e.setHealth(e.getHealth() - b.getDamage());
+			e.setHealth(e.getHealth() - dmgToInflict);
 			e.setHealthpercent(e.getHealth() / model.getHealth());
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
@@ -872,53 +851,10 @@ public class RealmManagerServer implements Runnable {
 					e.addEffect(EffectType.STUNNED, 5000);
 				}
 			}
-			try {
-				this.enqueueServerPacket(
-						TextEffectPacket.from(EntityType.ENEMY, e.getId(), TextEffect.DAMAGE, "-" + b.getDamage()));
-			} catch (Exception ex) {
-				RealmManagerServer.log.error("Failed to send Damage TextEffect Packet dsfor Enemy {} hit. Reason: {}",
-						e.getId(), ex);
-			}
+			this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "-" + dmgToInflict);
 			if (e.getDeath()) {
-				for(Player player : targetRealm.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(e))){
-					int xpToGive = model.getXp() * (targetRealm.getDepth() == 0 ? 1 : targetRealm.getDepth() + 1);
-					player.incrementExperience(xpToGive);
-					try {
-						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
-								TextEffect.PLAYER_INFO, xpToGive + "xp"));
-					}catch(Exception ex) {
-						RealmManagerServer.log.error("Failed to create player experience text effect. Reason: {}", ex);
-					}
-				}
-
-				Random random = new Random(Instant.now().toEpochMilli());
 				targetRealm.getExpiredBullets().add(b.getId());
-				targetRealm.getExpiredEnemies().add(e.getId());
-				targetRealm.clearHitMap();
-				if ((targetRealm.getMapId() != 5) && (targetRealm.getMapId() != 1)) {
-					targetRealm.spawnRandomEnemy();
-				}
-				targetRealm.removeEnemy(e);
-
-				if (Realm.RANDOM.nextInt(10) < 1) {
-					if (targetRealm.getMapId() == 4) {
-						targetRealm.addPortal(new Portal(random.nextLong(), (short) 0, e.getPos().withNoise(64, 64)));
-					} else if (targetRealm.getMapId() == 2) {
-						targetRealm.addPortal(new Portal(random.nextLong(), (short) 3, e.getPos().withNoise(64, 64)));
-					} else if (targetRealm.getMapId() == 3) {
-						targetRealm.addPortal(new Portal(random.nextLong(), (short) 4, e.getPos().withNoise(64, 64)));
-					}
-				}
-
-				/**
-				 * Loot drops are determined by the LootTableModel mapped by this enemyId
-				 */
-				final List<GameItem> lootToDrop = GameDataManager.LOOT_TABLES.get(e.getEnemyId()).getLootDrop();
-				if (lootToDrop.size() > 0) {
-					final LootContainer dropsBag = new LootContainer(LootTier.BLUE, e.getPos().withNoise(64, 64),
-							lootToDrop.toArray(new GameItem[0]));
-					targetRealm.addLootContainer(dropsBag);
-				}
+				this.enemyDeath(targetRealm, e);
 			}
 		}
 	}
@@ -989,6 +925,82 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 		return results;
+	}
+
+	private void enemyDeath(final Realm targetRealm, final Enemy enemy) {
+		final EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
+		try {
+			for (final Player player : targetRealm
+					.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(enemy))) {
+				final int xpToGive = model.getXp() * (targetRealm.getDepth() == 0 ? 1 : targetRealm.getDepth() + 1);
+				player.incrementExperience(xpToGive);
+				try {
+					this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
+							TextEffect.PLAYER_INFO, xpToGive + "xp"));
+				} catch (Exception ex) {
+					RealmManagerServer.log.error("Failed to create player experience text effect. Reason: {}", ex);
+				}
+			}
+
+			targetRealm.getExpiredEnemies().add(enemy.getId());
+			targetRealm.clearHitMap();
+			if ((targetRealm.getMapId() != 5) && (targetRealm.getMapId() != 1)) {
+				targetRealm.spawnRandomEnemy();
+			}
+			targetRealm.removeEnemy(enemy);
+
+			if (Realm.RANDOM.nextInt(10) < 1) {
+				if (targetRealm.getMapId() == 4) {
+					targetRealm.addPortal(
+							new Portal(Realm.RANDOM.nextLong(), (short) 0, enemy.getPos().withNoise(64, 64)));
+				} else if (targetRealm.getMapId() == 2) {
+					targetRealm.addPortal(
+							new Portal(Realm.RANDOM.nextLong(), (short) 3, enemy.getPos().withNoise(64, 64)));
+				} else if (targetRealm.getMapId() == 3) {
+					targetRealm.addPortal(
+							new Portal(Realm.RANDOM.nextLong(), (short) 4, enemy.getPos().withNoise(64, 64)));
+				}
+			}
+
+			/**
+			 * Loot drops are determined by the LootTableModel mapped by this enemyId
+			 */
+			final List<GameItem> lootToDrop = GameDataManager.LOOT_TABLES.get(enemy.getEnemyId()).getLootDrop();
+			if (lootToDrop.size() > 0) {
+				final LootContainer dropsBag = new LootContainer(LootTier.BLUE, enemy.getPos().withNoise(64, 64),
+						lootToDrop.toArray(new GameItem[0]));
+				targetRealm.addLootContainer(dropsBag);
+			}
+		} catch (Exception e) {
+			RealmManagerServer.log.error("Failed to handle dead Enemy {}. Reason: {}", enemy.getId(), e);
+		}
+	}
+
+	private void playerDeath(final Realm targetRealm, final Player player) {
+		try {
+			final String remoteAddrDeath = this.getRemoteAddressMapRevered().get(player.getId());
+			final LootContainer graveLoot = new LootContainer(LootTier.GRAVE, player.getPos().clone(),
+					player.getSlots(4, 12));
+			// this.getServer().getClients().remove(remoteAddrDeath);
+			targetRealm.addLootContainer(graveLoot);
+			targetRealm.getExpiredPlayers().add(player.getId());
+			targetRealm.removePlayer(player);
+			this.enqueueServerPacket(player, PlayerDeathPacket.from());
+			if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
+				ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + player.getCharacterUuid(),
+						Object.class);
+			} else {
+				// Remove their amulet and let them respawn
+				TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
+						player.getName() + "'s Amulet shatters as they disappear.");
+				this.enqueueServerPacket(toBroadcast);
+				player.getInventory()[3] = null;
+				this.persistPlayerAsync(player);
+			}
+
+		} catch (Exception e) {
+			RealmManagerServer.log.error("Failed to Remove dead Player {}. Reason: {}", e);
+		}
 	}
 
 	public void clearPlayerState(long playerId) {
@@ -1068,6 +1080,25 @@ public class RealmManagerServer implements Runnable {
 			this.persistPlayer(player);
 		};
 		WorkerThread.doAsync(persist);
+	}
+
+	private void sendTextEffectToPlayer(final Player player, final TextEffect effect, final String text) {
+		try {
+			this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), effect, text));
+		} catch (Exception e) {
+			RealmManagerServer.log.error("Failed to send TextEffect Packet to Player {}. Reason: {}", player.getId(),
+					e);
+		}
+	}
+
+	private void broadcastTextEffect(final EntityType entityType, final GameObject entity, final TextEffect effect,
+			final String text) {
+		try {
+			this.enqueueServerPacket(TextEffectPacket.from(entityType, entity.getId(), effect, text));
+		} catch (Exception e) {
+			RealmManagerServer.log.error("Failed to broadcast TextEffect Packet for Entity {}. Reason: {}",
+					entity.getId(), e);
+		}
 	}
 
 	private boolean persistPlayer(final Player player) {

@@ -188,6 +188,10 @@ public class PlayState extends GameState {
 	}
 
 	private void movePlayer(Player p) {
+		if (p.hasEffect(EffectType.PARALYZED)) {
+			p.setDx(0);
+			p.setDy(0);
+		}
 		if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)
 				&& !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx())) {
 			p.xCol = false;
