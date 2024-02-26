@@ -59,8 +59,6 @@ public class Sprite {
 	private EffectEnum currentEffectEnum = EffectEnum.NORMAL;
 
 
-
-
 	public Sprite(BufferedImage image) {
 		this.image = image;
 		this.w = image.getWidth();

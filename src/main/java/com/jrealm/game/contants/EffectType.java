@@ -19,8 +19,8 @@ public enum EffectType {
 		this.effectId = effectId;
 	}
 
-	public static EffectType valueOf(short classId) {
-		return EffectType.map.get(classId);
+	public static EffectType valueOf(short effectId) {
+		return EffectType.map.get(effectId);
 	}
 
 }

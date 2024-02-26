@@ -5,6 +5,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.time.Instant;
 
+import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
@@ -28,12 +30,14 @@ public class Portal implements Streamable<Portal> {
 		this.portalId = portalId;
 		this.pos = pos;
 		this.expires = Instant.now().toEpochMilli() + 35000;
+		this.sprite = GameSpriteManager.loadSprite(GameDataManager.PORTALS.get((int) portalId));
 	}
 
 	public Portal(short portalId, Vector2f pos) {
 		this.portalId = portalId;
 		this.pos = pos;
 		this.expires = Instant.now().toEpochMilli() + 35000;
+		this.sprite = GameSpriteManager.loadSprite(GameDataManager.PORTALS.get((int) portalId));
 	}
 
 	public short getPortalId() {

@@ -8,8 +8,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jrealm.game.graphics.Sprite;
+import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.net.Streamable;
 
 import lombok.Data;
@@ -38,8 +39,8 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 
 	private long createdTime;
 
-	public Bullet(long id, int bulletId, Sprite image, Vector2f origin, int size) {
-		super(id, image, origin, size);
+	public Bullet(long id, int bulletId, Vector2f origin, int size) {
+		super(id, origin, size);
 		this.flags = new ArrayList<>();
 		this.createdTime = Instant.now().toEpochMilli();
 	}
@@ -64,9 +65,9 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 		this.createdTime = Instant.now().toEpochMilli();
 	}
 
-	public Bullet(long id, int projectileId, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude,
+	public Bullet(long id, int projectileId, Vector2f origin, Vector2f dest, short size, float magnitude,
 			float range, short damage, boolean isEnemy) {
-		super(id, image, origin, size);
+		super(id, origin, size);
 		this.projectileId = projectileId;
 		this.magnitude = magnitude;
 		this.range = range;
@@ -77,9 +78,9 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 		this.createdTime = Instant.now().toEpochMilli();
 	}
 
-	public Bullet(long id, int projectileId, Sprite image, Vector2f origin, Vector2f dest, short size, float magnitude,
+	public Bullet(long id, int projectileId, Vector2f origin, Vector2f dest, short size, float magnitude,
 			float range, short damage, short amplitude, short frequency, boolean isEnemy) {
-		super(id, image, origin, size);
+		super(id, origin, size);
 		this.projectileId = projectileId;
 		this.magnitude = magnitude;
 		this.range = range;
@@ -92,9 +93,9 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 		this.createdTime = Instant.now().toEpochMilli();
 	}
 
-	public Bullet(long id, int projectileId, Sprite image, Vector2f origin, float angle, short size, float magnitude,
+	public Bullet(long id, int projectileId, Vector2f origin, float angle, short size, float magnitude,
 			float range, short damage, boolean isEnemy) {
-		super(id, image, origin, size);
+		super(id, origin, size);
 		this.projectileId = projectileId;
 		this.magnitude = magnitude;
 		this.range = range;
@@ -182,15 +183,16 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 			this.dx = velX;
 			this.dy = velY;
 		}
-
 	}
 
 	@Override
 	public void render(Graphics2D g) {
 		AffineTransform original = g.getTransform();
 		AffineTransform t = new AffineTransform();
-		if (this.image.getAngleOffset() > 0.0f) {
-			t.rotate(-this.getAngle() + (this.tfAngle + this.image.getAngleOffset()),
+		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.getProjectileId());
+		float angleOffset = Float.parseFloat(group.getAngleOffset());
+		if (angleOffset > 0.0f) {
+			t.rotate(-this.getAngle() + (this.tfAngle + angleOffset),
 					this.pos.getWorldVar().x + (this.size / 2), this.pos.getWorldVar().y + (this.size / 2));
 		} else {
 			t.rotate(-this.getAngle() + this.tfAngle, this.pos.getWorldVar().x + (this.size / 2),
@@ -198,7 +200,9 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
 		}
 
 		g.setTransform(t);
-		g.drawImage(this.image.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), this.size,
+		g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x),
+				(int) (this.pos.getWorldVar().y),
+				this.size,
 				this.size, null);
 		g.setTransform(original);
 	}

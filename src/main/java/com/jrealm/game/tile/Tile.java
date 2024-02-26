@@ -4,8 +4,7 @@ import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import com.jrealm.game.data.GameDataManager;
-import com.jrealm.game.graphics.Sprite;
+import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
@@ -22,27 +21,12 @@ public class Tile implements Streamable<Tile> {
 	private Vector2f pos;
 	private TileData data;
 
-	public Sprite img;
-
-	public Tile(short tileId, Sprite img, Vector2f pos, TileData data, short size, boolean discovered) {
-		this.tileId = tileId;
-		this.img = img;
-		this.pos = pos;
-		this.size = size;
-		this.data = data;
-		this.discovered = discovered;
-	}
-
 	public Tile(short tileId, Vector2f pos, TileData data, short size, boolean discovered) {
 		this.tileId = tileId;
 		this.pos = pos;
 		this.size = size;
 		this.data = data;
 		this.discovered = discovered;
-		this.img = GameDataManager.getSubSprite(GameDataManager.TILES.get((int)this.tileId), 8);
-		if (this.img == null) {
-			System.out.println();
-		}
 	}
 
 	public boolean update(Rectangle bounds) {
@@ -66,7 +50,8 @@ public class Tile implements Streamable<Tile> {
 	}
 
 	public void render(Graphics2D g) {
-		g.drawImage(this.img.image, (int) this.pos.getWorldVar().x, (int) this.pos.getWorldVar().y, this.size,
+		g.drawImage(GameSpriteManager.TILE_SPRITES.get((int) this.tileId), (int) this.pos.getWorldVar().x,
+				(int) this.pos.getWorldVar().y, this.size,
 				this.size, null);
 	}
 

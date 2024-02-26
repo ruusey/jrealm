@@ -9,7 +9,6 @@ import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
@@ -40,13 +39,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	private int enemyId;
 	private int weaponId = -1;
 	private int idleTime = 0;
-
-	public Enemy(long id, int enemyId, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
-		super(id, sprite, origin, size);
-		this.model = GameDataManager.ENEMIES.get(enemyId);
-		this.enemyId = enemyId;
-		this.weaponId = weaponId;
-	}
 
 	public Enemy(long id, int enemyId, Vector2f origin, int size, int weaponId) {
 		super(id, origin, size);
@@ -198,29 +190,30 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		g.setColor(c);
 		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + (this.size / 2), this.size,
 				this.size / 2);
-		if (this.useRight && this.left) {
-			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x) + this.size,
+		if (this.left) {
+			g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x) + this.size,
 					(int) (this.pos.getWorldVar().y), -this.size, this.size, null);
 		} else {
-			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y),
+			g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x),
+					(int) (this.pos.getWorldVar().y),
 					this.size, this.size, null);
 		}
 
 		if (this.hasEffect(EffectType.PARALYZED)) {
-			if (!this.getSprite().hasEffect(Sprite.EffectEnum.GRAYSCALE)) {
-				this.getSprite().setEffect(Sprite.EffectEnum.GRAYSCALE);
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.GRAYSCALE)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.GRAYSCALE);
 			}
 		}
 
 		if (this.hasEffect(EffectType.STUNNED)) {
-			if (!this.getSprite().hasEffect(Sprite.EffectEnum.DECAY)) {
-				this.getSprite().setEffect(Sprite.EffectEnum.DECAY);
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.DECAY);
 			}
 		}
 
 		if (this.hasNoEffects()) {
-			if (!this.getSprite().hasEffect(Sprite.EffectEnum.NORMAL)) {
-				this.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.NORMAL)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
 			}
 		}
 

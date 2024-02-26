@@ -22,7 +22,6 @@ import com.jrealm.account.dto.CharacterDto;
 import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.account.dto.PlayerAccountDto;
-import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.EntityType;
@@ -41,8 +40,6 @@ import com.jrealm.game.entity.item.Effect;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
-import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
@@ -59,7 +56,6 @@ import com.jrealm.game.tile.TileMap;
 import com.jrealm.game.tile.decorators.Beach0Decorator;
 import com.jrealm.game.tile.decorators.Grasslands0Decorator;
 import com.jrealm.game.tile.decorators.RealmDecorator;
-import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
@@ -121,11 +117,9 @@ public class RealmManagerServer implements Runnable {
 			final Random random = new Random(Instant.now().toEpochMilli());
 			for(int i = 0 ; i < count; i++) {
 				final CharacterClass classToSpawn = CharacterClass.getCharacterClasses().get(random.nextInt(CharacterClass.getCharacterClasses().size()));
-				final Camera c = new Camera(new Rectangle(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				try {
 					final Vector2f spawnPos = targetRealm.getTileManager().getSafePosition();
-					final Player player = new Player(Realm.RANDOM.nextLong(), c,
-							GameDataManager.loadClassSprites(classToSpawn),
+					final Player player = new Player(Realm.RANDOM.nextLong(),
 							spawnPos, GlobalConstants.PLAYER_SIZE, classToSpawn);
 					String playerName = UUID.randomUUID().toString().replaceAll("-", "");
 					playerName = playerName.substring(playerName.length()/2);
@@ -607,8 +601,7 @@ public class RealmManagerServer implements Runnable {
 					.get(abilityItem.getDamage().getProjectileGroupId());
 
 			final Vector2f dest = new Vector2f(pos.x, pos.y);
-			dest.addX(player.getCam().getPos().x);
-			dest.addY(player.getCam().getPos().y);
+
 			Vector2f source = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 			final float angle = Bullet.getAngle(source, dest);
 
@@ -631,8 +624,6 @@ public class RealmManagerServer implements Runnable {
 			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
 					.get(abilityItem.getDamage().getProjectileGroupId());
 			final Vector2f dest = new Vector2f(pos.x, pos.y);
-			dest.addX(player.getCam().getPos().x);
-			dest.addY(player.getCam().getPos().y);
 			for (final Projectile p : group.getProjectiles()) {
 
 				final short offset = (short) (p.getSize() / (short) 2);
@@ -868,19 +859,13 @@ public class RealmManagerServer implements Runnable {
 		if (player == null)
 			return;
 		final ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
-		final SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
-		final Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
-
-		if (pg.getAngleOffset() != null) {
-			bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
-		}
 
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
 
 		final long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
-		final Bullet b = new Bullet(id, projectileId, bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
+		final Bullet b = new Bullet(id, projectileId, src, dest, size, magnitude, range, damage, isEnemy);
 		b.setFlags(flags);
 		targetRealm.addBullet(b);
 	}
@@ -894,18 +879,12 @@ public class RealmManagerServer implements Runnable {
 		if (player == null)
 			return;
 		final ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
-		final SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
-		final Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
-
-		if (pg.getAngleOffset() != null) {
-			bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
-		}
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
 
 		final long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
-		final Bullet b = new Bullet(idToUse, projectileId, bulletImage, src, angle, size, magnitude, range, damage, isEnemy);
+		final Bullet b = new Bullet(idToUse, projectileId, src, angle, size, magnitude, range, damage, isEnemy);
 
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);

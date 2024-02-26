@@ -1,10 +1,11 @@
 package com.jrealm.game.ui;
 
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.entity.item.GameItem;
-import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
@@ -54,15 +55,14 @@ public class Slots {
 		if(this.getItem().getSpriteKey()==null) {
 			GameDataManager.loadSpriteModel(this.getItem());
 		}
-		Sprite itemSprite = GameDataManager.getSubSprite(this.item, 8);
-		if(itemSprite==null) {
+		BufferedImage itemImage = GameSpriteManager.ITEM_SPRITES.get(this.item.getItemId());
+		if (itemImage == null)
 			return;
-		}
 		if(this.button != null) {
 			this.button.render(g);
 		} else {
-			g.drawImage(itemSprite.image, (int) pos.x, (int) pos.y, 64, 64, null);
+			g.drawImage(itemImage, (int) pos.x, (int) pos.y, 64, 64, null);
 		}
-		g.drawImage(itemSprite.image, (int) pos.x, (int) pos.y, 64, 64, null);
+		g.drawImage(itemImage, (int) pos.x, (int) pos.y, 64, 64, null);
 	}
 }

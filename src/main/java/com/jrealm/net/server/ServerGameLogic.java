@@ -30,6 +30,7 @@ import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.messaging.LoginResponseMessage;
 import com.jrealm.game.messaging.ServerCommandMessage;
+import com.jrealm.game.messaging.ServerErrorMessage;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
@@ -323,9 +324,27 @@ public class ServerGameLogic {
 						message.getArgs().get(0), fromPlayer.getPos());
 				int enemyId = Integer.parseInt(message.getArgs().get(0));
 				from.addEnemy(GameObjectUtils.getEnemyFromId(enemyId, fromPlayer.getPos().clone()));
+			}else if(message.getCommand().equalsIgnoreCase("effect")) {
+				switch(message.getArgs().get(0)) {
+				case "add":
+					fromPlayer.addEffect(EffectType.valueOf(Short.valueOf(message.getArgs().get(1))),
+							1000 * Long.parseLong(message.getArgs().get(2)));
+					break;
+				case "clear":
+					fromPlayer.resetEffects();
+					break;
+				}
+
+			} else {
+				ServerErrorMessage error = ServerErrorMessage.from(501, "Unknown command " + message.getCommand());
+				CommandPacket errorResponse = CommandPacket.create(fromPlayer, CommandType.SERVER_ERROR, error);
+				mgr.enqueueServerPacket(fromPlayer, errorResponse);
 			}
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to handle server command. Reason: {}", e);
+			ServerErrorMessage error = ServerErrorMessage.from(502, "Command handling failed " + message.getCommand());
+			CommandPacket errorResponse = CommandPacket.create(fromPlayer, CommandType.SERVER_ERROR, error);
+			mgr.enqueueServerPacket(fromPlayer, errorResponse);
 		}
 	}
 
@@ -361,7 +380,7 @@ public class ServerGameLogic {
 
 			final Vector2f playerPos = new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 					(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE);
-			final Player player = new Player(Realm.RANDOM.nextLong(), c, GameDataManager.loadClassSprites(cls),
+			final Player player = new Player(Realm.RANDOM.nextLong(),
 					playerPos,
 					GlobalConstants.PLAYER_SIZE, cls);
 			player.setAccountUuid(accountUuid);

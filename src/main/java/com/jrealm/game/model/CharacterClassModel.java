@@ -45,5 +45,4 @@ public class CharacterClassModel {
 			System.out.println(startStats.toString());
 		}
 	}
-
 }

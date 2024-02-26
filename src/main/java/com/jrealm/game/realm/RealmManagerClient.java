@@ -95,7 +95,6 @@ public class RealmManagerClient implements Runnable {
 		this.registerPacketCallback(PacketType.UNLOAD.getPacketId(), ClientGameLogic::handleUnloadClient);
 		this.registerPacketCallback(PacketType.TEXT_EFFECT.getPacketId(), ClientGameLogic::handleTextEffectClient);
 		this.registerPacketCallback(PacketType.PLAYER_DEATH.getPacketId(), ClientGameLogic::handlePlayerDeathClient);
-
 	}
 
 	private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerClient, Packet> callback) {

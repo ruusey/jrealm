@@ -1,9 +1,5 @@
 package com.jrealm.game.math;
 
-import java.util.ArrayList;
-
-import com.jrealm.game.entity.GameObject;
-
 import lombok.Data;
 
 @Data
@@ -59,20 +55,6 @@ public class Rectangle {
 
 	public boolean collides(Rectangle bBox) {
 		return this.collides(0, 0, bBox);
-	}
-
-	public boolean collides(float dx, float dy, ArrayList<GameObject> go) {
-		boolean collides = false;
-
-		for(int i = 0; i < go.size(); i++) {
-			collides = this.collides(dx, dy, go.get(i).getBounds());
-			if(collides) {
-				go.get(i).getImage().restoreDefault();
-				go.remove(i);
-				return collides;
-			}
-		}
-		return collides;
 	}
 
 	public boolean collides(float dx, float dy, Rectangle bBox) {

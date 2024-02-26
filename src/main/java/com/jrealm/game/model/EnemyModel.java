@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 public class EnemyModel extends SpriteModel {
 	private int enemyId;
 	private int size;
-	private int spriteSize;
 	private int attackId;
 	private String name;
 	private int xp;

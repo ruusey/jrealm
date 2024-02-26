@@ -4,16 +4,18 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-
+import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.graphics.Sprite.EffectEnum;
 import com.jrealm.game.model.SpriteModel;
+import com.jrealm.game.util.Tuple;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
+
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class SpriteSheetNew {
@@ -24,20 +26,39 @@ public class SpriteSheetNew {
 	private List<Integer> animationFrames;
 	private int spriteImageSize;
 
-	public SpriteSheetNew(SpriteModel key, int spriteImageSize) {
-		this.spriteImageSize = spriteImageSize;
-		this.spriteSheetImage = this.loadSprite(key.getSpriteKey());
+	public SpriteSheetNew(BufferedImage baseSheet) {
+		this.spriteImageSize = GlobalConstants.BASE_SPRITE_SIZE;
+		this.spriteSheetImage = baseSheet;
 		this.animationFrames = new ArrayList<>();
 		this.sprites = new ArrayList<>();
 		this.loadImageArray();
 	}
 
-	public SpriteSheetNew(SpriteModel key, int spriteImageSize, final List<Integer> animationFrames) {
-		this.spriteImageSize = spriteImageSize;
-		this.spriteSheetImage = this.loadSprite(key.getSpriteKey());
+	public SpriteSheetNew(BufferedImage baseSheet, int x, int y) {
+		this.spriteImageSize = GlobalConstants.BASE_SPRITE_SIZE;
+		this.spriteSheetImage = baseSheet;
+		this.animationFrames = new ArrayList<>();
+		this.sprites = new ArrayList<>();
+		this.loadImageArray(y, x);
+	}
+
+	public SpriteSheetNew(BufferedImage baseSheet, SpriteModel model) {
+		this.spriteImageSize = model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize();
+		this.spriteSheetImage = baseSheet;
+		this.animationFrames = new ArrayList<>();
+		this.sprites = new ArrayList<>();
+		this.loadImageArray(model.getRow(), model.getCol());
+	}
+
+	public SpriteSheetNew(BufferedImage baseSheet, List<Tuple<Integer, Integer>> spriteFrames,
+			final List<Integer> animationFrames) {
+		this.spriteImageSize = GlobalConstants.BASE_SPRITE_SIZE;
+		this.spriteSheetImage = baseSheet;
 		this.animationFrames = animationFrames;
 		this.sprites = new ArrayList<>();
-		this.loadImageArray();
+		for (Tuple<Integer, Integer> sprite : spriteFrames) {
+			this.loadImageArray(sprite.getX(), sprite.getY());
+		}
 	}
 
 	public void resetAnimation() {
@@ -60,13 +81,21 @@ public class SpriteSheetNew {
 		this.elapsedFrames++;
 	}
 
+	public boolean hasEffect(final EffectEnum effect) {
+		for (Sprite sprite : this.sprites) {
+			if (sprite.hasEffect(effect))
+				return true;
+		}
+		return false;
+	}
+
 	public void setEffect(final EffectEnum effect) {
 		for (Sprite sprite : this.sprites) {
 			sprite.setEffect(effect);
 		}
 	}
 
-	public void resetEffect() {
+	public void resetEffects() {
 		for (Sprite sprite : this.sprites) {
 			sprite.restoreDefault();
 		}
@@ -77,6 +106,11 @@ public class SpriteSheetNew {
 		if (sprite != null)
 			return sprite.getImage();
 		return null;
+	}
+
+	private void loadImageArray(final int x, final int y) {
+		Sprite newSprite = new Sprite(this.getSubimage(x, y));
+		this.sprites.add(newSprite);
 	}
 
 	private void loadImageArray() {
@@ -92,16 +126,12 @@ public class SpriteSheetNew {
 	}
 
 	private BufferedImage getSubimage(int x, int y) {
-		return this.spriteSheetImage.getSubimage(x, y, this.spriteImageSize, this.spriteImageSize);
+		return this.spriteSheetImage.getSubimage(y * this.spriteImageSize, x * this.spriteImageSize,
+				this.spriteImageSize, this.spriteImageSize);
 	}
 
-	private BufferedImage loadSprite(String file) {
-		BufferedImage sprite = null;
-		try {
-			sprite = ImageIO.read(this.getClass().getClassLoader().getResourceAsStream(file));
-		} catch (Exception e) {
-			SpriteSheetNew.log.error("ERROR: could not load file: {}", file);
-		}
-		return sprite;
+	public static SpriteSheetNew fromSpriteModel(SpriteModel model) {
+		BufferedImage toUse = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
+		return new SpriteSheetNew(toUse, model);
 	}
 }

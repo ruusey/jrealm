@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jrealm.game.contants.CharacterClass;
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
@@ -21,7 +22,6 @@ import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.model.SpriteModel;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.net.server.ServerGameLogic;
@@ -35,7 +35,6 @@ public class GameDataManager {
 	public static Map<Integer, ProjectileGroup> PROJECTILE_GROUPS = null;
 	public static Map<Integer, GameItem> GAME_ITEMS = null;
 	public static Map<Integer, EnemyModel> ENEMIES = null;
-	public static Map<String, SpriteSheet> SPRITE_SHEETS = null;
 	public static Map<Integer, TileModel> TILES = null;
 	public static Map<Integer, MapModel> MAPS = null;
 	public static Map<Integer, TerrainGenerationParameters> TERRAINS = null;
@@ -44,11 +43,6 @@ public class GameDataManager {
 	public static Map<Integer, LootTableModel> LOOT_TABLES = null;
 	public static Map<Integer, LootGroupModel> LOOT_GROUPS = null;
 	public static ExperienceModel EXPERIENCE_LVLS = null;
-
-	private static final String[] SPRITE_SHEET_LOCATIONS = { "entity/rotmg-classes.png", "entity/rotmg-projectiles.png",
-			"entity/rotmg-bosses-1.png", "entity/rotmg-bosses.png", "entity/rotmg-items.png", "entity/rotmg-tiles.png",
-			"entity/rotmg-tiles-1.png", "entity/rotmg-tiles-2.png", "entity/rotmg-tiles-all.png",
-			"entity/rotmg-items-1.png", "entity/rotmg-abilities.png", "entity/rotmg-misc.png" };
 
 	private static void loadLootGroups(final boolean remote) throws Exception {
 		GameDataManager.log.info("Loading Loot Groups...");
@@ -223,6 +217,8 @@ public class GameDataManager {
 		for (ProjectileGroup group : projectileGroups) {
 			if ((group.getAngleOffset() != null) && group.getAngleOffset().contains("{{")) {
 				group.setAngleOffset(GameDataManager.replaceInjectVariables(group.getAngleOffset()));
+			}else {
+				group.setAngleOffset("0");
 			}
 			for(Projectile p : group.getProjectiles()) {
 				if(p.getAngle().contains("{{")) {
@@ -257,75 +253,17 @@ public class GameDataManager {
 
 	// TODO: Add loot tier in LootContainer
 	public static Sprite getLootSprite(int tier) {
-		return GameDataManager.SPRITE_SHEETS.get("entity/rotmg-misc.png").getSprite(tier, 9, 8, 8);
+		return GameSpriteManager.loadSprite(tier, 9, "rotmg-misc.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Sprite getGraveSprite() {
-		return GameDataManager.SPRITE_SHEETS.get("entity/rotmg-bosses.png").getSprite(5, 5, 16, 16);
+		return GameSpriteManager.loadSprite(5, 5, "rotmg-bosses.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Sprite getChestSprite() {
-		return GameDataManager.SPRITE_SHEETS.get("entity/rotmg-projectiles.png").getSprite(2, 0, 8, 8);
+		return GameSpriteManager.loadSprite(2, 0, "rotmg-projectiles.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
-	private static void loadSpriteSheets() throws Exception {
-		GameDataManager.log.info("Loading Sprite Sheets...");
-
-		GameDataManager.SPRITE_SHEETS = new HashMap<>();
-		for (String loc : GameDataManager.SPRITE_SHEET_LOCATIONS) {
-			switch(loc) {
-			case "entity/rotmg-classes.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-classes.png",
-						GameDataManager.loadClassSprites(CharacterClass.ARCHER));
-				break;
-			case "entity/rotmg-projectiles.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-projectiles.png",
-						new SpriteSheet("entity/rotmg-projectiles.png", 8, 8, 0));
-				break;
-			case "entity/rotmg-items.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-items.png",
-						new SpriteSheet("entity/rotmg-items.png", 8, 8, 0));
-				break;
-			case "entity/rotmg-misc.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-misc.png",
-						new SpriteSheet("entity/rotmg-misc.png", 8, 8, 0));
-				break;
-			case "entity/rotmg-abilities.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-abilities.png",
-						new SpriteSheet("entity/rotmg-abilities.png", 8, 8, 0));
-				break;
-			case "entity/rotmg-items-1.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-items-1.png",
-						new SpriteSheet("entity/rotmg-items-1.png", 8, 8, 0));
-				break;
-			case "entity/rotmg-bosses.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-bosses.png",
-						new SpriteSheet("entity/rotmg-bosses.png", 16, 16, 0));
-				break;
-			case "entity/rotmg-bosses-1.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-bosses-1.png",
-						new SpriteSheet("entity/rotmg-bosses-1.png", 8, 8, 0));
-				break;
-			case "entity/rotmg-tiles.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-tiles.png",
-						new SpriteSheet("entity/rotmg-tiles.png", 8, 8, 0));
-				break;
-			case "entity/rotmg-tiles-1.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-tiles-1.png",
-						new SpriteSheet("entity/rotmg-tiles-1.png", 8, 8, 0));
-				break;
-			case "entity/rotmg-tiles-2.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-tiles-2.png",
-						new SpriteSheet("entity/rotmg-tiles-2.png", 8, 8, 0));
-				break;
-			case "entity/rotmg-tiles-all.png":
-				GameDataManager.SPRITE_SHEETS.put("entity/rotmg-tiles-all.png",
-						new SpriteSheet("entity/rotmg-tiles-all.png", 8, 8, 0));
-				break;
-			}
-		}
-		GameDataManager.log.info("Loading Sprite Sheets... DONE");
-	}
 
 	public static Map<Integer, GameItem> getStartingEquipment(final CharacterClass characterClass) {
 		Map<Integer, GameItem> result = new HashMap<>();
@@ -403,21 +341,10 @@ public class GameDataManager {
 
 	}
 
-	public static Sprite getSubSprite(String spriteKey, int col, int row, int size) {
-		SpriteSheet sheet = GameDataManager.SPRITE_SHEETS.get(spriteKey);
-		if(sheet==null)
-			return null;
-		return sheet.getSprite(col, row, size, size);
-	}
-
 	public static void loadSpriteModel(GameItem item){
 		if(item.getItemId()>-1) {
 			item.applySpriteModel(GameDataManager.GAME_ITEMS.get(item.getItemId()));
 		}
-	}
-
-	public static Sprite getSubSprite(SpriteModel model, int size) {
-		return GameDataManager.getSubSprite(model.getSpriteKey(), model.getCol(), model.getRow(), size);
 	}
 
 	public static String replaceGen(String source, String variable, String value) {
@@ -425,13 +352,11 @@ public class GameDataManager {
 		return text;
 	}
 
-
 	public static void loadGameData(final boolean loadRemote) {
 		GameDataManager.log.info("Loading Game Data from remote={}", loadRemote);
 		try {
 			GameDataManager.loadProjectileGroups(loadRemote);
 			GameDataManager.loadGameItems(loadRemote);
-			GameDataManager.loadSpriteSheets();
 			GameDataManager.loadEnemies(loadRemote);
 			GameDataManager.loadTiles(loadRemote);
 			GameDataManager.loadMaps(loadRemote);
@@ -441,6 +366,9 @@ public class GameDataManager {
 			GameDataManager.loadCharacterClasses(loadRemote);
 			GameDataManager.loadLootTables(loadRemote);
 			GameDataManager.loadLootGroups(loadRemote);
+			GameSpriteManager.loadSpriteImages(loadRemote);
+			GameSpriteManager.loadTileSprites();
+			GameSpriteManager.loadItemSprites();
 		}catch(Exception e) {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 		}

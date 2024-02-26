@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
-import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -24,12 +23,9 @@ import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
-import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.PortalModel;
-import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.ui.EffectText;
@@ -95,15 +91,6 @@ public class PlayState extends GameState {
 		this.pui = new PlayerUI(this);
 
 		this.getPui().setEquipment(player.getInventory());
-	}
-
-	@SuppressWarnings("unused")
-	private void loadClass(CharacterClass cls, boolean setEquipment) {
-		Player player = new Player(Realm.RANDOM.nextLong(), this.cam, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE, cls);
-		this.loadClass(player, cls, setEquipment);
 	}
 
 	public long getPlayerId() {
@@ -221,16 +208,12 @@ public class PlayState extends GameState {
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if (player == null)
 			return;
-		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
-		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
-		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
-		if (pg.getAngleOffset() != null) {
-			bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
-		}
+
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, src, dest, size, magnitude, range, damage,
+				isEnemy);
 		b.setFlags(flags);
 
 		this.realmManager.getRealm().addBullet(b);
@@ -242,16 +225,11 @@ public class PlayState extends GameState {
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if (player == null)
 			return -1;
-		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
-		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
-		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
-		if (pg.getAngleOffset() != null) {
-			bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
-		}
+
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, angle, size, magnitude, range, damage,
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, src, angle, size, magnitude, range, damage,
 				isEnemy);
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);

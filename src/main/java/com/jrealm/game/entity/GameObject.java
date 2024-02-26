@@ -2,19 +2,18 @@ package com.jrealm.game.entity;
 
 import java.awt.Graphics2D;
 
-import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.graphics.SpriteSheet;
+import com.jrealm.game.graphics.SpriteSheetNew;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.client.packet.ObjectMovement;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public abstract class GameObject {
 	protected long id;
-	protected SpriteSheet sprite;
-	protected Sprite image;
 	protected Rectangle bounds;
 	protected Vector2f pos;
 	protected int size;
@@ -33,14 +32,14 @@ public abstract class GameObject {
 	protected String name = "";
 
 	public boolean discovered;
-	public GameObject(long id, SpriteSheet sprite, Vector2f origin, int spriteX, int spriteY, int size) {
+	private SpriteSheetNew spriteSheet;
+
+	public GameObject(long id, Vector2f origin, int spriteX, int spriteY, int size) {
 		this(id, origin, size);
-		this.sprite = sprite;
 	}
 
-	public GameObject(long id, Sprite image, Vector2f origin, int size) {
-		this(id, origin, size);
-		this.image = image;
+	public void setSpriteSheet(final SpriteSheetNew spriteSheet) {
+		this.spriteSheet = spriteSheet;
 	}
 
 	public GameObject(long id, Vector2f origin, int size) {
@@ -127,8 +126,13 @@ public abstract class GameObject {
 	}
 
 	public void render(Graphics2D g) {
-		// Top Left -> Top Right
-		g.drawImage(this.image.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), this.size, this.size, null);
+		if(this.spriteSheet==null) {
+			GameObject.log.warn("GameObject {} does not have a sprite sheet!");
+			return;
+		}
+		g.drawImage(this.spriteSheet.getCurrentFrame(), (int) (this.pos.getWorldVar().x),
+				(int) (this.pos.getWorldVar().y),
+				this.size, this.size, null);
 	}
 
 	@Override

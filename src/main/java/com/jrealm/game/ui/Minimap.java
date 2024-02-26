@@ -4,8 +4,8 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.state.PlayState;
@@ -77,8 +77,8 @@ public class Minimap {
 				if (col == null) {
 					continue;
 				}
-				Sprite sprite = GameDataManager.getSubSprite(GameDataManager.TILES.get((int) col.getTileId()), 8);
-				g.drawImage(sprite.image, Minimap.X_PADDING + (col.getYIndex() * tileSize),
+				g.drawImage(GameSpriteManager.TILE_SPRITES.get((int) col.getTileId()),
+						Minimap.X_PADDING + (col.getYIndex() * tileSize),
 						Minimap.Y_PADDING + (col.getXIndex() * tileSize), tileSize,
 						tileSize,
 						null);
@@ -93,8 +93,8 @@ public class Minimap {
 				if ((col == null) || (col.getTileId() == (short) 0)) {
 					continue;
 				}
-				Sprite sprite = GameDataManager.getSubSprite(GameDataManager.TILES.get((int) col.getTileId()), 8);
-				g.drawImage(sprite.image, Minimap.X_PADDING + (col.getYIndex() * tileSize),
+				g.drawImage(GameSpriteManager.TILE_SPRITES.get((int) col.getTileId()),
+						Minimap.X_PADDING + (col.getYIndex() * tileSize),
 						Minimap.Y_PADDING + (col.getXIndex() * tileSize), tileSize,
 						tileSize,
 						null);
