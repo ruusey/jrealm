@@ -221,7 +221,6 @@ public class ServerGameLogic {
 			toMove.setDy(doMove ? spd : 0.0f);
 			toMove.setDx(doMove ? -spd : 0.0f);
 		}
-		ServerGameLogic.log.info(toMove.getDx() + ", " + toMove.getDy());
 
 		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setLeft(false);
