@@ -319,12 +319,15 @@ public class ServerGameLogic {
 		final Realm from = mgr.searchRealmsForPlayers(fromPlayerId);
 		final Player fromPlayer = from.getPlayer(fromPlayerId);
 		try {
+
 			if (message.getCommand().equalsIgnoreCase("spawn")) {
 				ServerGameLogic.log.info("Player {} spawn enemy {} at {}", fromPlayer.getName(),
 						message.getArgs().get(0), fromPlayer.getPos());
 				int enemyId = Integer.parseInt(message.getArgs().get(0));
 				from.addEnemy(GameObjectUtils.getEnemyFromId(enemyId, fromPlayer.getPos().clone()));
 			}else if(message.getCommand().equalsIgnoreCase("effect")) {
+				if(message.getArgs().size()<3)
+					throw new IllegalArgumentException("/effect requires arguments [{add | remove} {EFFECT_ID} {DURATION}");
 				switch(message.getArgs().get(0)) {
 				case "add":
 					fromPlayer.addEffect(EffectType.valueOf(Short.valueOf(message.getArgs().get(1))),
@@ -342,7 +345,7 @@ public class ServerGameLogic {
 			}
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to handle server command. Reason: {}", e);
-			ServerErrorMessage error = ServerErrorMessage.from(502, "Command handling failed " + message.getCommand());
+			ServerErrorMessage error = ServerErrorMessage.from(502, e.getMessage());
 			CommandPacket errorResponse = CommandPacket.create(fromPlayer, CommandType.SERVER_ERROR, error);
 			mgr.enqueueServerPacket(fromPlayer, errorResponse);
 		}
