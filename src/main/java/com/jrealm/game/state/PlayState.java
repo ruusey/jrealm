@@ -22,7 +22,6 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
-import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.PortalModel;
