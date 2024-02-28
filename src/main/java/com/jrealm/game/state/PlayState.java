@@ -509,19 +509,7 @@ public class PlayState extends GameState {
 				this.gsm.add(GameStateManager.PAUSE);
 			}
 		}
-		if (key.t.down && !this.sentChat) {
-			try {
-				this.sentChat = true;
-				//				MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), (byte)0, (byte)4, false, false);
-				//				this.realmManager.getClient().sendRemote(moveItem);
-
-			} catch (Exception e) {
-				PlayState.log.error("Failed to send test text packet: {}", e);
-			}
-
-		}
-		Stats stats = player.getComputedStats();
-
+		
 		int dex = (int) ((6.5 * (this.getPlayer().getComputedStats().getDex() + 17.3)) / 75);
 		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (1000 / dex));
 		boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;

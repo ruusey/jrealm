@@ -28,7 +28,6 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.messaging.LoginResponseMessage;
-import com.jrealm.game.messaging.ServerCommandMessage;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
@@ -286,7 +285,7 @@ public class ServerGameLogic {
 				ServerGameLogic.doLogin(mgr, CommandType.fromPacket(commandPacket), commandPacket);
 				break;
 			case 3:
-				ServerGameLogic.handleServerCommand(mgr, CommandType.fromPacket(commandPacket), commandPacket);
+				ServerGameLogic.handleServerCommand(mgr, commandPacket);
 				break;
 			}
 		} catch (Exception e) {
@@ -308,72 +307,13 @@ public class ServerGameLogic {
 		final LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
 	}
 
-	private static void handleServerCommand(RealmManagerServer mgr, ServerCommandMessage message,
+	private static void handleServerCommand(RealmManagerServer mgr,
 			CommandPacket command) {
-		final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
-		final Realm from = mgr.searchRealmsForPlayers(fromPlayerId);
-		final Player fromPlayer = from.getPlayer(fromPlayerId);
 		try {
-			switch (message.getCommand().toLowerCase()) {
-			case "setstat":
-				ServerGameLogic.log.info("Player {} set stat {} to {}", fromPlayer.getName(),message.getArgs().get(0),message.getArgs().get(1));
-				switch(message.getArgs().get(0)) {
-				case "hp":
-					fromPlayer.getStats().setHp(Short.parseShort(message.getArgs().get(1)));
-					break;
-				case "mp":
-					fromPlayer.getStats().setMp(Short.parseShort(message.getArgs().get(1)));
-					break;
-				case "att":
-					fromPlayer.getStats().setAtt(Short.parseShort(message.getArgs().get(1)));
-					break;
-				case "def":
-					fromPlayer.getStats().setDef(Short.parseShort(message.getArgs().get(1)));
-					break;
-				case "spd":
-					fromPlayer.getStats().setSpd(Short.parseShort(message.getArgs().get(1)));
-					break;
-				case "dex":
-					fromPlayer.getStats().setDex(Short.parseShort(message.getArgs().get(1)));
-					break;
-				case "vit":
-					fromPlayer.getStats().setVit(Short.parseShort(message.getArgs().get(1)));
-					break;
-				case "wis":
-					fromPlayer.getStats().setWis(Short.parseShort(message.getArgs().get(1)));
-					break;
-				}
-				break;
-			case "spawn":
-				ServerGameLogic.log.info("Player {} spawn enemy {} at {}", fromPlayer.getName(),
-						message.getArgs().get(0), fromPlayer.getPos());
-				final int enemyId = Integer.parseInt(message.getArgs().get(0));
-				from.addEnemy(GameObjectUtils.getEnemyFromId(enemyId, fromPlayer.getPos().clone()));
-				break;
-			case "effect":
-				if (message.getArgs().size() < 3)
-					throw new IllegalArgumentException(
-							"/effect requires arguments [{add | remove} {EFFECT_ID} {DURATION}");
-				switch (message.getArgs().get(0)) {
-				case "add":
-					fromPlayer.addEffect(EffectType.valueOf(Short.valueOf(message.getArgs().get(1))),
-							1000 * Long.parseLong(message.getArgs().get(2)));
-					break;
-				case "clear":
-					fromPlayer.resetEffects();
-					break;
-				}
-				break;
-			default:
-				CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 501,
-						"Unknown command " + message.getCommand());
-				mgr.enqueueServerPacket(fromPlayer, errorResponse);
-			}
-		} catch (Exception e) {
-			ServerGameLogic.log.error("Failed to handle server command. Reason: {}", e);
-			CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 502, e.getMessage());
-			mgr.enqueueServerPacket(fromPlayer, errorResponse);
-		}
+			ServerCommandHandler.invokeCommand(mgr, command);
+		}catch(Exception e) {
+			log.error("Failed to invoke server command. Reason: {}", e);
+		}	
 	}
 
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
