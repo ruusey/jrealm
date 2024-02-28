@@ -22,12 +22,48 @@ public class SpriteSheetNew {
 	private BufferedImage spriteSheetImage;
 	private int animationFrame = 0;
 	private int elapsedFrames = 0;
+	private BufferedImage[][] spriteSheetImageSplit;
 	private List<Sprite> sprites;
 	private List<Integer> animationFrames;
-	private int spriteImageSize;
-
+	private int spriteImageHeight;
+	private int spriteImageWidth;
+	
+	// Builds a sprite sheet from fileName at row, col with given subimage width and height of 
+	// spriteWidth, spriteHeight
+	public SpriteSheetNew(String fileName, int spriteWidth, int spriteHeight, int col, int row) {
+		BufferedImage toUse = GameSpriteManager.IMAGE_CACHE.get(fileName);
+		this.spriteImageWidth = spriteWidth;
+		this.spriteImageHeight = spriteHeight;
+		this.spriteSheetImage = toUse;
+		final int cols = toUse.getWidth()/spriteImageWidth;
+		final int rows = toUse.getHeight()/spriteImageHeight;
+		this.spriteSheetImageSplit = new BufferedImage[rows][cols];
+		for(int i = 0; i < rows; i++ ) {
+			for(int j = 0; j<cols; j++) {
+				spriteSheetImageSplit[i][j] = this.getSubimage(i, j);
+			}
+		}
+		this.sprites.add(new Sprite(this.spriteSheetImageSplit[row][col]));
+	}
+	
+	public SpriteSheetNew(String fileName, int spriteWidth, int spriteHeight) {
+		BufferedImage toUse = GameSpriteManager.IMAGE_CACHE.get(fileName);
+		this.spriteImageWidth = spriteWidth;
+		this.spriteImageHeight = spriteHeight;
+		this.spriteSheetImage = toUse;
+		final int cols = toUse.getWidth()/spriteImageWidth;
+		final int rows = toUse.getHeight()/spriteImageHeight;
+		spriteSheetImageSplit = new BufferedImage[rows][cols];
+		for(int i = 0; i < rows; i++ ) {
+			for(int j = 0; j<cols; j++) {
+				spriteSheetImageSplit[i][j] = this.getSubimage(i, j);
+			}
+		}
+	}
+	
 	public SpriteSheetNew(BufferedImage baseSheet) {
-		this.spriteImageSize = GlobalConstants.BASE_SPRITE_SIZE;
+		this.spriteImageWidth = GlobalConstants.BASE_SPRITE_SIZE;
+		this.spriteImageHeight =  GlobalConstants.BASE_SPRITE_SIZE;
 		this.spriteSheetImage = baseSheet;
 		this.animationFrames = new ArrayList<>();
 		this.sprites = new ArrayList<>();
@@ -35,7 +71,8 @@ public class SpriteSheetNew {
 	}
 
 	public SpriteSheetNew(BufferedImage baseSheet, int x, int y) {
-		this.spriteImageSize = GlobalConstants.BASE_SPRITE_SIZE;
+		this.spriteImageWidth = GlobalConstants.BASE_SPRITE_SIZE;
+		this.spriteImageHeight =  GlobalConstants.BASE_SPRITE_SIZE;
 		this.spriteSheetImage = baseSheet;
 		this.animationFrames = new ArrayList<>();
 		this.sprites = new ArrayList<>();
@@ -43,7 +80,8 @@ public class SpriteSheetNew {
 	}
 
 	public SpriteSheetNew(BufferedImage baseSheet, SpriteModel model) {
-		this.spriteImageSize = model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize();
+		this.spriteImageWidth = model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize();
+		this.spriteImageHeight = model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize();
 		this.spriteSheetImage = baseSheet;
 		this.animationFrames = new ArrayList<>();
 		this.sprites = new ArrayList<>();
@@ -52,7 +90,8 @@ public class SpriteSheetNew {
 
 	public SpriteSheetNew(BufferedImage baseSheet, List<Tuple<Integer, Integer>> spriteFrames,
 			final List<Integer> animationFrames) {
-		this.spriteImageSize = GlobalConstants.BASE_SPRITE_SIZE;
+		this.spriteImageWidth = GlobalConstants.BASE_SPRITE_SIZE;
+		this.spriteImageHeight =  GlobalConstants.BASE_SPRITE_SIZE;
 		this.spriteSheetImage = baseSheet;
 		this.animationFrames = animationFrames;
 		this.sprites = new ArrayList<>();
@@ -114,11 +153,11 @@ public class SpriteSheetNew {
 	}
 
 	private void loadImageArray() {
-		int subimageWidth = this.spriteSheetImage.getWidth() / this.spriteImageSize;
-		int subImageHeight = this.spriteSheetImage.getHeight() / this.spriteImageSize;
+		int cols = this.spriteSheetImage.getWidth() / this.spriteImageWidth;
+		int rows = this.spriteSheetImage.getHeight() / this.spriteImageHeight;
 
-		for (int x = 0; x < (this.spriteSheetImage.getWidth() / subimageWidth); x++) {
-			for (int y = 0; y < (this.spriteSheetImage.getHeight() / subImageHeight); y++) {
+		for (int x = 0; x < rows; x++) {
+			for (int y = 0; y < cols; y++) {
 				Sprite newSprite = new Sprite(this.getSubimage(x, y));
 				this.sprites.add(newSprite);
 			}
@@ -126,12 +165,20 @@ public class SpriteSheetNew {
 	}
 
 	private BufferedImage getSubimage(int x, int y) {
-		return this.spriteSheetImage.getSubimage(y * this.spriteImageSize, x * this.spriteImageSize,
-				this.spriteImageSize, this.spriteImageSize);
+		return this.spriteSheetImage.getSubimage(y * this.spriteImageWidth, x * this.spriteImageHeight,
+				this.spriteImageWidth, this.spriteImageHeight);
 	}
 
 	public static SpriteSheetNew fromSpriteModel(SpriteModel model) {
 		BufferedImage toUse = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
 		return new SpriteSheetNew(toUse, model);
+	}
+	
+	public static SpriteSheetNew x8SpriteSheet(final String fileName) {
+		return new SpriteSheetNew(fileName, GlobalConstants.BASE_SPRITE_SIZE, GlobalConstants.BASE_SPRITE_SIZE);
+	}
+	
+	public static SpriteSheetNew x16SpriteSheet(final String fileName) {
+		return new SpriteSheetNew(fileName, GlobalConstants.MEDIUM_ART_SIZE, GlobalConstants.MEDIUM_ART_SIZE);
 	}
 }

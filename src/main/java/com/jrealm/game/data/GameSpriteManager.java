@@ -23,7 +23,7 @@ public class GameSpriteManager {
 	private static final String[] SPRITE_NAMES = { "rotmg-classes.png", "rotmg-projectiles.png", "rotmg-bosses-1.png",
 			"rotmg-bosses.png", "rotmg-items.png", "rotmg-tiles.png", "rotmg-tiles-1.png", "rotmg-tiles-2.png",
 			"rotmg-tiles-all.png", "rotmg-items-1.png", "rotmg-abilities.png",
-	"rotmg-misc.png" };
+	"rotmg-misc.png", "buttons.png", "fillbars.png", "icons.png", "slots.png", "ui.png" };
 
 	public static Map<String, BufferedImage> IMAGE_CACHE;
 	public static Map<Integer, BufferedImage> TILE_SPRITES;

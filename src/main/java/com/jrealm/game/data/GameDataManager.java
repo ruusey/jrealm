@@ -12,7 +12,6 @@ import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.ExperienceModel;
@@ -308,11 +307,6 @@ public class GameDataManager {
 			break;
 		}
 		return result;
-	}
-
-	public static SpriteSheet loadClassSprites(CharacterClass cls) {
-		SpriteSheet sheet = new SpriteSheet("entity/rotmg-classes.png", 8, 8, 4 * cls.classId);
-		return sheet;
 	}
 
 	private static String replaceInjectVariables(String input) {
