@@ -28,10 +28,10 @@ public class SpriteSheetNew {
 	private int spriteImageHeight;
 	private int spriteImageWidth;
 	
+	
 	// Builds a sprite sheet from fileName at row, col with given subimage width and height of 
 	// spriteWidth, spriteHeight
-	public SpriteSheetNew(String fileName, int spriteWidth, int spriteHeight, int col, int row) {
-		BufferedImage toUse = GameSpriteManager.IMAGE_CACHE.get(fileName);
+	public SpriteSheetNew(BufferedImage toUse, int spriteWidth, int spriteHeight, int col, int row) {
 		this.spriteImageWidth = spriteWidth;
 		this.spriteImageHeight = spriteHeight;
 		this.spriteSheetImage = toUse;
@@ -45,7 +45,13 @@ public class SpriteSheetNew {
 		}
 		this.sprites.add(new Sprite(this.spriteSheetImageSplit[row][col]));
 	}
+	// Builds a sprite sheet from fileName at row, col with given subimage width and height of 
+	// spriteWidth, spriteHeight
+	public SpriteSheetNew(String fileName, int spriteWidth, int spriteHeight, int col, int row) {
+		this(GameSpriteManager.IMAGE_CACHE.get(fileName), spriteWidth, spriteHeight, col, row);
+	}		
 	
+	// Builds an empty sprite sheet from fileName with spriteWidth and spriteHeight
 	public SpriteSheetNew(String fileName, int spriteWidth, int spriteHeight) {
 		BufferedImage toUse = GameSpriteManager.IMAGE_CACHE.get(fileName);
 		this.spriteImageWidth = spriteWidth;
@@ -62,41 +68,30 @@ public class SpriteSheetNew {
 	}
 	
 	public SpriteSheetNew(BufferedImage baseSheet) {
-		this.spriteImageWidth = GlobalConstants.BASE_SPRITE_SIZE;
-		this.spriteImageHeight =  GlobalConstants.BASE_SPRITE_SIZE;
-		this.spriteSheetImage = baseSheet;
-		this.animationFrames = new ArrayList<>();
-		this.sprites = new ArrayList<>();
-		this.loadImageArray();
+		this(baseSheet, GlobalConstants.BASE_SPRITE_SIZE, GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public SpriteSheetNew(BufferedImage baseSheet, int x, int y) {
-		this.spriteImageWidth = GlobalConstants.BASE_SPRITE_SIZE;
-		this.spriteImageHeight =  GlobalConstants.BASE_SPRITE_SIZE;
-		this.spriteSheetImage = baseSheet;
-		this.animationFrames = new ArrayList<>();
-		this.sprites = new ArrayList<>();
-		this.loadImageArray(y, x);
+		this(baseSheet,GlobalConstants.BASE_SPRITE_SIZE,
+				GlobalConstants.BASE_SPRITE_SIZE, x,
+				y);
 	}
 
 	public SpriteSheetNew(BufferedImage baseSheet, SpriteModel model) {
-		this.spriteImageWidth = model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize();
-		this.spriteImageHeight = model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize();
-		this.spriteSheetImage = baseSheet;
-		this.animationFrames = new ArrayList<>();
-		this.sprites = new ArrayList<>();
-		this.loadImageArray(model.getRow(), model.getCol());
+		this(baseSheet, model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize(),
+				model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize(), model.getCol(),
+				model.getRow());
 	}
 
-	public SpriteSheetNew(BufferedImage baseSheet, List<Tuple<Integer, Integer>> spriteFrames,
+	public SpriteSheetNew(BufferedImage baseSheet, int spriteSize, List<Tuple<Integer, Integer>> spriteFrames,
 			final List<Integer> animationFrames) {
-		this.spriteImageWidth = GlobalConstants.BASE_SPRITE_SIZE;
-		this.spriteImageHeight =  GlobalConstants.BASE_SPRITE_SIZE;
-		this.spriteSheetImage = baseSheet;
-		this.animationFrames = animationFrames;
-		this.sprites = new ArrayList<>();
-		for (Tuple<Integer, Integer> sprite : spriteFrames) {
-			this.loadImageArray(sprite.getX(), sprite.getY());
+		this(baseSheet, spriteSize, spriteSize);
+		//Copy over the animation frames
+		for(int i = 0; i<spriteFrames.size();i++) {
+			Tuple<Integer, Integer> spriteLocation = spriteFrames.get(i);
+			if(spriteLocation!=null) {
+				this.animationFrames.set(i, animationFrames.get(i));
+			}
 		}
 	}
 
@@ -119,7 +114,7 @@ public class SpriteSheetNew {
 		}
 		this.elapsedFrames++;
 	}
-
+	
 	public boolean hasEffect(final EffectEnum effect) {
 		for (Sprite sprite : this.sprites) {
 			if (sprite.hasEffect(effect))
