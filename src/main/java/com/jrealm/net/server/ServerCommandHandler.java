@@ -43,6 +43,8 @@ public class ServerCommandHandler {
 				CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 501,
 						"Unknown command " + message.getCommand());
 				mgr.enqueueServerPacket(fromPlayer, errorResponse);
+			}else {
+				consumer.accept(mgr, fromPlayer, message);
 			}
 		} catch (Exception e) {
 			log.error("Failed to handle server command. Reason: {}", e);

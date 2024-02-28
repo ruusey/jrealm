@@ -284,7 +284,8 @@ public class PlayerUI {
 		}
 		return null;
 	}
-
+	
+	@SuppressWarnings("unused")
 	private boolean overlapsInventory(Vector2f pos) {
 		final int panelWidth = (GamePanel.width / 5);
 		final int startX = GamePanel.width - panelWidth;

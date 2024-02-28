@@ -40,7 +40,6 @@ public class NetTile implements Streamable<NetTile> {
 		return new NetTile(tile.getTileId(), layer, xIndex, yIndex);
 	}
 
-
 	public boolean equals(NetTile other) {
 		return (this.tileId == other.getTileId()) && (this.getLayer() == other.getLayer())
 				&& (this.getXIndex() == other.getXIndex()) && (this.getYIndex() == other.getYIndex());

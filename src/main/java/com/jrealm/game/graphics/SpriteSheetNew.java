@@ -148,18 +148,18 @@ public class SpriteSheetNew {
 		return null;
 	}
 
-	private void loadImageArray(final int x, final int y) {
+	public void loadImageArray(final int x, final int y) {
 		Sprite newSprite = new Sprite(this.getSubimage(x, y));
 		this.sprites.add(newSprite);
 	}
 
-	private void loadImageArray() {
-		int cols = this.spriteSheetImage.getWidth() / this.spriteImageWidth;
-		int rows = this.spriteSheetImage.getHeight() / this.spriteImageHeight;
+	public void loadImageArray() {
+		final int cols = this.spriteSheetImage.getWidth() / this.spriteImageWidth;
+		final int rows = this.spriteSheetImage.getHeight() / this.spriteImageHeight;
 
 		for (int x = 0; x < rows; x++) {
 			for (int y = 0; y < cols; y++) {
-				Sprite newSprite = new Sprite(this.getSubimage(x, y));
+				final Sprite newSprite = new Sprite(this.getSubimage(x, y));
 				this.sprites.add(newSprite);
 			}
 		}
