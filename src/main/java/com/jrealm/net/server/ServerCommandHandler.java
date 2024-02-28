@@ -1,5 +1,6 @@
 package com.jrealm.net.server;
 
+import com.jrealm.account.dto.AccountDto;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.messaging.CommandType;
@@ -18,8 +19,14 @@ public class ServerCommandHandler {
 		final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
 		final Realm playerRealm = mgr.searchRealmsForPlayers(fromPlayerId);
 		final Player fromPlayer = playerRealm.getPlayer(fromPlayerId);
+		// Look up this players account to see if they are allowed
+		// to run Admin server commands
+		final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE.executeGet("/admin/account/"+fromPlayer.getAccountUuid(), null, AccountDto.class);
 		
 		try {
+			if(!playerAccount.isAdmin()) 
+				throw new IllegalStateException("Player "+playerAccount.getAccountName()+" is not allowed to use Admin commands.");
+			
 			switch (message.getCommand().toLowerCase()) {
 			case "setstat":
 				invokeSetStats(fromPlayer, message);
@@ -37,57 +44,58 @@ public class ServerCommandHandler {
 			}
 		} catch (Exception e) {
 			log.error("Failed to handle server command. Reason: {}", e);
-			CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 502, e.getMessage());
+			final CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 502, e.getMessage());
 			mgr.enqueueServerPacket(fromPlayer, errorResponse);
 		}
 	}
-	
-	private static void invokeSetStats(Player target, ServerCommandMessage message) {
-		switch (message.getCommand().toLowerCase()) {
-		case "setstat":
-			log.info("Player {} set stat {} to {}", target.getName(),message.getArgs().get(0),message.getArgs().get(1));
-			switch(message.getArgs().get(0)) {
-			case "hp":
-				target.getStats().setHp(Short.parseShort(message.getArgs().get(1)));
-				break;
-			case "mp":
-				target.getStats().setMp(Short.parseShort(message.getArgs().get(1)));
-				break;
-			case "att":
-				target.getStats().setAtt(Short.parseShort(message.getArgs().get(1)));
-				break;
-			case "def":
-				target.getStats().setDef(Short.parseShort(message.getArgs().get(1)));
-				break;
-			case "spd":
-				target.getStats().setSpd(Short.parseShort(message.getArgs().get(1)));
-				break;
-			case "dex":
-				target.getStats().setDex(Short.parseShort(message.getArgs().get(1)));
-				break;
-			case "vit":
-				target.getStats().setVit(Short.parseShort(message.getArgs().get(1)));
-				break;
-			case "wis":
-				target.getStats().setWis(Short.parseShort(message.getArgs().get(1)));
-				break;
-			}
+
+	private static void invokeSetStats(Player target, ServerCommandMessage message) throws Exception {
+		if (message.getArgs() == null || message.getArgs().size() != 2)
+			throw new IllegalArgumentException("Usage: /setstat {STAT_NAME} {STAT_VALUE}");
+		final short valueToSet = Short.parseShort(message.getArgs().get(1));
+		log.info("Player {} set stat {} to {}", target.getName(), message.getArgs().get(0), valueToSet);
+		switch (message.getArgs().get(0)) {
+		case "hp":
+			target.getStats().setHp(valueToSet);
+			break;
+		case "mp":
+			target.getStats().setMp(valueToSet);
+			break;
+		case "att":
+			target.getStats().setAtt(valueToSet);
+			break;
+		case "def":
+			target.getStats().setDef(valueToSet);
+			break;
+		case "spd":
+			target.getStats().setSpd(valueToSet);
+			break;
+		case "dex":
+			target.getStats().setDex(valueToSet);
+			break;
+		case "vit":
+			target.getStats().setVit(valueToSet);
+			break;
+		case "wis":
+			target.getStats().setWis(valueToSet);
+			break;
 		}
 	}
-	
-	private static void invokeEnemySpawn(RealmManagerServer mgr, Player player, ServerCommandMessage message) {
-		log.info("Player {} spawn enemy {} at {}", player.getName(),
-				message.getArgs().get(0), player.getPos());
-		final Realm from = mgr.searchRealmsForPlayers(player.getId());
 
+	private static void invokeEnemySpawn(RealmManagerServer mgr, Player player, ServerCommandMessage message)
+			throws Exception {
+		if(message.getArgs()==null || message.getArgs().size()!=1) 
+			throw new IllegalArgumentException("Usage: /spawn {ENEMY_ID}");
+		
+		log.info("Player {} spawn enemy {} at {}", player.getName(), message.getArgs().get(0), player.getPos());
+		final Realm from = mgr.searchRealmsForPlayers(player.getId());
 		final int enemyId = Integer.parseInt(message.getArgs().get(0));
 		from.addEnemy(GameObjectUtils.getEnemyFromId(enemyId, player.getPos().clone()));
 	}
-	
-	private static void invokeSetEffect(Player player, ServerCommandMessage message) throws Exception{
-		if (message.getArgs().size() < 3)
-			throw new IllegalArgumentException(
-					"/effect requires arguments [{add | remove} {EFFECT_ID} {DURATION}");
+
+	private static void invokeSetEffect(Player player, ServerCommandMessage message) throws Exception {
+		if (message.getArgs()==null || message.getArgs().size() < 3)
+			throw new IllegalArgumentException("Usage: /effect {add | clear} {EFFECT_ID} {DURATION (sec)}");
 		switch (message.getArgs().get(0)) {
 		case "add":
 			player.addEffect(EffectType.valueOf(Short.valueOf(message.getArgs().get(1))),

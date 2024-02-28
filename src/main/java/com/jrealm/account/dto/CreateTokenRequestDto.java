@@ -1,7 +1,5 @@
 package com.jrealm.account.dto;
 
-import java.util.Date;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class SessionTokenDto {
+public class CreateTokenRequestDto {
 	private String accountGuid;
-	private String token;
-	private Date expires;
+	private String tokenName;
 }
