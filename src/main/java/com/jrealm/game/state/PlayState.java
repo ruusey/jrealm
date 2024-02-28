@@ -184,7 +184,7 @@ public class PlayState extends GameState {
 			p.xCol = false;
 			if (p.getDx() != 0.0f) {
 				// p.applyMovementLerp(p.getDx(), 0, 0.65f);
-				p.getPos().x += p.getDx() / 4;
+				p.getPos().x += (p.getDx()*0.55f);
 			}
 		} else {
 			p.xCol = true;
@@ -195,7 +195,7 @@ public class PlayState extends GameState {
 			p.yCol = false;
 			if (p.getDy() != 0.0f) {
 				// p.applyMovementLerp(0, p.getDy(), 0.65f);
-				p.getPos().y += p.getDy() / 4;
+				p.getPos().y += (p.getDy()*0.55f);
 			}
 		} else {
 			p.yCol = true;
@@ -281,6 +281,7 @@ public class PlayState extends GameState {
 				player.input(mouse, key);
 				Cardinality c = null;
 				float spd = (float) ((5.6 * (player.getComputedStats().getSpd() + 53.5)) / 75.0f);
+				spd = spd/1.5f;
 				if (player.getIsUp()) {
 					player.setDy(-spd);
 					c = Cardinality.NORTH;

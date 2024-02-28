@@ -557,7 +557,6 @@ public class RealmManagerServer implements Runnable {
 			p.xCol = false;
 			if (targetRealm.getTileManager().collidesSlowTile(p)) {
 				p.getPos().x += p.getDx() / 3.0f;
-
 			} else {
 				p.getPos().x += p.getDx();
 			}
@@ -570,10 +569,8 @@ public class RealmManagerServer implements Runnable {
 			p.yCol = false;
 			if (targetRealm.getTileManager().collidesSlowTile(p)) {
 				p.getPos().y += p.getDy() / 3.0f;
-
 			} else {
 				p.getPos().y += p.getDy();
-
 			}
 		} else {
 			p.yCol = true;

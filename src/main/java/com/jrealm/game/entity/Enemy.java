@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	private static final int IDLE_FRAMES = 12;
+	private static final float CHASE_SPEED = 1.4f;
 	protected EnemyModel model;
 	protected int chaseRange;
 	protected int attackRange;
@@ -61,22 +62,27 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 				&& (this.getPos().distanceTo(player.getPos()) >= this.attackRange)) {
 			if (this.pos.y > (player.pos.y + 1)) {
 				this.up = true;
+				this.dy=-CHASE_SPEED;
 			} else {
 				this.up = false;
 			}
 			if (this.pos.y < (player.pos.y - 1)) {
 				this.down = true;
+				this.dy=CHASE_SPEED;
+
 			} else {
 				this.down = false;
 			}
 
 			if (this.pos.x > (player.pos.x + 1)) {
 				this.left = true;
+				this.dx=-CHASE_SPEED;
 			} else {
 				this.left = false;
 			}
 			if (this.pos.x < (player.pos.x - 1)) {
 				this.right = true;
+				this.dx=CHASE_SPEED;
 			} else {
 				this.right = false;
 			}
@@ -98,10 +104,9 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			this.left = false;
 			return;
 		}
-		if (!this.isFallen()) {
-			this.pos.x += this.dx;
-			this.pos.y += this.dy;
-		}
+		this.pos.x += this.dx;
+		this.pos.y += this.dy;
+		
 	}
 
 	public void update(long realmId, RealmManagerServer mgr, double time) {

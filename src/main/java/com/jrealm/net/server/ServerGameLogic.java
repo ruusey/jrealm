@@ -174,6 +174,7 @@ public class ServerGameLogic {
 			return;
 		boolean doMove = playerMovePacket.isMove();
 		float spd = (float) ((5.6 * (toMove.getComputedStats().getSpd() + 53.5)) / 75.0f);
+		spd = spd/1.5f;
 		if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
 			toMove.setUp(doMove);
 			toMove.setDy(doMove ? -spd : 0.0f);
@@ -214,7 +215,6 @@ public class ServerGameLogic {
 			toMove.setDy(doMove ? spd : 0.0f);
 			toMove.setDx(doMove ? -spd : 0.0f);
 		}
-
 		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setLeft(false);
 			toMove.setRight(false);
@@ -315,6 +315,35 @@ public class ServerGameLogic {
 		final Player fromPlayer = from.getPlayer(fromPlayerId);
 		try {
 			switch (message.getCommand().toLowerCase()) {
+			case "setstat":
+				ServerGameLogic.log.info("Player {} set stat {} to {}", fromPlayer.getName(),message.getArgs().get(0),message.getArgs().get(1));
+				switch(message.getArgs().get(0)) {
+				case "hp":
+					fromPlayer.getStats().setHp(Short.parseShort(message.getArgs().get(1)));
+					break;
+				case "mp":
+					fromPlayer.getStats().setMp(Short.parseShort(message.getArgs().get(1)));
+					break;
+				case "att":
+					fromPlayer.getStats().setAtt(Short.parseShort(message.getArgs().get(1)));
+					break;
+				case "def":
+					fromPlayer.getStats().setDef(Short.parseShort(message.getArgs().get(1)));
+					break;
+				case "spd":
+					fromPlayer.getStats().setSpd(Short.parseShort(message.getArgs().get(1)));
+					break;
+				case "dex":
+					fromPlayer.getStats().setDex(Short.parseShort(message.getArgs().get(1)));
+					break;
+				case "vit":
+					fromPlayer.getStats().setVit(Short.parseShort(message.getArgs().get(1)));
+					break;
+				case "wis":
+					fromPlayer.getStats().setWis(Short.parseShort(message.getArgs().get(1)));
+					break;
+				}
+				break;
 			case "spawn":
 				ServerGameLogic.log.info("Player {} spawn enemy {} at {}", fromPlayer.getName(),
 						message.getArgs().get(0), fromPlayer.getPos());
@@ -391,7 +420,7 @@ public class ServerGameLogic {
 			player.applyStats(targetCharacter.getStats());
 			player.setName(accountName);
 			player.setHeadless(false);
-			// player.addEffect(EffectType.INVINCIBLE, 60000l * 60l);
+			player.addEffect(EffectType.INVINCIBLE, 3000);
 			Realm targetRealm = mgr.getTopRealm();
 			player.setPos(targetRealm.getTileManager().getSafePosition());
 			targetRealm.addPlayer(player);

@@ -132,8 +132,6 @@ public abstract class Entity extends GameObject {
 		return -1;
 	}
 
-
-
 	public void move() {
 		if (this.hasEffect(EffectType.PARALYZED)) {
 			this.up = false;
@@ -144,54 +142,15 @@ public abstract class Entity extends GameObject {
 		}
 		if (this.up) {
 			this.currentDirection = this.UP;
-			this.dy -= this.acc;
-			if (this.dy < -this.maxSpeed) {
-				this.dy = -this.maxSpeed;
-			}
-		} else if (this.dy < 0) {
-			this.dy += this.deacc;
-			if (this.dy > 0) {
-				this.dy = 0;
-			}
-		}
-
+		} 
 		if (this.down) {
 			this.currentDirection = this.DOWN;
-			this.dy += this.acc;
-			if (this.dy > this.maxSpeed) {
-				this.dy = this.maxSpeed;
-			}
-		} else if (this.dy > 0) {
-			this.dy -= this.deacc;
-			if (this.dy < 0) {
-				this.dy = 0;
-			}
 		}
-
 		if (this.left) {
 			this.currentDirection = this.LEFT;
-			this.dx -= this.acc;
-			if (this.dx < -this.maxSpeed) {
-				this.dx = -this.maxSpeed;
-			}
-		} else if (this.dx < 0) {
-			this.dx += this.deacc;
-			if (this.dx > 0) {
-				this.dx = 0;
-			}
 		}
-
 		if (this.right) {
 			this.currentDirection = this.RIGHT;
-			this.dx += this.acc;
-			if (this.dx > this.maxSpeed) {
-				this.dx = this.maxSpeed;
-			}
-		} else if (this.dx > 0) {
-			this.dx -= this.deacc;
-			if (this.dx < 0) {
-				this.dx = 0;
-			}
 		}
 	}
 
