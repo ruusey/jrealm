@@ -5,7 +5,7 @@ import java.awt.Graphics2D;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.graphics.Font;
 import com.jrealm.game.graphics.Fontf;
-import com.jrealm.game.graphics.SpriteSheet;
+import com.jrealm.game.graphics.SpriteSheetNew;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.Camera;
@@ -26,8 +26,12 @@ public class GameStateManager {
 
 	public static Font font;
 	public static Fontf fontf;
-	public static SpriteSheet ui;
-	public static SpriteSheet button;
+	public static Font currentFont;
+//	public static SpriteSheet ui;
+//	public static SpriteSheet button;
+	
+	public static SpriteSheetNew ui;
+	public static SpriteSheetNew button;
 	public static Camera cam;
 	public static Graphics2D g;
 
@@ -42,10 +46,10 @@ public class GameStateManager {
 		GameStateManager.fontf = new Fontf();
 		GameStateManager.fontf.loadFont("font/Stackedpixel.ttf", "MeatMadness");
 		GameStateManager.fontf.loadFont("font/GravityBold8.ttf", "GravityBold8");
-		SpriteSheet.currentFont = GameStateManager.font;
+		GameStateManager.currentFont = GameStateManager.font;
 
-		GameStateManager.ui = new SpriteSheet("ui/ui.png", 64, 64, 0);
-		GameStateManager.button = new SpriteSheet("ui/buttons.png", 122, 57, 0);
+		GameStateManager.ui = new SpriteSheetNew("ui.png", 64, 64);
+		GameStateManager.button = new SpriteSheetNew("buttons.png", 122, 57);
 
 
 		GameStateManager.cam = new Camera(new Rectangle(new Vector2f(-64, -64), GamePanel.width + 128, GamePanel.height + 128));

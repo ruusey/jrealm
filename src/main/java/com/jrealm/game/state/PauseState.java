@@ -19,8 +19,8 @@ public class PauseState extends GameState {
     public PauseState(GameStateManager gsm) {
         super(gsm);
 
-        BufferedImage imgButton = GameStateManager.button.getSubimage(0, 0, 121, 26);
-        BufferedImage imgHover = GameStateManager.button.getSubimage(0, 29, 122, 28);
+        BufferedImage imgButton = GameStateManager.button.cropImage(0, 0, 121, 26);
+        BufferedImage imgHover = GameStateManager.button.cropImage(0, 29, 122, 28);
 
         font = new Font("MeatMadness", Font.PLAIN, 48);
         btnResume = new Button("RESUME", imgButton, font, new Vector2f(GamePanel.width / 2, GamePanel.height / 2 - 48), 32, 16);

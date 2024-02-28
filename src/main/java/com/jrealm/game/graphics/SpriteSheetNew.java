@@ -35,6 +35,7 @@ public class SpriteSheetNew {
 		this.spriteImageWidth = spriteWidth;
 		this.spriteImageHeight = spriteHeight;
 		this.spriteSheetImage = toUse;
+		this.sprites = new ArrayList<>();
 		final int cols = toUse.getWidth()/spriteImageWidth;
 		final int rows = toUse.getHeight()/spriteImageHeight;
 		this.spriteSheetImageSplit = new BufferedImage[rows][cols];
@@ -57,6 +58,7 @@ public class SpriteSheetNew {
 		this.spriteImageWidth = spriteWidth;
 		this.spriteImageHeight = spriteHeight;
 		this.spriteSheetImage = toUse;
+		this.sprites = new ArrayList<>();
 		final int cols = toUse.getWidth()/spriteImageWidth;
 		final int rows = toUse.getHeight()/spriteImageHeight;
 		spriteSheetImageSplit = new BufferedImage[rows][cols];
@@ -93,6 +95,10 @@ public class SpriteSheetNew {
 				this.animationFrames.set(i, animationFrames.get(i));
 			}
 		}
+	}
+	
+	public Sprite getSubSprite(int x, int y) {
+		return new Sprite(this.spriteSheetImageSplit[y][x]);
 	}
 
 	public void resetAnimation() {
@@ -158,8 +164,13 @@ public class SpriteSheetNew {
 			}
 		}
 	}
+	
+	public BufferedImage cropImage(int x, int y, int width, int height) {
+		return this.spriteSheetImage.getSubimage(x,y,
+				width, height);
+	}
 
-	private BufferedImage getSubimage(int x, int y) {
+	public BufferedImage getSubimage(int x, int y) {
 		return this.spriteSheetImage.getSubimage(y * this.spriteImageWidth, x * this.spriteImageHeight,
 				this.spriteImageWidth, this.spriteImageHeight);
 	}

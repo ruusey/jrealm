@@ -9,7 +9,6 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.state.GameStateManager;
@@ -249,7 +248,7 @@ public class Button {
 
 	public void render(Graphics2D g) {
 		if(this.drawString) {
-			SpriteSheet.drawArray(g, this.label, this.pos, this.lbWidth, this.lbHeight);
+			g.drawString(this.label, this.pos.x, this.pos.y);
 		}
 
 		if ((this.hoverImage != null) && this.hovering) {

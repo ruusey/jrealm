@@ -164,7 +164,7 @@ public class PlayState extends GameState {
 				Runnable updatePlayerAndUi = () -> {
 					// player.removeExpiredEffects();
 					player.update(time);
-					//his.movePlayer(player);
+					this.movePlayer(player);
 					this.pui.update(time);
 				};
 				WorkerThread.submitAndRun(processGameObjects, playerShootDequeue, updatePlayerAndUi, monitorDamageText);

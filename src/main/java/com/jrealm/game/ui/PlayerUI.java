@@ -12,7 +12,7 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
-import com.jrealm.game.graphics.SpriteSheet;
+import com.jrealm.game.graphics.SpriteSheetNew;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ItemTooltip;
@@ -39,14 +39,14 @@ public class PlayerUI {
 	private Graphics2D tempGraphics;
 	private long lastAction = Instant.now().toEpochMilli();
 	public PlayerUI(PlayState p) {
-		SpriteSheet bars = new SpriteSheet("ui/fillbars.png", 0);
-		BufferedImage[] barSpritesHp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 0, 7, 14),
-				bars.getSubimage(0, 0, 12, 20) };
-		BufferedImage[] barSpritesMp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 16, 7, 14),
-				bars.getSubimage(0, 0, 12, 20) };
+		SpriteSheetNew bars = new SpriteSheetNew("fillbars.png", 12,12);
+		BufferedImage[] barSpritesHp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(39, 0, 7, 14),
+				bars.cropImage(0, 0, 12, 20) };
+		BufferedImage[] barSpritesMp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(39, 16, 7, 14),
+				bars.cropImage(0, 0, 12, 20) };
 
-		BufferedImage[] barSpritesXp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(59, 0, 7, 14),
-				bars.getSubimage(0, 0, 12, 20) };
+		BufferedImage[] barSpritesXp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(59, 0, 7, 14),
+				bars.cropImage(0, 0, 12, 20) };
 
 		Vector2f posHp = new Vector2f(GamePanel.width - 356, 128);
 		Vector2f posMp = posHp.clone(0, 32);
