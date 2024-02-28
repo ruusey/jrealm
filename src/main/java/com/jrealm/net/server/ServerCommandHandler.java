@@ -1,5 +1,8 @@
 package com.jrealm.net.server;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.jrealm.account.dto.AccountDto;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.entity.Player;
@@ -8,12 +11,20 @@ import com.jrealm.game.messaging.ServerCommandMessage;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.util.GameObjectUtils;
+import com.jrealm.game.util.TriConsumer;
 import com.jrealm.net.server.packet.CommandPacket;
 
 import lombok.extern.slf4j.Slf4j;
-
 @Slf4j
 public class ServerCommandHandler {
+	private static final Map<String, TriConsumer<RealmManagerServer, Player, ServerCommandMessage>> COMMAND_CALLBACKS = new HashMap<>();
+	
+	static {
+		COMMAND_CALLBACKS.put("setstat", ServerCommandHandler::invokeSetStats);
+		COMMAND_CALLBACKS.put("spawn", ServerCommandHandler::invokeEnemySpawn);
+		COMMAND_CALLBACKS.put("seteffect", ServerCommandHandler::invokeSetEffect);
+	}
+	
 	public static void invokeCommand(RealmManagerServer mgr, CommandPacket command) throws Exception {
 		final ServerCommandMessage message = CommandType.fromPacket(command);
 		final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
@@ -27,17 +38,8 @@ public class ServerCommandHandler {
 			if(!playerAccount.isAdmin()) 
 				throw new IllegalStateException("Player "+playerAccount.getAccountName()+" is not allowed to use Admin commands.");
 			
-			switch (message.getCommand().toLowerCase()) {
-			case "setstat":
-				invokeSetStats(fromPlayer, message);
-				break;
-			case "spawn":
-				invokeEnemySpawn(mgr, fromPlayer, message);
-				break;
-			case "seteffect":
-				invokeSetEffect(fromPlayer, message);
-				break;
-			default:
+			TriConsumer<RealmManagerServer, Player, ServerCommandMessage> consumer = COMMAND_CALLBACKS.get(message.getCommand().toLowerCase());
+			if(consumer==null) {
 				CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 501,
 						"Unknown command " + message.getCommand());
 				mgr.enqueueServerPacket(fromPlayer, errorResponse);
@@ -49,7 +51,7 @@ public class ServerCommandHandler {
 		}
 	}
 
-	private static void invokeSetStats(Player target, ServerCommandMessage message) throws Exception {
+	private static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs() == null || message.getArgs().size() != 2)
 			throw new IllegalArgumentException("Usage: /setstat {STAT_NAME} {STAT_VALUE}");
 		final short valueToSet = Short.parseShort(message.getArgs().get(1));
@@ -82,27 +84,26 @@ public class ServerCommandHandler {
 		}
 	}
 
-	private static void invokeEnemySpawn(RealmManagerServer mgr, Player player, ServerCommandMessage message)
-			throws Exception {
+	private static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if(message.getArgs()==null || message.getArgs().size()!=1) 
 			throw new IllegalArgumentException("Usage: /spawn {ENEMY_ID}");
 		
-		log.info("Player {} spawn enemy {} at {}", player.getName(), message.getArgs().get(0), player.getPos());
-		final Realm from = mgr.searchRealmsForPlayers(player.getId());
+		log.info("Player {} spawn enemy {} at {}", target.getName(), message.getArgs().get(0), target.getPos());
+		final Realm from = mgr.searchRealmsForPlayers(target.getId());
 		final int enemyId = Integer.parseInt(message.getArgs().get(0));
-		from.addEnemy(GameObjectUtils.getEnemyFromId(enemyId, player.getPos().clone()));
+		from.addEnemy(GameObjectUtils.getEnemyFromId(enemyId, target.getPos().clone()));
 	}
 
-	private static void invokeSetEffect(Player player, ServerCommandMessage message) throws Exception {
+	private static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs()==null || message.getArgs().size() < 3)
 			throw new IllegalArgumentException("Usage: /effect {add | clear} {EFFECT_ID} {DURATION (sec)}");
 		switch (message.getArgs().get(0)) {
 		case "add":
-			player.addEffect(EffectType.valueOf(Short.valueOf(message.getArgs().get(1))),
+			target.addEffect(EffectType.valueOf(Short.valueOf(message.getArgs().get(1))),
 					1000 * Long.parseLong(message.getArgs().get(2)));
 			break;
 		case "clear":
-			player.resetEffects();
+			target.resetEffects();
 			break;
 		}
 	}
