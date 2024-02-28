@@ -34,7 +34,7 @@ public class Enemy11Script extends ScriptBase {
 		for (int i = 0; i < 12; i++) {
 			this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
 					(float) (angle + ((Math.PI / 6) * i)), group);
-			this.sleep(25);
+			this.sleep(150);
 
 		}
 	}

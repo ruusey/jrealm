@@ -32,12 +32,16 @@ public class Enemy10Script extends ScriptBase {
 		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(2);
 		Projectile p = group.getProjectiles().get(0);
 
-		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(-32, 0), angle, group);
-		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(0, -32), angle, group);
 		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
 		this.sleep(100);
-		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(-32, 0), angle, group);
-		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(0, -32), angle, group);
+		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
+		this.sleep(100);
+		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
+		this.sleep(100);
+		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
+		this.sleep(100);
+		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
+		this.sleep(100);
 		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
 	}
 }

@@ -36,7 +36,7 @@ public class Enemy12Script extends ScriptBase {
 					(float) (angle + ((Math.PI / 10) * i)), group);
 			this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
 					(float) (angle + ((Math.PI / 10) * -i)), group);
-			this.sleep(50);
+			this.sleep(100);
 		}
 	}
 }
