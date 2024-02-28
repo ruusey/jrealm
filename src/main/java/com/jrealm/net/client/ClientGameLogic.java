@@ -229,9 +229,9 @@ public class ClientGameLogic {
 					break;
 				}
 				if(cli.getCurrentPlayerId()==movement.getEntityId()) {
-					playerToUpdate.applyMovementLerp(movement, 0.5f);
+					playerToUpdate.applyMovementLerp(movement, 1.0f);
 				}else {
-					playerToUpdate.applyMovementLerp(movement);
+					playerToUpdate.applyMovementLerp(movement, 0.55f);
 				}
 				break;
 			case ENEMY:
