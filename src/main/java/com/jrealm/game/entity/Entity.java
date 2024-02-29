@@ -178,7 +178,6 @@ public abstract class Entity extends GameObject {
 			this.down=false;
 			this.up=false;
 		}
-
 	}
 
 	@Override

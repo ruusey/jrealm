@@ -19,10 +19,6 @@ public class GameLauncher {
 	public static final String GAME_VERSION = "0.3.3-Testing";
 	private static final String HELP_MSG = "Please set the player email, password, server and character UUID. [java -jar ./jrealm-{version}.jar {-client | -server| -embedded} {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}]";
 
-	public GameLauncher() {
-		new Window();
-	}
-
 	public static void main(String[] args) {
 		GameLauncher.log.info("Starting JRealm...");
 		if (args.length < 2) {
@@ -96,7 +92,7 @@ public class GameLauncher {
 			GameLauncher.log.error(GameLauncher.HELP_MSG);
 			System.exit(-1);
 		}
-		new GameLauncher();
+		new Window();
 	}
 
 	private static boolean argsContains(final String[] args, String arg) {

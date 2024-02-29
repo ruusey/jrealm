@@ -102,7 +102,7 @@ public class ServerGameLogic {
 					Enemy enemy = GameObjectUtils.getEnemyFromId(13, spawnPos);
 					int healthMult = (4);
 					enemy.setHealth(enemy.getHealth() * healthMult);
-					enemy.setPos(spawnPos.clone(100, 0));
+					enemy.setPos(spawnPos.clone(200, 0));
 					generatedRealm.addEnemy(enemy);
 					exitPortal.setId(mgr.getTopRealm().getRealmId());
 					exitPortal.setNeverExpires();

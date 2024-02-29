@@ -12,7 +12,7 @@ public class Window extends JFrame {
 	private GamePanel gp;
 
 	public Window() {
-		this.setTitle("JRealm");
+		this.setTitle("JRealm " + GameLauncher.GAME_VERSION);
 		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		this.setIgnoreRepaint(true);
 		this.pack();
@@ -24,10 +24,9 @@ public class Window extends JFrame {
 	@Override
 	public void addNotify() {
 		super.addNotify();
-		this.createBufferStrategy(2);
+		this.createBufferStrategy(1);
 		this.bs = this.getBufferStrategy();
 		this.gp = new GamePanel(this.bs, 1920, 1080);
-		// add(gp);
 		this.setContentPane(this.gp);
 	}
 }

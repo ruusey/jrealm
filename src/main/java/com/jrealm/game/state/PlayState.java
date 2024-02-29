@@ -183,7 +183,7 @@ public class PlayState extends GameState {
 			p.xCol = false;
 			if (p.getDx() != 0.0f) {
 				// p.applyMovementLerp(p.getDx(), 0, 0.65f);
-				p.getPos().x += (p.getDx()*0.35f);
+				p.getPos().x += (p.getDx()*0.45f);
 			}
 		} else {
 			p.xCol = true;
@@ -194,7 +194,7 @@ public class PlayState extends GameState {
 			p.yCol = false;
 			if (p.getDy() != 0.0f) {
 				// p.applyMovementLerp(0, p.getDy(), 0.65f);
-				p.getPos().y += (p.getDy()*0.35f);
+				p.getPos().y += (p.getDy()*0.45f);
 			}
 		} else {
 			p.yCol = true;
