@@ -323,6 +323,7 @@ public class ServerGameLogic {
 			Optional<CharacterDto> characterClass = null;
 			try {
 				loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
+				ServerGameLogic.DATA_SERVICE.setSessionToken(loginToken.getToken());
 				PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
 						.executeGet("/data/account/" + loginToken.getAccountGuid(), null, PlayerAccountDto.class);
 				accountName = account.getAccountName();

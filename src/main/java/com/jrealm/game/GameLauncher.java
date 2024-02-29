@@ -28,7 +28,7 @@ public class GameLauncher {
 		}
 
 		ServerGameLogic.DATA_SERVICE = new JRealmDataService(HttpClient.newHttpClient(),
-				"http://" + args[1] + ":8085/");
+				"http://" + args[1] + ":8085/", null);
 		try {
 			PingResponseDto dataServerOnline = ServerGameLogic.DATA_SERVICE.executeGet("ping", null,
 					PingResponseDto.class);
