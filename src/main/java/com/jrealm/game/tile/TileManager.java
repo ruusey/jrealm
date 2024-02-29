@@ -104,7 +104,7 @@ public class TileManager {
 		}
 		return Arrays.asList(baseLayer, collisionLayer);
 	}
-
+	// Builds map layers from a map model that has statically defined layers (is not a terrain)
 	private List<TileMap> getLayersFromData(MapModel model) {
 		Map<String, int[][]> layerMap = model.getData();
 		TileMap baseLayer = new TileMap((short)model.getMapId(), model.getTileSize(), model.getWidth(), model.getHeight());
@@ -119,7 +119,6 @@ public class TileManager {
 				int tileIdToCreate = baseData[i][j];
 				TileData tileData = GameDataManager.TILES.get(tileIdToCreate).getData();
 				baseLayer.setBlockAt(i, j, (short)tileIdToCreate, tileData);
-				//collisionLayer.setBlockAt(i, j, (short)0, GameDataManager.TILES.get(0).getData());
 			}
 		}
 
@@ -128,7 +127,6 @@ public class TileManager {
 				int tileIdToCreate = collisionData[i][j];
 				TileData tileData = GameDataManager.TILES.get(tileIdToCreate).getData();
 				collisionLayer.setBlockAt(i, j, (short)tileIdToCreate, tileData);
-				//collisionLayer.setBlockAt(i, j, (short)0, GameDataManager.TILES.get(0).getData());
 			}
 		}
 		return Arrays.asList(baseLayer, collisionLayer);

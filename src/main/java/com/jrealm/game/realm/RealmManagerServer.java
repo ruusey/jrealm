@@ -350,7 +350,7 @@ public class RealmManagerServer implements Runnable {
 			}else {
 				// Player Disconnect routine
 				final Long dcPlayerId = this.getRemoteAddresses().get(thread.getKey());
-				final Realm playerLocation = this.searchRealmsForPlayers(dcPlayerId);
+				final Realm playerLocation = this.searchRealmsForPlayer(dcPlayerId);
 				final Player dcPlayer = playerLocation.getPlayer(dcPlayerId);
 				this.persistPlayerAsync(dcPlayer);
 				playerLocation.getExpiredPlayers().add(dcPlayerId);
@@ -1001,7 +1001,7 @@ public class RealmManagerServer implements Runnable {
 		this.realms.put(realm.getRealmId(), realm);
 	}
 
-	public Realm searchRealmsForPlayers(long playerId) {
+	public Realm searchRealmsForPlayer(long playerId) {
 		Realm found = null;
 		for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
 			for (Player player : realm.getValue().getPlayers().values()) {
@@ -1012,6 +1012,19 @@ public class RealmManagerServer implements Runnable {
 		}
 		return found;
 	}
+	
+	public Player searchRealmsForPlayer(String playerName) {
+		Player found = null;
+		for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
+			for (Player player : realm.getValue().getPlayers().values()) {
+				if (player.getName()!=null && player.getName().equalsIgnoreCase(playerName)) {
+					found = player;
+				}
+			}
+		}
+		return found;
+	}
+	
 
 	private void beginPlayerSync() {
 		final Runnable playerSync = () ->{

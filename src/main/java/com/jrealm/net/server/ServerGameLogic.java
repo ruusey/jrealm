@@ -96,7 +96,7 @@ public class ServerGameLogic {
 				if (portalUsed.getMapId() == 5) {
 					final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
 							GlobalConstants.BASE_TILE_SIZE * 13);
-					generatedRealm.setDepth(-1);
+					generatedRealm.setDepth(currentRealm.getDepth()+1);
 					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2, spawnPos.clone(250, 0));
 					user.setPos(spawnPos);
 					Enemy enemy = GameObjectUtils.getEnemyFromId(13, spawnPos);
@@ -119,12 +119,10 @@ public class ServerGameLogic {
 					generatedRealm.addPortal(exitPortal);
 					generatedRealm.addPlayer(user);
 				}
-
 				mgr.addRealm(generatedRealm);
 			} else {
 				realmAtDepth.get().addPlayer(user);
 			}
-
 		}
 		// Remove player from current, add to target ( realm already exists)
 		else {
@@ -162,7 +160,7 @@ public class ServerGameLogic {
 
 	public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
 		final PlayerMovePacket playerMovePacket = (PlayerMovePacket) packet;
-		final Realm realm = mgr.searchRealmsForPlayers(playerMovePacket.getEntityId());
+		final Realm realm = mgr.searchRealmsForPlayer(playerMovePacket.getEntityId());
 		if (realm == null) {
 			ServerGameLogic.log.error("Failed to get realm for player {}", playerMovePacket.getEntityId());
 			return;
@@ -225,7 +223,7 @@ public class ServerGameLogic {
 
 	public static void handleUseAbilityServer(RealmManagerServer mgr, Packet packet) {
 		final UseAbilityPacket useAbilityPacket = (UseAbilityPacket) packet;
-		final Realm realm = mgr.searchRealmsForPlayers(useAbilityPacket.getPlayerId());
+		final Realm realm = mgr.searchRealmsForPlayer(useAbilityPacket.getPlayerId());
 		mgr.useAbility(realm.getRealmId(), useAbilityPacket.getPlayerId(),
 				new Vector2f(useAbilityPacket.getPosX(), useAbilityPacket.getPosY()));
 		ServerGameLogic.log.info("[SERVER] Recieved UseAbility Packet For Player {}", useAbilityPacket.getPlayerId());
@@ -233,7 +231,7 @@ public class ServerGameLogic {
 
 	public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {
 		final PlayerShootPacket shootPacket = (PlayerShootPacket) packet;
-		final Realm realm = mgr.searchRealmsForPlayers(shootPacket.getEntityId());
+		final Realm realm = mgr.searchRealmsForPlayer(shootPacket.getEntityId());
 		if (realm == null) {
 			ServerGameLogic.log.error("Failed to get realm for player {}", shootPacket.getEntityId());
 			return;
@@ -260,7 +258,7 @@ public class ServerGameLogic {
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		final TextPacket textPacket = (TextPacket) packet;
 		final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
-		final Realm from = mgr.searchRealmsForPlayers(fromPlayerId);
+		final Realm from = mgr.searchRealmsForPlayer(fromPlayerId);
 		try {
 			ServerGameLogic.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}",
 					textPacket.getTo(), textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());

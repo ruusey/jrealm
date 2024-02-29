@@ -20,7 +20,7 @@ public class ServerItemHelper {
 		final MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
 		ServerItemHelper.log.info("[SERVER] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
 
-		final Realm realm = mgr.searchRealmsForPlayers(moveItemPacket.getPlayerId());
+		final Realm realm = mgr.searchRealmsForPlayer(moveItemPacket.getPlayerId());
 
 		final Player player = realm.getPlayer(moveItemPacket.getPlayerId());
 		// if moving item from inventory

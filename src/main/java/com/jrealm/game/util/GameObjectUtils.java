@@ -20,5 +20,4 @@ public class GameObjectUtils {
 		enemy.setPos(pos);
 		return enemy;
 	}
-
 }
