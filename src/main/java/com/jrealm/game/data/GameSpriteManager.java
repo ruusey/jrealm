@@ -10,7 +10,7 @@ import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.graphics.SpriteSheetNew;
+import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.model.SpriteModel;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.net.server.ServerGameLogic;
@@ -59,11 +59,11 @@ public class GameSpriteManager {
 		}
 	}
 
-	public static SpriteSheetNew getSpriteSheet(SpriteModel spriteModel) {
-		SpriteSheetNew result = null;
+	public static SpriteSheet getSpriteSheet(SpriteModel spriteModel) {
+		SpriteSheet result = null;
 		try {
 			final BufferedImage spriteSheetImage = GameSpriteManager.IMAGE_CACHE.get(spriteModel.getSpriteKey());
-			final SpriteSheetNew sheet = new SpriteSheetNew(spriteSheetImage, spriteModel);
+			final SpriteSheet sheet = new SpriteSheet(spriteSheetImage, spriteModel);
 			result = sheet;
 		} catch (Exception e) {
 			GameSpriteManager.log.error("Failed to build sprite sheet for sprite model {}. Reason: {}", spriteModel, e);
@@ -121,7 +121,7 @@ public class GameSpriteManager {
 	private static BufferedImage loadSpriteRemote(String file) {
 		BufferedImage sprite = null;
 		try {
-			final java.net.URL imageUrl = new java.net.URL(ServerGameLogic.DATA_SERVICE.getBaseUrl() + file);
+			final java.net.URL imageUrl = new java.net.URL(ServerGameLogic.DATA_SERVICE.getBaseUrl() + "game-data/"+file);
 			sprite = ImageIO.read(imageUrl);
 		} catch (Exception e) {
 			GameSpriteManager.log.error("ERROR: could not load file: {}", file);
@@ -129,9 +129,9 @@ public class GameSpriteManager {
 		return sprite;
 	}
 
-	public static SpriteSheetNew loadClassSprites(CharacterClass cls) {
+	public static SpriteSheet loadClassSprites(CharacterClass cls) {
 		final BufferedImage classSpritesImage = GameSpriteManager.IMAGE_CACHE.get("rotmg-classes.png");
-		final SpriteSheetNew classSprites = new SpriteSheetNew(classSpritesImage, 0, 4 * cls.classId);
+		final SpriteSheet classSprites = new SpriteSheet(classSpritesImage, 0, 4 * cls.classId);
 		return classSprites;
 	}
 }

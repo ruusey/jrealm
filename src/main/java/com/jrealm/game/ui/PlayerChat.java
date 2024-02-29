@@ -59,12 +59,6 @@ public class PlayerChat {
 
 		if (key.enter.down && !this.pressedEnter) {
 			this.pressedEnter = true;
-			return;
-		}
-
-		if (this.pressedEnter && !key.enter.down) {
-			this.releasedEnter = true;
-			return;
 		}
 
 		if (this.pressedEnter && this.releasedEnter) {
@@ -91,6 +85,11 @@ public class PlayerChat {
 					PlayerChat.log.error("Failed to send PlayerChat to server. Reason: {}", e);
 				}
 			}
+		}
+		
+		if (this.pressedEnter && !key.enter.down) {
+			this.releasedEnter = true;
+			return;
 		}
 	}
 

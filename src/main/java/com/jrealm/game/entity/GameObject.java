@@ -2,7 +2,7 @@ package com.jrealm.game.entity;
 
 import java.awt.Graphics2D;
 
-import com.jrealm.game.graphics.SpriteSheetNew;
+import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.client.packet.ObjectMovement;
@@ -32,13 +32,13 @@ public abstract class GameObject {
 	protected String name = "";
 
 	public boolean discovered;
-	private SpriteSheetNew spriteSheet;
+	private SpriteSheet spriteSheet;
 
 	public GameObject(long id, Vector2f origin, int spriteX, int spriteY, int size) {
 		this(id, origin, size);
 	}
 
-	public void setSpriteSheet(final SpriteSheetNew spriteSheet) {
+	public void setSpriteSheet(final SpriteSheet spriteSheet) {
 		this.spriteSheet = spriteSheet;
 	}
 

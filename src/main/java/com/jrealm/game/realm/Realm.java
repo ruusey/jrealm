@@ -28,7 +28,7 @@ import com.jrealm.game.entity.item.Chest;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.graphics.SpriteSheetNew;
+import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
@@ -156,7 +156,7 @@ public class Realm {
 	public long addPlayerIfNotExists(Player player) {
 		if(!this.players.containsKey(player.getId())) {
 			this.acquirePlayerLock();
-			SpriteSheetNew sheet = GameSpriteManager.loadClassSprites(CharacterClass.valueOf(player.getClassId()));
+			SpriteSheet sheet = GameSpriteManager.loadClassSprites(CharacterClass.valueOf(player.getClassId()));
 			player.setSpriteSheet(sheet);
 			this.players.put(player.getId(), player);
 			this.releasePlayerLock();
@@ -222,7 +222,7 @@ public class Realm {
 		Bullet existing = this.bullets.get(b.getId());
 		if(existing==null) {
 			ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(b.getProjectileId());
-			SpriteSheetNew bulletSprite = GameSpriteManager.getSpriteSheet(pg);
+			SpriteSheet bulletSprite = GameSpriteManager.getSpriteSheet(pg);
 			final Sprite bulletImage = bulletSprite.getSprites().get(0);
 
 			if (pg.getAngleOffset() != null) {
@@ -283,7 +283,7 @@ public class Realm {
 		Enemy existing = this.enemies.get(enemy.getId());
 		if(existing==null) {
 			EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
-			enemy.setSpriteSheet(SpriteSheetNew.fromSpriteModel(model));
+			enemy.setSpriteSheet(SpriteSheet.fromSpriteModel(model));
 			this.enemies.put(enemy.getId(), enemy);
 
 		}

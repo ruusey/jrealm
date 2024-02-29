@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SpriteSheetNew {
+public class SpriteSheet {
 	private BufferedImage spriteSheetImage;
 	private int animationFrame = 0;
 	private int elapsedFrames = 0;
@@ -31,7 +31,7 @@ public class SpriteSheetNew {
 	
 	// Builds a sprite sheet from fileName at row, col with given subimage width and height of 
 	// spriteWidth, spriteHeight
-	public SpriteSheetNew(BufferedImage toUse, int spriteWidth, int spriteHeight, int col, int row) {
+	public SpriteSheet(BufferedImage toUse, int spriteWidth, int spriteHeight, int col, int row) {
 		this.spriteImageWidth = spriteWidth;
 		this.spriteImageHeight = spriteHeight;
 		this.spriteSheetImage = toUse;
@@ -48,12 +48,12 @@ public class SpriteSheetNew {
 	}
 	// Builds a sprite sheet from fileName at row, col with given subimage width and height of 
 	// spriteWidth, spriteHeight
-	public SpriteSheetNew(String fileName, int spriteWidth, int spriteHeight, int col, int row) {
+	public SpriteSheet(String fileName, int spriteWidth, int spriteHeight, int col, int row) {
 		this(GameSpriteManager.IMAGE_CACHE.get(fileName), spriteWidth, spriteHeight, col, row);
 	}		
 	
 	// Builds an empty sprite sheet from fileName with spriteWidth and spriteHeight
-	public SpriteSheetNew(String fileName, int spriteWidth, int spriteHeight) {
+	public SpriteSheet(String fileName, int spriteWidth, int spriteHeight) {
 		BufferedImage toUse = GameSpriteManager.IMAGE_CACHE.get(fileName);
 		this.spriteImageWidth = spriteWidth;
 		this.spriteImageHeight = spriteHeight;
@@ -69,23 +69,23 @@ public class SpriteSheetNew {
 		}
 	}
 	
-	public SpriteSheetNew(BufferedImage baseSheet) {
+	public SpriteSheet(BufferedImage baseSheet) {
 		this(baseSheet, GlobalConstants.BASE_SPRITE_SIZE, GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
-	public SpriteSheetNew(BufferedImage baseSheet, int x, int y) {
+	public SpriteSheet(BufferedImage baseSheet, int x, int y) {
 		this(baseSheet,GlobalConstants.BASE_SPRITE_SIZE,
 				GlobalConstants.BASE_SPRITE_SIZE, x,
 				y);
 	}
 
-	public SpriteSheetNew(BufferedImage baseSheet, SpriteModel model) {
+	public SpriteSheet(BufferedImage baseSheet, SpriteModel model) {
 		this(baseSheet, model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize(),
 				model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize(), model.getCol(),
 				model.getRow());
 	}
 
-	public SpriteSheetNew(BufferedImage baseSheet, int spriteSize, List<Tuple<Integer, Integer>> spriteFrames,
+	public SpriteSheet(BufferedImage baseSheet, int spriteSize, List<Tuple<Integer, Integer>> spriteFrames,
 			final List<Integer> animationFrames) {
 		this(baseSheet, spriteSize, spriteSize);
 		//Copy over the animation frames
@@ -175,16 +175,16 @@ public class SpriteSheetNew {
 				this.spriteImageWidth, this.spriteImageHeight);
 	}
 
-	public static SpriteSheetNew fromSpriteModel(SpriteModel model) {
+	public static SpriteSheet fromSpriteModel(SpriteModel model) {
 		BufferedImage toUse = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
-		return new SpriteSheetNew(toUse, model);
+		return new SpriteSheet(toUse, model);
 	}
 	
-	public static SpriteSheetNew x8SpriteSheet(final String fileName) {
-		return new SpriteSheetNew(fileName, GlobalConstants.BASE_SPRITE_SIZE, GlobalConstants.BASE_SPRITE_SIZE);
+	public static SpriteSheet x8SpriteSheet(final String fileName) {
+		return new SpriteSheet(fileName, GlobalConstants.BASE_SPRITE_SIZE, GlobalConstants.BASE_SPRITE_SIZE);
 	}
 	
-	public static SpriteSheetNew x16SpriteSheet(final String fileName) {
-		return new SpriteSheetNew(fileName, GlobalConstants.MEDIUM_ART_SIZE, GlobalConstants.MEDIUM_ART_SIZE);
+	public static SpriteSheet x16SpriteSheet(final String fileName) {
+		return new SpriteSheet(fileName, GlobalConstants.MEDIUM_ART_SIZE, GlobalConstants.MEDIUM_ART_SIZE);
 	}
 }

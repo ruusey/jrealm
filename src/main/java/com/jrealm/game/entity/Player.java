@@ -160,6 +160,12 @@ public class Player extends Entity implements Streamable<Player>{
 	public void update(double time) {
 		super.update(time);
 		Stats stats = this.getComputedStats();
+		float currentHealthPercent = (float)this.getHealth()/(float)this.getComputedStats().getHp();
+		float currentManaPercent = (float)this.getMana()/(float)this.getComputedStats().getMp();
+
+		this.setHealthpercent(currentHealthPercent);
+		this.setManapercent(currentManaPercent);
+
 		if (((Instant.now().toEpochMilli() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
 			float mult = 1.0f;
@@ -205,6 +211,11 @@ public class Player extends Entity implements Streamable<Player>{
 
 	public void drinkMp() {
 		this.stats.setMp((short) (this.stats.getMp() + 5));
+	}
+	
+	@Override
+	public float getHealthpercent() {
+		return this.healthpercent;
 	}
 
 	@Override

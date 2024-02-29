@@ -12,7 +12,7 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
-import com.jrealm.game.graphics.SpriteSheetNew;
+import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ItemTooltip;
@@ -39,7 +39,7 @@ public class PlayerUI {
 	private Graphics2D tempGraphics;
 	private long lastAction = Instant.now().toEpochMilli();
 	public PlayerUI(PlayState p) {
-		SpriteSheetNew bars = new SpriteSheetNew("fillbars.png", 12,12);
+		SpriteSheet bars = new SpriteSheet("fillbars.png", 12,12);
 		BufferedImage[] barSpritesHp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(39, 0, 7, 14),
 				bars.cropImage(0, 0, 12, 20) };
 		BufferedImage[] barSpritesMp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(39, 16, 7, 14),

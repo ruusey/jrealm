@@ -5,7 +5,7 @@ import java.awt.Graphics2D;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.graphics.Font;
 import com.jrealm.game.graphics.Fontf;
-import com.jrealm.game.graphics.SpriteSheetNew;
+import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.Camera;
@@ -30,8 +30,8 @@ public class GameStateManager {
 //	public static SpriteSheet ui;
 //	public static SpriteSheet button;
 	
-	public static SpriteSheetNew ui;
-	public static SpriteSheetNew button;
+	public static SpriteSheet ui;
+	public static SpriteSheet button;
 	public static Camera cam;
 	public static Graphics2D g;
 
@@ -48,8 +48,8 @@ public class GameStateManager {
 		GameStateManager.fontf.loadFont("font/GravityBold8.ttf", "GravityBold8");
 		GameStateManager.currentFont = GameStateManager.font;
 
-		GameStateManager.ui = new SpriteSheetNew("ui.png", 64, 64);
-		GameStateManager.button = new SpriteSheetNew("buttons.png", 122, 57);
+		GameStateManager.ui = new SpriteSheet("ui.png", 64, 64);
+		GameStateManager.button = new SpriteSheet("buttons.png", 122, 57);
 
 
 		GameStateManager.cam = new Camera(new Rectangle(new Vector2f(-64, -64), GamePanel.width + 128, GamePanel.height + 128));

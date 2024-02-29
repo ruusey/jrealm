@@ -35,15 +35,15 @@ public class FillBars {
 		this.size = size;
 		this.length = length;
 		this.field = field;
-		Method method;
-		try {
-			method = e.getClass().getMethod(field);
-			float energy = (float) method.invoke(e);
-
-			this.energyLength = (int) ((this.bar[0].getWidth() + size) * (length * energy));
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
+//		Method method;
+//		try {
+//			method = e.getClass().getMethod(field);
+//			float energy = (float) method.invoke(e);
+//
+//			this.energyLength = (int) ((this.bar[0].getWidth() + size) * (length * energy));
+//		} catch (Exception e1) {
+//			e1.printStackTrace();
+//		}
 
 		this.barWidthRatio = ((this.bar[0].getWidth() + size) * length) / (this.bar[0].getWidth());
 		this.energyWidthRatio = this.energyLength / (this.bar[0].getWidth());
@@ -57,8 +57,20 @@ public class FillBars {
 
 		Method method;
 		try {
-			method = this.e.getClass().getMethod(this.field);
-			float energy = (float) method.invoke(this.e);
+			float energy = 0.0f;
+			switch(this.field) {
+			case "getHealthPercent":
+				energy = e.getHealthpercent();
+				break;
+			case "getManaPercent":
+				energy = e.getManapercent();
+				break;
+			case "getExperiencePercent":
+				energy = ((Player)e).getExperiencePercent();
+				break;
+			}
+			
+			
 			this.energyLength = (int) ((this.bar[0].getWidth() + this.size) * (this.length * energy));
 		} catch (Exception e1) {
 

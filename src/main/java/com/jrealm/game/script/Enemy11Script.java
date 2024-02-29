@@ -31,7 +31,7 @@ public class Enemy11Script extends ScriptBase {
 		float angle = Bullet.getAngle(source, dest);
 		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(26);
 		Projectile p = group.getProjectiles().get(0);
-		for (int i = 0; i < 12; i++) {
+		for (int i = 0; i < 6; i++) {
 			this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
 					(float) (angle + ((Math.PI / 6) * i)), group);
 			this.sleep(150);

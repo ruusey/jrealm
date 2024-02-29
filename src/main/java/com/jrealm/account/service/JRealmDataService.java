@@ -27,6 +27,7 @@ public class JRealmDataService {
 		URI targetURI = new URI(this.baseUrl + path);
 		HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
 				.DELETE();
+		this.setAuth(httpRequest);
 
 		HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
 		if (response.statusCode() != 200)
@@ -41,6 +42,7 @@ public class JRealmDataService {
 				.ofString(JRealmDataService.REQUEST_MAPPER.writeValueAsString(object));
 		HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
 				.POST(body);
+		this.setAuth(httpRequest);
 
 		HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
 		if (response.statusCode() != 200)
@@ -55,6 +57,7 @@ public class JRealmDataService {
 				.ofString(JRealmDataService.REQUEST_MAPPER.writeValueAsString(object));
 		HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
 				.PUT(body);
+		this.setAuth(httpRequest);
 
 		HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
 		if (response.statusCode() != 200)
@@ -68,6 +71,8 @@ public class JRealmDataService {
 		HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
 				.GET();
 		HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
+		this.setAuth(httpRequest);
+
 		// TODO: Add query params
 		if (response.statusCode() != 200)
 			throw new IOException("Response was non 200.");
@@ -104,5 +109,4 @@ public class JRealmDataService {
 			System.out.println("Failed to login. " + e.getMessage());
 		}
 	}
-
 }
