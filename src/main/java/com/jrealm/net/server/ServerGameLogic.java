@@ -151,7 +151,6 @@ public class ServerGameLogic {
 		}
 		currentRealm.removePlayer(user);
 		mgr.clearPlayerState(user.getId());
-
 	}
 
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {

@@ -98,7 +98,7 @@ public class ServerCommandHandler {
 
 	private static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs()==null || message.getArgs().size() < 3)
-			throw new IllegalArgumentException("Usage: /effect {add | clear} {EFFECT_ID} {DURATION (sec)}");
+			throw new IllegalArgumentException("Usage: /seteffect {add | clear} {EFFECT_ID} {DURATION (sec)}");
 		switch (message.getArgs().get(0)) {
 		case "add":
 			target.addEffect(EffectType.valueOf(Short.valueOf(message.getArgs().get(1))),

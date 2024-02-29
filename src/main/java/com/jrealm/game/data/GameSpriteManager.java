@@ -59,11 +59,11 @@ public class GameSpriteManager {
 		}
 	}
 
-	public static SpriteSheetNew getSpriteSheet(final SpriteModel spriteModel) {
+	public static SpriteSheetNew getSpriteSheet(SpriteModel spriteModel) {
 		SpriteSheetNew result = null;
 		try {
-			BufferedImage spriteSheetImage = GameSpriteManager.IMAGE_CACHE.get(spriteModel.getSpriteKey());
-			SpriteSheetNew sheet = new SpriteSheetNew(spriteSheetImage, spriteModel);
+			final BufferedImage spriteSheetImage = GameSpriteManager.IMAGE_CACHE.get(spriteModel.getSpriteKey());
+			final SpriteSheetNew sheet = new SpriteSheetNew(spriteSheetImage, spriteModel);
 			result = sheet;
 		} catch (Exception e) {
 			GameSpriteManager.log.error("Failed to build sprite sheet for sprite model {}. Reason: {}", spriteModel, e);
@@ -73,8 +73,8 @@ public class GameSpriteManager {
 	}
 
 	public static Sprite loadSprite(int x, int y, String file, int spriteSize) {
-		BufferedImage classSpritesImage = GameSpriteManager.IMAGE_CACHE.get(file);
-		BufferedImage subImage = classSpritesImage.getSubimage(x * spriteSize, y * spriteSize, spriteSize, spriteSize);
+		final BufferedImage classSpritesImage = GameSpriteManager.IMAGE_CACHE.get(file);
+		final BufferedImage subImage = classSpritesImage.getSubimage(x * spriteSize, y * spriteSize, spriteSize, spriteSize);
 		return new Sprite(subImage);
 	}
 
@@ -82,8 +82,8 @@ public class GameSpriteManager {
 		if (model.getSpriteSize() == 0) {
 			model.setSpriteSize(GlobalConstants.BASE_SPRITE_SIZE);
 		}
-		BufferedImage classSpritesImage = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
-		BufferedImage subImage = classSpritesImage.getSubimage(model.getCol() * model.getSpriteSize(),
+		final BufferedImage classSpritesImage = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
+		final BufferedImage subImage = classSpritesImage.getSubimage(model.getCol() * model.getSpriteSize(),
 				model.getRow() * model.getSpriteSize(), model.getSpriteSize(),
 				model.getSpriteSize());
 		return new Sprite(subImage);
@@ -106,7 +106,6 @@ public class GameSpriteManager {
 			GameSpriteManager.log.error("Failed to load game sprites. Exiting. Reason: {}", e);
 			System.exit(-1);
 		}
-
 	}
 
 	private static BufferedImage loadSprite(String file) {
@@ -131,8 +130,8 @@ public class GameSpriteManager {
 	}
 
 	public static SpriteSheetNew loadClassSprites(CharacterClass cls) {
-		BufferedImage classSpritesImage = GameSpriteManager.IMAGE_CACHE.get("rotmg-classes.png");
-		SpriteSheetNew classSprites = new SpriteSheetNew(classSpritesImage, 0, 4 * cls.classId);
+		final BufferedImage classSpritesImage = GameSpriteManager.IMAGE_CACHE.get("rotmg-classes.png");
+		final SpriteSheetNew classSprites = new SpriteSheetNew(classSpritesImage, 0, 4 * cls.classId);
 		return classSprites;
 	}
 }

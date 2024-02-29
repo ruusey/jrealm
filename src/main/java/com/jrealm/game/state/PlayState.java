@@ -77,7 +77,7 @@ public class PlayState extends GameState {
 		if (setEquipment || (this.playerId == -1l)) {
 			player.equipSlots(GameDataManager.getStartingEquipment(cls));
 		} else {
-			GameItem[] existing = this.getPlayer().getInventory();
+			final GameItem[] existing = this.getPlayer().getInventory();
 			player.setInventory(existing);
 		}
 		this.cam.target(player);
@@ -103,7 +103,7 @@ public class PlayState extends GameState {
 	@Override
 	public void update(double time) {
 
-		Player player = this.realmManager.getRealm().getPlayer(this.realmManager.getCurrentPlayerId());
+		final Player player = this.realmManager.getRealm().getPlayer(this.realmManager.getCurrentPlayerId());
 
 		if (player == null)
 			return;
@@ -114,7 +114,7 @@ public class PlayState extends GameState {
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
 			if (!this.gsm.isStateActive(GameStateManager.EDIT)) {
 
-				Runnable monitorDamageText = () -> {
+				final Runnable monitorDamageText = () -> {
 					List<EffectText> toRemove = new ArrayList<>();
 					for (EffectText text : this.getDamageText()) {
 						text.update();
@@ -125,7 +125,7 @@ public class PlayState extends GameState {
 					this.damageText.removeAll(toRemove);
 				};
 
-				Runnable playerShootDequeue = () -> {
+				final Runnable playerShootDequeue = () -> {
 					for (int i = 0; i < this.shotDestQueue.size(); i++) {
 						Vector2f dest = this.shotDestQueue.remove(i);
 						Vector2f source = this.getPlayer().getCenteredPosition();
@@ -160,7 +160,7 @@ public class PlayState extends GameState {
 					}
 				};
 
-				Runnable updatePlayerAndUi = () -> {
+				final Runnable updatePlayerAndUi = () -> {
 					// player.removeExpiredEffects();
 					player.update(time);
 					this.movePlayer(player);
@@ -183,7 +183,7 @@ public class PlayState extends GameState {
 			p.xCol = false;
 			if (p.getDx() != 0.0f) {
 				// p.applyMovementLerp(p.getDx(), 0, 0.65f);
-				p.getPos().x += (p.getDx()*0.55f);
+				p.getPos().x += (p.getDx()*0.35f);
 			}
 		} else {
 			p.xCol = true;
@@ -194,7 +194,7 @@ public class PlayState extends GameState {
 			p.yCol = false;
 			if (p.getDy() != 0.0f) {
 				// p.applyMovementLerp(0, p.getDy(), 0.65f);
-				p.getPos().y += (p.getDy()*0.55f);
+				p.getPos().y += (p.getDy()*0.35f);
 			}
 		} else {
 			p.yCol = true;
@@ -214,7 +214,6 @@ public class PlayState extends GameState {
 		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, src, dest, size, magnitude, range, damage,
 				isEnemy);
 		b.setFlags(flags);
-
 		this.realmManager.getRealm().addBullet(b);
 	}
 
@@ -232,7 +231,6 @@ public class PlayState extends GameState {
 				isEnemy);
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);
-
 		b.setFlags(flags);
 		return this.realmManager.getRealm().addBullet(b);
 	}
@@ -312,8 +310,6 @@ public class PlayState extends GameState {
 				}else {
 					lastDirectionTempMap.put(Cardinality.EAST, false);
 				}
-				spd = (float) (spd * Math.sqrt(2)) / 2.0f;
-
 				if (player.getIsUp() && player.getIsRight()) {
 					player.setDy(-spd);
 					player.setDx(spd);
