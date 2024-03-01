@@ -82,6 +82,7 @@ targeted by this Command `(defined in com.jrealm.game.messaging.CommandType)`
 
 The class `ServerCommandHandler` is responsible for handling individual Command functionality. Each command callback is registered statically at runtime
 in a similar way to Packet Callbacks
+
 **Example**:
 ```java
     static {
