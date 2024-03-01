@@ -16,7 +16,7 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.realm.RealmManagerServer;
-import com.jrealm.game.script.ScriptBase;
+import com.jrealm.game.script.EnemyScriptBase;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Streamable;
 
@@ -128,7 +128,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			if (canShoot) {
 				this.lastShotTick = System.currentTimeMillis();
 				Player target = player;
-				ScriptBase script = mgr.getEnemyScript(this.enemyId);
+				EnemyScriptBase script = mgr.getEnemyScript(this.enemyId);
 				if(script==null) {
 					Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
 

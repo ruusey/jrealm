@@ -10,7 +10,7 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 
-public class Enemy11Script extends ScriptBase {
+public class Enemy11Script extends EnemyScriptBase {
 
 	public Enemy11Script(RealmManagerServer mgr) {
 		super(mgr);

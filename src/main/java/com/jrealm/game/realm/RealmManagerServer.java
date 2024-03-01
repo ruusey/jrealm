@@ -49,7 +49,7 @@ import com.jrealm.game.script.Enemy10Script;
 import com.jrealm.game.script.Enemy11Script;
 import com.jrealm.game.script.Enemy12Script;
 import com.jrealm.game.script.Enemy13Script;
-import com.jrealm.game.script.ScriptBase;
+import com.jrealm.game.script.EnemyScriptBase;
 import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.Tile;
 import com.jrealm.game.tile.TileMap;
@@ -97,7 +97,7 @@ public class RealmManagerServer implements Runnable {
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
 	private List<RealmDecorator> realmDecorators = new ArrayList<>();
-	private List<ScriptBase> enemyScripts = new ArrayList<>();
+	private List<EnemyScriptBase> enemyScripts = new ArrayList<>();
 	private Semaphore realmLock = new Semaphore(1);
 
 	public RealmManagerServer() {
@@ -453,9 +453,9 @@ public class RealmManagerServer implements Runnable {
 		return result;
 	}
 
-	public ScriptBase getEnemyScript(int enemyId) {
-		ScriptBase result = null;
-		for (final ScriptBase enemyScript : this.enemyScripts) {
+	public EnemyScriptBase getEnemyScript(int enemyId) {
+		EnemyScriptBase result = null;
+		for (final EnemyScriptBase enemyScript : this.enemyScripts) {
 			if (enemyScript.getTargetEnemyId() == enemyId) {
 				result = enemyScript;
 			}

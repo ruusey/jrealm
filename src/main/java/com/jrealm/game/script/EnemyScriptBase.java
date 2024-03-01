@@ -8,10 +8,10 @@ import com.jrealm.game.realm.RealmManagerServer;
 import lombok.Data;
 
 @Data
-public abstract class ScriptBase implements BulletScript {
+public abstract class EnemyScriptBase implements EnemyScript {
 	private RealmManagerServer mgr;
 
-	public ScriptBase(final RealmManagerServer mgr) {
+	public EnemyScriptBase(final RealmManagerServer mgr) {
 		this.mgr = mgr;
 	}
 
