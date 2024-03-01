@@ -925,7 +925,7 @@ public class RealmManagerServer implements Runnable {
 			}
 			targetRealm.removeEnemy(enemy);
 
-			if (Realm.RANDOM.nextInt(1) < 1) {
+			if (Realm.RANDOM.nextInt(11) < 1) {
 				if (targetRealm.getMapId() == 4) {
 					targetRealm.addPortal(
 							new Portal(Realm.RANDOM.nextLong(), (short) 0, enemy.getPos().withNoise(64, 64)));

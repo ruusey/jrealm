@@ -26,7 +26,7 @@ public class ServerCommandHandler {
 	static {
 		COMMAND_CALLBACKS.put("setstat", ServerCommandHandler::invokeSetStats);
 		COMMAND_CALLBACKS.put("spawn", ServerCommandHandler::invokeEnemySpawn);
-		COMMAND_CALLBACKS.put("seteffect", ServerCommandHandler::invokeSetEffect);
+		COMMAND_CALLBACKS.put("effect", ServerCommandHandler::invokeSetEffect);
 		COMMAND_CALLBACKS.put("tp", ServerCommandHandler::invokeTeleport);
 	}
 	
@@ -104,7 +104,7 @@ public class ServerCommandHandler {
 	}
 
 	private static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
-		if (message.getArgs()==null || message.getArgs().size() < 3)
+		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /seteffect {add | clear} {EFFECT_ID} {DURATION (sec)}");
 		switch (message.getArgs().get(0)) {
 		case "add":

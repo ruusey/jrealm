@@ -170,6 +170,9 @@ public class PlayState extends GameState {
 			}
 			this.cam.target(player);
 			this.cam.update();
+			for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
+				lc.setContentsChanged(false);
+			}
 		}
 	}
 
@@ -650,9 +653,7 @@ public class PlayState extends GameState {
 		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
 			lc.render(g);
 		}
-
-		if ((this.getPui().isGroundLootEmpty() && (closeLoot != null))
-				|| ((closeLoot != null) && closeLoot.getContentsChanged())) {
+		if ((closeLoot != null && this.getPui().isGroundLootEmpty()) || (closeLoot != null && closeLoot.getContentsChanged())) {
 			this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot), g);
 
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {

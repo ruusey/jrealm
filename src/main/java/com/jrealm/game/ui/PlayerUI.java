@@ -368,7 +368,7 @@ public class PlayerUI {
 			if (curr == null) {
 				continue;
 			}
-			if (curr.getItem() != null)
+			if (curr.getItem() != null )
 				return false;
 		}
 		return true;
