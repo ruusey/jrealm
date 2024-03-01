@@ -34,7 +34,6 @@ public class Enemy14Script extends EnemyScriptBase {
 				.get(18);
 		for(int i = 0; i<3; i++) {
 			for (Projectile p : group.getProjectiles()) {
-				p.setFlags(Arrays.asList((short)10));
 				this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
 						angle + Float.parseFloat(p.getAngle()),
 						group);

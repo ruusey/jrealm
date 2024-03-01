@@ -111,6 +111,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 	public void update(long realmId, RealmManagerServer mgr, double time) {
 		final Realm targetRealm = mgr.getRealms().get(realmId);
+		
 		Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.chaseRange);
 		super.update(time);
 		this.move();
@@ -118,7 +119,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			return;
 		this.chase(player);
 		final boolean notInvisible = !player.hasEffect(EffectType.INVISIBLE);
-		if ((this.getPos().distanceTo(player.getPos()) < this.attackRange)
+		if ((this.getPos().distanceTo(player.getPos()) < this.attackRange && !this.hasEffect(EffectType.STUNNED))
 				&& notInvisible) {
 			this.attack = true;
 

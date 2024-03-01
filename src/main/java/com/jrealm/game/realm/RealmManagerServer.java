@@ -613,7 +613,7 @@ public class RealmManagerServer implements Runnable {
 				}
 				this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
 						p.getProjectileId(),
-						source.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
+						source.clone(-offset, -offset), angle+Float.parseFloat(p.getAngle()), p.getSize(),
 						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
 						p.getFrequency());
 
@@ -833,12 +833,16 @@ public class RealmManagerServer implements Runnable {
 			if (b.hasFlag((short) 2)) {
 				if (!e.hasEffect(EffectType.PARALYZED)) {
 					e.addEffect(EffectType.PARALYZED, 5000);
+					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "PARALYZED");
+
 				}
 			}
 
 			if (b.hasFlag((short) 3)) {
 				if (!e.hasEffect(EffectType.STUNNED)) {
 					e.addEffect(EffectType.STUNNED, 5000);
+					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "STUNNED");
+
 				}
 			}
 			this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "-" + dmgToInflict);

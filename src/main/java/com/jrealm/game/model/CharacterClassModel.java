@@ -21,13 +21,34 @@ public class CharacterClassModel {
 	public Stats getRandomLevelUpStats() {
 		final ExperienceModel expModel = GameDataManager.EXPERIENCE_LVLS;
 		final Stats difference = this.maxStats.subtract(this.baseStats);
-		int randomHp = Realm.RANDOM.nextInt((difference.getHp() / expModel.maxLevel()) + 15);
-		int randomMp = Realm.RANDOM.nextInt((difference.getMp() / expModel.maxLevel()) + 2);
-		int randomSpd = Realm.RANDOM.nextInt((difference.getSpd() / expModel.maxLevel()) + 1);
-		int randomDex = Realm.RANDOM.nextInt((difference.getDex() / expModel.maxLevel()) + 1);
-		int randomAtt = Realm.RANDOM.nextInt((difference.getAtt() / expModel.maxLevel()) + 1);
-		int randomWis = Realm.RANDOM.nextInt((difference.getWis() / expModel.maxLevel()) + 1);
-		int randomVit = Realm.RANDOM.nextInt((difference.getVit() / expModel.maxLevel()) + 1);
+		int hpRange = (difference.getHp() / expModel.maxLevel()) + 15;
+		if(hpRange<0)
+			hpRange = 1;
+		int mpRange = (difference.getMp() / expModel.maxLevel()) + 2;
+		if(mpRange<0)
+			mpRange = 1;
+		int spdRange = (difference.getSpd() / expModel.maxLevel()) + 1;
+		if(spdRange<0)
+			spdRange = 1;
+		int dexRange = (difference.getDex() / expModel.maxLevel()) + 1;
+		if(dexRange<0)
+			dexRange = 1;
+		int attRange = (difference.getAtt() / expModel.maxLevel()) + 1;
+		if(attRange<0)
+			attRange = 1;
+		int wisRange =(difference.getWis() / expModel.maxLevel()) + 1;
+		if(wisRange<0)
+			wisRange = 1;
+		int vitRange = (difference.getVit() / expModel.maxLevel()) + 1;
+		if(vitRange<0)
+			vitRange = 1;
+		int randomHp = Realm.RANDOM.nextInt(hpRange);
+		int randomMp = Realm.RANDOM.nextInt(mpRange);
+		int randomSpd = Realm.RANDOM.nextInt(spdRange);
+		int randomDex = Realm.RANDOM.nextInt(dexRange);
+		int randomAtt = Realm.RANDOM.nextInt(attRange);
+		int randomWis = Realm.RANDOM.nextInt(wisRange);
+		int randomVit = Realm.RANDOM.nextInt(vitRange);
 
 		// Return a random stat increase with the defense always being 0
 		return new Stats((short) randomHp, (short) randomMp, (short) 0, (short) randomAtt, (short) randomSpd,
