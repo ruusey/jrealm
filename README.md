@@ -82,26 +82,27 @@ targeted by this Command `(defined in com.jrealm.game.messaging.CommandType)`
 
 The class `ServerCommandHandler` is responsible for handling individual Command functionality. Each command callback is registered statically at runtime
 in a similar way to Packet Callbacks
+**Example**:
 ```java
-	static {
-		COMMAND_CALLBACKS.put("setstat", ServerCommandHandler::invokeSetStats);
-		COMMAND_CALLBACKS.put("spawn", ServerCommandHandler::invokeEnemySpawn);
-		COMMAND_CALLBACKS.put("effect", ServerCommandHandler::invokeSetEffect);
-		COMMAND_CALLBACKS.put("tp", ServerCommandHandler::invokeTeleport);
-	}
-
+    static {
+        COMMAND_CALLBACKS.put("setstat", ServerCommandHandler::invokeSetStats);
+        COMMAND_CALLBACKS.put("spawn", ServerCommandHandler::invokeEnemySpawn);
+        COMMAND_CALLBACKS.put("effect", ServerCommandHandler::invokeSetEffect);
+        COMMAND_CALLBACKS.put("tp", ServerCommandHandler::invokeTeleport);
+    }
+    
     private static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
-		if (message.getArgs() == null || message.getArgs().size() != 2)
-			throw new IllegalArgumentException("Usage: /setstat {STAT_NAME} {STAT_VALUE}");
-		final short valueToSet = Short.parseShort(message.getArgs().get(1));
-		log.info("Player {} set stat {} to {}", target.getName(), message.getArgs().get(0), valueToSet);
-		switch (message.getArgs().get(0)) {
-		case "hp":
-			target.getStats().setHp(valueToSet);
-			break;
-		case "mp":
-			target.getStats().setMp(valueToSet);
-			break;
+        if (message.getArgs() == null || message.getArgs().size() != 2)
+            throw new IllegalArgumentException("Usage: /setstat {STAT_NAME} {STAT_VALUE}");
+        final short valueToSet = Short.parseShort(message.getArgs().get(1));
+        log.info("Player {} set stat {} to {}", target.getName(), message.getArgs().get(0), valueToSet);
+        switch (message.getArgs().get(0)) {
+        case "hp":
+            target.getStats().setHp(valueToSet);
+            break;
+        case "mp":
+            target.getStats().setMp(valueToSet);
+            break;
         ...
     }
 ```
