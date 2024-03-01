@@ -49,6 +49,7 @@ import com.jrealm.game.script.Enemy10Script;
 import com.jrealm.game.script.Enemy11Script;
 import com.jrealm.game.script.Enemy12Script;
 import com.jrealm.game.script.Enemy13Script;
+import com.jrealm.game.script.Enemy14Script;
 import com.jrealm.game.script.EnemyScriptBase;
 import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.Tile;
@@ -477,6 +478,7 @@ public class RealmManagerServer implements Runnable {
 		this.enemyScripts.add(new Enemy11Script(this));
 		this.enemyScripts.add(new Enemy12Script(this));
 		this.enemyScripts.add(new Enemy13Script(this));
+		this.enemyScripts.add(new Enemy14Script(this));
 	}
 
 	private void registerPacketCallbacks() {
