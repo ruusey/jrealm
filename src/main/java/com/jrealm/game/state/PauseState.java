@@ -14,7 +14,6 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.ui.Button;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
@@ -65,14 +64,11 @@ public class PauseState extends GameState {
 
         btnResume.render(g);
         btnExit.render(g);
-        int paddingX =100;
-        int paddingY = 400;
         int rowWidth = 500;
-        int rowHeight = 90;
+        int rowHeight = 100;
         if(this.account!=null) {
         	for(CharacterDto cls : this.account.getCharacters()) {
         		final CharacterClass characterClass = CharacterClass.valueOf(cls.getCharacterClass());
-        		final CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(cls.getCharacterClass());
         		int lvl = 0;
         		if(GameDataManager.EXPERIENCE_LVLS.isMaxLvl(cls.getStats().getXp())) {
         			lvl = 20;
@@ -80,19 +76,17 @@ public class PauseState extends GameState {
         			lvl = GameDataManager.EXPERIENCE_LVLS.getLevel(cls.getStats().getXp());
         		}
         		
-        		int maxedStats = classModel.countMaxedStats(this.gsm.getPlayState().getPlayer().getStats());
         		final SpriteSheet classImg = GameSpriteManager.loadClassSprites(characterClass);
         		String characterStr = "{0}, lv {1} {2} {3}/8";
-        		characterStr = MessageFormat.format(characterStr, this.account.getAccountName(), lvl, characterClass, maxedStats);
+        		characterStr = MessageFormat.format(characterStr, this.account.getAccountName(), lvl, characterClass, 0);
         		g.setColor(Color.GRAY);
-        		g.fillRect(paddingX, paddingY+(i*rowHeight), rowWidth, rowHeight);
+        		g.fillRect(0, (i*rowHeight), rowWidth, rowHeight);
         		
         		g.setColor(Color.WHITE);
-        		g.drawString(characterStr, paddingX+100, 32+(rowHeight*i)+paddingY);
-        		g.drawImage(classImg.getCurrentFrame(),paddingX, i*rowHeight+paddingY, 64,64, null);
+        		g.drawString(characterStr, 100, 32+(rowHeight*i));
+        		g.drawImage(classImg.getCurrentFrame(),0, i*rowHeight, 64,64, null);
         		i++;
         	}
         }
-    }
-    
+    }    
 }

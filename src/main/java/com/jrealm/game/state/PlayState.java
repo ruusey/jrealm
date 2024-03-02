@@ -116,7 +116,7 @@ public class PlayState extends GameState {
 			if (!this.gsm.isStateActive(GameStateManager.EDIT)) {
 
 				final Runnable monitorDamageText = () -> {
-					List<EffectText> toRemove = new ArrayList<>();
+					final List<EffectText> toRemove = new ArrayList<>();
 					for (EffectText text : this.getDamageText()) {
 						text.update();
 						if (text.getRemove()) {
@@ -128,8 +128,8 @@ public class PlayState extends GameState {
 
 				final Runnable playerShootDequeue = () -> {
 					for (int i = 0; i < this.shotDestQueue.size(); i++) {
-						Vector2f dest = this.shotDestQueue.remove(i);
-						Vector2f source = this.getPlayer().getCenteredPosition();
+						final Vector2f dest = this.shotDestQueue.remove(i);
+						final Vector2f source = this.getPlayer().getCenteredPosition();
 						if (this.realmManager.getRealm().getTileManager().isCollisionTile(source)) {
 							PlayState.log.error("Failed to invoke player shoot. Projectile is out of bounds.");
 							continue;
@@ -171,7 +171,7 @@ public class PlayState extends GameState {
 			}
 			this.cam.target(player);
 			this.cam.update();
-			for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
+			for (final LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
 				lc.setContentsChanged(false);
 			}
 		}
