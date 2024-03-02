@@ -70,6 +70,10 @@ public class GameStateManager {
 	public void pop(int state) {
 		this.states[state] = null;
 	}
+	
+	public PlayState getPlayState() {
+		return (PlayState)this.states[GameStateManager.PLAY];
+	}
 
 	public void add(int state) {
 		if (this.states[state] != null)
@@ -84,15 +88,35 @@ public class GameStateManager {
 			this.states[GameStateManager.MENU] = new MenuState(this);
 			break;
 		case GameStateManager.PAUSE:
-			this.states[GameStateManager.PAUSE] = new PauseState(this);
+			this.states[GameStateManager.PAUSE] = new PauseState(this, null);
 			break;
 		case GameStateManager.GAMEOVER:
 			this.states[GameStateManager.GAMEOVER] = new GameOverState(this);
 			break;
+		default:
+			break;
+		}
+	}
+	
+	public void add(int state, GameState gameState) {
+		if (this.states[state] != null)
+			return;
+
+		switch (state) {
+		case GameStateManager.PLAY:
+			this.states[GameStateManager.PLAY] = gameState;
+			break;
+		case GameStateManager.MENU:
+			this.states[GameStateManager.MENU] = gameState;
+			break;
+		case GameStateManager.PAUSE:
+			this.states[GameStateManager.PAUSE] = gameState;
+			break;
+		case GameStateManager.GAMEOVER:
+			this.states[GameStateManager.GAMEOVER] = gameState;
+			break;
 		case GameStateManager.EDIT:
-			if(this.states[GameStateManager.PLAY] != null) {
-				this.states[GameStateManager.EDIT] = new EditState(this, GameStateManager.cam);
-			}
+				this.states[GameStateManager.EDIT] = gameState;
 			break;
 		default:
 			break;

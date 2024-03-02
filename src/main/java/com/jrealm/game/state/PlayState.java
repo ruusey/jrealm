@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
@@ -51,7 +52,7 @@ public class PlayState extends GameState {
 	private RealmManagerClient realmManager;
 	private Queue<EffectText> damageText;
 	private List<Vector2f> shotDestQueue;
-
+	private PlayerAccountDto account;
 	private Camera cam;
 	private PlayerUI pui;
 	public static Vector2f map;
@@ -504,7 +505,8 @@ public class PlayState extends GameState {
 			if (this.gsm.isStateActive(GameStateManager.PAUSE)) {
 				this.gsm.pop(GameStateManager.PAUSE);
 			} else {
-				this.gsm.add(GameStateManager.PAUSE);
+				PauseState pause = new PauseState(this.gsm, this.getAccount());
+				this.gsm.add(GameStateManager.PAUSE, pause);
 			}
 		}
 		

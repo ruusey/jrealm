@@ -16,6 +16,7 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.ServerCommandMessage;
+import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
@@ -62,7 +63,7 @@ public class ServerCommandHandler {
 				consumer.accept(mgr, fromPlayer, message);
 			}
 		} catch (Exception e) {
-			log.error("Failed to handle server command. Reason: {}", e);
+			log.error("Failed to handle server command. Reason: {}", e.getMessage());
 			final CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 502, e.getMessage());
 			mgr.enqueueServerPacket(fromPlayer, errorResponse);
 		}
@@ -70,9 +71,10 @@ public class ServerCommandHandler {
 	// Handler methods are passed a reference to the current RealmManager, the invoking Player object
 	// and the ServerCommand message object.
 	private static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
-		if (message.getArgs() == null || message.getArgs().size() != 2)
+		if (message.getArgs() == null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /setstat {STAT_NAME} {STAT_VALUE}");
 		final short valueToSet = Short.parseShort(message.getArgs().get(1));
+		CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(target.getClassId());
 		log.info("Player {} set stat {} to {}", target.getName(), message.getArgs().get(0), valueToSet);
 		switch (message.getArgs().get(0)) {
 		case "hp":
@@ -99,6 +101,11 @@ public class ServerCommandHandler {
 		case "wis":
 			target.getStats().setWis(valueToSet);
 			break;
+		case "max":
+			target.setStats(classModel.getMaxStats());
+			break;
+		default:
+			throw new IllegalArgumentException("Unknown stat "+message.getArgs().get(0));
 		}
 	}
 	

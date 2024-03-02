@@ -43,6 +43,7 @@ import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
+import com.jrealm.game.model.LootTableModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.script.Enemy10Script;
@@ -351,6 +352,10 @@ public class RealmManagerServer implements Runnable {
 			}else {
 				// Player Disconnect routine
 				final Long dcPlayerId = this.getRemoteAddresses().get(thread.getKey());
+				if(dcPlayerId==null) {
+					thread.getValue().setShutdownProcessing(true);
+					return;
+				}
 				final Realm playerLocation = this.searchRealmsForPlayer(dcPlayerId);
 				final Player dcPlayer = playerLocation.getPlayer(dcPlayerId);
 				this.persistPlayerAsync(dcPlayer);
@@ -944,9 +949,12 @@ public class RealmManagerServer implements Runnable {
 				}
 			}
 
-			/**
-			 * Loot drops are determined by the LootTableModel mapped by this enemyId
-			 */
+			// Try to get the loot model mapped by this enemyId
+			final LootTableModel lootTable = GameDataManager.LOOT_TABLES.get(enemy.getEnemyId());
+			if(lootTable==null) {
+				log.warn("No loot table registered for enemy {}", enemy.getEnemyId());
+				throw new IllegalStateException("No loot table registered for enemy " + enemy.getEnemyId());
+			}
 			final List<GameItem> lootToDrop = GameDataManager.LOOT_TABLES.get(enemy.getEnemyId()).getLootDrop();
 			if (lootToDrop.size() > 0) {
 				final LootContainer dropsBag = new LootContainer(LootTier.BLUE, enemy.getPos().withNoise(64, 64),

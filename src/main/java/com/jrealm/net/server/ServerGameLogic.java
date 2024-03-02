@@ -316,6 +316,7 @@ public class ServerGameLogic {
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
 		CommandPacket commandResponse = null;
 		long assignedId = -1l;
+		PlayerAccountDto account = null;
 		try {
 			SessionTokenDto loginToken = null;
 			String accountName = request.getEmail();
@@ -324,7 +325,7 @@ public class ServerGameLogic {
 			try {
 				loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
 				ServerGameLogic.DATA_SERVICE.setSessionToken(loginToken.getToken());
-				PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
+				account = ServerGameLogic.DATA_SERVICE
 						.executeGet("/data/account/" + loginToken.getAccountGuid(), null, PlayerAccountDto.class);
 				accountName = account.getAccountName();
 				accountUuid = account.getAccountUuid();
@@ -366,7 +367,7 @@ public class ServerGameLogic {
 
 			final LoginResponseMessage message = LoginResponseMessage.builder()
 					.classId(targetCharacter.getCharacterClass()).spawnX(player.getPos().x).spawnY(player.getPos().y)
-					.playerId(player.getId()).success(true).accountUuid(loginToken.getAccountGuid())
+					.playerId(player.getId()).success(true).account(account)
 					.token(loginToken.getToken()).build();
 			mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
 

@@ -1,5 +1,7 @@
 package com.jrealm.game.messaging;
 
+import com.jrealm.account.dto.PlayerAccountDto;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +17,6 @@ public class LoginResponseMessage {
 	private boolean success;
 	private float spawnX;
 	private float spawnY;
-	private String accountUuid;
 	private String token;
+	private PlayerAccountDto account;
 }

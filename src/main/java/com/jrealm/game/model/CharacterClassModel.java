@@ -54,6 +54,36 @@ public class CharacterClassModel {
 		return new Stats((short) randomHp, (short) randomMp, (short) 0, (short) randomAtt, (short) randomSpd,
 				(short) randomDex, (short) randomVit, (short) randomWis);
 	}
+	
+	public int countMaxedStats(final Stats characterStats) {
+		Stats combined = this.maxStats.subtract(characterStats);
+		int count = 0;
+		if(combined.getHp()<=0) {
+			count++;
+		}
+		if(combined.getMp()<=0) {
+			count++;
+		}
+		if(combined.getAtt()<=0) {
+			count++;
+		}
+		if(combined.getDef()<=0) {
+			count++;
+		}
+		if(combined.getSpd()<=0) {
+			count++;
+		}
+		if(combined.getDex()<=0) {
+			count++;
+		}
+		if(combined.getVit()<=0) {
+			count++;
+		}
+		if(combined.getWis()<=0) {
+			count++;
+		}
+		return count;
+	}
 
 	public static void main(String[] args) {
 		GameDataManager.loadGameData(true);

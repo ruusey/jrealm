@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ExperienceModel {
-
 	private Map<String, String> levelExperienceMap;
 
 	@JsonIgnore
@@ -28,6 +27,10 @@ public class ExperienceModel {
 			final Tuple<Integer, Integer> value = new Tuple<Integer, Integer>(Integer.parseInt(range[0]), Integer.parseInt(range[1]));
 			this.parsedMap.put(Integer.parseInt(entry.getKey()), value);
 		}
+	}
+	
+	public boolean isMaxLvl(long experience) {
+		return experience>=this.maxExperience();
 	}
 
 	public long getBaseFame(long experience) {

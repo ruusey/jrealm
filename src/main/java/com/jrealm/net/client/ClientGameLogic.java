@@ -276,6 +276,7 @@ public class ClientGameLogic {
 						GlobalConstants.PLAYER_SIZE, cls);
 				ClientGameLogic.log.info("Login succesful, added Player ID {}", player.getId());
 				player.setSpriteSheet(GameSpriteManager.loadClassSprites(cls));
+				cli.getState().setAccount(loginResponse.getAccount());
 				cli.getState().loadClass(player, cls, true);
 				cli.setCurrentPlayerId(player.getId());
 				cli.getState().setPlayerId(player.getId());
