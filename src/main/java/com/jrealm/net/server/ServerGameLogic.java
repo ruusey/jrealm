@@ -2,6 +2,7 @@ package com.jrealm.net.server;
 
 import java.io.DataOutputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -237,21 +238,34 @@ public class ServerGameLogic {
 			return;
 		}
 		final Player player = realm.getPlayer(shootPacket.getEntityId());
-		if (player.hasEffect(EffectType.STUNNED))
-			return;
-		final Vector2f dest = new Vector2f(shootPacket.getDestX(), shootPacket.getDestY());
-		final Vector2f source = player.getCenteredPosition();
-		final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
-		float angle = Bullet.getAngle(source, dest);
-		for (Projectile proj : group.getProjectiles()) {
-			short offset = (short) (player.getSize() / (short) 2);
-			short rolledDamage = player.getInventory()[0].getDamage().getInRange();
-			float shootAngle = angle + Float.parseFloat(proj.getAngle());
-			rolledDamage += player.getComputedStats().getAtt();
-			mgr.addProjectile(realm.getRealmId(), Realm.RANDOM.nextLong(), player.getId(), proj.getProjectileId(),
-					player.getWeaponId(), source.clone(-offset, -offset), shootAngle, proj.getSize(),
-					proj.getMagnitude(), proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
-					proj.getFrequency());
+		boolean canShoot = false;
+		if(realm.getPlayerLastShotTime().get(player.getId())!=null) {
+			int dex = (int) ((6.5 * (player.getComputedStats().getDex() + 17.3)) / 75);
+			canShoot = ((System.currentTimeMillis() - realm.getPlayerLastShotTime().get(player.getId())) > (1000 / dex));
+			if(canShoot && !player.hasEffect(EffectType.STUNNED)) {
+				realm.getPlayerLastShotTime().put(player.getId(), Instant.now().toEpochMilli());
+			}else {
+				canShoot=false;
+			}
+		}else {
+			realm.getPlayerLastShotTime().put(player.getId(), Instant.now().toEpochMilli());
+			canShoot=true;
+		}
+		if(canShoot) {
+			final Vector2f dest = new Vector2f(shootPacket.getDestX(), shootPacket.getDestY());
+			final Vector2f source = player.getCenteredPosition();
+			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
+			float angle = Bullet.getAngle(source, dest);
+			for (Projectile proj : group.getProjectiles()) {
+				short offset = (short) (player.getSize() / (short) 2);
+				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
+				float shootAngle = angle + Float.parseFloat(proj.getAngle());
+				rolledDamage += player.getComputedStats().getAtt();
+				mgr.addProjectile(realm.getRealmId(), Realm.RANDOM.nextLong(), player.getId(), proj.getProjectileId(),
+						player.getWeaponId(), source.clone(-offset, -offset), shootAngle, proj.getSize(),
+						proj.getMagnitude(), proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
+						proj.getFrequency());
+			}
 		}
 	}
 

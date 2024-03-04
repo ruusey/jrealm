@@ -3,6 +3,7 @@ package com.jrealm.game.realm;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -65,7 +66,7 @@ public class Realm {
 	private List<Long> expiredEnemies;
 	private List<Long> expiredBullets;
 	private List<Long> expiredPlayers;
-
+	private Map<Long, Long> playerLastShotTime;
 	private TileManager tileManager;
 	private Semaphore playerLock = new Semaphore(1);
 
@@ -79,6 +80,7 @@ public class Realm {
 		this.expiredEnemies = new ArrayList<>();
 		this.expiredPlayers = new ArrayList<>();
 		this.expiredBullets = new ArrayList<>();
+		this.playerLastShotTime = new HashMap<>();
 		this.loadMap(mapId);
 		if(this.isServer) {
 			WorkerThread.submit(this.getStatsThread());
@@ -166,6 +168,7 @@ public class Realm {
 
 	public boolean removePlayer(Player player) {
 		this.acquirePlayerLock();
+		this.playerLastShotTime.remove(player.getId());
 		Player p = this.players.remove(player.getId());
 		this.releasePlayerLock();
 		return p != null;
