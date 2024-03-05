@@ -158,6 +158,14 @@ public class PlayState extends GameState {
 								bullet.update();
 							}
 						}
+						
+						if(gameObject[i] instanceof Player && gameObject[i].getId()!=player.getId()) {
+							final Player playerOther = ((Player) gameObject[i]);
+							if(playerOther!=null) {
+								playerOther.update(time);
+								this.movePlayer(playerOther);
+							}
+						}
 					}
 				};
 
@@ -511,7 +519,7 @@ public class PlayState extends GameState {
 		}
 		
 		int dex = (int) ((6.5 * (this.getPlayer().getComputedStats().getDex() + 17.3)) / 75);
-		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (1000 / dex));
+		boolean canShoot = true;
 		boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
 		if ((mouse.isPressed(MouseEvent.BUTTON1)) && canShoot) {
 			this.lastShotTick = System.currentTimeMillis();
