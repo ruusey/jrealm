@@ -96,13 +96,13 @@ public class Realm {
 	}
 
 	public void setupChests(final Player player) {
-		Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 450, (0 + (GamePanel.height / 2)) - 200);
+		final Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 450, (0 + (GamePanel.height / 2)) - 200);
 		try {
 			final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
 					.executeGet("/data/account/" + player.getAccountUuid(), null, PlayerAccountDto.class);
-			for(ChestDto chest : account.getPlayerVault()) {
-				List<GameItem> itemsInChest = chest.getItems().stream().map(GameItem::fromGameItemRef).collect(Collectors.toList());
-				Chest toSpawn = new Chest(chestLoc.clone(-64 * chest.getOrdinal(), 0),
+			for(final ChestDto chest : account.getPlayerVault()) {
+				final List<GameItem> itemsInChest = chest.getItems().stream().map(GameItem::fromGameItemRef).collect(Collectors.toList());
+				final Chest toSpawn = new Chest(chestLoc.clone(-64 * chest.getOrdinal(), 0),
 						itemsInChest.toArray(new GameItem[8]));
 				this.addLootContainer(toSpawn);
 			}
@@ -112,15 +112,15 @@ public class Realm {
 	}
 
 	public List<ChestDto> serializeChests() {
-		List<ChestDto> result = new ArrayList<ChestDto>();
+		final List<ChestDto> result = new ArrayList<ChestDto>();
 		int ordinal = 0;
-		for (LootContainer container : this.loot.values()) {
+		for (final LootContainer container : this.loot.values()) {
 			if (container instanceof Chest) {
-				ChestDto chest = ChestDto.builder().chestId(container.getUid()).chestUuid(container.getUid())
+				final ChestDto chest = ChestDto.builder().chestId(container.getUid()).chestUuid(container.getUid())
 						.ordinal(ordinal++).build();
-				List<GameItemRefDto> itemRefs = new ArrayList<>();
+				final List<GameItemRefDto> itemRefs = new ArrayList<>();
 				for (int i = 0; i < container.getItems().length; i++) {
-					GameItem toCopy = container.getItems()[i];
+					final GameItem toCopy = container.getItems()[i];
 					if (toCopy != null) {
 						itemRefs.add(GameItemRefDto.builder().itemId(toCopy.getItemId()).itemUuid(toCopy.getUid())
 								.slotIdx(i).build());
@@ -158,7 +158,7 @@ public class Realm {
 	public long addPlayerIfNotExists(Player player) {
 		if(!this.players.containsKey(player.getId())) {
 			this.acquirePlayerLock();
-			SpriteSheet sheet = GameSpriteManager.loadClassSprites(CharacterClass.valueOf(player.getClassId()));
+			final SpriteSheet sheet = GameSpriteManager.loadClassSprites(CharacterClass.valueOf(player.getClassId()));
 			player.setSpriteSheet(sheet);
 			this.players.put(player.getId(), player);
 			this.releasePlayerLock();
@@ -169,7 +169,7 @@ public class Realm {
 	public boolean removePlayer(Player player) {
 		this.acquirePlayerLock();
 		this.playerLastShotTime.remove(player.getId());
-		Player p = this.players.remove(player.getId());
+		final Player p = this.players.remove(player.getId());
 		this.releasePlayerLock();
 		return p != null;
 	}
@@ -184,30 +184,26 @@ public class Realm {
 
 	public void hitEnemy(long bulletId, long enemyId) {
 		if (this.bulletHits.get(bulletId) == null) {
-			List<Long> hits = new ArrayList<>();
+			final List<Long> hits = new ArrayList<>();
 			hits.add(enemyId);
 			this.bulletHits.put(bulletId, hits);
 		} else {
-			List<Long> curr = this.bulletHits.get(bulletId);
+			final List<Long> curr = this.bulletHits.get(bulletId);
 			curr.add(enemyId);
 			this.bulletHits.put(bulletId, curr);
 		}
 	}
-
-	public void asd() {
-		System.out.println(this.mapId + this.realmId);
-	}
-
+	
 	public boolean removePlayer(long playerId) {
 		this.acquirePlayerLock();
-		Player p = this.players.remove(playerId);
+		final Player p = this.players.remove(playerId);
 		this.releasePlayerLock();
 		return p != null;
 	}
 
 	public Player getPlayer(long playerId) {
 		this.acquirePlayerLock();
-		Player p = this.players.get(playerId);
+		final Player p = this.players.get(playerId);
 		this.releasePlayerLock();
 		return p;
 	}
@@ -222,10 +218,10 @@ public class Realm {
 	}
 
 	public long addBulletIfNotExists(Bullet b) {
-		Bullet existing = this.bullets.get(b.getId());
+		final Bullet existing = this.bullets.get(b.getId());
 		if(existing==null) {
-			ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(b.getProjectileId());
-			SpriteSheet bulletSprite = GameSpriteManager.getSpriteSheet(pg);
+			final ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(b.getProjectileId());
+			final SpriteSheet bulletSprite = GameSpriteManager.getSpriteSheet(pg);
 			final Sprite bulletImage = bulletSprite.getSprites().get(0);
 
 			if (pg.getAngleOffset() != null) {
@@ -238,7 +234,7 @@ public class Realm {
 	}
 
 	public boolean removeBullet(Bullet b) {
-		Bullet bullet = this.bullets.remove(b.getId());
+		final Bullet bullet = this.bullets.remove(b.getId());
 		this.bulletHits.remove(b.getId());
 		return bullet != null;
 	}
@@ -257,20 +253,20 @@ public class Realm {
 	}
 
 	public boolean removePortal(long portalId) {
-		Portal removed = this.portals.remove(portalId);
+		final Portal removed = this.portals.remove(portalId);
 		return removed != null;
 	}
 
 	public boolean removePortal(Portal portal) {
-		Portal removed = this.portals.remove(portal.getId());
+		final Portal removed = this.portals.remove(portal.getId());
 		return removed != null;
 	}
 
 	public long addPortalIfNotExists(Portal portal) {
-		Portal existing = this.portals.get(portal.getId());
+		final Portal existing = this.portals.get(portal.getId());
 		if (existing == null) {
-			PortalModel portalModel = GameDataManager.PORTALS.get((int) portal.getPortalId());
-			Sprite portalSprite = GameSpriteManager.loadSprite(portalModel);
+			final PortalModel portalModel = GameDataManager.PORTALS.get((int) portal.getPortalId());
+			final Sprite portalSprite = GameSpriteManager.loadSprite(portalModel);
 			portal.setSprite(portalSprite);
 			this.portals.put(portal.getId(), portal);
 		}
@@ -283,9 +279,9 @@ public class Realm {
 	}
 
 	public long addEnemyIfNotExists(Enemy enemy) {
-		Enemy existing = this.enemies.get(enemy.getId());
+		final Enemy existing = this.enemies.get(enemy.getId());
 		if(existing==null) {
-			EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
+			final EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
 			enemy.setSpriteSheet(SpriteSheet.fromSpriteModel(model));
 			this.enemies.put(enemy.getId(), enemy);
 
@@ -298,7 +294,7 @@ public class Realm {
 	}
 
 	public boolean removeEnemy(Enemy enemy) {
-		Enemy e = this.enemies.remove(enemy.getId());
+		final Enemy e = this.enemies.remove(enemy.getId());
 		return e != null;
 	}
 
@@ -429,11 +425,10 @@ public class Realm {
 	}
 
 	public List<UpdatePacket> getPlayersAsPackets(Rectangle cam) {
-		List<UpdatePacket> playerUpdates = new ArrayList<>();
-		for (Player p : this.players.values()) {
-			// if (p.getBounds().intersect(cam)) {
+		final List<UpdatePacket> playerUpdates = new ArrayList<>();
+		for (final Player p : this.players.values()) {
 			try {
-				UpdatePacket pack = UpdatePacket.from(p);
+				final UpdatePacket pack = UpdatePacket.from(p);
 				playerUpdates.add(pack);
 			} catch (Exception e) {
 				Realm.log.error("Failed to create update packet from Player. Reason: {}", e);
@@ -496,19 +491,19 @@ public class Realm {
 	}
 
 	public ObjectMovePacket getGameObjectsAsPackets(Rectangle cam) throws Exception{
-		GameObject[] gameObjects = this.getAllGameObjects();
-		List<GameObject> validObjects = new ArrayList<>();
+		final GameObject[] gameObjects = this.getAllGameObjects();
+		final List<GameObject> validObjects = new ArrayList<>();
 		for (GameObject obj : gameObjects) {
 			try {
-				if(((obj.getDx()>0) || (obj.getDy()>0)) || ((obj.getDx()<0) || (obj.getDy()<0)) || obj.getTeleported()) {
-					final boolean inViewport = cam.inside((int) obj.getPos().x, (int) obj.getPos().y);
-					if (inViewport) {
-						validObjects.add(obj);
-					}
-					if(obj.getTeleported()) {
-						obj.setTeleported(false);
-					}
+				
+				final boolean inViewport = cam.inside((int) obj.getPos().x, (int) obj.getPos().y);
+				if (inViewport) {
+					validObjects.add(obj);
 				}
+				if(obj.getTeleported()) {
+					obj.setTeleported(false);
+				}
+				
 			} catch (Exception e) {
 				Realm.log.error("Failed to create ObjectMove Packet. Reason: {}", e.getMessage());
 			}
@@ -519,8 +514,8 @@ public class Realm {
 	}
 
 	public LootContainer[] getLootInBounds(Rectangle cam) {
-		List<LootContainer> objs = new ArrayList<>();
-		for (LootContainer lc : this.loot.values()) {
+		final List<LootContainer> objs = new ArrayList<>();
+		for (final LootContainer lc : this.loot.values()) {
 			if (cam.inside((int) lc.getPos().x, (int) lc.getPos().y)) {
 				objs.add(lc);
 			}
@@ -533,24 +528,23 @@ public class Realm {
 			this.enemies = new ConcurrentHashMap<>();
 		}
 
-		List<EnemyModel> enemyToSpawn = new ArrayList<>();
+		final List<EnemyModel> enemyToSpawn = new ArrayList<>();
 
-		TerrainGenerationParameters params = GameDataManager.TERRAINS.get(GameDataManager.MAPS.get(mapId).getTerrainId());
-		for(int enemyId: params.getEnemyGroups().get(0).getEnemyIds()) {
+		final TerrainGenerationParameters params = GameDataManager.TERRAINS.get(GameDataManager.MAPS.get(mapId).getTerrainId());
+		for(final int enemyId: params.getEnemyGroups().get(0).getEnemyIds()) {
 			enemyToSpawn.add(GameDataManager.ENEMIES.get(enemyId));
 		}
 
-		Random r = new Random(System.nanoTime());
 		for (int i = 0; i < this.tileManager.getMapLayers().get(0).getHeight(); i++) {
 			for (int j = 0; j < this.tileManager.getMapLayers().get(0).getWidth(); j++) {
-				int doSpawn = r.nextInt(200);
+				final int doSpawn = Realm.RANDOM.nextInt(200);
 				if ((doSpawn > 198) && (i > 0) && (j > 0)) {
-					Vector2f spawnPos = new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
+					final Vector2f spawnPos = new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
 							i * this.tileManager.getMapLayers().get(0).getTileSize());
-					EnemyModel toSpawn = enemyToSpawn.get(r.nextInt(enemyToSpawn.size()));
+					final EnemyModel toSpawn = enemyToSpawn.get(Realm.RANDOM.nextInt(enemyToSpawn.size()));
 
 
-					Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
+					final Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
 							new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
 									i * this.tileManager.getMapLayers().get(0).getTileSize()),
 							toSpawn.getSize(), toSpawn.getAttackId());
@@ -565,24 +559,23 @@ public class Realm {
 	}
 
 	public void spawnRandomEnemy() {
-		Random r = new Random(System.nanoTime());
-		Vector2f spawnPos = new Vector2f(
+		final Vector2f spawnPos = new Vector2f(
 				this.tileManager.getMapLayers().get(0).getTileSize()
-				* r.nextInt(this.tileManager.getMapLayers().get(0).getWidth()),
+				* Realm.RANDOM.nextInt(this.tileManager.getMapLayers().get(0).getWidth()),
 				this.tileManager.getMapLayers().get(0).getTileSize()
-				* r.nextInt(this.tileManager.getMapLayers().get(0).getHeight()));
+				* Realm.RANDOM.nextInt(this.tileManager.getMapLayers().get(0).getHeight()));
 
-		List<EnemyModel> enemyToSpawn = new ArrayList<>();
+		final List<EnemyModel> enemyToSpawn = new ArrayList<>();
 		GameDataManager.ENEMIES.values().forEach(enemy->{
 			enemyToSpawn.add(enemy);
 		});
-		EnemyModel toSpawn = enemyToSpawn.get(r.nextInt(enemyToSpawn.size()));
+		final EnemyModel toSpawn = enemyToSpawn.get(Realm.RANDOM.nextInt(enemyToSpawn.size()));
 
-		Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
+		final Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
 				spawnPos, toSpawn.getSize(), toSpawn.getAttackId());
 		enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
 
-		int healthMult = (this.getDepth() == 0 ? 1 : this.getDepth() + 1);
+		final int healthMult = (this.getDepth() == 0 ? 1 : this.getDepth() + 1);
 		enemy.setHealth(enemy.getHealth() * healthMult);
 		enemy.setPos(spawnPos);
 		this.addEnemy(enemy);
