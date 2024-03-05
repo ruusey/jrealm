@@ -73,7 +73,7 @@ public class ServerCommandHandler {
 	private static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs() == null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /setstat {STAT_NAME} {STAT_VALUE}");
-		final short valueToSet = Short.parseShort(message.getArgs().get(1));
+		final short valueToSet = message.getArgs().get(0).equalsIgnoreCase("max") ? -1 : Short.parseShort(message.getArgs().get(1));
 		CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(target.getClassId());
 		log.info("Player {} set stat {} to {}", target.getName(), message.getArgs().get(0), valueToSet);
 		switch (message.getArgs().get(0)) {

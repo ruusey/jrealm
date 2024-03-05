@@ -256,7 +256,7 @@ public class GameDataManager {
 	}
 
 	public static Sprite getGraveSprite() {
-		return GameSpriteManager.loadSprite(5, 5, "rotmg-bosses.png", GlobalConstants.BASE_SPRITE_SIZE);
+		return GameSpriteManager.loadSprite(5, 5, "rotmg-bosses.png", GlobalConstants.MEDIUM_ART_SIZE);
 	}
 
 	public static Sprite getChestSprite() {

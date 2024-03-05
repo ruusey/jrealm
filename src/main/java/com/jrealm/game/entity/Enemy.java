@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	private static final int IDLE_FRAMES = 12;
-	private static final float CHASE_SPEED = 1.4f;
+	private static final float CHASE_SPEED = 1.1f;
 	protected EnemyModel model;
 	protected int chaseRange;
 	protected int attackRange;
@@ -107,6 +107,16 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		this.pos.x += this.dx;
 		this.pos.y += this.dy;
 		
+//		if (this.idleTime >= Enemy.IDLE_FRAMES) {
+//			this.up = Realm.RANDOM.nextBoolean();
+//			this.down = Realm.RANDOM.nextBoolean();
+//			this.left = Realm.RANDOM.nextBoolean();
+//			this.right = Realm.RANDOM.nextBoolean();
+//			this.idleTime = 0;
+//		} else {
+//			this.idleTime++;
+//		}
+		
 	}
 
 	public void update(long realmId, RealmManagerServer mgr, double time) {
@@ -114,6 +124,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		
 		Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.chaseRange);
 		super.update(time);
+		
 		this.move();
 		if (player == null)
 			return;
@@ -177,7 +188,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 		this.pos.x += this.dx;
 		this.pos.y += this.dy;
-
+		
 		if (this.idleTime >= Enemy.IDLE_FRAMES) {
 			this.up = Realm.RANDOM.nextBoolean();
 			this.down = Realm.RANDOM.nextBoolean();
@@ -187,6 +198,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		} else {
 			this.idleTime++;
 		}
+
 	}
 
 	@Override

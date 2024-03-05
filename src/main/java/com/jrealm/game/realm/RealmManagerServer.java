@@ -52,6 +52,9 @@ import com.jrealm.game.script.Enemy12Script;
 import com.jrealm.game.script.Enemy13Script;
 import com.jrealm.game.script.Enemy14Script;
 import com.jrealm.game.script.EnemyScriptBase;
+import com.jrealm.game.script.item.Item157Script;
+import com.jrealm.game.script.item.UseableItemScript;
+import com.jrealm.game.script.item.UseableItemScriptBase;
 import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.Tile;
 import com.jrealm.game.tile.TileMap;
@@ -100,6 +103,7 @@ public class RealmManagerServer implements Runnable {
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
 	private List<RealmDecorator> realmDecorators = new ArrayList<>();
 	private List<EnemyScriptBase> enemyScripts = new ArrayList<>();
+	private List<UseableItemScriptBase> itemScripts = new ArrayList<>();
 	private Semaphore realmLock = new Semaphore(1);
 	private int currentTickCount =0;
 	private long tickSampleTime = 0;
@@ -107,6 +111,7 @@ public class RealmManagerServer implements Runnable {
 		this.registerRealmDecorators();
 		this.registerEnemyScripts();
 		this.registerPacketCallbacks();
+		this.registerItemScripts();
 		this.server = new SocketServer(2222);
 		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
@@ -477,6 +482,16 @@ public class RealmManagerServer implements Runnable {
 		}
 		return result;
 	}
+	
+	public UseableItemScriptBase getItemScript(int itemId) {
+		UseableItemScriptBase result = null;
+		for (final UseableItemScriptBase itemScript : this.itemScripts) {
+			if (itemScript.getTargetItemId() == itemId) {
+				result = itemScript;
+			}
+		}
+		return result;
+	}
 
 	// Register any custom realm type decorators.
 	// Each time a realm of the target type is added, an instance
@@ -493,6 +508,10 @@ public class RealmManagerServer implements Runnable {
 		this.enemyScripts.add(new Enemy12Script(this));
 		this.enemyScripts.add(new Enemy13Script(this));
 		this.enemyScripts.add(new Enemy14Script(this));
+	}
+	
+	private void registerItemScripts() {
+		this.itemScripts.add(new Item157Script(this));
 	}
 
 	private void registerPacketCallbacks() {
@@ -630,8 +649,6 @@ public class RealmManagerServer implements Runnable {
 						source.clone(-offset, -offset), angle+Float.parseFloat(p.getAngle()), p.getSize(),
 						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
 						p.getFrequency());
-
-
 			}
 		} else if ((abilityItem.getDamage() != null)) {
 			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
@@ -647,12 +664,17 @@ public class RealmManagerServer implements Runnable {
 						dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
 						p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
 			}
+			
+		
 			// If the ability is non damaging (rogue cloak, priest tome)
 		} else if (abilityItem.getEffect() != null) {
-			player.addEffect(effect.getEffectId(), effect.getDuration());
-			if (abilityItem.getEffect().getEffectId().equals(EffectType.HEAL)) {
-				player.setHealth(player.getHealth() + 50);
-			}
+
+			
+		}
+		
+		UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
+		if(script!=null) {
+			script.invokeItemAbility(targetRealm, player, abilityItem);
 		}
 	}
 
@@ -945,7 +967,7 @@ public class RealmManagerServer implements Runnable {
 			}
 			targetRealm.removeEnemy(enemy);
 
-			if (Realm.RANDOM.nextInt(1) < 1) {
+			if (Realm.RANDOM.nextInt(10) < 1) {
 				if (targetRealm.getMapId() == 4) {
 					targetRealm.addPortal(
 							new Portal(Realm.RANDOM.nextLong(), (short) 0, enemy.getPos().withNoise(64, 64)));
