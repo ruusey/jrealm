@@ -142,10 +142,10 @@ public class ServerGameLogic {
 					ServerGameLogic.log.error("Failed to save account chests for account {}. Reason: {}",
 							user.getAccountUuid(), e);
 				}
-				mgr.getRealms().remove(currentRealm.getRealmId());
+				mgr.safeRemoveRealm(currentRealm.getRealmId());
 			} else if ((currentRealm.getMapId() == 5) && (currentRealm.getEnemies().size() == 0)
 					&& (currentRealm.getPlayers().size() == 0)) {
-				mgr.getRealms().remove(currentRealm.getRealmId());
+				mgr.safeRemoveRealm(currentRealm.getRealmId());
 			}
 		}
 		currentRealm.removePlayer(user);

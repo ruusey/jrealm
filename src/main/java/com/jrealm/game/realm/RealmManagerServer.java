@@ -101,7 +101,8 @@ public class RealmManagerServer implements Runnable {
 	private List<RealmDecorator> realmDecorators = new ArrayList<>();
 	private List<EnemyScriptBase> enemyScripts = new ArrayList<>();
 	private Semaphore realmLock = new Semaphore(1);
-
+	private int currentTickCount =0;
+	private long tickSampleTime = 0;
 	public RealmManagerServer() {
 		this.registerRealmDecorators();
 		this.registerEnemyScripts();
@@ -170,6 +171,11 @@ public class RealmManagerServer implements Runnable {
 
 	private void tick() {
 		try {
+			if(Instant.now().toEpochMilli()-this.tickSampleTime>1000) {
+				this.tickSampleTime = Instant.now().toEpochMilli();
+				log.info("[SERVER] ticks this second: {}", this.currentTickCount);
+				this.currentTickCount=0;
+			}
 			final Runnable enqueueGameData = () -> {
 				this.enqueueGameData();
 			};
@@ -185,6 +191,7 @@ public class RealmManagerServer implements Runnable {
 			// rather that all three are completed at least once per tick, so run them
 			// asynchronously
 			WorkerThread.submitAndRun(enqueueGameData, processServerPackets, sendGameData);
+			this.currentTickCount++;
 		} catch (Exception e) {
 			RealmManagerServer.log.error("Failed to sleep");
 		}
@@ -231,6 +238,7 @@ public class RealmManagerServer implements Runnable {
 		final List<String> disconnectedClients = new ArrayList<>();
 		// TODO: Parallelize work for each realm
 		// For each realm we have to do work for
+		this.acquireRealmLock();
 		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
 			final Realm realm = realmEntry.getValue();
 			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
@@ -329,6 +337,7 @@ public class RealmManagerServer implements Runnable {
 				}
 			}
 		}
+		this.releaseRealmLock();
 	}
 
 	// For each connected client, dequeue all pending packets
@@ -936,7 +945,7 @@ public class RealmManagerServer implements Runnable {
 			}
 			targetRealm.removeEnemy(enemy);
 
-			if (Realm.RANDOM.nextInt(11) < 1) {
+			if (Realm.RANDOM.nextInt(1) < 1) {
 				if (targetRealm.getMapId() == 4) {
 					targetRealm.addPortal(
 							new Portal(Realm.RANDOM.nextLong(), (short) 0, enemy.getPos().withNoise(64, 64)));
@@ -1076,6 +1085,16 @@ public class RealmManagerServer implements Runnable {
 		};
 		WorkerThread.doAsync(persist);
 	}
+	
+	public void safeRemoveRealm(final Realm realm) {
+		this.safeRemoveRealm(realm.getRealmId());
+	}
+	
+	public void safeRemoveRealm(final long realmId) {
+		this.acquireRealmLock();
+		this.realms.remove(realmId);
+		this.releaseRealmLock();
+	}
 
 	private void persistPlayerAsync(final Player player) {
 		final Runnable persist = () -> {
@@ -1138,6 +1157,22 @@ public class RealmManagerServer implements Runnable {
 			} catch (Exception e) {
 				RealmManagerServer.log.error("Failed to broadcast Packet to client {}", client.getKey());
 			}
+		}
+	}
+	
+	private void acquireRealmLock() {
+		try {
+			this.realmLock.acquire();
+		} catch (Exception e) {
+			log.error(e.getMessage());
+		}
+	}
+
+	private void releaseRealmLock() {
+		try {
+			this.realmLock.release();
+		} catch (Exception e) {
+			log.error(e.getMessage());
 		}
 	}
 }
