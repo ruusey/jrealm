@@ -124,6 +124,7 @@ public class GameSpriteManager {
 			final java.net.URL imageUrl = new java.net.URL(ServerGameLogic.DATA_SERVICE.getBaseUrl() + "game-data/"+file);
 			sprite = ImageIO.read(imageUrl);
 		} catch (Exception e) {
+			e.printStackTrace();
 			GameSpriteManager.log.error("ERROR: could not load file: {}", file);
 		}
 		return sprite;
