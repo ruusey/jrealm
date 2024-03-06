@@ -18,50 +18,53 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 public class JRealmDataService {
+	// TODO: make POST/GET methods private
+	// and expose public routine specific methods.
+	// eg. getPlayerAccount(String accountUuid)
 	private static final transient ObjectMapper REQUEST_MAPPER = new ObjectMapper();
 	private HttpClient httpClient;
 	private String baseUrl;
 	private String sessionToken;
 
 	public <T> T executeDelete(String path, Class<T> responseClass) throws Exception {
-		URI targetURI = new URI(this.baseUrl + path);
-		HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
+		final URI targetURI = new URI(this.baseUrl + path);
+		final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
 				.DELETE();
 		this.setAuth(httpRequest);
 
-		HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
+		final HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
 		if (response.statusCode() != 200)
-			throw new IOException("Response was non 200.");
+			throw new IOException(response.body());
 
 		return JRealmDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
 	}
 
 	public <T> T executePost(String path, Object object, Class<T> responseClass) throws Exception {
-		URI targetURI = new URI(this.baseUrl + path);
-		BodyPublisher body = HttpRequest.BodyPublishers
+		final URI targetURI = new URI(this.baseUrl + path);
+		final BodyPublisher body = HttpRequest.BodyPublishers
 				.ofString(JRealmDataService.REQUEST_MAPPER.writeValueAsString(object));
-		HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
+		final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
 				.POST(body);
 		this.setAuth(httpRequest);
 
 		HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
 		if (response.statusCode() != 200)
-			throw new IOException("Response was non 200.");
+			throw new IOException(response.body());
 
 		return JRealmDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
 	}
 	
 	public <T> T executePut(String path, Object object, Class<T> responseClass) throws Exception {
-		URI targetURI = new URI(this.baseUrl + path);
-		BodyPublisher body = HttpRequest.BodyPublishers
+		final URI targetURI = new URI(this.baseUrl + path);
+		final BodyPublisher body = HttpRequest.BodyPublishers
 				.ofString(JRealmDataService.REQUEST_MAPPER.writeValueAsString(object));
-		HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
+		final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
 				.PUT(body);
 		this.setAuth(httpRequest);
 
-		HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
+		final HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
 		if (response.statusCode() != 200)
-			throw new IOException("Response was non 200.");
+			throw new IOException(response.body());
 
 		return JRealmDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
 	}
@@ -75,20 +78,20 @@ public class JRealmDataService {
 
 		// TODO: Add query params
 		if (response.statusCode() != 200)
-			throw new IOException("Response was non 200.");
+			throw new IOException(response.body());
 
 		return response.body();
 	}
 
 	public <T> T executeGet(String path, Map<String, String> queryParams, Class<T> responseClass) throws Exception {
-		URI targetURI = new URI(this.baseUrl + path);
-		HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
+		final URI targetURI = new URI(this.baseUrl + path);
+		final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json").uri(targetURI)
 				.GET();
 		this.setAuth(httpRequest);
-		HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
+		final HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
 		// TODO: Add query params
 		if (response.statusCode() != 200)
-			throw new IOException("Response was non 200.");
+			throw new IOException(response.body());
 
 		return JRealmDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
 	}

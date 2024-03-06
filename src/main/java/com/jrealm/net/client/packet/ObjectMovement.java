@@ -24,12 +24,12 @@ public class ObjectMovement implements Streamable<ObjectMovement> {
 	private float posY;
 	private float velX;
 	private float velY;
-	
+
 	public ObjectMovement(float posX, float posY) {
 		this.posX = posX;
 		this.posY = posY;
 	}
-	
+
 	public ObjectMovement(GameObject obj) {
 		this.entityId = obj.getId();
 		if (obj instanceof Enemy) {
@@ -45,12 +45,12 @@ public class ObjectMovement implements Streamable<ObjectMovement> {
 		this.velX = obj.getDx();
 		this.velY = obj.getDy();
 	}
-	
+
 	public EntityType getTargetEntityType() {
 		EntityType type = EntityType.valueOf(entityType);
 		return type;
 	}
-	
+
 	@Override
 	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.entityId);
@@ -70,5 +70,11 @@ public class ObjectMovement implements Streamable<ObjectMovement> {
 		final float velX = stream.readFloat();
 		final float velY = stream.readFloat();
 		return new ObjectMovement(id, entityType, posX, posY, velX, velY);
+	}
+
+	public boolean equals(ObjectMovement other) {
+		return this.entityId == other.getEntityId() && this.entityType == other.getEntityType()
+				&& this.posX == other.getPosX() && this.posY == other.getPosY() && this.velX == other.getVelX()
+				&& this.getVelY() == other.getVelY();
 	}
 }

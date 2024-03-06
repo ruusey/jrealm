@@ -99,7 +99,7 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
 	private Map<Long, UnloadPacket> playerUnloadState = new HashMap<>();
 	private Map<Long, LoadMapPacket> playerLoadMapState = new HashMap<>();
-
+	private Map<Long, ObjectMovePacket> playerObjectMoveState = new HashMap<>();
 	private UnloadPacket lastUnload;
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
@@ -328,8 +328,16 @@ public class RealmManagerServer implements Runnable {
 					}
 
 					// If the ObjectMove packet isnt empty
-					if (movePacket != null) {
+					if(this.playerObjectMoveState.get(player.getKey())==null) {
+						this.playerObjectMoveState.put(player.getKey(), movePacket);
 						this.enqueueServerPacket(player.getValue(), movePacket);
+					}else {
+						final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
+						if(!oldMove.equals(movePacket)) {
+							final ObjectMovePacket movediff = oldMove.getMoveDiff(movePacket);
+							this.playerObjectMoveState.put(player.getKey(), movediff);
+							this.enqueueServerPacket(player.getValue(), movediff);
+						}
 					}
 
 					// Used to dynamically re-render changed loot containers (chests) on the client
