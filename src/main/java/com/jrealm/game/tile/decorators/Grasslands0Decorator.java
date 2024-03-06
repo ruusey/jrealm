@@ -4,16 +4,17 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.game.realm.Realm;
+import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.tile.TileMap;
 
-public class Grasslands0Decorator implements RealmDecorator {
+public class Grasslands0Decorator extends RealmDecoratorBase {
 	private static final Integer MIN_FOREST_COUNT = 15;
 	private static final Integer MAX_FOREST_COUNT = 25;
 	private static final TileModel TREE_10 = GameDataManager.TILES.get(38);
 	private static final TileModel TREE_11 = GameDataManager.TILES.get(39);
 
-	public Grasslands0Decorator() {
-		// TODO Auto-generated constructor stub
+	public Grasslands0Decorator(RealmManagerServer mgr) {
+		super(mgr);
 	}
 
 	@Override

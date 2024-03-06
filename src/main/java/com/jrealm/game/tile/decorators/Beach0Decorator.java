@@ -4,16 +4,17 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.game.realm.Realm;
+import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.tile.TileMap;
 
-public class Beach0Decorator implements RealmDecorator {
+public class Beach0Decorator extends RealmDecoratorBase {
 	private static final Integer MIN_WATER_POOL_COUNT = 15;
 	private static final Integer MAX_WATER_POOL_COUNT = 25;
 	private static final TileModel WATER_TILE = GameDataManager.TILES.get(41);
 	private static final TileModel WATER_TILE_DEEP = GameDataManager.TILES.get(42);
 
-	public Beach0Decorator() {
-		// TODO Auto-generated constructor stub
+	public Beach0Decorator(RealmManagerServer mgr) {
+		super(mgr);
 	}
 
 	@Override

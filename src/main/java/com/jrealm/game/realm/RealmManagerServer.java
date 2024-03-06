@@ -18,6 +18,9 @@ import java.util.concurrent.Semaphore;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
+
 import com.jrealm.account.dto.CharacterDto;
 import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.account.dto.GameItemRefDto;
@@ -63,6 +66,7 @@ import com.jrealm.game.tile.TileMap;
 import com.jrealm.game.tile.decorators.Beach0Decorator;
 import com.jrealm.game.tile.decorators.Grasslands0Decorator;
 import com.jrealm.game.tile.decorators.RealmDecorator;
+import com.jrealm.game.tile.decorators.RealmDecoratorBase;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
@@ -89,7 +93,7 @@ import lombok.extern.slf4j.Slf4j;
 public class RealmManagerServer implements Runnable {
 	private SocketServer server;
 	private boolean shutdown = false;
-
+	private Reflections classPathScanner = new Reflections("com.jrealm.game",new SubTypesScanner(true));
 	private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
 
 	private List<Vector2f> shotDestQueue;
@@ -103,7 +107,7 @@ public class RealmManagerServer implements Runnable {
 	private UnloadPacket lastUnload;
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
-	private List<RealmDecorator> realmDecorators = new ArrayList<>();
+	private List<RealmDecoratorBase> realmDecorators = new ArrayList<>();
 	private List<EnemyScriptBase> enemyScripts = new ArrayList<>();
 	private List<UseableItemScriptBase> itemScripts = new ArrayList<>();
 	private Semaphore realmLock = new Semaphore(1);
@@ -508,22 +512,61 @@ public class RealmManagerServer implements Runnable {
 	// of it will be passed to the decorator for post processing
 	// (generate static enemies, terrain, events)
 	private void registerRealmDecorators() {
-		this.realmDecorators.add(new Beach0Decorator());
-		this.realmDecorators.add(new Grasslands0Decorator());
+		this.registerRealmDecoratorsReflection();
+//		this.realmDecorators.add(new Beach0Decorator());
+//		this.realmDecorators.add(new Grasslands0Decorator());
+	}
+	
+	private void registerRealmDecoratorsReflection() {
+		Set<Class<? extends RealmDecoratorBase>> subclasses = this.classPathScanner.getSubTypesOf(RealmDecoratorBase.class);
+		for(Class<? extends RealmDecoratorBase> clazz : subclasses) {
+			try {
+				final RealmDecoratorBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class).newInstance(this);
+				this.realmDecorators.add(realmDecoratorInstance);
+			}catch(Exception e) {
+				log.error("Failed to register realm decorator for script {}. Reason: {}", clazz, e.getMessage());
+			}
+		}
 	}
 
 	private void registerEnemyScripts() {
-		this.enemyScripts.add(new Enemy10Script(this));
-		this.enemyScripts.add(new Enemy11Script(this));
-		this.enemyScripts.add(new Enemy12Script(this));
-		this.enemyScripts.add(new Enemy13Script(this));
-		this.enemyScripts.add(new Enemy14Script(this));
+//		this.enemyScripts.add(new Enemy10Script(this));
+//		this.enemyScripts.add(new Enemy11Script(this));
+//		this.enemyScripts.add(new Enemy12Script(this));
+//		this.enemyScripts.add(new Enemy13Script(this));
+//		this.enemyScripts.add(new Enemy14Script(this));
+		this.registerItemScriptsReflection();
+	}
+	
+	private void registerEnemyScriptsReflection() {
+		Set<Class<? extends EnemyScriptBase>> subclasses = this.classPathScanner.getSubTypesOf(EnemyScriptBase.class);
+		for(Class<? extends EnemyScriptBase> clazz : subclasses) {
+			try {
+				final EnemyScriptBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class).newInstance(this);
+				this.enemyScripts.add(realmDecoratorInstance);
+			}catch(Exception e) {
+				log.error("Failed to register enemy script for script {}. Reason: {}", clazz, e.getMessage());
+			}
+		}
 	}
 	
 	private void registerItemScripts() {
-		this.itemScripts.add(new Item153Script(this));
-		this.itemScripts.add(new Item156Script(this));
-		this.itemScripts.add(new Item157Script(this));
+//		this.itemScripts.add(new Item153Script(this));
+//		this.itemScripts.add(new Item156Script(this));
+//		this.itemScripts.add(new Item157Script(this));
+		this.registerItemScriptsReflection();
+	}
+	
+	private void registerItemScriptsReflection() {
+		Set<Class<? extends UseableItemScriptBase>> subclasses = this.classPathScanner.getSubTypesOf(UseableItemScriptBase.class);
+		for(Class<? extends UseableItemScriptBase> clazz : subclasses) {
+			try {
+				final UseableItemScriptBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class).newInstance(this);
+				this.itemScripts.add(realmDecoratorInstance);
+			}catch(Exception e) {
+				log.error("Failed to register useable item script for script {}. Reason: {}", clazz, e.getMessage());
+			}
+		}
 	}
 
 	private void registerPacketCallbacks() {
@@ -1040,6 +1083,7 @@ public class RealmManagerServer implements Runnable {
 		this.playerUpdateState.remove(playerId);
 		this.playerUnloadState.remove(playerId);
 		this.playerLoadMapState.remove(playerId);
+		this.playerObjectMoveState.remove(playerId);
 	}
 
 	public Map<Long, String> getRemoteAddressMapRevered() {
