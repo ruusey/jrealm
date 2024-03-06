@@ -19,7 +19,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
+import org.reflections.scanners.Scanners;
 
 import com.jrealm.account.dto.CharacterDto;
 import com.jrealm.account.dto.CharacterStatsDto;
@@ -93,7 +93,7 @@ import lombok.extern.slf4j.Slf4j;
 public class RealmManagerServer implements Runnable {
 	private SocketServer server;
 	private boolean shutdown = false;
-	private Reflections classPathScanner = new Reflections("com.jrealm.game",new SubTypesScanner(true));
+	private Reflections classPathScanner = new Reflections("com.jrealm.game", Scanners.SubTypes);
 	private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
 
 	private List<Vector2f> shotDestQueue;
