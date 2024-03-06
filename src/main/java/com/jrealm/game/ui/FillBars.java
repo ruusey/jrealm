@@ -2,7 +2,6 @@ package com.jrealm.game.ui;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.Method;
 
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.Player;
@@ -35,27 +34,14 @@ public class FillBars {
 		this.size = size;
 		this.length = length;
 		this.field = field;
-//		Method method;
-//		try {
-//			method = e.getClass().getMethod(field);
-//			float energy = (float) method.invoke(e);
-//
-//			this.energyLength = (int) ((this.bar[0].getWidth() + size) * (length * energy));
-//		} catch (Exception e1) {
-//			e1.printStackTrace();
-//		}
-
 		this.barWidthRatio = ((this.bar[0].getWidth() + size) * length) / (this.bar[0].getWidth());
 		this.energyWidthRatio = this.energyLength / (this.bar[0].getWidth());
-
 		this.barHeightRatio = (this.bar[0].getHeight() + size) / this.bar[0].getHeight();
 	}
 
 	public void render(Graphics2D g) {
 		int endsWidth = 0;
 		int centerHeight = (int) (this.pos.y - this.barHeightRatio - (this.bar[0].getHeight() / 2));
-
-		Method method;
 		try {
 			float energy = 0.0f;
 			switch(this.field) {
@@ -69,15 +55,11 @@ public class FillBars {
 				energy = ((Player)e).getExperiencePercent();
 				break;
 			}
-			
-			
 			this.energyLength = (int) ((this.bar[0].getWidth() + this.size) * (this.length * energy));
 		} catch (Exception e1) {
-
+			// TODO: Log
 		}
-
 		this.energyWidthRatio = this.energyLength / (this.bar[0].getWidth());
-
 		if(this.bar[2] != null) {
 			endsWidth = this.bar[2].getWidth() + this.size;
 
