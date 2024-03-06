@@ -52,6 +52,8 @@ import com.jrealm.game.script.Enemy12Script;
 import com.jrealm.game.script.Enemy13Script;
 import com.jrealm.game.script.Enemy14Script;
 import com.jrealm.game.script.EnemyScriptBase;
+import com.jrealm.game.script.item.Item153Script;
+import com.jrealm.game.script.item.Item156Script;
 import com.jrealm.game.script.item.Item157Script;
 import com.jrealm.game.script.item.UseableItemScript;
 import com.jrealm.game.script.item.UseableItemScriptBase;
@@ -511,6 +513,8 @@ public class RealmManagerServer implements Runnable {
 	}
 	
 	private void registerItemScripts() {
+		this.itemScripts.add(new Item153Script(this));
+		this.itemScripts.add(new Item156Script(this));
 		this.itemScripts.add(new Item157Script(this));
 	}
 
@@ -621,7 +625,7 @@ public class RealmManagerServer implements Runnable {
 
 		final Player player = targetRealm.getPlayer(playerId);
 		final GameItem abilityItem = player.getAbility();
-		if ((abilityItem == null) || (abilityItem.getEffect() == null))
+		if ((abilityItem == null))
 			return;
 		final Effect effect = abilityItem.getEffect();
 		if (player.getMana() < effect.getMpCost())
@@ -668,8 +672,7 @@ public class RealmManagerServer implements Runnable {
 		
 			// If the ability is non damaging (rogue cloak, priest tome)
 		} else if (abilityItem.getEffect() != null) {
-
-			
+			player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());	
 		}
 		
 		UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());

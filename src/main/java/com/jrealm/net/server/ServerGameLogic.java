@@ -240,7 +240,10 @@ public class ServerGameLogic {
 		final Player player = realm.getPlayer(shootPacket.getEntityId());
 		boolean canShoot = false;
 		if(realm.getPlayerLastShotTime().get(player.getId())!=null) {
-			int dex = (int) ((6.5 * (player.getComputedStats().getDex() + 17.3)) / 75);
+			double dex = (int) ((6.5 * (player.getComputedStats().getDex() + 17.3)) / 75);
+			if(player.hasEffect(EffectType.SPEEDY)) {
+				dex = dex * 1.5;
+			}
 			canShoot = ((System.currentTimeMillis() - realm.getPlayerLastShotTime().get(player.getId())) > (1000 / dex));
 			if(canShoot && !player.hasEffect(EffectType.STUNNED)) {
 				realm.getPlayerLastShotTime().put(player.getId(), Instant.now().toEpochMilli());
