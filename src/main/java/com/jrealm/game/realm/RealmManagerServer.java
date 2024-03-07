@@ -2,6 +2,10 @@ package com.jrealm.game.realm;
 
 import java.io.DataOutputStream;
 import java.io.OutputStream;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,6 +49,7 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.messaging.ServerCommandMessage;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.LootTableModel;
 import com.jrealm.game.model.Projectile;
@@ -67,6 +72,7 @@ import com.jrealm.game.tile.decorators.Beach0Decorator;
 import com.jrealm.game.tile.decorators.Grasslands0Decorator;
 import com.jrealm.game.tile.decorators.RealmDecorator;
 import com.jrealm.game.tile.decorators.RealmDecoratorBase;
+import com.jrealm.game.util.CommandHandler;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
@@ -78,6 +84,7 @@ import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.ProcessingThread;
+import com.jrealm.net.server.ServerCommandHandler;
 import com.jrealm.net.server.ServerGameLogic;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.TextPacket;
@@ -94,6 +101,8 @@ public class RealmManagerServer implements Runnable {
 	private SocketServer server;
 	private boolean shutdown = false;
 	private Reflections classPathScanner = new Reflections("com.jrealm.game", Scanners.SubTypes);
+	private MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
+
 	private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
 
 	private List<Vector2f> shotDestQueue;
@@ -118,6 +127,7 @@ public class RealmManagerServer implements Runnable {
 		this.registerEnemyScripts();
 		this.registerPacketCallbacks();
 		this.registerItemScripts();
+		this.registerCommandHandlersReflection();
 		this.server = new SocketServer(2222);
 		this.shotDestQueue = new ArrayList<>();
 		WorkerThread.submitAndForkRun(this.server);
@@ -568,6 +578,22 @@ public class RealmManagerServer implements Runnable {
 				this.itemScripts.add(realmDecoratorInstance);
 			}catch(Exception e) {
 				log.error("Failed to register useable item script for script {}. Reason: {}", clazz, e.getMessage());
+			}
+		}
+	}
+	
+	private void registerCommandHandlersReflection() {
+		final MethodType mt = MethodType.methodType(Void.class, RealmManagerServer.class, Player.class, ServerCommandMessage.class);
+		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(CommandHandler.class);
+		for(final Method method : subclasses) {
+			try {
+				final CommandHandler commandToHandle = method.getDeclaredAnnotation(CommandHandler.class);
+				final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerCommandHandler.class, method.getName(), mt);
+				if(handleToHandler!=null) {
+					ServerCommandHandler.COMMAND_CALLBACKS_1.put(commandToHandle.value(), handleToHandler);
+				}
+			}catch(Exception e) {
+				log.error("Failed to get MethodHandle to method {}. Reason: {}",method.getName(), e);
 			}
 		}
 	}

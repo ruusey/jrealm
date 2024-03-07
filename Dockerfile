@@ -1,5 +1,6 @@
 FROM maven:3.8.6-openjdk-11-slim as BUILD
 WORKDIR /app
+COPY cacerts $JAVA_HOME/lib/security
 COPY . .
 RUN mvn clean install
 
