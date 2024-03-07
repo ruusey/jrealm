@@ -332,20 +332,20 @@ public class RealmManagerServer implements Runnable {
 					}
 
 					// If the ObjectMove packet isnt empty
-//					if(this.playerObjectMoveState.get(player.getKey())==null) {
-//						this.playerObjectMoveState.put(player.getKey(), movePacket);
-//						this.enqueueServerPacket(player.getValue(), movePacket);
-//					}else {
-//						final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
-//						if(!oldMove.equals(movePacket)) {
-//							final ObjectMovePacket movediff = oldMove.getMoveDiff(movePacket);
-//							this.playerObjectMoveState.put(player.getKey(), movediff);
-//							this.enqueueServerPacket(player.getValue(), movediff);
-//						}
-//					}
-					if(movePacket!=null && movePacket.getMovements().length>0) {
+					if(this.playerObjectMoveState.get(player.getKey())==null) {
+						this.playerObjectMoveState.put(player.getKey(), movePacket);
 						this.enqueueServerPacket(player.getValue(), movePacket);
+					}else {
+						final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
+						if(!oldMove.equals(movePacket)) {
+							//final ObjectMovePacket movediff = oldMove.getMoveDiff(movePacket);
+							this.playerObjectMoveState.put(player.getKey(), movePacket);
+							this.enqueueServerPacket(player.getValue(), movePacket);
+						}
 					}
+//					if(movePacket!=null && movePacket.getMovements().length>0) {
+//						this.enqueueServerPacket(player.getValue(), movePacket);
+//					}
 
 					// Used to dynamically re-render changed loot containers (chests) on the client
 					// if their contents change in a server tick (receive MoveItem packet from
@@ -538,7 +538,7 @@ public class RealmManagerServer implements Runnable {
 //		this.enemyScripts.add(new Enemy12Script(this));
 //		this.enemyScripts.add(new Enemy13Script(this));
 //		this.enemyScripts.add(new Enemy14Script(this));
-		this.registerItemScriptsReflection();
+		this.registerEnemyScriptsReflection();
 	}
 	
 	private void registerEnemyScriptsReflection() {
