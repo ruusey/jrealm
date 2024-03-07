@@ -516,8 +516,6 @@ public class RealmManagerServer implements Runnable {
 	// (generate static enemies, terrain, events)
 	private void registerRealmDecorators() {
 		this.registerRealmDecoratorsReflection();
-//		this.realmDecorators.add(new Beach0Decorator());
-//		this.realmDecorators.add(new Grasslands0Decorator());
 	}
 	
 	private void registerRealmDecoratorsReflection() {
@@ -533,11 +531,6 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	private void registerEnemyScripts() {
-//		this.enemyScripts.add(new Enemy10Script(this));
-//		this.enemyScripts.add(new Enemy11Script(this));
-//		this.enemyScripts.add(new Enemy12Script(this));
-//		this.enemyScripts.add(new Enemy13Script(this));
-//		this.enemyScripts.add(new Enemy14Script(this));
 		this.registerEnemyScriptsReflection();
 	}
 	
@@ -554,9 +547,6 @@ public class RealmManagerServer implements Runnable {
 	}
 	
 	private void registerItemScripts() {
-//		this.itemScripts.add(new Item153Script(this));
-//		this.itemScripts.add(new Item156Script(this));
-//		this.itemScripts.add(new Item157Script(this));
 		this.registerItemScriptsReflection();
 	}
 	
