@@ -73,6 +73,7 @@ import com.jrealm.game.tile.decorators.Grasslands0Decorator;
 import com.jrealm.game.tile.decorators.RealmDecorator;
 import com.jrealm.game.tile.decorators.RealmDecoratorBase;
 import com.jrealm.game.util.CommandHandler;
+import com.jrealm.game.util.PacketHandler;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
@@ -591,6 +592,22 @@ public class RealmManagerServer implements Runnable {
 				final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerCommandHandler.class, method.getName(), mt);
 				if(handleToHandler!=null) {
 					ServerCommandHandler.COMMAND_CALLBACKS_1.put(commandToHandle.value(), handleToHandler);
+				}
+			}catch(Exception e) {
+				log.error("Failed to get MethodHandle to method {}. Reason: {}",method.getName(), e);
+			}
+		}
+	}
+	
+	private void registerPacketCallbacksReflection() {
+		final MethodType mt = MethodType.methodType(Void.class, RealmManagerServer.class, Packet.class);
+		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandler.class);
+		for(final Method method : subclasses) {
+			try {
+				final PacketHandler packetToHandle = method.getDeclaredAnnotation(PacketHandler.class);
+				final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerGameLogic.class, method.getName(), mt);
+				if(handleToHandler!=null) {
+					//registerPacketCallback(commandToHandle.packetId(), handle)
 				}
 			}catch(Exception e) {
 				log.error("Failed to get MethodHandle to method {}. Reason: {}",method.getName(), e);
