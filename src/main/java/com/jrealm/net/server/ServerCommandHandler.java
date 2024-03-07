@@ -30,21 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ServerCommandHandler {
-	public static final Map<String, TriConsumer<RealmManagerServer, Player, ServerCommandMessage>> COMMAND_CALLBACKS = new HashMap<>();
-	public static final Map<String, MethodHandle> COMMAND_CALLBACKS_1 = new HashMap<>();
+	public static final Map<String, MethodHandle> COMMAND_CALLBACKS = new HashMap<>();
 
-	// Static callback initialization. Using custom TriConsumer to enforce the method signature
-	
-	// of command handler methods
-	static {
-		COMMAND_CALLBACKS.put("setstat", ServerCommandHandler::invokeSetStats);
-		COMMAND_CALLBACKS.put("spawn", ServerCommandHandler::invokeEnemySpawn);
-		COMMAND_CALLBACKS.put("effect", ServerCommandHandler::invokeSetEffect);
-		COMMAND_CALLBACKS.put("tp", ServerCommandHandler::invokeTeleport);
-		COMMAND_CALLBACKS.put("item", ServerCommandHandler::invokeSpawnItem);
-		COMMAND_CALLBACKS.put("realm", ServerCommandHandler::invokeRealmMove);
-	}
-	
 	public static void invokeCommand(RealmManagerServer mgr, CommandPacket command) throws Exception {
 		final ServerCommandMessage message = CommandType.fromPacket(command);
 		final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
@@ -59,21 +46,18 @@ public class ServerCommandHandler {
 			if(!playerAccount.isAdmin()) 
 				throw new IllegalStateException("Player "+playerAccount.getAccountName()+" is not allowed to use Admin commands.");
 			
-			TriConsumer<RealmManagerServer, Player, ServerCommandMessage> consumer = COMMAND_CALLBACKS.get(message.getCommand().toLowerCase());
-			MethodHandle methodHandle = COMMAND_CALLBACKS_1.get(message.getCommand().toLowerCase());
-			if(methodHandle!=null) {
+			MethodHandle methodHandle = COMMAND_CALLBACKS.get(message.getCommand().toLowerCase());
+
+			if(methodHandle==null) {
+				CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 501,
+						"Unknown command " + message.getCommand());
+				mgr.enqueueServerPacket(fromPlayer, errorResponse);
+			}else {
 				try {
 					methodHandle.invokeExact(mgr, fromPlayer, message);
 				}catch(Throwable e) {
 					log.error("Failed to invoke MethodHandle for command {}. Reason: {}",message.getCommand().toLowerCase(), e);
 				}
-			}
-			if(consumer==null) {
-				CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 501,
-						"Unknown command " + message.getCommand());
-				mgr.enqueueServerPacket(fromPlayer, errorResponse);
-			}else {
-				consumer.accept(mgr, fromPlayer, message);
 			}
 		} catch (Exception e) {
 			log.error("Failed to handle server command. Reason: {}", e.getMessage());
@@ -84,7 +68,7 @@ public class ServerCommandHandler {
 	// Handler methods are passed a reference to the current RealmManager, the invoking Player object
 	// and the ServerCommand message object.
 	@CommandHandler("setstat")
-	private static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs() == null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /setstat {STAT_NAME} {STAT_VALUE}");
 		final short valueToSet = message.getArgs().get(0).equalsIgnoreCase("max") ? -1 : Short.parseShort(message.getArgs().get(1));
@@ -124,7 +108,7 @@ public class ServerCommandHandler {
 	}
 	
 	@CommandHandler("spawn")
-	private static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if(message.getArgs()==null || message.getArgs().size()!=1) 
 			throw new IllegalArgumentException("Usage: /spawn {ENEMY_ID}");
 		
@@ -135,7 +119,7 @@ public class ServerCommandHandler {
 	}
 
 	@CommandHandler("seteffect")
-	private static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /seteffect {add | clear} {EFFECT_ID} {DURATION (sec)}");
 		log.info("Player {} set effect {}", target.getName(), message);
@@ -151,7 +135,7 @@ public class ServerCommandHandler {
 	}
 	
 	@CommandHandler("tp")
-	private static void invokeTeleport(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeTeleport(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /tp {PLAYER_NAME}. /tp {X_CORD} {Y_CORD}");
 		
@@ -174,7 +158,7 @@ public class ServerCommandHandler {
 	}
 	
 	@CommandHandler("item")
-	private static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /item {ITEM_ID}");
 		log.info("Player {} spawn item {}", target.getName(), message);
@@ -189,7 +173,7 @@ public class ServerCommandHandler {
 	}
 	
 	@CommandHandler("realm")
-	private static void invokeRealmMove(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeRealmMove(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /realm {up | down}");
 		

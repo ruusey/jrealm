@@ -101,9 +101,8 @@ import lombok.extern.slf4j.Slf4j;
 public class RealmManagerServer implements Runnable {
 	private SocketServer server;
 	private boolean shutdown = false;
-	private Reflections classPathScanner = new Reflections("com.jrealm.game", Scanners.SubTypes);
+	private Reflections classPathScanner = new Reflections("com.jrealm", Scanners.SubTypes, Scanners.MethodsAnnotated);
 	private MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
-
 	private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
 
 	private List<Vector2f> shotDestQueue;
@@ -348,8 +347,11 @@ public class RealmManagerServer implements Runnable {
 						this.enqueueServerPacket(player.getValue(), movePacket);
 					}else {
 						final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
-						if(!oldMove.equals(movePacket)) {
+						if(oldMove!=null && !oldMove.equals(movePacket)) {
 							//final ObjectMovePacket movediff = oldMove.getMoveDiff(movePacket);
+							this.playerObjectMoveState.put(player.getKey(), movePacket);
+							this.enqueueServerPacket(player.getValue(), movePacket);
+						}else {
 							this.playerObjectMoveState.put(player.getKey(), movePacket);
 							this.enqueueServerPacket(player.getValue(), movePacket);
 						}
@@ -572,16 +574,19 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 	}
-	
+
 	private void registerCommandHandlersReflection() {
-		final MethodType mt = MethodType.methodType(Void.class, RealmManagerServer.class, Player.class, ServerCommandMessage.class);
+		// Target method signature. ex. public static void myMethod(RealmManagerServer, Player, ServerCommandMessage)
+		final MethodType mt = MethodType.methodType(void.class, RealmManagerServer.class, Player.class, ServerCommandMessage.class);
 		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(CommandHandler.class);
 		for(final Method method : subclasses) {
 			try {
+				// Get the annotation on the method
 				final CommandHandler commandToHandle = method.getDeclaredAnnotation(CommandHandler.class);
+				// Find the static method with given name in the target class
 				final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerCommandHandler.class, method.getName(), mt);
 				if(handleToHandler!=null) {
-					ServerCommandHandler.COMMAND_CALLBACKS_1.put(commandToHandle.value(), handleToHandler);
+					ServerCommandHandler.COMMAND_CALLBACKS.put(commandToHandle.value(), handleToHandler);
 				}
 			}catch(Exception e) {
 				log.error("Failed to get MethodHandle to method {}. Reason: {}",method.getName(), e);
