@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.GameObject;
@@ -59,6 +61,25 @@ public class ObjectMovePacket extends Packet {
 		}
 
 	}
+	
+	public ObjectMovePacket getMoveDiff(ObjectMovePacket newMove) throws Exception {
+		List<ObjectMovement> moveDiff = new ArrayList<>();
+		for (ObjectMovement movement : newMove.getMovements()) {
+			if (!this.containsMovement(movement)) {
+				moveDiff.add(movement);
+			}
+		}
+		return ObjectMovePacket.from(moveDiff.toArray(new ObjectMovement[0]));
+	}
+	
+	public boolean containsMovement(ObjectMovement movement) {
+		for(ObjectMovement thisMovement : this.getMovements()) {
+			if(thisMovement!=null && thisMovement.equals(movement)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	
 	public static ObjectMovePacket from(GameObject[] objects) throws Exception {
@@ -68,6 +89,27 @@ public class ObjectMovePacket extends Packet {
 		stream.writeInt(objects.length);
 		for(GameObject obj : objects) {
 			new ObjectMovement(obj).write(stream);
+		}
+		
+		return new ObjectMovePacket(PacketType.OBJECT_MOVE.getPacketId(), byteStream.toByteArray());
+	}
+	
+	public boolean equals(ObjectMovePacket other) {
+		for(ObjectMovement movement: other.getMovements()) {
+			if(!this.containsMovement(movement)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public static ObjectMovePacket from(ObjectMovement[] objects) throws Exception {
+		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+		DataOutputStream stream = new DataOutputStream(byteStream);
+		
+		stream.writeInt(objects.length);
+		for(ObjectMovement obj : objects) {
+			obj.write(stream);
 		}
 		
 		return new ObjectMovePacket(PacketType.OBJECT_MOVE.getPacketId(), byteStream.toByteArray());

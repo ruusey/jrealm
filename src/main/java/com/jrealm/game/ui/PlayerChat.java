@@ -7,9 +7,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.jrealm.game.GamePanel;
+import com.jrealm.game.messaging.CommandType;
+import com.jrealm.game.messaging.ServerCommandMessage;
+import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.net.client.SocketClient;
+import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
@@ -24,11 +28,14 @@ public class PlayerChat {
 	private boolean chatOpen;
 	private boolean releasedEnter;
 	private boolean pressedEnter;
-	public PlayerChat() {
+	private PlayState state;
+
+	public PlayerChat(PlayState state) {
 		this.currentMessage = "";
 		this.chatOpen = false;
 		this.releasedEnter = false;
 		this.pressedEnter = false;
+		this.state = state;
 		this.playerChat = new LinkedHashMap<String, TextPacket>() {
 			private static final long serialVersionUID = 4568387673008726309L;
 
@@ -52,12 +59,6 @@ public class PlayerChat {
 
 		if (key.enter.down && !this.pressedEnter) {
 			this.pressedEnter = true;
-			return;
-		}
-
-		if (this.pressedEnter && !key.enter.down) {
-			this.releasedEnter = true;
-			return;
 		}
 
 		if (this.pressedEnter && this.releasedEnter) {
@@ -69,12 +70,26 @@ public class PlayerChat {
 				try {
 					String messageToSend = key.getCapturedInput();
 					messageToSend = messageToSend.replace("\n", "").replace("\r", "");
-					TextPacket packet = TextPacket.create(SocketClient.PLAYER_EMAIL, "SYSTEM", messageToSend);
-					client.sendRemote(packet);
+					if(messageToSend.startsWith("/")) {
+						ServerCommandMessage serverCommand = ServerCommandMessage.parseFromInput(messageToSend);
+						CommandPacket packet = CommandPacket.create(this.state.getPlayer(), CommandType.SERVER_COMMAND,
+								serverCommand);
+						client.sendRemote(packet);
+					}else {
+						TextPacket packet = TextPacket.create(this.state.getPlayer().getName(), "SYSTEM",
+								messageToSend);
+						client.sendRemote(packet);
+					}
+
 				}catch(Exception e) {
 					PlayerChat.log.error("Failed to send PlayerChat to server. Reason: {}", e);
 				}
 			}
+		}
+		
+		if (this.pressedEnter && !key.enter.down) {
+			this.releasedEnter = true;
+			return;
 		}
 	}
 

@@ -1,6 +1,6 @@
 package com.jrealm.account.dto;
 
-import java.sql.Timestamp;
+import java.util.Date;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,5 +14,5 @@ import lombok.NoArgsConstructor;
 public class SessionTokenDto {
 	private String accountGuid;
 	private String token;
-	private Timestamp expires;
+	private Date expires;
 }

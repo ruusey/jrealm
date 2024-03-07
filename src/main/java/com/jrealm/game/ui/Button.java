@@ -9,8 +9,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.util.KeyHandler;
@@ -31,7 +30,7 @@ public class Button {
 
 	private Vector2f pos;
 
-	private AABB bounds;
+	private Rectangle bounds;
 	private boolean hovering = false;
 	private boolean canHover = true;
 	private ArrayList<RightClickEvent> rightClickEvents;
@@ -50,7 +49,7 @@ public class Button {
 	public Button(Vector2f pos, int size) {
 		this.pos = pos;
 
-		this.bounds = new AABB(this.pos, size, size);
+		this.bounds = new Rectangle(this.pos, size, size);
 		this.drawString = false;
 		this.rightClickEvents = new ArrayList<RightClickEvent>();
 		this.hoverInEvents = new ArrayList<HoverInEvent>();
@@ -62,7 +61,7 @@ public class Button {
 	public Button(BufferedImage icon, BufferedImage image, Vector2f pos, int width, int height, int iconsize) {
 		this.pos = pos;
 		this.image = this.createIconButton(icon, image, width + iconsize, height + iconsize, iconsize);
-		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
+		this.bounds = new Rectangle(this.pos, this.image.getWidth(), this.image.getHeight());
 		this.rightClickEvents = new ArrayList<RightClickEvent>();
 
 		this.hoverInEvents = new ArrayList<HoverInEvent>();
@@ -116,7 +115,7 @@ public class Button {
 		this.image = this.createButton(label, image, font, width + buttonWidth, height + buttonHeight, buttonWidth, buttonHeight);
 		this.pos = pos;
 
-		this.bounds = new AABB(this.pos, this.image.getWidth(), this.image.getHeight());
+		this.bounds = new Rectangle(this.pos, this.image.getWidth(), this.image.getHeight());
 		this.rightClickEvents = new ArrayList<RightClickEvent>();
 
 		this.hoverInEvents = new ArrayList<HoverInEvent>();
@@ -249,7 +248,7 @@ public class Button {
 
 	public void render(Graphics2D g) {
 		if(this.drawString) {
-			SpriteSheet.drawArray(g, this.label, this.pos, this.lbWidth, this.lbHeight);
+			g.drawString(this.label, this.pos.x, this.pos.y);
 		}
 
 		if ((this.hoverImage != null) && this.hovering) {

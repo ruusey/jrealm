@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.messaging.CommandType;
+import com.jrealm.game.messaging.ServerErrorMessage;
 import com.jrealm.net.Packet;
 
 import lombok.Data;
@@ -72,6 +73,15 @@ public class CommandPacket extends Packet {
 		return new CommandPacket(PacketType.COMMAND.getPacketId(), baos.toByteArray());
 	}
 	
+	public static CommandPacket from(long targetEntity, byte commandId, String command) throws Exception {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(baos);
+		dos.writeLong(targetEntity);
+		dos.writeByte(commandId);
+		dos.writeUTF(command);
+		return new CommandPacket(PacketType.COMMAND.getPacketId(), baos.toByteArray());
+	}
+	
 	public static CommandPacket from(CommandType cmd, Object command) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
@@ -82,12 +92,25 @@ public class CommandPacket extends Packet {
 	}
 	
 	public static CommandPacket create(Player target, CommandType type, Object command) {
+		return create(target.getId(), type, command);
+	}
+	
+	public static CommandPacket create(long targetEntityId, CommandType type, Object command) {
 		CommandPacket created = null;
 		try {
-			created = from(target, type.getCommandId(), new ObjectMapper().writeValueAsString(command));
+			created = from(targetEntityId, type.getCommandId(), new ObjectMapper().writeValueAsString(command));
 		}catch(Exception e) {
 			log.error("Failed to create Command Packet. Reason: {}", e);
 		}
 		return created;
+	}
+	
+	public static CommandPacket createError(final Player target, final int code, final String message) {
+		return createError(target.getId(), code, message);
+	}
+	
+	public static CommandPacket createError(final long targetEntityId, final int code, final String message) {
+		final ServerErrorMessage error = ServerErrorMessage.from(code, message);
+		return CommandPacket.create(targetEntityId, CommandType.SERVER_ERROR, error);
 	}
 }

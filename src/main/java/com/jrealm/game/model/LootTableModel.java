@@ -67,7 +67,15 @@ public class LootTableModel {
 		List<GameItem> res = new ArrayList<>();
 		for (Entry<String, Float> drop : this.drops.entrySet()) {
 			if (drop.getValue() == 1.0d) {
-				res.add(GameDataManager.GAME_ITEMS.get(Integer.parseInt(drop.getKey())));
+				if (this.isLootGroup(drop.getKey())) {
+					final LootGroupModel lootGroup = GameDataManager.LOOT_GROUPS
+							.get(this.getLootGroupId(drop.getKey()));
+					final int itemFromGroup = lootGroup.getPotentialDrops()
+							.get(Realm.RANDOM.nextInt(lootGroup.getPotentialDrops().size()));
+					res.add(GameDataManager.GAME_ITEMS.get(itemFromGroup));
+				} else {
+					res.add(GameDataManager.GAME_ITEMS.get(this.getLootGroupId(drop.getKey())));
+				}
 			}
 		}
 		return res;

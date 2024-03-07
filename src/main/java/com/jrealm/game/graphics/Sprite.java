@@ -58,6 +58,7 @@ public class Sprite {
 
 	private EffectEnum currentEffectEnum = EffectEnum.NORMAL;
 
+
 	public Sprite(BufferedImage image) {
 		this.image = image;
 		this.w = image.getWidth();
@@ -217,7 +218,8 @@ public class Sprite {
 	public Sprite getNewSubimage() {
 		return this.getNewSubimage(0, 0, this.w, this.h);
 	}
-	
+
+	@Override
 	public Sprite clone() {
 		return new Sprite(this.getImage());
 	}

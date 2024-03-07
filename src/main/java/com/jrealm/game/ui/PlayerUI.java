@@ -13,7 +13,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ItemTooltip;
 import com.jrealm.game.state.PlayState;
@@ -39,14 +39,14 @@ public class PlayerUI {
 	private Graphics2D tempGraphics;
 	private long lastAction = Instant.now().toEpochMilli();
 	public PlayerUI(PlayState p) {
-		SpriteSheet bars = new SpriteSheet("ui/fillbars.png", 0);
-		BufferedImage[] barSpritesHp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 0, 7, 14),
-				bars.getSubimage(0, 0, 12, 20) };
-		BufferedImage[] barSpritesMp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(39, 16, 7, 14),
-				bars.getSubimage(0, 0, 12, 20) };
+		SpriteSheet bars = new SpriteSheet("fillbars.png", 12,12);
+		BufferedImage[] barSpritesHp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(39, 0, 7, 14),
+				bars.cropImage(0, 0, 12, 20) };
+		BufferedImage[] barSpritesMp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(39, 16, 7, 14),
+				bars.cropImage(0, 0, 12, 20) };
 
-		BufferedImage[] barSpritesXp = { bars.getSubimage(12, 2, 7, 16), bars.getSubimage(59, 0, 7, 14),
-				bars.getSubimage(0, 0, 12, 20) };
+		BufferedImage[] barSpritesXp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(59, 0, 7, 14),
+				bars.cropImage(0, 0, 12, 20) };
 
 		Vector2f posHp = new Vector2f(GamePanel.width - 356, 128);
 		Vector2f posMp = posHp.clone(0, 32);
@@ -59,7 +59,7 @@ public class PlayerUI {
 		this.groundLoot = new Slots[8];
 		this.inventory = new Slots[20];
 		this.tooltips = new HashMap<>();
-		this.playerChat = new PlayerChat();
+		this.playerChat = new PlayerChat(p);
 		this.minimap = new Minimap(p);
 	}
 
@@ -133,7 +133,7 @@ public class PlayerUI {
 
 			b.onMouseUp(event -> {
 				this.tooltips.clear();
-				if (this.overlapsInventory(event) && this.canSwap()) {
+				if (this.canSwap()) {
 					this.setActionTime();
 					GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
 					int idx = this.firstNullIdx(currentInv);
@@ -269,7 +269,7 @@ public class PlayerUI {
 	@SuppressWarnings("unused")
 	private boolean overlapsGround(Vector2f pos) {
 		final int panelWidth = (GamePanel.width / 5);
-		AABB currBounds = new AABB(new Vector2f(0, 0), GamePanel.width - panelWidth, GamePanel.height);
+		Rectangle currBounds = new Rectangle(new Vector2f(0, 0), GamePanel.width - panelWidth, GamePanel.height);
 		return currBounds.inside((int) pos.x, (int) pos.y);
 	}
 
@@ -284,14 +284,15 @@ public class PlayerUI {
 		}
 		return null;
 	}
-
+	
+	@SuppressWarnings("unused")
 	private boolean overlapsInventory(Vector2f pos) {
 		final int panelWidth = (GamePanel.width / 5);
 		final int startX = GamePanel.width - panelWidth;
 		final int startY = 450;
 
-		AABB currBounds = new AABB(new Vector2f(startX, startY), panelWidth, 128);
-		AABB bounds = new AABB(currBounds.getPos().clone(), (int) currBounds.getWidth() * 4,
+		Rectangle currBounds = new Rectangle(new Vector2f(startX, startY), panelWidth, 128);
+		Rectangle bounds = new Rectangle(currBounds.getPos().clone(), (int) currBounds.getWidth() * 4,
 				(int) currBounds.getHeight() * 4);
 
 		return bounds.inside((int) pos.x, (int) pos.y);
@@ -367,7 +368,7 @@ public class PlayerUI {
 			if (curr == null) {
 				continue;
 			}
-			if (curr.getItem() != null)
+			if (curr.getItem() != null )
 				return false;
 		}
 		return true;
@@ -401,16 +402,53 @@ public class PlayerUI {
 				g.drawString("Fame: " + fame, posXp.x, posXp.y);
 				g.drawString(this.playState.getPlayer().getName() + "   Lv. 20", nameLvlPos.x, nameLvlPos.y);
 			}
-
+			if (this.playState.getPlayer().isStatMaxed(0)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("" + this.playState.getPlayer().getHealth(), posHp.x, posHp.y);
+			if (this.playState.getPlayer().isStatMaxed(1)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("" + this.playState.getPlayer().getMana(), posMp.x, posMp.y);
-
+			if (this.playState.getPlayer().isStatMaxed(3)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("att :" + stats.getAtt(), startX, startY);
+			if (this.playState.getPlayer().isStatMaxed(4)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("spd :" + stats.getSpd(), startX, startY + (1 * yOffset));
+			if (this.playState.getPlayer().isStatMaxed(6)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("vit :" + stats.getVit(), startX, startY + (2 * yOffset));
-
+			if (this.playState.getPlayer().isStatMaxed(2)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("def :" + stats.getDef(), startX + xOffset, startY);
+			if (this.playState.getPlayer().isStatMaxed(5)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("dex :" + stats.getDex(), startX + xOffset, startY + (1 * yOffset));
+			if (this.playState.getPlayer().isStatMaxed(7)) {
+				g.setColor(Color.YELLOW);
+			} else {
+				g.setColor(Color.WHITE);
+			}
 			g.drawString("wis :" + stats.getWis(), startX + xOffset, startY + (2 * yOffset));
 		}
 	}

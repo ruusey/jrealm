@@ -21,8 +21,8 @@ public class GameOverState extends GameState {
 	public GameOverState(GameStateManager gsm) {
 		super(gsm);
 
-		this.imgButton = GameStateManager.button.getSubimage(0, 0, 121, 26);
-		this.imgHover = GameStateManager.button.getSubimage(0, 29, 122, 28);
+		this.imgButton = GameStateManager.button.cropImage(0, 0, 121, 26);
+		this.imgHover = GameStateManager.button.cropImage(0, 29, 122, 28);
 
 		this.font = new Font("MeatMadness", Font.PLAIN, 48);
 		this.btnReset = new Button("RESTART", this.imgButton, this.font, new Vector2f(GamePanel.width / 2, (GamePanel.height / 2) - 48), 32, 16);

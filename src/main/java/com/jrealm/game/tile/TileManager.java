@@ -13,7 +13,7 @@ import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.TerrainGenerationParameters;
@@ -104,7 +104,7 @@ public class TileManager {
 		}
 		return Arrays.asList(baseLayer, collisionLayer);
 	}
-
+	// Builds map layers from a map model that has statically defined layers (is not a terrain)
 	private List<TileMap> getLayersFromData(MapModel model) {
 		Map<String, int[][]> layerMap = model.getData();
 		TileMap baseLayer = new TileMap((short)model.getMapId(), model.getTileSize(), model.getWidth(), model.getHeight());
@@ -119,7 +119,6 @@ public class TileManager {
 				int tileIdToCreate = baseData[i][j];
 				TileData tileData = GameDataManager.TILES.get(tileIdToCreate).getData();
 				baseLayer.setBlockAt(i, j, (short)tileIdToCreate, tileData);
-				//collisionLayer.setBlockAt(i, j, (short)0, GameDataManager.TILES.get(0).getData());
 			}
 		}
 
@@ -128,7 +127,6 @@ public class TileManager {
 				int tileIdToCreate = collisionData[i][j];
 				TileData tileData = GameDataManager.TILES.get(tileIdToCreate).getData();
 				collisionLayer.setBlockAt(i, j, (short)tileIdToCreate, tileData);
-				//collisionLayer.setBlockAt(i, j, (short)0, GameDataManager.TILES.get(0).getData());
 			}
 		}
 		return Arrays.asList(baseLayer, collisionLayer);
@@ -242,8 +240,8 @@ public class TileManager {
 
 		final Tile currentTile = this.getBaseLayer().getBlocks()[startY][startX];
 
-		final AABB tileBounds = new AABB(currentTile.getPos(), currentTile.getWidth(), currentTile.getHeight());
-		final AABB futurePosBounds = new AABB(e.getPos(), (e.getSize() / 2), e.getSize() / 2);
+		final Rectangle tileBounds = new Rectangle(currentTile.getPos(), currentTile.getWidth(), currentTile.getHeight());
+		final Rectangle futurePosBounds = new Rectangle(e.getPos(), (e.getSize() / 2), e.getSize() / 2);
 
 		return currentTile.getData().slows() && tileBounds.intersect(futurePosBounds);
 	}
@@ -254,8 +252,8 @@ public class TileManager {
 			if((t==null) || t.isVoid()) {
 				continue;
 			}
-			AABB tileBounds = new AABB(t.getPos(), t.getWidth(), t.getHeight());
-			AABB futurePosBounds = new AABB(futurePos, (int) (e.getSize() / 1.5), (int) (e.getSize() / 1.5));
+			Rectangle tileBounds = new Rectangle(t.getPos(), t.getWidth(), t.getHeight());
+			Rectangle futurePosBounds = new Rectangle(futurePos, (int) (e.getSize() / 1.5), (int) (e.getSize() / 1.5));
 			if (tileBounds.intersect(futurePosBounds))
 				return true;
 		}
@@ -269,28 +267,28 @@ public class TileManager {
 		return new Vector2f(x, y);
 	}
 
-	public AABB getRenderViewPort(Camera cam) {
-		return new AABB(
-				cam.getTarget().getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
-						-(6 * GlobalConstants.BASE_TILE_SIZE)),
-				(12 * GlobalConstants.BASE_TILE_SIZE), (12 * GlobalConstants.BASE_TILE_SIZE));
+	public Rectangle getRenderViewPort(Camera cam) {
+		return new Rectangle(
+				cam.getTarget().getPos().clone(-(7 * GlobalConstants.BASE_TILE_SIZE),
+						-(7 * GlobalConstants.BASE_TILE_SIZE)),
+				(13 * GlobalConstants.BASE_TILE_SIZE), (13 * GlobalConstants.BASE_TILE_SIZE));
 	}
 
-	public AABB getRenderViewPort(Entity p) {
-		return new AABB(
-				p.getPos().clone(-(6 * GlobalConstants.BASE_TILE_SIZE),
-						-(6 * GlobalConstants.BASE_TILE_SIZE)),
-				(12 * GlobalConstants.BASE_TILE_SIZE), (12 * GlobalConstants.BASE_TILE_SIZE));
+	public Rectangle getRenderViewPort(Entity p) {
+		return new Rectangle(
+				p.getPos().clone(-(7 * GlobalConstants.BASE_TILE_SIZE), -(7 * GlobalConstants.BASE_TILE_SIZE)),
+				(13 * GlobalConstants.BASE_TILE_SIZE), (13 * GlobalConstants.BASE_TILE_SIZE));
 	}
 
 	public NetTile[] getLoadMapTiles(Player player) {
-		final Vector2f pos = player.getPos();
+		final int playerSize = player.getSize() / 2;
+		final Vector2f pos = player.getPos().clone(playerSize, playerSize);
 		final List<NetTile> tiles = new ArrayList<>();
 		final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
 				pos.y / GlobalConstants.BASE_TILE_SIZE);
 		this.normalizeToBounds(posNormalized);
-		for (int x = (int) (posNormalized.x - 6); x < (posNormalized.x + 7); x++) {
-			for (int y = (int) (posNormalized.y - 6); y < (int) (posNormalized.y + 7); y++) {
+		for (int x = (int) (posNormalized.x - 7); x < (posNormalized.x + 7); x++) {
+			for (int y = (int) (posNormalized.y - 7); y < (int) (posNormalized.y + 7); y++) {
 				// Temp fix. Aint nobody got time for array math.
 				if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
 						|| (y < 0)) {

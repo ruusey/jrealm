@@ -2,20 +2,19 @@ package com.jrealm.game.entity;
 
 import java.awt.Graphics2D;
 
-import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.client.packet.ObjectMovement;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public abstract class GameObject {
 	protected long id;
-	protected SpriteSheet sprite;
-	protected Sprite image;
-	protected AABB bounds;
+	protected Rectangle bounds;
 	protected Vector2f pos;
 	protected int size;
 	protected int spriteX;
@@ -33,31 +32,36 @@ public abstract class GameObject {
 	protected String name = "";
 
 	public boolean discovered;
-	public GameObject(long id, SpriteSheet sprite, Vector2f origin, int spriteX, int spriteY, int size) {
+	private SpriteSheet spriteSheet;
+
+	public GameObject(long id, Vector2f origin, int spriteX, int spriteY, int size) {
 		this(id, origin, size);
-		this.sprite = sprite;
 	}
 
-	public GameObject(long id, Sprite image, Vector2f origin, int size) {
-		this(id, origin, size);
-		this.image = image;
+	public void setSpriteSheet(final SpriteSheet spriteSheet) {
+		this.spriteSheet = spriteSheet;
 	}
 
 	public GameObject(long id, Vector2f origin, int size) {
 		this.id = id;
-		this.bounds = new AABB(origin, size, size);
+		this.bounds = new Rectangle(origin, size, size);
 		this.pos = origin;
 		this.size = size;
 	}
 
 	public void setPos(Vector2f pos) {
 		this.pos = pos;
-		// pos.clone(this.size / 2, this.size / 2)
-		//pos.addX(this.size / 2)
-		this.bounds = new AABB(pos, this.size, this.size);
+		this.bounds = new Rectangle(pos, this.size, this.size);
 		this.teleported = true;
 	}
 
+	public boolean getTeleported() {
+		return this.teleported;
+	}
+
+	public void setTeleported(final boolean teleported) {
+		this.teleported = teleported;
+	}
 
 	public void addForce(float a, boolean vertical) {
 		if(!vertical) {
@@ -83,7 +87,7 @@ public abstract class GameObject {
 		final float lerpY = this.lerp(this.pos.y, packet.getPosY(), pct);
 
 		this.pos = new Vector2f(lerpX, lerpY);
-		this.bounds = new AABB(this.pos, this.size, this.size);
+		this.bounds = new Rectangle(this.pos, this.size, this.size);
 		this.dx = packet.getVelX();
 		this.dy = packet.getVelY();
 	}
@@ -93,14 +97,14 @@ public abstract class GameObject {
 		final float lerpY = this.lerp(this.pos.y, packet.getPosY(), 0.65f);
 
 		this.pos = new Vector2f(lerpX, lerpY);
-		this.bounds = new AABB(this.pos, this.size, this.size);
+		this.bounds = new Rectangle(this.pos, this.size, this.size);
 		this.dx = packet.getVelX();
 		this.dy = packet.getVelY();
 	}
 
 	public void applyMovement(ObjectMovement packet) {
 		this.pos = new Vector2f(packet.getPosX(), packet.getPosY());
-		this.bounds = new AABB(this.pos, this.size, this.size);
+		this.bounds = new Rectangle(this.pos, this.size, this.size);
 		this.dx = packet.getVelX();
 		this.dy = packet.getVelY();
 	}
@@ -122,8 +126,13 @@ public abstract class GameObject {
 	}
 
 	public void render(Graphics2D g) {
-		// Top Left -> Top Right
-		g.drawImage(this.image.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), this.size, this.size, null);
+		if(this.spriteSheet==null) {
+			GameObject.log.warn("GameObject {} does not have a sprite sheet!");
+			return;
+		}
+		g.drawImage(this.spriteSheet.getCurrentFrame(), (int) (this.pos.getWorldVar().x),
+				(int) (this.pos.getWorldVar().y),
+				this.size, this.size, null);
 	}
 
 	@Override

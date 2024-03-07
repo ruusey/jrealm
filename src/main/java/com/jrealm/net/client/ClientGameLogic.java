@@ -1,26 +1,24 @@
 package com.jrealm.net.client;
 
 import com.jrealm.game.GameLauncher;
-import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.TextEffect;
-import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.LootContainer;
-import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginResponseMessage;
+import com.jrealm.game.messaging.ServerErrorMessage;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.EffectText;
-import com.jrealm.game.util.Camera;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
@@ -102,7 +100,7 @@ public class ClientGameLogic {
 	public static void handleLoadMapClient(RealmManagerClient cli, Packet packet) {
 		final LoadMapPacket loadPacket = (LoadMapPacket) packet;
 		try {
-			cli.getState().getPui().getMinimap().initializeMap(cli.getRealm().getMapId());
+			cli.getState().getPui().getMinimap().initializeMap((int) loadPacket.getMapId());
 			cli.getRealm().setRealmId(loadPacket.getRealmId());
 			cli.getRealm().setMapId(loadPacket.getMapId());
 			cli.getRealm().getTileManager().mergeMap(loadPacket);
@@ -208,6 +206,9 @@ public class ClientGameLogic {
 				final LoginResponseMessage loginResponse = CommandType.fromPacket(commandPacket);
 				ClientGameLogic.doLoginResponse(cli, loginResponse);
 				break;
+			case 4:
+				final ServerErrorMessage serverError = CommandType.fromPacket(commandPacket);
+				ClientGameLogic.handleServerError(cli, serverError);
 			}
 		}catch(Exception e) {
 			ClientGameLogic.log.error("Failed to handle client command packet. Reason: {}", e.getMessage());
@@ -230,7 +231,7 @@ public class ClientGameLogic {
 				if(cli.getCurrentPlayerId()==movement.getEntityId()) {
 					playerToUpdate.applyMovementLerp(movement, 1.0f);
 				}else {
-					playerToUpdate.applyMovementLerp(movement);
+					playerToUpdate.applyMovementLerp(movement, 0.55f);
 				}
 				break;
 			case ENEMY:
@@ -261,17 +262,21 @@ public class ClientGameLogic {
 		toUpdate.applyUpdate(updatePacket, cli.getState());
 	}
 
+	private static void handleServerError(RealmManagerClient cli, ServerErrorMessage message) {
+		ClientGameLogic.log.error("Server Error ***{}", message);
+		cli.getState().getPui().enqueueChat(TextPacket.create("SYSTEM", "", message.toString()));
+	}
+
 	private static void doLoginResponse(RealmManagerClient cli, LoginResponseMessage loginResponse) {
 		try {
 			if(loginResponse.isSuccess()) {
-				Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 				CharacterClass cls = CharacterClass.valueOf(loginResponse.getClassId());
-				Player player = new Player(loginResponse.getPlayerId(), c, GameDataManager.loadClassSprites(cls),
+				Player player = new Player(loginResponse.getPlayerId(),
 						new Vector2f(loginResponse.getSpawnX(), loginResponse.getSpawnY()),
 						GlobalConstants.PLAYER_SIZE, cls);
 				ClientGameLogic.log.info("Login succesful, added Player ID {}", player.getId());
-				player.getCam().target(player);
-
+				player.setSpriteSheet(GameSpriteManager.loadClassSprites(cls));
+				cli.getState().setAccount(loginResponse.getAccount());
 				cli.getState().loadClass(player, cls, true);
 				cli.setCurrentPlayerId(player.getId());
 				cli.getState().setPlayerId(player.getId());

@@ -9,59 +9,41 @@ import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.realm.RealmManagerServer;
+import com.jrealm.game.script.EnemyScriptBase;
+import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Streamable;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@Slf4j
 public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	private static final int IDLE_FRAMES = 12;
-	protected AABB sense;
-	protected int r_sense;
-
-	protected AABB attackrange;
-	protected int r_attackrange;
-
+	private static final float CHASE_SPEED = 1.1f;
+	protected EnemyModel model;
+	protected int chaseRange;
+	protected int attackRange;
 	protected int xOffset;
 	protected int yOffset;
 
-	public long lastShotTick = 0;
-
-
+	private long lastShotTick = 0;
 	private int enemyId;
 	private int weaponId = -1;
 	private int idleTime = 0;
-	public Enemy(long id, int enemyId, SpriteSheet sprite, Vector2f origin, int size, int weaponId) {
-		super(id, sprite, origin, size);
-
-		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
-				(origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);
-		this.attackrange = new AABB(new Vector2f(
-				(origin.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
-				(origin.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
-				this.r_attackrange);
-		this.enemyId = enemyId;
-		this.weaponId = weaponId;
-	}
 
 	public Enemy(long id, int enemyId, Vector2f origin, int size, int weaponId) {
 		super(id, origin, size);
-		this.sense = new AABB(new Vector2f((origin.x + (size / 2)) - (this.r_sense / 2),
-				(origin.y + (size / 2)) - (this.r_sense / 2)), this.r_sense);
-		this.attackrange = new AABB(new Vector2f(
-				(origin.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
-				(origin.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
-				this.r_attackrange);
+		this.model = GameDataManager.ENEMIES.get(enemyId);
 		this.enemyId = enemyId;
 		this.weaponId = weaponId;
 	}
@@ -76,63 +58,44 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			return;
 		}
 
-		AABB playerBounds = player.getBounds();
-		if (this.sense.colCircleBox(playerBounds) && !this.attackrange.colCircleBox(playerBounds)) {
+		if ((this.getPos().distanceTo(player.getPos()) < this.chaseRange)
+				&& (this.getPos().distanceTo(player.getPos()) >= this.attackRange)) {
 			if (this.pos.y > (player.pos.y + 1)) {
 				this.up = true;
+				this.dy=-CHASE_SPEED;
 			} else {
 				this.up = false;
 			}
 			if (this.pos.y < (player.pos.y - 1)) {
 				this.down = true;
+				this.dy=CHASE_SPEED;
+
 			} else {
 				this.down = false;
 			}
 
 			if (this.pos.x > (player.pos.x + 1)) {
 				this.left = true;
+				this.dx=-CHASE_SPEED;
 			} else {
 				this.left = false;
 			}
 			if (this.pos.x < (player.pos.x - 1)) {
 				this.right = true;
+				this.dx=CHASE_SPEED;
 			} else {
 				this.right = false;
 			}
-		} else if(this.sense.colCircleBox(playerBounds) ){
-			if(this.idleTime>=Enemy.IDLE_FRAMES) {
-				this.up = Realm.RANDOM.nextBoolean();
-				this.down = Realm.RANDOM.nextBoolean();
-				this.left = Realm.RANDOM.nextBoolean();
-				this.right = Realm.RANDOM.nextBoolean();
-				this.idleTime = 0;
-			}else {
-				this.idleTime++;
-			}
-
 		}
 	}
 
 	public void update(RealmManagerClient mgr, double time) {
-		Player player = mgr.getClosestPlayer(this.getPos(), this.r_sense);
+		Player player = mgr.getClosestPlayer(this.getPos(), this.chaseRange);
 		super.update(time);
+		this.move();
 		if (player == null)
 			return;
 		this.chase(player);
-		this.move();
-
-		if (this.teleported) {
-			this.teleported = false;
-
-			this.hitBounds = new AABB(this.pos, this.size, this.size);
-
-			this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2),
-					(this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
-			this.attackrange = new AABB(new Vector2f(
-					(this.pos.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
-					(this.pos.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
-					this.r_attackrange);
-		}
 
 		if (this.hasEffect(EffectType.PARALYZED)) {
 			this.up = false;
@@ -141,81 +104,76 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			this.left = false;
 			return;
 		}
-		if (!this.isFallen()) {
-			// if
-			// (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1),
-			// mgr.getRealm().getTileManager().getTm().get(1).getBlocks(),
-			// this.dx,0)) {
-			this.sense.getPos().x += this.dx;
-			this.attackrange.getPos().x += this.dx;
-			this.pos.x += this.dx;
-			// }
-			// if
-			// (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1),
-			// mgr.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
-			// this.dy)) {
-			this.sense.getPos().y += this.dy;
-			this.attackrange.getPos().y += this.dy;
-			this.pos.y += this.dy;
-			// }
-		} else if (this.ani.hasPlayedOnce()) {
-			this.die = true;
-		}
+		this.pos.x += this.dx;
+		this.pos.y += this.dy;
+		
+//		if (this.idleTime >= Enemy.IDLE_FRAMES) {
+//			this.up = Realm.RANDOM.nextBoolean();
+//			this.down = Realm.RANDOM.nextBoolean();
+//			this.left = Realm.RANDOM.nextBoolean();
+//			this.right = Realm.RANDOM.nextBoolean();
+//			this.idleTime = 0;
+//		} else {
+//			this.idleTime++;
+//		}
+		
 	}
 
 	public void update(long realmId, RealmManagerServer mgr, double time) {
 		final Realm targetRealm = mgr.getRealms().get(realmId);
-		Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.r_sense);
+		
+		Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.chaseRange);
 		super.update(time);
+		
+		this.move();
 		if (player == null)
 			return;
 		this.chase(player);
-		this.move();
-
-		if (this.teleported) {
-			this.teleported = false;
-
-			this.hitBounds = new AABB(this.pos, this.size, this.size);
-
-			this.sense = new AABB(new Vector2f((this.pos.x + (this.size / 2)) - (this.r_sense / 2),
-					(this.pos.y + (this.size / 2)) - (this.r_sense / 2)), this.r_sense);
-			this.attackrange = new AABB(new Vector2f(
-					(this.pos.x + this.bounds.getXOffset() + (this.bounds.getWidth() / 2)) - (this.r_attackrange / 2),
-					(this.pos.y + this.bounds.getYOffset() + (this.bounds.getHeight() / 2)) - (this.r_attackrange / 2)),
-					this.r_attackrange);
-		}
-
-		if (this.attackrange.colCircleBox(player.getBounds()) && !this.isInvincible
-				&& !player.hasEffect(EffectType.INVISIBLE)) {
+		final boolean notInvisible = !player.hasEffect(EffectType.INVISIBLE);
+		if ((this.getPos().distanceTo(player.getPos()) < this.attackRange && !this.hasEffect(EffectType.STUNNED))
+				&& notInvisible) {
 			this.attack = true;
 
-			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > 1500)
-					&& !this.hasEffect(EffectType.STUNNED);
+			int dex = (int) ((6.5 * (this.model.getStats().getDex() + 17.3)) / 75);
+			boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (1000 / dex));
 
 			if (canShoot) {
 				this.lastShotTick = System.currentTimeMillis();
 				Player target = player;
-				Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
+				EnemyScriptBase script = mgr.getEnemyScript(this.enemyId);
+				if(script==null) {
+					Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
 
-				Vector2f source = this.getPos().clone(this.getSize() / 2, this.getSize() / 2);
-				float angle = Bullet.getAngle(source, dest);
-				ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
+					Vector2f source = this.getPos().clone(this.getSize() / 2, this.getSize() / 2);
+					float angle = Bullet.getAngle(source, dest);
+					ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.weaponId);
 
-				for (Projectile p : group.getProjectiles()) {
-					if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
-						mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
-								p.getProjectileId(),
-								source.clone(),
-								angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
-								p.getDamage(), true, p.getFlags(), p.getAmplitude(), p.getFrequency());
-					} else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
-						mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
-								p.getProjectileId(),
-								source.clone(), Float.parseFloat(p.getAngle()),
-								p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
-								p.getAmplitude(), p.getFrequency());
+					for (Projectile p : group.getProjectiles()) {
+						if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
+							mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
+									p.getProjectileId(),
+									source.clone(),
+									angle + Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(), p.getRange(),
+									p.getDamage(), true, p.getFlags(), p.getAmplitude(), p.getFrequency());
+						} else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
+							mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
+									p.getProjectileId(),
+									source.clone(), Float.parseFloat(p.getAngle()),
+									p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
+									p.getAmplitude(), p.getFrequency());
+						}
 					}
+				}else {
+					final Runnable enemyAttack = () -> {
+						try {
+							script.attack(targetRealm, this, target);
+						} catch (Exception e) {
+							Enemy.log.error("Failed to invoke enemy attack script. Reason: {}", e);
+						}
+					};
+					WorkerThread.doAsync(enemyAttack);
 				}
+
 			}
 		} else {
 			this.attack = false;
@@ -227,24 +185,21 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			this.left = false;
 			return;
 		}
-		if (!this.isFallen()) {
-			//			if (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1), mgr.getRealm().getTileManager().getTm().get(1).getBlocks(),
-			//					this.dx,0)) {
-			this.sense.getPos().x += this.dx;
-			this.attackrange.getPos().x += this.dx;
-			this.pos.x += this.dx;
-			//			}
-			//			if (!this.tc.collisionTile((TileMapObj)mgr.getRealm().getTileManager().getTm().get(1), mgr.getRealm().getTileManager().getTm().get(1).getBlocks(), 0,
-			//					this.dy)) {
-			this.sense.getPos().y += this.dy;
-			this.attackrange.getPos().y += this.dy;
-			this.pos.y += this.dy;
-			//			}
-		} else if (this.ani.hasPlayedOnce()) {
-			this.die = true;
-		}
-	}
 
+		this.pos.x += this.dx;
+		this.pos.y += this.dy;
+		
+		if (this.idleTime >= Enemy.IDLE_FRAMES) {
+			this.up = Realm.RANDOM.nextBoolean();
+			this.down = Realm.RANDOM.nextBoolean();
+			this.left = Realm.RANDOM.nextBoolean();
+			this.right = Realm.RANDOM.nextBoolean();
+			this.idleTime = 0;
+		} else {
+			this.idleTime++;
+		}
+
+	}
 
 	@Override
 	public void render(Graphics2D g) {
@@ -253,29 +208,30 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 		g.setColor(c);
 		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + (this.size / 2), this.size,
 				this.size / 2);
-		if (this.useRight && this.left) {
-			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x) + this.size,
+		if (this.left) {
+			g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x) + this.size,
 					(int) (this.pos.getWorldVar().y), -this.size, this.size, null);
 		} else {
-			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y),
+			g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x),
+					(int) (this.pos.getWorldVar().y),
 					this.size, this.size, null);
 		}
 
 		if (this.hasEffect(EffectType.PARALYZED)) {
-			if (!this.getSprite().hasEffect(Sprite.EffectEnum.GRAYSCALE)) {
-				this.getSprite().setEffect(Sprite.EffectEnum.GRAYSCALE);
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.GRAYSCALE)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.GRAYSCALE);
 			}
 		}
 
 		if (this.hasEffect(EffectType.STUNNED)) {
-			if (!this.getSprite().hasEffect(Sprite.EffectEnum.DECAY)) {
-				this.getSprite().setEffect(Sprite.EffectEnum.DECAY);
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.DECAY);
 			}
 		}
 
 		if (this.hasNoEffects()) {
-			if (!this.getSprite().hasEffect(Sprite.EffectEnum.NORMAL)) {
-				this.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.NORMAL)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
 			}
 		}
 

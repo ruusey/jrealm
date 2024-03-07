@@ -11,7 +11,6 @@ import java.util.Set;
 
 import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.account.dto.GameItemRefDto;
-import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.data.GameDataManager;
@@ -19,12 +18,9 @@ import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.state.PlayState;
-import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
@@ -38,7 +34,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class Player extends Entity implements Streamable<Player>{
-	private Camera cam;
 	private Cardinality cardinality = Cardinality.EAST;
 	private GameItem[] inventory;
 	private long lastStatsTime = 0l;
@@ -50,54 +45,23 @@ public class Player extends Entity implements Streamable<Player>{
 	private Stats stats;
 
 	private boolean headless = false;
-	public Player(long id, Camera cam, SpriteSheet sprite, Vector2f origin, int size, CharacterClass characterClass) {
-		super(id, sprite, origin, size);
-		this.resetEffects();
-		this.resetInventory();
-		this.classId = characterClass.classId;
-		this.cam = cam;
-		this.size = size;
-		this.experience = 0;
-		this.bounds.setWidth(this.size);
-		this.bounds.setHeight(this.size);
-
-		this.hitBounds.setWidth(this.size);
-		this.hitBounds.setHeight(this.size);
-
-		this.ani.setNumFrames(2, this.UP);
-		this.ani.setNumFrames(2, this.DOWN);
-		this.ani.setNumFrames(2, this.RIGHT);
-		this.ani.setNumFrames(2, this.LEFT);
-		this.ani.setNumFrames(2, this.ATTACK + this.RIGHT);
-		this.ani.setNumFrames(2, this.ATTACK + this.LEFT);
-		this.ani.setNumFrames(2, this.ATTACK + this.UP);
-		this.ani.setNumFrames(2, this.ATTACK + this.DOWN);
-
-		this.hasIdle = false;
-		CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(this.classId);
-		this.health = classModel.getBaseStats().getHp();
-		this.mana = classModel.getBaseStats().getMp();
-
-		this.stats = classModel.getBaseStats();
-	}
 
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
 		super(id, origin, size);
 		this.resetEffects();
 		this.resetInventory();
-		this.experience = 0;
 		this.classId = characterClass.classId;
 		this.size = size;
+		this.experience = 0;
 		this.bounds.setWidth(this.size);
 		this.bounds.setHeight(this.size);
 
 		this.hitBounds.setWidth(this.size);
 		this.hitBounds.setHeight(this.size);
-		this.hasIdle = false;
-
 		CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(this.classId);
 		this.health = classModel.getBaseStats().getHp();
 		this.mana = classModel.getBaseStats().getMp();
+
 		this.stats = classModel.getBaseStats();
 	}
 
@@ -196,7 +160,12 @@ public class Player extends Entity implements Streamable<Player>{
 	public void update(double time) {
 		super.update(time);
 		Stats stats = this.getComputedStats();
-		this.cam.update();
+		float currentHealthPercent = (float)this.getHealth()/(float)this.getComputedStats().getHp();
+		float currentManaPercent = (float)this.getMana()/(float)this.getComputedStats().getMp();
+
+		this.setHealthpercent(currentHealthPercent);
+		this.setManapercent(currentManaPercent);
+
 		if (((Instant.now().toEpochMilli() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
 			float mult = 1.0f;
@@ -243,6 +212,11 @@ public class Player extends Entity implements Streamable<Player>{
 	public void drinkMp() {
 		this.stats.setMp((short) (this.stats.getMp() + 5));
 	}
+	
+	@Override
+	public float getHealthpercent() {
+		return this.healthpercent;
+	}
 
 	@Override
 	public int getHealth() {
@@ -266,42 +240,41 @@ public class Player extends Entity implements Streamable<Player>{
 			g.drawString(this.getName(), (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 64);
 		}
 		if (this.hasEffect(EffectType.INVISIBLE)) {
-			if (!this.getSprite().hasEffect(Sprite.EffectEnum.SEPIA)) {
-				this.getSprite().setEffect(Sprite.EffectEnum.SEPIA);
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.SEPIA)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.SEPIA);
 			}
 		}
 
 		if (this.hasEffect(EffectType.HEALING)) {
-			if (!this.getSprite().hasEffect(Sprite.EffectEnum.REDISH)) {
-				this.getSprite().setEffect(Sprite.EffectEnum.REDISH);
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.REDISH)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.REDISH);
 			}
 		}
 
 		if (this.hasEffect(EffectType.SPEEDY)) {
-			if (!this.getSprite().hasEffect(Sprite.EffectEnum.DECAY)) {
-				this.getSprite().setEffect(Sprite.EffectEnum.DECAY);
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.DECAY);
 			}
 		}
 
 		if (this.hasNoEffects()) {
-			if (!this.getSprite().hasEffect(Sprite.EffectEnum.NORMAL)) {
-				this.getSprite().setEffect(Sprite.EffectEnum.NORMAL);
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.NORMAL)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
 			}
 		}
 
-		if (this.useRight && this.left) {
-			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x) + this.size,
+		if (this.left) {
+			g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x) + this.size,
 					(int) (this.pos.getWorldVar().y), -this.size, this.size, null);
 		} else {
-			g.drawImage(this.ani.getImage().image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y),
+			g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x),
+					(int) (this.pos.getWorldVar().y),
 					this.size, this.size, null);
 		}
 		g.setFont(currentFont);
 	}
 
 	public void input(MouseHandler mouse, KeyHandler key) {
-		Stats stats = this.getComputedStats();
-
 		if (!this.isFallen()) {
 			if (key.up.down) {
 				this.up = true;
@@ -323,13 +296,6 @@ public class Player extends Entity implements Streamable<Player>{
 			} else {
 				this.right = false;
 			}
-
-			float maxSpeed = 0.5f + (stats.getSpd() * 0.05f);
-			if (this.hasEffect(EffectType.SPEEDY)) {
-				maxSpeed *= 1.5;
-			}
-			this.maxSpeed = maxSpeed;
-			this.cam.setMaxSpeed(maxSpeed);
 
 			if (this.up && this.down) {
 				this.up = false;
@@ -408,6 +374,55 @@ public class Player extends Entity implements Streamable<Player>{
 		this.experience = packet.getExperience();
 	}
 
+	public boolean isStatMaxed(int statIdx) {
+		CharacterClassModel characterClass = GameDataManager.CHARACTER_CLASSES.get(this.classId);
+		Stats maxStats = characterClass.getMaxStats();
+		boolean maxed = false;
+		switch(statIdx) {
+		case 0:
+			maxed = this.stats.getHp() >= maxStats.getHp();
+			break;
+		case 1:
+			maxed = this.stats.getMp() >= maxStats.getMp();
+			break;
+		case 2:
+			maxed = this.stats.getDef() >= maxStats.getDef();
+			break;
+		case 3:
+			maxed = this.stats.getAtt() >= maxStats.getAtt();
+			break;
+		case 4:
+			maxed = this.stats.getSpd() >= maxStats.getSpd();
+			break;
+		case 5:
+			maxed = this.stats.getDex() >= maxStats.getDex();
+			break;
+		case 6:
+			maxed = this.stats.getVit() >= maxStats.getVit();
+			break;
+		case 7:
+			maxed = this.stats.getWis() >= maxStats.getWis();
+			break;
+		}
+		return maxed;
+	}
+
+	public boolean canConsume(final GameItem item) {
+		boolean canConsume = true;
+		if(((item.getStats().getHp()>0) && this.isStatMaxed(0)) || ((item.getStats().getMp()>0) && this.isStatMaxed(1))) {
+			canConsume = false;
+		} else if(((item.getStats().getMp()>0) && this.isStatMaxed(1)) || ((item.getStats().getDef()>0) && this.isStatMaxed(2))) {
+			canConsume = false;
+		} else if(((item.getStats().getAtt()>0) && this.isStatMaxed(3)) || ((item.getStats().getSpd()>0) && this.isStatMaxed(4))) {
+			canConsume = false;
+		} else if(((item.getStats().getDex()>0) && this.isStatMaxed(5)) || ((item.getStats().getVit()>0) && this.isStatMaxed(6))) {
+			canConsume = false;
+		} else if((item.getStats().getWis()>0) && this.isStatMaxed(7)) {
+			canConsume = false;
+		}
+		return canConsume;
+	}
+
 	public boolean getIsUp() {
 		return this.up;
 	}
@@ -460,9 +475,7 @@ public class Player extends Entity implements Streamable<Player>{
 	}
 
 	public static Player fromData(long id, String name, Vector2f origin, int size, CharacterClass characterClass) {
-		Camera c = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
-		SpriteSheet sheet = GameDataManager.loadClassSprites(characterClass);
-		Player player =  new Player(id, c, sheet, origin, size, characterClass);
+		Player player = new Player(id, origin, size, characterClass);
 		player.setName(name);
 		return player;
 	}

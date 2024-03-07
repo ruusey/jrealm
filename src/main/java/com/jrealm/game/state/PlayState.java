@@ -11,10 +11,10 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
-import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -23,13 +23,9 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
-import com.jrealm.game.entity.item.Stats;
-import com.jrealm.game.graphics.Sprite;
-import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.PortalModel;
-import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.ui.EffectText;
@@ -56,7 +52,7 @@ public class PlayState extends GameState {
 	private RealmManagerClient realmManager;
 	private Queue<EffectText> damageText;
 	private List<Vector2f> shotDestQueue;
-
+	private PlayerAccountDto account;
 	private Camera cam;
 	private PlayerUI pui;
 	public static Vector2f map;
@@ -82,7 +78,7 @@ public class PlayState extends GameState {
 		if (setEquipment || (this.playerId == -1l)) {
 			player.equipSlots(GameDataManager.getStartingEquipment(cls));
 		} else {
-			GameItem[] existing = this.getPlayer().getInventory();
+			final GameItem[] existing = this.getPlayer().getInventory();
 			player.setInventory(existing);
 		}
 		this.cam.target(player);
@@ -97,15 +93,6 @@ public class PlayState extends GameState {
 		this.getPui().setEquipment(player.getInventory());
 	}
 
-	@SuppressWarnings("unused")
-	private void loadClass(CharacterClass cls, boolean setEquipment) {
-		Player player = new Player(Realm.RANDOM.nextLong(), this.cam, GameDataManager.loadClassSprites(cls),
-				new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-						(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE),
-				GlobalConstants.PLAYER_SIZE, cls);
-		this.loadClass(player, cls, setEquipment);
-	}
-
 	public long getPlayerId() {
 		return this.playerId;
 	}
@@ -117,7 +104,7 @@ public class PlayState extends GameState {
 	@Override
 	public void update(double time) {
 
-		Player player = this.realmManager.getRealm().getPlayer(this.realmManager.getCurrentPlayerId());
+		final Player player = this.realmManager.getRealm().getPlayer(this.realmManager.getCurrentPlayerId());
 
 		if (player == null)
 			return;
@@ -128,8 +115,8 @@ public class PlayState extends GameState {
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
 			if (!this.gsm.isStateActive(GameStateManager.EDIT)) {
 
-				Runnable monitorDamageText = () -> {
-					List<EffectText> toRemove = new ArrayList<>();
+				final Runnable monitorDamageText = () -> {
+					final List<EffectText> toRemove = new ArrayList<>();
 					for (EffectText text : this.getDamageText()) {
 						text.update();
 						if (text.getRemove()) {
@@ -139,10 +126,10 @@ public class PlayState extends GameState {
 					this.damageText.removeAll(toRemove);
 				};
 
-				Runnable playerShootDequeue = () -> {
+				final Runnable playerShootDequeue = () -> {
 					for (int i = 0; i < this.shotDestQueue.size(); i++) {
-						Vector2f dest = this.shotDestQueue.remove(i);
-						Vector2f source = this.getPlayer().getCenteredPosition();
+						final Vector2f dest = this.shotDestQueue.remove(i);
+						final Vector2f source = this.getPlayer().getCenteredPosition();
 						if (this.realmManager.getRealm().getTileManager().isCollisionTile(source)) {
 							PlayState.log.error("Failed to invoke player shoot. Projectile is out of bounds.");
 							continue;
@@ -171,11 +158,19 @@ public class PlayState extends GameState {
 								bullet.update();
 							}
 						}
+						
+						if(gameObject[i] instanceof Player && gameObject[i].getId()!=player.getId()) {
+							final Player playerOther = ((Player) gameObject[i]);
+							if(playerOther!=null) {
+								playerOther.update(time);
+								this.movePlayer(playerOther);
+							}
+						}
 					}
 				};
 
-				Runnable updatePlayerAndUi = () -> {
-					player.removeExpiredEffects();
+				final Runnable updatePlayerAndUi = () -> {
+					// player.removeExpiredEffects();
 					player.update(time);
 					this.movePlayer(player);
 					this.pui.update(time);
@@ -184,16 +179,23 @@ public class PlayState extends GameState {
 			}
 			this.cam.target(player);
 			this.cam.update();
+			for (final LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
+				lc.setContentsChanged(false);
+			}
 		}
 	}
 
 	private void movePlayer(Player p) {
+		if (p.hasEffect(EffectType.PARALYZED)) {
+			p.setDx(0);
+			p.setDy(0);
+		}
 		if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)
 				&& !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx())) {
 			p.xCol = false;
 			if (p.getDx() != 0.0f) {
 				// p.applyMovementLerp(p.getDx(), 0, 0.65f);
-				p.getPos().x += p.getDx() / 4;
+				p.getPos().x += (p.getDx()*0.45f);
 			}
 		} else {
 			p.xCol = true;
@@ -204,7 +206,7 @@ public class PlayState extends GameState {
 			p.yCol = false;
 			if (p.getDy() != 0.0f) {
 				// p.applyMovementLerp(0, p.getDy(), 0.65f);
-				p.getPos().y += p.getDy() / 4;
+				p.getPos().y += (p.getDy()*0.45f);
 			}
 		} else {
 			p.yCol = true;
@@ -217,18 +219,13 @@ public class PlayState extends GameState {
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if (player == null)
 			return;
-		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
-		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
-		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
-		if (pg.getAngleOffset() != null) {
-			bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
-		}
+
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, dest, size, magnitude, range, damage, isEnemy);
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, src, dest, size, magnitude, range, damage,
+				isEnemy);
 		b.setFlags(flags);
-
 		this.realmManager.getRealm().addBullet(b);
 	}
 
@@ -238,20 +235,14 @@ public class PlayState extends GameState {
 		Player player = this.realmManager.getRealm().getPlayer(this.playerId);
 		if (player == null)
 			return -1;
-		ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
-		SpriteSheet bulletSprite = GameDataManager.SPRITE_SHEETS.get(pg.getSpriteKey());
-		Sprite bulletImage = bulletSprite.getSprite(pg.getCol(), pg.getRow());
-		if (pg.getAngleOffset() != null) {
-			bulletImage.setAngleOffset(Float.parseFloat(pg.getAngleOffset()));
-		}
+
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
-		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, bulletImage, src, angle, size, magnitude, range, damage,
+		Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, src, angle, size, magnitude, range, damage,
 				isEnemy);
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);
-
 		b.setFlags(flags);
 		return this.realmManager.getRealm().addBullet(b);
 	}
@@ -292,12 +283,14 @@ public class PlayState extends GameState {
 
 		this.cam.input(mouse, key);
 
+
 		if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
-			if (this.cam.getTarget() == player) {
+			if ((this.cam.getTarget() == player) && !player.hasEffect(EffectType.PARALYZED)) {
 				final Map<Cardinality, Boolean > lastDirectionTempMap = new HashMap<>();
 				player.input(mouse, key);
 				Cardinality c = null;
 				float spd = (float) ((5.6 * (player.getComputedStats().getSpd() + 53.5)) / 75.0f);
+				spd = spd/1.5f;
 				if (player.getIsUp()) {
 					player.setDy(-spd);
 					c = Cardinality.NORTH;
@@ -329,8 +322,6 @@ public class PlayState extends GameState {
 				}else {
 					lastDirectionTempMap.put(Cardinality.EAST, false);
 				}
-				spd = (float) (spd * Math.sqrt(2)) / 2.0f;
-
 				if (player.getIsUp() && player.getIsRight()) {
 					player.setDy(-spd);
 					player.setDx(spd);
@@ -393,14 +384,11 @@ public class PlayState extends GameState {
 			}
 			if (key.f1.clicked) {
 				try {
-					Portal closestPortal = this.realmManager.getState().getClosestPortal(this.getPlayerPos(), 32);
-					if (closestPortal != null) {
-						PortalModel portalModel = GameDataManager.PORTALS.get((int) closestPortal.getPortalId());
-						UsePortalPacket usePortal = UsePortalPacket.from(-1, this.realmManager.getRealm().getRealmId(),
+					if (this.realmManager.getRealm().getMapId() != 1) {
+						UsePortalPacket usePortal = UsePortalPacket.toVault(this.realmManager.getRealm().getRealmId(),
 								this.getPlayerId());
-
 						this.realmManager.getClient().sendRemote(usePortal);
-						this.realmManager.getRealm().loadMap(portalModel.getMapId());
+						this.realmManager.getRealm().loadMap(1);
 					}
 				} catch (Exception e) {
 					PlayState.log.error("Failed to send test UsePortalPacket", e.getMessage());
@@ -413,73 +401,106 @@ public class PlayState extends GameState {
 			if (key.one.clicked) {
 				try {
 					GameItem from = this.getPlayer().getInventory()[4];
+
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)4, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 4, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.two.clicked) {
 				try {
 					GameItem from = this.getPlayer().getInventory()[5];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)5, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 5, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.three.clicked) {
 				try {
 					GameItem from = this.getPlayer().getInventory()[6];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)6, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 6, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.four.clicked) {
 				try {
 					GameItem from = this.getPlayer().getInventory()[7];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)7, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 7, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.five.clicked) {
 				try {
 					GameItem from = this.getPlayer().getInventory()[8];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)8, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 8, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.six.clicked) {
 				try {
 					GameItem from = this.getPlayer().getInventory()[9];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)9, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 9, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.seven.clicked) {
 				try {
 					GameItem from = this.getPlayer().getInventory()[10];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)10, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 10, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 			if (key.eight.clicked) {
 				try {
 					GameItem from = this.getPlayer().getInventory()[11];
 					MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte)11, false, false);
+					if (from.isConsumable()) {
+						moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 11, false,
+								true);
+					}
 					this.realmManager.getClient().sendRemote(moveItem);
 				} catch (Exception e) {
-					PlayState.log.error("Failed to send test move item packet: {}", e);
+					PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
 				}
 			}
 
@@ -492,26 +513,13 @@ public class PlayState extends GameState {
 			if (this.gsm.isStateActive(GameStateManager.PAUSE)) {
 				this.gsm.pop(GameStateManager.PAUSE);
 			} else {
-				this.gsm.add(GameStateManager.PAUSE);
+				PauseState pause = new PauseState(this.gsm, this.getAccount());
+				this.gsm.add(GameStateManager.PAUSE, pause);
 			}
 		}
-		if (key.t.down && !this.sentChat) {
-			try {
-				this.sentChat = true;
-				//				MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), (byte)0, (byte)4, false, false);
-				//				this.realmManager.getClient().sendRemote(moveItem);
-
-			} catch (Exception e) {
-				PlayState.log.error("Failed to send test text packet: {}", e);
-			}
-
-		}
-		Stats stats = player.getComputedStats();
-		if (this.getPlayer().hasEffect(EffectType.SPEEDY)) {
-			stats.setDex((short) (stats.getDex() * 2));
-		}
+		
 		int dex = (int) ((6.5 * (this.getPlayer().getComputedStats().getDex() + 17.3)) / 75);
-		boolean canShoot = ((System.currentTimeMillis() - this.lastShotTick) > (1000 / dex));
+		boolean canShoot = true;
 		boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
 		if ((mouse.isPressed(MouseEvent.BUTTON1)) && canShoot) {
 			this.lastShotTick = System.currentTimeMillis();
@@ -655,8 +663,7 @@ public class PlayState extends GameState {
 		for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
 			lc.render(g);
 		}
-
-		if ((this.getPui().isGroundLootEmpty() && (closeLoot != null)) || ((closeLoot != null) && closeLoot.getContentsChanged())) {
+		if ((closeLoot != null && this.getPui().isGroundLootEmpty()) || (closeLoot != null && closeLoot.getContentsChanged())) {
 			this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot), g);
 
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
@@ -673,9 +680,9 @@ public class PlayState extends GameState {
 	private void renderCollisionBoxes(Graphics2D g) {
 
 		GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.cam.getBounds());
-		AABB[] colBoxes = this.realmManager.getRealm().getCollisionBoxesInBounds(this.cam.getBounds());
+		Rectangle[] colBoxes = this.realmManager.getRealm().getCollisionBoxesInBounds(this.cam.getBounds());
 		for (GameObject go : gameObject) {
-			AABB node = go.getBounds();
+			Rectangle node = go.getBounds();
 
 			g.setColor(Color.BLUE);
 			Vector2f pos = node.getPos().getWorldVar();
@@ -693,7 +700,7 @@ public class PlayState extends GameState {
 			g.drawLine((int) pos.x, (int) pos.y, (int) pos.x, (int) pos.y + (int) node.getHeight());
 		}
 
-		for (AABB node : colBoxes) {
+		for (Rectangle node : colBoxes) {
 
 			g.setColor(Color.BLUE);
 			Vector2f pos = node.getPos().getWorldVar();

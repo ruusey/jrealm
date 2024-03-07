@@ -4,13 +4,19 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.jrealm.game</groupId>
 	<artifactId>jrealm</artifactId>
-	<version>0.3.2</version>
+	<version>0.3.3</version>
 	<properties>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<dependencies>
+		<dependency>
+		    <groupId>org.reflections</groupId>
+		    <artifactId>reflections</artifactId>
+		    <version>0.10.2</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

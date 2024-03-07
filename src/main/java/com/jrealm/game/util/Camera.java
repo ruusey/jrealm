@@ -3,7 +3,7 @@ package com.jrealm.game.util;
 import java.awt.Graphics;
 
 import com.jrealm.game.entity.Entity;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 
 import lombok.Data;
@@ -11,7 +11,7 @@ import lombok.Data;
 @Data
 public class Camera {
 
-	private AABB collisionCam;
+	private Rectangle collisionCam;
 
 	private boolean up;
 	private boolean down;
@@ -28,7 +28,7 @@ public class Camera {
 
 	private Entity e;
 
-	public Camera(AABB collisionCam) {
+	public Camera(Rectangle collisionCam) {
 		this.collisionCam = collisionCam;
 	}
 
@@ -38,7 +38,7 @@ public class Camera {
 	public Vector2f getPos() {
 		return this.collisionCam.getPos();
 	}
-	public AABB getBounds() {
+	public Rectangle getBounds() {
 		return this.collisionCam;
 	}
 

@@ -6,7 +6,7 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.graphics.Font;
 import com.jrealm.game.graphics.Fontf;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.math.AABB;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.KeyHandler;
@@ -26,6 +26,10 @@ public class GameStateManager {
 
 	public static Font font;
 	public static Fontf fontf;
+	public static Font currentFont;
+//	public static SpriteSheet ui;
+//	public static SpriteSheet button;
+	
 	public static SpriteSheet ui;
 	public static SpriteSheet button;
 	public static Camera cam;
@@ -42,13 +46,13 @@ public class GameStateManager {
 		GameStateManager.fontf = new Fontf();
 		GameStateManager.fontf.loadFont("font/Stackedpixel.ttf", "MeatMadness");
 		GameStateManager.fontf.loadFont("font/GravityBold8.ttf", "GravityBold8");
-		SpriteSheet.currentFont = GameStateManager.font;
+		GameStateManager.currentFont = GameStateManager.font;
 
-		GameStateManager.ui = new SpriteSheet("ui/ui.png", 64, 64, 0);
-		GameStateManager.button = new SpriteSheet("ui/buttons.png", 122, 57, 0);
+		GameStateManager.ui = new SpriteSheet("ui.png", 64, 64);
+		GameStateManager.button = new SpriteSheet("buttons.png", 122, 57);
 
 
-		GameStateManager.cam = new Camera(new AABB(new Vector2f(-64, -64), GamePanel.width + 128, GamePanel.height + 128));
+		GameStateManager.cam = new Camera(new Rectangle(new Vector2f(-64, -64), GamePanel.width + 128, GamePanel.height + 128));
 
 		// this.states[GameStateManager.PLAY] = new PlayState(this,
 		// GameStateManager.cam);
@@ -66,6 +70,10 @@ public class GameStateManager {
 	public void pop(int state) {
 		this.states[state] = null;
 	}
+	
+	public PlayState getPlayState() {
+		return (PlayState)this.states[GameStateManager.PLAY];
+	}
 
 	public void add(int state) {
 		if (this.states[state] != null)
@@ -73,22 +81,42 @@ public class GameStateManager {
 
 		switch (state) {
 		case GameStateManager.PLAY:
-			GameStateManager.cam = new Camera(new AABB(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
+			GameStateManager.cam = new Camera(new Rectangle(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
 			this.states[GameStateManager.PLAY] = new PlayState(this, GameStateManager.cam);
 			break;
 		case GameStateManager.MENU:
 			this.states[GameStateManager.MENU] = new MenuState(this);
 			break;
 		case GameStateManager.PAUSE:
-			this.states[GameStateManager.PAUSE] = new PauseState(this);
+			this.states[GameStateManager.PAUSE] = new PauseState(this, null);
 			break;
 		case GameStateManager.GAMEOVER:
 			this.states[GameStateManager.GAMEOVER] = new GameOverState(this);
 			break;
+		default:
+			break;
+		}
+	}
+	
+	public void add(int state, GameState gameState) {
+		if (this.states[state] != null)
+			return;
+
+		switch (state) {
+		case GameStateManager.PLAY:
+			this.states[GameStateManager.PLAY] = gameState;
+			break;
+		case GameStateManager.MENU:
+			this.states[GameStateManager.MENU] = gameState;
+			break;
+		case GameStateManager.PAUSE:
+			this.states[GameStateManager.PAUSE] = gameState;
+			break;
+		case GameStateManager.GAMEOVER:
+			this.states[GameStateManager.GAMEOVER] = gameState;
+			break;
 		case GameStateManager.EDIT:
-			if(this.states[GameStateManager.PLAY] != null) {
-				this.states[GameStateManager.EDIT] = new EditState(this, GameStateManager.cam);
-			}
+				this.states[GameStateManager.EDIT] = gameState;
 			break;
 		default:
 			break;
