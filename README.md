@@ -123,32 +123,33 @@ long running attack patterns. Any class extending `EnemyScriptBase` will be load
 ```java
 public class Enemy10Script extends EnemyScriptBase {
     // Default constructor
-	public Enemy10Script(RealmManagerServer mgr) {
-		super(mgr);
-	}
-
+    public Enemy10Script(RealmManagerServer mgr) {
+        super(mgr);
+    }
+    
     // Target enemy ID
-	@Override
-	public int getTargetEnemyId() {
-		return 10;
-	}
-
-	@Override
-	public void attack(Realm targetRealm, Enemy enemy, Player targetPlayer) throws Exception {
-
-		Player target = targetPlayer;
-		Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
-
-		Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
-		float angle = Bullet.getAngle(source, dest);
+    @Override
+    public int getTargetEnemyId() {
+        return 10;
+    }
+    
+    @Override
+    public void attack(Realm targetRealm, Enemy enemy, Player targetPlayer) throws Exception {
+    
+        Player target = targetPlayer;
+        Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
+    
+        Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
+        float angle = Bullet.getAngle(source, dest);
         // Get the projectiles for attack ID 2
-		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(2);
-		Projectile p = group.getProjectiles().get(0);
+        ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(2);
+        Projectile p = group.getProjectiles().get(0);
         // Create two enemy projectiles with the given data with a 100ms delay in between
-		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
-		this.sleep(100);
-		this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
-	}
+        this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
+        this.sleep(100);
+        this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
+    }
+}
 ```
 
 ### UseableItem Scripts
@@ -161,27 +162,27 @@ players ability slot. Any class extending `UseableItemScriptBase` will be loaded
 // Item script that adds the ability items effect
 // to surrounding players
 public class Item156Script extends UseableItemScriptBase{
-
-	public Item156Script(RealmManagerServer mgr) {
-		super(mgr);
-	}
-
-	@Override
-	public void invokeUseItem(Realm targetRealm, Player player, GameItem item) {
-	}
-
-	@Override
-	public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem) {
-		for (final Player other : targetRealm
-				.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
-			other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
-		}
-	}
-
-	@Override
-	public int getTargetItemId() {
-		return 156;
-	}
+    
+    public Item156Script(RealmManagerServer mgr) {
+        super(mgr);
+    }
+    
+    @Override
+    public void invokeUseItem(Realm targetRealm, Player player, GameItem item) {
+    }
+    
+    @Override
+    public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem) {
+        for (final Player other : targetRealm
+                .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
+            other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
+        }
+    }
+    
+    @Override
+    public int getTargetItemId() {
+        return 156;
+    }
 }
 ```
 
@@ -194,45 +195,45 @@ script at runtime.
 ```java
 // Creates slowing water pool decorations in the Beach Realm
 public class Beach0Decorator extends RealmDecoratorBase {
-	private static final Integer MIN_WATER_POOL_COUNT = 15;
-	private static final Integer MAX_WATER_POOL_COUNT = 25;
-	private static final TileModel WATER_TILE = GameDataManager.TILES.get(41);
-	private static final TileModel WATER_TILE_DEEP = GameDataManager.TILES.get(42);
-
-	public Beach0Decorator(RealmManagerServer mgr) {
-		super(mgr);
-	}
-
-	@Override
-	public void decorate(final Realm input) {
-		for (int i = 0; i < (Beach0Decorator.MIN_WATER_POOL_COUNT + Realm.RANDOM
-				.nextInt(Beach0Decorator.MAX_WATER_POOL_COUNT - Beach0Decorator.MIN_WATER_POOL_COUNT)); i++) {
-			final Vector2f pos = input.getTileManager().randomPos();
-			final TileMap baseLayer = input.getTileManager().getBaseLayer();
-			final int centerX = (int) (pos.x / baseLayer.getTileSize());
-			final int centerY = (int) (pos.y / baseLayer.getTileSize());
-
-			baseLayer.setBlockAt(centerX, centerY, (short) Beach0Decorator.WATER_TILE_DEEP.getTileId(),
-					Beach0Decorator.WATER_TILE_DEEP.getData());
-			baseLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
-					(short) Beach0Decorator.WATER_TILE.getTileId(),
-					Beach0Decorator.WATER_TILE.getData());
-			baseLayer.setBlockAt(centerX,
-					(centerY + 1) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerY + 1,
-							(short) Beach0Decorator.WATER_TILE.getTileId(),
-							Beach0Decorator.WATER_TILE.getData());
-			baseLayer.setBlockAt((centerX - 1) > -1 ? centerX - 1  : 0, centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
-					Beach0Decorator.WATER_TILE.getData());
-			baseLayer.setBlockAt((centerX + 1) >= baseLayer.getWidth() ? baseLayer.getWidth()-1 : centerX + 1 , centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
-					Beach0Decorator.WATER_TILE.getData());
-
-		}
-	}
-
-	@Override
-	public Integer getTargetMapId() {
-		return 2;
-	}
+    private static final Integer MIN_WATER_POOL_COUNT = 15;
+    private static final Integer MAX_WATER_POOL_COUNT = 25;
+    private static final TileModel WATER_TILE = GameDataManager.TILES.get(41);
+    private static final TileModel WATER_TILE_DEEP = GameDataManager.TILES.get(42);
+    
+    public Beach0Decorator(RealmManagerServer mgr) {
+        super(mgr);
+    }
+    
+    @Override
+    public void decorate(final Realm input) {
+        for (int i = 0; i < (Beach0Decorator.MIN_WATER_POOL_COUNT + Realm.RANDOM
+                .nextInt(Beach0Decorator.MAX_WATER_POOL_COUNT - Beach0Decorator.MIN_WATER_POOL_COUNT)); i++) {
+            final Vector2f pos = input.getTileManager().randomPos();
+            final TileMap baseLayer = input.getTileManager().getBaseLayer();
+            final int centerX = (int) (pos.x / baseLayer.getTileSize());
+            final int centerY = (int) (pos.y / baseLayer.getTileSize());
+    
+            baseLayer.setBlockAt(centerX, centerY, (short) Beach0Decorator.WATER_TILE_DEEP.getTileId(),
+                    Beach0Decorator.WATER_TILE_DEEP.getData());
+            baseLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
+                    (short) Beach0Decorator.WATER_TILE.getTileId(),
+                    Beach0Decorator.WATER_TILE.getData());
+            baseLayer.setBlockAt(centerX,
+                    (centerY + 1) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerY + 1,
+                            (short) Beach0Decorator.WATER_TILE.getTileId(),
+                            Beach0Decorator.WATER_TILE.getData());
+            baseLayer.setBlockAt((centerX - 1) > -1 ? centerX - 1  : 0, centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
+                    Beach0Decorator.WATER_TILE.getData());
+            baseLayer.setBlockAt((centerX + 1) >= baseLayer.getWidth() ? baseLayer.getWidth()-1 : centerX + 1 , centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
+                    Beach0Decorator.WATER_TILE.getData());
+    
+        }
+    }
+    
+    @Override
+    public Integer getTargetMapId() {
+        return 2;
+    }
 }
 ```
 
