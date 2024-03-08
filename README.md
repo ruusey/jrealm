@@ -80,18 +80,13 @@ that allow users to embed  server commands in the packets they send to **JRealm-
 and a `UTF JSON String command`. When the server recieves a Command Packet it will attempt to deserialize the JSON payload into the model
 targeted by this Command `(defined in com.jrealm.game.messaging.CommandType)`
 
-The class `ServerCommandHandler` is responsible for handling individual Command functionality. Each command callback is registered statically at runtime
-in a similar way to Packet Callbacks
+The class `ServerCommandHandler` is responsible for handling individual Command functionality. Each command callback is registered dynamically
+at runtime
 
 **Example**:
 ```java
-    static {
-        COMMAND_CALLBACKS.put("setstat", ServerCommandHandler::invokeSetStats);
-        COMMAND_CALLBACKS.put("spawn", ServerCommandHandler::invokeEnemySpawn);
-        COMMAND_CALLBACKS.put("effect", ServerCommandHandler::invokeSetEffect);
-        COMMAND_CALLBACKS.put("tp", ServerCommandHandler::invokeTeleport);
-    }
-    
+
+    @CommandHandler("setstats")
     private static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
         if (message.getArgs() == null || message.getArgs().size() != 2)
             throw new IllegalArgumentException("Usage: /setstat {STAT_NAME} {STAT_VALUE}");
