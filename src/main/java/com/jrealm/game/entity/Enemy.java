@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = false)
 @Slf4j
 public abstract class Enemy extends Entity implements Streamable<Enemy>{
-	private static final int IDLE_FRAMES = 12;
+	private static final int IDLE_FRAMES = 10;
 	private static final float CHASE_SPEED = 1.1f;
 	protected EnemyModel model;
 	protected int chaseRange;
@@ -52,6 +52,8 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 
 		if ((player == null) || player.hasEffect(EffectType.INVISIBLE)) {
 			this.up = false;
+			this.dy = 0;
+			this.dx = 0;
 			this.down = false;
 			this.right = false;
 			this.left = false;
@@ -194,6 +196,18 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 			this.down = Realm.RANDOM.nextBoolean();
 			this.left = Realm.RANDOM.nextBoolean();
 			this.right = Realm.RANDOM.nextBoolean();
+			if(this.up) {
+				this.dy=-CHASE_SPEED;
+			}
+			if(this.down) {
+				this.dy=CHASE_SPEED;
+			}
+			if(this.right) {
+				this.dx=CHASE_SPEED;
+			}
+			if(this.left) {
+				this.dx=-CHASE_SPEED;
+			}
 			this.idleTime = 0;
 		} else {
 			this.idleTime++;
@@ -204,9 +218,9 @@ public abstract class Enemy extends Entity implements Streamable<Enemy>{
 	@Override
 	public void render(Graphics2D g) {
 
-		Color c = new Color(0f, 0f, 0f, .4f);
+		Color c = new Color(0f, 0f, 0f, .35f);
 		g.setColor(c);
-		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + (this.size / 2), this.size,
+		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + (int)(this.size / 1.5), this.size,
 				this.size / 2);
 		if (this.left) {
 			g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x) + this.size,

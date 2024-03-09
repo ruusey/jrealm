@@ -178,11 +178,11 @@ public class ServerCommandHandler {
 			throw new IllegalArgumentException("Usage: /realm {up | down}");
 		
 		final Realm targetRealm = mgr.searchRealmsForPlayer(target.getId());
-		final PortalModel bossPortal = GameDataManager.PORTALS.get(4);
+		final PortalModel bossPortal = GameDataManager.PORTALS.get(5);
 		final Realm generatedRealm = new Realm(true, bossPortal.getMapId());
 		final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
 				GlobalConstants.BASE_TILE_SIZE * 13);
-		final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2, spawnPos.clone(250, 0));
+		final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, spawnPos.clone(250, 0));
 		if(message.getArgs().get(0).equalsIgnoreCase("up")) {
 			generatedRealm.setDepth(targetRealm.getDepth()+1);
 		

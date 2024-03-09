@@ -1,5 +1,6 @@
 package com.jrealm.game.data;
 
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +10,7 @@ import javax.imageio.ImageIO;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.item.GameItem;
+import com.jrealm.game.graphics.ImageUtils;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.model.SpriteModel;
@@ -37,9 +39,10 @@ public class GameSpriteManager {
 				model.setSpriteSize(GlobalConstants.BASE_SPRITE_SIZE);
 			}
 			final BufferedImage spriteImage = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
-			final BufferedImage subImage = spriteImage.getSubimage(model.getCol() * model.getSpriteSize(),
+			BufferedImage subImage = spriteImage.getSubimage(model.getCol() * model.getSpriteSize(),
 					model.getRow() * model.getSpriteSize(),
 					model.getSpriteSize(), model.getSpriteSize());
+			subImage = ImageUtils.generateBorder(subImage, 1, Color.BLACK, 1.0f);
 			GameSpriteManager.ITEM_SPRITES.put(gameItemId, subImage);
 		}
 	}
@@ -51,10 +54,14 @@ public class GameSpriteManager {
 			if (model.getSpriteSize() == 0) {
 				model.setSpriteSize(GlobalConstants.BASE_SPRITE_SIZE);
 			}
+			
 			final BufferedImage spriteImage = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
-			final BufferedImage subImage = spriteImage.getSubimage(model.getCol() * model.getSpriteSize(),
+			BufferedImage subImage = spriteImage.getSubimage(model.getCol() * model.getSpriteSize(),
 					model.getRow() * model.getSpriteSize(),
 					model.getSpriteSize(), model.getSpriteSize());
+			if(model.getData().hasCollision()) {
+				subImage = ImageUtils.applyShadow(subImage, 1, Color.BLACK, 0.65f);
+			}
 			GameSpriteManager.TILE_SPRITES.put(tileId, subImage);
 		}
 	}

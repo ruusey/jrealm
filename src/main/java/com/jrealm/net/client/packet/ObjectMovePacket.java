@@ -95,6 +95,7 @@ public class ObjectMovePacket extends Packet {
 	}
 	
 	public boolean equals(ObjectMovePacket other) {
+		if(other==null) return false;
 		for(ObjectMovement movement: other.getMovements()) {
 			if(!this.containsMovement(movement)) {
 				return false;
