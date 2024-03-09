@@ -39,10 +39,10 @@ public class GameSpriteManager {
 				model.setSpriteSize(GlobalConstants.BASE_SPRITE_SIZE);
 			}
 			final BufferedImage spriteImage = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
-			BufferedImage subImage = spriteImage.getSubimage(model.getCol() * model.getSpriteSize(),
+			final BufferedImage subImage = spriteImage.getSubimage(model.getCol() * model.getSpriteSize(),
 					model.getRow() * model.getSpriteSize(),
 					model.getSpriteSize(), model.getSpriteSize());
-			subImage = ImageUtils.generateBorder(subImage, 1, Color.BLACK, 1.0f);
+			//subImage = ImageUtils.generateBorder(subImage, 1, Color.BLACK, 0)
 			GameSpriteManager.ITEM_SPRITES.put(gameItemId, subImage);
 		}
 	}
