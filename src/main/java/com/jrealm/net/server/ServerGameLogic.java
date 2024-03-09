@@ -98,7 +98,7 @@ public class ServerGameLogic {
 							GlobalConstants.BASE_TILE_SIZE * 13);
 					
 					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, spawnPos.clone(250, 0));
-					exitPortal.linkPortal(generatedRealm, currentRealm);
+					exitPortal.linkPortal(generatedRealm, mgr.getTopRealm());
 					exitPortal.setNeverExpires();
 
 					user.setPos(spawnPos);
