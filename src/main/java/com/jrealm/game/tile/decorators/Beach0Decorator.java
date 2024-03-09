@@ -8,6 +8,7 @@ import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.tile.TileMap;
 
 public class Beach0Decorator extends RealmDecoratorBase {
+	private static final Integer SHORE_LINE_SIZE = 3;
 	private static final Integer MIN_WATER_POOL_COUNT = 15;
 	private static final Integer MAX_WATER_POOL_COUNT = 25;
 	private static final TileModel WATER_TILE = GameDataManager.TILES.get(41);
@@ -40,6 +41,40 @@ public class Beach0Decorator extends RealmDecoratorBase {
 			baseLayer.setBlockAt((centerX + 1) >= baseLayer.getWidth() ? baseLayer.getWidth()-1 : centerX + 1 , centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
 					Beach0Decorator.WATER_TILE.getData());
 
+		}
+		this.createShoreline(input);
+	}
+	
+	private void createShoreline(final Realm input) {
+		final TileMap baseLayer = input.getTileManager().getBaseLayer();
+		// left side
+		for (int i = 0; i < input.getTileManager().getBaseLayer().getWidth(); i++) {
+			for (int j = 0; j < 1+Realm.RANDOM.nextInt(SHORE_LINE_SIZE); j++) {
+				baseLayer.setBlockAt(i, j, (short) Beach0Decorator.WATER_TILE.getTileId(),
+						Beach0Decorator.WATER_TILE.getData());
+			}
+		}
+		// right side
+		for (int i = 0; i < input.getTileManager().getBaseLayer().getWidth(); i++) {
+			for (int j = 1; j < 2+Realm.RANDOM.nextInt(SHORE_LINE_SIZE); j++) {
+				baseLayer.setBlockAt(i, input.getTileManager().getBaseLayer().getHeight() - (j),
+						(short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
+			}
+		}
+
+		// top side
+		for (int i = 0; i < input.getTileManager().getBaseLayer().getWidth(); i++) {
+			for (int j = 0; j < 1+Realm.RANDOM.nextInt(SHORE_LINE_SIZE); j++) {
+				baseLayer.setBlockAt(j, i, (short) Beach0Decorator.WATER_TILE.getTileId(),
+						Beach0Decorator.WATER_TILE.getData());
+			}
+		}
+		// bottom side
+		for (int i = 0; i < input.getTileManager().getBaseLayer().getWidth(); i++) {
+			for (int j = 1; j < 2+Realm.RANDOM.nextInt(SHORE_LINE_SIZE); j++) {
+				baseLayer.setBlockAt(input.getTileManager().getBaseLayer().getHeight() - (j), i,
+						(short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
+			}
 		}
 	}
 

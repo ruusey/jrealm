@@ -1175,7 +1175,7 @@ public class RealmManagerServer implements Runnable {
 		final Runnable playerSync = () ->{
 			try {
 				while (!this.shutdown) {
-					Thread.sleep(20000);
+					Thread.sleep(12000);
 					RealmManagerServer.log.info("Performing asynchronous player data sync.");
 					this.persistsPlayersAsync();
 				}

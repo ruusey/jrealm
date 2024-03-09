@@ -53,13 +53,9 @@ public class ServerCommandHandler {
 						"Unknown command " + message.getCommand());
 				mgr.enqueueServerPacket(fromPlayer, errorResponse);
 			}else {
-				try {
-					methodHandle.invokeExact(mgr, fromPlayer, message);
-				}catch(Throwable e) {
-					log.error("Failed to invoke MethodHandle for command {}. Reason: {}",message.getCommand().toLowerCase(), e);
-				}
+				methodHandle.invokeExact(mgr, fromPlayer, message);
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			log.error("Failed to handle server command. Reason: {}", e.getMessage());
 			final CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 502, e.getMessage());
 			mgr.enqueueServerPacket(fromPlayer, errorResponse);
