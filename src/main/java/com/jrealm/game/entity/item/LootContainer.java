@@ -12,6 +12,7 @@ import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.ui.Slots;
 import com.jrealm.net.Streamable;
 
 import lombok.AllArgsConstructor;
@@ -183,6 +184,16 @@ public class LootContainer implements Streamable<LootContainer> {
 		}
 		return container;
 
+	}
+	
+	public int getNonEmptySlotCount() {
+		int count = 0;
+		for(GameItem s : this.getItems()) {
+			if(s!=null) {
+				count++;
+			}
+		}
+		return count;
 	}
 
 	public static GameItem[] getCondensedItems(LootContainer container) {

@@ -123,6 +123,7 @@ public class RealmManagerServer implements Runnable {
 	private Semaphore realmLock = new Semaphore(1);
 	private int currentTickCount =0;
 	private long tickSampleTime = 0;
+	
 	public RealmManagerServer() {
 		this.registerRealmDecorators();
 		this.registerEnemyScripts();
