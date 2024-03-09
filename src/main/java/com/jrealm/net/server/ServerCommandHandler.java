@@ -179,33 +179,30 @@ public class ServerCommandHandler {
 		
 		final Realm targetRealm = mgr.searchRealmsForPlayer(target.getId());
 		final PortalModel bossPortal = GameDataManager.PORTALS.get(5);
-		final Realm generatedRealm = new Realm(true, bossPortal.getMapId());
+		final Realm generatedRealm = new Realm(true, bossPortal.getMapId(), bossPortal.getTargetRealmDepth());
 		final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
 				GlobalConstants.BASE_TILE_SIZE * 13);
 		final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, spawnPos.clone(250, 0));
 		if(message.getArgs().get(0).equalsIgnoreCase("up")) {
-			generatedRealm.setDepth(targetRealm.getDepth()+1);
-		
 			target.setPos(spawnPos);
 			Enemy enemy = GameObjectUtils.getEnemyFromId(13, spawnPos);
 			int healthMult = (4);
 			enemy.setHealth(enemy.getHealth() * healthMult);
 			enemy.setPos(spawnPos.clone(200, 0));
 			generatedRealm.addEnemy(enemy);
-			exitPortal.setId(mgr.getTopRealm().getRealmId());
+			exitPortal.linkPortal(generatedRealm, mgr.getTopRealm());
 			exitPortal.setNeverExpires();
 			generatedRealm.addPortal(exitPortal);
 			generatedRealm.addPlayer(target);
 			mgr.addRealm(generatedRealm);
 		}else if(message.getArgs().get(0).equalsIgnoreCase("down")) {
-			generatedRealm.setDepth(targetRealm.getDepth()+1);
 			target.setPos(spawnPos);
 			Enemy enemy = GameObjectUtils.getEnemyFromId(13, spawnPos);
 			int healthMult = (4);
 			enemy.setHealth(enemy.getHealth() * healthMult);
 			enemy.setPos(spawnPos.clone(200, 0));
 			generatedRealm.addEnemy(enemy);
-			exitPortal.setId(mgr.getTopRealm().getRealmId());
+			exitPortal.linkPortal(generatedRealm, mgr.getTopRealm());
 			exitPortal.setNeverExpires();
 			generatedRealm.addPortal(exitPortal);
 			generatedRealm.addPlayer(target);

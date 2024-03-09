@@ -344,16 +344,16 @@ public class RealmManagerServer implements Runnable {
 					}
 
 					// If the ObjectMove packet isnt empty
-					if(this.playerObjectMoveState.get(player.getKey())==null) {
+					if (this.playerObjectMoveState.get(player.getKey()) == null && movePacket != null) {
 						this.playerObjectMoveState.put(player.getKey(), movePacket);
 						this.enqueueServerPacket(player.getValue(), movePacket);
-					}else {
+					} else if (movePacket != null) {
 						final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
-						if(oldMove!=null && !oldMove.equals(movePacket)) {
-							//final ObjectMovePacket movediff = oldMove.getMoveDiff(movePacket);
+						if (oldMove != null && !oldMove.equals(movePacket)) {
+							// final ObjectMovePacket movediff = oldMove.getMoveDiff(movePacket);
 							this.playerObjectMoveState.put(player.getKey(), movePacket);
 							this.enqueueServerPacket(player.getValue(), movePacket);
-						}else {
+						} else {
 							this.playerObjectMoveState.put(player.getKey(), movePacket);
 							this.enqueueServerPacket(player.getValue(), movePacket);
 						}
@@ -1064,7 +1064,7 @@ public class RealmManagerServer implements Runnable {
 			}
 			targetRealm.removeEnemy(enemy);
 
-			if (Realm.RANDOM.nextInt(1) < 1) {
+			if (targetRealm.getMapId()!=5 && Realm.RANDOM.nextInt(1) < 1) {
 				final PortalModel portalModel = this.getPortalToDepth(targetRealm.getDepth()+1);
 				final Portal toNewRealmPortal = new Portal(Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
 				toNewRealmPortal.linkPortal(targetRealm, null);
@@ -1214,7 +1214,8 @@ public class RealmManagerServer implements Runnable {
 	
 	public void safeRemoveRealm(final long realmId) {
 		this.acquireRealmLock();
-		this.realms.remove(realmId);
+		Realm realm = this.realms.remove(realmId);
+		realm.setShutdown(true);
 		this.releaseRealmLock();
 	}
 

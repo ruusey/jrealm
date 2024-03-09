@@ -71,7 +71,7 @@ public class Realm {
 	private Semaphore playerLock = new Semaphore(1);
 
 	private boolean isServer;
-
+	private boolean shutdown = false;
 	public Realm(boolean isServer, int mapId) {
 		this.depth = 0;
 		this.realmId = Realm.RANDOM.nextLong();
@@ -588,7 +588,7 @@ public class Realm {
 
 	private Thread getStatsThread() {
 		Runnable r = () -> {
-			while (true) {
+			while (!this.shutdown) {
 				double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
 				Realm.log.info("--- Realm: {} | MapId: {} ---", this.getRealmId(), this.getMapId());
 				Realm.log.info("Enemies: {}", this.enemies.size());
@@ -605,6 +605,7 @@ public class Realm {
 
 				}
 			}
+			log.info("Realm {} destroyed", this.getRealmId());
 		};
 		return new Thread(r);
 	}

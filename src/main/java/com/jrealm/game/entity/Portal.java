@@ -69,7 +69,7 @@ public class Portal implements Streamable<Portal> {
 	}
 	
 	private void setToRealm(long toRealmId) {
-		this.fromRealmId = toRealmId;
+		this.toRealmId = toRealmId;
 	}
 
 	public short getPortalId() {

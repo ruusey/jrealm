@@ -70,7 +70,7 @@ public class ServerGameLogic {
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, chestLoc);
 			exitPortal.setNeverExpires();
-			exitPortal.linkPortal(currentRealm, generatedRealm);
+			exitPortal.linkPortal(generatedRealm, currentRealm);
 			generatedRealm.setupChests(user);
 			user.setPos(mapModel.getCenter());
 			generatedRealm.addPortal(exitPortal);
@@ -98,7 +98,7 @@ public class ServerGameLogic {
 							GlobalConstants.BASE_TILE_SIZE * 13);
 					
 					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, spawnPos.clone(250, 0));
-					exitPortal.linkPortal(currentRealm, targetRealm);
+					exitPortal.linkPortal(generatedRealm, currentRealm);
 					exitPortal.setNeverExpires();
 
 					user.setPos(spawnPos);
@@ -116,7 +116,7 @@ public class ServerGameLogic {
 					
 					user.setPos(generatedRealm.getTileManager().getSafePosition());
 					
-					exitPortal.linkPortal(currentRealm, targetRealm);
+					exitPortal.linkPortal(generatedRealm, currentRealm);
 					exitPortal.setNeverExpires();
 					
 					generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
