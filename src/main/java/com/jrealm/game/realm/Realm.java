@@ -86,6 +86,11 @@ public class Realm {
 			WorkerThread.submit(this.getStatsThread());
 		}
 	}
+	
+	public Realm(boolean isServer, int mapId, int depth) {
+		this(isServer, mapId);
+		this.depth = depth;
+	}
 
 	public int getDepth() {
 		return this.depth;

@@ -53,7 +53,7 @@ public class GameLauncher {
 	}
 
 	private static void startServer() {
-		Realm realm = new Realm(true, 4);
+		Realm realm = new Realm(true, 2);
 		RealmManagerServer server = new RealmManagerServer();
 		Runtime.getRuntime().addShutdownHook(server.shutdownHook());
 

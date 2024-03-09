@@ -52,6 +52,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.ServerCommandMessage;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.LootTableModel;
+import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.script.Enemy10Script;
@@ -1062,17 +1063,11 @@ public class RealmManagerServer implements Runnable {
 			}
 			targetRealm.removeEnemy(enemy);
 
-			if (Realm.RANDOM.nextInt(10) < 1) {
-				if (targetRealm.getMapId() == 4) {
-					targetRealm.addPortal(
-							new Portal(Realm.RANDOM.nextLong(), (short) 0, enemy.getPos().withNoise(64, 64)));
-				} else if (targetRealm.getMapId() == 2) {
-					targetRealm.addPortal(
-							new Portal(Realm.RANDOM.nextLong(), (short) 3, enemy.getPos().withNoise(64, 64)));
-				} else if (targetRealm.getMapId() == 3) {
-					targetRealm.addPortal(
-							new Portal(Realm.RANDOM.nextLong(), (short) 4, enemy.getPos().withNoise(64, 64)));
-				}
+			if (Realm.RANDOM.nextInt(1) < 1) {
+				final PortalModel portalModel = this.getPortalToDepth(targetRealm.getDepth()+1);
+				final Portal toNewRealmPortal = new Portal(Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
+				toNewRealmPortal.linkPortal(targetRealm, null);
+				targetRealm.addPortal(toNewRealmPortal);
 			}
 
 			// Try to get the loot model mapped by this enemyId
@@ -1126,6 +1121,10 @@ public class RealmManagerServer implements Runnable {
 		this.playerLoadMapState.remove(playerId);
 		this.playerObjectMoveState.remove(playerId);
 	}
+	
+	public PortalModel getPortalToDepth(int targetDepth) {
+		return GameDataManager.PORTALS.values().stream().filter(portal->portal.getTargetRealmDepth()==targetDepth).findAny().get();
+	}
 
 	public Map<Long, String> getRemoteAddressMapRevered() {
 		final Map<Long, String> result = new HashMap<>();
@@ -1152,6 +1151,10 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 		return found;
+	}
+	
+	public Optional<Realm> findRealmAtDepth(int depth) {
+		return this.getRealms().values().stream().filter(realm -> realm.getDepth() == (depth + 1)).findAny();
 	}
 	
 	public Player searchRealmsForPlayer(String playerName) {
