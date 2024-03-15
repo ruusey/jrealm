@@ -355,14 +355,16 @@ public class RealmManagerServer implements Runnable {
 					} else if (movePacket != null) {
 						final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
 						if (oldMove != null && !oldMove.equals(movePacket)) {
-							// final ObjectMovePacket movediff = oldMove.getMoveDiff(movePacket);
 							this.playerObjectMoveState.put(player.getKey(), movePacket);
 							this.enqueueServerPacket(player.getValue(), movePacket);
+						}else {
+							final ObjectMovePacket moveDiff = oldMove.getMoveDiff(movePacket);
+							if(moveDiff!=null) {
+								this.playerObjectMoveState.put(player.getKey(), movePacket);
+								this.enqueueServerPacket(player.getValue(), movePacket);
+							}
 						}
 					}
-//					if(movePacket!=null && movePacket.getMovements().length>0) {
-//						this.enqueueServerPacket(player.getValue(), movePacket);
-//					}
 
 					// Used to dynamically re-render changed loot containers (chests) on the client
 					// if their contents change in a server tick (receive MoveItem packet from
