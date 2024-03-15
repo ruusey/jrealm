@@ -19,7 +19,7 @@
 ```java -jar ./jrealm-{version}.jar {-client | -server | -embedded} {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}```
 
 * **Server**: <br />
-```java -jar ./jrealm-{version}.jar -server``` <br />
+```java -jar ./jrealm-{version}.jar -server {SERVER_ADDR}``` <br />
 The server requires port 2222 to be available
 
 * **Client**: <br />
