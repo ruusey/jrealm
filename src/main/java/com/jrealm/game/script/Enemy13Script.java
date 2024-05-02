@@ -22,25 +22,24 @@ public class Enemy13Script extends EnemyScriptBase {
 	}
 
 	@Override
-	public void attack(Realm targetRealm, Enemy enemy, Player targetPlayer) throws Exception {
+	public void attack(final Realm targetRealm, final Enemy enemy, final Player targetPlayer) throws Exception {
+		final Player target = targetPlayer;
+		final Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
 
-		Player target = targetPlayer;
-		Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
-
-		Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
-		float angle = Bullet.getAngle(source, dest);
-		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
+		final Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
+		final float angle = Bullet.getAngle(source, dest);
+		final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
 				.get(Realm.RANDOM.nextInt(GameDataManager.PROJECTILE_GROUPS.size()));
 		if ((group == null) || (group.getProjectileGroupId() == -1) || (group.getProjectileGroupId() == 6))
 			return;
-		for (Projectile p : group.getProjectiles()) {
-			this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
+		for (final Projectile p : group.getProjectiles()) {
+			super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
 					angle + Float.parseFloat(p.getAngle()),
 					group);
 		}
-		sleep(250);
-		for (Projectile p : group.getProjectiles()) {
-			this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
+		super.sleep(250);
+		for (final Projectile p : group.getProjectiles()) {
+			super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
 					angle + Float.parseFloat(p.getAngle()),
 					group);
 		}

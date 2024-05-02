@@ -1,7 +1,5 @@
 package com.jrealm.game.script;
 
-import java.util.Arrays;
-
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -24,22 +22,19 @@ public class Enemy14Script extends EnemyScriptBase {
 	}
 
 	@Override
-	public void attack(Realm targetRealm, Enemy enemy, Player targetPlayer) throws Exception {
-		Player target = targetPlayer;
-		Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
+	public void attack(final Realm targetRealm, final Enemy enemy, final Player targetPlayer) throws Exception {
+		final Player target = targetPlayer;
+		final Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
 
-		Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
+		final Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
 		float angle = Bullet.getAngle(source, dest);
-		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
-				.get(18);
-		for(int i = 0; i<3; i++) {
-			for (Projectile p : group.getProjectiles()) {
+		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(18);
+		for (int i = 0; i < 3; i++) {
+			for (final Projectile p : group.getProjectiles()) {
 				this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
-						angle + Float.parseFloat(p.getAngle()),
-						group);
+						angle + Float.parseFloat(p.getAngle()), group);
 			}
-			sleep(150);
+			super.sleep(150);
 		}
-
 	}
 }

@@ -11,7 +11,6 @@ import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 
 public class Enemy12Script extends EnemyScriptBase {
-
 	public Enemy12Script(RealmManagerServer mgr) {
 		super(mgr);
 	}
@@ -23,20 +22,18 @@ public class Enemy12Script extends EnemyScriptBase {
 
 	@Override
 	public void attack(Realm targetRealm, Enemy enemy, Player targetPlayer) throws Exception {
-
-		Player target = targetPlayer;
-		Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
-
-		Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
-		float angle = Bullet.getAngle(source, dest);
-		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(27);
-		Projectile p = group.getProjectiles().get(0);
+		final Player target = targetPlayer;
+		final Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
+		final Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
+		final float angle = Bullet.getAngle(source, dest);
+		final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(27);
+		final Projectile p = group.getProjectiles().get(0);
 		for (int i = 0; i < 6; i++) {
-			this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
+			super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
 					(float) (angle + ((Math.PI / 10) * i)), group);
-			this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
+			super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
 					(float) (angle + ((Math.PI / 10) * -i)), group);
-			this.sleep(100);
+			super.sleep(100);
 		}
 	}
 }

@@ -8,18 +8,16 @@ import com.jrealm.game.realm.RealmManagerServer;
 
 public class Item157Script extends UseableItemScriptBase {
 
-	public Item157Script(RealmManagerServer mgr) {
+	public Item157Script(final RealmManagerServer mgr) {
 		super(mgr);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
-	public void invokeUseItem(Realm targetRealm, Player player, GameItem item) {
-		// TODO Auto-generated method stub
+	public void invokeUseItem(final Realm targetRealm, final Player player, final GameItem item) {
 	}
 
 	@Override
-	public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem) {
+	public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
 		final Effect effect = abilityItem.getEffect();
 		player.addEffect(effect.getEffectId(), effect.getDuration());
 		int healthDiff = player.getComputedStats().getHp() - player.getHealth();
@@ -39,7 +37,6 @@ public class Item157Script extends UseableItemScriptBase {
 
 	@Override
 	public int getTargetItemId() {
-		// TODO Auto-generated method stub
 		return 157;
 	}
 }

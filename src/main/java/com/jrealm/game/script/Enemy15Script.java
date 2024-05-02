@@ -14,31 +14,26 @@ public class Enemy15Script extends EnemyScriptBase {
 
 	public Enemy15Script(RealmManagerServer mgr) {
 		super(mgr);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
 	public int getTargetEnemyId() {
-		// TODO Auto-generated method stub
 		return 15;
 	}
 
 	@Override
-	public void attack(Realm targetRealm, Enemy enemy, Player targetPlayer) throws Exception {
-		Player target = targetPlayer;
-		Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
+	public void attack(final Realm targetRealm, final Enemy enemy, final Player targetPlayer) throws Exception {
+		final Player target = targetPlayer;
+		final Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
 
-		Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
-		float angle = Bullet.getAngle(source, dest);
-		ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(34);
-		Projectile p = group.getProjectiles().get(0);
+		final Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
+		final float angle = Bullet.getAngle(source, dest);
+		final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(34);
+		final Projectile p = group.getProjectiles().get(0);
 		for (int i = 0; i < 6; i++) {
 			this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.withNoise(120, 120),
-					angle+(float)Math.PI*i, group);
-			//this.sleep(150);
+					angle + (float) Math.PI * i, group);
 
 		}
-
 	}
-
 }

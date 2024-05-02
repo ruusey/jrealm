@@ -9,17 +9,14 @@ public class Item153Script extends UseableItemScriptBase{
 
 	public Item153Script(RealmManagerServer mgr) {
 		super(mgr);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
-	public void invokeUseItem(Realm targetRealm, Player player, GameItem item) {
-		// TODO Auto-generated method stub
-		
+	public void invokeUseItem(final Realm targetRealm, final Player player, final GameItem item) {		
 	}
 
 	@Override
-	public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem) {
+	public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
 		for (final Player other : targetRealm
 				.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
 			other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
@@ -28,7 +25,6 @@ public class Item153Script extends UseableItemScriptBase{
 
 	@Override
 	public int getTargetItemId() {
-		// TODO Auto-generated method stub
 		return 153;
 	}
 
