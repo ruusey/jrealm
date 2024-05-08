@@ -24,6 +24,7 @@ import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.util.CommandHandler;
 import com.jrealm.game.util.GameObjectUtils;
 import com.jrealm.net.server.packet.CommandPacket;
+import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -102,8 +103,19 @@ public class ServerCommandHandler {
 		}
 	}
 	
+	@CommandHandler("help")
+	public static void invokeHelp(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
+		String commandHelpText = "Available Commands:   ";
+		for(String commandHandlerKey : COMMAND_CALLBACKS.keySet()) {
+			commandHelpText+="/"+commandHandlerKey+"     ";
+		}
+		TextPacket commandHelp = TextPacket.from("SYSTEM", target.getName(),commandHelpText );
+		mgr.enqueueServerPacket(target, commandHelp);
+		log.info("Player {} request command help.", commandHelp);
+	}
+	
 	@CommandHandler("spawn")
-	public static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
 		if(message.getArgs()==null || message.getArgs().size()!=1) 
 			throw new IllegalArgumentException("Usage: /spawn {ENEMY_ID}");
 		
@@ -114,7 +126,7 @@ public class ServerCommandHandler {
 	}
 
 	@CommandHandler("seteffect")
-	public static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /seteffect {add | clear} {EFFECT_ID} {DURATION (sec)}");
 		log.info("Player {} set effect {}", target.getName(), message);
@@ -130,7 +142,7 @@ public class ServerCommandHandler {
 	}
 	
 	@CommandHandler("tp")
-	public static void invokeTeleport(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeTeleport(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /tp {PLAYER_NAME}. /tp {X_CORD} {Y_CORD}");
 		
@@ -153,7 +165,7 @@ public class ServerCommandHandler {
 	}
 	
 	@CommandHandler("item")
-	public static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception  {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /item {ITEM_ID}");
 		log.info("Player {} spawn item {}", target.getName(), message);
@@ -168,7 +180,7 @@ public class ServerCommandHandler {
 	}
 	
 	@CommandHandler("realm")
-	public static void invokeRealmMove(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeRealmMove(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception  {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /realm {up | down}");
 		
