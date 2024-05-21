@@ -10,7 +10,7 @@ on:
       - main
 jobs:
   build:
-    if: ${{ github.event.label.name == 'release' }}
+    if: ${{ github.event.pull_request.label.name == 'release' }}
 
     runs-on: ubuntu-latest
     permissions:
@@ -39,8 +39,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         tag: ${{ github.ref_name }}
       run: |
-        gh release create ${{ github.event.pull_request.title }} \
+        gh release create "$tag" \
             --repo="$GITHUB_REPOSITORY" \
-            --title="${GITHUB_REPOSITORY#*/}" ${{ github.event.pull_request.title }} \
+            --title="${GITHUB_REPOSITORY#*/}" "$tag" \
             --generate-notes
 
