@@ -12,9 +12,9 @@
 	</properties>
 	<dependencies>
 		<dependency>
-		    <groupId>org.reflections</groupId>
-		    <artifactId>reflections</artifactId>
-		    <version>0.10.2</version>
+			<groupId>org.reflections</groupId>
+			<artifactId>reflections</artifactId>
+			<version>0.10.2</version>
 		</dependency>
 
 		<dependency>
@@ -45,13 +45,14 @@
 		</dependency>
 
 	</dependencies>
-	 <distributionManagement>
-    <repository>
-      <id>github</id>
-      <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/ruusey/jrealm</url>
-    </repository>
-  </distributionManagement>
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/ruusey/jrealm</url>
+		</repository>
+	</distributionManagement>
+
 	<build>
 		<finalName>jrealm-${project.version}</finalName>
 		<plugins>
