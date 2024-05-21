@@ -69,7 +69,8 @@ public class ObjectMovePacket extends Packet {
 				moveDiff.add(movement);
 			}
 		}
-		return ObjectMovePacket.from(moveDiff.toArray(new ObjectMovement[0]));
+		
+		return moveDiff.size()==0 ? null : ObjectMovePacket.from(moveDiff.toArray(new ObjectMovement[0]));
 	}
 	
 	public boolean containsMovement(ObjectMovement movement) {
@@ -95,6 +96,7 @@ public class ObjectMovePacket extends Packet {
 	}
 	
 	public boolean equals(ObjectMovePacket other) {
+		if(other==null) return false;
 		for(ObjectMovement movement: other.getMovements()) {
 			if(!this.containsMovement(movement)) {
 				return false;

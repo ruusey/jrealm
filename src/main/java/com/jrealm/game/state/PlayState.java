@@ -669,7 +669,13 @@ public class PlayState extends GameState {
 		} else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
 			this.getPui().setGroundLoot(new GameItem[8], g);
 		}
-
+		
+		if(closeLoot!=null && !this.getPui().isGroundLootEmpty()) {
+			final boolean contentsChanged = this.getPui().getNonEmptySlotCount()!=closeLoot.getNonEmptySlotCount();
+			if(contentsChanged) {
+				this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot), g);
+			}
+		}
 	}
 
 	public Player getPlayer() {

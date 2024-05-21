@@ -30,7 +30,6 @@ public class Chest extends LootContainer {
 	public Chest(LootContainer c) {
 		super(LootTier.CHEST, c.getPos(), c.getItems());
 		this.setLootContainerId(c.getLootContainerId());
-		boolean visible = true;
 		this.setContentsChanged(c.getContentsChanged());
 	}
 

@@ -10,15 +10,15 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 
-public class Enemy13Script extends EnemyScriptBase {
+public class Enemy15Script extends EnemyScriptBase {
 
-	public Enemy13Script(RealmManagerServer mgr) {
+	public Enemy15Script(RealmManagerServer mgr) {
 		super(mgr);
 	}
 
 	@Override
 	public int getTargetEnemyId() {
-		return 13;
+		return 15;
 	}
 
 	@Override
@@ -28,20 +28,12 @@ public class Enemy13Script extends EnemyScriptBase {
 
 		final Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
 		final float angle = Bullet.getAngle(source, dest);
-		final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
-				.get(Realm.RANDOM.nextInt(GameDataManager.PROJECTILE_GROUPS.size()));
-		if ((group == null) || (group.getProjectileGroupId() == -1) || (group.getProjectileGroupId() == 6))
-			return;
-		for (final Projectile p : group.getProjectiles()) {
-			super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
-					angle + Float.parseFloat(p.getAngle()),
-					group);
-		}
-		super.sleep(250);
-		for (final Projectile p : group.getProjectiles()) {
-			super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
-					angle + Float.parseFloat(p.getAngle()),
-					group);
+		final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(34);
+		final Projectile p = group.getProjectiles().get(0);
+		for (int i = 0; i < 6; i++) {
+			this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.withNoise(120, 120),
+					angle + (float) Math.PI * i, group);
+
 		}
 	}
 }

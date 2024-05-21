@@ -6,8 +6,12 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +56,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.ServerCommandMessage;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.LootTableModel;
+import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.script.Enemy10Script;
@@ -120,8 +125,9 @@ public class RealmManagerServer implements Runnable {
 	private List<EnemyScriptBase> enemyScripts = new ArrayList<>();
 	private List<UseableItemScriptBase> itemScripts = new ArrayList<>();
 	private Semaphore realmLock = new Semaphore(1);
-	private int currentTickCount =0;
+	private int currentTickCount = 0;
 	private long tickSampleTime = 0;
+
 	public RealmManagerServer() {
 		this.registerRealmDecorators();
 		this.registerEnemyScripts();
@@ -135,18 +141,19 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	// Adds a specified amount of random headless players
-	public void spawnTestPlayers(final long realmId, final int count) {
+	public void spawnTestPlayers(final long realmId, final int count, final Vector2f pos) {
 		final Realm targetRealm = this.realms.get(realmId);
-		final Runnable spawnTestPlayers = ()-> {
+		final Runnable spawnTestPlayers = () -> {
 			final Random random = new Random(Instant.now().toEpochMilli());
-			for(int i = 0 ; i < count; i++) {
-				final CharacterClass classToSpawn = CharacterClass.getCharacterClasses().get(random.nextInt(CharacterClass.getCharacterClasses().size()));
+			for (int i = 0; i < count; i++) {
+				final CharacterClass classToSpawn = CharacterClass.getCharacterClasses()
+						.get(random.nextInt(CharacterClass.getCharacterClasses().size()));
 				try {
 					final Vector2f spawnPos = targetRealm.getTileManager().getSafePosition();
-					final Player player = new Player(Realm.RANDOM.nextLong(),
-							spawnPos, GlobalConstants.PLAYER_SIZE, classToSpawn);
+					final Player player = new Player(Realm.RANDOM.nextLong(), pos, GlobalConstants.PLAYER_SIZE,
+							classToSpawn);
 					String playerName = UUID.randomUUID().toString().replaceAll("-", "");
-					playerName = playerName.substring(playerName.length()/2);
+					playerName = playerName.substring(playerName.length() / 2);
 					player.setName(playerName);
 					player.equipSlots(GameDataManager.getStartingEquipment(classToSpawn));
 					player.setCharacterUuid(UUID.randomUUID().toString());
@@ -155,21 +162,22 @@ public class RealmManagerServer implements Runnable {
 					final boolean up = random.nextBoolean();
 					final boolean right = random.nextBoolean();
 
-					if(up) {
+					if (up) {
 						player.setUp(true);
-					}else {
+					} else {
 						player.setDown(true);
 					}
-					if(right) {
+					if (right) {
 						player.setRight(true);
-					}else {
+					} else {
 						player.setLeft(true);
 					}
 
 					player.setHeadless(true);
 					final long newId = targetRealm.addPlayer(player);
-				}catch(Exception e) {
-					RealmManagerServer.log.error("Failed to spawn test character of class type {}. Reason: {}", classToSpawn, e);
+				} catch (Exception e) {
+					RealmManagerServer.log.error("Failed to spawn test character of class type {}. Reason: {}",
+							classToSpawn, e);
 				}
 			}
 		};
@@ -192,10 +200,10 @@ public class RealmManagerServer implements Runnable {
 
 	private void tick() {
 		try {
-			if(Instant.now().toEpochMilli()-this.tickSampleTime>1000) {
+			if (Instant.now().toEpochMilli() - this.tickSampleTime > 1000) {
 				this.tickSampleTime = Instant.now().toEpochMilli();
 				log.info("[SERVER] ticks this second: {}", this.currentTickCount);
-				this.currentTickCount=0;
+				this.currentTickCount = 0;
 			}
 			final Runnable enqueueGameData = () -> {
 				this.enqueueGameData();
@@ -221,7 +229,7 @@ public class RealmManagerServer implements Runnable {
 	private void sendGameData() {
 		final List<Packet> packetsToBroadcast = new ArrayList<>();
 		// TODO: Possibly rework this queue as we dont usually send stuff globally
-		while(!this.outboundPacketQueue.isEmpty()) {
+		while (!this.outboundPacketQueue.isEmpty()) {
 			packetsToBroadcast.add(this.outboundPacketQueue.remove());
 		}
 
@@ -246,7 +254,7 @@ public class RealmManagerServer implements Runnable {
 				for (final Packet packet : playerPackets) {
 					packet.serializeWrite(dosToClient);
 				}
-			}catch(Exception e) {
+			} catch (Exception e) {
 				disconnectedClients.add(client.getKey());
 				RealmManagerServer.log.error("Failed to get OutputStream to Client. Reason: {}", e);
 			}
@@ -259,6 +267,9 @@ public class RealmManagerServer implements Runnable {
 		final List<String> disconnectedClients = new ArrayList<>();
 		// TODO: Parallelize work for each realm
 		// For each realm we have to do work for
+
+		// Prevent concurrent modification errors by acquiring a semaphore lease
+		// while we are building the game data for this tick
 		this.acquireRealmLock();
 		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
 			final Realm realm = realmEntry.getValue();
@@ -342,23 +353,22 @@ public class RealmManagerServer implements Runnable {
 					}
 
 					// If the ObjectMove packet isnt empty
-					if(this.playerObjectMoveState.get(player.getKey())==null) {
+					if (this.playerObjectMoveState.get(player.getKey()) == null && movePacket != null) {
 						this.playerObjectMoveState.put(player.getKey(), movePacket);
 						this.enqueueServerPacket(player.getValue(), movePacket);
-					}else {
+					} else if (movePacket != null) {
 						final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
-						if(oldMove!=null && !oldMove.equals(movePacket)) {
-							//final ObjectMovePacket movediff = oldMove.getMoveDiff(movePacket);
+						if (oldMove != null && !oldMove.equals(movePacket)) {
 							this.playerObjectMoveState.put(player.getKey(), movePacket);
 							this.enqueueServerPacket(player.getValue(), movePacket);
 						}else {
-							this.playerObjectMoveState.put(player.getKey(), movePacket);
-							this.enqueueServerPacket(player.getValue(), movePacket);
+							final ObjectMovePacket moveDiff = oldMove.getMoveDiff(movePacket);
+							if(moveDiff!=null) {
+								this.playerObjectMoveState.put(player.getKey(), movePacket);
+								this.enqueueServerPacket(player.getValue(), movePacket);
+							}
 						}
 					}
-//					if(movePacket!=null && movePacket.getMovements().length>0) {
-//						this.enqueueServerPacket(player.getValue(), movePacket);
-//					}
 
 					// Used to dynamically re-render changed loot containers (chests) on the client
 					// if their contents change in a server tick (receive MoveItem packet from
@@ -379,10 +389,10 @@ public class RealmManagerServer implements Runnable {
 	// pass the packet and RealmManager context to the handler
 	// script
 	public void processServerPackets() {
-		for(final Map.Entry<String, ProcessingThread> thread : this.getServer().getClients().entrySet()) {
-			if(!thread.getValue().isShutdownProcessing()) {
+		for (final Map.Entry<String, ProcessingThread> thread : this.getServer().getClients().entrySet()) {
+			if (!thread.getValue().isShutdownProcessing()) {
 				// Read all packets from the ProcessingThread (client's) queue
-				while(!thread.getValue().getPacketQueue().isEmpty()) {
+				while (!thread.getValue().getPacketQueue().isEmpty()) {
 					final Packet packet = thread.getValue().getPacketQueue().remove();
 					try {
 						final Packet created = Packet.newInstance(packet.getId(), packet.getData());
@@ -391,21 +401,24 @@ public class RealmManagerServer implements Runnable {
 						this.packetCallbacksServer.get(created.getId()).accept(this, created);
 					} catch (Exception e) {
 						RealmManagerServer.log.error("Failed to process server packets {}", e);
+						thread.getValue().setShutdownProcessing(true);
 					}
 				}
-			}else {
+			} else {
 				// Player Disconnect routine
 				final Long dcPlayerId = this.getRemoteAddresses().get(thread.getKey());
-				if(dcPlayerId==null) {
+				if (dcPlayerId == null) {
 					thread.getValue().setShutdownProcessing(true);
 					return;
 				}
 				final Realm playerLocation = this.searchRealmsForPlayer(dcPlayerId);
-				final Player dcPlayer = playerLocation.getPlayer(dcPlayerId);
-				this.persistPlayerAsync(dcPlayer);
-				playerLocation.getExpiredPlayers().add(dcPlayerId);
+				if (playerLocation != null) {
+					final Player dcPlayer = playerLocation.getPlayer(dcPlayerId);
+					this.persistPlayerAsync(dcPlayer);
+					playerLocation.getExpiredPlayers().add(dcPlayerId);
+					playerLocation.getPlayers().remove(dcPlayerId);
+				}
 				this.server.getClients().remove(thread.getKey());
-				playerLocation.getPlayers().remove(dcPlayerId);
 			}
 		}
 	}
@@ -473,10 +486,9 @@ public class RealmManagerServer implements Runnable {
 		final List<Long> lootContainers = targetRealm.getLoot().values().stream()
 				.filter(lc -> lc.isExpired() || lc.isEmpty()).map(LootContainer::getLootContainerId)
 				.collect(Collectors.toList());
-		final List<Long> portals = targetRealm.getPortals().values().stream()
-				.filter(Portal::isExpired).map(Portal::getId)
-				.collect(Collectors.toList());
-		for(final Long lcId: lootContainers) {
+		final List<Long> portals = targetRealm.getPortals().values().stream().filter(Portal::isExpired)
+				.map(Portal::getId).collect(Collectors.toList());
+		for (final Long lcId : lootContainers) {
 			targetRealm.getLoot().remove(lcId);
 		}
 		for (final Long pId : portals) {
@@ -512,7 +524,7 @@ public class RealmManagerServer implements Runnable {
 		}
 		return result;
 	}
-	
+
 	public UseableItemScriptBase getItemScript(int itemId) {
 		UseableItemScriptBase result = null;
 		for (final UseableItemScriptBase itemScript : this.itemScripts) {
@@ -530,14 +542,16 @@ public class RealmManagerServer implements Runnable {
 	private void registerRealmDecorators() {
 		this.registerRealmDecoratorsReflection();
 	}
-	
+
 	private void registerRealmDecoratorsReflection() {
-		Set<Class<? extends RealmDecoratorBase>> subclasses = this.classPathScanner.getSubTypesOf(RealmDecoratorBase.class);
-		for(Class<? extends RealmDecoratorBase> clazz : subclasses) {
+		Set<Class<? extends RealmDecoratorBase>> subclasses = this.classPathScanner
+				.getSubTypesOf(RealmDecoratorBase.class);
+		for (Class<? extends RealmDecoratorBase> clazz : subclasses) {
 			try {
-				final RealmDecoratorBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class).newInstance(this);
+				final RealmDecoratorBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class)
+						.newInstance(this);
 				this.realmDecorators.add(realmDecoratorInstance);
-			}catch(Exception e) {
+			} catch (Exception e) {
 				log.error("Failed to register realm decorator for script {}. Reason: {}", clazz, e.getMessage());
 			}
 		}
@@ -546,66 +560,73 @@ public class RealmManagerServer implements Runnable {
 	private void registerEnemyScripts() {
 		this.registerEnemyScriptsReflection();
 	}
-	
+
 	private void registerEnemyScriptsReflection() {
 		Set<Class<? extends EnemyScriptBase>> subclasses = this.classPathScanner.getSubTypesOf(EnemyScriptBase.class);
-		for(Class<? extends EnemyScriptBase> clazz : subclasses) {
+		for (Class<? extends EnemyScriptBase> clazz : subclasses) {
 			try {
-				final EnemyScriptBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class).newInstance(this);
+				final EnemyScriptBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class)
+						.newInstance(this);
 				this.enemyScripts.add(realmDecoratorInstance);
-			}catch(Exception e) {
+			} catch (Exception e) {
 				log.error("Failed to register enemy script for script {}. Reason: {}", clazz, e.getMessage());
 			}
 		}
 	}
-	
+
 	private void registerItemScripts() {
 		this.registerItemScriptsReflection();
 	}
-	
+
 	private void registerItemScriptsReflection() {
-		Set<Class<? extends UseableItemScriptBase>> subclasses = this.classPathScanner.getSubTypesOf(UseableItemScriptBase.class);
-		for(Class<? extends UseableItemScriptBase> clazz : subclasses) {
+		Set<Class<? extends UseableItemScriptBase>> subclasses = this.classPathScanner
+				.getSubTypesOf(UseableItemScriptBase.class);
+		for (Class<? extends UseableItemScriptBase> clazz : subclasses) {
 			try {
-				final UseableItemScriptBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class).newInstance(this);
+				final UseableItemScriptBase realmDecoratorInstance = clazz
+						.getDeclaredConstructor(RealmManagerServer.class).newInstance(this);
 				this.itemScripts.add(realmDecoratorInstance);
-			}catch(Exception e) {
+			} catch (Exception e) {
 				log.error("Failed to register useable item script for script {}. Reason: {}", clazz, e.getMessage());
 			}
 		}
 	}
 
 	private void registerCommandHandlersReflection() {
-		// Target method signature. ex. public static void myMethod(RealmManagerServer, Player, ServerCommandMessage)
-		final MethodType mt = MethodType.methodType(void.class, RealmManagerServer.class, Player.class, ServerCommandMessage.class);
+		// Target method signature. ex. public static void myMethod(RealmManagerServer,
+		// Player, ServerCommandMessage)
+		final MethodType mt = MethodType.methodType(void.class, RealmManagerServer.class, Player.class,
+				ServerCommandMessage.class);
 		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(CommandHandler.class);
-		for(final Method method : subclasses) {
+		for (final Method method : subclasses) {
 			try {
 				// Get the annotation on the method
 				final CommandHandler commandToHandle = method.getDeclaredAnnotation(CommandHandler.class);
 				// Find the static method with given name in the target class
-				final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerCommandHandler.class, method.getName(), mt);
-				if(handleToHandler!=null) {
+				final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerCommandHandler.class,
+						method.getName(), mt);
+				if (handleToHandler != null) {
 					ServerCommandHandler.COMMAND_CALLBACKS.put(commandToHandle.value(), handleToHandler);
 				}
-			}catch(Exception e) {
-				log.error("Failed to get MethodHandle to method {}. Reason: {}",method.getName(), e);
+			} catch (Exception e) {
+				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
 			}
 		}
 	}
-	
+
 	private void registerPacketCallbacksReflection() {
 		final MethodType mt = MethodType.methodType(Void.class, RealmManagerServer.class, Packet.class);
 		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandler.class);
-		for(final Method method : subclasses) {
+		for (final Method method : subclasses) {
 			try {
 				final PacketHandler packetToHandle = method.getDeclaredAnnotation(PacketHandler.class);
-				final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerGameLogic.class, method.getName(), mt);
-				if(handleToHandler!=null) {
-					//registerPacketCallback(commandToHandle.packetId(), handle)
+				final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerGameLogic.class,
+						method.getName(), mt);
+				if (handleToHandler != null) {
+					// registerPacketCallback(commandToHandle.packetId(), handle)
 				}
-			}catch(Exception e) {
-				log.error("Failed to get MethodHandle to method {}. Reason: {}",method.getName(), e);
+			} catch (Exception e) {
+				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
 			}
 		}
 	}
@@ -741,10 +762,9 @@ public class RealmManagerServer implements Runnable {
 					source = dest;
 				}
 				this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
-						p.getProjectileId(),
-						source.clone(-offset, -offset), angle+Float.parseFloat(p.getAngle()), p.getSize(),
-						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
-						p.getFrequency());
+						p.getProjectileId(), source.clone(-offset, -offset), angle + Float.parseFloat(p.getAngle()),
+						p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(),
+						p.getAmplitude(), p.getFrequency());
 			}
 		} else if ((abilityItem.getDamage() != null)) {
 			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
@@ -756,19 +776,18 @@ public class RealmManagerServer implements Runnable {
 				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
 				this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
-						p.getProjectileId(),
-						dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(), p.getMagnitude(),
-						p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(), p.getFrequency());
+						p.getProjectileId(), dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
+						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
+						p.getFrequency());
 			}
-			
-		
+
 			// If the ability is non damaging (rogue cloak, priest tome)
 		} else if (abilityItem.getEffect() != null) {
-			player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());	
+			player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
 		}
-		
+
 		UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
-		if(script!=null) {
+		if (script != null) {
 			script.invokeItemAbility(targetRealm, player, abilityItem);
 		}
 	}
@@ -845,6 +864,7 @@ public class RealmManagerServer implements Runnable {
 		}
 		this.proccessTerrainHit(realmId, p);
 	}
+
 	// This may not need to be synchronized
 	// Enqueues a server packet to be transmitted to all players
 	public synchronized void enqueueServerPacket(final Packet packet) {
@@ -919,7 +939,7 @@ public class RealmManagerServer implements Runnable {
 					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "PARALYZED");
 					p.setDx(0);
 					p.setDy(0);
-					p.addEffect(EffectType.PARALYZED, 2500);
+					p.addEffect(EffectType.PARALYZED, 1500);
 				}
 			}
 
@@ -985,9 +1005,8 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
-			final int projectileGroupId,
-			final Vector2f src, final Vector2f dest, final short size, final float magnitude, final float range, short damage, final boolean isEnemy,
-			final List<Short> flags) {
+			final int projectileGroupId, final Vector2f src, final Vector2f dest, final short size,
+			final float magnitude, final float range, short damage, final boolean isEnemy, final List<Short> flags) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Player player = targetRealm.getPlayer(targetPlayerId);
 		if (player == null)
@@ -1005,9 +1024,9 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
-			final int projectileGroupId,
-			final Vector2f src, final float angle, final short size, final float magnitude, final float range, short damage, final boolean isEnemy,
-			final List<Short> flags, final short amplitude, final short frequency) {
+			final int projectileGroupId, final Vector2f src, final float angle, final short size, final float magnitude,
+			final float range, short damage, final boolean isEnemy, final List<Short> flags, final short amplitude,
+			final short frequency) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Player player = targetRealm.getPlayer(targetPlayerId);
 		if (player == null)
@@ -1061,23 +1080,18 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.spawnRandomEnemy();
 			}
 			targetRealm.removeEnemy(enemy);
-
-			if (Realm.RANDOM.nextInt(10) < 1) {
-				if (targetRealm.getMapId() == 4) {
-					targetRealm.addPortal(
-							new Portal(Realm.RANDOM.nextLong(), (short) 0, enemy.getPos().withNoise(64, 64)));
-				} else if (targetRealm.getMapId() == 2) {
-					targetRealm.addPortal(
-							new Portal(Realm.RANDOM.nextLong(), (short) 3, enemy.getPos().withNoise(64, 64)));
-				} else if (targetRealm.getMapId() == 3) {
-					targetRealm.addPortal(
-							new Portal(Realm.RANDOM.nextLong(), (short) 4, enemy.getPos().withNoise(64, 64)));
-				}
+			// TODO: Possibly rewrite portal drops to come from loot table
+			if (targetRealm.getMapId() != 5 && Realm.RANDOM.nextInt(10) < 1) {
+				final PortalModel portalModel = this.getPortalToDepth(targetRealm.getDepth() + 1);
+				final Portal toNewRealmPortal = new Portal(Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(),
+						enemy.getPos().withNoise(64, 64));
+				toNewRealmPortal.linkPortal(targetRealm, null);
+				targetRealm.addPortal(toNewRealmPortal);
 			}
 
 			// Try to get the loot model mapped by this enemyId
 			final LootTableModel lootTable = GameDataManager.LOOT_TABLES.get(enemy.getEnemyId());
-			if(lootTable==null) {
+			if (lootTable == null) {
 				log.warn("No loot table registered for enemy {}", enemy.getEnemyId());
 				throw new IllegalStateException("No loot table registered for enemy " + enemy.getEnemyId());
 			}
@@ -1101,6 +1115,7 @@ public class RealmManagerServer implements Runnable {
 			targetRealm.addLootContainer(graveLoot);
 			targetRealm.getExpiredPlayers().add(player.getId());
 			targetRealm.removePlayer(player);
+			if(player.isHeadless()) return;
 			this.enqueueServerPacket(player, PlayerDeathPacket.from());
 			if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
 				ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + player.getCharacterUuid(),
@@ -1125,6 +1140,11 @@ public class RealmManagerServer implements Runnable {
 		this.playerUnloadState.remove(playerId);
 		this.playerLoadMapState.remove(playerId);
 		this.playerObjectMoveState.remove(playerId);
+	}
+
+	public PortalModel getPortalToDepth(int targetDepth) {
+		return GameDataManager.PORTALS.values().stream().filter(portal -> portal.getTargetRealmDepth() == targetDepth)
+				.findAny().get();
 	}
 
 	public Map<Long, String> getRemoteAddressMapRevered() {
@@ -1153,34 +1173,37 @@ public class RealmManagerServer implements Runnable {
 		}
 		return found;
 	}
-	
+
+	public Optional<Realm> findRealmAtDepth(int depth) {
+		return this.getRealms().values().stream().filter(realm -> realm.getDepth() == (depth + 1)).findAny();
+	}
+
 	public Player searchRealmsForPlayer(String playerName) {
 		Player found = null;
 		for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
 			for (Player player : realm.getValue().getPlayers().values()) {
-				if (player.getName()!=null && player.getName().equalsIgnoreCase(playerName)) {
+				if (player.getName() != null && player.getName().equalsIgnoreCase(playerName)) {
 					found = player;
 				}
 			}
 		}
 		return found;
 	}
-	
 
 	private void beginPlayerSync() {
-		final Runnable playerSync = () ->{
+		final Runnable playerSync = () -> {
 			try {
 				while (!this.shutdown) {
-					Thread.sleep(20000);
+					Thread.sleep(12000);
 					RealmManagerServer.log.info("Performing asynchronous player data sync.");
 					this.persistsPlayersAsync();
 				}
-			}catch(Exception e) {
+			} catch (Exception e) {
 				RealmManagerServer.log.error("Failed to perform player data sync.");
 			}
 		};
 
-		//Thread syncThread = new Thread(playerSync);
+		// Thread syncThread = new Thread(playerSync);
 		WorkerThread.submitAndForkRun(playerSync);
 	}
 
@@ -1203,14 +1226,15 @@ public class RealmManagerServer implements Runnable {
 		};
 		WorkerThread.doAsync(persist);
 	}
-	
+
 	public void safeRemoveRealm(final Realm realm) {
 		this.safeRemoveRealm(realm.getRealmId());
 	}
-	
+
 	public void safeRemoveRealm(final long realmId) {
 		this.acquireRealmLock();
-		this.realms.remove(realmId);
+		Realm realm = this.realms.remove(realmId);
+		realm.setShutdown(true);
 		this.releaseRealmLock();
 	}
 
@@ -1277,12 +1301,12 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 	}
-	
+
 	private void acquireRealmLock() {
 		try {
 			this.realmLock.acquire();
 		} catch (Exception e) {
-			log.error(e.getMessage());
+			log.error("Failed to acquire the realm lock. Reason: {}", e.getMessage());
 		}
 	}
 
@@ -1290,7 +1314,7 @@ public class RealmManagerServer implements Runnable {
 		try {
 			this.realmLock.release();
 		} catch (Exception e) {
-			log.error(e.getMessage());
+			log.error("Failed to release the realm lock. Reason: {}", e.getMessage());
 		}
 	}
 }

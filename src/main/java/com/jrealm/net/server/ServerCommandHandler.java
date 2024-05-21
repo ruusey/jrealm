@@ -23,8 +23,8 @@ import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.util.CommandHandler;
 import com.jrealm.game.util.GameObjectUtils;
-import com.jrealm.game.util.TriConsumer;
 import com.jrealm.net.server.packet.CommandPacket;
+import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,13 +53,9 @@ public class ServerCommandHandler {
 						"Unknown command " + message.getCommand());
 				mgr.enqueueServerPacket(fromPlayer, errorResponse);
 			}else {
-				try {
-					methodHandle.invokeExact(mgr, fromPlayer, message);
-				}catch(Throwable e) {
-					log.error("Failed to invoke MethodHandle for command {}. Reason: {}",message.getCommand().toLowerCase(), e);
-				}
+				methodHandle.invokeExact(mgr, fromPlayer, message);
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			log.error("Failed to handle server command. Reason: {}", e.getMessage());
 			final CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 502, e.getMessage());
 			mgr.enqueueServerPacket(fromPlayer, errorResponse);
@@ -107,8 +103,28 @@ public class ServerCommandHandler {
 		}
 	}
 	
+	@CommandHandler("testplayers")
+	public static void invokeSpawnTest(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
+		if(message.getArgs()==null || message.getArgs().size()!=1) 
+			throw new IllegalArgumentException("Usage: /testplayers {COUNT}");
+		
+		log.info("Player {} spawn {} players  at {}", target.getName(), message.getArgs().get(0), target.getPos());
+		mgr.spawnTestPlayers(mgr.getTopRealm().getRealmId(), Integer.parseInt(message.getArgs().get(0)), target.getPos().clone());
+	}
+	
+	@CommandHandler("help")
+	public static void invokeHelp(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
+		String commandHelpText = "Available Commands:   ";
+		for(String commandHandlerKey : COMMAND_CALLBACKS.keySet()) {
+			commandHelpText+="/"+commandHandlerKey+"     ";
+		}
+		TextPacket commandHelp = TextPacket.from("SYSTEM", target.getName(),commandHelpText );
+		mgr.enqueueServerPacket(target, commandHelp);
+		log.info("Player {} request command help.", commandHelp);
+	}
+	
 	@CommandHandler("spawn")
-	public static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
 		if(message.getArgs()==null || message.getArgs().size()!=1) 
 			throw new IllegalArgumentException("Usage: /spawn {ENEMY_ID}");
 		
@@ -119,7 +135,7 @@ public class ServerCommandHandler {
 	}
 
 	@CommandHandler("seteffect")
-	public static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /seteffect {add | clear} {EFFECT_ID} {DURATION (sec)}");
 		log.info("Player {} set effect {}", target.getName(), message);
@@ -135,7 +151,7 @@ public class ServerCommandHandler {
 	}
 	
 	@CommandHandler("tp")
-	public static void invokeTeleport(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeTeleport(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /tp {PLAYER_NAME}. /tp {X_CORD} {Y_CORD}");
 		
@@ -158,7 +174,7 @@ public class ServerCommandHandler {
 	}
 	
 	@CommandHandler("item")
-	public static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception  {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /item {ITEM_ID}");
 		log.info("Player {} spawn item {}", target.getName(), message);
@@ -173,39 +189,36 @@ public class ServerCommandHandler {
 	}
 	
 	@CommandHandler("realm")
-	public static void invokeRealmMove(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+	public static void invokeRealmMove(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception  {
 		if (message.getArgs()==null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /realm {up | down}");
 		
 		final Realm targetRealm = mgr.searchRealmsForPlayer(target.getId());
-		final PortalModel bossPortal = GameDataManager.PORTALS.get(4);
-		final Realm generatedRealm = new Realm(true, bossPortal.getMapId());
+		final PortalModel bossPortal = GameDataManager.PORTALS.get(5);
+		final Realm generatedRealm = new Realm(true, bossPortal.getMapId(), bossPortal.getTargetRealmDepth());
 		final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
 				GlobalConstants.BASE_TILE_SIZE * 13);
-		final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 2, spawnPos.clone(250, 0));
+		final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, spawnPos.clone(250, 0));
 		if(message.getArgs().get(0).equalsIgnoreCase("up")) {
-			generatedRealm.setDepth(targetRealm.getDepth()+1);
-		
 			target.setPos(spawnPos);
 			Enemy enemy = GameObjectUtils.getEnemyFromId(13, spawnPos);
 			int healthMult = (4);
 			enemy.setHealth(enemy.getHealth() * healthMult);
 			enemy.setPos(spawnPos.clone(200, 0));
 			generatedRealm.addEnemy(enemy);
-			exitPortal.setId(mgr.getTopRealm().getRealmId());
+			exitPortal.linkPortal(generatedRealm, mgr.getTopRealm());
 			exitPortal.setNeverExpires();
 			generatedRealm.addPortal(exitPortal);
 			generatedRealm.addPlayer(target);
 			mgr.addRealm(generatedRealm);
 		}else if(message.getArgs().get(0).equalsIgnoreCase("down")) {
-			generatedRealm.setDepth(targetRealm.getDepth()+1);
 			target.setPos(spawnPos);
 			Enemy enemy = GameObjectUtils.getEnemyFromId(13, spawnPos);
 			int healthMult = (4);
 			enemy.setHealth(enemy.getHealth() * healthMult);
 			enemy.setPos(spawnPos.clone(200, 0));
 			generatedRealm.addEnemy(enemy);
-			exitPortal.setId(mgr.getTopRealm().getRealmId());
+			exitPortal.linkPortal(generatedRealm, mgr.getTopRealm());
 			exitPortal.setNeverExpires();
 			generatedRealm.addPortal(exitPortal);
 			generatedRealm.addPlayer(target);

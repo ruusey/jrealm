@@ -184,6 +184,16 @@ public class LootContainer implements Streamable<LootContainer> {
 		return container;
 
 	}
+	
+	public int getNonEmptySlotCount() {
+		int count = 0;
+		for(GameItem s : this.getItems()) {
+			if(s!=null) {
+				count++;
+			}
+		}
+		return count;
+	}
 
 	public static GameItem[] getCondensedItems(LootContainer container) {
 		List<GameItem> items = new ArrayList<>();

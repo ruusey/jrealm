@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
@@ -71,7 +70,7 @@ public class Realm {
 	private Semaphore playerLock = new Semaphore(1);
 
 	private boolean isServer;
-
+	private boolean shutdown = false;
 	public Realm(boolean isServer, int mapId) {
 		this.depth = 0;
 		this.realmId = Realm.RANDOM.nextLong();
@@ -85,6 +84,11 @@ public class Realm {
 		if(this.isServer) {
 			WorkerThread.submit(this.getStatsThread());
 		}
+	}
+	
+	public Realm(boolean isServer, int mapId, int depth) {
+		this(isServer, mapId);
+		this.depth = depth;
 	}
 
 	public int getDepth() {
@@ -583,7 +587,7 @@ public class Realm {
 
 	private Thread getStatsThread() {
 		Runnable r = () -> {
-			while (true) {
+			while (!this.shutdown) {
 				double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
 				Realm.log.info("--- Realm: {} | MapId: {} ---", this.getRealmId(), this.getMapId());
 				Realm.log.info("Enemies: {}", this.enemies.size());
@@ -600,6 +604,7 @@ public class Realm {
 
 				}
 			}
+			log.info("Realm {} destroyed", this.getRealmId());
 		};
 		return new Thread(r);
 	}

@@ -107,6 +107,16 @@ public class PlayerUI {
 			this.buildGroundLootSlotButton(i, item, g);
 		}
 	}
+	
+	public int getNonEmptySlotCount() {
+		int count = 0;
+		for(Slots s : this.getGroundLoot()) {
+			if(s!=null && s.getItem()!=null) {
+				count++;
+			}
+		}
+		return count;
+	}
 
 	private void buildGroundLootSlotButton(int index, GameItem item, Graphics2D g) {
 		int panelWidth = (GamePanel.width / 5);

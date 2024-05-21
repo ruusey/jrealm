@@ -52,6 +52,7 @@
 			<url>https://maven.pkg.github.com/ruusey/jrealm</url>
 		</repository>
 	</distributionManagement>
+
 	<build>
 		<finalName>jrealm-${project.version}</finalName>
 		<plugins>

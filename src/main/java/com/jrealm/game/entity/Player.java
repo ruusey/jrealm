@@ -230,12 +230,13 @@ public class Player extends Entity implements Streamable<Player>{
 
 	@Override
 	public void render(Graphics2D g) {
-		Color c = new Color(0f, 0f, 0f, 1f);
+		Color c = new Color(0f, 0f, 0f, 0.35f);
 		g.setColor(c);
 		java.awt.Font currentFont = g.getFont();
 		java.awt.Font newFont = currentFont.deriveFont(currentFont.getSize() * 0.50F);
 		g.setFont(newFont);
 		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 24, this.size, this.size / 2);
+		g.setColor(Color.BLACK);
 		if(this.getName()!=null) {
 			g.drawString(this.getName(), (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 64);
 		}
