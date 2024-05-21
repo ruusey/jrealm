@@ -6,8 +6,12 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -137,7 +141,7 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	// Adds a specified amount of random headless players
-	public void spawnTestPlayers(final long realmId, final int count) {
+	public void spawnTestPlayers(final long realmId, final int count, final Vector2f pos) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Runnable spawnTestPlayers = () -> {
 			final Random random = new Random(Instant.now().toEpochMilli());
@@ -146,7 +150,7 @@ public class RealmManagerServer implements Runnable {
 						.get(random.nextInt(CharacterClass.getCharacterClasses().size()));
 				try {
 					final Vector2f spawnPos = targetRealm.getTileManager().getSafePosition();
-					final Player player = new Player(Realm.RANDOM.nextLong(), spawnPos, GlobalConstants.PLAYER_SIZE,
+					final Player player = new Player(Realm.RANDOM.nextLong(), pos, GlobalConstants.PLAYER_SIZE,
 							classToSpawn);
 					String playerName = UUID.randomUUID().toString().replaceAll("-", "");
 					playerName = playerName.substring(playerName.length() / 2);
@@ -1111,6 +1115,7 @@ public class RealmManagerServer implements Runnable {
 			targetRealm.addLootContainer(graveLoot);
 			targetRealm.getExpiredPlayers().add(player.getId());
 			targetRealm.removePlayer(player);
+			if(player.isHeadless()) return;
 			this.enqueueServerPacket(player, PlayerDeathPacket.from());
 			if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
 				ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + player.getCharacterUuid(),

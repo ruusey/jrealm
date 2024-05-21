@@ -384,7 +384,7 @@ public class ServerGameLogic {
 			player.setPos(targetRealm.getTileManager().getSafePosition());
 			targetRealm.addPlayer(player);
 			mgr.getServer().getClients().get(command.getSrcIp()).setHandshakeComplete(true);
-
+			
 			final LoginResponseMessage message = LoginResponseMessage.builder()
 					.classId(targetCharacter.getCharacterClass()).spawnX(player.getPos().x).spawnY(player.getPos().y)
 					.playerId(player.getId()).success(true).account(account)

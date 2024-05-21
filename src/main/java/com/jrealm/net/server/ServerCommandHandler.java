@@ -103,6 +103,15 @@ public class ServerCommandHandler {
 		}
 	}
 	
+	@CommandHandler("testplayers")
+	public static void invokeSpawnTest(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
+		if(message.getArgs()==null || message.getArgs().size()!=1) 
+			throw new IllegalArgumentException("Usage: /testplayers {COUNT}");
+		
+		log.info("Player {} spawn {} players  at {}", target.getName(), message.getArgs().get(0), target.getPos());
+		mgr.spawnTestPlayers(mgr.getTopRealm().getRealmId(), Integer.parseInt(message.getArgs().get(0)), target.getPos().clone());
+	}
+	
 	@CommandHandler("help")
 	public static void invokeHelp(RealmManagerServer mgr, Player target, ServerCommandMessage message) throws Exception {
 		String commandHelpText = "Available Commands:   ";
