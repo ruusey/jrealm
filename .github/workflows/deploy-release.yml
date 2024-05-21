@@ -4,11 +4,13 @@
 name: Maven Package
 
 on:
-  push:
+  pull_request:
+    types: [ labeled ]
     branches:
       - main
 jobs:
   build:
+    if: ${{ github.event.pull_request.label.name == 'release' }}
 
     runs-on: ubuntu-latest
     permissions:
@@ -33,12 +35,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
     - name: Create release
+      run: |
+        gh release create "$tag" \
+            --title="${GITHUB_REPOSITORY#*/}" "$tag" \
+            --generate-notes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        tag: ${{ github.ref_name }}
-      run: |
-        gh release create ${{ github.event.pull_request.title }} \
-            --repo="$GITHUB_REPOSITORY" \
-            --title="${GITHUB_REPOSITORY#*/}" ${{ github.event.pull_request.title }} \
-            --generate-notes
-
+        tag: ${{ github.event.pull_request.labels.*.name }}
