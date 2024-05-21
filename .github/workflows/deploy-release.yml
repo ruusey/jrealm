@@ -40,4 +40,4 @@ jobs:
             --generate-notes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        tag: ${{ github.event.pull_request.labels.*.name }}
+        tag: join(github.event.issue.labels.*.name, '-')
