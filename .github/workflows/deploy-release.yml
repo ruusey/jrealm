@@ -10,8 +10,7 @@ on:
       - main
 jobs:
   build:
-    if: ${{ github.event.pull_request.label.name == 'release' }}
-
+    if: contains(github.event.pull_request.labels.*.name, 'release')
     runs-on: ubuntu-latest
     permissions:
       contents: read
