@@ -39,6 +39,6 @@ jobs:
       run: |
         gh release create ${{ github.event.pull_request.title }} \
             --repo="$GITHUB_REPOSITORY" \
-            --title="${GITHUB_REPOSITORY#*/} ${{ github.event.pull_request.title }} \
+            --title="${GITHUB_REPOSITORY#*/}" ${{ github.event.pull_request.title }} \
             --generate-notes
 
