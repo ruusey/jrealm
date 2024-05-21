@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.jrealm.game</groupId>
 	<artifactId>jrealm</artifactId>
-	<version>0.3.3</version>
+	<version>0.3.4</version>
 	<properties>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
@@ -12,9 +12,9 @@
 	</properties>
 	<dependencies>
 		<dependency>
-		    <groupId>org.reflections</groupId>
-		    <artifactId>reflections</artifactId>
-		    <version>0.10.2</version>
+			<groupId>org.reflections</groupId>
+			<artifactId>reflections</artifactId>
+			<version>0.10.2</version>
 		</dependency>
 
 		<dependency>
@@ -45,6 +45,13 @@
 		</dependency>
 
 	</dependencies>
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/ruusey/jrealm</url>
+		</repository>
+	</distributionManagement>
 	<build>
 		<finalName>jrealm-${project.version}</finalName>
 		<plugins>
