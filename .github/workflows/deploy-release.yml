@@ -35,9 +35,9 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
     - name: Create release
       run: |
-        gh release create "$tag" \
-            --title="${GITHUB_REPOSITORY#*/}" "$tag" \
+        gh release create $tag \
+            --title="${GITHUB_REPOSITORY#*/}" $tag \
             --generate-notes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        tag: join(github.event.issue.labels.*.name, '-')
+        tag: ${{join(github.event.issue.labels.*.name, '-')}}
