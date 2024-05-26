@@ -33,8 +33,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ steps.version.outputs.version }}
+        tag_name: ${{ join(github.event.pull_request.labels.*.name, '-') }}
+        release_name: ${{ join(github.event.pull_request.labels.*.name, '-') }}
         draft: false
         prerelease: false
     - name: Upload Release Asset
