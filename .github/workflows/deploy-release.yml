@@ -4,16 +4,16 @@
 name: Maven Package
 
 on:
-  pull_request:
+  push:
     branches:
       - main
 jobs:
-  build:
+  build-release:
+    if: contains(github.event.pull_request.labels.*.name, 'release')
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 11
@@ -23,10 +23,8 @@ jobs:
         distribution: 'temurin'
         server-id: github
         settings-path: ${{ github.workspace }} # location for the settings.xml file
-
     - name: Build with Maven
       run: mvn -B package --file pom.xml
-
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -37,9 +35,11 @@ jobs:
         release_name: ${{ join(github.event.pull_request.labels.*.name, '-') }}
         draft: false
         prerelease: false
-        body: ${{ steps.create_release.outputs.upload_url }}
+        body: |
+          JRealm 
+          ${{ join(github.event.pull_request.labels.*.name, '-') }}
     - name: Upload Release Asset
-      id: upload-release-asset 
+      id: upload_release_asset 
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
