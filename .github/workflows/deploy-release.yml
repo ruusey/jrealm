@@ -4,17 +4,16 @@
 name: Maven Package
 
 on:
-  pull_request:
+  push:
     branches:
       - main
- 
 jobs:
-  build:
+  build-release:
+    if: contains(github.event.pull_request.labels.*.name, 'release')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 11
@@ -24,22 +23,23 @@ jobs:
         distribution: 'temurin'
         server-id: github
         settings-path: ${{ github.workspace }} # location for the settings.xml file
-
     - name: Build with Maven
       run: mvn -B package --file pom.xml
-
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
+        tag_name: ${{ join(github.event.pull_request.labels.*.name, '-') }}
+        release_name: ${{ join(github.event.pull_request.labels.*.name, '-') }}
         draft: false
         prerelease: false
+        body: |
+          JRealm 
+          ${{ join(github.event.pull_request.labels.*.name, '-') }}
     - name: Upload Release Asset
-      id: upload-release-asset 
+      id: upload_release_asset 
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -47,4 +47,5 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./target/jrealm-0.3.4-jar-with-dependencies.jar
         asset_name: jrealm-0.3.4.jar
+        asset_content_type: application/java-archive
     
