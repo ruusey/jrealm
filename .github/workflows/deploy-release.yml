@@ -48,7 +48,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./target/jrealm-0.3.4-jar-with-dependencies.jar
-        asset_name: jrealm-0.3.4.jar
+        asset_path: ./target/jrealm.jar
+        asset_name: ${{ join(github.event.pull_request.labels.*.name, '-') }}.jar
         asset_content_type: application/java-archive
     
