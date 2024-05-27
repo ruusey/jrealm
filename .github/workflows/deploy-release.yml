@@ -12,7 +12,7 @@ on:
       - main
 jobs:
   build:
-    if: (contains(github.event.pull_request.labels.*.name, 'release') && github.event.pull_request.merged == 'true')
+    if: contains(github.event.pull_request.labels.*.name, 'release')
     runs-on: ubuntu-latest
     permissions:
       contents: write
