@@ -1,14 +1,17 @@
 # This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
 # For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
 
-name: Maven Package
+name: Build Jrealm
 
 on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
 jobs:
-  build-release:
+  build:
     if: contains(github.event.pull_request.labels.*.name, 'release') && github.event.pull_request.merged == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -32,7 +35,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ join(github.event.pull_request.labels.*.name, '-') }}
-        release_name: ${{ join(github.event.pull_request.labels.*.name, '-') }}
+        release_name: JRealm-${{ join(github.event.pull_request.labels.*.name, '-') }}
         draft: false
         prerelease: false
         body: |
