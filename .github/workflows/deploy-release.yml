@@ -4,12 +4,12 @@
 name: Maven Package
 
 on:
-  push:
+  pull_request:
     branches:
       - main
 jobs:
   build-release:
-    if: contains(github.event.pull_request.labels.*.name, 'release')
+    if: contains(github.event.pull_request.labels.*.name, 'release') && github.event.pull_request.merged == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
