@@ -1082,11 +1082,18 @@ public class RealmManagerServer implements Runnable {
 			targetRealm.removeEnemy(enemy);
 			// TODO: Possibly rewrite portal drops to come from loot table
 			if (targetRealm.getMapId() != 5 && Realm.RANDOM.nextInt(10) < 1) {
-				final PortalModel portalModel = this.getPortalToDepth(targetRealm.getDepth() + 1);
-				final Portal toNewRealmPortal = new Portal(Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(),
-						enemy.getPos().withNoise(64, 64));
+
+			    final PortalModel portalModel = this.getPortalToDepth(targetRealm.getDepth() + 1);
+			    final Portal toNewRealmPortal = new Portal(Realm.RANDOM.nextLong(),
+				    (short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
+			    Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth());
+			    if (realmAtDepth.isEmpty()) {
 				toNewRealmPortal.linkPortal(targetRealm, null);
-				targetRealm.addPortal(toNewRealmPortal);
+
+			    } else {
+				toNewRealmPortal.linkPortal(targetRealm, realmAtDepth.get());
+			    }
+			    targetRealm.addPortal(toNewRealmPortal);
 			}
 
 			// Try to get the loot model mapped by this enemyId
