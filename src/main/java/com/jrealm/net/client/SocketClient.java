@@ -47,6 +47,7 @@ public class SocketClient implements Runnable {
 	public SocketClient(String targetHost, int port) {
 		try {
 			this.clientSocket = new Socket(targetHost, port);
+			this.clientSocket.setTcpNoDelay(true);
 		} catch (Exception e) {
 			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
 		}
@@ -70,13 +71,13 @@ public class SocketClient implements Runnable {
 		};
 		TimedWorkerThread readThread = new TimedWorkerThread(readPackets, 64);
 		TimedWorkerThread sendThread = new TimedWorkerThread(sendPackets, 64);
-		sendThread.start();
-		readThread.start();
+		WorkerThread.submitAndForkRun(readThread, sendThread);
 	}
 
 	private void readPackets() {
 		try {
 			InputStream stream = this.clientSocket.getInputStream();
+
 			int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
 					this.remoteBuffer.length - this.remoteBufferIndex);
 			this.lastDataTime = System.currentTimeMillis();

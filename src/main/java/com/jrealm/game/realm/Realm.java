@@ -82,7 +82,7 @@ public class Realm {
 		this.playerLastShotTime = new HashMap<>();
 		this.loadMap(mapId);
 		if(this.isServer) {
-			WorkerThread.submit(this.getStatsThread());
+			WorkerThread.submitAndForkRun(this.getStatsThread());
 		}
 	}
 	
@@ -585,7 +585,7 @@ public class Realm {
 		this.addEnemy(enemy);
 	}
 
-	private Thread getStatsThread() {
+	private Runnable getStatsThread() {
 		Runnable r = () -> {
 			while (!this.shutdown) {
 				double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
@@ -606,7 +606,7 @@ public class Realm {
 			}
 			log.info("Realm {} destroyed", this.getRealmId());
 		};
-		return new Thread(r);
+		return r;
 	}
 
 	private void acquirePlayerLock() {

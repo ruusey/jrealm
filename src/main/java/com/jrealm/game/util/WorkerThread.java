@@ -9,13 +9,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class WorkerThread extends Thread {
-	private static final int THREAD_POOL_COUNT = 70;
+	private static final int THREAD_POOL_COUNT = 40;
 	private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(WorkerThread.THREAD_POOL_COUNT,
 			Executors.privilegedThreadFactory());
 
 	public static CompletableFuture<?> submit(Runnable runnable) {
 		if(runnable == null) return null;
-
 		return CompletableFuture.runAsync(runnable, WorkerThread.executor);
 	}
 	
@@ -35,6 +34,12 @@ public class WorkerThread extends Thread {
 
 		WorkerThread.executor.execute(runnable);
 	}
+	
+	public static void submitRunnable(Runnable runnable) {
+		if(runnable == null) return;
+
+		WorkerThread.executor.execute(runnable);
+	}
 
 	public static void allOf(CompletableFuture<?>... futures) {
 		if(futures == null) return;
@@ -43,7 +48,7 @@ public class WorkerThread extends Thread {
 		try {
 			//			 WorkerThread.log.info("Completing {} asynchronous tasks",
 			//			futures.length);
-			cf.get();
+			cf.join();
 		} catch (Exception e) {
 			WorkerThread.log.error("Failed to complete async tasks {}", e);
 		}
@@ -65,7 +70,7 @@ public class WorkerThread extends Thread {
 		if(runnables == null) return;
 
 		for (int i = 0; i < runnables.length; i++) {
-			WorkerThread.submit(new Thread(runnables[i]));
+			WorkerThread.submit(runnables[i]);
 		}
 	}
 }

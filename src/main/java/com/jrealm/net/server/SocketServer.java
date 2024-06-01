@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 
 import lombok.Data;
@@ -39,10 +40,12 @@ public class SocketServer implements Runnable {
 			while (!this.shutdownSocketAccept) {
 				try {
 					Socket socket = this.serverSocket.accept();
+					socket.setTcpNoDelay(true);
+
 					String remoteAddr = socket.getInetAddress().getHostAddress();
-					ProcessingThread procesingThread = new ProcessingThread(this, socket);
-					this.clients.put(remoteAddr, procesingThread);
-					procesingThread.start();
+					ProcessingThread processingThread = new ProcessingThread(this, socket);
+					this.clients.put(remoteAddr, processingThread);
+					processingThread.start();
 					SocketServer.log.info("Server accepted new connection from Remote Address {}", remoteAddr);
 				} catch (Exception e) {
 					SocketServer.log.error("Failed to accept incoming socket connection, exiting...", e);
