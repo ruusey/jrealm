@@ -1,5 +1,6 @@
 package com.jrealm.net.server;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketException;
@@ -47,6 +48,13 @@ public class ProcessingThread extends Thread {
 		ProcessingThread.log.error("Failed to parse client input {}", e.getMessage());
 	    }
 	}
+	try {
+	    this.clientSocket.close();
+	    log.info("Client socket succesfully closed");
+	}catch (IOException e1) {
+	    log.error("Failed to close client socket");
+	 }
+	log.info("Processing thread for user shutdown.");
     }
 
     private void enqueueClientPackets() {

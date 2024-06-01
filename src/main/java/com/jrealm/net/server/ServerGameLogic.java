@@ -337,6 +337,7 @@ public class ServerGameLogic {
 	CommandPacket commandResponse = null;
 	long assignedId = -1l;
 	PlayerAccountDto account = null;
+	log.info("[SERVER] Recieved login command {}", request);
 	try {
 	    SessionTokenDto loginToken = null;
 	    String accountName = request.getEmail();
@@ -396,6 +397,7 @@ public class ServerGameLogic {
 	    commandResponse = CommandPacket.createError(assignedId, 503,
 		    "Failed to perform Client Login. Reason: " + e.getMessage());
 	} finally {
+	    log.info("Login successfuly, adding player.");
 	    OutputStream toClientStream;
 	    try {
 		toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getClientSocket()
