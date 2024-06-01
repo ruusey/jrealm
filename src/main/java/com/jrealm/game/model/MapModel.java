@@ -14,18 +14,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 public class MapModel {
-	private int mapId;
-	private String mapName;
-	private String mapKey;
-	private int tileSize;
-	private int width;
-	private int height;
-	private int terrainId;
-	private Map<String, int[][]> data;
+    private int mapId;
+    private String mapName;
+    private String mapKey;
+    private int tileSize;
+    private int width;
+    private int height;
+    private int terrainId;
+    private Map<String, int[][]> data;
 
-	public Vector2f getCenter() {
-		return new Vector2f((this.width / 2) * this.tileSize, ((this.height / 2) * (this.tileSize)));
-	}
+    public Vector2f getCenter() {
+	return new Vector2f((this.width / 2) * this.tileSize, ((this.height / 2) * (this.tileSize)));
+    }
 }

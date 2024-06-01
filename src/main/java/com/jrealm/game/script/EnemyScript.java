@@ -5,6 +5,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.realm.Realm;
 
 public interface EnemyScript {
-	public int getTargetEnemyId();
-	public void attack(final Realm targetRealm, final Enemy enemy, final Player targetPlayer) throws Exception;
+    public int getTargetEnemyId();
+
+    public void attack(final Realm targetRealm, final Enemy enemy, final Player targetPlayer) throws Exception;
 }

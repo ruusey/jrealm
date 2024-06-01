@@ -10,12 +10,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TerrainGenerationParameters {
-	private int terrainId;
-	private String name;
-	private int width;
-	private int height;
-	private int tileSize;
-	private List<TileGroup> tileGroups;
-	private List<EnemyGroup> enemyGroups;
+    private int terrainId;
+    private String name;
+    private int width;
+    private int height;
+    private int tileSize;
+    private List<TileGroup> tileGroups;
+    private List<EnemyGroup> enemyGroups;
 
 }

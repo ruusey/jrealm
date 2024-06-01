@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @EqualsAndHashCode(callSuper = false)
 public class PingResponseDto {
-	private String time;
-	private String status;
+    private String time;
+    private String status;
 
 }

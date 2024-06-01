@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateTokenResponseDto {
-	private String id;
-	private String token;
-	private String tokenName;
+    private String id;
+    private String token;
+    private String tokenName;
 }

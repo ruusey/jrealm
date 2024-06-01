@@ -5,27 +5,27 @@ import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.realm.Realm;
 import com.jrealm.game.realm.RealmManagerServer;
 
-public class Item156Script extends UseableItemScriptBase{
+public class Item156Script extends UseableItemScriptBase {
 
-	public Item156Script(final RealmManagerServer mgr) {
-		super(mgr);
-	}
+    public Item156Script(final RealmManagerServer mgr) {
+	super(mgr);
+    }
 
-	@Override
-	public void invokeUseItem(final Realm targetRealm, final Player player, final GameItem item) {
-	}
+    @Override
+    public void invokeUseItem(final Realm targetRealm, final Player player, final GameItem item) {
+    }
 
-	@Override
-	public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
-		for (final Player other : targetRealm
-				.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
-			other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
-		}
+    @Override
+    public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
+	for (final Player other : targetRealm
+		.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
+	    other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
 	}
+    }
 
-	@Override
-	public int getTargetItemId() {
-		return 156;
-	}
+    @Override
+    public int getTargetItemId() {
+	return 156;
+    }
 
 }

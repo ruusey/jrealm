@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EnemyGroup {
-	private String name;
-	private int ordinal;
-	private List<Integer> enemyIds;
+    private String name;
+    private int ordinal;
+    private List<Integer> enemyIds;
 
 }

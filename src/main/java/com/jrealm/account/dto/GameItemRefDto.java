@@ -16,13 +16,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonInclude(Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 public class GameItemRefDto extends TemporalDto {
-	private static final long serialVersionUID = -5119762736198793613L;
+    private static final long serialVersionUID = -5119762736198793613L;
 
-	private String gameItemRefId;
-	private Integer itemId;
-	private Integer slotIdx;
-	private String itemUuid;
+    private String gameItemRefId;
+    private Integer itemId;
+    private Integer slotIdx;
+    private String itemUuid;
 
 }

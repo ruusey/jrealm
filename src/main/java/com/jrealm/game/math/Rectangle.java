@@ -4,148 +4,180 @@ import lombok.Data;
 
 @Data
 public class Rectangle {
-	private Vector2f pos;
-	private float xOffset = 0;
-	private float yOffset = 0;
-	private float w;
-	private float h;
-	private float r;
-	private int size;
+    private Vector2f pos;
+    private float xOffset = 0;
+    private float yOffset = 0;
+    private float w;
+    private float h;
+    private float r;
+    private int size;
 
-	public Rectangle(Vector2f pos, int w, int h) {
-		this.pos = pos;
-		this.w = w;
-		this.h = h;
-		this.size = Math.max(w, h);
-	}
+    public Rectangle(Vector2f pos, int w, int h) {
+	this.pos = pos;
+	this.w = w;
+	this.h = h;
+	this.size = Math.max(w, h);
+    }
 
-	public Rectangle(Vector2f pos, int r) {
-		this.pos = pos;
-		this.r = r;
-		this.size = r;
-	}
+    public Rectangle(Vector2f pos, int r) {
+	this.pos = pos;
+	this.r = r;
+	this.size = r;
+    }
 
-	public Vector2f getPos() { return this.pos; }
+    public Vector2f getPos() {
+	return this.pos;
+    }
 
-	public float getRadius() { return this.r; }
-	public float getSize() { return this.size; }
-	public float getWidth() { return this.w; }
-	public float getHeight() { return this.h; }
+    public float getRadius() {
+	return this.r;
+    }
 
-	public void setBox(Vector2f pos, int w, int h) {
-		this.pos = pos;
-		this.w = w;
-		this.h = h;
-		this.size = Math.max(w, h);
-	}
+    public float getSize() {
+	return this.size;
+    }
 
-	public void setCircle(Vector2f pos, int r) {
-		this.pos = pos;
-		this.r = r;
-		this.size = r;
-	}
+    public float getWidth() {
+	return this.w;
+    }
 
-	public void setWidth(float f) { this.w = f; }
-	public void setHeight(float f) { this.h = f; }
+    public float getHeight() {
+	return this.h;
+    }
 
-	public void setXOffset(float f) { this.xOffset = f; }
-	public void setYOffset(float f) { this.yOffset = f; }
-	public float getXOffset() { return this.xOffset; }
-	public float getYOffset() { return this.yOffset; }
+    public void setBox(Vector2f pos, int w, int h) {
+	this.pos = pos;
+	this.w = w;
+	this.h = h;
+	this.size = Math.max(w, h);
+    }
 
-	public boolean collides(Rectangle bBox) {
-		return this.collides(0, 0, bBox);
-	}
+    public void setCircle(Vector2f pos, int r) {
+	this.pos = pos;
+	this.r = r;
+	this.size = r;
+    }
 
-	public boolean collides(float dx, float dy, Rectangle bBox) {
-		float ax = ((this.pos.x + (this.xOffset)) + (this.w / 2)) + dx;
-		float ay = ((this.pos.y + (this.yOffset)) + (this.h / 2)) + dy;
-		float bx = ((bBox.getPos().x + (bBox.getXOffset())) + (bBox.getWidth() / 2));
-		float by = ((bBox.getPos().y + (bBox.getYOffset())) + (bBox.getHeight() / 2));
+    public void setWidth(float f) {
+	this.w = f;
+    }
 
-		if (Math.abs(ax - bx) < ((this.w / 2) + (bBox.getWidth() / 2))) {
-			if (Math.abs(ay - by) < ((this.h / 2) + (bBox.getHeight() / 2)))
-				return true;
-		}
-		return false;
-	}
+    public void setHeight(float f) {
+	this.h = f;
+    }
 
-	public boolean inside(int xp, int yp) {
-		if((xp == -1) || (yp == - 1)) return false;
+    public void setXOffset(float f) {
+	this.xOffset = f;
+    }
 
-		int wTemp = (int) this.w;
-		int hTemp = (int) this.h;
-		int x = (int) this.pos.x;
-		int y = (int) this.pos.y;
+    public void setYOffset(float f) {
+	this.yOffset = f;
+    }
 
-		if((xp < x) || (yp < y))
-			return false;
+    public float getXOffset() {
+	return this.xOffset;
+    }
 
-		wTemp += x;
-		hTemp += y;
-		return (((wTemp < x) || (wTemp > xp)) && ((hTemp < y) || (hTemp > yp)));
-	}
+    public float getYOffset() {
+	return this.yOffset;
+    }
 
-	public boolean intersect(Rectangle aBox) {
+    public boolean collides(Rectangle bBox) {
+	return this.collides(0, 0, bBox);
+    }
 
-		if(((this.pos.x + this.xOffset) > (aBox.getPos().x + aBox.getXOffset() + aBox.getSize()))
-				|| ((aBox.getPos().x + this.xOffset) > (this.pos.x + aBox.getXOffset() + aBox.getSize())))
-			return false;
+    public boolean collides(float dx, float dy, Rectangle bBox) {
+	float ax = ((this.pos.x + (this.xOffset)) + (this.w / 2)) + dx;
+	float ay = ((this.pos.y + (this.yOffset)) + (this.h / 2)) + dy;
+	float bx = ((bBox.getPos().x + (bBox.getXOffset())) + (bBox.getWidth() / 2));
+	float by = ((bBox.getPos().y + (bBox.getYOffset())) + (bBox.getHeight() / 2));
 
-		if(((this.pos.y + this.yOffset) > (aBox.getPos().y + aBox.getYOffset() + aBox.getSize()))
-				|| ((aBox.getPos().y + this.yOffset) > (this.pos.y + aBox.getYOffset() + aBox.getSize())))
-			return false;
-
+	if (Math.abs(ax - bx) < ((this.w / 2) + (bBox.getWidth() / 2))) {
+	    if (Math.abs(ay - by) < ((this.h / 2) + (bBox.getHeight() / 2)))
 		return true;
 	}
+	return false;
+    }
 
-	public boolean colCircle(Rectangle circle) {
-		float totalRadius = this.r + circle.getRadius();
-		totalRadius *= totalRadius;
+    public boolean inside(int xp, int yp) {
+	if ((xp == -1) || (yp == -1))
+	    return false;
 
-		float dx = (this.pos.x + circle.getPos().x);
-		float dy = (this.pos.y + circle.getPos().y);
+	int wTemp = (int) this.w;
+	int hTemp = (int) this.h;
+	int x = (int) this.pos.x;
+	int y = (int) this.pos.y;
 
-		return totalRadius < ((dx * dx) + (dy * dy));
-	}
+	if ((xp < x) || (yp < y))
+	    return false;
 
-	public boolean colCircleBox(Rectangle aBox) {
-		float dx = Math.max(aBox.getPos().x + aBox.getXOffset(), Math.min(this.pos.x + (this.r / 2), aBox.getPos().x + aBox.getXOffset() + aBox.getWidth()));
-		float dy = Math.max(aBox.getPos().y + aBox.getYOffset(), Math.min(this.pos.y + (this.r / 2), aBox.getPos().y + aBox.getYOffset() + aBox.getHeight()));
+	wTemp += x;
+	hTemp += y;
+	return (((wTemp < x) || (wTemp > xp)) && ((hTemp < y) || (hTemp > yp)));
+    }
 
-		dx = (this.pos.x + (this.r / 2)) - dx;
-		dy = (this.pos.y + (this.r / 2)) - dy;
+    public boolean intersect(Rectangle aBox) {
 
-		if(Math.sqrt((dx * dx) + (dy * dy)) < (this.r / 2))
-			return true;
+	if (((this.pos.x + this.xOffset) > (aBox.getPos().x + aBox.getXOffset() + aBox.getSize()))
+		|| ((aBox.getPos().x + this.xOffset) > (this.pos.x + aBox.getXOffset() + aBox.getSize())))
+	    return false;
 
-		return false;
-	}
+	if (((this.pos.y + this.yOffset) > (aBox.getPos().y + aBox.getYOffset() + aBox.getSize()))
+		|| ((aBox.getPos().y + this.yOffset) > (this.pos.y + aBox.getYOffset() + aBox.getSize())))
+	    return false;
 
-	public float distance(Vector2f other) {
-		float dx = this.pos.x - other.x;
-		float dy = this.pos.y - other.y;
-		return (float) Math.sqrt((dx * dx) + (dy * dy));
-	}
+	return true;
+    }
 
-	public Rectangle merge(Rectangle other) {
-		float minX = Math.min(this.pos.x, other.getPos().x);
-		float minY = Math.min(this.pos.y, other.getPos().y);
+    public boolean colCircle(Rectangle circle) {
+	float totalRadius = this.r + circle.getRadius();
+	totalRadius *= totalRadius;
 
-		int maxW = (int) Math.max(this.w, other.getWidth());
-		int maxH = (int) Math.max(this.h, other.getHeight());
+	float dx = (this.pos.x + circle.getPos().x);
+	float dy = (this.pos.y + circle.getPos().y);
 
-		Vector2f pos = new Vector2f(minX, minY);
-		return new Rectangle(pos, maxW, maxH);
-	}
+	return totalRadius < ((dx * dx) + (dy * dy));
+    }
 
-	@Override
-	public String toString() {
-		String x = Float.toString(this.pos.x);
-		String y = Float.toString(this.pos.y);
-		String w = Float.toString(this.w);
-		String h = Float.toString(this.h);
+    public boolean colCircleBox(Rectangle aBox) {
+	float dx = Math.max(aBox.getPos().x + aBox.getXOffset(),
+		Math.min(this.pos.x + (this.r / 2), aBox.getPos().x + aBox.getXOffset() + aBox.getWidth()));
+	float dy = Math.max(aBox.getPos().y + aBox.getYOffset(),
+		Math.min(this.pos.y + (this.r / 2), aBox.getPos().y + aBox.getYOffset() + aBox.getHeight()));
 
-		return "{" + x + ", " + y + " : " + w + ", " + h + "}";
-	}
+	dx = (this.pos.x + (this.r / 2)) - dx;
+	dy = (this.pos.y + (this.r / 2)) - dy;
+
+	if (Math.sqrt((dx * dx) + (dy * dy)) < (this.r / 2))
+	    return true;
+
+	return false;
+    }
+
+    public float distance(Vector2f other) {
+	float dx = this.pos.x - other.x;
+	float dy = this.pos.y - other.y;
+	return (float) Math.sqrt((dx * dx) + (dy * dy));
+    }
+
+    public Rectangle merge(Rectangle other) {
+	float minX = Math.min(this.pos.x, other.getPos().x);
+	float minY = Math.min(this.pos.y, other.getPos().y);
+
+	int maxW = (int) Math.max(this.w, other.getWidth());
+	int maxH = (int) Math.max(this.h, other.getHeight());
+
+	Vector2f pos = new Vector2f(minX, minY);
+	return new Rectangle(pos, maxW, maxH);
+    }
+
+    @Override
+    public String toString() {
+	String x = Float.toString(this.pos.x);
+	String y = Float.toString(this.pos.y);
+	String w = Float.toString(this.w);
+	String h = Float.toString(this.h);
+
+	return "{" + x + ", " + y + " : " + w + ", " + h + "}";
+    }
 }

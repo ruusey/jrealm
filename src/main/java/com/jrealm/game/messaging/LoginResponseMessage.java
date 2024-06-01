@@ -12,11 +12,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class LoginResponseMessage {
-	private long playerId;
-	private int classId;
-	private boolean success;
-	private float spawnX;
-	private float spawnY;
-	private String token;
-	private PlayerAccountDto account;
+    private long playerId;
+    private int classId;
+    private boolean success;
+    private float spawnX;
+    private float spawnY;
+    private String token;
+    private PlayerAccountDto account;
 }

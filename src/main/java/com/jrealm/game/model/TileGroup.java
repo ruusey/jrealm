@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TileGroup {
-	private String name;
-	private Integer ordinal;
-	private List<Integer> tileIds;
-	private Map<String, Float> rarities;
+    private String name;
+    private Integer ordinal;
+    private List<Integer> tileIds;
+    private Map<String, Float> rarities;
 }

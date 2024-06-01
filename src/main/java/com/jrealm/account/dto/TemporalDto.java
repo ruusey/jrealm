@@ -18,13 +18,13 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TemporalDto implements Serializable {
 
-	private static final long serialVersionUID = -4882496257221385663L;
+    private static final long serialVersionUID = -4882496257221385663L;
 
-	private Date created;
-	private Date updated;
-	private Date deleted;
+    private Date created;
+    private Date updated;
+    private Date deleted;
 
-	public boolean isDeleted() {
-		return this.deleted != null;
-	}
+    public boolean isDeleted() {
+	return this.deleted != null;
+    }
 }

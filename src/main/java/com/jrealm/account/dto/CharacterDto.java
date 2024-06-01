@@ -17,13 +17,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonInclude(Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@EqualsAndHashCode(callSuper=false)
-public class CharacterDto extends TemporalDto{
-	private static final long serialVersionUID = -8940547643757956271L;
+@EqualsAndHashCode(callSuper = false)
+public class CharacterDto extends TemporalDto {
+    private static final long serialVersionUID = -8940547643757956271L;
 
-	private String characterId;
-	private String characterUuid;
-	private Integer characterClass;
-	private CharacterStatsDto stats;
-	private Set<GameItemRefDto> items;
+    private String characterId;
+    private String characterUuid;
+    private Integer characterClass;
+    private CharacterStatsDto stats;
+    private Set<GameItemRefDto> items;
 }

@@ -28,14 +28,13 @@ public class TimedWorkerThread implements Runnable {
 	this.targetFps = targetFps;
     }
 
+    @SuppressWarnings("unused")
     @Override
     public void run() {
 
 	log.info("TimedThread processing start...");
 
-	long start = System.nanoTime();
 	double rate = targetFps;
-
 
 	long lastTime = System.nanoTime();
 	double amountOfTicks = rate;
@@ -55,6 +54,7 @@ public class TimedWorkerThread implements Runnable {
 
 	    if (System.currentTimeMillis() - timer > 1000) {
 		timer += 1000;
+		//log.info("Timed worker thread {} frames={}",runnable.);
 		frames = 0;
 		// updates = 0;
 	    }

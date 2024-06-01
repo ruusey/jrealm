@@ -15,14 +15,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ServerCommandMessage {
-	private String command;
-	private List<String> args;
+    private String command;
+    private List<String> args;
 
-	public static ServerCommandMessage parseFromInput(String line) {
-		final String command = line.substring(line.indexOf("/") + 1);
-		final String[] commandArgs = command.split(" ");
-		final List<String> argsList = Stream.of(Arrays.copyOfRange(commandArgs, 1, commandArgs.length))
-				.collect(Collectors.toList());
-		return ServerCommandMessage.builder().command(commandArgs[0]).args(argsList).build();
-	}
+    public static ServerCommandMessage parseFromInput(String line) {
+	final String command = line.substring(line.indexOf("/") + 1);
+	final String[] commandArgs = command.split(" ");
+	final List<String> argsList = Stream.of(Arrays.copyOfRange(commandArgs, 1, commandArgs.length))
+		.collect(Collectors.toList());
+	return ServerCommandMessage.builder().command(commandArgs[0]).args(argsList).build();
+    }
 }

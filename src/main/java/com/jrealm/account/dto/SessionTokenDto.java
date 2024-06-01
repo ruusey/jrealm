@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class SessionTokenDto {
-	private String accountGuid;
-	private String token;
-	private Date expires;
+    private String accountGuid;
+    private String token;
+    private Date expires;
 }

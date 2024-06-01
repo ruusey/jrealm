@@ -12,15 +12,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ServerErrorMessage {
-	private int code;
-	private String message;
+    private int code;
+    private String message;
 
-	public static ServerErrorMessage from(int code, String message) {
-		return ServerErrorMessage.builder().code(code).message(message).build();
-	}
+    public static ServerErrorMessage from(int code, String message) {
+	return ServerErrorMessage.builder().code(code).message(message).build();
+    }
 
-	@Override
-	public String toString() {
-		return MessageFormat.format("\"code\":{0}, \"message\": {1}", this.code, this.message);
-	}
+    @Override
+    public String toString() {
+	return MessageFormat.format("\"code\":{0}, \"message\": {1}", this.code, this.message);
+    }
 }

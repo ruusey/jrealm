@@ -26,174 +26,174 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class SocketClient implements Runnable {
-	public static String PLAYER_EMAIL = null;
-	public static String SERVER_ADDR = null;
-	public static String CHARACTER_UUID = null;
-	public static String PLAYER_PASSWORD = null;
+    public static String PLAYER_EMAIL = null;
+    public static String SERVER_ADDR = null;
+    public static String CHARACTER_UUID = null;
+    public static String PLAYER_PASSWORD = null;
 
-	private static final int BUFFER_CAPACITY = 65536 * 100;
+    private static final int BUFFER_CAPACITY = 65536 * 100;
 
-	private Socket clientSocket;
-	private boolean shutdown = false;
-	private byte[] remoteBuffer = new byte[SocketClient.BUFFER_CAPACITY];
-	private int remoteBufferIndex = 0;
-	private long lastUpdate = 0;
-	private long previousTime = 0;
-	private long lastDataTime = System.currentTimeMillis();
-	private long currentBytesRecieved = 0;
-	private volatile Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
-	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
+    private Socket clientSocket;
+    private boolean shutdown = false;
+    private byte[] remoteBuffer = new byte[SocketClient.BUFFER_CAPACITY];
+    private int remoteBufferIndex = 0;
+    private long lastUpdate = 0;
+    private long previousTime = 0;
+    private long lastDataTime = System.currentTimeMillis();
+    private long currentBytesRecieved = 0;
+    private volatile Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
+    private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 
-	public SocketClient(String targetHost, int port) {
+    public SocketClient(String targetHost, int port) {
+	try {
+	    this.clientSocket = new Socket(targetHost, port);
+	    this.clientSocket.setTcpNoDelay(true);
+	} catch (Exception e) {
+	    SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
+	}
+    }
+
+    @Override
+    public void run() {
+	this.startBandwidthMonitor();
+	// this.monitorLastReceived();
+	try {
+	    this.doLogin();
+	} catch (Exception e) {
+	    SocketClient.log.error("Failed to send initial LoginRequest. Reason: {}", e);
+	}
+
+	Runnable readPackets = () -> {
+	    this.readPackets();
+	};
+	Runnable sendPackets = () -> {
+	    this.sendPackets();
+	};
+	TimedWorkerThread readThread = new TimedWorkerThread(readPackets, 64);
+	TimedWorkerThread sendThread = new TimedWorkerThread(sendPackets, 64);
+	WorkerThread.submitAndForkRun(readThread, sendThread);
+    }
+
+    private void readPackets() {
+	try {
+	    InputStream stream = this.clientSocket.getInputStream();
+
+	    int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
+		    this.remoteBuffer.length - this.remoteBufferIndex);
+	    this.lastDataTime = System.currentTimeMillis();
+	    if (bytesRead == -1)
+		throw new SocketException("end of stream");
+	    if (bytesRead > 0) {
+		this.remoteBufferIndex += bytesRead;
+
+		while (this.remoteBufferIndex >= 5) {
+		    int packetLength = (ByteBuffer.allocate(4).put(this.remoteBuffer[1]).put(this.remoteBuffer[2])
+			    .put(this.remoteBuffer[3]).put(this.remoteBuffer[4]).rewind()).getInt();
+		    if (this.remoteBufferIndex < (packetLength)) {
+			break;
+		    }
+		    byte packetId = this.remoteBuffer[0];
+		    byte[] packetBytes = new byte[packetLength];
+		    System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
+		    if (this.remoteBufferIndex > packetLength) {
+			System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
+				this.remoteBufferIndex - packetLength);
+		    }
+		    this.currentBytesRecieved += packetLength;
+		    this.remoteBufferIndex -= packetLength;
+		    BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
+		    newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+		    this.inboundPacketQueue.add(newPacket);
+		}
+	    }
+	} catch (Exception e) {
+	    SocketClient.log.error("Failed to parse client input. Reason {}", e);
+	}
+    }
+
+    private void doLogin() throws Exception {
+	LoginRequestMessage login = LoginRequestMessage.builder().characterUuid(SocketClient.CHARACTER_UUID)
+		.email(SocketClient.PLAYER_EMAIL).password(SocketClient.PLAYER_PASSWORD).build();
+
+	CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
+	this.sendRemote(loginPacket);
+    }
+
+    private void sendPackets() {
+	OutputStream stream = null;
+	try {
+	    stream = this.clientSocket.getOutputStream();
+	} catch (Exception e) {
+	    return;
+	}
+	DataOutputStream dos = new DataOutputStream(stream);
+	while (!this.outboundPacketQueue.isEmpty()) {
+	    Packet toSend = this.outboundPacketQueue.remove();
+	    try {
+		toSend.serializeWrite(dos);
+	    } catch (Exception e) {
+		String remoteAddr = this.clientSocket.getInetAddress().getHostAddress();
+		SocketClient.log.error("Failed to send Packet to remote addr {}, Reason: {}", remoteAddr, e);
+	    }
+	}
+    }
+
+    /**
+     * Enqueues a Packet instance to be sent to the remote during the next
+     * processing cycle
+     * 
+     * @param packet Packet to send to remote server
+     * @throws Exception
+     */
+    public void sendRemote(Packet packet) throws Exception {
+	if (this.clientSocket == null)
+	    throw new Exception("Client socket is null/not yet established");
+
+	this.outboundPacketQueue.add(packet);
+    }
+
+    @SuppressWarnings("unused")
+    private void monitorLastReceived() {
+	Runnable monitorLastRecieved = () -> {
+	    while (!this.shutdown) {
 		try {
-			this.clientSocket = new Socket(targetHost, port);
-			this.clientSocket.setTcpNoDelay(true);
+		    if ((System.currentTimeMillis() - this.lastDataTime) > 5000) {
+			this.shutdown = true;
+		    }
 		} catch (Exception e) {
-			SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
-		}
-	}
 
-	@Override
-	public void run() {
-		this.startBandwidthMonitor();
-		//this.monitorLastReceived();
+		}
+	    }
+	};
+	WorkerThread.submitAndForkRun(monitorLastRecieved);
+    }
+
+    public void startBandwidthMonitor() {
+	Runnable run = () -> {
+	    while (!this.shutdown) {
 		try {
-			this.doLogin();
+		    long bytesRead = this.currentBytesRecieved;
+		    SocketClient.log.info("[CLIENT] current read rate = {} kbit/s",
+			    (float) (bytesRead / 1024.0f) * 8.0f);
+		    this.currentBytesRecieved = 0;
+		    Thread.sleep(1000);
 		} catch (Exception e) {
-			SocketClient.log.error("Failed to send initial LoginRequest. Reason: {}", e);
+
 		}
 
-		Runnable readPackets = () -> {
-			this.readPackets();
-		};
-		Runnable sendPackets = () -> {
-			this.sendPackets();
-		};
-		TimedWorkerThread readThread = new TimedWorkerThread(readPackets, 64);
-		TimedWorkerThread sendThread = new TimedWorkerThread(sendPackets, 64);
-		WorkerThread.submitAndForkRun(readThread, sendThread);
+	    }
+	};
+	WorkerThread.submitAndForkRun(run);
+    }
+
+    public static String getLocalAddr() throws Exception {
+	String[] split = InetAddress.getLocalHost().toString().split("/");
+	String addr = null;
+	if (split.length > 1) {
+	    addr = split[1];
+	} else {
+	    addr = split[0];
 	}
-
-	private void readPackets() {
-		try {
-			InputStream stream = this.clientSocket.getInputStream();
-
-			int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
-					this.remoteBuffer.length - this.remoteBufferIndex);
-			this.lastDataTime = System.currentTimeMillis();
-			if (bytesRead == -1)
-				throw new SocketException("end of stream");
-			if (bytesRead > 0) {
-				this.remoteBufferIndex += bytesRead;
-
-				while (this.remoteBufferIndex >= 5) {
-					int packetLength = (ByteBuffer.allocate(4).put(this.remoteBuffer[1])
-							.put(this.remoteBuffer[2]).put(this.remoteBuffer[3]).put(this.remoteBuffer[4]).rewind())
-							.getInt();
-					if (this.remoteBufferIndex < (packetLength)) {
-						break;
-					}
-					byte packetId = this.remoteBuffer[0];
-					byte[] packetBytes = new byte[packetLength];
-					System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
-					if (this.remoteBufferIndex > packetLength) {
-						System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
-								this.remoteBufferIndex - packetLength);
-					}
-					this.currentBytesRecieved += packetLength;
-					this.remoteBufferIndex -= packetLength;
-					BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
-					newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-					this.inboundPacketQueue.add(newPacket);
-				}
-			}
-		} catch (Exception e) {
-			SocketClient.log.error("Failed to parse client input. Reason {}", e);
-		}
-	}
-
-	private void doLogin() throws Exception{
-		LoginRequestMessage login = LoginRequestMessage.builder().characterUuid(SocketClient.CHARACTER_UUID)
-				.email(SocketClient.PLAYER_EMAIL)
-				.password(SocketClient.PLAYER_PASSWORD).build();
-
-		CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
-		this.sendRemote(loginPacket);
-	}
-
-	private void sendPackets() {
-		OutputStream stream = null;
-		try{
-			stream = this.clientSocket.getOutputStream();
-		}catch(Exception e) {
-			return;
-		}
-		DataOutputStream dos = new DataOutputStream(stream);
-		while(!this.outboundPacketQueue.isEmpty()) {
-			Packet toSend = this.outboundPacketQueue.remove();
-			try {
-				toSend.serializeWrite(dos);
-			}catch(Exception e) {
-				String remoteAddr = this.clientSocket.getInetAddress().getHostAddress();
-				SocketClient.log.error("Failed to send Packet to remote addr {}, Reason: {}", remoteAddr, e);
-			}
-		}
-	}
-
-	/**
-	 * Enqueues a Packet instance to be sent to the remote during the next
-	 * processing cycle
-	 * @param packet Packet to send to remote server
-	 * @throws Exception
-	 */
-	public void sendRemote(Packet packet) throws Exception {
-		if (this.clientSocket == null)
-			throw new Exception("Client socket is null/not yet established");
-
-		this.outboundPacketQueue.add(packet);
-	}
-
-	@SuppressWarnings("unused")
-	private void monitorLastReceived() {
-		Runnable monitorLastRecieved = () ->{
-			while(!this.shutdown) {
-				try {
-					if((System.currentTimeMillis() - this.lastDataTime) > 5000) {
-						this.shutdown = true;
-					}
-				}catch(Exception e) {
-
-				}
-			}
-		};
-		WorkerThread.submitAndForkRun(monitorLastRecieved);
-	}
-
-	public void startBandwidthMonitor() {
-		Runnable run = () ->{
-			while(!this.shutdown) {
-				try {
-					long bytesRead = this.currentBytesRecieved;
-					SocketClient.log.info("[CLIENT] current read rate = {} kbit/s", (float)(bytesRead/1024.0f) * 8.0f);
-					this.currentBytesRecieved = 0;
-					Thread.sleep(1000);
-				}catch(Exception e) {
-
-				}
-
-			}
-		};
-		WorkerThread.submitAndForkRun(run);
-	}
-
-	public static String getLocalAddr() throws Exception{
-		String[] split = InetAddress.getLocalHost().toString().split("/");
-		String addr = null;
-		if(split.length>1) {
-			addr = split[1];
-		}else {
-			addr = split[0];
-		}
-		return addr;
-	}
+	return addr;
+    }
 }

@@ -18,16 +18,16 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonInclude(Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 public class PlayerAccountDto extends TemporalDto {
 
-	private static final long serialVersionUID = -3553188514579673153L;
+    private static final long serialVersionUID = -3553188514579673153L;
 
-	private String accountId;
-	private String accountEmail;
-	private String accountUuid;
-	private String accountName;
+    private String accountId;
+    private String accountEmail;
+    private String accountUuid;
+    private String accountName;
 
-	private List<ChestDto> playerVault;
-	private List<CharacterDto> characters;
+    private List<ChestDto> playerVault;
+    private List<CharacterDto> characters;
 }

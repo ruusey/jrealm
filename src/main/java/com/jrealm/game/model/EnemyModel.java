@@ -12,17 +12,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 public class EnemyModel extends SpriteModel {
-	private int enemyId;
-	private int size;
-	private int attackId;
-	private String name;
-	private int xp;
-	private Stats stats;
-	private int health;
-	private float maxSpeed;
-	private float chaseRange;
-	private float attackRange;
+    private int enemyId;
+    private int size;
+    private int attackId;
+    private String name;
+    private int xp;
+    private Stats stats;
+    private int health;
+    private float maxSpeed;
+    private float chaseRange;
+    private float attackRange;
 
 }

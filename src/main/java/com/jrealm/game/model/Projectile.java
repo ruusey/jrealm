@@ -14,21 +14,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class Projectile {
-	private int projectileId;
-	private ProjectilePositionMode positionMode;
-	private String angle;
-	private short range;
-	private float magnitude;
-	private short size;
-	private short damage;
+    private int projectileId;
+    private ProjectilePositionMode positionMode;
+    private String angle;
+    private short range;
+    private float magnitude;
+    private short size;
+    private short damage;
 
-	private short amplitude;
-	private short frequency;
+    private short amplitude;
+    private short frequency;
 
-	private List<Short> flags;
+    private List<Short> flags;
 
-	public boolean hasFlag(short flag) {
-		return (this.flags != null) && this.flags.contains(flag);
-	}
+    public boolean hasFlag(short flag) {
+	return (this.flags != null) && this.flags.contains(flag);
+    }
 
 }

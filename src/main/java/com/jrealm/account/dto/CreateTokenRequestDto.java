@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class CreateTokenRequestDto {
-	private String accountGuid;
-	private String tokenName;
+    private String accountGuid;
+    private String tokenName;
 }

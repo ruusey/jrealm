@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class LoginRequestMessage {
-	private String email;
-	private String password;
-	private String characterUuid;
+    private String email;
+    private String password;
+    private String characterUuid;
 }

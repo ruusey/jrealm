@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class LootGroupModel {
-	private Integer lootGroupId;
-	private String lootGroupName;
-	private List<Integer> potentialDrops;
+    private Integer lootGroupId;
+    private String lootGroupName;
+    private List<Integer> potentialDrops;
 }

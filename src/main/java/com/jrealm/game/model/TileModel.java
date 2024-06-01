@@ -12,11 +12,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 public class TileModel extends SpriteModel {
-	private int tileId;
-	private String name;
-	private short size;
-	private TileData data;
+    private int tileId;
+    private String name;
+    private short size;
+    private TileData data;
 
 }
