@@ -10,6 +10,7 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.JPanel;
 
+import com.jrealm.game.graphics.ImageUtils;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
@@ -70,6 +71,7 @@ public class GamePanel extends JPanel implements Runnable {
     public void initGraphics() {
 	this.img = new BufferedImage(GamePanel.width, GamePanel.height, BufferedImage.TYPE_INT_ARGB);
 	this.g = (Graphics2D) this.img.getGraphics();
+	ImageUtils.applyQualityRenderingHints(this.g);
 	this.g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     }
 

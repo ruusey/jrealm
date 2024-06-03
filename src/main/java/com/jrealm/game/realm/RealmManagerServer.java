@@ -234,7 +234,21 @@ public class RealmManagerServer implements Runnable {
 	while (!this.outboundPacketQueue.isEmpty()) {
 	    packetsToBroadcast.add(this.outboundPacketQueue.remove());
 	}
-
+	final List<Map.Entry<String, ProcessingThread>> staleProcessingThreads = new ArrayList<>();
+	for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
+	    if(client.getValue().getClientSocket().isClosed() || !client.getValue().getClientSocket().isConnected()) {
+		staleProcessingThreads.add(client);
+	    }
+	}
+	staleProcessingThreads.forEach(thread->{
+	    try {
+		thread.getValue().setShutdownProcessing(true);
+		this.server.getClients().remove(thread.getKey());
+		this.server.getClients().remove(thread.getKey(), thread.getValue());
+	    }catch(Exception e) {
+		log.error("Failed to remove stale processing threads. Reason:  {}", e);
+	    }
+	});
 	final List<String> disconnectedClients = new ArrayList<>();
 	for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
 	    try {

@@ -41,9 +41,10 @@ public class GameSpriteManager {
 	    final BufferedImage spriteImage = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
 	    BufferedImage subImage = spriteImage.getSubimage(model.getCol() * model.getSpriteSize(),
 		    model.getRow() * model.getSpriteSize(), model.getSpriteSize(), model.getSpriteSize());
-	    // subImage = ImageUtils.generateBorder(subImage, 1, Color.BLACK, 0)
-	    subImage = ImageUtils.applyShadow(subImage, 1, Color.BLACK, 0.65f);
+	    //subImage = ImageUtils.generateBorder(subImage, 1, Color.BLACK, 0.2f);
+	    subImage = ImageUtils.applyShadow(subImage, 1, Color.BLACK, 0.60f);
 
+	    
 	    GameSpriteManager.ITEM_SPRITES.put(gameItemId, subImage);
 	}
     }
@@ -62,6 +63,7 @@ public class GameSpriteManager {
 	    if (model.getData().hasCollision()) {
 		subImage = ImageUtils.applyShadow(subImage, 1, Color.BLACK, 0.65f);
 	    }
+	
 	    GameSpriteManager.TILE_SPRITES.put(tileId, subImage);
 	}
     }
@@ -107,6 +109,9 @@ public class GameSpriteManager {
 		} else {
 		    spriteImage = GameSpriteManager.loadSprite(spriteKey);
 		}
+		BufferedImage mask = ImageUtils.generateMask(spriteImage, Color.GREEN,0.15f);
+		spriteImage = ImageUtils.applyMask(spriteImage, mask, 10);
+
 		GameSpriteManager.IMAGE_CACHE.put(spriteKey, spriteImage);
 	    }
 	} catch (Exception e) {
@@ -139,7 +144,7 @@ public class GameSpriteManager {
     }
 
     public static SpriteSheet loadClassSprites(CharacterClass cls) {
-	final BufferedImage classSpritesImage = GameSpriteManager.IMAGE_CACHE.get("rotmg-classes.png");
+	BufferedImage classSpritesImage = GameSpriteManager.IMAGE_CACHE.get("rotmg-classes.png");
 	final SpriteSheet classSprites = new SpriteSheet(classSpritesImage, 0, 4 * cls.classId);
 	return classSprites;
     }
