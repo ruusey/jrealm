@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GameDataManager {
-    private static final transient ObjectMapper mapper = new ObjectMapper();
+    public static final transient ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     public static Map<Integer, ProjectileGroup> PROJECTILE_GROUPS = null;
     public static Map<Integer, GameItem> GAME_ITEMS = null;
@@ -54,7 +54,7 @@ public class GameDataManager {
                     .getResourceAsStream("data/loot-groups.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        LootGroupModel[] lootGroups = GameDataManager.mapper.readValue(text, LootGroupModel[].class);
+        LootGroupModel[] lootGroups = GameDataManager.JSON_MAPPER.readValue(text, LootGroupModel[].class);
         for (LootGroupModel lootGroup : lootGroups) {
             GameDataManager.LOOT_GROUPS.put(lootGroup.getLootGroupId(), lootGroup);
         }
@@ -72,7 +72,7 @@ public class GameDataManager {
                     .getResourceAsStream("data/loot-tables.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        LootTableModel[] lootTables = GameDataManager.mapper.readValue(text, LootTableModel[].class);
+        LootTableModel[] lootTables = GameDataManager.JSON_MAPPER.readValue(text, LootTableModel[].class);
         for (LootTableModel lootTable : lootTables) {
             GameDataManager.LOOT_TABLES.put(lootTable.getEnemyId(), lootTable);
         }
@@ -90,7 +90,7 @@ public class GameDataManager {
                     .getResourceAsStream("data/character-classes.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        CharacterClassModel[] characterClasses = GameDataManager.mapper.readValue(text, CharacterClassModel[].class);
+        CharacterClassModel[] characterClasses = GameDataManager.JSON_MAPPER.readValue(text, CharacterClassModel[].class);
         for (CharacterClassModel characterClass : characterClasses) {
             GameDataManager.CHARACTER_CLASSES.put(characterClass.getClassId(), characterClass);
         }
@@ -107,7 +107,7 @@ public class GameDataManager {
                     .getResourceAsStream("data/exp-levels.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        ExperienceModel expModel = GameDataManager.mapper.readValue(text, ExperienceModel.class);
+        ExperienceModel expModel = GameDataManager.JSON_MAPPER.readValue(text, ExperienceModel.class);
         expModel.parseMap();
         GameDataManager.EXPERIENCE_LVLS = expModel;
         GameDataManager.log.info("Loading ExperienceModel... DONE");
@@ -123,7 +123,7 @@ public class GameDataManager {
             InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/portals.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        PortalModel[] maps = GameDataManager.mapper.readValue(text, PortalModel[].class);
+        PortalModel[] maps = GameDataManager.JSON_MAPPER.readValue(text, PortalModel[].class);
         for (PortalModel map : maps) {
             GameDataManager.PORTALS.put(map.getPortalId(), map);
         }
@@ -140,7 +140,7 @@ public class GameDataManager {
             InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/terrains.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        TerrainGenerationParameters[] maps = GameDataManager.mapper.readValue(text,
+        TerrainGenerationParameters[] maps = GameDataManager.JSON_MAPPER.readValue(text,
                 TerrainGenerationParameters[].class);
         for (TerrainGenerationParameters map : maps) {
             GameDataManager.TERRAINS.put(map.getTerrainId(), map);
@@ -158,7 +158,7 @@ public class GameDataManager {
             InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/maps.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        MapModel[] maps = GameDataManager.mapper.readValue(text, MapModel[].class);
+        MapModel[] maps = GameDataManager.JSON_MAPPER.readValue(text, MapModel[].class);
         for (MapModel map : maps) {
             GameDataManager.MAPS.put(map.getMapId(), map);
         }
@@ -175,7 +175,7 @@ public class GameDataManager {
             InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/tiles.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        TileModel[] tiles = GameDataManager.mapper.readValue(text, TileModel[].class);
+        TileModel[] tiles = GameDataManager.JSON_MAPPER.readValue(text, TileModel[].class);
         for (TileModel tile : tiles) {
             GameDataManager.TILES.put(tile.getTileId(), tile);
         }
@@ -192,7 +192,7 @@ public class GameDataManager {
             InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/enemies.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        EnemyModel[] enemies = GameDataManager.mapper.readValue(text, EnemyModel[].class);
+        EnemyModel[] enemies = GameDataManager.JSON_MAPPER.readValue(text, EnemyModel[].class);
         for (EnemyModel enemy : enemies) {
             GameDataManager.ENEMIES.put(enemy.getEnemyId(), enemy);
         }
@@ -211,7 +211,7 @@ public class GameDataManager {
                     .getResourceAsStream("data/projectile-groups.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        ProjectileGroup[] projectileGroups = GameDataManager.mapper.readValue(text, ProjectileGroup[].class);
+        ProjectileGroup[] projectileGroups = GameDataManager.JSON_MAPPER.readValue(text, ProjectileGroup[].class);
 
         for (ProjectileGroup group : projectileGroups) {
             if ((group.getAngleOffset() != null) && group.getAngleOffset().contains("{{")) {
@@ -242,7 +242,7 @@ public class GameDataManager {
                     .getResourceAsStream("data/game-items.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-        GameItem[] gameItems = GameDataManager.mapper.readValue(text, GameItem[].class);
+        GameItem[] gameItems = GameDataManager.JSON_MAPPER.readValue(text, GameItem[].class);
 
         for (GameItem item : gameItems) {
             GameDataManager.GAME_ITEMS.put(item.getItemId(), item);

@@ -5,8 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jrealm.game.contants.PacketType;
+import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.ServerErrorMessage;
@@ -29,8 +29,7 @@ public class CommandPacket extends Packet {
     }
 
     public <T> T messageAs(Class<T> type) throws Exception {
-        ObjectMapper m = new ObjectMapper();
-        return m.readValue(this.command, type);
+        return GameDataManager.JSON_MAPPER.readValue(this.command, type);
     }
 
     public CommandPacket(byte packetId, byte[] data) {
@@ -86,7 +85,7 @@ public class CommandPacket extends Packet {
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeLong(-1l);
         dos.writeByte(cmd.getCommandId());
-        dos.writeUTF(new ObjectMapper().writeValueAsString(command));
+        dos.writeUTF(GameDataManager.JSON_MAPPER.writeValueAsString(command));
         return new CommandPacket(PacketType.COMMAND.getPacketId(), baos.toByteArray());
     }
 
@@ -97,7 +96,7 @@ public class CommandPacket extends Packet {
     public static CommandPacket create(long targetEntityId, CommandType type, Object command) {
         CommandPacket created = null;
         try {
-            created = from(targetEntityId, type.getCommandId(), new ObjectMapper().writeValueAsString(command));
+            created = from(targetEntityId, type.getCommandId(), GameDataManager.JSON_MAPPER.writeValueAsString(command));
         } catch (Exception e) {
             log.error("Failed to create Command Packet. Reason: {}", e);
         }
