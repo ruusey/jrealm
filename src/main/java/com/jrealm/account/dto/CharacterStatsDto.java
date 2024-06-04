@@ -35,11 +35,11 @@ public class CharacterStatsDto extends TemporalDto {
     private Integer wis;
 
     public static CharacterStatsDto characterDefaults(final Integer characterClass) {
-	final CharacterClassModel model = GameDataManager.CHARACTER_CLASSES.get(characterClass);
-	return CharacterStatsDto.builder().xp(0l).hp((int) model.getBaseStats().getHp())
-		.mp((int) model.getBaseStats().getMp()).def((int) model.getBaseStats().getDef())
-		.att((int) model.getBaseStats().getAtt()).spd((int) model.getBaseStats().getSpd())
-		.dex((int) model.getBaseStats().getDex()).vit((int) model.getBaseStats().getVit())
-		.wis((int) model.getBaseStats().getWis()).build();
+        final CharacterClassModel model = GameDataManager.CHARACTER_CLASSES.get(characterClass);
+        return CharacterStatsDto.builder().xp(0l).hp((int) model.getBaseStats().getHp())
+                .mp((int) model.getBaseStats().getMp()).def((int) model.getBaseStats().getDef())
+                .att((int) model.getBaseStats().getAtt()).spd((int) model.getBaseStats().getSpd())
+                .dex((int) model.getBaseStats().getDex()).vit((int) model.getBaseStats().getVit())
+                .wis((int) model.getBaseStats().getWis()).build();
     }
 }

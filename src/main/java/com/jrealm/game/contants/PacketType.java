@@ -36,30 +36,30 @@ public enum PacketType {
     private Class<? extends Packet> packetClass;
 
     static {
-	for (PacketType et : PacketType.values()) {
-	    PacketType.map.put(et.getPacketId(),
-		    new Tuple<Class<? extends Packet>, PacketType>(et.getPacketClass(), et));
-	}
+        for (PacketType et : PacketType.values()) {
+            PacketType.map.put(et.getPacketId(),
+                    new Tuple<Class<? extends Packet>, PacketType>(et.getPacketClass(), et));
+        }
     }
 
     private PacketType(byte entityTypeId, Class<? extends Packet> packetClass) {
-	this.packetId = entityTypeId;
-	this.packetClass = packetClass;
+        this.packetId = entityTypeId;
+        this.packetClass = packetClass;
     }
 
     public byte getPacketId() {
-	return this.packetId;
+        return this.packetId;
     }
 
     public Class<? extends Packet> getPacketClass() {
-	return this.packetClass;
+        return this.packetClass;
     }
 
     public static Tuple<Class<? extends Packet>, PacketType> valueOf(byte value) {
-	return PacketType.map.get(Byte.valueOf(value));
+        return PacketType.map.get(Byte.valueOf(value));
     }
 
     public static Tuple<Class<? extends Packet>, PacketType> valueOf(int value) {
-	return PacketType.map.get(Byte.valueOf((byte) value));
+        return PacketType.map.get(Byte.valueOf((byte) value));
     }
 }

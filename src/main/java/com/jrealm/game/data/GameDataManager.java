@@ -44,335 +44,335 @@ public class GameDataManager {
     public static ExperienceModel EXPERIENCE_LVLS = null;
 
     private static void loadLootGroups(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading Loot Groups...");
-	GameDataManager.LOOT_GROUPS = new HashMap<>();
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/loot-groups.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader()
-		    .getResourceAsStream("data/loot-groups.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	LootGroupModel[] lootGroups = GameDataManager.mapper.readValue(text, LootGroupModel[].class);
-	for (LootGroupModel lootGroup : lootGroups) {
-	    GameDataManager.LOOT_GROUPS.put(lootGroup.getLootGroupId(), lootGroup);
-	}
-	GameDataManager.log.info("Loading Loot Groups... DONE");
+        GameDataManager.log.info("Loading Loot Groups...");
+        GameDataManager.LOOT_GROUPS = new HashMap<>();
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/loot-groups.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader()
+                    .getResourceAsStream("data/loot-groups.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        LootGroupModel[] lootGroups = GameDataManager.mapper.readValue(text, LootGroupModel[].class);
+        for (LootGroupModel lootGroup : lootGroups) {
+            GameDataManager.LOOT_GROUPS.put(lootGroup.getLootGroupId(), lootGroup);
+        }
+        GameDataManager.log.info("Loading Loot Groups... DONE");
     }
 
     private static void loadLootTables(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading Loot Tables..");
-	GameDataManager.LOOT_TABLES = new HashMap<>();
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/loot-tables.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader()
-		    .getResourceAsStream("data/loot-tables.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	LootTableModel[] lootTables = GameDataManager.mapper.readValue(text, LootTableModel[].class);
-	for (LootTableModel lootTable : lootTables) {
-	    GameDataManager.LOOT_TABLES.put(lootTable.getEnemyId(), lootTable);
-	}
-	GameDataManager.log.info("Loading Loot Tables... DONE");
+        GameDataManager.log.info("Loading Loot Tables..");
+        GameDataManager.LOOT_TABLES = new HashMap<>();
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/loot-tables.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader()
+                    .getResourceAsStream("data/loot-tables.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        LootTableModel[] lootTables = GameDataManager.mapper.readValue(text, LootTableModel[].class);
+        for (LootTableModel lootTable : lootTables) {
+            GameDataManager.LOOT_TABLES.put(lootTable.getEnemyId(), lootTable);
+        }
+        GameDataManager.log.info("Loading Loot Tables... DONE");
     }
 
     private static void loadCharacterClasses(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading Character Classes...");
-	GameDataManager.CHARACTER_CLASSES = new HashMap<>();
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/character-classes.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader()
-		    .getResourceAsStream("data/character-classes.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	CharacterClassModel[] characterClasses = GameDataManager.mapper.readValue(text, CharacterClassModel[].class);
-	for (CharacterClassModel characterClass : characterClasses) {
-	    GameDataManager.CHARACTER_CLASSES.put(characterClass.getClassId(), characterClass);
-	}
-	GameDataManager.log.info("Loading Character Classes... DONE");
+        GameDataManager.log.info("Loading Character Classes...");
+        GameDataManager.CHARACTER_CLASSES = new HashMap<>();
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/character-classes.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader()
+                    .getResourceAsStream("data/character-classes.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        CharacterClassModel[] characterClasses = GameDataManager.mapper.readValue(text, CharacterClassModel[].class);
+        for (CharacterClassModel characterClass : characterClasses) {
+            GameDataManager.CHARACTER_CLASSES.put(characterClass.getClassId(), characterClass);
+        }
+        GameDataManager.log.info("Loading Character Classes... DONE");
     }
 
     private static void loadExperienceModel(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading ExperienceModel...");
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/exp-levels.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader()
-		    .getResourceAsStream("data/exp-levels.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	ExperienceModel expModel = GameDataManager.mapper.readValue(text, ExperienceModel.class);
-	expModel.parseMap();
-	GameDataManager.EXPERIENCE_LVLS = expModel;
-	GameDataManager.log.info("Loading ExperienceModel... DONE");
+        GameDataManager.log.info("Loading ExperienceModel...");
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/exp-levels.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader()
+                    .getResourceAsStream("data/exp-levels.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        ExperienceModel expModel = GameDataManager.mapper.readValue(text, ExperienceModel.class);
+        expModel.parseMap();
+        GameDataManager.EXPERIENCE_LVLS = expModel;
+        GameDataManager.log.info("Loading ExperienceModel... DONE");
     }
 
     private static void loadPortals(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading Portals..");
-	GameDataManager.PORTALS = new HashMap<>();
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/portals.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/portals.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	PortalModel[] maps = GameDataManager.mapper.readValue(text, PortalModel[].class);
-	for (PortalModel map : maps) {
-	    GameDataManager.PORTALS.put(map.getPortalId(), map);
-	}
-	GameDataManager.log.info("Loading Portals... DONE");
+        GameDataManager.log.info("Loading Portals..");
+        GameDataManager.PORTALS = new HashMap<>();
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/portals.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/portals.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        PortalModel[] maps = GameDataManager.mapper.readValue(text, PortalModel[].class);
+        for (PortalModel map : maps) {
+            GameDataManager.PORTALS.put(map.getPortalId(), map);
+        }
+        GameDataManager.log.info("Loading Portals... DONE");
     }
 
     private static void loadTerrains(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading Terrains..");
-	GameDataManager.TERRAINS = new HashMap<>();
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/terrains.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/terrains.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	TerrainGenerationParameters[] maps = GameDataManager.mapper.readValue(text,
-		TerrainGenerationParameters[].class);
-	for (TerrainGenerationParameters map : maps) {
-	    GameDataManager.TERRAINS.put(map.getTerrainId(), map);
-	}
-	GameDataManager.log.info("Loading Terrains... DONE");
+        GameDataManager.log.info("Loading Terrains..");
+        GameDataManager.TERRAINS = new HashMap<>();
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/terrains.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/terrains.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        TerrainGenerationParameters[] maps = GameDataManager.mapper.readValue(text,
+                TerrainGenerationParameters[].class);
+        for (TerrainGenerationParameters map : maps) {
+            GameDataManager.TERRAINS.put(map.getTerrainId(), map);
+        }
+        GameDataManager.log.info("Loading Terrains... DONE");
     }
 
     private static void loadMaps(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading Maps..");
-	GameDataManager.MAPS = new HashMap<>();
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/maps.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/maps.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	MapModel[] maps = GameDataManager.mapper.readValue(text, MapModel[].class);
-	for (MapModel map : maps) {
-	    GameDataManager.MAPS.put(map.getMapId(), map);
-	}
-	GameDataManager.log.info("Loading Maps... DONE");
+        GameDataManager.log.info("Loading Maps..");
+        GameDataManager.MAPS = new HashMap<>();
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/maps.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/maps.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        MapModel[] maps = GameDataManager.mapper.readValue(text, MapModel[].class);
+        for (MapModel map : maps) {
+            GameDataManager.MAPS.put(map.getMapId(), map);
+        }
+        GameDataManager.log.info("Loading Maps... DONE");
     }
 
     private static void loadTiles(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading Tiles..");
-	GameDataManager.TILES = new HashMap<>();
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/tiles.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/tiles.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	TileModel[] tiles = GameDataManager.mapper.readValue(text, TileModel[].class);
-	for (TileModel tile : tiles) {
-	    GameDataManager.TILES.put(tile.getTileId(), tile);
-	}
-	GameDataManager.log.info("Loading Tiles... DONE");
+        GameDataManager.log.info("Loading Tiles..");
+        GameDataManager.TILES = new HashMap<>();
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/tiles.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/tiles.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        TileModel[] tiles = GameDataManager.mapper.readValue(text, TileModel[].class);
+        for (TileModel tile : tiles) {
+            GameDataManager.TILES.put(tile.getTileId(), tile);
+        }
+        GameDataManager.log.info("Loading Tiles... DONE");
     }
 
     private static void loadEnemies(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading Enemies..");
-	GameDataManager.ENEMIES = new HashMap<>();
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/enemies.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/enemies.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	EnemyModel[] enemies = GameDataManager.mapper.readValue(text, EnemyModel[].class);
-	for (EnemyModel enemy : enemies) {
-	    GameDataManager.ENEMIES.put(enemy.getEnemyId(), enemy);
-	}
-	GameDataManager.log.info("Loading Enemies... DONE");
+        GameDataManager.log.info("Loading Enemies..");
+        GameDataManager.ENEMIES = new HashMap<>();
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/enemies.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/enemies.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        EnemyModel[] enemies = GameDataManager.mapper.readValue(text, EnemyModel[].class);
+        for (EnemyModel enemy : enemies) {
+            GameDataManager.ENEMIES.put(enemy.getEnemyId(), enemy);
+        }
+        GameDataManager.log.info("Loading Enemies... DONE");
     }
 
     private static void loadProjectileGroups(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading Projectile Groups...");
+        GameDataManager.log.info("Loading Projectile Groups...");
 
-	GameDataManager.PROJECTILE_GROUPS = new HashMap<>();
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/projectile-groups.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader()
-		    .getResourceAsStream("data/projectile-groups.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	ProjectileGroup[] projectileGroups = GameDataManager.mapper.readValue(text, ProjectileGroup[].class);
+        GameDataManager.PROJECTILE_GROUPS = new HashMap<>();
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/projectile-groups.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader()
+                    .getResourceAsStream("data/projectile-groups.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        ProjectileGroup[] projectileGroups = GameDataManager.mapper.readValue(text, ProjectileGroup[].class);
 
-	for (ProjectileGroup group : projectileGroups) {
-	    if ((group.getAngleOffset() != null) && group.getAngleOffset().contains("{{")) {
-		group.setAngleOffset(GameDataManager.replaceInjectVariables(group.getAngleOffset()));
-	    } else {
-		group.setAngleOffset("0");
-	    }
-	    for (Projectile p : group.getProjectiles()) {
-		if (p.getAngle().contains("{{")) {
-		    p.setAngle(GameDataManager.replaceInjectVariables(p.getAngle()));
-		}
-	    }
-	    GameDataManager.PROJECTILE_GROUPS.put(group.getProjectileGroupId(), group);
-	}
-	GameDataManager.log.info("Loading Projectile Groups... DONE");
+        for (ProjectileGroup group : projectileGroups) {
+            if ((group.getAngleOffset() != null) && group.getAngleOffset().contains("{{")) {
+                group.setAngleOffset(GameDataManager.replaceInjectVariables(group.getAngleOffset()));
+            } else {
+                group.setAngleOffset("0");
+            }
+            for (Projectile p : group.getProjectiles()) {
+                if (p.getAngle().contains("{{")) {
+                    p.setAngle(GameDataManager.replaceInjectVariables(p.getAngle()));
+                }
+            }
+            GameDataManager.PROJECTILE_GROUPS.put(group.getProjectileGroupId(), group);
+        }
+        GameDataManager.log.info("Loading Projectile Groups... DONE");
 
     }
 
     private static void loadGameItems(final boolean remote) throws Exception {
-	GameDataManager.log.info("Loading Game Items...");
+        GameDataManager.log.info("Loading Game Items...");
 
-	GameDataManager.GAME_ITEMS = new HashMap<>();
-	String text = null;
-	if (remote) {
-	    text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/game-items.json", null);
-	} else {
-	    InputStream inputStream = GameDataManager.class.getClassLoader()
-		    .getResourceAsStream("data/game-items.json");
-	    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-	}
-	GameItem[] gameItems = GameDataManager.mapper.readValue(text, GameItem[].class);
+        GameDataManager.GAME_ITEMS = new HashMap<>();
+        String text = null;
+        if (remote) {
+            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/game-items.json", null);
+        } else {
+            InputStream inputStream = GameDataManager.class.getClassLoader()
+                    .getResourceAsStream("data/game-items.json");
+            text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        GameItem[] gameItems = GameDataManager.mapper.readValue(text, GameItem[].class);
 
-	for (GameItem item : gameItems) {
-	    GameDataManager.GAME_ITEMS.put(item.getItemId(), item);
-	}
-	GameDataManager.log.info("Loading Game Items... DONE");
+        for (GameItem item : gameItems) {
+            GameDataManager.GAME_ITEMS.put(item.getItemId(), item);
+        }
+        GameDataManager.log.info("Loading Game Items... DONE");
     }
 
     // TODO: Add loot tier in LootContainer
     public static Sprite getLootSprite(int tier) {
-	return GameSpriteManager.loadSprite(tier, 9, "rotmg-misc.png", GlobalConstants.BASE_SPRITE_SIZE);
+        return GameSpriteManager.loadSprite(tier, 9, "rotmg-misc.png", GlobalConstants.BASE_SPRITE_SIZE);
     }
 
     public static Sprite getGraveSprite() {
-	return GameSpriteManager.loadSprite(5, 5, "rotmg-bosses.png", GlobalConstants.MEDIUM_ART_SIZE);
+        return GameSpriteManager.loadSprite(5, 5, "rotmg-bosses.png", GlobalConstants.MEDIUM_ART_SIZE);
     }
 
     public static Sprite getChestSprite() {
-	return GameSpriteManager.loadSprite(2, 0, "rotmg-projectiles.png", GlobalConstants.BASE_SPRITE_SIZE);
+        return GameSpriteManager.loadSprite(2, 0, "rotmg-projectiles.png", GlobalConstants.BASE_SPRITE_SIZE);
     }
 
     // TODO: Externalize this to a JSON file
     public static Map<Integer, GameItem> getStartingEquipment(final CharacterClass characterClass) {
-	final Map<Integer, GameItem> result = new HashMap<>();
+        final Map<Integer, GameItem> result = new HashMap<>();
 
-	switch (characterClass) {
-	case ROGUE:
-	    result.put(0, GameDataManager.GAME_ITEMS.get(91));
-	    result.put(1, GameDataManager.GAME_ITEMS.get(152));
-	    result.put(2, GameDataManager.GAME_ITEMS.get(32));
-	    break;
-	case ARCHER:
-	    result.put(0, GameDataManager.GAME_ITEMS.get(17));
-	    result.put(1, GameDataManager.GAME_ITEMS.get(154));
-	    result.put(2, GameDataManager.GAME_ITEMS.get(32));
-	    break;
-	case WIZARD:
-	    result.put(0, GameDataManager.GAME_ITEMS.get(121));
-	    result.put(1, GameDataManager.GAME_ITEMS.get(136));
-	    result.put(2, GameDataManager.GAME_ITEMS.get(106));
-	    break;
-	case PRIEST:
-	    result.put(0, GameDataManager.GAME_ITEMS.get(137));
-	    result.put(1, GameDataManager.GAME_ITEMS.get(157));
-	    result.put(2, GameDataManager.GAME_ITEMS.get(106));
-	    break;
-	case WARRIOR:
-	    result.put(0, GameDataManager.GAME_ITEMS.get(75));
-	    result.put(1, GameDataManager.GAME_ITEMS.get(156));
-	    result.put(2, GameDataManager.GAME_ITEMS.get(60));
-	    break;
-	case KNIGHT:
-	    result.put(0, GameDataManager.GAME_ITEMS.get(75));
-	    result.put(1, GameDataManager.GAME_ITEMS.get(155));
-	    result.put(2, GameDataManager.GAME_ITEMS.get(60));
-	    break;
-	case PALLADIN:
-	    result.put(0, GameDataManager.GAME_ITEMS.get(75));
-	    result.put(1, GameDataManager.GAME_ITEMS.get(153));
-	    result.put(2, GameDataManager.GAME_ITEMS.get(60));
-	    break;
-	default:
-	    break;
-	}
-	return result;
+        switch (characterClass) {
+        case ROGUE:
+            result.put(0, GameDataManager.GAME_ITEMS.get(91));
+            result.put(1, GameDataManager.GAME_ITEMS.get(152));
+            result.put(2, GameDataManager.GAME_ITEMS.get(32));
+            break;
+        case ARCHER:
+            result.put(0, GameDataManager.GAME_ITEMS.get(17));
+            result.put(1, GameDataManager.GAME_ITEMS.get(154));
+            result.put(2, GameDataManager.GAME_ITEMS.get(32));
+            break;
+        case WIZARD:
+            result.put(0, GameDataManager.GAME_ITEMS.get(121));
+            result.put(1, GameDataManager.GAME_ITEMS.get(136));
+            result.put(2, GameDataManager.GAME_ITEMS.get(106));
+            break;
+        case PRIEST:
+            result.put(0, GameDataManager.GAME_ITEMS.get(137));
+            result.put(1, GameDataManager.GAME_ITEMS.get(157));
+            result.put(2, GameDataManager.GAME_ITEMS.get(106));
+            break;
+        case WARRIOR:
+            result.put(0, GameDataManager.GAME_ITEMS.get(75));
+            result.put(1, GameDataManager.GAME_ITEMS.get(156));
+            result.put(2, GameDataManager.GAME_ITEMS.get(60));
+            break;
+        case KNIGHT:
+            result.put(0, GameDataManager.GAME_ITEMS.get(75));
+            result.put(1, GameDataManager.GAME_ITEMS.get(155));
+            result.put(2, GameDataManager.GAME_ITEMS.get(60));
+            break;
+        case PALLADIN:
+            result.put(0, GameDataManager.GAME_ITEMS.get(75));
+            result.put(1, GameDataManager.GAME_ITEMS.get(153));
+            result.put(2, GameDataManager.GAME_ITEMS.get(60));
+            break;
+        default:
+            break;
+        }
+        return result;
     }
 
     private static String replaceInjectVariables(String input) {
-	String randomizeRegex = "\\{\\{(.*?)}}";
-	Pattern pattern = Pattern.compile(randomizeRegex);
-	Matcher matcher = pattern.matcher(input);
-	while (matcher.find()) {
-	    String match = matcher.group(1);
-	    if (match.contains("PI/")) {
-		String[] split = match.split("/");
+        String randomizeRegex = "\\{\\{(.*?)}}";
+        Pattern pattern = Pattern.compile(randomizeRegex);
+        Matcher matcher = pattern.matcher(input);
+        while (matcher.find()) {
+            String match = matcher.group(1);
+            if (match.contains("PI/")) {
+                String[] split = match.split("/");
 
-		float multF = 1.0f;
-		if (split[0].length() > 2) {
-		    int endIndex = split[0].indexOf("P");
-		    multF = Float.parseFloat(split[0].substring(0, endIndex));
-		}
-		float angle = (float) ((multF * Math.PI) / Float.parseFloat(split[1]));
-		input = GameDataManager.replaceGen(input, match, angle + "");
+                float multF = 1.0f;
+                if (split[0].length() > 2) {
+                    int endIndex = split[0].indexOf("P");
+                    multF = Float.parseFloat(split[0].substring(0, endIndex));
+                }
+                float angle = (float) ((multF * Math.PI) / Float.parseFloat(split[1]));
+                input = GameDataManager.replaceGen(input, match, angle + "");
 
-	    } else if (match.contains("PI")) {
-		float angle = (float) Math.PI;
-		input = GameDataManager.replaceGen(input, match, angle + "");
-	    }
-	}
-	return input;
+            } else if (match.contains("PI")) {
+                float angle = (float) Math.PI;
+                input = GameDataManager.replaceGen(input, match, angle + "");
+            }
+        }
+        return input;
 
     }
 
     public static void loadSpriteModel(GameItem item) {
-	if (item.getItemId() > -1) {
-	    item.applySpriteModel(GameDataManager.GAME_ITEMS.get(item.getItemId()));
-	}
+        if (item.getItemId() > -1) {
+            item.applySpriteModel(GameDataManager.GAME_ITEMS.get(item.getItemId()));
+        }
     }
 
     public static String replaceGen(String source, String variable, String value) {
-	String text = source.replace("{{" + variable + "}}", value);
-	return text;
+        String text = source.replace("{{" + variable + "}}", value);
+        return text;
     }
 
     public static void loadGameData(final boolean loadRemote) {
-	GameDataManager.log.info("Loading Game Data from remote={}", loadRemote);
-	try {
-	    GameDataManager.loadProjectileGroups(loadRemote);
-	    GameDataManager.loadGameItems(loadRemote);
-	    GameDataManager.loadEnemies(loadRemote);
-	    GameDataManager.loadTiles(loadRemote);
-	    GameDataManager.loadMaps(loadRemote);
-	    GameDataManager.loadTerrains(loadRemote);
-	    GameDataManager.loadPortals(loadRemote);
-	    GameDataManager.loadExperienceModel(loadRemote);
-	    GameDataManager.loadCharacterClasses(loadRemote);
-	    GameDataManager.loadLootTables(loadRemote);
-	    GameDataManager.loadLootGroups(loadRemote);
-	    GameSpriteManager.loadSpriteImages(loadRemote);
-	    GameSpriteManager.loadTileSprites();
-	    GameSpriteManager.loadItemSprites();
-	} catch (Exception e) {
-	    GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
-	}
+        GameDataManager.log.info("Loading Game Data from remote={}", loadRemote);
+        try {
+            GameDataManager.loadProjectileGroups(loadRemote);
+            GameDataManager.loadGameItems(loadRemote);
+            GameDataManager.loadEnemies(loadRemote);
+            GameDataManager.loadTiles(loadRemote);
+            GameDataManager.loadMaps(loadRemote);
+            GameDataManager.loadTerrains(loadRemote);
+            GameDataManager.loadPortals(loadRemote);
+            GameDataManager.loadExperienceModel(loadRemote);
+            GameDataManager.loadCharacterClasses(loadRemote);
+            GameDataManager.loadLootTables(loadRemote);
+            GameDataManager.loadLootGroups(loadRemote);
+            GameSpriteManager.loadSpriteImages(loadRemote);
+            GameSpriteManager.loadTileSprites();
+            GameSpriteManager.loadItemSprites();
+        } catch (Exception e) {
+            GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) {
-	String data = "";
-	for (int i = 0; i < 32; i++) {
-	    data += "0,";
-	}
-	System.out.println(data);
+        String data = "";
+        for (int i = 0; i < 32; i++) {
+            data += "0,";
+        }
+        System.out.println(data);
     }
 }

@@ -26,6 +26,6 @@ public class MapModel {
     private Map<String, int[][]> data;
 
     public Vector2f getCenter() {
-	return new Vector2f((this.width / 2) * this.tileSize, ((this.height / 2) * (this.tileSize)));
+        return new Vector2f((this.width / 2) * this.tileSize, ((this.height / 2) * (this.tileSize)));
     }
 }

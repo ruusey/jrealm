@@ -9,7 +9,7 @@ import com.jrealm.game.realm.RealmManagerServer;
 public class Item157Script extends UseableItemScriptBase {
 
     public Item157Script(final RealmManagerServer mgr) {
-	super(mgr);
+        super(mgr);
     }
 
     @Override
@@ -18,25 +18,25 @@ public class Item157Script extends UseableItemScriptBase {
 
     @Override
     public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
-	final Effect effect = abilityItem.getEffect();
-	player.addEffect(effect.getEffectId(), effect.getDuration());
-	int healthDiff = player.getComputedStats().getHp() - player.getHealth();
-	if (healthDiff > 0) {
-	    int healthToAdd = healthDiff < 50 ? healthDiff : 50;
-	    player.setHealth(player.getHealth() + healthToAdd);
-	}
-	for (final Player other : targetRealm
-		.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
-	    healthDiff = player.getComputedStats().getHp() - player.getHealth();
-	    if (healthDiff > 0) {
-		int healthToAdd = healthDiff < 50 ? healthDiff : 50;
-		other.setHealth(other.getHealth() + healthToAdd);
-	    }
-	}
+        final Effect effect = abilityItem.getEffect();
+        player.addEffect(effect.getEffectId(), effect.getDuration());
+        int healthDiff = player.getComputedStats().getHp() - player.getHealth();
+        if (healthDiff > 0) {
+            int healthToAdd = healthDiff < 50 ? healthDiff : 50;
+            player.setHealth(player.getHealth() + healthToAdd);
+        }
+        for (final Player other : targetRealm
+                .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
+            healthDiff = player.getComputedStats().getHp() - player.getHealth();
+            if (healthDiff > 0) {
+                int healthToAdd = healthDiff < 50 ? healthDiff : 50;
+                other.setHealth(other.getHealth() + healthToAdd);
+            }
+        }
     }
 
     @Override
     public int getTargetItemId() {
-	return 157;
+        return 157;
     }
 }

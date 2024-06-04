@@ -43,29 +43,29 @@ public class AccountDto implements Serializable {
     private Date deleted;
 
     public boolean isAdmin() {
-	return this.accountSubscriptions != null && this.accountSubscriptions.size() > 0
-		&& this.accountSubscriptions.contains(AccountSubscription.ADMIN);
+        return this.accountSubscriptions != null && this.accountSubscriptions.size() > 0
+                && this.accountSubscriptions.contains(AccountSubscription.ADMIN);
     }
 
     @Override
     public boolean equals(Object obj) {
-	if (this == obj)
-	    return true;
-	if (obj == null)
-	    return false;
-	if (this.getClass() != obj.getClass())
-	    return false;
-	AccountDto other = (AccountDto) obj;
-	return Objects.equals(this.accountGuid, other.accountGuid) && Objects.equals(this.accountId, other.accountId)
-		&& Objects.equals(this.accountName, other.accountName) && Objects.equals(this.email, other.email)
-		&& Objects.equals(this.externalId, other.externalId)
-		&& Objects.equals(this.identifier, other.identifier);
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (this.getClass() != obj.getClass())
+            return false;
+        AccountDto other = (AccountDto) obj;
+        return Objects.equals(this.accountGuid, other.accountGuid) && Objects.equals(this.accountId, other.accountId)
+                && Objects.equals(this.accountName, other.accountName) && Objects.equals(this.email, other.email)
+                && Objects.equals(this.externalId, other.externalId)
+                && Objects.equals(this.identifier, other.identifier);
     }
 
     @Override
     public int hashCode() {
-	return Objects.hash(this.accountGuid, this.accountId, this.accountName, this.email, this.externalId,
-		this.identifier);
+        return Objects.hash(this.accountGuid, this.accountId, this.accountName, this.email, this.externalId,
+                this.identifier);
     }
 
 }

@@ -10,7 +10,7 @@ public abstract class GameState {
     public GameStateManager gsm;
 
     public GameState(GameStateManager gsm) {
-	this.gsm = gsm;
+        this.gsm = gsm;
     }
 
     public abstract void update(double time);

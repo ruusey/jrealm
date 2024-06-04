@@ -28,7 +28,7 @@ public class Projectile {
     private List<Short> flags;
 
     public boolean hasFlag(short flag) {
-	return (this.flags != null) && this.flags.contains(flag);
+        return (this.flags != null) && this.flags.contains(flag);
     }
 
 }

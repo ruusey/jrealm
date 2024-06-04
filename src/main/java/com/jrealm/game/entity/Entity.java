@@ -51,171 +51,171 @@ public abstract class Entity extends GameObject {
     private long[] effectTimes;
 
     public Entity(long id, Vector2f origin, int size) {
-	super(id, origin, size);
+        super(id, origin, size);
 
-	this.hitBounds = new Rectangle(origin, size, size);
-	this.resetEffects();
+        this.hitBounds = new Rectangle(origin, size, size);
+        this.resetEffects();
     }
 
     public void removeEffect(short effectId) {
-	for (int i = 0; i < this.effectIds.length; i++) {
-	    if (this.effectIds[i] == effectId) {
-		this.effectIds[i] = -1;
-		this.effectTimes[i] = -1;
-	    }
-	}
+        for (int i = 0; i < this.effectIds.length; i++) {
+            if (this.effectIds[i] == effectId) {
+                this.effectIds[i] = -1;
+                this.effectTimes[i] = -1;
+            }
+        }
     }
 
     public void removeExpiredEffects() {
-	for (int i = 0; i < this.effectIds.length; i++) {
-	    if (this.effectIds[i] != -1) {
-		if (Instant.now().toEpochMilli() > this.effectTimes[i]) {
-		    this.effectIds[i] = -1;
-		    this.effectTimes[i] = -1;
-		}
-	    }
-	}
+        for (int i = 0; i < this.effectIds.length; i++) {
+            if (this.effectIds[i] != -1) {
+                if (Instant.now().toEpochMilli() > this.effectTimes[i]) {
+                    this.effectIds[i] = -1;
+                    this.effectTimes[i] = -1;
+                }
+            }
+        }
     }
 
     public boolean hasEffect(EffectType effect) {
-	if (this.effectIds == null)
-	    return false;
-	for (int i = 0; i < this.effectIds.length; i++) {
-	    if (this.effectIds[i] == effect.effectId)
-		return true;
-	}
-	return false;
+        if (this.effectIds == null)
+            return false;
+        for (int i = 0; i < this.effectIds.length; i++) {
+            if (this.effectIds[i] == effect.effectId)
+                return true;
+        }
+        return false;
     }
 
     public boolean hasNoEffects() {
-	for (int i = 0; i < this.effectIds.length; i++) {
-	    if (this.effectIds[i] > -1)
-		return false;
-	}
-	return true;
+        for (int i = 0; i < this.effectIds.length; i++) {
+            if (this.effectIds[i] > -1)
+                return false;
+        }
+        return true;
     }
 
     public void resetEffects() {
-	this.effectIds = new short[] { -1, -1, -1, -1, -1, -1, -1, -1 };
-	this.effectTimes = new long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
+        this.effectIds = new short[] { -1, -1, -1, -1, -1, -1, -1, -1 };
+        this.effectTimes = new long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
     }
 
     public void addEffect(EffectType effect, long duration) {
-	for (int i = 0; i < this.effectIds.length; i++) {
-	    if (this.effectIds[i] == -1) {
-		this.effectIds[i] = effect.effectId;
-		this.effectTimes[i] = (Instant.now().toEpochMilli() + duration);
-		return;
-	    }
-	}
+        for (int i = 0; i < this.effectIds.length; i++) {
+            if (this.effectIds[i] == -1) {
+                this.effectIds[i] = effect.effectId;
+                this.effectTimes[i] = (Instant.now().toEpochMilli() + duration);
+                return;
+            }
+        }
     }
 
     public void setFallen(boolean b) {
-	this.fallen = b;
+        this.fallen = b;
     }
 
     public boolean getDeath() {
-	return this.health <= 0;
+        return this.health <= 0;
     }
 
     public int getHealth() {
-	return this.health;
+        return this.health;
     }
 
     public Rectangle getHitBounds() {
-	return this.hitBounds;
+        return this.hitBounds;
     }
 
     public int getDirection() {
-	if ((this.currentDirection == this.UP) || (this.currentDirection == this.LEFT))
-	    return 1;
-	return -1;
+        if ((this.currentDirection == this.UP) || (this.currentDirection == this.LEFT))
+            return 1;
+        return -1;
     }
 
     public void move() {
-	if (this.hasEffect(EffectType.PARALYZED)) {
-	    this.up = false;
-	    this.down = false;
-	    this.right = false;
-	    this.left = false;
-	    return;
-	}
-	if (this.up) {
-	    this.currentDirection = this.UP;
-	}
-	if (this.down) {
-	    this.currentDirection = this.DOWN;
-	}
-	if (this.left) {
-	    this.currentDirection = this.LEFT;
-	}
-	if (this.right) {
-	    this.currentDirection = this.RIGHT;
-	}
+        if (this.hasEffect(EffectType.PARALYZED)) {
+            this.up = false;
+            this.down = false;
+            this.right = false;
+            this.left = false;
+            return;
+        }
+        if (this.up) {
+            this.currentDirection = this.UP;
+        }
+        if (this.down) {
+            this.currentDirection = this.DOWN;
+        }
+        if (this.left) {
+            this.currentDirection = this.LEFT;
+        }
+        if (this.right) {
+            this.currentDirection = this.RIGHT;
+        }
     }
 
     public void update(double time) {
-	if (this.getSpriteSheet() != null) {
-	    this.getSpriteSheet().animate();
-	}
+        if (this.getSpriteSheet() != null) {
+            this.getSpriteSheet().animate();
+        }
     }
 
     public void updateAnimation() {
-	if (this.dx > 0) {
-	    this.right = true;
-	} else if (this.dx < 0) {
-	    this.left = true;
-	} else {
-	    this.right = false;
-	    this.left = false;
-	}
+        if (this.dx > 0) {
+            this.right = true;
+        } else if (this.dx < 0) {
+            this.left = true;
+        } else {
+            this.right = false;
+            this.left = false;
+        }
 
-	if (this.dy > 0) {
-	    this.down = true;
-	} else if (this.dy < 0) {
-	    this.up = true;
-	} else {
-	    this.down = false;
-	    this.up = false;
-	}
+        if (this.dy > 0) {
+            this.down = true;
+        } else if (this.dy < 0) {
+            this.up = true;
+        } else {
+            this.down = false;
+            this.up = false;
+        }
     }
 
     @Override
     public abstract void render(Graphics2D g);
 
     public boolean isFallen() {
-	return this.fallen;
+        return this.fallen;
     }
 
     public void setUp(boolean up) {
-	this.up = up;
+        this.up = up;
     }
 
     public void setDown(boolean down) {
-	this.down = down;
+        this.down = down;
     }
 
     public void setRight(boolean right) {
-	this.right = right;
+        this.right = right;
     }
 
     public void setLeft(boolean left) {
-	this.left = left;
+        this.left = left;
     }
 
     public boolean isUp() {
-	return this.up;
+        return this.up;
     }
 
     public boolean isDown() {
-	return this.down;
+        return this.down;
     }
 
     public boolean isRight() {
-	return this.right;
+        return this.right;
     }
 
     public boolean isLeft() {
-	return this.left;
+        return this.left;
     }
 }

@@ -14,36 +14,36 @@ public class Grasslands0Decorator extends RealmDecoratorBase {
     private static final TileModel TREE_11 = GameDataManager.TILES.get(39);
 
     public Grasslands0Decorator(RealmManagerServer mgr) {
-	super(mgr);
+        super(mgr);
     }
 
     @Override
     public void decorate(final Realm input) {
-	for (int i = 0; i < (Grasslands0Decorator.MIN_FOREST_COUNT + Realm.RANDOM
-		.nextInt(Grasslands0Decorator.MAX_FOREST_COUNT - Grasslands0Decorator.MIN_FOREST_COUNT)); i++) {
-	    final Vector2f pos = input.getTileManager().randomPos();
-	    final TileMap collisionLayer = input.getTileManager().getCollisionLayer();
-	    final int centerX = (int) (pos.x / collisionLayer.getTileSize());
-	    final int centerY = (int) (pos.y / collisionLayer.getTileSize());
+        for (int i = 0; i < (Grasslands0Decorator.MIN_FOREST_COUNT + Realm.RANDOM
+                .nextInt(Grasslands0Decorator.MAX_FOREST_COUNT - Grasslands0Decorator.MIN_FOREST_COUNT)); i++) {
+            final Vector2f pos = input.getTileManager().randomPos();
+            final TileMap collisionLayer = input.getTileManager().getCollisionLayer();
+            final int centerX = (int) (pos.x / collisionLayer.getTileSize());
+            final int centerY = (int) (pos.y / collisionLayer.getTileSize());
 
-	    collisionLayer.setBlockAt(centerX, centerY, (short) Grasslands0Decorator.TREE_11.getTileId(),
-		    Grasslands0Decorator.TREE_11.getData());
-	    collisionLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
-		    (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
-	    collisionLayer.setBlockAt(centerX,
-		    (centerY + 1) >= collisionLayer.getHeight() ? collisionLayer.getHeight() - 1 : centerY + 1,
-		    (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
-	    collisionLayer.setBlockAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
-		    (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
-	    collisionLayer.setBlockAt(
-		    (centerX + 1) >= collisionLayer.getWidth() ? collisionLayer.getWidth() - 1 : centerX + 1, centerY,
-		    (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
-	}
+            collisionLayer.setBlockAt(centerX, centerY, (short) Grasslands0Decorator.TREE_11.getTileId(),
+                    Grasslands0Decorator.TREE_11.getData());
+            collisionLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
+                    (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
+            collisionLayer.setBlockAt(centerX,
+                    (centerY + 1) >= collisionLayer.getHeight() ? collisionLayer.getHeight() - 1 : centerY + 1,
+                    (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
+            collisionLayer.setBlockAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
+                    (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
+            collisionLayer.setBlockAt(
+                    (centerX + 1) >= collisionLayer.getWidth() ? collisionLayer.getWidth() - 1 : centerX + 1, centerY,
+                    (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
+        }
     }
 
     @Override
     public Integer getTargetMapId() {
-	return 4;
+        return 4;
     }
 
 }

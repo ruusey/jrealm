@@ -22,62 +22,62 @@ public class Tile implements Streamable<Tile> {
     private TileData data;
 
     public Tile(short tileId, Vector2f pos, TileData data, short size, boolean discovered) {
-	this.tileId = tileId;
-	this.pos = pos;
-	this.size = size;
-	this.data = data;
-	this.discovered = discovered;
+        this.tileId = tileId;
+        this.pos = pos;
+        this.size = size;
+        this.data = data;
+        this.discovered = discovered;
     }
 
     public boolean update(Rectangle bounds) {
-	return false;
+        return false;
     }
 
     public int getWidth() {
-	return this.size;
+        return this.size;
     }
 
     public int getHeight() {
-	return this.size;
+        return this.size;
     }
 
     public Vector2f getPos() {
-	return this.pos;
+        return this.pos;
     }
 
     public boolean isVoid() {
-	return this.tileId == 0;
+        return this.tileId == 0;
     }
 
     public void render(Graphics2D g) {
-	g.drawImage(GameSpriteManager.TILE_SPRITES.get((int) this.tileId), (int) this.pos.getWorldVar().x,
-		(int) this.pos.getWorldVar().y, this.size, this.size, null);
+        g.drawImage(GameSpriteManager.TILE_SPRITES.get((int) this.tileId), (int) this.pos.getWorldVar().x,
+                (int) this.pos.getWorldVar().y, this.size, this.size, null);
     }
 
     @Override
     public void write(DataOutputStream stream) throws Exception {
-	stream.writeShort(this.tileId);
-	stream.writeBoolean(this.discovered);
-	stream.writeShort(this.size);
-	stream.writeFloat(this.pos.x);
-	stream.writeFloat(this.pos.y);
-	stream.writeByte(this.data.getHasCollision());
-	stream.writeByte(this.data.getSlows());
-	stream.writeByte(this.data.getDamaging());
+        stream.writeShort(this.tileId);
+        stream.writeBoolean(this.discovered);
+        stream.writeShort(this.size);
+        stream.writeFloat(this.pos.x);
+        stream.writeFloat(this.pos.y);
+        stream.writeByte(this.data.getHasCollision());
+        stream.writeByte(this.data.getSlows());
+        stream.writeByte(this.data.getDamaging());
     }
 
     @Override
     public Tile read(DataInputStream stream) throws Exception {
-	final short tileId = stream.readShort();
-	final boolean discovered = stream.readBoolean();
-	final short size = stream.readShort();
-	final float posX = stream.readFloat();
-	final float posY = stream.readFloat();
-	final byte hasCollision = stream.readByte();
-	final byte slows = stream.readByte();
-	final byte damaging = stream.readByte();
+        final short tileId = stream.readShort();
+        final boolean discovered = stream.readBoolean();
+        final short size = stream.readShort();
+        final float posX = stream.readFloat();
+        final float posY = stream.readFloat();
+        final byte hasCollision = stream.readByte();
+        final byte slows = stream.readByte();
+        final byte damaging = stream.readByte();
 
-	return new Tile(tileId, new Vector2f(posX, posY), new TileData(hasCollision, slows, damaging), size,
-		discovered);
+        return new Tile(tileId, new Vector2f(posX, posY), new TileData(hasCollision, slows, damaging), size,
+                discovered);
     }
 }

@@ -16,17 +16,17 @@ public class Monster extends Enemy {
     private String uuid;
 
     public Monster(long id, int enemyId, Vector2f origin, int size, int weaponId) {
-	super(id, enemyId, origin, size, weaponId);
-	EnemyModel model = GameDataManager.ENEMIES.get(enemyId);
-	this.acc = 1f;
-	this.deacc = 2f;
-	this.maxSpeed = 1.4f;
-	this.chaseRange = (int) model.getChaseRange();
-	this.attackRange = (int) model.getAttackRange();
+        super(id, enemyId, origin, size, weaponId);
+        EnemyModel model = GameDataManager.ENEMIES.get(enemyId);
+        this.acc = 1f;
+        this.deacc = 2f;
+        this.maxSpeed = 1.4f;
+        this.chaseRange = (int) model.getChaseRange();
+        this.attackRange = (int) model.getAttackRange();
 
-	this.health = Realm.RANDOM.nextInt(1000) + model.getHealth();
-	this.right = true;
-	this.uuid = UUID.randomUUID().toString();
+        this.health = Realm.RANDOM.nextInt(1000) + model.getHealth();
+        this.right = true;
+        this.uuid = UUID.randomUUID().toString();
     }
 
 }

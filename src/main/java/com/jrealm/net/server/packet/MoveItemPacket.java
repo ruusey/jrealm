@@ -35,60 +35,60 @@ public class MoveItemPacket extends Packet {
     }
 
     public MoveItemPacket(final byte id, final byte[] data) {
-	super(id, data);
-	try {
-	    this.readData(data);
-	} catch (Exception e) {
-	    log.error("Failed to parse MoveItem packet, Reason: {}", e);
-	}
+        super(id, data);
+        try {
+            this.readData(data);
+        } catch (Exception e) {
+            log.error("Failed to parse MoveItem packet, Reason: {}", e);
+        }
     }
 
     @Override
     public void readData(byte[] data) throws Exception {
-	ByteArrayInputStream bis = new ByteArrayInputStream(data);
-	DataInputStream dis = new DataInputStream(bis);
-	if (dis == null || dis.available() < 5)
-	    throw new IllegalStateException("No Packet data available to read from DataInputStream");
-	this.playerId = dis.readLong();
-	this.targetSlotIndex = dis.readByte();
-	this.fromSlotIndex = dis.readByte();
-	this.drop = dis.readBoolean();
-	this.consume = dis.readBoolean();
+        ByteArrayInputStream bis = new ByteArrayInputStream(data);
+        DataInputStream dis = new DataInputStream(bis);
+        if (dis == null || dis.available() < 5)
+            throw new IllegalStateException("No Packet data available to read from DataInputStream");
+        this.playerId = dis.readLong();
+        this.targetSlotIndex = dis.readByte();
+        this.fromSlotIndex = dis.readByte();
+        this.drop = dis.readBoolean();
+        this.consume = dis.readBoolean();
     }
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-	if (this.getId() < 1 || this.getData() == null || this.getData().length < 5)
-	    throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-	this.addHeader(stream);
-	stream.writeLong(this.playerId);
-	stream.writeByte(this.targetSlotIndex);
-	stream.writeByte(this.fromSlotIndex);
-	stream.writeBoolean(this.drop);
-	stream.writeBoolean(this.consume);
+        if (this.getId() < 1 || this.getData() == null || this.getData().length < 5)
+            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
+        this.addHeader(stream);
+        stream.writeLong(this.playerId);
+        stream.writeByte(this.targetSlotIndex);
+        stream.writeByte(this.fromSlotIndex);
+        stream.writeBoolean(this.drop);
+        stream.writeBoolean(this.consume);
     }
 
     public static MoveItemPacket from(long playerId, byte targetSlot, byte fromSlot, boolean drop, boolean consume)
-	    throws Exception {
-	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	DataOutputStream dos = new DataOutputStream(baos);
-	dos.writeLong(playerId);
-	dos.writeByte(targetSlot);
-	dos.writeByte(fromSlot);
-	dos.writeBoolean(drop);
-	dos.writeBoolean(consume);
-	return new MoveItemPacket(PacketType.MOVE_ITEM.getPacketId(), baos.toByteArray());
+            throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        dos.writeLong(playerId);
+        dos.writeByte(targetSlot);
+        dos.writeByte(fromSlot);
+        dos.writeBoolean(drop);
+        dos.writeBoolean(consume);
+        return new MoveItemPacket(PacketType.MOVE_ITEM.getPacketId(), baos.toByteArray());
     }
 
     public static boolean isInv1(int index) {
-	return INV_IDX1.contains(index);
+        return INV_IDX1.contains(index);
     }
 
     public static boolean isEquipment(int index) {
-	return EQUIPMENT_IDX.contains(index);
+        return EQUIPMENT_IDX.contains(index);
     }
 
     public static boolean isGroundLoot(int index) {
-	return GROUND_LOOT_IDX.contains(index);
+        return GROUND_LOOT_IDX.contains(index);
     }
 }

@@ -24,33 +24,33 @@ public class SocketServer implements Runnable {
     private volatile Map<String, ProcessingThread> clients = new ConcurrentHashMap<>();
 
     public SocketServer(int port) {
-	SocketServer.log.info("Creating local server at port {}", port);
-	try {
-	    this.serverSocket = new ServerSocket(port);
-	} catch (Exception e) {
-	    SocketServer.log.error("Failed to create server socket. Reason: {}", e.getMessage());
-	}
+        SocketServer.log.info("Creating local server at port {}", port);
+        try {
+            this.serverSocket = new ServerSocket(port);
+        } catch (Exception e) {
+            SocketServer.log.error("Failed to create server socket. Reason: {}", e.getMessage());
+        }
     }
 
     @Override
     public void run() {
-	Runnable socketAccept = () -> {
-	    SocketServer.log.info("Server now accepting inbound connections...");
-	    while (!this.shutdownSocketAccept) {
-		try {
-		    Socket socket = this.serverSocket.accept();
-		    socket.setTcpNoDelay(true);
+        Runnable socketAccept = () -> {
+            SocketServer.log.info("Server now accepting inbound connections...");
+            while (!this.shutdownSocketAccept) {
+                try {
+                    Socket socket = this.serverSocket.accept();
+                    socket.setTcpNoDelay(true);
 
-		    String remoteAddr = socket.getInetAddress().getHostAddress();
-		    ProcessingThread processingThread = new ProcessingThread(this, socket);
-		    this.clients.put(remoteAddr, processingThread);
-		    processingThread.start();
-		    SocketServer.log.info("Server accepted new connection from Remote Address {}", remoteAddr);
-		} catch (Exception e) {
-		    SocketServer.log.error("Failed to accept incoming socket connection, exiting...", e);
-		}
-	    }
-	};
-	WorkerThread.submitAndForkRun(socketAccept);
+                    String remoteAddr = socket.getInetAddress().getHostAddress();
+                    ProcessingThread processingThread = new ProcessingThread(this, socket);
+                    this.clients.put(remoteAddr, processingThread);
+                    processingThread.start();
+                    SocketServer.log.info("Server accepted new connection from Remote Address {}", remoteAddr);
+                } catch (Exception e) {
+                    SocketServer.log.error("Failed to accept incoming socket connection, exiting...", e);
+                }
+            }
+        };
+        WorkerThread.submitAndForkRun(socketAccept);
     }
 }

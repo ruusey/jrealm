@@ -9,6 +9,6 @@ public abstract class RealmDecoratorBase implements RealmDecorator {
     private RealmManagerServer mgr;
 
     public RealmDecoratorBase(RealmManagerServer mgr) {
-	this.mgr = mgr;
+        this.mgr = mgr;
     }
 }

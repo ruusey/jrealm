@@ -8,7 +8,7 @@ import com.jrealm.game.realm.RealmManagerServer;
 public class Item153Script extends UseableItemScriptBase {
 
     public Item153Script(RealmManagerServer mgr) {
-	super(mgr);
+        super(mgr);
     }
 
     @Override
@@ -17,15 +17,15 @@ public class Item153Script extends UseableItemScriptBase {
 
     @Override
     public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
-	for (final Player other : targetRealm
-		.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
-	    other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
-	}
+        for (final Player other : targetRealm
+                .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
+            other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
+        }
     }
 
     @Override
     public int getTargetItemId() {
-	return 153;
+        return 153;
     }
 
 }

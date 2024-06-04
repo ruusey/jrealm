@@ -9,25 +9,25 @@ public enum Cardinality {
     public static final Map<Byte, Cardinality> map = new HashMap<>();
 
     static {
-	for (Cardinality c : Cardinality.values()) {
-	    map.put(c.getCardinalityId(), c);
-	}
+        for (Cardinality c : Cardinality.values()) {
+            map.put(c.getCardinalityId(), c);
+        }
     }
     public byte cardinalityId;
 
     Cardinality(byte cardinalityId) {
-	this.cardinalityId = cardinalityId;
+        this.cardinalityId = cardinalityId;
     }
 
     public byte getCardinalityId() {
-	return this.cardinalityId;
+        return this.cardinalityId;
     }
 
     public static Cardinality valueOf(byte cardinalityId) {
-	return map.get(cardinalityId);
+        return map.get(cardinalityId);
     }
 
     public boolean equals(Cardinality other) {
-	return this.ordinal() == other.ordinal();
+        return this.ordinal() == other.ordinal();
     }
 }

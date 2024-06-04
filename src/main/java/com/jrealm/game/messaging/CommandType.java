@@ -15,35 +15,35 @@ public enum CommandType {
     private static Map<Byte, Class<?>> map = new HashMap<>();
 
     static {
-	for (CommandType et : CommandType.values()) {
-	    CommandType.map.put(et.getCommandId(), et.getCommandClass());
-	}
+        for (CommandType et : CommandType.values()) {
+            CommandType.map.put(et.getCommandId(), et.getCommandClass());
+        }
     }
 
     private CommandType(byte commandId, Class<?> packetClass) {
-	this.commandId = commandId;
-	this.commandClass = packetClass;
+        this.commandId = commandId;
+        this.commandClass = packetClass;
     }
 
     public byte getCommandId() {
-	return this.commandId;
+        return this.commandId;
     }
 
     public Class<?> getCommandClass() {
-	return this.commandClass;
+        return this.commandClass;
     }
 
     public static Class<?> valueOf(byte value) {
-	return CommandType.map.get(Byte.valueOf(value));
+        return CommandType.map.get(Byte.valueOf(value));
     }
 
     public static Class<?> valueOf(int value) {
-	return CommandType.map.get(Byte.valueOf((byte) value));
+        return CommandType.map.get(Byte.valueOf((byte) value));
     }
 
     @SuppressWarnings("unchecked")
     public static <T> T fromPacket(CommandPacket packet) throws Exception {
-	Class<T> target = (Class<T>) CommandType.valueOf(packet.getCommandId());
-	return packet.messageAs(target);
+        Class<T> target = (Class<T>) CommandType.valueOf(packet.getCommandId());
+        return packet.messageAs(target);
     }
 }

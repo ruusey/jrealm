@@ -13,56 +13,56 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class Chest extends LootContainer {
     public Chest(Vector2f pos) {
-	super(LootTier.CHEST, pos);
-	this.setUid(UUID.randomUUID().toString());
+        super(LootTier.CHEST, pos);
+        this.setUid(UUID.randomUUID().toString());
     }
 
     public Chest(Vector2f pos, GameItem loot) {
-	super(LootTier.CHEST, pos, loot);
-	this.setUid(UUID.randomUUID().toString());
+        super(LootTier.CHEST, pos, loot);
+        this.setUid(UUID.randomUUID().toString());
     }
 
     public Chest(Vector2f pos, GameItem[] loot) {
-	super(LootTier.CHEST, pos, loot);
-	this.setUid(UUID.randomUUID().toString());
+        super(LootTier.CHEST, pos, loot);
+        this.setUid(UUID.randomUUID().toString());
     }
 
     public Chest(LootContainer c) {
-	super(LootTier.CHEST, c.getPos(), c.getItems());
-	this.setLootContainerId(c.getLootContainerId());
-	this.setContentsChanged(c.getContentsChanged());
+        super(LootTier.CHEST, c.getPos(), c.getItems());
+        this.setLootContainerId(c.getLootContainerId());
+        this.setContentsChanged(c.getContentsChanged());
     }
 
     public void addItemAtFirtIdx(GameItem item) {
-	int idx = -1;
-	for (int i = 0; i < this.getItems().length; i++) {
-	    if (super.getItems()[i] == null) {
-		idx = i;
-	    }
-	}
-	if (idx > -1) {
-	    super.setItem(idx, item);
-	}
+        int idx = -1;
+        for (int i = 0; i < this.getItems().length; i++) {
+            if (super.getItems()[i] == null) {
+                idx = i;
+            }
+        }
+        if (idx > -1) {
+            super.setItem(idx, item);
+        }
     }
 
     @Override
     public boolean isExpired() {
-	return false;
+        return false;
     }
 
     @Override
     public boolean isEmpty() {
-	return false;
+        return false;
     }
 
     @Override
     public void render(Graphics2D g) {
-	super.render(g);
+        super.render(g);
     }
 
     @Override
     public String toString() {
-	return (this.getLootContainerId() + " " + this.getPos() + " isChest=" + (this instanceof Chest));
+        return (this.getLootContainerId() + " " + this.getPos() + " isChest=" + (this instanceof Chest));
     }
 
 }

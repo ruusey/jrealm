@@ -23,20 +23,20 @@ public class Effect implements Streamable<Effect> {
 
     @Override
     public Effect read(DataInputStream stream) throws Exception {
-	boolean self = stream.readBoolean();
-	short effectId = stream.readShort();
-	long duration = stream.readLong();
-	short mpCost = stream.readShort();
+        boolean self = stream.readBoolean();
+        short effectId = stream.readShort();
+        long duration = stream.readLong();
+        short mpCost = stream.readShort();
 
-	return new Effect(self, EffectType.valueOf(effectId), duration, mpCost);
+        return new Effect(self, EffectType.valueOf(effectId), duration, mpCost);
     }
 
     @Override
     public void write(DataOutputStream stream) throws Exception {
-	stream.writeBoolean(this.self);
-	stream.writeShort(this.effectId.effectId);
-	stream.writeLong(this.duration);
-	stream.writeShort(this.mpCost);
+        stream.writeBoolean(this.self);
+        stream.writeShort(this.effectId.effectId);
+        stream.writeLong(this.duration);
+        stream.writeShort(this.mpCost);
 
     }
 

@@ -11,26 +11,26 @@ public enum LootTier {
 
     public static Map<Byte, LootTier> map = new HashMap<>();
     static {
-	for (LootTier cc : LootTier.values()) {
-	    LootTier.map.put(cc.tierId, cc);
-	}
+        for (LootTier cc : LootTier.values()) {
+            LootTier.map.put(cc.tierId, cc);
+        }
     }
 
     public byte tierId;
 
     LootTier(int classId) {
-	this.tierId = (byte) classId;
+        this.tierId = (byte) classId;
     }
 
     public static LootTier valueOf(byte tier) {
-	return LootTier.map.get(tier);
+        return LootTier.map.get(tier);
     }
 
     public static Sprite getLootSprite(byte tier) {
-	if (LootTier.valueOf(tier).equals(GRAVE))
-	    return GameDataManager.getGraveSprite();
-	if (LootTier.valueOf(tier).equals(CHEST))
-	    return GameDataManager.getChestSprite();
-	return GameDataManager.getLootSprite(tier);
+        if (LootTier.valueOf(tier).equals(GRAVE))
+            return GameDataManager.getGraveSprite();
+        if (LootTier.valueOf(tier).equals(CHEST))
+            return GameDataManager.getChestSprite();
+        return GameDataManager.getLootSprite(tier);
     }
 }

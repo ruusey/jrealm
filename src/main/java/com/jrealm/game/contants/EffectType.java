@@ -9,18 +9,18 @@ public enum EffectType {
 
     public static Map<Short, EffectType> map = new HashMap<>();
     static {
-	for (EffectType e : EffectType.values()) {
-	    EffectType.map.put((short) e.effectId, e);
-	}
+        for (EffectType e : EffectType.values()) {
+            EffectType.map.put((short) e.effectId, e);
+        }
     }
     public short effectId;
 
     EffectType(short effectId) {
-	this.effectId = effectId;
+        this.effectId = effectId;
     }
 
     public static EffectType valueOf(short effectId) {
-	return EffectType.map.get(effectId);
+        return EffectType.map.get(effectId);
     }
 
 }

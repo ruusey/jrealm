@@ -11,24 +11,24 @@ public enum EntityType {
     private byte entityTypeId;
 
     static {
-	for (EntityType et : EntityType.values()) {
-	    map.put(et.getEntityTypeId(), et);
-	}
+        for (EntityType et : EntityType.values()) {
+            map.put(et.getEntityTypeId(), et);
+        }
     }
 
     private EntityType(byte entityTypeId) {
-	this.entityTypeId = entityTypeId;
+        this.entityTypeId = entityTypeId;
     }
 
     public byte getEntityTypeId() {
-	return this.entityTypeId;
+        return this.entityTypeId;
     }
 
     public static EntityType valueOf(byte value) {
-	return map.get(Byte.valueOf(value));
+        return map.get(Byte.valueOf(value));
     }
 
     public static EntityType valueOf(int value) {
-	return map.get(Byte.valueOf((byte) value));
+        return map.get(Byte.valueOf((byte) value));
     }
 }

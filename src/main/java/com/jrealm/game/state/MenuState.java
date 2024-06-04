@@ -8,7 +8,7 @@ import com.jrealm.game.util.MouseHandler;
 public class MenuState extends GameState {
 
     public MenuState(GameStateManager gsm) {
-	super(gsm);
+        super(gsm);
     }
 
     @Override
