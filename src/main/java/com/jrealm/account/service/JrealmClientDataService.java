@@ -17,7 +17,7 @@ import lombok.Data;
 
 @AllArgsConstructor
 @Data
-public class JrealmClientDataService {
+public class JrealmClientDataService implements JrealmDataService{
     // TODO: make POST/GET methods private
     // and expose public routine specific methods.
     // eg. getPlayerAccount(String accountUuid)
@@ -99,7 +99,7 @@ public class JrealmClientDataService {
         return JrealmClientDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
     }
 
-    private void setAuth(HttpRequest.Builder builder) {
+    public void setAuth(HttpRequest.Builder builder) {
         if (this.sessionToken != null) {
             builder.header("Authorization", this.sessionToken);
         }

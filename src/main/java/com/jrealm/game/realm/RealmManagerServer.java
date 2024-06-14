@@ -113,6 +113,7 @@ public class RealmManagerServer implements Runnable {
     private List<Vector2f> shotDestQueue;
     private Map<Long, Realm> realms = new HashMap<>();
     private Map<String, Long> remoteAddresses = new HashMap<>();
+    private Map<Long, Long> playerAbilityState = new HashMap<>();
     private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
     private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
     private Map<Long, UnloadPacket> playerUnloadState = new HashMap<>();
@@ -757,6 +758,13 @@ public class RealmManagerServer implements Runnable {
         if ((abilityItem == null))
             return;
         final Effect effect = abilityItem.getEffect();
+        final Long lastAbilityUsage = this.playerAbilityState.get(playerId);
+        if(lastAbilityUsage==null || (Instant.now().toEpochMilli() - lastAbilityUsage >= effect.getCooldownDuration())) {
+        	this.playerAbilityState.put(playerId, Instant.now().toEpochMilli());
+        }else {
+        	log.info("Ability {} is on cooldown", abilityItem);
+        	return;
+        }
         if (player.getMana() < effect.getMpCost())
             return;
         player.setMana(player.getMana() - effect.getMpCost());
@@ -1164,6 +1172,7 @@ public class RealmManagerServer implements Runnable {
         this.playerUnloadState.remove(playerId);
         this.playerLoadMapState.remove(playerId);
         this.playerObjectMoveState.remove(playerId);
+        this.playerAbilityState.remove(playerId);
     }
 
     public PortalModel getPortalToDepth(int targetDepth) {
