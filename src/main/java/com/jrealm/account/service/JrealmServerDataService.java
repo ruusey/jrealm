@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpResponse;
+import java.net.http.HttpRequest.BodyPublisher;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,15 +17,12 @@ import lombok.Data;
 
 @AllArgsConstructor
 @Data
-public class JRealmDataService {
-    // TODO: make POST/GET methods private
-    // and expose public routine specific methods.
-    // eg. getPlayerAccount(String accountUuid)
+public class JrealmServerDataService implements JrealmDataService{
     private static final transient ObjectMapper REQUEST_MAPPER = new ObjectMapper();
     private HttpClient httpClient;
     private String baseUrl;
-    private String sessionToken;
-
+    private String bearerToken;
+    
     public <T> T executeDelete(String path, Class<T> responseClass) throws Exception {
         final URI targetURI = new URI(this.baseUrl + path);
         final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json")
@@ -37,13 +34,13 @@ public class JRealmDataService {
         if (response.statusCode() != 200)
             throw new IOException(response.body());
 
-        return JRealmDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
+        return JrealmServerDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
     }
 
     public <T> T executePost(String path, Object object, Class<T> responseClass) throws Exception {
         final URI targetURI = new URI(this.baseUrl + path);
         final BodyPublisher body = HttpRequest.BodyPublishers
-                .ofString(JRealmDataService.REQUEST_MAPPER.writeValueAsString(object));
+                .ofString(JrealmServerDataService.REQUEST_MAPPER.writeValueAsString(object));
         final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json")
                 .uri(targetURI).POST(body);
         this.setAuth(httpRequest);
@@ -52,13 +49,13 @@ public class JRealmDataService {
         if (response.statusCode() != 200)
             throw new IOException(response.body());
 
-        return JRealmDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
+        return JrealmServerDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
     }
 
     public <T> T executePut(String path, Object object, Class<T> responseClass) throws Exception {
         final URI targetURI = new URI(this.baseUrl + path);
         final BodyPublisher body = HttpRequest.BodyPublishers
-                .ofString(JRealmDataService.REQUEST_MAPPER.writeValueAsString(object));
+                .ofString(JrealmServerDataService.REQUEST_MAPPER.writeValueAsString(object));
         final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json")
                 .uri(targetURI).PUT(body);
         this.setAuth(httpRequest);
@@ -68,7 +65,7 @@ public class JRealmDataService {
         if (response.statusCode() != 200)
             throw new IOException(response.body());
 
-        return JRealmDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
+        return JrealmServerDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
     }
 
     public String executeGet(String path, Map<String, String> queryParams) throws Exception {
@@ -96,17 +93,17 @@ public class JRealmDataService {
         if (response.statusCode() != 200)
             throw new IOException(response.body());
 
-        return JRealmDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
+        return JrealmServerDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
     }
 
-    private void setAuth(HttpRequest.Builder builder) {
-        if (this.sessionToken != null) {
-            builder.header("Authorization", this.sessionToken);
+    public void setAuth(HttpRequest.Builder builder) {
+        if (this.bearerToken != null) {
+            builder.header("Authorization", "Bearer " + this.bearerToken);
         }
     }
 
     public static void main(String[] args) {
-        JRealmDataService service = new JRealmDataService(HttpClient.newHttpClient(), "http://localhost:8085/", null);
+        JrealmClientDataService service = new JrealmClientDataService(HttpClient.newHttpClient(), "http://localhost:8085/", null);
         LoginRequestDto login = new LoginRequestDto("ru-admin@jrealm.com", "password");
         try {
             final SessionTokenDto response = service.executePost("/admin/account/login", login, SessionTokenDto.class);

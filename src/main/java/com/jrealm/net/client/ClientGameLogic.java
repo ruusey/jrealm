@@ -1,5 +1,6 @@
 package com.jrealm.net.client;
 
+import com.jrealm.account.service.JrealmClientDataService;
 import com.jrealm.game.GameLauncher;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EntityType;
@@ -35,6 +36,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientGameLogic {
+    public static JrealmClientDataService DATA_SERVICE = null;
+
+	
     public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
         @SuppressWarnings("unused")
         // Unused until this contains user spefic death data.

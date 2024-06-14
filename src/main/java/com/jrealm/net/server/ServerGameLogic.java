@@ -14,7 +14,7 @@ import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.account.dto.LoginRequestDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.account.dto.SessionTokenDto;
-import com.jrealm.account.service.JRealmDataService;
+import com.jrealm.account.service.JrealmServerDataService;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EffectType;
@@ -54,7 +54,7 @@ public class ServerGameLogic {
      * As of release 0.3.0 DATA_SERVICE static member is required for Game
      * functionality
      */
-    public static JRealmDataService DATA_SERVICE = null;
+    public static JrealmServerDataService DATA_SERVICE = null;
 
     public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
         final UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
@@ -345,7 +345,7 @@ public class ServerGameLogic {
             Optional<CharacterDto> characterClass = null;
             try {
                 loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
-                ServerGameLogic.DATA_SERVICE.setSessionToken(loginToken.getToken());
+                //ServerGameLogic.DATA_SERVICE.setSessionToken(loginToken.getToken());
                 account = ServerGameLogic.DATA_SERVICE.executeGet("/data/account/" + loginToken.getAccountGuid(), null,
                         PlayerAccountDto.class);
                 accountName = account.getAccountName();
