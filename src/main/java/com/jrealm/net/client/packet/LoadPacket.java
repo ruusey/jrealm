@@ -47,8 +47,8 @@ public class LoadPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream dis = new DataInputStream(bis);
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream dis = new DataInputStream(bis);
         if ((dis == null) || (dis.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
         int playersSize = dis.readInt();
@@ -116,8 +116,8 @@ public class LoadPacket extends Packet {
 
     public static LoadPacket from(Player[] players, LootContainer[] loot, Bullet[] bullets, Enemy[] enemies,
             Portal[] portals) throws Exception {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutputStream stream = new DataOutputStream(byteStream);
+    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(byteStream);
         stream.writeInt(players.length);
         for (Player p : players) {
             p.write(stream);
@@ -177,21 +177,21 @@ public class LoadPacket extends Packet {
             }
         }
 
-        for (LootContainer c : this.containers) {
+        for (final LootContainer c : this.containers) {
             if (c.getContentsChanged()) {
                 containersEq = false;
                 break;
             }
         }
 
-        for (LootContainer c : other.getContainers()) {
+        for (final LootContainer c : other.getContainers()) {
             if (c.getContentsChanged()) {
                 containersEq = false;
                 break;
             }
         }
 
-        for (LootContainer c : this.getContainers()) {
+        for (final LootContainer c : this.getContainers()) {
             if (c.getContentsChanged()) {
                 containersEq = false;
                 break;

@@ -87,8 +87,8 @@ public class UpdatePacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream dis = new DataInputStream(bis);
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream dis = new DataInputStream(bis);
         if ((dis == null) || (dis.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
         this.playerId = dis.readLong();
@@ -124,9 +124,8 @@ public class UpdatePacket extends Packet {
     }
 
     public static UpdatePacket from(Player player) throws Exception {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-
-        DataOutputStream stream = new DataOutputStream(byteStream);
+    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(byteStream);
         stream.writeLong(player.getId());
         stream.writeInt(player.getHealth());
         stream.writeInt(player.getMana());
@@ -143,7 +142,7 @@ public class UpdatePacket extends Packet {
         stream.writeShort(invSize);
 
         for (int i = 0; i < invSize; i++) {
-            GameItem item = player.getInventory()[i];
+        	final GameItem item = player.getInventory()[i];
             if (item != null) {
                 player.getInventory()[i].write(stream);
             } else {
@@ -190,15 +189,12 @@ public class UpdatePacket extends Packet {
 
         boolean effects = true;
         for (int i = 0; i < this.effectIds.length; i++) {
-
             if ((this.effectIds[i] != other.getEffectIds()[i]) || (this.effectTimes[i] != other.getEffectTimes()[i])) {
                 effects = false;
                 break;
             }
         }
-
         boolean expEqual = this.experience == other.getExperience();
-
         return basic && stats && inv && effects && expEqual;
     }
 }

@@ -58,8 +58,8 @@ public class PlayerMovePacket extends Packet {
     }
 
     public static PlayerMovePacket from(Player player, Cardinality direction, boolean move) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	final DataOutputStream dos = new DataOutputStream(baos);
         dos.writeLong(player.getId());
         dos.writeByte(direction.cardinalityId);
         dos.writeBoolean(move);

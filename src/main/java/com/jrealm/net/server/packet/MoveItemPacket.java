@@ -45,8 +45,8 @@ public class MoveItemPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream dis = new DataInputStream(bis);
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream dis = new DataInputStream(bis);
         if (dis == null || dis.available() < 5)
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
         this.playerId = dis.readLong();
@@ -70,8 +70,8 @@ public class MoveItemPacket extends Packet {
 
     public static MoveItemPacket from(long playerId, byte targetSlot, byte fromSlot, boolean drop, boolean consume)
             throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	final DataOutputStream dos = new DataOutputStream(baos);
         dos.writeLong(playerId);
         dos.writeByte(targetSlot);
         dos.writeByte(fromSlot);

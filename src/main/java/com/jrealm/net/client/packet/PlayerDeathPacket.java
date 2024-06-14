@@ -39,8 +39,8 @@ public class PlayerDeathPacket extends Packet {
     }
 
     public static PlayerDeathPacket from() throws Exception {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutputStream stream = new DataOutputStream(byteStream);
+    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(byteStream);
 
         return new PlayerDeathPacket(PacketType.PLAYER_DEATH.getPacketId(), byteStream.toByteArray());
     }

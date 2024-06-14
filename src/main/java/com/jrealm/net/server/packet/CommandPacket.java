@@ -63,8 +63,8 @@ public class CommandPacket extends Packet {
     }
 
     public static CommandPacket from(Player target, byte commandId, String command) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	final DataOutputStream dos = new DataOutputStream(baos);
         dos.writeLong(target.getId());
         dos.writeByte(commandId);
         dos.writeUTF(command);
@@ -72,8 +72,8 @@ public class CommandPacket extends Packet {
     }
 
     public static CommandPacket from(long targetEntity, byte commandId, String command) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final DataOutputStream dos = new DataOutputStream(baos);
         dos.writeLong(targetEntity);
         dos.writeByte(commandId);
         dos.writeUTF(command);
@@ -81,8 +81,8 @@ public class CommandPacket extends Packet {
     }
 
     public static CommandPacket from(CommandType cmd, Object command) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final DataOutputStream dos = new DataOutputStream(baos);
         dos.writeLong(-1l);
         dos.writeByte(cmd.getCommandId());
         dos.writeUTF(GameDataManager.JSON_MAPPER.writeValueAsString(command));

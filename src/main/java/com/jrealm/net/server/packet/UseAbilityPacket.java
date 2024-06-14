@@ -37,8 +37,8 @@ public class UseAbilityPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream dis = new DataInputStream(bis);
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream dis = new DataInputStream(bis);
         if ((dis == null) || (dis.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
         this.playerId = dis.readLong();
@@ -57,8 +57,8 @@ public class UseAbilityPacket extends Packet {
     }
 
     public static UseAbilityPacket from(Player player, Vector2f pos) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream stream = new DataOutputStream(baos);
+    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(baos);
         stream.writeLong(player.getId());
         stream.writeFloat(pos.x);
         stream.writeFloat(pos.y);

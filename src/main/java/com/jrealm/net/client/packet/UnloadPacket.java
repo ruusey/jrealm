@@ -40,8 +40,8 @@ public class UnloadPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream dis = new DataInputStream(bis);
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream dis = new DataInputStream(bis);
         if ((dis == null) || (dis.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
         int playersSize = dis.readInt();
@@ -110,8 +110,8 @@ public class UnloadPacket extends Packet {
 
     public static UnloadPacket from(Long[] players, Long[] containers, Long[] bullets, Long[] enemies, Long[] portals)
             throws Exception {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutputStream stream = new DataOutputStream(byteStream);
+    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(byteStream);
         stream.writeInt(players.length);
         for (long p : players) {
             stream.writeLong(p);

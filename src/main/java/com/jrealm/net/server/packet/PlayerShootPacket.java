@@ -71,8 +71,8 @@ public class PlayerShootPacket extends Packet {
     }
 
     public static PlayerShootPacket from(long newProjectileId, Player p, Vector2f dest) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	final DataOutputStream dos = new DataOutputStream(baos);
         dos.writeLong(newProjectileId);
         dos.writeLong(p.getId());
         dos.writeInt(p.getWeaponId());

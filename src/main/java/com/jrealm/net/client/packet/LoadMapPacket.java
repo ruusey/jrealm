@@ -36,15 +36,15 @@ public class LoadMapPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream dis = new DataInputStream(bis);
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream dis = new DataInputStream(bis);
         if ((dis == null) || (dis.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
         final long realmId = dis.readLong();
         final short mapId = dis.readShort();
         this.realmId = realmId;
         this.mapId = mapId;
-        short tilesSize = dis.readShort();
+        final short tilesSize = dis.readShort();
         if (tilesSize > 0) {
             this.tiles = new NetTile[tilesSize];
             for (int i = 0; i < tilesSize; i++) {
@@ -68,8 +68,8 @@ public class LoadMapPacket extends Packet {
     }
 
     public static LoadMapPacket from(long realmId, short mapId, List<NetTile> tiles) throws Exception {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutputStream stream = new DataOutputStream(byteStream);
+    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(byteStream);
         stream.writeLong(realmId);
         stream.writeShort(mapId);
         stream.writeShort(tiles.size());
@@ -81,8 +81,8 @@ public class LoadMapPacket extends Packet {
     }
 
     public static LoadMapPacket from(long realmId, short mapId, NetTile[] tiles) throws Exception {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutputStream stream = new DataOutputStream(byteStream);
+    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(byteStream);
         stream.writeLong(realmId);
         stream.writeShort(mapId);
         stream.writeShort(tiles.length);
@@ -98,7 +98,7 @@ public class LoadMapPacket extends Packet {
         // If the player is changing realms, force the new tiles to be sent
         if (this.realmId != other.getRealmId())
             return other;
-        for (NetTile tileOther : other.getTiles()) {
+        for (final NetTile tileOther : other.getTiles()) {
             if (!LoadMapPacket.tilesContains(tileOther, this.getTiles())) {
                 diff.add(tileOther);
             }
@@ -109,8 +109,8 @@ public class LoadMapPacket extends Packet {
     }
 
     public boolean equals(LoadMapPacket other) {
-        NetTile[] myTiles = this.getTiles();
-        NetTile[] otherTiles = other.getTiles();
+    	final NetTile[] myTiles = this.getTiles();
+    	final NetTile[] otherTiles = other.getTiles();
         if (myTiles.length != otherTiles.length)
             return false;
 
@@ -118,8 +118,8 @@ public class LoadMapPacket extends Packet {
             return false;
 
         for (int i = 0; i < myTiles.length; i++) {
-            NetTile myTile = myTiles[i];
-            NetTile otherTile = otherTiles[i];
+        	final  NetTile myTile = myTiles[i];
+        	final NetTile otherTile = otherTiles[i];
             if (!myTile.equals(otherTile))
                 return false;
         }

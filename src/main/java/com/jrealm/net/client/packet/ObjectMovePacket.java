@@ -49,8 +49,8 @@ public class ObjectMovePacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream dis = new DataInputStream(bis);
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream dis = new DataInputStream(bis);
         if (dis == null || dis.available() < 5)
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
 
@@ -63,8 +63,8 @@ public class ObjectMovePacket extends Packet {
     }
 
     public ObjectMovePacket getMoveDiff(ObjectMovePacket newMove) throws Exception {
-        List<ObjectMovement> moveDiff = new ArrayList<>();
-        for (ObjectMovement movement : newMove.getMovements()) {
+    	final List<ObjectMovement> moveDiff = new ArrayList<>();
+        for (final ObjectMovement movement : newMove.getMovements()) {
             if (!this.containsMovement(movement)) {
                 moveDiff.add(movement);
             }
@@ -74,7 +74,7 @@ public class ObjectMovePacket extends Packet {
     }
 
     public boolean containsMovement(ObjectMovement movement) {
-        for (ObjectMovement thisMovement : this.getMovements()) {
+        for (final ObjectMovement thisMovement : this.getMovements()) {
             if (thisMovement != null && thisMovement.equals(movement)) {
                 return true;
             }
@@ -83,11 +83,11 @@ public class ObjectMovePacket extends Packet {
     }
 
     public static ObjectMovePacket from(GameObject[] objects) throws Exception {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutputStream stream = new DataOutputStream(byteStream);
+    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(byteStream);
 
         stream.writeInt(objects.length);
-        for (GameObject obj : objects) {
+        for (final GameObject obj : objects) {
             new ObjectMovement(obj).write(stream);
         }
 
@@ -97,7 +97,7 @@ public class ObjectMovePacket extends Packet {
     public boolean equals(ObjectMovePacket other) {
         if (other == null)
             return false;
-        for (ObjectMovement movement : other.getMovements()) {
+        for (final ObjectMovement movement : other.getMovements()) {
             if (!this.containsMovement(movement)) {
                 return false;
             }
@@ -106,11 +106,11 @@ public class ObjectMovePacket extends Packet {
     }
 
     public static ObjectMovePacket from(ObjectMovement[] objects) throws Exception {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutputStream stream = new DataOutputStream(byteStream);
+    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(byteStream);
 
         stream.writeInt(objects.length);
-        for (ObjectMovement obj : objects) {
+        for (final ObjectMovement obj : objects) {
             obj.write(stream);
         }
 

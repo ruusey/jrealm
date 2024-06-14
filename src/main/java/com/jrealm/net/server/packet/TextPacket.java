@@ -35,8 +35,8 @@ public class TextPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream dis = new DataInputStream(bis);
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream dis = new DataInputStream(bis);
         if (dis == null || dis.available() < 5)
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
         this.from = dis.readUTF();
@@ -55,8 +55,8 @@ public class TextPacket extends Packet {
     }
 
     public static TextPacket from(String from, String to, String text) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	final DataOutputStream dos = new DataOutputStream(baos);
         dos.writeUTF(from);
         dos.writeUTF(to);
         dos.writeUTF(text);

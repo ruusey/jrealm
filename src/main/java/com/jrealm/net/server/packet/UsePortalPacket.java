@@ -45,8 +45,8 @@ public class UsePortalPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream dis = new DataInputStream(bis);
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream dis = new DataInputStream(bis);
         if ((dis == null) || (dis.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
 
@@ -70,8 +70,8 @@ public class UsePortalPacket extends Packet {
     }
 
     public static UsePortalPacket from(long portalId, long fromRealmId, long playerId) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	final DataOutputStream dos = new DataOutputStream(baos);
         dos.writeLong(portalId);
         dos.writeLong(fromRealmId);
         dos.writeLong(playerId);
@@ -81,8 +81,8 @@ public class UsePortalPacket extends Packet {
     }
 
     public static UsePortalPacket toNexus(long fromRealmId, long playerId) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	final DataOutputStream dos = new DataOutputStream(baos);
         dos.writeLong(-1l);
         dos.writeLong(fromRealmId);
         dos.writeLong(playerId);
@@ -92,8 +92,8 @@ public class UsePortalPacket extends Packet {
     }
 
     public static UsePortalPacket toVault(long fromRealmId, long playerId) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	final DataOutputStream dos = new DataOutputStream(baos);
         dos.writeLong(-1l);
         dos.writeLong(fromRealmId);
         dos.writeLong(playerId);

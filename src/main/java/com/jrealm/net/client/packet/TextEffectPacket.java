@@ -38,8 +38,8 @@ public class TextEffectPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream stream = new DataInputStream(bis);
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream stream = new DataInputStream(bis);
         if ((stream == null) || (stream.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
 
@@ -62,8 +62,8 @@ public class TextEffectPacket extends Packet {
 
     public static TextEffectPacket from(EntityType entityType, long targetEntityId, TextEffect effect, String text)
             throws Exception {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutputStream stream = new DataOutputStream(byteStream);
+    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(byteStream);
         stream.writeByte(effect.ordinal());
         stream.writeByte(entityType.getEntityTypeId());
         stream.writeLong(targetEntityId);
