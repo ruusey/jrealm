@@ -16,6 +16,8 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.model.SpriteModel;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.net.client.ClientGameLogic;
+import com.jrealm.net.server.ServerGameLogic;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -107,6 +109,7 @@ public class GameSpriteManager {
                 } else {
                     spriteImage = GameSpriteManager.loadSprite(spriteKey);
                 }
+                if(spriteImage==null) continue;
                 BufferedImage mask = ImageUtils.generateMask(spriteImage, Color.GREEN, 0.15f);
                 spriteImage = ImageUtils.applyMask(spriteImage, mask, 10);
 
@@ -132,7 +135,8 @@ public class GameSpriteManager {
         BufferedImage sprite = null;
         try {
             final java.net.URL imageUrl = new java.net.URL(
-                    ClientGameLogic.DATA_SERVICE.getBaseUrl() + "game-data/" + file);
+                    ClientGameLogic.DATA_SERVICE.getBaseUrl() == null ? ServerGameLogic.DATA_SERVICE.getBaseUrl()
+                            : ClientGameLogic.DATA_SERVICE.getBaseUrl() + "game-data/" + file);
             sprite = ImageIO.read(imageUrl);
         } catch (Exception e) {
             e.printStackTrace();

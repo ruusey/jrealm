@@ -43,6 +43,10 @@ public class GameLauncher {
             GameDataManager.loadGameData(true);
             GameLauncher.startClient(args);
         } else if (GameLauncher.argsContains(args, "-embedded")) {
+            ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(), "http://127.0.0.1:8085/",
+                    null);
+            ClientGameLogic.DATA_SERVICE = new JrealmClientDataService(HttpClient.newHttpClient(), "http://"+args[1]+":8085/",
+                    null);
             GameDataManager.loadGameData(true);
             GameLauncher.startServer();
             GameLauncher.startClient(args);
@@ -74,11 +78,11 @@ public class GameLauncher {
     private static void startServer() {
         Realm realm = new Realm(true, 2);
         try {
-			String sysToken = ServerGameLogic.DATA_SERVICE.executeGet("token", null);
-			ServerGameLogic.DATA_SERVICE.setBearerToken(sysToken);
-		} catch (Exception e) {
-			log.error("Failed to get Server SYS_TOKEN. Reason: {}", e);
-		}
+            String sysToken = ServerGameLogic.DATA_SERVICE.executeGet("token", null);
+            ServerGameLogic.DATA_SERVICE.setBearerToken(sysToken);
+        } catch (Exception e) {
+            log.error("Failed to get Server SYS_TOKEN. Reason: {}", e);
+        }
         RealmManagerServer server = new RealmManagerServer();
         Runtime.getRuntime().addShutdownHook(server.shutdownHook());
 
