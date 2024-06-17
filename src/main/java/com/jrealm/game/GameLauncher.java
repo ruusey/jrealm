@@ -29,29 +29,45 @@ public class GameLauncher {
             System.exit(-1);
         }
 
-        try {
-            PingResponseDto dataServerOnline = ServerGameLogic.DATA_SERVICE.executeGet("ping", null,
-                    PingResponseDto.class);
-            GameLauncher.log.info("Data server online. Response: {}", dataServerOnline);
-        } catch (Exception e) {
-            GameLauncher.log.error("FATAL. Unable to reach data server at {}. Reason: {}", args[1], e.getMessage());
-            System.exit(-1);
-        }
+       
         if (GameLauncher.argsContains(args, "-server")) {
-
             ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(), "http://127.0.0.1:8085/",
                     null);
+            GameLauncher.pingServer();
             GameDataManager.loadGameData(true);
             GameLauncher.startServer();
         } else if (GameLauncher.argsContains(args, "-client")) {
             ClientGameLogic.DATA_SERVICE = new JrealmClientDataService(HttpClient.newHttpClient(), "http://"+args[1]+":8085/",
                     null);
+            GameLauncher.pingClient();
             GameDataManager.loadGameData(true);
             GameLauncher.startClient(args);
         } else if (GameLauncher.argsContains(args, "-embedded")) {
             GameDataManager.loadGameData(true);
             GameLauncher.startServer();
             GameLauncher.startClient(args);
+        }
+    }
+    
+    private static void pingServer() {
+        try {
+            PingResponseDto dataServerOnline = ServerGameLogic.DATA_SERVICE.executeGet("ping", null,
+                    PingResponseDto.class);
+            GameLauncher.log.info("Data server online. Response: {}", dataServerOnline);
+        } catch (Exception e) {
+            GameLauncher.log.error("FATAL. Unable to reach data server at {}. Reason: {}", ServerGameLogic.DATA_SERVICE.getBaseUrl(), e.getMessage());
+            System.exit(-1);
+        }
+    }
+    
+    private static void pingClient() {
+        try {
+            PingResponseDto dataServerOnline = ClientGameLogic.DATA_SERVICE.executeGet("ping", null,
+                    PingResponseDto.class);
+            GameLauncher.log.info("Data server online. Response: {}", dataServerOnline);
+        } catch (Exception e) {
+            GameLauncher.log.error("FATAL. Unable to reach data server at {}. Reason: {}", ClientGameLogic.DATA_SERVICE.getBaseUrl(), e.getMessage());
+            System.exit(-1);
         }
     }
 

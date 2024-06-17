@@ -261,6 +261,7 @@ public class RealmManagerServer implements Runnable {
                 while ((playerPacketsToSend != null) && !playerPacketsToSend.isEmpty()) {
                     playerPackets.add(playerPacketsToSend.remove());
                 }
+                
                 final OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
                 final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 

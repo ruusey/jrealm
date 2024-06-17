@@ -50,6 +50,8 @@ public class ProcessingThread extends Thread {
         }
         try {
             this.clientSocket.close();
+            this.remoteBuffer = null;
+            this.packetQueue.clear();
             log.info("Client socket succesfully closed");
         } catch (IOException e1) {
             log.error("Failed to close client socket");

@@ -23,7 +23,7 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileModel;
-import com.jrealm.net.server.ServerGameLogic;
+import com.jrealm.net.client.ClientGameLogic;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +48,7 @@ public class GameDataManager {
         GameDataManager.LOOT_GROUPS = new HashMap<>();
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/loot-groups.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/loot-groups.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader()
                     .getResourceAsStream("data/loot-groups.json");
@@ -66,7 +66,7 @@ public class GameDataManager {
         GameDataManager.LOOT_TABLES = new HashMap<>();
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/loot-tables.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/loot-tables.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader()
                     .getResourceAsStream("data/loot-tables.json");
@@ -84,7 +84,7 @@ public class GameDataManager {
         GameDataManager.CHARACTER_CLASSES = new HashMap<>();
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/character-classes.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/character-classes.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader()
                     .getResourceAsStream("data/character-classes.json");
@@ -101,7 +101,7 @@ public class GameDataManager {
         GameDataManager.log.info("Loading ExperienceModel...");
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/exp-levels.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/exp-levels.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader()
                     .getResourceAsStream("data/exp-levels.json");
@@ -118,7 +118,7 @@ public class GameDataManager {
         GameDataManager.PORTALS = new HashMap<>();
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/portals.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/portals.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/portals.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
@@ -135,7 +135,7 @@ public class GameDataManager {
         GameDataManager.TERRAINS = new HashMap<>();
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/terrains.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/terrains.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/terrains.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
@@ -153,7 +153,7 @@ public class GameDataManager {
         GameDataManager.MAPS = new HashMap<>();
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/maps.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/maps.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/maps.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
@@ -170,7 +170,7 @@ public class GameDataManager {
         GameDataManager.TILES = new HashMap<>();
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/tiles.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/tiles.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/tiles.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
@@ -187,7 +187,7 @@ public class GameDataManager {
         GameDataManager.ENEMIES = new HashMap<>();
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/enemies.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/enemies.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/enemies.json");
             text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
@@ -205,7 +205,7 @@ public class GameDataManager {
         GameDataManager.PROJECTILE_GROUPS = new HashMap<>();
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/projectile-groups.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/projectile-groups.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader()
                     .getResourceAsStream("data/projectile-groups.json");
@@ -236,7 +236,7 @@ public class GameDataManager {
         GameDataManager.GAME_ITEMS = new HashMap<>();
         String text = null;
         if (remote) {
-            text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/game-items.json", null);
+            text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/game-items.json", null);
         } else {
             InputStream inputStream = GameDataManager.class.getClassLoader()
                     .getResourceAsStream("data/game-items.json");
