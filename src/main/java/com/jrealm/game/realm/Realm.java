@@ -591,7 +591,7 @@ public class Realm {
         Runnable r = () -> {
             while (!this.shutdown) {
                 double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
-                Realm.log.info("--- Realm: {} | MapId: {} ---", this.getRealmId(), this.getMapId());
+                Realm.log.info("--- Realm: {} | MapId: {} | Depth: {} ---", this.getRealmId(), this.getMapId(), this.getDepth());
                 Realm.log.info("Enemies: {}", this.enemies.size());
                 Realm.log.info("Players: {}", this.players.size());
                 Realm.log.info("Loot: {}", this.loot.size());

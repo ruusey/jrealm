@@ -110,9 +110,12 @@ public class GameSpriteManager {
                     spriteImage = GameSpriteManager.loadSprite(spriteKey);
                 }
                 if(spriteImage==null) continue;
-                BufferedImage mask = ImageUtils.generateMask(spriteImage, Color.GREEN, 0.15f);
-                spriteImage = ImageUtils.applyMask(spriteImage, mask, 10);
-
+                try {
+                    BufferedImage mask = ImageUtils.generateMask(spriteImage, Color.GREEN, 0.15f);
+                    spriteImage = ImageUtils.applyMask(spriteImage, mask, 10);
+                }catch(Exception e) {
+                    log.warn("Failed to create image shadow mask, graphics display quality may be reduced. Reason: {}", e.getMessage());
+                }
                 GameSpriteManager.IMAGE_CACHE.put(spriteKey, spriteImage);
             }
         } catch (Exception e) {

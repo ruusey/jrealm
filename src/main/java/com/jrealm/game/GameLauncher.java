@@ -33,10 +33,14 @@ public class GameLauncher {
         if (GameLauncher.argsContains(args, "-server")) {
             ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(), "http://127.0.0.1:8085/",
                     null);
+            ClientGameLogic.DATA_SERVICE = new JrealmClientDataService(HttpClient.newHttpClient(), "http://"+args[1]+":8085/",
+                    null);
             GameLauncher.pingServer();
             GameDataManager.loadGameData(true);
             GameLauncher.startServer();
         } else if (GameLauncher.argsContains(args, "-client")) {
+            ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(), "http://127.0.0.1:8085/",
+                    null);
             ClientGameLogic.DATA_SERVICE = new JrealmClientDataService(HttpClient.newHttpClient(), "http://"+args[1]+":8085/",
                     null);
             GameLauncher.pingClient();
