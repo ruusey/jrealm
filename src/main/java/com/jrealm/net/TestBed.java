@@ -16,7 +16,7 @@ public class TestBed {
 	private static Boolean runClient = true;
 	// Only one client will be in here but this is how to handle multple
 	private static volatile Map<String, Socket> clients = new ConcurrentHashMap<>();
-	
+
 	// Thread pool to run stuff in other threads
 	private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10,
 			Executors.privilegedThreadFactory());
@@ -35,15 +35,15 @@ public class TestBed {
 		}
 
 	}
-	
+
 	private static void shutDown() {
 		runServer = false;
 		runClient = false;
 	}
-	
+
 	// Attempts to accept a inbound socket connection and put it in the client map
 	private static void runServerSocket(final ServerSocket server) {
-		Runnable runServerSocketSeparateThread = () -> {
+		final Runnable runServerSocketSeparateThread = () -> {
 			System.out.println("Begin ServerSocket accept");
 			while (runServer) {
 				try {
@@ -62,19 +62,19 @@ public class TestBed {
 
 	// For all clients connected read the inbound data and response
 	private static void runServerRoutine(final ServerSocket server) {
-		Runnable runServerSocketSeparateThread = () -> {
+		final Runnable runServerSocketSeparateThread = () -> {
 			while (runServer) {
 				try {
 					for (Entry<String, Socket> entry : clients.entrySet()) {
 						final Socket clientSocket = entry.getValue();
 						final InputStream inputStreamFromClient = clientSocket.getInputStream();
 						if (inputStreamFromClient.available() > 0) {
-							int avail = inputStreamFromClient.available();
+							final int avail = inputStreamFromClient.available();
 							final byte[] readBytes = new byte[avail];
 							final int numBytesRead = inputStreamFromClient.read(readBytes);
 							final String inputContent = new String(readBytes, StandardCharsets.UTF_8);
-							System.out.println(
-									"Server recieved message("+numBytesRead+" bytes)"+" from client " + entry.getKey());
+							System.out.println("Server recieved message(" + numBytesRead + " bytes)" + " from client "
+									+ entry.getKey());
 							final OutputStream outputStreamToClient = clientSocket.getOutputStream();
 							byte[] responseToWrite = (inputContent + " FROM SERVER!").getBytes();
 							outputStreamToClient.write(responseToWrite);
@@ -98,7 +98,8 @@ public class TestBed {
 					final byte[] bytesToWrite = "Hello World".getBytes();
 					final OutputStream outputStream = client.getOutputStream();
 					// No stream established yet
-					if(outputStream==null) continue;
+					if (outputStream == null)
+						continue;
 					final InputStream inputStream = client.getInputStream();
 					outputStream.write(bytesToWrite);
 					outputStream.flush();
@@ -108,7 +109,7 @@ public class TestBed {
 						final byte[] readBytes = new byte[avail];
 						final int numBytesRead = inputStream.read(readBytes);
 						final String inputContent = new String(readBytes, StandardCharsets.UTF_8);
-						System.out.println("Client recieved message ("+numBytesRead+" bytes)" + inputContent);
+						System.out.println("Client recieved message (" + numBytesRead + " bytes)" + inputContent);
 					}
 					Thread.sleep(100);
 				} catch (Exception e) {
