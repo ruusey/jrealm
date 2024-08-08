@@ -29,14 +29,6 @@ public class TileData implements Streamable<TileData> {
         return this.damaging != 0;
     }
 
-    public static TileData withCollision() {
-        return new TileData((byte) 1, (byte) 0, (byte) 0);
-    }
-
-    public static TileData withoutCollision() {
-        return new TileData((byte) 0, (byte) 0, (byte) 0);
-    }
-
     @Override
     public void write(DataOutputStream stream) throws Exception {
         stream.writeByte(this.hasCollision);
@@ -49,7 +41,14 @@ public class TileData implements Streamable<TileData> {
         final byte hasCollision = stream.readByte();
         final byte slows = stream.readByte();
         final byte damaging = stream.readByte();
-
         return new TileData(hasCollision, slows, damaging);
+    }
+    
+    public static TileData withCollision() {
+        return new TileData((byte) 1, (byte) 0, (byte) 0);
+    }
+
+    public static TileData withoutCollision() {
+        return new TileData((byte) 0, (byte) 0, (byte) 0);
     }
 }
