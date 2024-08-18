@@ -128,6 +128,7 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
         return this.magnitude;
     }
 
+    // TODO: Remove static 10s lifetime
     public boolean remove() {
         final boolean timeExp = ((Instant.now().toEpochMilli()) - this.createdTime) > 10000;
         return ((this.range <= 0.0) || timeExp);

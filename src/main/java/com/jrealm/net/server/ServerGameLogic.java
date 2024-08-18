@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServerGameLogic {
     /**
-     * As of release 0.3.0 DATA_SERVICE static member is required for Game
+     * As of release 0.3.0 DATA_SERVICE static class variable is required for Game
      * functionality
      */
     public static JrealmServerDataService DATA_SERVICE = null;
