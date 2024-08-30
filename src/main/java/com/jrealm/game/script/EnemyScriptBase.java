@@ -3,7 +3,7 @@ package com.jrealm.game.script;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.realm.RealmManagerServer;
+import com.jrealm.net.realm.RealmManagerServer;
 
 import lombok.Data;
 

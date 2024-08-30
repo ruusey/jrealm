@@ -33,12 +33,13 @@ import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.realm.Realm;
-import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.GameObjectUtils;
+import com.jrealm.game.util.PacketHandler;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.realm.Realm;
+import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
@@ -164,7 +165,7 @@ public class ServerGameLogic {
 
     public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
         final PlayerMovePacket playerMovePacket = (PlayerMovePacket) packet;
-        final Realm realm = mgr.searchRealmsForPlayer(playerMovePacket.getEntityId());
+        final Realm realm = mgr.findPlayerRealm(playerMovePacket.getEntityId());
         if (realm == null) {
             ServerGameLogic.log.error("Failed to get realm for player {}", playerMovePacket.getEntityId());
             return;
@@ -227,15 +228,26 @@ public class ServerGameLogic {
 
     public static void handleUseAbilityServer(RealmManagerServer mgr, Packet packet) {
         final UseAbilityPacket useAbilityPacket = (UseAbilityPacket) packet;
-        final Realm realm = mgr.searchRealmsForPlayer(useAbilityPacket.getPlayerId());
+        final Realm realm = mgr.findPlayerRealm(useAbilityPacket.getPlayerId());
         mgr.useAbility(realm.getRealmId(), useAbilityPacket.getPlayerId(),
                 new Vector2f(useAbilityPacket.getPosX(), useAbilityPacket.getPosY()));
         ServerGameLogic.log.info("[SERVER] Recieved UseAbility Packet For Player {}", useAbilityPacket.getPlayerId());
     }
+    
+    @PacketHandler(TextPacket.class)
+    public static void handlePlayerrShootServer0(RealmManagerServer mgr, Packet packet) {
+        final TextPacket textPacket = (TextPacket) packet;
+        final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
+        final Player player = mgr.searchRealmsForPlayer(fromPlayerId);
+        final Realm realm = mgr.findPlayerRealm(fromPlayerId);
 
+        log.info("Player {} says {} from Realm {}", player.getName(), textPacket.getMessage(), realm.getRealmId());
+    }
+
+    //@PacketHandler(PlayerShootPacket.class)
     public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {
         final PlayerShootPacket shootPacket = (PlayerShootPacket) packet;
-        final Realm realm = mgr.searchRealmsForPlayer(shootPacket.getEntityId());
+        final Realm realm = mgr.findPlayerRealm(shootPacket.getEntityId());
         if (realm == null) {
             ServerGameLogic.log.error("Failed to get realm for player {}", shootPacket.getEntityId());
             return;
@@ -279,7 +291,7 @@ public class ServerGameLogic {
     public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
         final TextPacket textPacket = (TextPacket) packet;
         final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
-        final Realm from = mgr.searchRealmsForPlayer(fromPlayerId);
+        final Realm from = mgr.findPlayerRealm(fromPlayerId);
         try {
             ServerGameLogic.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}",
                     textPacket.getTo(), textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
@@ -292,7 +304,6 @@ public class ServerGameLogic {
             ServerGameLogic.log.error("Failed to send welcome message. Reason: {}", e);
         }
     }
-
     public static void handleCommandServer(RealmManagerServer mgr, Packet packet) {
         final CommandPacket commandPacket = (CommandPacket) packet;
         ServerGameLogic.log.info("[SERVER] Recieved Command Packet For Player {}. Command={}. SrcIp={}",

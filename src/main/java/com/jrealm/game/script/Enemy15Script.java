@@ -7,8 +7,8 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.realm.Realm;
-import com.jrealm.game.realm.RealmManagerServer;
+import com.jrealm.net.realm.Realm;
+import com.jrealm.net.realm.RealmManagerServer;
 
 public class Enemy15Script extends EnemyScriptBase {
 

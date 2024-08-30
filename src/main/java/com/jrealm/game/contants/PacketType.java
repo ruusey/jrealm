@@ -62,4 +62,8 @@ public enum PacketType {
     public static Tuple<Class<? extends Packet>, PacketType> valueOf(int value) {
         return PacketType.map.get(Byte.valueOf((byte) value));
     }
+    
+    public static PacketType valueOf(Class<? extends Packet> packetClass) {
+        return PacketType.map.values().stream().filter(packet->packet.getX().equals(packetClass)).map(packet->packet.getY()).findAny().orElse(null);
+    }
 }

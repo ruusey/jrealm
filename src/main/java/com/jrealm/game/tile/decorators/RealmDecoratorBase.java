@@ -1,6 +1,6 @@
 package com.jrealm.game.tile.decorators;
 
-import com.jrealm.game.realm.RealmManagerServer;
+import com.jrealm.net.realm.RealmManagerServer;
 
 import lombok.Data;
 

@@ -5,8 +5,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ ElementType.METHOD, ElementType.TYPE })
+import com.jrealm.net.Packet;
+
+@Target({ ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PacketHandler {
-    public byte packetId();
+    public Class<? extends Packet> value ();
+    //public byte packetId();
 }

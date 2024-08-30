@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
-import com.jrealm.game.realm.Realm;
+import com.jrealm.net.realm.Realm;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

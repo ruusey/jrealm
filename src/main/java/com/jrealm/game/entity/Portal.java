@@ -9,8 +9,8 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.realm.Realm;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.realm.Realm;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

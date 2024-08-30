@@ -2,7 +2,7 @@ package com.jrealm.game.script;
 
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.realm.Realm;
+import com.jrealm.net.realm.Realm;
 
 public interface EnemyScript {
     public int getTargetEnemyId();

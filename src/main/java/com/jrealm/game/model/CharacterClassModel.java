@@ -2,7 +2,7 @@ package com.jrealm.game.model;
 
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.Stats;
-import com.jrealm.game.realm.Realm;
+import com.jrealm.net.realm.Realm;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package com.jrealm.game.realm;
+package com.jrealm.net.realm;
 
 import java.io.DataOutputStream;
 import java.io.OutputStream;
@@ -109,6 +109,7 @@ public class RealmManagerServer implements Runnable {
     private Reflections classPathScanner = new Reflections("com.jrealm", Scanners.SubTypes, Scanners.MethodsAnnotated);
     private MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
     private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
+    private final Map<Byte, List<MethodHandle>> userPacketCallbacksServer = new HashMap<>();
 
     private List<Vector2f> shotDestQueue;
     private Map<Long, Realm> realms = new HashMap<>();
@@ -133,6 +134,7 @@ public class RealmManagerServer implements Runnable {
         this.registerRealmDecorators();
         this.registerEnemyScripts();
         this.registerPacketCallbacks();
+        this.registerPacketCallbacksReflection();
         this.registerItemScripts();
         this.registerCommandHandlersReflection();
         this.server = new SocketServer(2222);
@@ -416,7 +418,23 @@ public class RealmManagerServer implements Runnable {
                         final Packet created = Packet.newInstance(packet.getId(), packet.getData());
                         created.setSrcIp(packet.getSrcIp());
                         // Invoke packet callback
+                        List<MethodHandle> packetHandles = userPacketCallbacksServer.get(packet.getId());
+                        long start = System.nanoTime();
+                        if(packetHandles!=null) {
+                            for(MethodHandle handler : packetHandles) {
+                                try {
+                                    handler.invokeExact(this, created);
+                                } catch (Throwable e) {
+                                   log.error("Failed to invoke packet callback. Reason: {}", e);
+                                }
+                            }
+                            log.info("Invoked {} packet callbacks for PacketType {} using reflection in {} nanos", packetHandles.size(), PacketType.valueOf(created.getId()).getY(),(System.nanoTime()-start));
+
+                        }
+                        start = System.nanoTime();
                         this.packetCallbacksServer.get(created.getId()).accept(this, created);
+                        log.info("Invoked callback using map in {} nanos", (System.nanoTime()-start));
+                    
                     } catch (Exception e) {
                         RealmManagerServer.log.error("Failed to process server packets {}", e);
                         thread.getValue().setShutdownProcessing(true);
@@ -429,7 +447,7 @@ public class RealmManagerServer implements Runnable {
                     thread.getValue().setShutdownProcessing(true);
                     return;
                 }
-                final Realm playerLocation = this.searchRealmsForPlayer(dcPlayerId);
+                final Realm playerLocation = this.findPlayerRealm(dcPlayerId);
                 if (playerLocation != null) {
                     final Player dcPlayer = playerLocation.getPlayer(dcPlayerId);
                     this.persistPlayerAsync(dcPlayer);
@@ -632,8 +650,10 @@ public class RealmManagerServer implements Runnable {
         }
     }
 
+    // Registers any user defined packet callbacks with the server
     private void registerPacketCallbacksReflection() {
-        final MethodType mt = MethodType.methodType(Void.class, RealmManagerServer.class, Packet.class);
+        log.info("Registering packet handlers using reflection");
+        final MethodType mt = MethodType.methodType(void.class, RealmManagerServer.class, Packet.class);
         final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandler.class);
         for (final Method method : subclasses) {
             try {
@@ -641,14 +661,24 @@ public class RealmManagerServer implements Runnable {
                 final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerGameLogic.class,
                         method.getName(), mt);
                 if (handleToHandler != null) {
-                    // registerPacketCallback(commandToHandle.packetId(), handle)
+                    PacketType targetPacketType = PacketType.valueOf(packetToHandle.value());
+                    List<MethodHandle> existing  = userPacketCallbacksServer.get(targetPacketType.getPacketId());
+                    if(existing==null) {
+                        existing = new ArrayList<>();
+                    }
+                    existing.add(handleToHandler);
+                    log.info("Added new packet handler for packet {}. Handler method: {}", targetPacketType, handleToHandler.toString());
+                    this.userPacketCallbacksServer.put(targetPacketType.getPacketId(), existing);
+
                 }
             } catch (Exception e) {
                 log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
             }
         }
     }
-
+    // For packet callbacks requiring high performance we will invoke them in a functional mager using
+    // a hashmap to store the references. The server operator is encouraged to add auxilary packet
+    // handling functionality using the @PacketHandler annotation
     private void registerPacketCallbacks() {
         this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), ServerGameLogic::handlePlayerMoveServer);
         this.registerPacketCallback(PacketType.PLAYER_SHOOT.getPacketId(), ServerGameLogic::handlePlayerShootServer);
@@ -1108,15 +1138,18 @@ public class RealmManagerServer implements Runnable {
             // TODO: Possibly rewrite portal drops to come from loot table
             if (targetRealm.getMapId() != 5 && Realm.RANDOM.nextInt(10) < 10) {
 
-                final PortalModel portalModel = this.getPortalToDepth(targetRealm.getDepth() + 1);
+                final PortalModel portalModel = this.getPortalToDepth(targetRealm.getDepth()+1);
                 final Portal toNewRealmPortal = new Portal(Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(),
                         enemy.getPos().withNoise(64, 64));
-                Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth());
+               
+                Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth()-1);
                 if (realmAtDepth.isEmpty()) {
                     toNewRealmPortal.linkPortal(targetRealm, null);
+                    log.info("New portal created. Will generate realm id {} on use", portalModel.getTargetRealmDepth());
 
                 } else {
                     toNewRealmPortal.linkPortal(targetRealm, realmAtDepth.get());
+                    log.info("Linking Portal {} to existing realm {}", toNewRealmPortal, realmAtDepth.get());
                 }
                 targetRealm.addPortal(toNewRealmPortal);
             }
@@ -1196,7 +1229,7 @@ public class RealmManagerServer implements Runnable {
         this.realms.put(realm.getRealmId(), realm);
     }
 
-    public Realm searchRealmsForPlayer(long playerId) {
+    public Realm findPlayerRealm(long playerId) {
         Realm found = null;
         for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
             for (Player player : realm.getValue().getPlayers().values()) {
@@ -1217,6 +1250,18 @@ public class RealmManagerServer implements Runnable {
         for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
             for (Player player : realm.getValue().getPlayers().values()) {
                 if (player.getName() != null && player.getName().equalsIgnoreCase(playerName)) {
+                    found = player;
+                }
+            }
+        }
+        return found;
+    }
+    
+    public Player searchRealmsForPlayer(long playerId) {
+        Player found = null;
+        for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
+            for (Player player : realm.getValue().getPlayers().values()) {
+                if (player.getId()==playerId) {
                     found = player;
                 }
             }

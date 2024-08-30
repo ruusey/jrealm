@@ -19,9 +19,9 @@ import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileGroup;
 import com.jrealm.game.model.TileModel;
-import com.jrealm.game.realm.Realm;
 import com.jrealm.game.util.Camera;
 import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.realm.Realm;
 
 import lombok.Data;
 

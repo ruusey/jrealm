@@ -1,4 +1,4 @@
-package com.jrealm.game.realm;
+package com.jrealm.net.realm;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;

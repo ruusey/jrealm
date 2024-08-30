@@ -19,10 +19,10 @@ import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.ServerCommandMessage;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.PortalModel;
-import com.jrealm.game.realm.Realm;
-import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.util.CommandHandler;
 import com.jrealm.game.util.GameObjectUtils;
+import com.jrealm.net.realm.Realm;
+import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
@@ -35,7 +35,7 @@ public class ServerCommandHandler {
     public static void invokeCommand(RealmManagerServer mgr, CommandPacket command) throws Exception {
         final ServerCommandMessage message = CommandType.fromPacket(command);
         final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
-        final Realm playerRealm = mgr.searchRealmsForPlayer(fromPlayerId);
+        final Realm playerRealm = mgr.findPlayerRealm(fromPlayerId);
         final Player fromPlayer = playerRealm.getPlayer(fromPlayerId);
         // Look up this players account to see if they are allowed
         // to run Admin server commands
@@ -44,9 +44,9 @@ public class ServerCommandHandler {
 
         try {
             // has Subscription 'ADMIN'
-            if (!playerAccount.isAdmin())
-                throw new IllegalStateException(
-                        "Player " + playerAccount.getAccountName() + " is not allowed to use Admin commands.");
+//            if (!playerAccount.isAdmin())
+//                throw new IllegalStateException(
+//                        "Player " + playerAccount.getAccountName() + " is not allowed to use Admin commands.");
 
             MethodHandle methodHandle = COMMAND_CALLBACKS.get(message.getCommand().toLowerCase());
 
@@ -138,7 +138,7 @@ public class ServerCommandHandler {
             throw new IllegalArgumentException("Usage: /spawn {ENEMY_ID}");
 
         log.info("Player {} spawn enemy {} at {}", target.getName(), message.getArgs().get(0), target.getPos());
-        final Realm from = mgr.searchRealmsForPlayer(target.getId());
+        final Realm from = mgr.findPlayerRealm(target.getId());
         final int enemyId = Integer.parseInt(message.getArgs().get(0));
         from.addEnemy(GameObjectUtils.getEnemyFromId(enemyId, target.getPos().clone()));
     }
@@ -190,7 +190,7 @@ public class ServerCommandHandler {
         if (message.getArgs() == null || message.getArgs().size() < 1)
             throw new IllegalArgumentException("Usage: /item {ITEM_ID}");
         log.info("Player {} spawn item {}", target.getName(), message);
-        final Realm targetRealm = mgr.searchRealmsForPlayer(target.getId());
+        final Realm targetRealm = mgr.findPlayerRealm(target.getId());
         final int gameItemId = Integer.parseInt(message.getArgs().get(0));
         final GameItem itemToSpawn = GameDataManager.GAME_ITEMS.get(gameItemId);
         if (itemToSpawn == null) {
@@ -206,7 +206,7 @@ public class ServerCommandHandler {
         if (message.getArgs() == null || message.getArgs().size() < 1)
             throw new IllegalArgumentException("Usage: /realm {up | down}");
 
-        final Realm targetRealm = mgr.searchRealmsForPlayer(target.getId());
+        final Realm targetRealm = mgr.findPlayerRealm(target.getId());
         final PortalModel bossPortal = GameDataManager.PORTALS.get(5);
         final Realm generatedRealm = new Realm(true, bossPortal.getMapId(), bossPortal.getTargetRealmDepth());
         final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,

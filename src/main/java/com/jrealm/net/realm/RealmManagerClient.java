@@ -1,4 +1,4 @@
-package com.jrealm.game.realm;
+package com.jrealm.net.realm;
 
 import java.time.Instant;
 import java.util.HashMap;

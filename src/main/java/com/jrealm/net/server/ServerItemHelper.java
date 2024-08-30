@@ -6,9 +6,9 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
-import com.jrealm.game.realm.Realm;
-import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.net.Packet;
+import com.jrealm.net.realm.Realm;
+import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.MoveItemPacket;
 
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ public class ServerItemHelper {
         final MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
         ServerItemHelper.log.info("[SERVER] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
 
-        final Realm realm = mgr.searchRealmsForPlayer(moveItemPacket.getPlayerId());
+        final Realm realm = mgr.findPlayerRealm(moveItemPacket.getPlayerId());
 
         final Player player = realm.getPlayer(moveItemPacket.getPlayerId());
         // if moving item from inventory

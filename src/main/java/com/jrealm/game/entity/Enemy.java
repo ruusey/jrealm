@@ -13,12 +13,12 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.realm.Realm;
-import com.jrealm.game.realm.RealmManagerClient;
-import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.script.EnemyScriptBase;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.realm.Realm;
+import com.jrealm.net.realm.RealmManagerClient;
+import com.jrealm.net.realm.RealmManagerServer;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

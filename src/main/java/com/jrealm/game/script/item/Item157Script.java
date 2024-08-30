@@ -3,8 +3,8 @@ package com.jrealm.game.script.item;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.Effect;
 import com.jrealm.game.entity.item.GameItem;
-import com.jrealm.game.realm.Realm;
-import com.jrealm.game.realm.RealmManagerServer;
+import com.jrealm.net.realm.Realm;
+import com.jrealm.net.realm.RealmManagerServer;
 
 public class Item157Script extends UseableItemScriptBase {
 

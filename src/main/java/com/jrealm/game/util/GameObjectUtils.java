@@ -5,7 +5,7 @@ import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Monster;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
-import com.jrealm.game.realm.Realm;
+import com.jrealm.net.realm.Realm;
 
 public class GameObjectUtils {
     public static Enemy getEnemyFromId(final int enemyId) {

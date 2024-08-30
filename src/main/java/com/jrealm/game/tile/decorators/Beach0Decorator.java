@@ -3,9 +3,9 @@ package com.jrealm.game.tile.decorators;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.TileModel;
-import com.jrealm.game.realm.Realm;
-import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.tile.TileMap;
+import com.jrealm.net.realm.Realm;
+import com.jrealm.net.realm.RealmManagerServer;
 
 public class Beach0Decorator extends RealmDecoratorBase {
     private static final Integer SHORE_LINE_SIZE = 3;

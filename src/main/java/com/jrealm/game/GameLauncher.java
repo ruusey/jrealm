@@ -6,11 +6,11 @@ import com.jrealm.account.dto.PingResponseDto;
 import com.jrealm.account.service.JrealmClientDataService;
 import com.jrealm.account.service.JrealmServerDataService;
 import com.jrealm.game.data.GameDataManager;
-import com.jrealm.game.realm.Realm;
-import com.jrealm.game.realm.RealmManagerServer;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.net.client.SocketClient;
+import com.jrealm.net.realm.Realm;
+import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.ServerGameLogic;
 import com.jrealm.net.server.SocketServer;
 

@@ -16,8 +16,6 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.LoginResponseMessage;
 import com.jrealm.game.messaging.ServerErrorMessage;
-import com.jrealm.game.realm.Realm;
-import com.jrealm.game.realm.RealmManagerClient;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.EffectText;
 import com.jrealm.net.Packet;
@@ -29,6 +27,8 @@ import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.realm.Realm;
+import com.jrealm.net.realm.RealmManagerClient;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
