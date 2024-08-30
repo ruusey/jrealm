@@ -341,7 +341,13 @@ public class Player extends Entity implements Streamable<Player> {
         int currentLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(this.experience);
         int newLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(newExperience);
         final CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(this.getClassId());
+        // On level up
         if (newLevel > currentLevel) {
+            // Restore health, mp and apply random
+            // level up stat increases
+            this.setHealth(this.stats.getHp());
+            this.setMana(this.stats.getMp());
+
             this.setStats(this.getStats().concat(classModel.getRandomLevelUpStats()));
         }
         this.setExperience(newExperience);

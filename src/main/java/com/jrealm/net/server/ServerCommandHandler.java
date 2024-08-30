@@ -39,8 +39,8 @@ public class ServerCommandHandler {
         final Player fromPlayer = playerRealm.getPlayer(fromPlayerId);
         // Look up this players account to see if they are allowed
         // to run Admin server commands
-        final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE
-                .executeGet("/admin/account/" + fromPlayer.getAccountUuid(), null, AccountDto.class);
+//        final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE
+//                .executeGet("/admin/account/" + fromPlayer.getAccountUuid(), null, AccountDto.class);
 
         try {
             // has Subscription 'ADMIN'

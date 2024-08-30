@@ -314,7 +314,7 @@ public class ServerGameLogic {
                 ServerGameLogic.doLogin(mgr, CommandType.fromPacket(commandPacket), commandPacket);
                 break;
             case 3:
-                ServerGameLogic.handleServerCommand(mgr, commandPacket);
+                ServerCommandHandler.invokeCommand(mgr, commandPacket);
                 break;
             }
         } catch (Exception e) {
@@ -336,13 +336,6 @@ public class ServerGameLogic {
         final LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
     }
 
-    private static void handleServerCommand(RealmManagerServer mgr, CommandPacket command) {
-        try {
-            ServerCommandHandler.invokeCommand(mgr, command);
-        } catch (Exception e) {
-            log.error("Failed to invoke server command. Reason: {}", e);
-        }
-    }
 
     private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
         CommandPacket commandResponse = null;
