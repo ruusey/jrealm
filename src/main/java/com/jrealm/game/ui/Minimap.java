@@ -52,10 +52,10 @@ public class Minimap {
             Minimap.log.warn("Minimap is not yet initialized, please call initializeMap()");
             return;
         }
-        TileManager tm = this.playState.getRealmManager().getRealm().getTileManager();
-        Player currentPlayer = this.playState.getPlayer();
-        NetTile[] newTiles = tm.getLoadMapTiles(currentPlayer);
-        for (NetTile tile : newTiles) {
+        final TileManager tm = this.playState.getRealmManager().getRealm().getTileManager();
+        final Player currentPlayer = this.playState.getPlayer();
+        final NetTile[] newTiles = tm.getLoadMapTiles(currentPlayer);
+        for (final NetTile tile : newTiles) {
             if (tile.getLayer() == (byte) 0) {
                 this.currentBaseTiles[tile.getYIndex()][tile.getXIndex()] = tile;
             } else {

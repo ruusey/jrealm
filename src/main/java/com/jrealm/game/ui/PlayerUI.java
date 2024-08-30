@@ -545,9 +545,9 @@ public class PlayerUI {
         this.xp.render(g);
         this.renderStats(g);
         this.playerChat.render(g);
-        if (this.minimap.isInitialized()) {
-            this.minimap.update();
-            this.minimap.render(g);
-        }
+//        if (this.minimap.isInitialized()) {
+//            this.minimap.update();
+//            this.minimap.render(g);
+//        }
     }
 }

@@ -41,7 +41,6 @@ import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.ServerGameLogic;
-import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -162,11 +161,6 @@ public class Realm {
         return player.getId();
     }
     
-    public void onPlayerJoin(RealmManagerServer mgr, Player player) {
-        TextPacket text = TextPacket.create("SYSTEM", player.getName(), "Realm "+this.realmId+", depth: "+this.depth+"\n Enemies: "+this.enemies.size());
-        mgr.enqueueServerPacket(player, text);
-    }
-
     public long addPlayerIfNotExists(Player player) {
         if (!this.players.containsKey(player.getId())) {
             this.acquirePlayerLock();

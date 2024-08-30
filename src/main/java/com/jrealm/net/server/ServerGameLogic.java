@@ -56,7 +56,16 @@ public class ServerGameLogic {
      * functionality
      */
     public static JrealmServerDataService DATA_SERVICE = null;
-
+    
+    public static void onPlayerJoin(RealmManagerServer mgr, Realm realm, Player player) {
+        TextPacket text = TextPacket.create("SYSTEM", player.getName(), "Realm "+realm.getRealmId());
+        mgr.enqueueServerPacket(player, text);
+        text = TextPacket.create("SYSTEM", player.getName(), "Depth: "+realm.getDepth());
+        mgr.enqueueServerPacket(player, text);
+        text = TextPacket.create("SYSTEM", player.getName(), "Enemies: "+realm.getEnemies().size());
+        mgr.enqueueServerPacket(player, text);
+    }
+    
     public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
         final UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
 
@@ -84,7 +93,7 @@ public class ServerGameLogic {
         final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
         final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
         final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
-        final Realm targetRealm = mgr.getRealms().get(used.getToRealmId());
+        Realm targetRealm = mgr.getRealms().get(used.getToRealmId());
         final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 
         // Generate target, remove player from current, add to target.
@@ -93,23 +102,11 @@ public class ServerGameLogic {
             Optional<Realm> realmAtDepth = mgr.findRealmAtDepth(portalUsed.getTargetRealmDepth());
             if (realmAtDepth.isEmpty()) {
                 final Realm generatedRealm = new Realm(true, portalUsed.getMapId(), portalUsed.getTargetRealmDepth());
+                targetRealm = generatedRealm;
                 if (portalUsed.getMapId() == 5) {
-                    final int healthMult = (4);
                     final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
                             GlobalConstants.BASE_TILE_SIZE * 13);
-
-                    final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, spawnPos.clone(250, 0));
-                    exitPortal.linkPortal(generatedRealm, mgr.getTopRealm());
-                    exitPortal.setNeverExpires();
-
                     user.setPos(spawnPos);
-
-                    final Enemy enemy = GameObjectUtils.getEnemyFromId(13, spawnPos);
-                    enemy.setHealth(enemy.getHealth() * healthMult);
-                    enemy.setPos(spawnPos.clone(200, 0));
-
-                    generatedRealm.addEnemy(enemy);
-                    generatedRealm.addPortal(exitPortal);
                     generatedRealm.addPlayer(user);
                 } else {
                     final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3,
@@ -154,6 +151,7 @@ public class ServerGameLogic {
         }
         currentRealm.removePlayer(user);
         mgr.clearPlayerState(user.getId());
+        onPlayerJoin(mgr, targetRealm, user);
     }
 
     public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
@@ -396,6 +394,7 @@ public class ServerGameLogic {
             mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
 
             commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
+            ServerGameLogic.onPlayerJoin(mgr, targetRealm, player);
         } catch (Exception e) {
             ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
             commandResponse = CommandPacket.createError(assignedId, 503,
@@ -408,6 +407,7 @@ public class ServerGameLogic {
                         .getOutputStream();
                 final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
                 commandResponse.serializeWrite(dosToClient);
+
             } catch (Exception e) {
                 log.error("Failed to write login response to client. Reason: {}", e);
             }

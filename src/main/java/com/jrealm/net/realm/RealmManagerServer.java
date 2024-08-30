@@ -643,6 +643,7 @@ public class RealmManagerServer implements Runnable {
                         method.getName(), mt);
                 if (handleToHandler != null) {
                     ServerCommandHandler.COMMAND_CALLBACKS.put(commandToHandle.value(), handleToHandler);
+                    ServerCommandHandler.COMMAND_DESCRIPTIONS.put(commandToHandle.value(), commandToHandle);
                 }
             } catch (Exception e) {
                 log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
@@ -1136,7 +1137,7 @@ public class RealmManagerServer implements Runnable {
             }
             targetRealm.removeEnemy(enemy);
             // TODO: Possibly rewrite portal drops to come from loot table
-            if (targetRealm.getMapId() != 5 && Realm.RANDOM.nextInt(10) < 10) {
+            if (targetRealm.getMapId() != 5 && Realm.RANDOM.nextInt(10) < 2) {
 
                 final PortalModel portalModel = this.getPortalToDepth(targetRealm.getDepth()+1);
                 final Portal toNewRealmPortal = new Portal(Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(),
