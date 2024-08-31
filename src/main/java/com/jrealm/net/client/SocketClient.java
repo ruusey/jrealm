@@ -111,7 +111,7 @@ public class SocketClient implements Runnable {
         }
     }
 
-    private void doLogin() throws Exception {
+    public void doLogin() throws Exception {
         final LoginRequestMessage login = LoginRequestMessage.builder().characterUuid(SocketClient.CHARACTER_UUID)
                 .email(SocketClient.PLAYER_EMAIL).password(SocketClient.PLAYER_PASSWORD).build();
         final CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);

@@ -71,10 +71,22 @@ public class PlayerChat {
                     String messageToSend = key.getCapturedInput();
                     messageToSend = messageToSend.replace("\n", "").replace("\r", "");
                     if (messageToSend.startsWith("/")) {
-                        ServerCommandMessage serverCommand = ServerCommandMessage.parseFromInput(messageToSend);
-                        CommandPacket packet = CommandPacket.create(this.state.getPlayer(), CommandType.SERVER_COMMAND,
-                                serverCommand);
-                        client.sendRemote(packet);
+                        if(messageToSend.equalsIgnoreCase("/clear")) {
+                            this.playerChat = new LinkedHashMap<String, TextPacket>() {
+                                private static final long serialVersionUID = 4568387673008726309L;
+
+                                @Override
+                                protected boolean removeEldestEntry(Map.Entry<String, TextPacket> eldest) {
+                                    return this.size() > PlayerChat.CHAT_SIZE;
+                                }
+                            };
+                        }else {
+                            ServerCommandMessage serverCommand = ServerCommandMessage.parseFromInput(messageToSend);
+                            CommandPacket packet = CommandPacket.create(this.state.getPlayer(), CommandType.SERVER_COMMAND,
+                                    serverCommand);
+                            client.sendRemote(packet);
+                        }
+
                     } else {
                         TextPacket packet = TextPacket.create(this.state.getPlayer().getName(), "SYSTEM",
                                 messageToSend);

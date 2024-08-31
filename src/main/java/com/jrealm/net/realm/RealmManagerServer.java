@@ -1245,6 +1245,19 @@ public class RealmManagerServer implements Runnable {
     public Optional<Realm> findRealmAtDepth(int depth) {
         return this.getRealms().values().stream().filter(realm -> realm.getDepth() == (depth + 1)).findAny();
     }
+    
+    public void enqueChunkedText(Player target, List<String> textLines) {
+        for(String line : textLines) {
+            TextPacket textPacket;
+            try {
+                textPacket = TextPacket.from("SYSTEM", target.getName(), line);
+                this.enqueueServerPacket(target, textPacket);
+
+            } catch (Exception e) {
+               log.error("Failed to send text line {} to player {}. Reason: {}", line, target.getName(), e);
+            }
+        }
+    }
 
     public Player searchRealmsForPlayer(String playerName) {
         Player found = null;
@@ -1356,7 +1369,7 @@ public class RealmManagerServer implements Runnable {
                 final CharacterDto character = currentCharacter.get();
                 final CharacterStatsDto newStats = player.serializeStats();
                 final Set<GameItemRefDto> newItems = player.serializeItems();
-                character.setItems(player.serializeItems());
+                character.setItems(newItems);
                 character.setStats(newStats);
                 final CharacterDto savedStats = ServerGameLogic.DATA_SERVICE.executePost(
                         "/data/account/character/" + character.getCharacterUuid(), character, CharacterDto.class);
@@ -1366,20 +1379,6 @@ public class RealmManagerServer implements Runnable {
             RealmManagerServer.log.error("Failed to get player account. Reason: {}", e);
         }
         return true;
-    }
-
-    private void broadcastPacket(final Packet packet) {
-        for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
-            if (!client.getValue().isHandshakeComplete()) {
-                continue;
-            }
-            try {
-                final OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
-                final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-            } catch (Exception e) {
-                RealmManagerServer.log.error("Failed to broadcast Packet to client {}", client.getKey());
-            }
-        }
     }
 
     private void acquireRealmLock() {

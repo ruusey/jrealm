@@ -1,9 +1,13 @@
 package com.jrealm.net.server;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import com.jrealm.game.GameLauncher;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
@@ -115,6 +119,18 @@ public class ServerCommandHandler {
         log.info("Player {} spawn {} players  at {}", target.getName(), message.getArgs().get(0), target.getPos());
         mgr.spawnTestPlayers(mgr.getTopRealm().getRealmId(), Integer.parseInt(message.getArgs().get(0)),
                 target.getPos().clone());
+    }
+    
+    @CommandHandler(value="about", description="Get server info")
+    public static void invokeAbout(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        final List<String> text = Arrays.asList(
+                "JRealm Server " + GameLauncher.GAME_VERSION,
+                "Players connected: " + mgr.getRealms().values().stream().map(realm -> realm.getPlayers().size()).collect(Collectors.summingInt(count -> count)),
+                "Players in my realm: " + mgr.findPlayerRealm(target.getId()).getPlayers().size());
+        mgr.enqueChunkedText(target, text);
+
+        log.info("Player {} request command about.", target.getName());
     }
 
     @CommandHandler(value="help", description="This command")

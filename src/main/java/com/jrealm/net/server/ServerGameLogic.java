@@ -231,7 +231,7 @@ public class ServerGameLogic {
     }
     
     @PacketHandler(TextPacket.class)
-    public static void handlePlayerrShootServer0(RealmManagerServer mgr, Packet packet) {
+    public static void handleText0(RealmManagerServer mgr, Packet packet) {
         final TextPacket textPacket = (TextPacket) packet;
         final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
         final Player player = mgr.searchRealmsForPlayer(fromPlayerId);
@@ -360,6 +360,13 @@ public class ServerGameLogic {
                 throw e;
             }
             final CharacterDto targetCharacter = characterClass.get();
+            final Player existing = mgr.searchRealmsForPlayer(account.getAccountName());
+            
+            if(existing!=null) {
+                final Realm currentRealm = mgr.findPlayerRealm(existing.getId());
+                currentRealm.removePlayer(existing);
+                log.info("Player {} re-logged in with new Character ID {}", accountName, targetCharacter.getCharacterUuid());
+            }
             // TODO: Character death currently disabled
             if (targetCharacter.isDeleted() && false)
                 throw new Exception("Character " + targetCharacter.getCharacterUuid() + " is deleted!");

@@ -153,6 +153,19 @@ public class Realm {
             this.tileManager = new TileManager(GameDataManager.MAPS.get(mapId));
         }
     }
+    
+    public void clearData() {
+        this.bullets = new ConcurrentHashMap<>();
+        this.enemies = new ConcurrentHashMap<>();
+        this.loot = new ConcurrentHashMap<>();
+        this.portals = new ConcurrentHashMap<>();
+        this.players = new ConcurrentHashMap<>();
+        this.bulletHits = new ConcurrentHashMap<>();
+        this.expiredEnemies = new ArrayList<>();
+        this.expiredEnemies = new ArrayList<>();
+        this.expiredPlayers = new ArrayList<>();
+        this.playerLastShotTime = new ConcurrentHashMap<>();
+    }
 
     public long addPlayer(Player player) {
         this.acquirePlayerLock();
@@ -518,7 +531,7 @@ public class Realm {
             return ObjectMovePacket.from(validObjects.toArray(new GameObject[0]));
         return null;
     }
-
+    
     public LootContainer[] getLootInBounds(Rectangle cam) {
         final List<LootContainer> objs = new ArrayList<>();
         for (final LootContainer lc : this.loot.values()) {

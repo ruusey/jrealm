@@ -14,7 +14,6 @@ import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.data.GameSpriteManager;
-import com.jrealm.game.entity.Player;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.ui.Button;
@@ -32,6 +31,7 @@ public class PauseState extends GameState {
     private Font font;
     private PlayerAccountDto account;
     private List<Button> charSelectButtons;
+    private boolean characterSwitchRequested = false;
     public PauseState(GameStateManager gsm, PlayerAccountDto account) {
         super(gsm);
         this.account = account;
@@ -80,7 +80,6 @@ public class PauseState extends GameState {
         btnExit.render(g);
         int rowWidth = 500;
         int rowHeight = 100;
-        Player player = this.gsm.getPlayState().getPlayer();
         if (this.account != null) {
             for (CharacterDto cls : this.account.getCharacters()) {
                 final CharacterClass characterClass = CharacterClass.valueOf(cls.getCharacterClass());
@@ -94,7 +93,7 @@ public class PauseState extends GameState {
                 final SpriteSheet classImg = GameSpriteManager.loadClassSprites(characterClass);
                 String characterStr = "{0}, lv {1} {2} {3}/8";
                 characterStr = MessageFormat.format(characterStr, this.account.getAccountName(), lvl, characterClass,
-                        player.numStatsMaxed());
+                        cls.numStatsMaxed());
                 g.setColor(Color.GRAY);
                 g.fillRect(0, (i * rowHeight), rowWidth, rowHeight);
 
@@ -104,13 +103,22 @@ public class PauseState extends GameState {
                 
                 Button b = new Button(new Vector2f(0, i * rowHeight), 64);
                 b.onMouseUp(event->{
-                    log.info("Character button clicked for {} {}", characterClass, cls.getCharacterUuid());
-                    SocketClient.CHARACTER_UUID = cls.getCharacterUuid();
-                    gsm.pop(GameStateManager.PAUSE);
-                    gsm.add(GameStateManager.PLAY);
-                });
-                charSelectButtons.add(b);
+                    if(!this.characterSwitchRequested) {
+                        log.info("Character button clicked for {} {}", characterClass, cls.getCharacterUuid());
+                        SocketClient.CHARACTER_UUID = cls.getCharacterUuid();
+                        try {
+                            this.gsm.getPlayState().getRealmManager().getRealm().clearData();
+                            this.gsm.getPlayState().getRealmManager().getClient().doLogin();
+                        } catch (Exception e) {
+                            log.error("Failed to perform character switch login. Reason: {}", e);
+                        }
 
+                        gsm.pop(GameStateManager.PAUSE);
+                        gsm.add(GameStateManager.PLAY);
+                    }
+                    this.characterSwitchRequested = true;
+                });
+                this.charSelectButtons.add(b);
                 i++;
             }
         }
