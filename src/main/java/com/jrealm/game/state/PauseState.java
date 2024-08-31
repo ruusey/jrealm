@@ -5,6 +5,8 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jrealm.account.dto.CharacterDto;
 import com.jrealm.account.dto.PlayerAccountDto;
@@ -18,14 +20,18 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.ui.Button;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
+import com.jrealm.net.client.SocketClient;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class PauseState extends GameState {
 
     private Button btnResume;
     private Button btnExit;
     private Font font;
     private PlayerAccountDto account;
-
+    private List<Button> charSelectButtons;
     public PauseState(GameStateManager gsm, PlayerAccountDto account) {
         super(gsm);
         this.account = account;
@@ -50,6 +56,7 @@ public class PauseState extends GameState {
         btnExit.onMouseDown(e -> {
             System.exit(0);
         });
+        charSelectButtons = new ArrayList<>();
     }
 
     @Override
@@ -61,6 +68,7 @@ public class PauseState extends GameState {
     public void input(MouseHandler mouse, KeyHandler key) {
         btnResume.input(mouse, key);
         btnExit.input(mouse, key);
+        charSelectButtons.forEach(button->button.input(mouse, key));
 
     }
 
@@ -93,6 +101,16 @@ public class PauseState extends GameState {
                 g.setColor(Color.WHITE);
                 g.drawString(characterStr, 100, 32 + (rowHeight * i));
                 g.drawImage(classImg.getCurrentFrame(), 0, i * rowHeight, 64, 64, null);
+                
+                Button b = new Button(new Vector2f(0, i * rowHeight), 64);
+                b.onMouseUp(event->{
+                    log.info("Character button clicked for {} {}", characterClass, cls.getCharacterUuid());
+                    SocketClient.CHARACTER_UUID = cls.getCharacterUuid();
+                    gsm.pop(GameStateManager.PAUSE);
+                    gsm.add(GameStateManager.PLAY);
+                });
+                charSelectButtons.add(b);
+
                 i++;
             }
         }

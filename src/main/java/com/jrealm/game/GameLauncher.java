@@ -127,6 +127,8 @@ public class GameLauncher {
         }
         new Window();
     }
+    
+
 
     private static boolean argsContains(final String[] args, String arg) {
         for (String s : args) {
