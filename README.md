@@ -26,6 +26,7 @@
 * **F1** - Teleport to vault (safe zone) <br/>
 * **F2** - Use nearest portal <br/>
 
+* **Enter** - Chat/Use command
 ### Running
 #### *NOTE: As of release 0.3.0 You are now required to run JRealm-Data alongside JRealm-Server see: https://github.com/ruusey/jrealm-data*
 
