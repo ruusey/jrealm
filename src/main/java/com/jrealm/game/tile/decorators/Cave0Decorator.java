@@ -33,8 +33,13 @@ public class Cave0Decorator extends RealmDecoratorBase {
                     Cave0Decorator.LAVA_TILE1.getData());
             baseLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
                     (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
+            baseLayer.setBlockAt(centerX, (centerY - 2) > -1 ? centerY - 2 : 0,
+                    (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
             baseLayer.setBlockAt(centerX,
                     (centerY + 1) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerY + 1,
+                    (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
+            baseLayer.setBlockAt(centerX,
+                    (centerY + 2) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerY + 2,
                     (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
             baseLayer.setBlockAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
                     (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());

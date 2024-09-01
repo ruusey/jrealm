@@ -433,7 +433,7 @@ public class RealmManagerServer implements Runnable {
                         }
                         start = System.nanoTime();
                         this.packetCallbacksServer.get(created.getId()).accept(this, created);
-                        log.info("Invoked callback using map in {} nanos", (System.nanoTime()-start));
+                        log.debug("Invoked callback for PacketType {} using map in {} nanos", PacketType.valueOf(created.getId()).getY(), (System.nanoTime()-start));
                     
                     } catch (Exception e) {
                         RealmManagerServer.log.error("Failed to process server packets {}", e);

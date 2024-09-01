@@ -28,7 +28,7 @@ import lombok.Data;
 @Data
 public class TileManager {
     private static final Integer VIEWPORT_TILE_MIN = 10;
-    private static final Integer VIEWPORT_TILE_MAX = 16;
+    private static final Integer VIEWPORT_TILE_MAX = 20;
 
     private List<TileMap> mapLayers;
 
