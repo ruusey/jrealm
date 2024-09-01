@@ -22,7 +22,6 @@ public class GameStateManager {
     public static final int PLAY = 1;
     public static final int PAUSE = 2;
     public static final int GAMEOVER = 3;
-    public static final int EDIT = 4;
 
     public static Font font;
     public static Fontf fontf;
@@ -115,9 +114,6 @@ public class GameStateManager {
             break;
         case GameStateManager.GAMEOVER:
             this.states[GameStateManager.GAMEOVER] = gameState;
-            break;
-        case GameStateManager.EDIT:
-            this.states[GameStateManager.EDIT] = gameState;
             break;
         default:
             break;

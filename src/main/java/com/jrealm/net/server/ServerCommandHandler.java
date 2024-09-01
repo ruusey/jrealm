@@ -20,6 +20,7 @@ import com.jrealm.game.messaging.CommandType;
 import com.jrealm.game.messaging.ServerCommandMessage;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.PortalModel;
+import com.jrealm.game.tile.Tile;
 import com.jrealm.game.util.CommandHandler;
 import com.jrealm.game.util.GameObjectUtils;
 import com.jrealm.net.realm.Realm;
@@ -130,6 +131,19 @@ public class ServerCommandHandler {
                 "Players in my realm: " + mgr.findPlayerRealm(target.getId()).getPlayers().size());
         mgr.enqueChunkedText(target, text);
 
+        log.info("Player {} request command about.", target.getName());
+    }
+    
+    @CommandHandler(value="tile", description="Change all tiles in the viewport to the provided tile ID")
+    public static void invokeSetTile(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        final Short newTileId = Short.parseShort(message.getArgs().get(0));
+        final Vector2f playerPos = target.getPos();
+        final Realm playerRealm = mgr.findPlayerRealm(target.getId());
+        final Tile[] toModify = playerRealm.getTileManager().getBaseTiles(playerPos);
+        for(Tile tile : toModify) {
+            tile.setTileId(newTileId);
+        }
         log.info("Player {} request command about.", target.getName());
     }
 

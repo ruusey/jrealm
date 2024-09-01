@@ -8,11 +8,12 @@ import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 
 public class Beach0Decorator extends RealmDecoratorBase {
-    private static final Integer SHORE_LINE_SIZE = 3;
-    private static final Integer MIN_WATER_POOL_COUNT = 15;
-    private static final Integer MAX_WATER_POOL_COUNT = 25;
+    private static final Integer SHORE_LINE_SIZE = 5;
+    private static  Integer MIN_WATER_POOL_COUNT = 15;
+    private static  Integer MAX_WATER_POOL_COUNT = 25;
     private static final TileModel WATER_TILE = GameDataManager.TILES.get(41);
     private static final TileModel WATER_TILE_DEEP = GameDataManager.TILES.get(42);
+    
 
     public Beach0Decorator(RealmManagerServer mgr) {
         super(mgr);
@@ -20,6 +21,9 @@ public class Beach0Decorator extends RealmDecoratorBase {
 
     @Override
     public void decorate(final Realm input) {
+        MIN_WATER_POOL_COUNT = input.getTileManager().getBaseLayer().getWidth()/2;
+        MAX_WATER_POOL_COUNT = (input.getTileManager().getBaseLayer().getWidth()/2)+15;
+
         for (int i = 0; i < (Beach0Decorator.MIN_WATER_POOL_COUNT + Realm.RANDOM
                 .nextInt(Beach0Decorator.MAX_WATER_POOL_COUNT - Beach0Decorator.MIN_WATER_POOL_COUNT)); i++) {
             final Vector2f pos = input.getTileManager().randomPos();

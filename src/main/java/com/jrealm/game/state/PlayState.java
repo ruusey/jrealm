@@ -114,70 +114,68 @@ public class PlayState extends GameState {
 
         Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
         if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
-            if (!this.gsm.isStateActive(GameStateManager.EDIT)) {
+            final Runnable monitorDamageText = () -> {
+                final List<EffectText> toRemove = new ArrayList<>();
+                for (EffectText text : this.getDamageText()) {
+                    text.update();
+                    if (text.getRemove()) {
+                        toRemove.add(text);
+                    }
+                }
+                this.damageText.removeAll(toRemove);
+            };
 
-                final Runnable monitorDamageText = () -> {
-                    final List<EffectText> toRemove = new ArrayList<>();
-                    for (EffectText text : this.getDamageText()) {
-                        text.update();
-                        if (text.getRemove()) {
-                            toRemove.add(text);
+            final Runnable playerShootDequeue = () -> {
+                for (int i = 0; i < this.shotDestQueue.size(); i++) {
+                    final Vector2f dest = this.shotDestQueue.remove(i);
+                    final Vector2f source = this.getPlayer().getCenteredPosition();
+                    if (this.realmManager.getRealm().getTileManager().isCollisionTile(source)) {
+                        PlayState.log.error("Failed to invoke player shoot. Projectile is out of bounds.");
+                        continue;
+                    }
+                    try {
+                        PlayerShootPacket packet = PlayerShootPacket.from(Realm.RANDOM.nextLong(), player, dest);
+                        this.realmManager.getClient().sendRemote(packet);
+                    } catch (Exception e) {
+                        PlayState.log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
+                    }
+                }
+            };
+            // Testing out optimistic update of enemies/bullets
+            final Runnable processGameObjects = () -> {
+                final Realm clientRealm = this.realmManager.getRealm();
+                final GameObject[] gameObject = clientRealm.getAllGameObjects();
+                for (int i = 0; i < gameObject.length; i++) {
+                    if (gameObject[i] instanceof Enemy) {
+                        final Enemy enemy = ((Enemy) gameObject[i]);
+                        enemy.update(this.getRealmManager(), time);
+                    }
+
+                    if (gameObject[i] instanceof Bullet) {
+                        final Bullet bullet = ((Bullet) gameObject[i]);
+                        if (bullet != null) {
+                            bullet.update();
                         }
                     }
-                    this.damageText.removeAll(toRemove);
-                };
 
-                final Runnable playerShootDequeue = () -> {
-                    for (int i = 0; i < this.shotDestQueue.size(); i++) {
-                        final Vector2f dest = this.shotDestQueue.remove(i);
-                        final Vector2f source = this.getPlayer().getCenteredPosition();
-                        if (this.realmManager.getRealm().getTileManager().isCollisionTile(source)) {
-                            PlayState.log.error("Failed to invoke player shoot. Projectile is out of bounds.");
-                            continue;
-                        }
-                        try {
-                            PlayerShootPacket packet = PlayerShootPacket.from(Realm.RANDOM.nextLong(), player, dest);
-                            this.realmManager.getClient().sendRemote(packet);
-                        } catch (Exception e) {
-                            PlayState.log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
+                    if (gameObject[i] instanceof Player && gameObject[i].getId() != player.getId()) {
+                        final Player playerOther = ((Player) gameObject[i]);
+                        if (playerOther != null) {
+                            playerOther.update(time);
+                            this.movePlayer(playerOther);
                         }
                     }
-                };
-                // Testing out optimistic update of enemies/bullets
-                final Runnable processGameObjects = () -> {
-                    final Realm clientRealm = this.realmManager.getRealm();
-                    final GameObject[] gameObject = clientRealm.getAllGameObjects();
-                    for (int i = 0; i < gameObject.length; i++) {
-                        if (gameObject[i] instanceof Enemy) {
-                            final Enemy enemy = ((Enemy) gameObject[i]);
-                            enemy.update(this.getRealmManager(), time);
-                        }
+                }
+            };
 
-                        if (gameObject[i] instanceof Bullet) {
-                            final Bullet bullet = ((Bullet) gameObject[i]);
-                            if (bullet != null) {
-                                bullet.update();
-                            }
-                        }
+            final Runnable updatePlayerAndUi = () -> {
+                // player.removeExpiredEffects();
+                player.update(time);
+                this.movePlayer(player);
+                this.pui.update(time);
+            };
+            WorkerThread.submitAndRun(processGameObjects, playerShootDequeue, updatePlayerAndUi, monitorDamageText);
 
-                        if (gameObject[i] instanceof Player && gameObject[i].getId() != player.getId()) {
-                            final Player playerOther = ((Player) gameObject[i]);
-                            if (playerOther != null) {
-                                playerOther.update(time);
-                                this.movePlayer(playerOther);
-                            }
-                        }
-                    }
-                };
-
-                final Runnable updatePlayerAndUi = () -> {
-                    // player.removeExpiredEffects();
-                    player.update(time);
-                    this.movePlayer(player);
-                    this.pui.update(time);
-                };
-                WorkerThread.submitAndRun(processGameObjects, playerShootDequeue, updatePlayerAndUi, monitorDamageText);
-            }
             this.cam.target(player);
             this.cam.update();
             for (final LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
@@ -215,8 +213,8 @@ public class PlayState extends GameState {
         p.move();
     }
 
-    public synchronized void addProjectile(int projectileGroupId, int projectileId, Vector2f src, Vector2f dest,
-            short size, float magnitude, float range, short damage, boolean isEnemy, List<Short> flags) {
+    public synchronized void addProjectile(int projectileGroupId, int projectileId, Vector2f src, Vector2f dest, short size, float magnitude,
+            float range, short damage, boolean isEnemy, List<Short> flags) {
         Player player = this.realmManager.getRealm().getPlayer(this.playerId);
         if (player == null)
             return;
@@ -224,15 +222,13 @@ public class PlayState extends GameState {
         if (!isEnemy) {
             damage = (short) (damage + player.getStats().getAtt());
         }
-        Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, src, dest, size, magnitude, range, damage,
-                isEnemy);
+        Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, src, dest, size, magnitude, range, damage, isEnemy);
         b.setFlags(flags);
         this.realmManager.getRealm().addBullet(b);
     }
 
-    public synchronized long addProjectile(int projectileGroupId, int projectileId, Vector2f src, float angle,
-            short size, float magnitude, float range, short damage, boolean isEnemy, List<Short> flags, short amplitude,
-            short frequency) {
+    public synchronized long addProjectile(int projectileGroupId, int projectileId, Vector2f src, float angle, short size, float magnitude,
+            float range, short damage, boolean isEnemy, List<Short> flags, short amplitude, short frequency) {
         Player player = this.realmManager.getRealm().getPlayer(this.playerId);
         if (player == null)
             return -1;
@@ -240,8 +236,7 @@ public class PlayState extends GameState {
         if (!isEnemy) {
             damage = (short) (damage + player.getStats().getAtt());
         }
-        Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, src, angle, size, magnitude, range, damage,
-                isEnemy);
+        Bullet b = new Bullet(Realm.RANDOM.nextLong(), projectileId, src, angle, size, magnitude, range, damage, isEnemy);
         b.setAmplitude(amplitude);
         b.setFrequency(frequency);
         b.setFlags(flags);
@@ -250,8 +245,8 @@ public class PlayState extends GameState {
 
     @SuppressWarnings("unused")
     private List<Bullet> getBullets() {
-        final GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(
-                this.realmManager.getRealm().getTileManager().getRenderViewPort(this.getPlayer()));
+        final GameObject[] gameObject = this.realmManager.getRealm()
+                .getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort(this.getPlayer()));
 
         final List<Bullet> results = new ArrayList<>();
         for (int i = 0; i < gameObject.length; i++) {
@@ -358,8 +353,7 @@ public class PlayState extends GameState {
                     for (Map.Entry<Cardinality, Boolean> entry : lastDirectionTempMap.entrySet()) {
                         if (this.lastDirectionMap.get(entry.getKey()) != entry.getValue()) {
                             try {
-                                PlayerMovePacket packet = PlayerMovePacket.from(player, entry.getKey(),
-                                        entry.getValue());
+                                PlayerMovePacket packet = PlayerMovePacket.from(player, entry.getKey(), entry.getValue());
                                 this.realmManager.getClient().sendRemote(packet);
                             } catch (Exception e) {
                                 PlayState.log.error("Failed to create player move packet. Reason: {}", e);
@@ -374,8 +368,8 @@ public class PlayState extends GameState {
                     Portal closestPortal = this.realmManager.getState().getClosestPortal(this.getPlayerPos(), 32);
                     if (closestPortal != null) {
                         PortalModel portalModel = GameDataManager.PORTALS.get((int) closestPortal.getPortalId());
-                        UsePortalPacket usePortal = UsePortalPacket.from(closestPortal.getId(),
-                                this.realmManager.getRealm().getRealmId(), this.getPlayerId());
+                        UsePortalPacket usePortal = UsePortalPacket.from(closestPortal.getId(), this.realmManager.getRealm().getRealmId(),
+                                this.getPlayerId());
                         this.realmManager.getClient().sendRemote(usePortal);
                         this.realmManager.getRealm().loadMap(portalModel.getMapId());
                     }
@@ -387,8 +381,7 @@ public class PlayState extends GameState {
             if (key.f1.clicked) {
                 try {
                     if (this.realmManager.getRealm().getMapId() != 1) {
-                        UsePortalPacket usePortal = UsePortalPacket.toVault(this.realmManager.getRealm().getRealmId(),
-                                this.getPlayerId());
+                        UsePortalPacket usePortal = UsePortalPacket.toVault(this.realmManager.getRealm().getRealmId(), this.getPlayerId());
                         this.realmManager.getClient().sendRemote(usePortal);
                         this.realmManager.getRealm().loadMap(1);
                     }
@@ -404,11 +397,9 @@ public class PlayState extends GameState {
                 try {
                     GameItem from = this.getPlayer().getInventory()[4];
 
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(),
-                            (byte) 4, false, false);
+                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 4, false, false);
                     if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 4, false,
-                                true);
+                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 4, false, true);
                     }
                     this.realmManager.getClient().sendRemote(moveItem);
                 } catch (Exception e) {
@@ -418,11 +409,9 @@ public class PlayState extends GameState {
             if (key.two.clicked) {
                 try {
                     GameItem from = this.getPlayer().getInventory()[5];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(),
-                            (byte) 5, false, false);
+                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 5, false, false);
                     if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 5, false,
-                                true);
+                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 5, false, true);
                     }
                     this.realmManager.getClient().sendRemote(moveItem);
                 } catch (Exception e) {
@@ -432,11 +421,9 @@ public class PlayState extends GameState {
             if (key.three.clicked) {
                 try {
                     GameItem from = this.getPlayer().getInventory()[6];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(),
-                            (byte) 6, false, false);
+                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 6, false, false);
                     if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 6, false,
-                                true);
+                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 6, false, true);
                     }
                     this.realmManager.getClient().sendRemote(moveItem);
                 } catch (Exception e) {
@@ -446,11 +433,9 @@ public class PlayState extends GameState {
             if (key.four.clicked) {
                 try {
                     GameItem from = this.getPlayer().getInventory()[7];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(),
-                            (byte) 7, false, false);
+                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 7, false, false);
                     if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 7, false,
-                                true);
+                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 7, false, true);
                     }
                     this.realmManager.getClient().sendRemote(moveItem);
                 } catch (Exception e) {
@@ -460,11 +445,9 @@ public class PlayState extends GameState {
             if (key.five.clicked) {
                 try {
                     GameItem from = this.getPlayer().getInventory()[8];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(),
-                            (byte) 8, false, false);
+                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 8, false, false);
                     if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 8, false,
-                                true);
+                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 8, false, true);
                     }
                     this.realmManager.getClient().sendRemote(moveItem);
                 } catch (Exception e) {
@@ -474,11 +457,9 @@ public class PlayState extends GameState {
             if (key.six.clicked) {
                 try {
                     GameItem from = this.getPlayer().getInventory()[9];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(),
-                            (byte) 9, false, false);
+                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 9, false, false);
                     if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 9, false,
-                                true);
+                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 9, false, true);
                     }
                     this.realmManager.getClient().sendRemote(moveItem);
                 } catch (Exception e) {
@@ -488,11 +469,9 @@ public class PlayState extends GameState {
             if (key.seven.clicked) {
                 try {
                     GameItem from = this.getPlayer().getInventory()[10];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(),
-                            (byte) 10, false, false);
+                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 10, false, false);
                     if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 10, false,
-                                true);
+                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 10, false, true);
                     }
                     this.realmManager.getClient().sendRemote(moveItem);
                 } catch (Exception e) {
@@ -502,11 +481,9 @@ public class PlayState extends GameState {
             if (key.eight.clicked) {
                 try {
                     GameItem from = this.getPlayer().getInventory()[11];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(),
-                            (byte) 11, false, false);
+                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 11, false, false);
                     if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 11, false,
-                                true);
+                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 11, false, true);
                     }
                     this.realmManager.getClient().sendRemote(moveItem);
                 } catch (Exception e) {
@@ -514,9 +491,6 @@ public class PlayState extends GameState {
                 }
             }
 
-        } else if (this.gsm.isStateActive(GameStateManager.EDIT)) {
-            this.gsm.pop(GameStateManager.EDIT);
-            this.cam.target(player);
         }
 
         if (key.escape.clicked) {
@@ -529,7 +503,8 @@ public class PlayState extends GameState {
         }
 
         int dex = (int) ((6.5 * (this.getPlayer().getComputedStats().getDex() + 17.3)) / 75);
-        boolean canShoot = true;
+
+        boolean canShoot = (System.currentTimeMillis() - this.lastShotTick) > (1000 / dex + 10);
         boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
         if ((mouse.isPressed(MouseEvent.BUTTON1)) && canShoot) {
             this.lastShotTick = System.currentTimeMillis();
@@ -676,8 +651,7 @@ public class PlayState extends GameState {
         for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
             lc.render(g);
         }
-        if ((closeLoot != null && this.getPui().isGroundLootEmpty())
-                || (closeLoot != null && closeLoot.getContentsChanged())) {
+        if ((closeLoot != null && this.getPui().isGroundLootEmpty()) || (closeLoot != null && closeLoot.getContentsChanged())) {
             this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot), g);
 
         } else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
@@ -711,11 +685,9 @@ public class PlayState extends GameState {
 
             g.drawLine((int) pos.x, (int) pos.y, (int) pos.x + (int) node.getWidth(), (int) pos.y);
             // Top Right-> Bottom Right
-            g.drawLine((int) pos.x + (int) node.getWidth(), (int) pos.y, (int) pos.x + (int) node.getWidth(),
-                    (int) pos.y + (int) node.getHeight());
+            g.drawLine((int) pos.x + (int) node.getWidth(), (int) pos.y, (int) pos.x + (int) node.getWidth(), (int) pos.y + (int) node.getHeight());
             // Bottom Left -> Bottom Right
-            g.drawLine((int) pos.x, (int) pos.y + (int) node.getHeight(), (int) pos.x + (int) node.getWidth(),
-                    (int) pos.y + (int) node.getHeight());
+            g.drawLine((int) pos.x, (int) pos.y + (int) node.getHeight(), (int) pos.x + (int) node.getWidth(), (int) pos.y + (int) node.getHeight());
 
             g.drawLine((int) pos.x, (int) pos.y, (int) pos.x, (int) pos.y + (int) node.getHeight());
         }
@@ -729,11 +701,9 @@ public class PlayState extends GameState {
 
             g.drawLine((int) pos.x, (int) pos.y, (int) pos.x + (int) node.getWidth(), (int) pos.y);
             // Top Right-> Bottom Right
-            g.drawLine((int) pos.x + (int) node.getWidth(), (int) pos.y, (int) pos.x + (int) node.getWidth(),
-                    (int) pos.y + (int) node.getHeight());
+            g.drawLine((int) pos.x + (int) node.getWidth(), (int) pos.y, (int) pos.x + (int) node.getWidth(), (int) pos.y + (int) node.getHeight());
             // Bottom Left -> Bottom Right
-            g.drawLine((int) pos.x, (int) pos.y + (int) node.getHeight(), (int) pos.x + (int) node.getWidth(),
-                    (int) pos.y + (int) node.getHeight());
+            g.drawLine((int) pos.x, (int) pos.y + (int) node.getHeight(), (int) pos.x + (int) node.getWidth(), (int) pos.y + (int) node.getHeight());
 
             g.drawLine((int) pos.x, (int) pos.y, (int) pos.x, (int) pos.y + (int) node.getHeight());
         }

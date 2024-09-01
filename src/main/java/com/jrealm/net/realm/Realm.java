@@ -473,7 +473,6 @@ public class Realm {
                 if (inViewport) {
                     containersToLoad.add(c);
                 }
-
             }
 
             final List<Bullet> bulletsToLoad = new ArrayList<>();

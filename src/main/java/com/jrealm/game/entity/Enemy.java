@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class Enemy extends Entity implements Streamable<Enemy> {
     private static final int IDLE_FRAMES = 10;
-    private static final float CHASE_SPEED = 1.1f;
+    private static final float CHASE_SPEED = 1.25f;
     protected EnemyModel model;
     protected int chaseRange;
     protected int attackRange;
