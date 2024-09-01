@@ -11,19 +11,20 @@
 
 </div>
 <br>
-** Game Controls **
-W - Up
-A - Left
-S - Down
-D - Right
 
-1-8 - Consume/Equip corresponding inventory slot
+### Game Controls
+* **W** - Up <br/>
+* **A** - Left <br/>
+* **S** - Down <br/>
+* **D** - Right <br/>
 
-Left Click - Shoot/Pick up loot
-Right Click - Use Ability/Drop item
+* **1-8** - Consume/Equip corresponding inventory slot <br/>
 
-F1 - Teleport to vault (safe zone)
-F2 - Use nearest portal
+* **Left Click** - Shoot/Pick up loot <br/>
+* **Right Click** - Use Ability/Drop item <br/>
+
+* **F1** - Teleport to vault (safe zone) <br/>
+* **F2** - Use nearest portal <br/>
 
 ### Running
 #### *NOTE: As of release 0.3.0 You are now required to run JRealm-Data alongside JRealm-Server see: https://github.com/ruusey/jrealm-data*
