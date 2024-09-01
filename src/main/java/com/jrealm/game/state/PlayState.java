@@ -513,7 +513,7 @@ public class PlayState extends GameState {
             dest.addY(PlayState.map.y);
             this.shotDestQueue.add(dest);
         }
-        if ((mouse.isPressed(MouseEvent.BUTTON3)) && canUseAbility) {
+        if ((mouse.isPressed(MouseEvent.BUTTON3)) && canUseAbility && !this.pui.isHoveringInventory(mouse.getX())) {
             try {
                 Vector2f pos = new Vector2f(mouse.getX(), mouse.getY());
                 pos.addX(PlayState.map.x);

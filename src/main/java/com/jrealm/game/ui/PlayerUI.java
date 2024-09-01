@@ -463,6 +463,13 @@ public class PlayerUI {
             g.drawString("wis :" + stats.getWis(), startX + xOffset, startY + (2 * yOffset));
         }
     }
+    
+    public boolean isHoveringInventory(float posX) {
+        int panelWidth = (GamePanel.width / 5);
+        int startX = GamePanel.width - panelWidth;
+        
+        return posX >=startX;
+    }
 
     public void render(Graphics2D g) {
         int panelWidth = (GamePanel.width / 5);
