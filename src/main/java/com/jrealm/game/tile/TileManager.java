@@ -139,6 +139,29 @@ public class TileManager {
         return Arrays.asList(baseLayer, collisionLayer);
 
     }
+    
+    public Tile[] getBaseTiles(Vector2f pos) {
+        Tile[] block = new Tile[144];
+        Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
+                pos.y / GlobalConstants.BASE_TILE_SIZE);
+        this.normalizeToBounds(posNormalized);
+        int i = 0;
+        for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
+            for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
+                if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
+                        || (y < 0)) {
+                    continue;
+                }
+                try {
+                    block[i] = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
+                    i++;
+                } catch (Exception e) {
+
+                }
+            }
+        }
+        return block;
+    }
 
     public Tile[] getCollisionTiles(Vector2f pos) {
         Tile[] block = new Tile[144];
