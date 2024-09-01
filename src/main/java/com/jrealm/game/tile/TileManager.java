@@ -27,6 +27,9 @@ import lombok.Data;
 
 @Data
 public class TileManager {
+    private static final Integer VIEWPORT_TILE_MIN = 10;
+    private static final Integer VIEWPORT_TILE_MAX = 16;
+
     private List<TileMap> mapLayers;
 
     // Server side constructor
@@ -135,29 +138,6 @@ public class TileManager {
         }
         return Arrays.asList(baseLayer, collisionLayer);
 
-    }
-
-    public Tile[] getBaseTiles(Vector2f pos) {
-        Tile[] block = new Tile[144];
-        Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
-                pos.y / GlobalConstants.BASE_TILE_SIZE);
-        this.normalizeToBounds(posNormalized);
-        int i = 0;
-        for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
-            for (int y = (int) (posNormalized.y - 5); y < (int) (posNormalized.y + 6); y++) {
-                if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
-                        || (y < 0)) {
-                    continue;
-                }
-                try {
-                    block[i] = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
-                    i++;
-                } catch (Exception e) {
-
-                }
-            }
-        }
-        return block;
     }
 
     public Tile[] getCollisionTiles(Vector2f pos) {
@@ -274,15 +254,15 @@ public class TileManager {
 
     public Rectangle getRenderViewPort(Camera cam) {
         return new Rectangle(
-                cam.getTarget().getPos().clone(-(7 * GlobalConstants.BASE_TILE_SIZE),
-                        -(7 * GlobalConstants.BASE_TILE_SIZE)),
-                (13 * GlobalConstants.BASE_TILE_SIZE), (13 * GlobalConstants.BASE_TILE_SIZE));
+                cam.getTarget().getPos().clone(-(VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE),
+                        -(VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE)),
+                (VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE), (VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE));
     }
 
     public Rectangle getRenderViewPort(Entity p) {
         return new Rectangle(
-                p.getPos().clone(-(7 * GlobalConstants.BASE_TILE_SIZE), -(7 * GlobalConstants.BASE_TILE_SIZE)),
-                (13 * GlobalConstants.BASE_TILE_SIZE), (13 * GlobalConstants.BASE_TILE_SIZE));
+                p.getPos().clone(-(VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE), -(VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE)),
+                (VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE), (VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE));
     }
 
     public NetTile[] getLoadMapTiles(Player player) {
@@ -292,8 +272,8 @@ public class TileManager {
         final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
                 pos.y / GlobalConstants.BASE_TILE_SIZE);
         this.normalizeToBounds(posNormalized);
-        for (int x = (int) (posNormalized.x - 7); x < (posNormalized.x + 7); x++) {
-            for (int y = (int) (posNormalized.y - 7); y < (int) (posNormalized.y + 7); y++) {
+        for (int x = (int) (posNormalized.x - VIEWPORT_TILE_MIN); x < (posNormalized.x + VIEWPORT_TILE_MIN); x++) {
+            for (int y = (int) (posNormalized.y - VIEWPORT_TILE_MIN); y < (int) (posNormalized.y + VIEWPORT_TILE_MIN); y++) {
                 // Temp fix. Aint nobody got time for array math.
                 if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
                         || (y < 0)) {
@@ -328,20 +308,35 @@ public class TileManager {
     }
 
     public void render(Player player, Graphics2D g) {
-        for (Tile tile : this.getBaseTiles(player.getPos())) {
-            if (tile == null) {
-                continue;
-            }
-            tile.render(g);
-        }
+        final int playerSize = player.getSize() / 2;
+        final Vector2f pos = player.getPos().clone(playerSize, playerSize);
+        final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
+                pos.y / GlobalConstants.BASE_TILE_SIZE);
+        this.normalizeToBounds(posNormalized);
+        for (int x = (int) (posNormalized.x - VIEWPORT_TILE_MIN); x < (posNormalized.x + VIEWPORT_TILE_MIN); x++) {
+            for (int y = (int) (posNormalized.y - VIEWPORT_TILE_MIN); y < (int) (posNormalized.y + VIEWPORT_TILE_MIN); y++) {
+                // Temp fix. Aint nobody got time for array math.
+                if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
+                        || (y < 0)) {
+                    continue;
+                }
+                try {
+                    Tile collisionTile = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
+                    Tile normalTile = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
+                    if(collisionTile!=null && normalTile!=null) {
+                        
+                    }
 
-        for (Tile tile : this.getCollisionTiles(player.getPos())) {
-            if (tile == null) {
-                continue;
-            }
-
-            if (!tile.isVoid()) {
-                tile.render(g);
+                    if (normalTile != null) {
+                        normalTile.render(g);
+                    }
+                    
+                    if (collisionTile != null && !collisionTile.isVoid()) {
+                        collisionTile.render(g);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
