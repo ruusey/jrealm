@@ -365,6 +365,9 @@ public class ServerGameLogic {
             if(existing!=null) {
                 final Realm currentRealm = mgr.findPlayerRealm(existing.getId());
                 currentRealm.removePlayer(existing);
+                if(currentRealm.getMapId()==1) {
+                    mgr.safeRemoveRealm(currentRealm.getRealmId());
+                }
                 log.info("Player {} re-logged in with new Character ID {}", accountName, targetCharacter.getCharacterUuid());
             }
             // TODO: Character death currently disabled
