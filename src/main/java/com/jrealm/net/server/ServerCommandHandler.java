@@ -142,6 +142,7 @@ public class ServerCommandHandler {
         final Realm playerRealm = mgr.findPlayerRealm(target.getId());
         final Tile[] toModify = playerRealm.getTileManager().getBaseTiles(playerPos);
         for(Tile tile : toModify) {
+            if(tile==null) continue;
             tile.setTileId(newTileId);
         }
         log.info("Player {} request command about.", target.getName());
