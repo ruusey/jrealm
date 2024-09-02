@@ -166,11 +166,9 @@ public class ServerCommandHandler {
     @CommandHandler(value="heal", description="Restores all Player health and mp")
     public static void invokePlayerHeal(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
-        if (message.getArgs() == null || message.getArgs().size() != 0)
-            throw new IllegalArgumentException("Usage: /heal");
-        target.setHealth(target.getStats().getHp());
-        target.setMana(target.getStats().getMp());
-        log.info("Player {} healed themselves", target.getName(), message.getArgs().get(0), target.getPos());
+        target.setHealth(target.getComputedStats().getHp());
+        target.setMana(target.getComputedStats().getMp());
+        log.info("Player {} healed themselves", target.getName());
     }
 
     @CommandHandler(value="spawn", description="Spawn a given Enemy by it's id")
