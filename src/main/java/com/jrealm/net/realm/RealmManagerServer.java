@@ -147,13 +147,13 @@ public class RealmManagerServer implements Runnable {
     public void spawnTestPlayers(final long realmId, final int count, final Vector2f pos) {
         final Realm targetRealm = this.realms.get(realmId);
         final Runnable spawnTestPlayers = () -> {
-            final Random random = new Random(Instant.now().toEpochMilli());
+            final Random random = Realm.RANDOM;
             for (int i = 0; i < count; i++) {
                 final CharacterClass classToSpawn = CharacterClass.getCharacterClasses()
                         .get(random.nextInt(CharacterClass.getCharacterClasses().size()));
                 try {
-                    final Vector2f spawnPos = targetRealm.getTileManager().getSafePosition();
-                    final Player player = new Player(Realm.RANDOM.nextLong(), pos, GlobalConstants.PLAYER_SIZE,
+                    final Vector2f spawnPos = pos.clone(50, 50);
+                    final Player player = new Player(Realm.RANDOM.nextLong(), spawnPos, GlobalConstants.PLAYER_SIZE,
                             classToSpawn);
                     String playerName = UUID.randomUUID().toString().replaceAll("-", "");
                     playerName = playerName.substring(playerName.length() / 2);
@@ -166,21 +166,22 @@ public class RealmManagerServer implements Runnable {
                     final boolean right = random.nextBoolean();
 
                     if (up) {
-                        player.setUp(true);
-                        player.setDy(-0.5f);
+                        //player.setUp(true);
+                        player.setDy(-random.nextFloat());
                     } else {
-                        player.setDown(true);
-                        player.setDy(0.5f);
+                       // player.setDown(true);
+                        player.setDy(random.nextFloat());
                     }
                     if (right) {
-                        player.setRight(true);
-                        player.setDx(0.5f);
+                        //player.setRight(true);
+                        player.setDx(random.nextFloat());
                     } else {
-                        player.setLeft(true);
-                        player.setDx(-0.5f);
+                       // player.setLeft(true);
+                        player.setDx(-random.nextFloat());
                     }
-
+                    Thread.sleep(100);
                     player.setHeadless(true);
+
                     final long newId = targetRealm.addPlayer(player);
                 } catch (Exception e) {
                     RealmManagerServer.log.error("Failed to spawn test character of class type {}. Reason: {}",

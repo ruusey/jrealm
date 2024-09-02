@@ -26,7 +26,7 @@ public class Item157Script extends UseableItemScriptBase {
             player.setHealth(player.getHealth() + healthToAdd);
         }
         for (final Player other : targetRealm
-                .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
+                .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 7))) {
             healthDiff = player.getComputedStats().getHp() - player.getHealth();
             if (healthDiff > 0) {
                 int healthToAdd = healthDiff < 50 ? healthDiff : 50;

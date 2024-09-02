@@ -18,7 +18,7 @@ public class Item156Script extends UseableItemScriptBase {
     @Override
     public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
         for (final Player other : targetRealm
-                .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
+                .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 5))) {
             other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
         }
     }

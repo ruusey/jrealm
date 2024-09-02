@@ -301,6 +301,12 @@ public class TileManager {
                 p.getPos().clone(-(VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE), -(VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE)),
                 (VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE), (VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE));
     }
+    
+    public Rectangle getRenderViewPort(Entity p, Integer tiles) {
+        return new Rectangle(
+                p.getPos().clone(-(tiles * GlobalConstants.BASE_TILE_SIZE), -(tiles * GlobalConstants.BASE_TILE_SIZE)),
+                (tiles * GlobalConstants.BASE_TILE_SIZE), (tiles * GlobalConstants.BASE_TILE_SIZE));
+    }
 
     public NetTile[] getLoadMapTiles(Player player) {
         final int playerSize = player.getSize() / 2;
