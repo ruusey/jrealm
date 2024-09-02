@@ -4,6 +4,7 @@ import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -75,7 +76,7 @@ public class LootContainer implements Streamable<LootContainer> {
         this.sprite = LootTier.getLootSprite(tier.tierId);
         this.pos = pos;
         this.uid = UUID.randomUUID().toString();
-        this.items = loot;
+        this.items = Arrays.copyOf(loot, 8);
         this.spawnedTime = System.currentTimeMillis();
         if (this.hasUntieredItem()) {
             this.tier = LootTier.WHITE;

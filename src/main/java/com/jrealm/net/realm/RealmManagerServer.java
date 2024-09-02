@@ -167,13 +167,17 @@ public class RealmManagerServer implements Runnable {
 
                     if (up) {
                         player.setUp(true);
+                        player.setDy(-0.5f);
                     } else {
                         player.setDown(true);
+                        player.setDy(0.5f);
                     }
                     if (right) {
                         player.setRight(true);
+                        player.setDx(0.5f);
                     } else {
                         player.setLeft(true);
+                        player.setDx(-0.5f);
                     }
 
                     player.setHeadless(true);
@@ -1182,7 +1186,7 @@ public class RealmManagerServer implements Runnable {
         try {
             final String remoteAddrDeath = this.getRemoteAddressMapRevered().get(player.getId());
             final LootContainer graveLoot = new LootContainer(LootTier.GRAVE, player.getPos().clone(),
-                    player.getSlots(4, 12));
+                    player.getSlots(0, 12));
             // this.getServer().getClients().remove(remoteAddrDeath);
             targetRealm.addLootContainer(graveLoot);
             targetRealm.getExpiredPlayers().add(player.getId());

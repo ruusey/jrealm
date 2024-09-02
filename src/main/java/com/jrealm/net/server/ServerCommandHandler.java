@@ -116,9 +116,9 @@ public class ServerCommandHandler {
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() != 1)
             throw new IllegalArgumentException("Usage: /testplayers {COUNT}");
-
+        final Realm playerRealm = mgr.findPlayerRealm(target.getId());
         log.info("Player {} spawn {} players  at {}", target.getName(), message.getArgs().get(0), target.getPos());
-        mgr.spawnTestPlayers(mgr.getTopRealm().getRealmId(), Integer.parseInt(message.getArgs().get(0)),
+        mgr.spawnTestPlayers(playerRealm.getRealmId(), Integer.parseInt(message.getArgs().get(0)),
                 target.getPos().clone());
     }
     
