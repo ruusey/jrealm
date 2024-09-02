@@ -52,6 +52,7 @@ public class GameLauncher {
             ClientGameLogic.DATA_SERVICE = new JrealmClientDataService(HttpClient.newHttpClient(), "http://"+args[1]+":8085/",
                     null);
             GameDataManager.loadGameData(true);
+            GameLauncher.pingClient();
             GameLauncher.startServer();
             GameLauncher.startClient(args);
         }

@@ -226,6 +226,8 @@ public class Realm {
         this.releasePlayerLock();
         return p;
     }
+    
+
 
     public Bullet getBullet(long bulletId) {
         return this.bullets.get(bulletId);

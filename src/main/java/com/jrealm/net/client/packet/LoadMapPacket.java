@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 public class LoadMapPacket extends Packet {
     private long realmId;
     private short mapId;
+    private short mapWidth;
+    private short mapHeight;
     private NetTile[] tiles;
 
     public LoadMapPacket() {
@@ -42,8 +44,13 @@ public class LoadMapPacket extends Packet {
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
         final long realmId = dis.readLong();
         final short mapId = dis.readShort();
+        final short mapWidth = dis.readShort();
+        final short mapHeight = dis.readShort();
+
         this.realmId = realmId;
         this.mapId = mapId;
+        this.mapWidth = mapWidth;
+        this.mapHeight = mapHeight;
         final short tilesSize = dis.readShort();
         if (tilesSize > 0) {
             this.tiles = new NetTile[tilesSize];
@@ -61,17 +68,21 @@ public class LoadMapPacket extends Packet {
         this.addHeader(stream);
         stream.writeLong(this.realmId);
         stream.writeShort(this.mapId);
+        stream.writeShort(this.mapWidth);
+        stream.writeShort(this.mapHeight);
         stream.writeShort(this.tiles.length);
         for (NetTile tile : this.tiles) {
             tile.write(stream);
         }
     }
 
-    public static LoadMapPacket from(long realmId, short mapId, List<NetTile> tiles) throws Exception {
+    public static LoadMapPacket from(long realmId, short mapId, short mapWidth, short mapHeight, List<NetTile> tiles) throws Exception {
     	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     	final DataOutputStream stream = new DataOutputStream(byteStream);
         stream.writeLong(realmId);
         stream.writeShort(mapId);
+        stream.writeShort(mapWidth);
+        stream.writeShort(mapHeight);
         stream.writeShort(tiles.size());
         for (NetTile tile : tiles) {
             tile.write(stream);
@@ -80,11 +91,13 @@ public class LoadMapPacket extends Packet {
         return new LoadMapPacket(PacketType.LOAD_MAP.getPacketId(), byteStream.toByteArray());
     }
 
-    public static LoadMapPacket from(long realmId, short mapId, NetTile[] tiles) throws Exception {
+    public static LoadMapPacket from(long realmId, short mapId, short mapWidth, short mapHeight,  NetTile[] tiles) throws Exception {
     	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     	final DataOutputStream stream = new DataOutputStream(byteStream);
         stream.writeLong(realmId);
         stream.writeShort(mapId);
+        stream.writeShort(mapWidth);
+        stream.writeShort(mapHeight);
         stream.writeShort(tiles.length);
         for (NetTile tile : tiles) {
             tile.write(stream);
@@ -105,7 +118,7 @@ public class LoadMapPacket extends Packet {
         }
         if (diff.size() == 0)
             return null;
-        return LoadMapPacket.from(other.getRealmId(), other.getMapId(), diff);
+        return LoadMapPacket.from(other.getRealmId(), other.getMapId(), other.getMapWidth(), other.getMapHeight(), diff);
     }
 
     public boolean equals(LoadMapPacket other) {
@@ -117,6 +130,9 @@ public class LoadMapPacket extends Packet {
         if (this.getRealmId() != other.getRealmId())
             return false;
 
+        if(this.mapHeight!=other.getMapHeight() || this.mapWidth!=other.getMapWidth()) {
+            return false;
+        }
         for (int i = 0; i < myTiles.length; i++) {
         	final  NetTile myTile = myTiles[i];
         	final NetTile otherTile = otherTiles[i];

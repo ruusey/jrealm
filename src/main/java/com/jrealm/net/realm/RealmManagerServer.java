@@ -281,7 +281,7 @@ public class RealmManagerServer implements Runnable {
             }
         }
         long nanosDiff = System.nanoTime()-startNanos;
-        log.info("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double)nanosDiff/(double)1000000l));
+        log.debug("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double)nanosDiff/(double)1000000l));
     }
 
     // Enqueues outbound game packets every tick. Manages
@@ -311,7 +311,7 @@ public class RealmManagerServer implements Runnable {
                     final NetTile[] netTilesForPlayer = realm.getTileManager().getLoadMapTiles(player.getValue());
                     // Build those tiles into a load map packet (NetTile[] wrapper)
                     final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(),
-                            (short) realm.getMapId(), netTilesForPlayer);
+                            (short) realm.getMapId(), realm.getTileManager().getMapWidth(), realm.getTileManager().getMapHeight(), netTilesForPlayer);
 
                     // If we dont have load map state for this player, map it and
                     // then transmit all the tiles
@@ -407,7 +407,7 @@ public class RealmManagerServer implements Runnable {
             }
         }
         long nanosDiff = System.nanoTime()-startNanos;
-        log.info("Game data enqueued in {} nanos ({}ms}", nanosDiff, ((double)nanosDiff/(double)1000000l));
+        log.debug("Game data enqueued in {} nanos ({}ms}", nanosDiff, ((double)nanosDiff/(double)1000000l));
         this.releaseRealmLock();
     }
 
@@ -468,7 +468,7 @@ public class RealmManagerServer implements Runnable {
     public Realm getTopRealm() {
         Realm result = null;
         for (final Realm realm : this.realms.values()) {
-            if (realm.getDepth() == 0) {
+            if (realm.getDepth() == 0 && realm.getMapId() != 1) {
                 result = realm;
             }
         }

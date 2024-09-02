@@ -335,8 +335,27 @@ public class TileManager {
         }
         return tiles.toArray(new NetTile[0]);
     }
+    
+    public short getMapWidth() {
+        return (short) this.getBaseLayer().getWidth();
+    }
+    
+    public short getMapHeight() {
+        return (short) this.getBaseLayer().getHeight();
+    }
 
     public void mergeMap(LoadMapPacket packet) {
+        // Resize the map on dimension change
+        if(getMapHeight()!=packet.getMapHeight() || getMapWidth()!=packet.getMapWidth()) {
+           MapModel model = GameDataManager.MAPS.get((int)packet.getMapId());
+           TileMap baseLayer = new TileMap((short) model.getMapId(), model.getTileSize(), model.getWidth(),
+                   model.getHeight());
+           TileMap collisionLayer = new TileMap((short) model.getMapId(), model.getTileSize(), model.getWidth(),
+                   model.getHeight());
+           this.mapLayers = new ArrayList<>();
+           this.mapLayers.add(baseLayer);
+           this.mapLayers.add(collisionLayer);
+        }
         for (NetTile tile : packet.getTiles()) {
             TileData data = GameDataManager.TILES.get((int) tile.getTileId()).getData();
             this.mapLayers.get((int) tile.getLayer()).setBlockAt(tile.getXIndex(), tile.getYIndex(), tile.getTileId(),
