@@ -1,4 +1,4 @@
-package com.jrealm.game.messaging;
+package com.jrealm.net.messaging;
 
 import java.text.MessageFormat;
 

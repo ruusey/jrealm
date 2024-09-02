@@ -8,9 +8,9 @@ import java.io.DataOutputStream;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.messaging.CommandType;
-import com.jrealm.game.messaging.ServerErrorMessage;
 import com.jrealm.net.Packet;
+import com.jrealm.net.messaging.CommandType;
+import com.jrealm.net.messaging.ServerErrorMessage;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

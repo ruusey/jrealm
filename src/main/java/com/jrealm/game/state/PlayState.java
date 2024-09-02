@@ -33,8 +33,12 @@ import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.client.SocketClient;
+import com.jrealm.net.messaging.CommandType;
+import com.jrealm.net.messaging.LoginRequestMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
+import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
@@ -58,7 +62,6 @@ public class PlayState extends GameState {
     public static Vector2f map;
     public long lastShotTick = 0;
     public long lastAbilityTick = 0;
-
     public long playerId = -1l;
 
     private Map<Cardinality, Boolean> lastDirectionMap;
@@ -72,6 +75,12 @@ public class PlayState extends GameState {
         this.realmManager = new RealmManagerClient(this, new Realm(false, 2));
         this.shotDestQueue = new ArrayList<>();
         this.damageText = new ConcurrentLinkedQueue<>();
+        try {
+            this.doLogin();
+        } catch (Exception e) {
+            log.error("Failed to send initial LoginRequest. Reason: {}", e);
+            System.exit(-1);
+        }
         WorkerThread.submitAndForkRun(this.realmManager);
     }
 
@@ -100,6 +109,13 @@ public class PlayState extends GameState {
 
     public Vector2f getPlayerPos() {
         return this.realmManager.getRealm().getPlayers().get(this.playerId).getPos();
+    }
+    
+    public void doLogin() throws Exception {
+        final LoginRequestMessage login = LoginRequestMessage.builder().characterUuid(SocketClient.CHARACTER_UUID)
+                .email(SocketClient.PLAYER_EMAIL).password(SocketClient.PLAYER_PASSWORD).build();
+        final CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
+        this.realmManager.getClient().sendRemote(loginPacket);
     }
 
     @Override

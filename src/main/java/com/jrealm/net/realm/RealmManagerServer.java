@@ -53,7 +53,6 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.messaging.ServerCommandMessage;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.LootTableModel;
 import com.jrealm.game.model.PortalModel;
@@ -89,6 +88,7 @@ import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.server.ProcessingThread;
 import com.jrealm.net.server.ServerCommandHandler;
 import com.jrealm.net.server.ServerGameLogic;
@@ -232,6 +232,7 @@ public class RealmManagerServer implements Runnable {
     }
 
     private void sendGameData() {
+        long startNanos = System.nanoTime();
         final List<Packet> packetsToBroadcast = new ArrayList<>();
         // TODO: Possibly rework this queue as we dont usually send stuff globally
         while (!this.outboundPacketQueue.isEmpty()) {
@@ -279,11 +280,14 @@ public class RealmManagerServer implements Runnable {
                 RealmManagerServer.log.error("Failed to get OutputStream to Client. Reason: {}", e);
             }
         }
+        long nanosDiff = System.nanoTime()-startNanos;
+        log.info("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double)nanosDiff/(double)1000000l));
     }
 
     // Enqueues outbound game packets every tick. Manages
     // when/if packets should be broadcast and to who
     public void enqueueGameData() {
+        long startNanos = System.nanoTime();
         final List<String> disconnectedClients = new ArrayList<>();
         // TODO: Parallelize work for each realm
         // For each realm we have to do work for
@@ -402,6 +406,8 @@ public class RealmManagerServer implements Runnable {
                 }
             }
         }
+        long nanosDiff = System.nanoTime()-startNanos;
+        log.info("Game data enqueued in {} nanos ({}ms}", nanosDiff, ((double)nanosDiff/(double)1000000l));
         this.releaseRealmLock();
     }
 

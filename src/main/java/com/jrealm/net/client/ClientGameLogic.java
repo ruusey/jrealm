@@ -13,9 +13,6 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.messaging.CommandType;
-import com.jrealm.game.messaging.LoginResponseMessage;
-import com.jrealm.game.messaging.ServerErrorMessage;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.EffectText;
 import com.jrealm.net.Packet;
@@ -27,6 +24,10 @@ import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.messaging.CommandType;
+import com.jrealm.net.messaging.LoginResponseMessage;
+import com.jrealm.net.messaging.PlayerAccountMessage;
+import com.jrealm.net.messaging.ServerErrorMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
 import com.jrealm.net.server.packet.CommandPacket;
@@ -217,6 +218,13 @@ public class ClientGameLogic {
             case 4:
                 final ServerErrorMessage serverError = CommandType.fromPacket(commandPacket);
                 ClientGameLogic.handleServerError(cli, serverError);
+                break;
+            case 5:
+                final PlayerAccountMessage playerAccount = CommandType.fromPacket(commandPacket);
+                cli.getState().setAccount(playerAccount.getAccount());
+                //cli.getState().getGameStateManager().add(GameStateManager.PAUSE);
+                break;
+                
             }
         } catch (Exception e) {
             ClientGameLogic.log.error("Failed to handle client command packet. Reason: {}", e.getMessage());

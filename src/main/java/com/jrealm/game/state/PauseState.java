@@ -108,7 +108,7 @@ public class PauseState extends GameState {
                         SocketClient.CHARACTER_UUID = cls.getCharacterUuid();
                         try {
                             this.gsm.getPlayState().getRealmManager().getRealm().clearData();
-                            this.gsm.getPlayState().getRealmManager().getClient().doLogin();
+                            this.gsm.getPlayState().doLogin();
                         } catch (Exception e) {
                             log.error("Failed to perform character switch login. Reason: {}", e);
                         }

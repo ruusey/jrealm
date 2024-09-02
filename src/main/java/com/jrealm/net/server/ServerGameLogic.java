@@ -25,9 +25,6 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.messaging.CommandType;
-import com.jrealm.game.messaging.LoginRequestMessage;
-import com.jrealm.game.messaging.LoginResponseMessage;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
@@ -36,6 +33,10 @@ import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.PacketHandler;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.messaging.CommandType;
+import com.jrealm.net.messaging.LoginRequestMessage;
+import com.jrealm.net.messaging.LoginResponseMessage;
+import com.jrealm.net.messaging.PlayerAccountMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.CommandPacket;
@@ -335,6 +336,7 @@ public class ServerGameLogic {
 
     private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
         CommandPacket commandResponse = null;
+        CommandPacket accountResponse = null;
         long assignedId = -1l;
         PlayerAccountDto account = null;
         log.info("[SERVER] Recieved login command {}", request);
@@ -402,6 +404,8 @@ public class ServerGameLogic {
             mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
 
             commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
+           
+            accountResponse = CommandPacket.create(player, CommandType.PLAYER_ACCOUNT, PlayerAccountMessage.builder().account(account).build());
             ServerGameLogic.onPlayerJoin(mgr, targetRealm, player);
         } catch (Exception e) {
             ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
@@ -414,6 +418,7 @@ public class ServerGameLogic {
                 toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getClientSocket()
                         .getOutputStream();
                 final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
+               // accountResponse.serializeWrite(dosToClient);
                 commandResponse.serializeWrite(dosToClient);
 
             } catch (Exception e) {

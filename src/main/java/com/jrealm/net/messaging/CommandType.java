@@ -1,4 +1,4 @@
-package com.jrealm.game.messaging;
+package com.jrealm.net.messaging;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -7,7 +7,8 @@ import com.jrealm.net.server.packet.CommandPacket;
 
 public enum CommandType {
     LOGIN_REQUEST((byte) 1, LoginRequestMessage.class), LOGIN_RESPONSE((byte) 2, LoginResponseMessage.class),
-    SERVER_COMMAND((byte) 3, ServerCommandMessage.class), SERVER_ERROR((byte) 4, ServerErrorMessage.class);
+    SERVER_COMMAND((byte) 3, ServerCommandMessage.class), SERVER_ERROR((byte) 4, ServerErrorMessage.class),
+    PLAYER_ACCOUNT((byte) 5, PlayerAccountMessage.class);
 
     private byte commandId;
     private Class<?> commandClass;

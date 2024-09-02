@@ -10,14 +10,10 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.jrealm.game.messaging.CommandType;
-import com.jrealm.game.messaging.LoginRequestMessage;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
-import com.jrealm.net.server.packet.CommandPacket;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -57,11 +53,6 @@ public class SocketClient implements Runnable {
     public void run() {
         this.startBandwidthMonitor();
         // this.monitorLastReceived();
-        try {
-            this.doLogin();
-        } catch (Exception e) {
-            SocketClient.log.error("Failed to send initial LoginRequest. Reason: {}", e);
-        }
 
         final Runnable readPackets = () -> {
             this.readPackets();
@@ -109,13 +100,6 @@ public class SocketClient implements Runnable {
         } catch (Exception e) {
             SocketClient.log.error("Failed to parse client input. Reason {}", e);
         }
-    }
-
-    public void doLogin() throws Exception {
-        final LoginRequestMessage login = LoginRequestMessage.builder().characterUuid(SocketClient.CHARACTER_UUID)
-                .email(SocketClient.PLAYER_EMAIL).password(SocketClient.PLAYER_PASSWORD).build();
-        final CommandPacket loginPacket = CommandPacket.from(CommandType.LOGIN_REQUEST, login);
-        this.sendRemote(loginPacket);
     }
 
     private void sendPackets() {

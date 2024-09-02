@@ -1,4 +1,6 @@
-package com.jrealm.game.messaging;
+package com.jrealm.net.messaging;
+
+import com.jrealm.account.dto.PlayerAccountDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LoginRequestMessage {
-    private String email;
-    private String password;
-    private String characterUuid;
+public class PlayerAccountMessage {
+    private PlayerAccountDto account;
 }

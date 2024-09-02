@@ -253,6 +253,20 @@ public class TileManager {
 
         return currentTile.getData().slows() && tileBounds.intersect(futurePosBounds);
     }
+    
+    public boolean collidesDamagingTile(Entity e) {
+        final Vector2f centerPos = e.getCenteredPosition();
+        final int startX = (int) (centerPos.x / (float) this.getBaseLayer().getTileSize());
+        final int startY = (int) (centerPos.y / (float) this.getBaseLayer().getTileSize());
+
+        final Tile currentTile = this.getBaseLayer().getBlocks()[startY][startX];
+
+        final Rectangle tileBounds = new Rectangle(currentTile.getPos(), currentTile.getWidth(),
+                currentTile.getHeight());
+        final Rectangle futurePosBounds = new Rectangle(e.getPos(), (e.getSize() / 2), e.getSize() / 2);
+
+        return currentTile.getData().damaging() && tileBounds.intersect(futurePosBounds);
+    }
 
     public boolean collisionTile(Entity e, float ax, float ay) {
         final Vector2f futurePos = e.getPos().clone(ax, ay);

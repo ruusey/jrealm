@@ -18,4 +18,9 @@ public abstract class GameState {
     public abstract void input(MouseHandler mouse, KeyHandler key);
 
     public abstract void render(Graphics2D g);
+    
+    public GameStateManager getGameStateManager() {
+        return this.gsm;
+    }
+   
 }
