@@ -2,7 +2,6 @@ package com.jrealm.net.server;
 
 import java.io.DataOutputStream;
 import java.io.OutputStream;
-import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -37,10 +36,10 @@ import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.LoginRequestMessage;
 import com.jrealm.net.messaging.LoginResponseMessage;
-import com.jrealm.net.messaging.PlayerAccountMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.CommandPacket;
+import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
@@ -158,10 +157,9 @@ public class ServerGameLogic {
     }
 
     public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
-        // HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
-        // log.info("[SERVER] Recieved Heartbeat Packet For Player {}@{}",
-        // heartbeatPacket.getPlayerId(),
-        // heartbeatPacket.getTimestamp());
+      final HeartbeatPacket heartbeatPacket =   (HeartbeatPacket)packet;
+      final Player player = mgr.getPlayerByRemoteAddress(packet.getSrcIp());
+      mgr.getPlayerLastHeartbeatTime().put(player.getId(), heartbeatPacket.getTimestamp());
     }
 
     public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
@@ -251,7 +249,7 @@ public class ServerGameLogic {
         final Player player = mgr.searchRealmsForPlayer(fromPlayerId);
         final Realm realm = mgr.findPlayerRealm(fromPlayerId);
 
-        log.info("Player {} says {} from Realm {}", player.getName(), textPacket.getMessage(), realm.getRealmId());
+        //log.info("Player {} says {} from Realm {}", player.getName(), textPacket.getMessage(), realm.getRealmId());
     }
 
     public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {
@@ -307,15 +305,16 @@ public class ServerGameLogic {
         if(!validateCallingPlayer(mgr, packet, fromPlayerId)) {
             return;
         }
+        final Player fromPlayer = mgr.searchRealmsForPlayer(fromPlayerId);
         final Realm from = mgr.findPlayerRealm(fromPlayerId);
         try {
-            ServerGameLogic.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}",
-                    textPacket.getTo(), textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
+//            ServerGameLogic.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}",
+//                    textPacket.getTo(), textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
 
             TextPacket toBroadcast = TextPacket.create(from.getPlayer(fromPlayerId).getName(), textPacket.getTo(),
                     textPacket.getMessage());
             mgr.enqueueServerPacket(toBroadcast);
-            ServerGameLogic.log.info("[SERVER] Broadcasted player chat message from {}", textPacket.getSrcIp());
+            ServerGameLogic.log.info("[SERVER] Broadcasted player chat message from {}", fromPlayer.getName());
         } catch (Exception e) {
             ServerGameLogic.log.error("Failed to send welcome message. Reason: {}", e);
         }
@@ -362,7 +361,6 @@ public class ServerGameLogic {
 
     private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
         CommandPacket commandResponse = null;
-        CommandPacket accountResponse = null;
         long assignedId = -1l;
         PlayerAccountDto account = null;
         log.info("[SERVER] Recieved login command {}", request);
@@ -399,8 +397,8 @@ public class ServerGameLogic {
                 log.info("Player {} re-logged in with new Character ID {}", accountName, targetCharacter.getCharacterUuid());
             }
             // TODO: Character death currently disabled
-            if (targetCharacter.isDeleted() && false)
-                throw new Exception("Character " + targetCharacter.getCharacterUuid() + " is deleted!");
+//            if (targetCharacter.isDeleted())
+//                throw new Exception("Character " + targetCharacter.getCharacterUuid() + " is dead!");
             final Map<Integer, GameItem> loadedEquipment = new HashMap<>();
             for (final GameItemRefDto item : targetCharacter.getItems()) {
                 loadedEquipment.put(item.getSlotIdx(), GameItem.fromGameItemRef(item));
@@ -431,7 +429,7 @@ public class ServerGameLogic {
 
             commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
            
-            accountResponse = CommandPacket.create(player, CommandType.PLAYER_ACCOUNT, PlayerAccountMessage.builder().account(account).build());
+            //accountResponse = CommandPacket.create(player, CommandType.PLAYER_ACCOUNT, PlayerAccountMessage.builder().account(account).build());
             ServerGameLogic.onPlayerJoin(mgr, targetRealm, player);
         } catch (Exception e) {
             ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);

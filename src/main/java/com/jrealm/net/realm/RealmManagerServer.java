@@ -122,6 +122,7 @@ public class RealmManagerServer implements Runnable {
     private Map<Long, ObjectMovePacket> playerObjectMoveState = new HashMap<>();
     
     private Map<Long, Long> playerGroundDamageState = new HashMap<>();
+    private Map<Long, Long> playerLastHeartbeatTime = new HashMap<>();
     private UnloadPacket lastUnload;
     private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
     private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
@@ -304,6 +305,7 @@ public class RealmManagerServer implements Runnable {
         this.acquireRealmLock();
         for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
             final Realm realm = realmEntry.getValue();
+            final List<Player> toRemove = new ArrayList<>();
             for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
                 if (player.getValue().isHeadless()) {
                     continue;
@@ -400,6 +402,10 @@ public class RealmManagerServer implements Runnable {
                             }
                         }
                     }
+                    final Long playerLastHeartbeatTime = this.playerLastHeartbeatTime.get(player.getKey());
+                    if(playerLastHeartbeatTime!=null && ((Instant.now().toEpochMilli() -playerLastHeartbeatTime)>5000)){
+                        toRemove.add(player.getValue());                    
+                    }
 
                     // Used to dynamically re-render changed loot containers (chests) on the client
                     // if their contents change in a server tick (receive MoveItem packet from
@@ -411,6 +417,9 @@ public class RealmManagerServer implements Runnable {
                     RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(),
                             e);
                 }
+            }
+            for(Player player : toRemove) {
+                this.disconnectPlayer(player);
             }
         }
         long nanosDiff = System.nanoTime()-startNanos;
@@ -481,6 +490,12 @@ public class RealmManagerServer implements Runnable {
         }
         return result;
     }
+    
+    public Player getPlayerByRemoteAddress(String remoteAddr) {
+        final Long playerId = this.remoteAddresses.get(remoteAddr);
+        final Player found = this.searchRealmsForPlayer(playerId);
+        return found;
+    }
 
     public ProcessingThread getPlayerProcessingThread(Player player) {
         return getPlayerProcessingThreadEntry(player).getValue();
@@ -495,6 +510,7 @@ public class RealmManagerServer implements Runnable {
         final String playerRemoteAddr = this.getPlayerRemoteAddress(player);
 
         try {
+            log.info("Disconnecting Player {}", player.getName());
             Realm playerRealm = this.findPlayerRealm(player.getId());
             playerRealm.removePlayer(player);
             playerThread.setShutdownProcessing(true);
