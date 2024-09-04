@@ -120,6 +120,8 @@ public class RealmManagerServer implements Runnable {
     private Map<Long, UnloadPacket> playerUnloadState = new HashMap<>();
     private Map<Long, LoadMapPacket> playerLoadMapState = new HashMap<>();
     private Map<Long, ObjectMovePacket> playerObjectMoveState = new HashMap<>();
+    
+    private Map<Long, Long> playerGroundDamageState = new HashMap<>();
     private UnloadPacket lastUnload;
     private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
     private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
@@ -774,6 +776,17 @@ public class RealmManagerServer implements Runnable {
             }
         } else {
             p.xCol = true;
+        }
+        if(targetRealm.getTileManager().collidesDamagingTile(p)) {
+            final Long lastDamageTime = this.playerGroundDamageState.get(p.getId());
+            if(lastDamageTime==null || (Instant.now().toEpochMilli()-lastDamageTime)>650) {
+                int damageToInflict = 30 + Realm.RANDOM.nextInt(15);
+                this.sendTextEffectToPlayer(p, TextEffect.DAMAGE, "-" + damageToInflict);
+
+                p.setHealth(p.getHealth() - damageToInflict);
+                this.playerGroundDamageState.put(p.getId(),Instant.now().toEpochMilli());
+            }
+
         }
 
         if (!targetRealm.getTileManager().collisionTile(p, 0, p.getDy())
