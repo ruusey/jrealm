@@ -2,6 +2,7 @@ package com.jrealm.net.server;
 
 import java.io.DataOutputStream;
 import java.io.OutputStream;
+import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +41,7 @@ import com.jrealm.net.messaging.PlayerAccountMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.CommandPacket;
+import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
@@ -67,7 +69,9 @@ public class ServerGameLogic {
     
     public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
         final UsePortalPacket usePortalPacket = (UsePortalPacket) packet;
-
+        if(!validateCallingPlayer(mgr, packet, usePortalPacket.getPlayerId())) {
+            return;
+        }
         if (usePortalPacket.isToVault()) {
             final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
             if (currentRealm.getMapId() == 1)
@@ -162,6 +166,9 @@ public class ServerGameLogic {
 
     public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
         final PlayerMovePacket playerMovePacket = (PlayerMovePacket) packet;
+        if(!validateCallingPlayer(mgr, packet, playerMovePacket.getEntityId())) {
+            return;
+        }
         final Realm realm = mgr.findPlayerRealm(playerMovePacket.getEntityId());
         if (realm == null) {
             ServerGameLogic.log.error("Failed to get realm for player {}", playerMovePacket.getEntityId());
@@ -225,6 +232,9 @@ public class ServerGameLogic {
 
     public static void handleUseAbilityServer(RealmManagerServer mgr, Packet packet) {
         final UseAbilityPacket useAbilityPacket = (UseAbilityPacket) packet;
+        if(!validateCallingPlayer(mgr, packet, useAbilityPacket.getPlayerId())) {
+            return;
+        }
         final Realm realm = mgr.findPlayerRealm(useAbilityPacket.getPlayerId());
         mgr.useAbility(realm.getRealmId(), useAbilityPacket.getPlayerId(),
                 new Vector2f(useAbilityPacket.getPosX(), useAbilityPacket.getPosY()));
@@ -235,15 +245,21 @@ public class ServerGameLogic {
     public static void handleText0(RealmManagerServer mgr, Packet packet) {
         final TextPacket textPacket = (TextPacket) packet;
         final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
+        if(!validateCallingPlayer(mgr, packet, fromPlayerId)) {
+            return;
+        }
         final Player player = mgr.searchRealmsForPlayer(fromPlayerId);
         final Realm realm = mgr.findPlayerRealm(fromPlayerId);
 
         log.info("Player {} says {} from Realm {}", player.getName(), textPacket.getMessage(), realm.getRealmId());
     }
 
-    //@PacketHandler(PlayerShootPacket.class)
     public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {
         final PlayerShootPacket shootPacket = (PlayerShootPacket) packet;
+        if(!validateCallingPlayer(mgr, packet, shootPacket.getEntityId())) {
+            return;
+        }
+
         final Realm realm = mgr.findPlayerRealm(shootPacket.getEntityId());
         if (realm == null) {
             ServerGameLogic.log.error("Failed to get realm for player {}", shootPacket.getEntityId());
@@ -288,6 +304,9 @@ public class ServerGameLogic {
     public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
         final TextPacket textPacket = (TextPacket) packet;
         final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
+        if(!validateCallingPlayer(mgr, packet, fromPlayerId)) {
+            return;
+        }
         final Realm from = mgr.findPlayerRealm(fromPlayerId);
         try {
             ServerGameLogic.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}",
@@ -303,6 +322,9 @@ public class ServerGameLogic {
     }
     public static void handleCommandServer(RealmManagerServer mgr, Packet packet) {
         final CommandPacket commandPacket = (CommandPacket) packet;
+        if(commandPacket.getCommandId()!=1 && !validateCallingPlayer(mgr, packet, commandPacket.getPlayerId())) {
+            return;
+        }
         ServerGameLogic.log.info("[SERVER] Recieved Command Packet For Player {}. Command={}. SrcIp={}",
                 commandPacket.getPlayerId(), commandPacket.getCommand(), commandPacket.getSrcIp());
         try {
@@ -321,6 +343,10 @@ public class ServerGameLogic {
     }
 
     public static void handleMoveItemServer(RealmManagerServer mgr, Packet packet) {
+        final MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
+        if(!validateCallingPlayer(mgr, packet, moveItemPacket.getPlayerId())) {
+            return;
+        }
         try {
             ServerItemHelper.handleMoveItemPacket(mgr, packet);
         } catch (Exception e) {
@@ -432,5 +458,16 @@ public class ServerGameLogic {
         final SessionTokenDto response = ServerGameLogic.DATA_SERVICE.executePost("/admin/account/login", loginReq,
                 SessionTokenDto.class);
         return response;
+    }
+    
+    private static boolean validateCallingPlayer(RealmManagerServer mgr, Packet packet, Long declaredPlayerId ) {
+       Long actualPlayerId =  mgr.getRemoteAddresses().get(packet.getSrcIp());
+       final Player actualPlayer = mgr.searchRealmsForPlayer(actualPlayerId);
+       if(actualPlayer.getId()!=declaredPlayerId) {
+           log.info("Player ids do not match for Packet {}. Actual PlayerId: {}. Declared PlayerId: {}", packet, actualPlayerId, declaredPlayerId);
+           mgr.disconnectPlayer(actualPlayer);
+           return false;
+       } 
+       return true;
     }
 }

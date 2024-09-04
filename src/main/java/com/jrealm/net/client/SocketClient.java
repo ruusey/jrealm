@@ -39,6 +39,8 @@ public class SocketClient implements Runnable {
     private long currentBytesRecieved = 0;
     private volatile Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
     private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
+    private TimedWorkerThread sendPacketThread = null;
+    private TimedWorkerThread readPacketThread = null;
 
     public SocketClient(String targetHost, int port) {
         try {
@@ -60,9 +62,9 @@ public class SocketClient implements Runnable {
         final Runnable sendPackets = () -> {
             this.sendPackets();
         };
-        final TimedWorkerThread sendThread = new TimedWorkerThread(sendPackets, 64);
-        final TimedWorkerThread readThread = new TimedWorkerThread(readPackets, 64);
-        WorkerThread.submitAndForkRun(readThread, sendThread);
+        this.sendPacketThread= new TimedWorkerThread(sendPackets, 64);
+        this.readPacketThread= new TimedWorkerThread(readPackets, 64);
+        WorkerThread.submitAndForkRun(this.readPacketThread, this.sendPacketThread);
     }
 
     private void readPackets() {
@@ -98,6 +100,8 @@ public class SocketClient implements Runnable {
                 }
             }
         } catch (Exception e) {
+            this.readPacketThread.setShutdown(true);
+            this.sendPacketThread.setShutdown(true);
             SocketClient.log.error("Failed to parse client input. Reason {}", e);
         }
     }

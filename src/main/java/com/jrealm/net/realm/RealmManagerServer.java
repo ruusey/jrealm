@@ -471,6 +471,38 @@ public class RealmManagerServer implements Runnable {
             }
         }
     }
+    
+    public Map.Entry<String, ProcessingThread> getPlayerProcessingThreadEntry(Player player) {
+        Map.Entry<String, ProcessingThread> result = null;
+        for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
+            if (this.remoteAddresses.get(client.getKey()) == player.getId()) {
+                result = client;
+            }
+        }
+        return result;
+    }
+
+    public ProcessingThread getPlayerProcessingThread(Player player) {
+        return getPlayerProcessingThreadEntry(player).getValue();
+    }
+
+    public String getPlayerRemoteAddress(Player player) {
+        return getPlayerProcessingThreadEntry(player).getKey();
+    }
+
+    public void disconnectPlayer(Player player) {
+        final ProcessingThread playerThread = this.getPlayerProcessingThread(player);
+        final String playerRemoteAddr = this.getPlayerRemoteAddress(player);
+
+        try {
+            Realm playerRealm = this.findPlayerRealm(player.getId());
+            playerRealm.removePlayer(player);
+            playerThread.setShutdownProcessing(true);
+            this.server.getClients().remove(playerRemoteAddr);
+        } catch (Exception e) {
+            log.error("Failed to disconnect player. Reason:  {}", e);
+        }
+    }
 
     public Realm getTopRealm() {
         Realm result = null;
