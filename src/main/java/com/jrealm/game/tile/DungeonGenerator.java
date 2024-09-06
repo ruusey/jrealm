@@ -9,6 +9,9 @@ import com.jrealm.game.model.TileModel;
 import com.jrealm.game.util.Graph;
 import com.jrealm.net.realm.Realm;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class DungeonGenerator {
     private int width;
     private int height;
@@ -48,8 +51,8 @@ public class DungeonGenerator {
         for(int i = 0 ; i< numRooms; i++) {
 
             TileMap room = this.getRoom(this.tileSize, this.minRoomWidth, this.maxRoomWidth, this.minRoomHeight, this.maxRoomHeight, this.shapeTemplates);
-            int offsetX = Realm.RANDOM.nextInt(this.width-room.getWidth());
-            int offsetY = Realm.RANDOM.nextInt(this.height-room.getHeight());
+            int offsetX = Realm.RANDOM.nextInt(previousRoomOffsetX+room.getWidth());
+            int offsetY = Realm.RANDOM.nextInt(previousRoomOffsetY+room.getHeight());
             baseLayer.append(room, offsetX, offsetY);
             
             if(previousRoom!=null) {
@@ -61,11 +64,72 @@ public class DungeonGenerator {
                 int xDiff = roomCenterX-previousRoomCenterX;
                 int yDiff = roomCenterY-previousRoomCenterY;
                 double ratio = yDiff/xDiff;
-                for(int j = roomCenterX; j<roomCenterX + xDiff;j++) {
-                    TileModel model = GameDataManager.TILES.get(1);
-                    baseLayer.setBlockAt(roomCenterX, (int) (j*ratio), (short)1, model.getData());
-                    
-                }
+                
+                //Down to the right
+//                if(previousRoomCenterX<roomCenterX && previousRoomCenterY<roomCenterY) {
+//                    for(int j = roomCenterX; j<roomCenterX + xDiff;j--) {
+//                        TileModel model = GameDataManager.TILES.get(29);
+//                        try {
+//                            collisionLayer.setBlockAt(j, roomCenterY, (short)29, model.getData());
+//
+//                        }catch(Exception e) {
+//                            log.error("Failed to connect dungeon room. Reason: {}",e);
+//                        }
+//                        
+//                    }
+//                    
+//                    for(int j = roomCenterY; j>roomCenterY + yDiff;j--) {
+//                        TileModel model = GameDataManager.TILES.get(29);
+//                        try {
+//                            collisionLayer.setBlockAt(roomCenterX, j, (short)29, model.getData());
+//
+//                        }catch(Exception e) {
+//                            log.error("Failed to connect dungeon room. Reason: {}",e);
+//                        }
+//                        
+//                    }
+//                    
+//                // Up to the right
+//                }
+//                else if(previousRoomCenterX<roomCenterX && previousRoomCenterY>roomCenterY) {
+//                    for(int j = previousRoomCenterX; j>previousRoomCenterX + xDiff;j++) {
+//                        TileModel model = GameDataManager.TILES.get(29);
+//                        try {
+//                            collisionLayer.setBlockAt(roomCenterX, (int) (j*Math.abs(ratio)), (short)29, model.getData());
+//
+//                        }catch(Exception e) {
+//                            log.error("Failed to connect dungeon room. Reason: {}",e);
+//                        }
+//                        
+//                    }
+//                    
+//                //Down to the left
+//                }else if(previousRoomCenterX>roomCenterX && previousRoomCenterY<roomCenterY) {
+//                    for(int j = roomCenterX; j>roomCenterX + xDiff;j++) {
+//                        TileModel model = GameDataManager.TILES.get(29);
+//                        try {
+//                            collisionLayer.setBlockAt(roomCenterX, (int) (j*Math.abs(ratio)), (short)29, model.getData());
+//
+//                        }catch(Exception e) {
+//                            log.error("Failed to connect dungeon room. Reason: {}",e);
+//                        }
+//                        
+//                    }
+//                    
+//                // Up to the left
+//                }else if(previousRoomCenterX>roomCenterX && previousRoomCenterY>roomCenterY) {
+//                    for(int j = previousRoomCenterX; j>previousRoomCenterX - xDiff;j--) {
+//                        TileModel model = GameDataManager.TILES.get(29);
+//                        try {
+//                            collisionLayer.setBlockAt(roomCenterX, (int) (j*Math.abs(ratio)), (short)29, model.getData());
+//
+//                        }catch(Exception e) {
+//                            log.error("Failed to connect dungeon room. Reason: {}",e);
+//                        }
+//                        
+//                    }
+//                }
+
 
                 this.dungeon.addVertex(previousRoom);
                 this.dungeon.addVertex(room);
@@ -90,7 +154,7 @@ public class DungeonGenerator {
         TileMap baseLayer = new TileMap(tileSize, roomWidth, roomHeight);
         for(int i = 0; i< roomHeight; i++) {
             for(int j = 0 ; j<roomWidth; j++) {
-                TileModel model = GameDataManager.TILES.get(1);
+                TileModel model = GameDataManager.TILES.get(29);
                 baseLayer.setBlockAt(i, j, (short)model.getTileId(), model.getData());
             }
         }
