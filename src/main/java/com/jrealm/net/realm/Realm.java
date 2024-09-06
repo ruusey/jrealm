@@ -552,6 +552,10 @@ public class Realm {
 
         final TerrainGenerationParameters params = GameDataManager.TERRAINS
                 .get(GameDataManager.MAPS.get(mapId).getTerrainId());
+        if(params==null) {
+            log.error("No Terrain generation params found for MapId {}", mapId);
+            return;
+        }
         for (final int enemyId : params.getEnemyGroups().get(0).getEnemyIds()) {
             enemyToSpawn.add(GameDataManager.ENEMIES.get(enemyId));
         }
@@ -563,7 +567,7 @@ public class Realm {
                     final Vector2f spawnPos = new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
                             i * this.tileManager.getMapLayers().get(0).getTileSize());
                     final EnemyModel toSpawn = enemyToSpawn.get(Realm.RANDOM.nextInt(enemyToSpawn.size()));
-
+                    
                     final Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
                             new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
                                     i * this.tileManager.getMapLayers().get(0).getTileSize()),

@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jrealm.game.contants.GlobalConstants;
+import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.TileModel;
 
 import lombok.Data;
 
@@ -44,10 +46,31 @@ public class TileMap {
     public Tile[][] getBlocks() {
         return this.blocks;
     }
+    
+    public void fill(int tileId) {
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                TileModel tileIdToCreate = GameDataManager.TILES.get(tileId);
+                this.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+            }
+        }
+    }
 
     public void setBlockAt(int row, int col, short tileId, TileData data) {
         Vector2f tilePos = new Vector2f(col * this.tileSize, row * this.tileSize);
         this.blocks[row][col] = new Tile(tileId, tilePos, data, (short) GlobalConstants.BASE_TILE_SIZE, false);
+    }
+    
+    public TileMap append(TileMap other, int offsetX, int offsetY) {
+        for(int i = 0; i<other.getBlocks().length; i++) {
+            for(int j = 0; j<other.getBlocks()[i].length; j++) {
+                Tile current = other.blocks[i][j];
+                if(current!=null && !current.isVoid()) {
+                    this.blocks[i+offsetY][j+offsetX]=current;
+                }
+            }
+        }
+        return this;
     }
 
     public Tile[] getBlocksInBounds(Rectangle cam) {

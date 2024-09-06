@@ -23,6 +23,7 @@ public class MapModel {
     private int width;
     private int height;
     private int terrainId;
+    private int dungeonId;
     private Map<String, int[][]> data;
 
     public Vector2f getCenter() {

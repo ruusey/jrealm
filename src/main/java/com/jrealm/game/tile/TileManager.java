@@ -38,10 +38,13 @@ public class TileManager {
         if (model.getData() != null) {
             this.mapLayers = this.getLayersFromData(model);
 
-        } else {
+        } else if(model.getTerrainId()>-1){
             TerrainGenerationParameters params = GameDataManager.TERRAINS.get(model.getTerrainId());
             this.mapLayers = this.getLayersFromTerrain(model.getWidth(), model.getHeight(), model.getTileSize(),
                     params);
+        }else if (model.getDungeonId()>-1){
+            DungeonGenerator dungeonGenerator = new DungeonGenerator(model.getWidth(), model.getHeight(), model.getTileSize(), 20, 30, 5,15 ,5,15, Arrays.asList(RoomShapeTemplate.RECTANGLE));
+            this.mapLayers = dungeonGenerator.generateDungeon(null);
         }
     }
 
@@ -212,7 +215,7 @@ public class TileManager {
 
     public Vector2f getSafePosition() {
         Vector2f pos = this.randomPos();
-        while (this.isCollisionTile(pos)) {
+        while (this.isCollisionTile(pos) || this.isVoidTile(pos, 0,0)) {
             pos = this.randomPos();
         }
         return pos;
@@ -224,6 +227,20 @@ public class TileManager {
         final int tileY = (int) pos.y / collisionLayer.getTileSize();
         final Tile currentTile = collisionLayer.getBlocks()[tileY][tileX];
         return (currentTile != null) && !currentTile.isVoid();
+    }
+    
+    public boolean isVoidTile(Vector2f pos, float dx, float dy) {
+        final TileMap collisionLayer = this.getBaseLayer();
+        final int tileX = (int) ((float)pos.x + dx) / collisionLayer.getTileSize();
+        final int tileY = (int) ((float)pos.y + dy)/ collisionLayer.getTileSize();
+        if(tileY>collisionLayer.getBlocks().length || tileX>collisionLayer.getBlocks()[0].length) {
+            return false;
+        }
+        final Tile currentTile = collisionLayer.getBlocks()[tileY][tileX];
+        if(currentTile==null) {
+            return false;
+        }
+        return currentTile.isVoid();
     }
 
     public boolean collidesXLimit(Entity e, float ax) {
@@ -238,6 +255,22 @@ public class TileManager {
         return (futurePos.y <= 0) || ((futurePos.y + e.getSize()) >= (this.getBaseLayer().getHeight()
                 * this.getBaseLayer().getTileSize()));
 
+    }
+    
+    public boolean collidesVoidTile(Entity e) {
+        final Vector2f centerPos = e.getCenteredPosition();
+        final int startX = (int) (centerPos.x / (float) this.getBaseLayer().getTileSize());
+        final int startY = (int) (centerPos.y / (float) this.getBaseLayer().getTileSize());
+
+        final Tile currentTile = this.getBaseLayer().getBlocks()[startY][startX];
+        if(!currentTile.isVoid()) {
+            return false;
+        }
+        final Rectangle tileBounds = new Rectangle(currentTile.getPos(), currentTile.getWidth(),
+                currentTile.getHeight());
+        final Rectangle futurePosBounds = new Rectangle(e.getPos(), (e.getSize() / 2), e.getSize() / 2);
+
+        return currentTile.isVoid() && tileBounds.intersect(futurePosBounds);
     }
 
     public boolean collidesSlowTile(Entity e) {
