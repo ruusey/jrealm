@@ -319,6 +319,7 @@ public class ServerGameLogic {
             ServerGameLogic.log.error("Failed to send welcome message. Reason: {}", e);
         }
     }
+    
     public static void handleCommandServer(RealmManagerServer mgr, Packet packet) {
         final CommandPacket commandPacket = (CommandPacket) packet;
         if(commandPacket.getCommandId()!=1 && !validateCallingPlayer(mgr, packet, commandPacket.getPlayerId())) {

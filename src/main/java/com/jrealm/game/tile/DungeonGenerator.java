@@ -115,10 +115,14 @@ public class DungeonGenerator {
     }
     
     public TileMap getRoom(int tileSize, int minRoomWidth, int maxRoomWidth, int minRoomHeight, int maxRoomHeight, List<RoomShapeTemplate> shapeTemplates) {
+        @SuppressWarnings("unused")
+        // TODO: Implement room shapes
         final RoomShapeTemplate shape = shapeTemplates.get(Realm.RANDOM.nextInt(shapeTemplates.size()));
         int roomWidth = minRoomWidth + Realm.RANDOM.nextInt((maxRoomWidth-minRoomWidth)+1);
         int roomHeight = minRoomHeight + Realm.RANDOM.nextInt((maxRoomHeight-minRoomHeight)+1);
         TileMap baseLayer = new TileMap(tileSize, roomWidth, roomHeight);
+        
+        // Currently only supports rectangular rooms because i'm terrible at programming
         for(int i = 0; i< roomHeight; i++) {
             for(int j = 0 ; j<roomWidth; j++) {
                 TileModel model = GameDataManager.TILES.get(29);

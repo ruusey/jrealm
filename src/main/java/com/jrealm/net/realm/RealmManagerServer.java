@@ -826,16 +826,15 @@ public class RealmManagerServer implements Runnable {
         } else {
             p.xCol = true;
         }
+        
         if(targetRealm.getTileManager().collidesDamagingTile(p)) {
             final Long lastDamageTime = this.playerGroundDamageState.get(p.getId());
             if(lastDamageTime==null || (Instant.now().toEpochMilli()-lastDamageTime)>650) {
                 int damageToInflict = 30 + Realm.RANDOM.nextInt(15);
                 this.sendTextEffectToPlayer(p, TextEffect.DAMAGE, "-" + damageToInflict);
-
                 p.setHealth(p.getHealth() - damageToInflict);
                 this.playerGroundDamageState.put(p.getId(),Instant.now().toEpochMilli());
             }
-
         }
 
         if (!targetRealm.getTileManager().collisionTile(p, 0, p.getDy())
@@ -850,7 +849,6 @@ public class RealmManagerServer implements Runnable {
         } else {
             p.yCol = true;
         }
-
         p.move();
     }
 
