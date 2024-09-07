@@ -738,7 +738,7 @@ public class RealmManagerServer implements Runnable {
             }
         }
     }
-    // For packet callbacks requiring high performance we will invoke them in a functional mager using
+    // For packet callbacks requiring high performance we will invoke them in a functional manner using
     // a hashmap to store the references. The server operator is encouraged to add auxilary packet
     // handling functionality using the @PacketHandler annotation
     private void registerPacketCallbacks() {
