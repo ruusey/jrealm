@@ -31,16 +31,16 @@ public class Beach0Decorator extends RealmDecoratorBase {
             final int centerX = (int) (pos.x / baseLayer.getTileSize());
             final int centerY = (int) (pos.y / baseLayer.getTileSize());
 
-            baseLayer.setBlockAt(centerX, centerY, (short) Beach0Decorator.WATER_TILE_DEEP.getTileId(),
+            baseLayer.setTileAt(centerX, centerY, (short) Beach0Decorator.WATER_TILE_DEEP.getTileId(),
                     Beach0Decorator.WATER_TILE_DEEP.getData());
-            baseLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
+            baseLayer.setTileAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
                     (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
-            baseLayer.setBlockAt(centerX,
+            baseLayer.setTileAt(centerX,
                     (centerY + 1) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerY + 1,
                     (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
-            baseLayer.setBlockAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
+            baseLayer.setTileAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
                     (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
-            baseLayer.setBlockAt((centerX + 1) >= baseLayer.getWidth() ? baseLayer.getWidth() - 1 : centerX + 1,
+            baseLayer.setTileAt((centerX + 1) >= baseLayer.getWidth() ? baseLayer.getWidth() - 1 : centerX + 1,
                     centerY, (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
 
         }
@@ -52,14 +52,14 @@ public class Beach0Decorator extends RealmDecoratorBase {
         // left side
         for (int i = 0; i < input.getTileManager().getBaseLayer().getWidth(); i++) {
             for (int j = 0; j < 1 + Realm.RANDOM.nextInt(SHORE_LINE_SIZE); j++) {
-                baseLayer.setBlockAt(i, j, (short) Beach0Decorator.WATER_TILE.getTileId(),
+                baseLayer.setTileAt(i, j, (short) Beach0Decorator.WATER_TILE.getTileId(),
                         Beach0Decorator.WATER_TILE.getData());
             }
         }
         // right side
         for (int i = 0; i < input.getTileManager().getBaseLayer().getWidth(); i++) {
             for (int j = 1; j < 2 + Realm.RANDOM.nextInt(SHORE_LINE_SIZE); j++) {
-                baseLayer.setBlockAt(i, input.getTileManager().getBaseLayer().getHeight() - (j),
+                baseLayer.setTileAt(i, input.getTileManager().getBaseLayer().getHeight() - (j),
                         (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
             }
         }
@@ -67,14 +67,14 @@ public class Beach0Decorator extends RealmDecoratorBase {
         // top side
         for (int i = 0; i < input.getTileManager().getBaseLayer().getWidth(); i++) {
             for (int j = 0; j < 1 + Realm.RANDOM.nextInt(SHORE_LINE_SIZE); j++) {
-                baseLayer.setBlockAt(j, i, (short) Beach0Decorator.WATER_TILE.getTileId(),
+                baseLayer.setTileAt(j, i, (short) Beach0Decorator.WATER_TILE.getTileId(),
                         Beach0Decorator.WATER_TILE.getData());
             }
         }
         // bottom side
         for (int i = 0; i < input.getTileManager().getBaseLayer().getWidth(); i++) {
             for (int j = 1; j < 2 + Realm.RANDOM.nextInt(SHORE_LINE_SIZE); j++) {
-                baseLayer.setBlockAt(input.getTileManager().getBaseLayer().getHeight() - (j), i,
+                baseLayer.setTileAt(input.getTileManager().getBaseLayer().getHeight() - (j), i,
                         (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
             }
         }

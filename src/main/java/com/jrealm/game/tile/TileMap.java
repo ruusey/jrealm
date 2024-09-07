@@ -15,7 +15,7 @@ import lombok.Data;
 @Data
 public class TileMap {
     private short mapId;
-    private Tile[][] blocks;
+    private Tile[][] tiles;
     private int tileSize;
     private int width;
     private int height;
@@ -24,7 +24,7 @@ public class TileMap {
         this.tileSize = tileSize;
         this.width = width;
         this.height = height;
-        this.blocks = new Tile[height][width];
+        this.tiles = new Tile[height][width];
     }
 
     public TileMap(short mapId, int tileSize, int width, int height) {
@@ -32,41 +32,46 @@ public class TileMap {
         this.tileSize = tileSize;
         this.width = width;
         this.height = height;
-        this.blocks = new Tile[height][width];
+        this.tiles = new Tile[height][width];
     }
 
     public TileMap(short mapId, Tile[][] blocks, int tileSize, int width, int height) {
         this.mapId = mapId;
-        this.blocks = blocks;
+        this.tiles = blocks;
         this.tileSize = tileSize;
         this.width = width;
         this.height = height;
     }
 
     public Tile[][] getBlocks() {
-        return this.blocks;
+        return this.tiles;
     }
     
     public void fill(int tileId) {
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 TileModel tileIdToCreate = GameDataManager.TILES.get(tileId);
-                this.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+                this.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
             }
         }
     }
 
-    public void setBlockAt(int row, int col, short tileId, TileData data) {
+    public void setTileAt(int row, int col, short tileId, TileData data) {
         Vector2f tilePos = new Vector2f(col * this.tileSize, row * this.tileSize);
-        this.blocks[row][col] = new Tile(tileId, tilePos, data, (short) GlobalConstants.BASE_TILE_SIZE, false);
+        this.tiles[row][col] = new Tile(tileId, tilePos, data, (short) GlobalConstants.BASE_TILE_SIZE, false);
+    }
+    
+    public void setTileAt(int row, int col, TileModel model) {
+        Vector2f tilePos = new Vector2f(col * this.tileSize, row * this.tileSize);
+        this.tiles[row][col] = new Tile((short)model.getTileId(), tilePos, model.getData(), (short) GlobalConstants.BASE_TILE_SIZE, false);
     }
     
     public TileMap append(TileMap other, int offsetX, int offsetY) {
         for(int i = 0; i<other.getBlocks().length; i++) {
             for(int j = 0; j<other.getBlocks()[i].length; j++) {
-                Tile current = other.blocks[i][j];
+                Tile current = other.tiles[i][j];
                 if(current!=null && !current.isVoid()) {
-                    this.blocks[i+offsetY][j+offsetX]=current;
+                    this.tiles[i+offsetY][j+offsetX]=current;
                 }
             }
         }

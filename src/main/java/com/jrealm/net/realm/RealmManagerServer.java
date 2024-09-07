@@ -815,7 +815,8 @@ public class RealmManagerServer implements Runnable {
         final Realm targetRealm = this.realms.get(realmId);
 
         if (!targetRealm.getTileManager().collisionTile(p, p.getDx(), 0)
-                && !targetRealm.getTileManager().collidesXLimit(p, p.getDx()) && !targetRealm.getTileManager().isVoidTile(p.getPos(), p.getDx(), 0)) {
+                && !targetRealm.getTileManager().collidesXLimit(p, p.getDx()) 
+                && !targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize()/2, p.getSize()/2), p.getDx(), 0)) {
             p.xCol = false;
             if (targetRealm.getTileManager().collidesSlowTile(p)) {
                 p.getPos().x += p.getDx() / 3.0f;
@@ -838,7 +839,8 @@ public class RealmManagerServer implements Runnable {
         }
 
         if (!targetRealm.getTileManager().collisionTile(p, 0, p.getDy())
-                && !targetRealm.getTileManager().collidesYLimit(p, p.getDy()) && !targetRealm.getTileManager().isVoidTile(p.getPos(), 0, p.getDy())) {
+                && !targetRealm.getTileManager().collidesYLimit(p, p.getDy()) 
+                && !targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize()/2, p.getSize()/2), 0, p.getDy())) {
             p.yCol = false;
             if (targetRealm.getTileManager().collidesSlowTile(p)) {
                 p.getPos().y += p.getDy() / 3.0f;

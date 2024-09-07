@@ -35,6 +35,7 @@ public class TileManager {
     // Server side constructor
     public TileManager(int mapId) {
         MapModel model = GameDataManager.MAPS.get(mapId);
+        // Three types of maps. Fixed data, generated terrain and generated dungeon
         if (model.getData() != null) {
             this.mapLayers = this.getLayersFromData(model);
 
@@ -87,10 +88,10 @@ public class TileManager {
                     TileModel tileIdToCreate = tileIdsNormal.get(random.nextInt(tileIdsNormal.size()));
                     float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
                     if ((rarity > 0.0) && (random.nextFloat() <= rarity)) {
-                        baseLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+                        baseLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
                     } else {
                         tileIdToCreate = tileIdsNormal.get(0);
-                        baseLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+                        baseLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
                     }
 
                 }
@@ -102,9 +103,9 @@ public class TileManager {
                     TileModel tileIdToCreate = tileIdsCollision.get(random.nextInt(tileIdsCollision.size()));
                     float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
                     if ((rarity > 0.0) && (random.nextFloat() <= rarity)) {
-                        collisionLayer.setBlockAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+                        collisionLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
                     } else {
-                        collisionLayer.setBlockAt(i, j, (short) 0, tileIdToCreate.getData());
+                        collisionLayer.setTileAt(i, j, (short) 0, tileIdToCreate.getData());
                     }
                 }
             }
@@ -128,7 +129,7 @@ public class TileManager {
             for (int j = 0; j < baseData[i].length; j++) {
                 int tileIdToCreate = baseData[i][j];
                 TileData tileData = GameDataManager.TILES.get(tileIdToCreate).getData();
-                baseLayer.setBlockAt(i, j, (short) tileIdToCreate, tileData);
+                baseLayer.setTileAt(i, j, (short) tileIdToCreate, tileData);
             }
         }
 
@@ -136,7 +137,7 @@ public class TileManager {
             for (int j = 0; j < collisionData[i].length; j++) {
                 int tileIdToCreate = collisionData[i][j];
                 TileData tileData = GameDataManager.TILES.get(tileIdToCreate).getData();
-                collisionLayer.setBlockAt(i, j, (short) tileIdToCreate, tileData);
+                collisionLayer.setTileAt(i, j, (short) tileIdToCreate, tileData);
             }
         }
         return Arrays.asList(baseLayer, collisionLayer);
@@ -397,7 +398,7 @@ public class TileManager {
         }
         for (NetTile tile : packet.getTiles()) {
             TileData data = GameDataManager.TILES.get((int) tile.getTileId()).getData();
-            this.mapLayers.get((int) tile.getLayer()).setBlockAt(tile.getXIndex(), tile.getYIndex(), tile.getTileId(),
+            this.mapLayers.get((int) tile.getLayer()).setTileAt(tile.getXIndex(), tile.getYIndex(), tile.getTileId(),
                     data);
         }
     }

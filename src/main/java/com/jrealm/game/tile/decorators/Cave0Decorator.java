@@ -29,21 +29,21 @@ public class Cave0Decorator extends RealmDecoratorBase {
             final int centerX = (int) (pos.x / baseLayer.getTileSize());
             final int centerY = (int) (pos.y / baseLayer.getTileSize());
 
-            baseLayer.setBlockAt(centerX, centerY, (short) Cave0Decorator.LAVA_TILE1.getTileId(),
+            baseLayer.setTileAt(centerX, centerY, (short) Cave0Decorator.LAVA_TILE1.getTileId(),
                     Cave0Decorator.LAVA_TILE1.getData());
-            baseLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
+            baseLayer.setTileAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
                     (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
-            baseLayer.setBlockAt(centerX, (centerY - 2) > -1 ? centerY - 2 : 0,
+            baseLayer.setTileAt(centerX, (centerY - 2) > -1 ? centerY - 2 : 0,
                     (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
-            baseLayer.setBlockAt(centerX,
+            baseLayer.setTileAt(centerX,
                     (centerY + 1) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerY + 1,
                     (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
-            baseLayer.setBlockAt(centerX,
+            baseLayer.setTileAt(centerX,
                     (centerY + 2) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerY + 2,
                     (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
-            baseLayer.setBlockAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
+            baseLayer.setTileAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
                     (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
-            baseLayer.setBlockAt((centerX + 1) >= baseLayer.getWidth() ? baseLayer.getWidth() - 1 : centerX + 1,
+            baseLayer.setTileAt((centerX + 1) >= baseLayer.getWidth() ? baseLayer.getWidth() - 1 : centerX + 1,
                     centerY, (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
 
         }

@@ -206,7 +206,8 @@ public class PlayState extends GameState {
             p.setDy(0);
         }
         if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, p.getDx(), 0)
-                && !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx()) && !this.getRealmManager().getRealm().getTileManager().isVoidTile(p.getPos(), p.getDx(), 0)) {
+                && !this.getRealmManager().getRealm().getTileManager().collidesXLimit(p, p.getDx()) 
+                && !this.getRealmManager().getRealm().getTileManager().isVoidTile(p.getPos().clone(p.getSize()/2, p.getSize()/2), p.getDx(), 0)) {
             p.xCol = false;
             if (p.getDx() != 0.0f) {
                 // p.applyMovementLerp(p.getDx(), 0, 0.65f);
@@ -217,7 +218,8 @@ public class PlayState extends GameState {
         }
 
         if (!this.getRealmManager().getRealm().getTileManager().collisionTile(p, 0, p.getDy())
-                && !this.getRealmManager().getRealm().getTileManager().collidesYLimit(p, p.getDy())&& !this.getRealmManager().getRealm().getTileManager().isVoidTile(p.getPos(), 0, p.getDy())) {
+                && !this.getRealmManager().getRealm().getTileManager().collidesYLimit(p, p.getDy())
+                && !this.getRealmManager().getRealm().getTileManager().isVoidTile(p.getPos().clone(p.getSize()/2, p.getSize()/2), 0, p.getDy())) {
             p.yCol = false;
             if (p.getDy() != 0.0f) {
                 // p.applyMovementLerp(0, p.getDy(), 0.65f);

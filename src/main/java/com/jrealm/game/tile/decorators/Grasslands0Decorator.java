@@ -26,16 +26,16 @@ public class Grasslands0Decorator extends RealmDecoratorBase {
             final int centerX = (int) (pos.x / collisionLayer.getTileSize());
             final int centerY = (int) (pos.y / collisionLayer.getTileSize());
 
-            collisionLayer.setBlockAt(centerX, centerY, (short) Grasslands0Decorator.TREE_11.getTileId(),
+            collisionLayer.setTileAt(centerX, centerY, (short) Grasslands0Decorator.TREE_11.getTileId(),
                     Grasslands0Decorator.TREE_11.getData());
-            collisionLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
+            collisionLayer.setTileAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
                     (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
-            collisionLayer.setBlockAt(centerX,
+            collisionLayer.setTileAt(centerX,
                     (centerY + 1) >= collisionLayer.getHeight() ? collisionLayer.getHeight() - 1 : centerY + 1,
                     (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
-            collisionLayer.setBlockAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
+            collisionLayer.setTileAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
                     (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
-            collisionLayer.setBlockAt(
+            collisionLayer.setTileAt(
                     (centerX + 1) >= collisionLayer.getWidth() ? collisionLayer.getWidth() - 1 : centerX + 1, centerY,
                     (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
         }
