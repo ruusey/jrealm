@@ -22,13 +22,21 @@ import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
 
 public enum PacketType {
-    PLAYER_MOVE((byte) 1, PlayerMovePacket.class), UPDATE((byte) 2, UpdatePacket.class),
-    OBJECT_MOVE((byte) 3, ObjectMovePacket.class), TEXT((byte) 4, TextPacket.class),
-    HEARTBEAT((byte) 5, HeartbeatPacket.class), PLAYER_SHOOT((byte) 6, PlayerShootPacket.class),
-    COMMAND((byte) 7, CommandPacket.class), LOAD_MAP((byte) 8, LoadMapPacket.class), LOAD((byte) 9, LoadPacket.class),
-    UNLOAD((byte) 10, UnloadPacket.class), USE_ABILITY((byte) 11, UseAbilityPacket.class),
-    MOVE_ITEM((byte) 12, MoveItemPacket.class), USE_PORTAL((byte) 13, UsePortalPacket.class),
-    TEXT_EFFECT((byte) 14, TextEffectPacket.class), PLAYER_DEATH((byte) 15, PlayerDeathPacket.class);
+    PLAYER_MOVE((byte) 1, PlayerMovePacket.class), 
+    UPDATE((byte) 2, UpdatePacket.class),
+    OBJECT_MOVE((byte) 3, ObjectMovePacket.class), 
+    TEXT((byte) 4, TextPacket.class),
+    HEARTBEAT((byte) 5, HeartbeatPacket.class), 
+    PLAYER_SHOOT((byte) 6, PlayerShootPacket.class),
+    COMMAND((byte) 7, CommandPacket.class), 
+    LOAD_MAP((byte) 8, LoadMapPacket.class), 
+    LOAD((byte) 9, LoadPacket.class),
+    UNLOAD((byte) 10, UnloadPacket.class), 
+    USE_ABILITY((byte) 11, UseAbilityPacket.class),
+    MOVE_ITEM((byte) 12, MoveItemPacket.class), 
+    USE_PORTAL((byte) 13, UsePortalPacket.class),
+    TEXT_EFFECT((byte) 14, TextEffectPacket.class), 
+    PLAYER_DEATH((byte) 15, PlayerDeathPacket.class);
 
     private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
 
