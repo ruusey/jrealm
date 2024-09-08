@@ -88,7 +88,7 @@ public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet)
 }
 ```
 **Example (Register by annotation)**:
-```
+```java
 @PacketHandler(TextPacket.class)
 public static void handleText0(RealmManagerServer mgr, Packet packet) {
     final TextPacket textPacket = (TextPacket) packet;
