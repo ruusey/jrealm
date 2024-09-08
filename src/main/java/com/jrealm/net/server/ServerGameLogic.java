@@ -249,7 +249,7 @@ public class ServerGameLogic {
         final Player player = mgr.searchRealmsForPlayer(fromPlayerId);
         final Realm realm = mgr.findPlayerRealm(fromPlayerId);
 
-        //log.info("Player {} says {} from Realm {}", player.getName(), textPacket.getMessage(), realm.getRealmId());
+        log.info("Player {} says {} from Realm {}", player.getName(), textPacket.getMessage(), realm.getRealmId());
     }
 
     public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {
@@ -445,7 +445,6 @@ public class ServerGameLogic {
                 final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
                // accountResponse.serializeWrite(dosToClient);
                 commandResponse.serializeWrite(dosToClient);
-
             } catch (Exception e) {
                 log.error("Failed to write login response to client. Reason: {}", e);
             }
@@ -460,7 +459,7 @@ public class ServerGameLogic {
     }
     
     private static boolean validateCallingPlayer(RealmManagerServer mgr, Packet packet, Long declaredPlayerId ) {
-       Long actualPlayerId =  mgr.getRemoteAddresses().get(packet.getSrcIp());
+       final Long actualPlayerId =  mgr.getRemoteAddresses().get(packet.getSrcIp());
        final Player actualPlayer = mgr.searchRealmsForPlayer(actualPlayerId);
        if(actualPlayer==null) {
            return false;
