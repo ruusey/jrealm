@@ -46,7 +46,7 @@ public class RealmManagerClient implements Runnable {
     public void run() {
         RealmManagerClient.log.info("Starting JRealm Client");
 
-        Runnable tick = () -> {
+        final Runnable tick = () -> {
             this.tick();
             this.update(0);
         };
@@ -59,7 +59,7 @@ public class RealmManagerClient implements Runnable {
 
     private void tick() {
         try {
-            Runnable processClientPackets = () -> {
+            final Runnable processClientPackets = () -> {
                 this.processClientPackets();
             };
 
@@ -71,9 +71,9 @@ public class RealmManagerClient implements Runnable {
 
     public void processClientPackets() {
         while (!this.getClient().getInboundPacketQueue().isEmpty()) {
-            Packet toProcess = this.getClient().getInboundPacketQueue().remove();
+            final Packet toProcess = this.getClient().getInboundPacketQueue().remove();
             try {
-                Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
+                final Packet created = Packet.newInstance(toProcess.getId(), toProcess.getData());
                 if (created == null) {
                     continue;
                 }
