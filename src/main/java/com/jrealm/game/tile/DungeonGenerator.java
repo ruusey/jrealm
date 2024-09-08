@@ -65,8 +65,8 @@ public class DungeonGenerator {
             final int rangeX = (previousRoomOffsetX+(room.getWidth()*xModifier)) <= 0 ? 1 : previousRoomOffsetX+(room.getWidth()*xModifier);
             final int rangeY = (previousRoomOffsetY+(room.getHeight()*yModifier)) <= 0 ? 1 : previousRoomOffsetY+(room.getHeight()*yModifier);
 
-            int offsetX = 10+Realm.RANDOM.nextInt(rangeX);
-            int offsetY = 10+Realm.RANDOM.nextInt(rangeY);
+            int offsetX = 15+Realm.RANDOM.nextInt(rangeX);
+            int offsetY = 15+Realm.RANDOM.nextInt(rangeY);
             
             if(offsetX<0) {
                 offsetX = 0;

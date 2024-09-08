@@ -8,8 +8,8 @@ import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 
 public class Grasslands0Decorator extends RealmDecoratorBase {
-    private static final Integer MIN_FOREST_COUNT = 15;
-    private static final Integer MAX_FOREST_COUNT = 25;
+    private static Integer MIN_FOREST_COUNT = 15;
+    private static Integer MAX_FOREST_COUNT = 25;
     private static final TileModel TREE_10 = GameDataManager.TILES.get(38);
     private static final TileModel TREE_11 = GameDataManager.TILES.get(39);
 
@@ -19,6 +19,10 @@ public class Grasslands0Decorator extends RealmDecoratorBase {
 
     @Override
     public void decorate(final Realm input) {
+        MIN_FOREST_COUNT = input.getTileManager().getBaseLayer().getWidth()/2;
+        MAX_FOREST_COUNT = (input.getTileManager().getBaseLayer().getWidth()/2)+15;
+        
+        
         for (int i = 0; i < (Grasslands0Decorator.MIN_FOREST_COUNT + Realm.RANDOM
                 .nextInt(Grasslands0Decorator.MAX_FOREST_COUNT - Grasslands0Decorator.MIN_FOREST_COUNT)); i++) {
             final Vector2f pos = input.getTileManager().randomPos();
@@ -26,17 +30,17 @@ public class Grasslands0Decorator extends RealmDecoratorBase {
             final int centerX = (int) (pos.x / collisionLayer.getTileSize());
             final int centerY = (int) (pos.y / collisionLayer.getTileSize());
 
-            collisionLayer.setTileAt(centerX, centerY, (short) Grasslands0Decorator.TREE_11.getTileId(),
+            collisionLayer.setTileAt(centerY, centerX, (short) Grasslands0Decorator.TREE_11.getTileId(),
                     Grasslands0Decorator.TREE_11.getData());
-            collisionLayer.setTileAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
+            collisionLayer.setTileAt(centerY, (centerX - 1) > -1 ? centerX - 1 : 0,
                     (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
-            collisionLayer.setTileAt(centerX,
-                    (centerY + 1) >= collisionLayer.getHeight() ? collisionLayer.getHeight() - 1 : centerY + 1,
+            collisionLayer.setTileAt(centerY,
+                    (centerX + 1) >= collisionLayer.getHeight() ? collisionLayer.getHeight() - 1 : centerX + 1,
                     (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
-            collisionLayer.setTileAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
+            collisionLayer.setTileAt((centerY - 1) > -1 ? centerY - 1 : 0, centerX,
                     (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
             collisionLayer.setTileAt(
-                    (centerX + 1) >= collisionLayer.getWidth() ? collisionLayer.getWidth() - 1 : centerX + 1, centerY,
+                    (centerY + 1) >= collisionLayer.getWidth() ? collisionLayer.getWidth() - 1 : centerY + 1, centerX,
                     (short) Grasslands0Decorator.TREE_10.getTileId(), Grasslands0Decorator.TREE_10.getData());
         }
     }

@@ -31,17 +31,17 @@ public class Beach0Decorator extends RealmDecoratorBase {
             final int centerX = (int) (pos.x / baseLayer.getTileSize());
             final int centerY = (int) (pos.y / baseLayer.getTileSize());
 
-            baseLayer.setTileAt(centerX, centerY, (short) Beach0Decorator.WATER_TILE_DEEP.getTileId(),
+            baseLayer.setTileAt(centerY, centerX, (short) Beach0Decorator.WATER_TILE_DEEP.getTileId(),
                     Beach0Decorator.WATER_TILE_DEEP.getData());
-            baseLayer.setTileAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
+            baseLayer.setTileAt(centerY, (centerX - 1) > -1 ? centerX - 1 : 0,
                     (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
-            baseLayer.setTileAt(centerX,
-                    (centerY + 1) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerY + 1,
+            baseLayer.setTileAt(centerY,
+                    (centerX + 1) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerX + 1,
                     (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
-            baseLayer.setTileAt((centerX - 1) > -1 ? centerX - 1 : 0, centerY,
+            baseLayer.setTileAt((centerY - 1) > -1 ? centerY - 1 : 0, centerX,
                     (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
-            baseLayer.setTileAt((centerX + 1) >= baseLayer.getWidth() ? baseLayer.getWidth() - 1 : centerX + 1,
-                    centerY, (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
+            baseLayer.setTileAt((centerY + 1) >= baseLayer.getWidth() ? baseLayer.getWidth() - 1 : centerY + 1,
+                    centerX, (short) Beach0Decorator.WATER_TILE.getTileId(), Beach0Decorator.WATER_TILE.getData());
 
         }
         this.createShoreline(input);

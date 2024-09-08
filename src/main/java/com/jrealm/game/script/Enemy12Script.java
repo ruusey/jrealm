@@ -30,10 +30,10 @@ public class Enemy12Script extends EnemyScriptBase {
         final Projectile p = group.getProjectiles().get(0);
         for (int i = 0; i < 4; i++) {
             super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
-                    (float) (angle + ((Math.PI / 10) * i)), group);
+                    (float) (angle + ((Math.PI / 5) * i)), group);
             super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(),
-                    (float) (angle + ((Math.PI / 10) * -i)), group);
-            super.sleep(50);
+                    (float) (angle + ((Math.PI / 5) * -i)), group);
+            super.sleep(100);
         }
     }
 }

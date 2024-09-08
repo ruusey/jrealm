@@ -651,11 +651,11 @@ public class PlayState extends GameState {
 
         g.setColor(Color.white);
 
-        String fps = GamePanel.oldFrameCount + " FPS";
-        g.drawString(fps, 0 + (6 * 32), 32);
-
-        String tps = GamePanel.oldTickCount + " TPS";
-        g.drawString(tps, 0 + (6 * 32), 64);
+//        String fps = GamePanel.oldFrameCount + " FPS";
+//        g.drawString(fps, 0 + (6 * 32), 32);
+//
+//        String tps = GamePanel.oldTickCount + " TPS";
+//        g.drawString(tps, 0 + (6 * 32), 64);
 
         // this.cam.render(g);
     }

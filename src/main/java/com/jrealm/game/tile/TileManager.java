@@ -283,7 +283,7 @@ public class TileManager {
 
         final Rectangle tileBounds = new Rectangle(currentTile.getPos(), currentTile.getWidth(),
                 currentTile.getHeight());
-        final Rectangle futurePosBounds = new Rectangle(e.getPos(), (e.getSize() / 2), e.getSize() / 2);
+        final Rectangle futurePosBounds = new Rectangle(e.getPos(), (e.getSize()), e.getSize());
 
         return currentTile.getData().slows() && tileBounds.intersect(futurePosBounds);
     }
