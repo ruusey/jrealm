@@ -56,9 +56,9 @@ Applicable classes:
 
 **JRealm** packet handlers exist on both the server and client realm managers to hook callbacks into recieved packets. In general packet callbacks are registered during the `registerPacketCallbacks()`
 routine of `RealmManagerClient` and `RealmManagerServer`. Packet callbacks methods will typically be a static method with signature `BiConsumer<RealmManager, Packet>` that is passed the target packet and Realm Manager on receiving the packet, although
-any method matching this signature can be used as a packet callback. 
-**As of JRealm 0.3.5**, developers can now make use of the @PacketHandler(Class<? extends Packet> packetClass) to mark a method as a packet handler in server code. Generally
-The @PacketHandler annotation sacrifices performance for convenience as the reflection mechanism used to trigger such callbacks is computationally expensive.
+any method matching this signature can be used as a packet callback. <br />
+**As of JRealm 0.3.5**, developers can now make use of the **@PacketHandler(Class<? extends Packet> packetClass)** to mark a method as a packet handler in server code. Generally
+The **@PacketHandler** annotation sacrifices performance for convenience as the reflection mechanism used to trigger such callbacks is computationally expensive.
 
 **Example (Register by mapping)**:
 ```java
@@ -107,8 +107,8 @@ Applicable classes:
 `com.jrealm.game.messaging.*, com.jrealm.net.server.ServerGameLogic, com.jrealm.net.server.ServerCommandHandler`
 
 **JRealm** command handlers are a similar subset of functionality to the Packet Callbacks mentioned in the previous section
-that allow users to embed  server commands in the packets they send to **JRealm-Server**. CommandPackets consist of a `byte commandId`
-and a `UTF JSON String command`. When the server recieves a Command Packet it will attempt to deserialize the JSON payload into the model
+that allow users to embed  server commands in the packets they send to **JRealm-Server**. <br />
+CommandPackets consist of a `byte commandId and a `UTF JSON String command`. When the server recieves a Command Packet it will attempt to deserialize the JSON payload into the model
 targeted by this Command `(defined in com.jrealm.game.messaging.CommandType)`
 
 The class `ServerCommandHandler` is responsible for handling individual Command functionality. Each command callback is registered dynamically
@@ -147,8 +147,8 @@ The current script features are:
 
 ### Enemy Scripts
 EnemyScripts are small classes that currently allow a developer to implement the `attack` method to provide custom attack behavior. EnemyScripts
-will replace the target enemies default attack pattern with the contents of your script. EnemyScripts are run concurrently and thus support delays and
-long running attack patterns. Any class extending `EnemyScriptBase` will be loaded as an EnemyScript at runtime.
+will replace the target enemies default attack pattern with the contents of your script. <br />
+EnemyScripts are run concurrently and thus support delays and long running attack patterns. Any class extending `EnemyScriptBase` will be loaded as an EnemyScript at runtime.
 
 **Example**
 ```java
