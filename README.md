@@ -44,9 +44,6 @@ Replace `{PLAYER_EMAIL}` with your account's email <br />
 Replace `{PLAYER_PASSWORD}` with your account's password <br />
 Replace `{CHARACTER_UUID}` with the UUID of your character 
 
-## Developing
-This section will cover local development of JRealm
-
 ### Game Data
 See [JRealm-Data](https://github.com/ruusey/jrealm-data) for information on modifying the game's .json data
 
@@ -60,7 +57,7 @@ any method matching this signature can be used as a packet callback. <br />
 **As of JRealm 0.3.5**, developers can now make use of the **@PacketHandler(Class<? extends Packet> packetClass)** to mark a method as a packet handler in server code. Generally
 The **@PacketHandler** annotation sacrifices performance for convenience as the reflection mechanism used to trigger such callbacks is computationally expensive.
 
-**Example (Register by mapping)**:
+**Example (Register by mapping)**
 ```java
 // RealmManagerServer.java
 private void registerPacketCallbacks() {
@@ -87,7 +84,7 @@ public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet)
     }
 }
 ```
-**Example (Register by annotation)**:
+**Example (Register by annotation)**
 ```java
 @PacketHandler(TextPacket.class)
 public static void handleText0(RealmManagerServer mgr, Packet packet) {
@@ -140,7 +137,7 @@ will be tranformed into a 502 error code message that is returned to the client.
 ### Creating Maps & Terrains
 See https://github.com/ruusey/jrealm-data?tab=readme-ov-file#adding-static-data-maps
 
-### Available Scripted Behaviors
+## Available Scripted Behaviors
 **JRealm** provides developers with an ever expanding arsenal of tools for implementing game content. The existing toolkit is 
 centered around providing script-like features for modifying the games state and data on the server side. 
 The current script features are:
