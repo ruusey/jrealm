@@ -133,6 +133,9 @@ public class RealmManagerServer implements Runnable {
     private int currentTickCount = 0;
     private long tickSampleTime = 0;
 
+    boolean transmitMovement = false;
+
+    
     public RealmManagerServer() {
         this.registerRealmDecorators();
         this.registerEnemyScripts();
@@ -386,22 +389,28 @@ public class RealmManagerServer implements Runnable {
                     }
 
                     // If the ObjectMove packet isnt empty
-                    if (this.playerObjectMoveState.get(player.getKey()) == null && movePacket != null) {
-                        this.playerObjectMoveState.put(player.getKey(), movePacket);
-                        this.enqueueServerPacket(player.getValue(), movePacket);
-                    } else if (movePacket != null) {
-                        final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
-                        if (oldMove != null && !oldMove.equals(movePacket)) {
+                    if(this.transmitMovement) {
+                        if (this.playerObjectMoveState.get(player.getKey()) == null && movePacket != null) {
                             this.playerObjectMoveState.put(player.getKey(), movePacket);
                             this.enqueueServerPacket(player.getValue(), movePacket);
-                        } else {
-                            final ObjectMovePacket moveDiff = oldMove.getMoveDiff(movePacket);
-                            if (moveDiff != null) {
+                        } else if (movePacket != null) {
+                            final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
+                            if (oldMove != null && !oldMove.equals(movePacket)) {
                                 this.playerObjectMoveState.put(player.getKey(), movePacket);
                                 this.enqueueServerPacket(player.getValue(), movePacket);
+                            } else {
+                                final ObjectMovePacket moveDiff = oldMove.getMoveDiff(movePacket);
+                                if (moveDiff != null) {
+                                    this.playerObjectMoveState.put(player.getKey(), movePacket);
+                                    this.enqueueServerPacket(player.getValue(), movePacket);
+                                }
                             }
                         }
+                        this.transmitMovement=false;
+                    }else {
+                        this.transmitMovement = true;
                     }
+                   
                     final Long playerLastHeartbeatTime = this.playerLastHeartbeatTime.get(player.getKey());
                     if(playerLastHeartbeatTime!=null && ((Instant.now().toEpochMilli() -playerLastHeartbeatTime)>5000)){
                         toRemove.add(player.getValue());                    
@@ -413,6 +422,7 @@ public class RealmManagerServer implements Runnable {
                     for (LootContainer lc : realm.getLoot().values()) {
                         lc.setContentsChanged(false);
                     }
+                    
                 } catch (Exception e) {
                     RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(),
                             e);
