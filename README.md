@@ -44,13 +44,13 @@ Replace `{PLAYER_EMAIL}` with your account's email <br />
 Replace `{PLAYER_PASSWORD}` with your account's password <br />
 Replace `{CHARACTER_UUID}` with the UUID of your character 
 
-### Developing
+## Developing
 This section will cover local development of JRealm
 
-#### Game Data
+### Game Data
 See [JRealm-Data](https://github.com/ruusey/jrealm-data) for information on modifying the game's .json data
 
-#### Packet Handlers
+## Packet Handlers
 Applicable classes: 
 `com.jrealm.game.realm.RealmManagerServer, com.jrealm.game.realm.RealmManagerClient, com.jrealm.net.server.ServerGameLogic, com.jrealm.net.server.ClientGameLogic`
 
@@ -102,7 +102,7 @@ public static void handleText0(RealmManagerServer mgr, Packet packet) {
     log.info("Player {} says {} from Realm {}", player.getName(), textPacket.getMessage(), realm.getRealmId());
 }
 ```
-#### Command Handlers
+## Command Handlers
 Applicable classes: 
 `com.jrealm.game.messaging.*, com.jrealm.net.server.ServerGameLogic, com.jrealm.net.server.ServerCommandHandler`
 
@@ -137,8 +137,8 @@ Note: Command Handler methods are allowed to throw `Exception` to control flow t
 will be tranformed into a 502 error code message that is returned to the client.
 
 
-#### Creating Maps & Terrains
-//TODO: Write this
+### Creating Maps & Terrains
+See https://github.com/ruusey/jrealm-data?tab=readme-ov-file#adding-static-data-maps
 
 ### Available Scripted Behaviors
 **JRealm** provides developers with an ever expanding arsenal of tools for implementing game content. The existing toolkit is 
