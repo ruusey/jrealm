@@ -108,7 +108,7 @@ Applicable classes:
 
 **JRealm** command handlers are a similar subset of functionality to the Packet Callbacks mentioned in the previous section
 that allow users to embed  server commands in the packets they send to **JRealm-Server**. <br />
-CommandPackets consist of a `byte commandId and a `UTF JSON String command`. When the server recieves a Command Packet it will attempt to deserialize the JSON payload into the model
+CommandPackets consist of a `byte commandId` and a `UTF JSON String command`. When the server recieves a Command Packet it will attempt to deserialize the JSON payload into the model
 targeted by this Command `(defined in com.jrealm.game.messaging.CommandType)`
 
 The class `ServerCommandHandler` is responsible for handling individual Command functionality. Each command callback is registered dynamically
