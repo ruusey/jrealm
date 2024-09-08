@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.game.util.Graph;
@@ -83,17 +84,25 @@ public class DungeonGenerator {
         final int xDiff = destX - srcX;
         final int yDiff = destY - srcY;
         final TileModel model = GameDataManager.TILES.get(29);
+        final TileModel model0 = GameDataManager.TILES.get(29);
+
         log.info("Connecting rooms SRC {}, {}. TARGET {}, {}", srcX, srcY, destX, destY);
 
         if (xDiff > 0) {
             for (int i = srcX; i < srcX + xDiff; i++) {
                 log.info("Filling X walkway tile at {}, {}", i, srcY);
                 targetLayer.setTileAt(srcY, i, model);
+
+                targetLayer.setTileAt(srcY-1, i, model0);
+                targetLayer.setTileAt(srcY+1, i, model0);
+
             }
         } else {
             for (int i = srcX; i > (srcX + xDiff); i--) {
                 log.info("Filling X walkway tile at {}, {}", i, srcY);
                 targetLayer.setTileAt(srcY, i, model);
+                targetLayer.setTileAt(srcY-1, i, model0);
+                targetLayer.setTileAt(srcY+1, i, model0);
             }
         }
         
@@ -101,11 +110,15 @@ public class DungeonGenerator {
             for (int i = srcY; i < srcY + yDiff; i++) {
                 log.info("Filling Y walkway tile at {}, {}", srcX, i);
                 targetLayer.setTileAt(i, destX, model);
+                targetLayer.setTileAt(i, destX-1, model0);
+                targetLayer.setTileAt(i, destX+1, model0);
             }
         } else {
             for (int i = srcY; i > (srcY + yDiff); i--) {
                 log.info("Filling Y walkway tile at {}, {}", srcX, i);
                 targetLayer.setTileAt(i, destX, model);
+                targetLayer.setTileAt(i, destX-1, model0);
+                targetLayer.setTileAt(i, destX+1, model0);
             }
         }
     }
@@ -123,12 +136,33 @@ public class DungeonGenerator {
         TileMap baseLayer = new TileMap(tileSize, roomWidth, roomHeight);
         
         // Currently only supports rectangular rooms because i'm terrible at programming
-        for(int i = 0; i< roomHeight; i++) {
-            for(int j = 0 ; j<roomWidth; j++) {
-                TileModel model = GameDataManager.TILES.get(29);
-                baseLayer.setTileAt(i, j, (short)model.getTileId(), model.getData());
+        if(shapeTemplates.get(0).equals(RoomShapeTemplate.RECTANGLE)) {
+            for(int i = 0; i< roomHeight; i++) {
+                for(int j = 0 ; j<roomWidth; j++) {
+                    TileModel model = GameDataManager.TILES.get(29);
+                    baseLayer.setTileAt(i, j, (short)model.getTileId(), model.getData());
+                }
             }
         }
+
+
+        int centerX = roomWidth/2;
+        int centerY = roomHeight/2;
+        int radius = centerX;
+        double cirCulmference = 2* Math.PI * radius;
+        final Vector2f pos = new Vector2f(centerX, centerY);
+        if(shapeTemplates.get(0).equals(RoomShapeTemplate.OVAL)) {
+            for(int i = 0; i< roomHeight; i++) {
+                for(int j = 0 ; j<roomWidth; j++) {
+                    if(pos.distanceTo(new Vector2f(i, j))<5) {
+                        TileModel model = GameDataManager.TILES.get(29);
+                        baseLayer.setTileAt(i, j, (short)model.getTileId(), model.getData());
+                    }
+
+                }
+            }
+        }
+       
         return baseLayer;
     }
 }

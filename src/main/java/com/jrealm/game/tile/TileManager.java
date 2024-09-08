@@ -44,7 +44,7 @@ public class TileManager {
             this.mapLayers = this.getLayersFromTerrain(model.getWidth(), model.getHeight(), model.getTileSize(),
                     params);
         }else if (model.getDungeonId()>-1){
-            DungeonGenerator dungeonGenerator = new DungeonGenerator(model.getWidth(), model.getHeight(), model.getTileSize(), 20, 30, 5,15 ,5,15, Arrays.asList(RoomShapeTemplate.RECTANGLE));
+            DungeonGenerator dungeonGenerator = new DungeonGenerator(model.getWidth(), model.getHeight(), model.getTileSize(), 20, 30, 10,15 ,10,15, Arrays.asList(RoomShapeTemplate.OVAL));
             this.mapLayers = dungeonGenerator.generateDungeon(null);
         }
     }

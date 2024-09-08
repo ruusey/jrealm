@@ -298,7 +298,7 @@ public class RealmManagerServer implements Runnable {
         long startNanos = System.nanoTime();
         final List<String> disconnectedClients = new ArrayList<>();
         // TODO: Parallelize work for each realm
-        // For each realm we have to do work for
+        // we have to do work for
 
         // Prevent concurrent modification errors by acquiring a semaphore lease
         // while we are building the game data for this tick
@@ -1227,7 +1227,7 @@ public class RealmManagerServer implements Runnable {
                 targetRealm.addPortal(toNewRealmPortal);
             }
             
-            if(Realm.RANDOM.nextInt(10) < 10) {
+            if(Realm.RANDOM.nextInt(10) < 3) {
                 final Portal toDungeonPortal = new Portal(Realm.RANDOM.nextLong(), (short) 6,
                         enemy.getPos().withNoise(64, 64));
                 toDungeonPortal.linkPortal(targetRealm, null);

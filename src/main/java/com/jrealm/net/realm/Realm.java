@@ -550,11 +550,12 @@ public class Realm {
 
         final List<EnemyModel> enemyToSpawn = new ArrayList<>();
 
-        final TerrainGenerationParameters params = GameDataManager.TERRAINS
+        TerrainGenerationParameters params = GameDataManager.TERRAINS
                 .get(GameDataManager.MAPS.get(mapId).getTerrainId());
         if(params==null) {
             log.error("No Terrain generation params found for MapId {}", mapId);
-            return;
+            params = GameDataManager.TERRAINS
+                    .get(GameDataManager.MAPS.get(4).getTerrainId());
         }
         for (final int enemyId : params.getEnemyGroups().get(0).getEnemyIds()) {
             enemyToSpawn.add(GameDataManager.ENEMIES.get(enemyId));
