@@ -4,9 +4,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileModel;
+import com.jrealm.game.util.GameObjectUtils;
 import com.jrealm.game.util.Graph;
 import com.jrealm.net.realm.Realm;
 
@@ -42,32 +44,62 @@ public class DungeonGenerator {
     
     public List<TileMap> generateDungeon(TerrainGenerationParameters params) {
         
-        TileMap baseLayer = new TileMap(this.tileSize, this.width, this.height);
+        final TileMap baseLayer = new TileMap(this.tileSize, this.width, this.height);
+        final TileMap collisionLayer = new TileMap(this.tileSize, this.width, this.height);
+
         baseLayer.fill(0);
-        TileMap collisionLayer = new TileMap(this.tileSize, this.width, this.height);
         collisionLayer.fill(0);
-        int numRooms =  this.minRooms + Realm.RANDOM.nextInt((this.maxRooms-this.minRooms)+1);
+        final int numRooms =  this.minRooms + Realm.RANDOM.nextInt((this.maxRooms-this.minRooms)+1);
 
         TileMap previousRoom = null;
         int previousRoomOffsetX = 0;
         int previousRoomOffsetY = 0;
         for(int i = 0 ; i< numRooms; i++) {
 
-            TileMap room = this.getRoom(this.tileSize, this.minRoomWidth, this.maxRoomWidth, this.minRoomHeight, this.maxRoomHeight, this.shapeTemplates);
-            int offsetX = Realm.RANDOM.nextInt(this.width-room.getWidth());
-            int offsetY = Realm.RANDOM.nextInt(this.height-room.getHeight());
+            final TileMap room = this.getRoom(this.tileSize, this.minRoomWidth, this.maxRoomWidth, this.minRoomHeight, this.maxRoomHeight, this.shapeTemplates);
+            // Try to group the rooms within 10+(roomWidth*2) tiles of the previous room
+            // WIP
+            final int xModifier = Realm.RANDOM.nextInt(2) == 0 ? -2 : 2;
+            final int yModifier = Realm.RANDOM.nextInt(2) == 0 ? -2 : 2;
+
+            final int rangeX = (previousRoomOffsetX+(room.getWidth()*xModifier)) <= 0 ? 1 : previousRoomOffsetX+(room.getWidth()*xModifier);
+            final int rangeY = (previousRoomOffsetY+(room.getHeight()*yModifier)) <= 0 ? 1 : previousRoomOffsetY+(room.getHeight()*yModifier);
+
+            int offsetX = 10+Realm.RANDOM.nextInt(rangeX);
+            int offsetY = 10+Realm.RANDOM.nextInt(rangeY);
+            
+            if(offsetX<0) {
+                offsetX = 0;
+            }
+            if(offsetX>this.width-room.getWidth()) {
+                offsetX = this.width-room.getWidth();
+            }
+            
+            if(offsetY<0) {
+                offsetY = 0;
+            }
+            if(offsetY>this.height-room.getHeight()) {
+                offsetY = this.height-room.getHeight();
+            }
+            // Place the room anywhere in the dungeon
+//            final int offsetX = Realm.RANDOM.nextInt(this.width-room.getWidth());
+//            final int offsetY = Realm.RANDOM.nextInt(this.height-room.getHeight());
             
             baseLayer.append(room, offsetX, offsetY);
             log.info("Dungeon room added at {}, {}", offsetX, offsetY);
             if(previousRoom!=null) {
-                int previousRoomCenterX = previousRoomOffsetX + (previousRoom.getWidth()/2);
-                int previousRoomCenterY = previousRoomOffsetY + (previousRoom.getHeight()/2);
+                final int previousRoomCenterX = previousRoomOffsetX + (previousRoom.getWidth()/2);
+                final int previousRoomCenterY = previousRoomOffsetY + (previousRoom.getHeight()/2);
                 
-                int roomCenterX = offsetX + (room.getWidth()/2);
-                int roomCenterY = offsetY + (room.getHeight()/2);
+                final int roomCenterX = offsetX + (room.getWidth()/2);
+                final int roomCenterY = offsetY + (room.getHeight()/2);
                 
                 this.connectPoints(baseLayer, previousRoomCenterX, previousRoomCenterY,roomCenterX,roomCenterY);
-
+                if(i == numRooms-1) {
+                    final Enemy enemy = GameObjectUtils.getEnemyFromId(13, new Vector2f(roomCenterX*tileSize, roomCenterY*tileSize));
+                    enemy.setHealth(enemy.getHealth() * 4);
+                    //enemy.setPos(spawnPos.clone(200, 0));
+                }
                 this.dungeon.addVertex(previousRoom);
                 this.dungeon.addVertex(room);
                 this.dungeon.addEdge(previousRoom, room, true);
@@ -92,17 +124,23 @@ public class DungeonGenerator {
             for (int i = srcX; i < srcX + xDiff; i++) {
                 log.info("Filling X walkway tile at {}, {}", i, srcY);
                 targetLayer.setTileAt(srcY, i, model);
-
-                targetLayer.setTileAt(srcY-1, i, model0);
-                targetLayer.setTileAt(srcY+1, i, model0);
-
+                try {
+                    targetLayer.setTileAt(srcY-1, i, model0);
+                    targetLayer.setTileAt(srcY+1, i, model0);
+                }catch(Exception e) {
+                    
+                }
             }
         } else {
             for (int i = srcX; i > (srcX + xDiff); i--) {
                 log.info("Filling X walkway tile at {}, {}", i, srcY);
                 targetLayer.setTileAt(srcY, i, model);
-                targetLayer.setTileAt(srcY-1, i, model0);
-                targetLayer.setTileAt(srcY+1, i, model0);
+                try {
+                    targetLayer.setTileAt(srcY-1, i, model0);
+                    targetLayer.setTileAt(srcY+1, i, model0);
+                }catch(Exception e) {
+                    
+                }
             }
         }
         
@@ -110,15 +148,24 @@ public class DungeonGenerator {
             for (int i = srcY; i < srcY + yDiff; i++) {
                 log.info("Filling Y walkway tile at {}, {}", srcX, i);
                 targetLayer.setTileAt(i, destX, model);
-                targetLayer.setTileAt(i, destX-1, model0);
-                targetLayer.setTileAt(i, destX+1, model0);
+                try {
+                    targetLayer.setTileAt(i, destX-1, model0);
+                    targetLayer.setTileAt(i, destX+1, model0); 
+                }catch(Exception e) {
+                    
+                }
+
             }
         } else {
             for (int i = srcY; i > (srcY + yDiff); i--) {
                 log.info("Filling Y walkway tile at {}, {}", srcX, i);
                 targetLayer.setTileAt(i, destX, model);
-                targetLayer.setTileAt(i, destX-1, model0);
-                targetLayer.setTileAt(i, destX+1, model0);
+                try {
+                    targetLayer.setTileAt(i, destX-1, model0);
+                    targetLayer.setTileAt(i, destX+1, model0); 
+                }catch(Exception e) {
+                    
+                }
             }
         }
     }
@@ -145,16 +192,14 @@ public class DungeonGenerator {
             }
         }
 
-
-        int centerX = roomWidth/2;
-        int centerY = roomHeight/2;
-        int radius = centerX;
-        double cirCulmference = 2* Math.PI * radius;
-        final Vector2f pos = new Vector2f(centerX, centerY);
         if(shapeTemplates.get(0).equals(RoomShapeTemplate.OVAL)) {
+            int centerX = roomWidth/2;
+            int centerY = roomHeight/2;
+            int radius = centerX;
+            final Vector2f pos = new Vector2f(centerX, centerY);
             for(int i = 0; i< roomHeight; i++) {
                 for(int j = 0 ; j<roomWidth; j++) {
-                    if(pos.distanceTo(new Vector2f(i, j))<5) {
+                    if(pos.distanceTo(new Vector2f(i, j))<(roomWidth/2)) {
                         TileModel model = GameDataManager.TILES.get(29);
                         baseLayer.setTileAt(i, j, (short)model.getTileId(), model.getData());
                     }

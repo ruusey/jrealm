@@ -462,6 +462,9 @@ public class ServerGameLogic {
     private static boolean validateCallingPlayer(RealmManagerServer mgr, Packet packet, Long declaredPlayerId ) {
        Long actualPlayerId =  mgr.getRemoteAddresses().get(packet.getSrcIp());
        final Player actualPlayer = mgr.searchRealmsForPlayer(actualPlayerId);
+       if(actualPlayer==null) {
+           return false;
+       }
        if(actualPlayer.getId()!=declaredPlayerId) {
            log.info("Player ids do not match for Packet {}. Actual PlayerId: {}. Declared PlayerId: {}", packet, actualPlayerId, declaredPlayerId);
            mgr.disconnectPlayer(actualPlayer);

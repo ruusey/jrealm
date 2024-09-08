@@ -1215,7 +1215,7 @@ public class RealmManagerServer implements Runnable {
                 final Portal toNewRealmPortal = new Portal(Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(),
                         enemy.getPos().withNoise(64, 64));
                
-                Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth()-1);
+                final Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth()-1);
                 if (realmAtDepth.isEmpty()) {
                     toNewRealmPortal.linkPortal(targetRealm, null);
                     log.info("New portal created. Will generate realm id {} on use", portalModel.getTargetRealmDepth());
@@ -1227,7 +1227,7 @@ public class RealmManagerServer implements Runnable {
                 targetRealm.addPortal(toNewRealmPortal);
             }
             
-            if(Realm.RANDOM.nextInt(10) < 3) {
+            if(Realm.RANDOM.nextInt(10) < 5) {
                 final Portal toDungeonPortal = new Portal(Realm.RANDOM.nextLong(), (short) 6,
                         enemy.getPos().withNoise(64, 64));
                 toDungeonPortal.linkPortal(targetRealm, null);

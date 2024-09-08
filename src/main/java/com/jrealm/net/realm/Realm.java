@@ -108,7 +108,7 @@ public class Realm {
             for (final ChestDto chest : account.getPlayerVault()) {
                 final List<GameItem> itemsInChest = chest.getItems().stream().map(GameItem::fromGameItemRef)
                         .collect(Collectors.toList());
-                final Chest toSpawn = new Chest(chestLoc.clone(-64 * chest.getOrdinal(), 0),
+                final Chest toSpawn = new Chest(chestLoc.clone((-64 * chest.getOrdinal())+128, 0),
                         itemsInChest.toArray(new GameItem[8]));
                 this.addLootContainer(toSpawn);
             }
@@ -556,6 +556,7 @@ public class Realm {
             log.error("No Terrain generation params found for MapId {}", mapId);
             params = GameDataManager.TERRAINS
                     .get(GameDataManager.MAPS.get(4).getTerrainId());
+            //return;
         }
         for (final int enemyId : params.getEnemyGroups().get(0).getEnemyIds()) {
             enemyToSpawn.add(GameDataManager.ENEMIES.get(enemyId));
