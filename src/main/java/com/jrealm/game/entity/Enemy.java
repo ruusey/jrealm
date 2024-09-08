@@ -109,16 +109,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
         this.pos.x += this.dx;
         this.pos.y += this.dy;
 
-//		if (this.idleTime >= Enemy.IDLE_FRAMES) {
-//			this.up = Realm.RANDOM.nextBoolean();
-//			this.down = Realm.RANDOM.nextBoolean();
-//			this.left = Realm.RANDOM.nextBoolean();
-//			this.right = Realm.RANDOM.nextBoolean();
-//			this.idleTime = 0;
-//		} else {
-//			this.idleTime++;
-//		}
-
     }
 
     public void update(long realmId, RealmManagerServer mgr, double time) {
@@ -128,8 +118,10 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
         super.update(time);
 
         this.move();
-        if (player == null)
+        if (player == null) {
+            this.idle(true);
             return;
+        }
         this.chase(player);
         final boolean notInvisible = !player.hasEffect(EffectType.INVISIBLE);
         if ((this.getPos().distanceTo(player.getPos()) < this.attackRange && !this.hasEffect(EffectType.STUNNED))
@@ -185,10 +177,14 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
             this.left = false;
             return;
         }
-
+        this.idle(false);
         this.pos.x += this.dx;
         this.pos.y += this.dy;
 
+
+    }
+    
+    public void idle(boolean applyMovement) {
         if (this.idleTime >= Enemy.IDLE_FRAMES) {
             this.up = Realm.RANDOM.nextBoolean();
             this.down = Realm.RANDOM.nextBoolean();
@@ -209,6 +205,10 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
             this.idleTime = 0;
         } else {
             this.idleTime++;
+        }
+        if(applyMovement) {
+            this.pos.x += this.dx;
+            this.pos.y += this.dy;   
         }
 
     }

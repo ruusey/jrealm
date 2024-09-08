@@ -29,6 +29,7 @@ public class UpdatePacket extends Packet {
     private long[] effectTimes;
     private long experience;
 
+    // TODO: Rewrite this to only include delta data within the character not the entire character
     public UpdatePacket() {
 
     }
