@@ -58,6 +58,7 @@ public class GameSpriteManager {
             }
 
             final BufferedImage spriteImage = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
+
             BufferedImage subImage = spriteImage.getSubimage(model.getCol() * model.getSpriteSize(),
                     model.getRow() * model.getSpriteSize(), model.getSpriteSize(), model.getSpriteSize());
             if (model.getData().hasCollision()) {
@@ -103,7 +104,6 @@ public class GameSpriteManager {
         try {
             for (final String spriteKey : GameSpriteManager.SPRITE_NAMES) {
                 BufferedImage spriteImage = null;
-
                 if (loadRemote) {
                     spriteImage = GameSpriteManager.loadSpriteRemote(spriteKey);
                 } else {
