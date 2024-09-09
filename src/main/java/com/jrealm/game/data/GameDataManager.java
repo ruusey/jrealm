@@ -62,7 +62,7 @@ public class GameDataManager {
     }
 
     private static void loadLootTables(final boolean remote) throws Exception {
-        GameDataManager.log.info("Loading Loot Tables..");
+        GameDataManager.log.info("Loading Loot Tables...");
         GameDataManager.LOOT_TABLES = new HashMap<>();
         String text = null;
         if (remote) {
@@ -114,7 +114,7 @@ public class GameDataManager {
     }
 
     private static void loadPortals(final boolean remote) throws Exception {
-        GameDataManager.log.info("Loading Portals..");
+        GameDataManager.log.info("Loading Portals...");
         GameDataManager.PORTALS = new HashMap<>();
         String text = null;
         if (remote) {
@@ -131,7 +131,7 @@ public class GameDataManager {
     }
 
     private static void loadTerrains(final boolean remote) throws Exception {
-        GameDataManager.log.info("Loading Terrains..");
+        GameDataManager.log.info("Loading Terrains...");
         GameDataManager.TERRAINS = new HashMap<>();
         String text = null;
         if (remote) {
@@ -149,7 +149,7 @@ public class GameDataManager {
     }
 
     private static void loadMaps(final boolean remote) throws Exception {
-        GameDataManager.log.info("Loading Maps..");
+        GameDataManager.log.info("Loading Maps... ");
         GameDataManager.MAPS = new HashMap<>();
         String text = null;
         if (remote) {
@@ -166,7 +166,7 @@ public class GameDataManager {
     }
 
     private static void loadTiles(final boolean remote) throws Exception {
-        GameDataManager.log.info("Loading Tiles..");
+        GameDataManager.log.info("Loading Tiles...");
         GameDataManager.TILES = new HashMap<>();
         String text = null;
         if (remote) {
@@ -183,7 +183,7 @@ public class GameDataManager {
     }
 
     private static void loadEnemies(final boolean remote) throws Exception {
-        GameDataManager.log.info("Loading Enemies..");
+        GameDataManager.log.info("Loading Enemies...");
         GameDataManager.ENEMIES = new HashMap<>();
         String text = null;
         if (remote) {
@@ -265,48 +265,49 @@ public class GameDataManager {
 
     // TODO: Externalize this to a JSON file
     public static Map<Integer, GameItem> getStartingEquipment(final CharacterClass characterClass) {
-        final Map<Integer, GameItem> result = new HashMap<>();
-
-        switch (characterClass) {
-        case ROGUE:
-            result.put(0, GameDataManager.GAME_ITEMS.get(91));
-            result.put(1, GameDataManager.GAME_ITEMS.get(152));
-            result.put(2, GameDataManager.GAME_ITEMS.get(32));
-            break;
-        case ARCHER:
-            result.put(0, GameDataManager.GAME_ITEMS.get(17));
-            result.put(1, GameDataManager.GAME_ITEMS.get(154));
-            result.put(2, GameDataManager.GAME_ITEMS.get(32));
-            break;
-        case WIZARD:
-            result.put(0, GameDataManager.GAME_ITEMS.get(121));
-            result.put(1, GameDataManager.GAME_ITEMS.get(136));
-            result.put(2, GameDataManager.GAME_ITEMS.get(106));
-            break;
-        case PRIEST:
-            result.put(0, GameDataManager.GAME_ITEMS.get(137));
-            result.put(1, GameDataManager.GAME_ITEMS.get(157));
-            result.put(2, GameDataManager.GAME_ITEMS.get(106));
-            break;
-        case WARRIOR:
-            result.put(0, GameDataManager.GAME_ITEMS.get(75));
-            result.put(1, GameDataManager.GAME_ITEMS.get(156));
-            result.put(2, GameDataManager.GAME_ITEMS.get(60));
-            break;
-        case KNIGHT:
-            result.put(0, GameDataManager.GAME_ITEMS.get(75));
-            result.put(1, GameDataManager.GAME_ITEMS.get(155));
-            result.put(2, GameDataManager.GAME_ITEMS.get(60));
-            break;
-        case PALLADIN:
-            result.put(0, GameDataManager.GAME_ITEMS.get(75));
-            result.put(1, GameDataManager.GAME_ITEMS.get(153));
-            result.put(2, GameDataManager.GAME_ITEMS.get(60));
-            break;
-        default:
-            break;
-        }
-        return result;
+        CharacterClassModel model = GameDataManager.CHARACTER_CLASSES.get(characterClass.classId);
+        return model.getStartingEquipmentMap();
+//        final Map<Integer, GameItem> result = new HashMap<>();
+//        switch (characterClass) {
+//        case ROGUE:
+//            result.put(0, GameDataManager.GAME_ITEMS.get(91));
+//            result.put(1, GameDataManager.GAME_ITEMS.get(152));
+//            result.put(2, GameDataManager.GAME_ITEMS.get(32));
+//            break;
+//        case ARCHER:
+//            result.put(0, GameDataManager.GAME_ITEMS.get(17));
+//            result.put(1, GameDataManager.GAME_ITEMS.get(154));
+//            result.put(2, GameDataManager.GAME_ITEMS.get(32));
+//            break;
+//        case WIZARD:
+//            result.put(0, GameDataManager.GAME_ITEMS.get(121));
+//            result.put(1, GameDataManager.GAME_ITEMS.get(136));
+//            result.put(2, GameDataManager.GAME_ITEMS.get(106));
+//            break;
+//        case PRIEST:
+//            result.put(0, GameDataManager.GAME_ITEMS.get(137));
+//            result.put(1, GameDataManager.GAME_ITEMS.get(157));
+//            result.put(2, GameDataManager.GAME_ITEMS.get(106));
+//            break;
+//        case WARRIOR:
+//            result.put(0, GameDataManager.GAME_ITEMS.get(75));
+//            result.put(1, GameDataManager.GAME_ITEMS.get(156));
+//            result.put(2, GameDataManager.GAME_ITEMS.get(60));
+//            break;
+//        case KNIGHT:
+//            result.put(0, GameDataManager.GAME_ITEMS.get(75));
+//            result.put(1, GameDataManager.GAME_ITEMS.get(155));
+//            result.put(2, GameDataManager.GAME_ITEMS.get(60));
+//            break;
+//        case PALLADIN:
+//            result.put(0, GameDataManager.GAME_ITEMS.get(75));
+//            result.put(1, GameDataManager.GAME_ITEMS.get(153));
+//            result.put(2, GameDataManager.GAME_ITEMS.get(60));
+//            break;
+//        default:
+//            break;
+//        }
+//        return result;
     }
 
     private static String replaceInjectVariables(String input) {
@@ -364,6 +365,7 @@ public class GameDataManager {
             GameSpriteManager.loadTileSprites();
             GameSpriteManager.loadItemSprites();
         } catch (Exception e) {
+            e.printStackTrace();
             GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
         }
     }

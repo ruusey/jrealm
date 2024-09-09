@@ -1,6 +1,10 @@
 package com.jrealm.game.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.realm.Realm;
 
@@ -17,6 +21,7 @@ public class CharacterClassModel {
     private String className;
     private Stats baseStats;
     private Stats maxStats;
+    private Map<Integer, Integer> startingEquipment;
 
     public Stats getRandomLevelUpStats() {
         final ExperienceModel expModel = GameDataManager.EXPERIENCE_LVLS;
@@ -84,10 +89,19 @@ public class CharacterClassModel {
         }
         return count;
     }
+    
+    public Map<Integer, GameItem> getStartingEquipmentMap(){
+        final Map<Integer, GameItem> result = new HashMap<>();
+        for(Map.Entry<Integer,Integer> entry : this.startingEquipment.entrySet()) {
+            result.put(entry.getKey(), GameDataManager.GAME_ITEMS.get(entry.getValue()));
+        }
+        return result;
+    }
 
     public static void main(String[] args) {
-        GameDataManager.loadGameData(true);
+        GameDataManager.loadGameData(false);
         CharacterClassModel model = GameDataManager.CHARACTER_CLASSES.get(0);
+        model.getStartingEquipmentMap();
         final ExperienceModel expModel = GameDataManager.EXPERIENCE_LVLS;
         Stats startStats = model.getBaseStats();
         System.out.println(startStats.toString());
