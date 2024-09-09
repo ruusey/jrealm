@@ -450,7 +450,7 @@ public class RealmManagerServer implements Runnable {
                         final Packet created = Packet.newInstance(packet.getId(), packet.getData());
                         created.setSrcIp(packet.getSrcIp());
                         // Invoke packet callback
-                        List<MethodHandle> packetHandles = userPacketCallbacksServer.get(packet.getId());
+                        final List<MethodHandle> packetHandles = userPacketCallbacksServer.get(packet.getId());
                         long start = System.nanoTime();
                         if(packetHandles!=null) {
                             for(MethodHandle handler : packetHandles) {
@@ -461,12 +461,10 @@ public class RealmManagerServer implements Runnable {
                                 }
                             }
                             log.info("Invoked {} packet callbacks for PacketType {} using reflection in {} nanos", packetHandles.size(), PacketType.valueOf(created.getId()).getY(),(System.nanoTime()-start));
-
                         }
                         start = System.nanoTime();
                         this.packetCallbacksServer.get(created.getId()).accept(this, created);
                         log.debug("Invoked callback for PacketType {} using map in {} nanos", PacketType.valueOf(created.getId()).getY(), (System.nanoTime()-start));
-                    
                     } catch (Exception e) {
                         RealmManagerServer.log.error("Failed to process server packets {}", e);
                         thread.getValue().setShutdownProcessing(true);
@@ -1341,7 +1339,6 @@ public class RealmManagerServer implements Runnable {
             try {
                 textPacket = TextPacket.from("SYSTEM", target.getName(), line);
                 this.enqueueServerPacket(target, textPacket);
-
             } catch (Exception e) {
                log.error("Failed to send text line {} to player {}. Reason: {}", line, target.getName(), e);
             }
@@ -1350,24 +1347,22 @@ public class RealmManagerServer implements Runnable {
 
     public Player searchRealmsForPlayer(String playerName) {
         Player found = null;
-        for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
-            for (Player player : realm.getValue().getPlayers().values()) {
-                if (player.getName() != null && player.getName().equalsIgnoreCase(playerName)) {
-                    found = player;
-                }
+        for (Player player : this.getPlayers()) {
+            if (player.getName() != null && player.getName().equalsIgnoreCase(playerName)) {
+                found = player;
             }
+
         }
         return found;
     }
     
     public Player searchRealmsForPlayer(long playerId) {
         Player found = null;
-        for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
-            for (Player player : realm.getValue().getPlayers().values()) {
-                if (player.getId()==playerId) {
-                    found = player;
-                }
+        for (Player player : this.getPlayers()) {
+            if (player.getId() == playerId) {
+                found = player;
             }
+
         }
         return found;
     }
@@ -1400,13 +1395,21 @@ public class RealmManagerServer implements Runnable {
 
     public void persistsPlayersAsync() {
         final Runnable persist = () -> {
-            for (final Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
-                for (final Player player : realm.getValue().getPlayers().values()) {
-                    this.persistPlayer(player);
-                }
+            for(Player player: this.getPlayers()) {
+                this.persistPlayer(player);
             }
         };
         WorkerThread.doAsync(persist);
+    }
+    
+    public List<Player> getPlayers(){
+       final  List<Player> players = new ArrayList<>();
+        for (final Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
+            for (final Player player : realm.getValue().getPlayers().values()) {
+                players.add(player);
+            }
+        }
+        return players;
     }
 
     public void safeRemoveRealm(final Realm realm) {
@@ -1415,7 +1418,7 @@ public class RealmManagerServer implements Runnable {
 
     public void safeRemoveRealm(final long realmId) {
         this.acquireRealmLock();
-        Realm realm = this.realms.remove(realmId);
+        final Realm realm = this.realms.remove(realmId);
         realm.setShutdown(true);
         this.releaseRealmLock();
     }
@@ -1425,25 +1428,6 @@ public class RealmManagerServer implements Runnable {
             this.persistPlayer(player);
         };
         WorkerThread.doAsync(persist);
-    }
-
-    private void sendTextEffectToPlayer(final Player player, final TextEffect effect, final String text) {
-        try {
-            this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), effect, text));
-        } catch (Exception e) {
-            RealmManagerServer.log.error("Failed to send TextEffect Packet to Player {}. Reason: {}", player.getId(),
-                    e);
-        }
-    }
-
-    private void broadcastTextEffect(final EntityType entityType, final GameObject entity, final TextEffect effect,
-            final String text) {
-        try {
-            this.enqueueServerPacket(TextEffectPacket.from(entityType, entity.getId(), effect, text));
-        } catch (Exception e) {
-            RealmManagerServer.log.error("Failed to broadcast TextEffect Packet for Entity {}. Reason: {}",
-                    entity.getId(), e);
-        }
     }
 
     private boolean persistPlayer(final Player player) {
@@ -1468,6 +1452,25 @@ public class RealmManagerServer implements Runnable {
             RealmManagerServer.log.error("Failed to get player account. Reason: {}", e);
         }
         return true;
+    }
+    
+    private void sendTextEffectToPlayer(final Player player, final TextEffect effect, final String text) {
+        try {
+            this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), effect, text));
+        } catch (Exception e) {
+            RealmManagerServer.log.error("Failed to send TextEffect Packet to Player {}. Reason: {}", player.getId(),
+                    e);
+        }
+    }
+
+    private void broadcastTextEffect(final EntityType entityType, final GameObject entity, final TextEffect effect,
+            final String text) {
+        try {
+            this.enqueueServerPacket(TextEffectPacket.from(entityType, entity.getId(), effect, text));
+        } catch (Exception e) {
+            RealmManagerServer.log.error("Failed to broadcast TextEffect Packet for Entity {}. Reason: {}",
+                    entity.getId(), e);
+        }
     }
 
     private void acquireRealmLock() {
