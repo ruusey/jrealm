@@ -72,7 +72,7 @@ public class GamePanel extends JPanel implements Runnable {
         this.img = new BufferedImage(GamePanel.width, GamePanel.height, BufferedImage.TYPE_INT_ARGB);
         this.g = (Graphics2D) this.img.getGraphics();
         ImageUtils.applyQualityRenderingHints(this.g);
-        this.g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        //this.g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     }
 
     public void init() {
@@ -92,7 +92,7 @@ public class GamePanel extends JPanel implements Runnable {
         this.init();
 
         long lastTime = System.nanoTime();
-        double amountOfTicks = 120.0;
+        double amountOfTicks = 180.0;
         double ns = 1000000000 / amountOfTicks;
         double delta = 0;
         long timer = System.currentTimeMillis();

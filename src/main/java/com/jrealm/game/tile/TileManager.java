@@ -20,6 +20,8 @@ import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileGroup;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.game.util.Camera;
+import com.jrealm.game.util.Partition;
+import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.realm.Realm;
 
@@ -409,6 +411,7 @@ public class TileManager {
         final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
                 pos.y / GlobalConstants.BASE_TILE_SIZE);
         this.normalizeToBounds(posNormalized);
+        List<Tile> toRender = new ArrayList<>();
         for (int x = (int) (posNormalized.x - VIEWPORT_TILE_MIN); x < (posNormalized.x + VIEWPORT_TILE_MIN); x++) {
             for (int y = (int) (posNormalized.y - VIEWPORT_TILE_MIN); y < (int) (posNormalized.y + VIEWPORT_TILE_MIN); y++) {
                 // Temp fix. Aint nobody got time for array math.
@@ -424,16 +427,28 @@ public class TileManager {
                     }
 
                     if (normalTile != null) {
-                        normalTile.render(g);
+                        toRender.add(normalTile);
+                        //normalTile.render(g);
                     }
                     
                     if (collisionTile != null && !collisionTile.isVoid()) {
-                        collisionTile.render(g);
+                        //collisionTile.render(g);
+                        toRender.add(collisionTile);
+
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
+       List<List<Tile>> i =  Partition.ofSize(toRender, 64);
+        i.forEach(tile->{
+            Runnable r = () ->{
+                for(Tile t : tile) {
+                    t.render(g);
+                }
+            };
+            WorkerThread.submitAndRun(r);
+        });
     }
 }

@@ -17,14 +17,14 @@ public class Window extends JFrame {
         this.setIgnoreRepaint(true);
         this.pack();
         this.setLocationRelativeTo(null);
-        this.setResizable(false);
+        this.setResizable(true);
         this.setVisible(true);
     }
 
     @Override
     public void addNotify() {
         super.addNotify();
-        this.createBufferStrategy(1);
+        this.createBufferStrategy(4);
         this.bs = this.getBufferStrategy();
         this.gp = new GamePanel(this.bs, 1920, 1080);
         this.setContentPane(this.gp);

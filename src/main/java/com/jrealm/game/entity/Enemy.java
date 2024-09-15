@@ -119,7 +119,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
 
         this.move();
         if (player == null) {
-            this.idle(true);
+            //this.idle(true);
             return;
         }
         this.chase(player);

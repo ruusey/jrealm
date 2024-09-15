@@ -41,10 +41,10 @@ public class Cave0Decorator extends RealmDecoratorBase {
             baseLayer.setTileAt(centerY,
                     (centerX + 2) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerX + 2,
                     (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
-            baseLayer.setTileAt((centerY - 1) > -1 ? centerX - 1 : 0, centerX,
-                    (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
-            baseLayer.setTileAt((centerY + 1) >= baseLayer.getWidth() ? baseLayer.getWidth() - 1 : centerY + 1,
-                    centerX, (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
+//            baseLayer.setTileAt((centerY - 1) > -1 ? centerX - 1 : 0, centerX,
+//                    (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
+//            baseLayer.setTileAt((centerY + 1) >= baseLayer.getWidth() ? baseLayer.getWidth() - 1 : centerY + 1,
+//                    centerX, (short) Cave0Decorator.LAVA_TILE0.getTileId(), Cave0Decorator.LAVA_TILE0.getData());
 
         }
     }

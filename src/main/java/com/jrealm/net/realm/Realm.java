@@ -561,11 +561,11 @@ public class Realm {
         for (final int enemyId : params.getEnemyGroups().get(0).getEnemyIds()) {
             enemyToSpawn.add(GameDataManager.ENEMIES.get(enemyId));
         }
-
+        
         for (int i = 0; i < this.tileManager.getMapLayers().get(0).getHeight(); i++) {
             for (int j = 0; j < this.tileManager.getMapLayers().get(0).getWidth(); j++) {
-                final int doSpawn = Realm.RANDOM.nextInt(200);
-                if ((doSpawn > 198) && (i > 0) && (j > 0)) {
+                final int doSpawn = Realm.RANDOM.nextInt(this.tileManager.getMapLayers().get(0).getWidth());
+                if ((doSpawn > this.tileManager.getMapLayers().get(0).getWidth()-2) && (i > 0) && (j > 0)) {
                     final Vector2f spawnPos = new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
                             i * this.tileManager.getMapLayers().get(0).getTileSize());
                     final EnemyModel toSpawn = enemyToSpawn.get(Realm.RANDOM.nextInt(enemyToSpawn.size()));
@@ -575,7 +575,7 @@ public class Realm {
                                     i * this.tileManager.getMapLayers().get(0).getTileSize()),
                             toSpawn.getSize(), toSpawn.getAttackId());
                     enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
-                    int healthMult = (this.getDepth() == 0 ? 1 : this.getDepth() + 1);
+                    int healthMult = ((this.getDepth() == 0  || this.getDepth()==999)? 1 : this.getDepth() + 1);
                     enemy.setHealth(enemy.getHealth() * healthMult);
                     enemy.setPos(spawnPos);
                     this.addEnemy(enemy);

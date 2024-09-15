@@ -127,6 +127,7 @@ public class UpdatePacket extends Packet {
     public static UpdatePacket from(Player player) throws Exception {
     	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     	final DataOutputStream stream = new DataOutputStream(byteStream);
+    	if(player==null) return null;
         stream.writeLong(player.getId());
         stream.writeInt(player.getHealth());
         stream.writeInt(player.getMana());
