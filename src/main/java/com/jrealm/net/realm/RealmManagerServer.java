@@ -739,7 +739,7 @@ public class RealmManagerServer implements Runnable {
                         method.getName(), mt);
                 if (handleToHandler != null) {
                     PacketType targetPacketType = PacketType.valueOf(packetToHandle.value());
-                    List<MethodHandle> existing  = userPacketCallbacksServer.get(targetPacketType.getPacketId());
+                    List<MethodHandle> existing  = this.userPacketCallbacksServer.get(targetPacketType.getPacketId());
                     if(existing==null) {
                         existing = new ArrayList<>();
                     }
@@ -1268,7 +1268,7 @@ public class RealmManagerServer implements Runnable {
 
     private void playerDeath(final Realm targetRealm, final Player player) {
         try {
-            final String remoteAddrDeath = this.getRemoteAddressMapRevered().get(player.getId());
+            final String remoteAddrDeath = this.getRemoteAddressMapReversed().get(player.getId());
             final LootContainer graveLoot = new LootContainer(LootTier.GRAVE, player.getPos().clone(),
                     player.getSlots(0, 12));
             // this.getServer().getClients().remove(remoteAddrDeath);
@@ -1309,7 +1309,7 @@ public class RealmManagerServer implements Runnable {
                 .findAny().get();
     }
 
-    public Map<Long, String> getRemoteAddressMapRevered() {
+    public Map<Long, String> getRemoteAddressMapReversed() {
         final Map<Long, String> result = new HashMap<>();
         for (final Entry<String, Long> entry : this.remoteAddresses.entrySet()) {
             result.put(entry.getValue(), entry.getKey());
