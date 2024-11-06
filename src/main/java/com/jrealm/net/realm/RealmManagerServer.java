@@ -138,7 +138,6 @@ public class RealmManagerServer implements Runnable {
     private boolean transmitMovement = false;
     private boolean transmitLoadPacket = false;
 
-    
     public RealmManagerServer() {
         this.registerRealmDecorators();
         this.registerEnemyScripts();
@@ -148,8 +147,12 @@ public class RealmManagerServer implements Runnable {
         this.registerCommandHandlersReflection();
         this.server = new SocketServer(2222);
         this.shotDestQueue = new ArrayList<>();
-        WorkerThread.submitAndForkRun(this.server);
         this.beginPlayerSync();
+        this.doRunServer();
+    }
+    
+    public void doRunServer() {
+        WorkerThread.submitAndForkRun(this.server);
     }
 
     // Adds a specified amount of random headless players
