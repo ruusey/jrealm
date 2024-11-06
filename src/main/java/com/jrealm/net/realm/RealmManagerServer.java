@@ -298,151 +298,170 @@ public class RealmManagerServer implements Runnable {
         log.debug("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double)nanosDiff/(double)1000000l));
     }
 
-    // Enqueues outbound game packets every tick. Manages
-    // when/if packets should be broadcast and to who
-    public void enqueueGameData() {
-        long startNanos = System.nanoTime();
-        final List<String> disconnectedClients = new ArrayList<>();
-        // TODO: Parallelize work for each realm
-        // we have to do work for
+	// Enqueues outbound game packets every tick. Manages
+	// when/if packets should be broadcast and to who
+	public void enqueueGameData() {
+		long startNanos = System.nanoTime();
+		final List<String> disconnectedClients = new ArrayList<>();
+		// TODO (inprog): Parallelize work for each realm
+		// we have to do work for
 
-        // Prevent concurrent modification errors by acquiring a semaphore lease
-        // while we are building the game data for this tick
-        this.acquireRealmLock();
-        for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
-            final Realm realm = realmEntry.getValue();
-            final List<Player> toRemove = new ArrayList<>();
-            for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
-                if (player.getValue().isHeadless()) {
-                    continue;
-                }
-                try {
+		// Prevent concurrent modification errors by acquiring a semaphore lease
+		// while we are building the game data for this tick
+		// realm ticking is global so each realm should recieve a new tick at
+		// roughly the same time regardless of its depth.
+		this.acquireRealmLock();
 
-                    // Get the background + collision tiles in this players viewport
-                    // condensed into a single array
-                    final NetTile[] netTilesForPlayer = realm.getTileManager().getLoadMapTiles(player.getValue());
-                    // Build those tiles into a load map packet (NetTile[] wrapper)
-                    final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(), (short) realm.getMapId(),
-                            realm.getTileManager().getMapWidth(), realm.getTileManager().getMapHeight(), netTilesForPlayer);
+		final List<Runnable> perRealmWork = new ArrayList<>();
+		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+			final Realm realm = realmEntry.getValue();
+			// Runnable representing processing work to performed on this Realm
 
-                    // If we dont have load map state for this player, map it and
-                    // then transmit all the tiles
-                    if (this.playerLoadMapState.get(player.getKey()) == null) {
-                        this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-                        this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
-                    } else {
-                        // Get the previous loadMap packet and check for Delta,
-                        // only send the delta to the client
-                        final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
+			// final Runnable realmWork = () -> {
+			final List<Player> toRemove = new ArrayList<>();
+			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
+				if (player.getValue().isHeadless()) {
+					continue;
+				}
+				try {
 
-                        if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
-                            final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
-                            this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-                            if (loadMapDiff != null) {
-                                this.enqueueServerPacket(player.getValue(), loadMapDiff);
-                            }
-                        }
-                    }
+					// Get the background + collision tiles in this players viewport
+					// condensed into a single array
+					final NetTile[] netTilesForPlayer = realm.getTileManager().getLoadMapTiles(player.getValue());
+					// Build those tiles into a load map packet (NetTile[] wrapper)
+					final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(),
+							(short) realm.getMapId(), realm.getTileManager().getMapWidth(),
+							realm.getTileManager().getMapHeight(), netTilesForPlayer);
 
-                    // Get UpdatePacket for this player and all players in this players viewport
-                    // Contains, player stat info, inventory, status effects, health and mana data
-                    final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
-                    // Only transmit this players update data if it has not been sent
-                    // or if it has changed since last tick
-                    if (this.playerUpdateState.get(player.getKey()) == null) {
-                        this.playerUpdateState.put(player.getKey(), updatePacket);
-                        this.enqueueServerPacket(player.getValue(), updatePacket);
-                    } else {
-                        final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
-                        if (!oldUpdate.equals(updatePacket)) {
-                            this.playerUpdateState.put(player.getKey(), updatePacket);
-                            this.enqueueServerPacket(player.getValue(), updatePacket);
-                        }
-                    }
+					// If we dont have load map state for this player, map it and
+					// then transmit all the tiles
+					if (this.playerLoadMapState.get(player.getKey()) == null) {
+						this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
+						this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
+					} else {
+						// Get the previous loadMap packet and check for Delta,
+						// only send the delta to the client
+						final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
 
-                    if (this.transmitLoadPacket || this.disablePartialTransmission) {
-                        // Get LoadPacket for this player
-                        // Contains newly spawned bullets, entities, players
-                        final LoadPacket loadPacket = realm.getLoadPacket(realm.getTileManager().getRenderViewPort(player.getValue()));
-                        // Only transmit the LoadPacket if its state is changed (it can potentially be
-                        // large).
-                        // If the state is changed, only transmit the DELTA data
-                        if (this.playerLoadState.get(player.getKey()) == null) {
-                            this.playerLoadState.put(player.getKey(), loadPacket);
-                            this.enqueueServerPacket(player.getValue(), loadPacket);
+						if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
+							final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
+							this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
+							if (loadMapDiff != null) {
+								this.enqueueServerPacket(player.getValue(), loadMapDiff);
+							}
+						}
+					}
 
-                        } else {
-                            final LoadPacket oldLoad = this.playerLoadState.get(player.getKey());
-                            if (!oldLoad.equals(loadPacket)) {
-                                // Get the LoadPacket delta
-                                final LoadPacket toSend = oldLoad.combine(loadPacket);
-                                this.playerLoadState.put(player.getKey(), loadPacket);
-                                this.enqueueServerPacket(player.getValue(), toSend);
-                                // Unload the delta objects that were in the old LoadPacket
-                                // but are NOT in the new LoadPacket
-                                final UnloadPacket unloadDelta = oldLoad.difference(loadPacket);
-                                if (unloadDelta.isNotEmpty()) {
-                                    this.enqueueServerPacket(player.getValue(), unloadDelta);
-                                }
-                            }
-                        }
-                        this.transmitLoadPacket = false;
-                    } else {
-                        this.transmitLoadPacket = true;
-                    }
-                    // Recently added tick skipping for game entity movements.
-                    // This greatly reduced bytes going down the wire but some
-                    // fidelity is lost
-                    if (this.transmitMovement || this.disablePartialTransmission) {
-                        // Get the posX, posY, dX, dY of all Entities in this players viewport
-                        final ObjectMovePacket movePacket = realm
-                                .getGameObjectsAsPackets(realm.getTileManager().getRenderViewPort(player.getValue()));
-                        // If the ObjectMove packet isnt empty
-                        if (this.playerObjectMoveState.get(player.getKey()) == null && movePacket != null) {
-                            this.playerObjectMoveState.put(player.getKey(), movePacket);
-                            this.enqueueServerPacket(player.getValue(), movePacket);
-                        } else if (movePacket != null) {
-                            final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
-                            if (oldMove != null && !oldMove.equals(movePacket)) {
-                                this.playerObjectMoveState.put(player.getKey(), movePacket);
-                                this.enqueueServerPacket(player.getValue(), movePacket);
-                            } else {
-                                final ObjectMovePacket moveDiff = oldMove.getMoveDiff(movePacket);
-                                if (moveDiff != null) {
-                                    this.playerObjectMoveState.put(player.getKey(), movePacket);
-                                    this.enqueueServerPacket(player.getValue(), movePacket);
-                                }
-                            }
-                        }
-                        this.transmitMovement = false;
-                    } else {
-                        this.transmitMovement = true;
-                    }
+					// Get UpdatePacket for this player and all players in this players viewport
+					// Contains, player stat info, inventory, status effects, health and mana data
+					final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
+					// Only transmit this players update data if it has not been sent
+					// or if it has changed since last tick
+					if (this.playerUpdateState.get(player.getKey()) == null) {
+						this.playerUpdateState.put(player.getKey(), updatePacket);
+						this.enqueueServerPacket(player.getValue(), updatePacket);
+					} else {
+						final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
+						if (!oldUpdate.equals(updatePacket)) {
+							this.playerUpdateState.put(player.getKey(), updatePacket);
+							this.enqueueServerPacket(player.getValue(), updatePacket);
+						}
+					}
 
-                    final Long playerLastHeartbeatTime = this.playerLastHeartbeatTime.get(player.getKey());
-                    if (playerLastHeartbeatTime != null && ((Instant.now().toEpochMilli() - playerLastHeartbeatTime) > 5000)) {
-                        toRemove.add(player.getValue());
-                    }
+					if (this.transmitLoadPacket || this.disablePartialTransmission) {
+						// Get LoadPacket for this player
+						// Contains newly spawned bullets, entities, players
+						final LoadPacket loadPacket = realm
+								.getLoadPacket(realm.getTileManager().getRenderViewPort(player.getValue()));
+						// Only transmit the LoadPacket if its state is changed (it can potentially be
+						// large).
+						// If the state is changed, only transmit the DELTA data
+						if (this.playerLoadState.get(player.getKey()) == null) {
+							this.playerLoadState.put(player.getKey(), loadPacket);
+							this.enqueueServerPacket(player.getValue(), loadPacket);
 
-                    // Used to dynamically re-render changed loot containers (chests) on the client
-                    // if their contents change in a server tick (receive MoveItem packet from
-                    // client this tick)
-                    for (LootContainer lc : realm.getLoot().values()) {
-                        lc.setContentsChanged(false);
-                    }
+						} else {
+							final LoadPacket oldLoad = this.playerLoadState.get(player.getKey());
+							if (!oldLoad.equals(loadPacket)) {
+								// Get the LoadPacket delta
+								final LoadPacket toSend = oldLoad.combine(loadPacket);
+								this.playerLoadState.put(player.getKey(), loadPacket);
+								this.enqueueServerPacket(player.getValue(), toSend);
+								// Unload the delta objects that were in the old LoadPacket
+								// but are NOT in the new LoadPacket
+								final UnloadPacket unloadDelta = oldLoad.difference(loadPacket);
+								if (unloadDelta.isNotEmpty()) {
+									this.enqueueServerPacket(player.getValue(), unloadDelta);
+								}
+							}
+						}
+						this.transmitLoadPacket = false;
+					} else {
+						this.transmitLoadPacket = true;
+					}
+					// Recently added tick skipping for game entity movements.
+					// This greatly reduced bytes going down the wire but some
+					// fidelity is lost
+					if (this.transmitMovement || this.disablePartialTransmission) {
+						// Get the posX, posY, dX, dY of all Entities in this players viewport
+						final ObjectMovePacket movePacket = realm
+								.getGameObjectsAsPackets(realm.getTileManager().getRenderViewPort(player.getValue()));
+						// If the ObjectMove packet isnt empty
+						if (this.playerObjectMoveState.get(player.getKey()) == null && movePacket != null) {
+							this.playerObjectMoveState.put(player.getKey(), movePacket);
+							this.enqueueServerPacket(player.getValue(), movePacket);
+						} else if (movePacket != null) {
+							final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
+							if (oldMove != null && !oldMove.equals(movePacket)) {
+								this.playerObjectMoveState.put(player.getKey(), movePacket);
+								this.enqueueServerPacket(player.getValue(), movePacket);
+							} else {
+								final ObjectMovePacket moveDiff = oldMove.getMoveDiff(movePacket);
+								if (moveDiff != null) {
+									this.playerObjectMoveState.put(player.getKey(), movePacket);
+									this.enqueueServerPacket(player.getValue(), movePacket);
+								}
+							}
+						}
+						this.transmitMovement = false;
+					} else {
+						this.transmitMovement = true;
+					}
 
-                } catch (Exception e) {
-                    RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(), e);
-                }
-            }
-            for (Player player : toRemove) {
-                this.disconnectPlayer(player);
-            }
-        }
-        long nanosDiff = System.nanoTime() - startNanos;
-        log.debug("Game data enqueued in {} nanos ({}ms}", nanosDiff, ((double) nanosDiff / (double) 1000000l));
-        this.releaseRealmLock();
-    }
+					final Long playerLastHeartbeatTime = this.playerLastHeartbeatTime.get(player.getKey());
+					if (playerLastHeartbeatTime != null
+							&& ((Instant.now().toEpochMilli() - playerLastHeartbeatTime) > 5000)) {
+						toRemove.add(player.getValue());
+					}
+
+					// Used to dynamically re-render changed loot containers (chests) on the client
+					// if their contents change in a server tick (receive MoveItem packet from
+					// client this tick)
+					for (LootContainer lc : realm.getLoot().values()) {
+						lc.setContentsChanged(false);
+					}
+
+				} catch (Exception e) {
+					RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}", player.getKey(),
+							e);
+				}
+			}
+			for (Player player : toRemove) {
+				this.disconnectPlayer(player);
+			}
+			// };
+			// perRealmWork.add(realmWork);
+			// WorkerThread.submitAndRun(realmWork);
+
+		}
+		final long processingStart = Instant.now().toEpochMilli();
+		log.debug("Parellelizing game data enqueue for {} realms");
+
+		long nanosDiff = System.nanoTime() - startNanos;
+		log.debug("Game data for {} realms enqueued in {} nanos ({}ms}", perRealmWork.size(), nanosDiff,
+				((double) nanosDiff / (double) 1000000l));
+		this.releaseRealmLock();
+	}
 
     // For each connected client, dequeue all pending packets
     // pass the packet and RealmManager context to the handler
@@ -457,7 +476,7 @@ public class RealmManagerServer implements Runnable {
                         final Packet created = Packet.newInstance(packet.getId(), packet.getData());
                         created.setSrcIp(packet.getSrcIp());
                         // Invoke packet callback
-                        final List<MethodHandle> packetHandles = userPacketCallbacksServer.get(packet.getId());
+                        final List<MethodHandle> packetHandles = this.userPacketCallbacksServer.get(packet.getId());
                         long start = System.nanoTime();
                         if(packetHandles!=null) {
                             for(MethodHandle handler : packetHandles) {
@@ -523,10 +542,9 @@ public class RealmManagerServer implements Runnable {
     public void disconnectPlayer(Player player) {
         final ProcessingThread playerThread = this.getPlayerProcessingThread(player);
         final String playerRemoteAddr = this.getPlayerRemoteAddress(player);
-
         try {
             log.info("Disconnecting Player {}", player.getName());
-            Realm playerRealm = this.findPlayerRealm(player.getId());
+            final Realm playerRealm = this.findPlayerRealm(player.getId());
             playerRealm.removePlayer(player);
             playerThread.setShutdownProcessing(true);
             this.server.getClients().remove(playerRemoteAddr);
@@ -656,7 +674,7 @@ public class RealmManagerServer implements Runnable {
     }
 
     private void registerRealmDecoratorsReflection() {
-        Set<Class<? extends RealmDecoratorBase>> subclasses = this.classPathScanner
+        final Set<Class<? extends RealmDecoratorBase>> subclasses = this.classPathScanner
                 .getSubTypesOf(RealmDecoratorBase.class);
         for (Class<? extends RealmDecoratorBase> clazz : subclasses) {
             try {
@@ -674,7 +692,7 @@ public class RealmManagerServer implements Runnable {
     }
 
     private void registerEnemyScriptsReflection() {
-        Set<Class<? extends EnemyScriptBase>> subclasses = this.classPathScanner.getSubTypesOf(EnemyScriptBase.class);
+        final Set<Class<? extends EnemyScriptBase>> subclasses = this.classPathScanner.getSubTypesOf(EnemyScriptBase.class);
         for (Class<? extends EnemyScriptBase> clazz : subclasses) {
             try {
                 final EnemyScriptBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class)
@@ -691,7 +709,7 @@ public class RealmManagerServer implements Runnable {
     }
 
     private void registerItemScriptsReflection() {
-        Set<Class<? extends UseableItemScriptBase>> subclasses = this.classPathScanner
+        final Set<Class<? extends UseableItemScriptBase>> subclasses = this.classPathScanner
                 .getSubTypesOf(UseableItemScriptBase.class);
         for (Class<? extends UseableItemScriptBase> clazz : subclasses) {
             try {
@@ -738,7 +756,7 @@ public class RealmManagerServer implements Runnable {
                 final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerGameLogic.class,
                         method.getName(), mt);
                 if (handleToHandler != null) {
-                    PacketType targetPacketType = PacketType.valueOf(packetToHandle.value());
+                    final PacketType targetPacketType = PacketType.valueOf(packetToHandle.value());
                     List<MethodHandle> existing  = this.userPacketCallbacksServer.get(targetPacketType.getPacketId());
                     if(existing==null) {
                         existing = new ArrayList<>();
@@ -1201,10 +1219,12 @@ public class RealmManagerServer implements Runnable {
         }
         return results;
     }
-
+    
+    // Invoked upon enemy death.
     private void enemyDeath(final Realm targetRealm, final Enemy enemy) {
         final EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
         try {
+        	// Get players in the viewport of this enemy and increment their experience
             for (final Player player : targetRealm
                     .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(enemy))) {
                 final int xpToGive = model.getXp() * (targetRealm.getDepth() == 0 ? 1 : targetRealm.getDepth() + 1);
@@ -1242,6 +1262,7 @@ public class RealmManagerServer implements Runnable {
                 targetRealm.addPortal(toNewRealmPortal);
             }
             
+            // Dungeon spawn chance
             if(Realm.RANDOM.nextInt(10) < 5) {
                 final Portal toDungeonPortal = new Portal(Realm.RANDOM.nextLong(), (short) 6,
                         enemy.getPos().withNoise(64, 64));
@@ -1255,6 +1276,7 @@ public class RealmManagerServer implements Runnable {
                 log.warn("No loot table registered for enemy {}", enemy.getEnemyId());
                 throw new IllegalStateException("No loot table registered for enemy " + enemy.getEnemyId());
             }
+            // Get a random loot bag drop based on this enemies loot table
             final List<GameItem> lootToDrop = GameDataManager.LOOT_TABLES.get(enemy.getEnemyId()).getLootDrop();
             if (lootToDrop.size() > 0) {
                 final LootContainer dropsBag = new LootContainer(LootTier.BLUE, enemy.getPos().withNoise(64, 64),
@@ -1266,6 +1288,7 @@ public class RealmManagerServer implements Runnable {
         }
     }
 
+    // Invoked upon player death
     private void playerDeath(final Realm targetRealm, final Player player) {
         try {
             final String remoteAddrDeath = this.getRemoteAddressMapReversed().get(player.getId());

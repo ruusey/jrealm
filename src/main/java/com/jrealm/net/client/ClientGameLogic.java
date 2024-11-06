@@ -64,7 +64,7 @@ public class ClientGameLogic {
                 case BULLET:
                     final Bullet b = clientRealm.getBullet(textEffect.getTargetEntityId());
                     if (b == null) {
-                        ClientGameLogic.log.warn("Bullet with id {} was not found for targeted TextEffect",
+                        ClientGameLogic.log.warn("[CLIENT] Bullet with id {} was not found for targeted TextEffect",
                                 textEffect.getTargetEntityId());
                         return;
                     }
@@ -74,7 +74,7 @@ public class ClientGameLogic {
                 case ENEMY:
                     final Enemy e = clientRealm.getEnemy(textEffect.getTargetEntityId());
                     if (e == null) {
-                        ClientGameLogic.log.warn("Enemy with id {} was not found for targeted TextEffect",
+                        ClientGameLogic.log.warn("[CLIENT] Enemy with id {} was not found for targeted TextEffect",
                                 textEffect.getTargetEntityId());
                         return;
                     }
@@ -83,7 +83,7 @@ public class ClientGameLogic {
                 case PLAYER:
                     final Player p = clientRealm.getPlayer(textEffect.getTargetEntityId());
                     if (p == null) {
-                        ClientGameLogic.log.warn("Player with id {} was not found for targeted TextEffect",
+                        ClientGameLogic.log.warn("[CLIENT] Player with id {} was not found for targeted TextEffect",
                                 textEffect.getTargetEntityId());
                         return;
                     }
@@ -97,11 +97,11 @@ public class ClientGameLogic {
                         .effect(TextEffect.from(textEffect.getTextEffectId())).sourcePos(targetPos).build();
                 cli.getState().getDamageText().add(hitText);
             } catch (Exception e) {
-                ClientGameLogic.log.error("Failed to create client TextEffect. Reason: {}", e);
+                ClientGameLogic.log.error("[CLIENT] Failed to create client TextEffect. Reason: {}", e);
             }
 
         } catch (Exception e) {
-            ClientGameLogic.log.error("Failed to handle TextEffect Packet. Reason: {}", e);
+            ClientGameLogic.log.error("[CLIENT] Failed to handle TextEffect Packet. Reason: {}", e);
         }
     }
 
@@ -113,7 +113,7 @@ public class ClientGameLogic {
             cli.getRealm().setMapId(loadPacket.getMapId());
             cli.getRealm().getTileManager().mergeMap(loadPacket);
         } catch (Exception e) {
-            ClientGameLogic.log.error("Failed to handle LoadMap Packet. Reason: {}", e);
+            ClientGameLogic.log.error("[CLIENT] Failed to handle LoadMap Packet. Reason: {}", e);
         }
     }
 
@@ -148,7 +148,7 @@ public class ClientGameLogic {
                 cli.getRealm().addPortalIfNotExists(p);
             }
         } catch (Exception e) {
-            ClientGameLogic.log.error("Failed to handle Load Packet. Reason: {}", e);
+            ClientGameLogic.log.error("[CLIENT] Failed to handle Load Packet. Reason: {}", e);
         }
     }
 
@@ -161,36 +161,36 @@ public class ClientGameLogic {
                 }
                 final Player removed = cli.getRealm().getPlayers().remove(p);
                 if (removed == null) {
-                    ClientGameLogic.log.error("Player {} does not exist", p);
+                    ClientGameLogic.log.error("[CLIENT] Player {} does not exist", p);
                 }
             }
             for (final Long lc : unloadPacket.getContainers()) {
                 final LootContainer removed = cli.getRealm().getLoot().remove(lc);
                 if (removed == null) {
-                    ClientGameLogic.log.error("LootContainer {} does not exist", lc);
+                    ClientGameLogic.log.error("[CLIENT] LootContainer {} does not exist", lc);
                 }
             }
             for (final Long b : unloadPacket.getBullets()) {
                 final Bullet removed = cli.getRealm().getBullets().remove(b);
                 if (removed == null) {
-                    ClientGameLogic.log.error("Bullet {} does not exist", b);
+                    ClientGameLogic.log.error("[CLIENT] Bullet {} does not exist", b);
                 }
             }
             for (final Long e : unloadPacket.getEnemies()) {
                 final Enemy removed = cli.getRealm().getEnemies().remove(e);
                 if (removed == null) {
-                    ClientGameLogic.log.error("Enemy {} does not exist", e);
+                    ClientGameLogic.log.error("[CLIENT] Enemy {} does not exist", e);
                 }
             }
             for (final Long p : unloadPacket.getPortals()) {
                 final Portal removed = cli.getRealm().getPortals().remove(p);
                 if (removed == null) {
-                    ClientGameLogic.log.error("Portal {} does not exist", p);
+                    ClientGameLogic.log.error("[CLIENT] Portal {} does not exist", p);
                 }
             }
 
         } catch (Exception e) {
-            ClientGameLogic.log.error("Failed to handle Unload Packet. Reason: {}", e);
+            ClientGameLogic.log.error("[CLIENT] Failed to handle Unload Packet. Reason: {}", e);
         }
     }
 
@@ -201,7 +201,7 @@ public class ClientGameLogic {
         try {
             cli.getState().getPui().enqueueChat(textPacket.clone());
         } catch (Exception e) {
-            ClientGameLogic.log.error("Failed to response to initial text packet. Reason: {}", e.getMessage());
+            ClientGameLogic.log.error("[CLIENT] Failed to response to initial text packet. Reason: {}", e.getMessage());
         }
     }
 
@@ -227,7 +227,7 @@ public class ClientGameLogic {
                 
             }
         } catch (Exception e) {
-            ClientGameLogic.log.error("Failed to handle client command packet. Reason: {}", e.getMessage());
+            ClientGameLogic.log.error("[CLIENT] Failed to handle client command packet. Reason: {}", e.getMessage());
         }
     }
 
@@ -279,7 +279,7 @@ public class ClientGameLogic {
     }
 
     private static void handleServerError(RealmManagerClient cli, ServerErrorMessage message) {
-        ClientGameLogic.log.error("Server Error ***{}", message);
+        ClientGameLogic.log.error("[CLIENT] Recieved Server Error ***{}", message);
         cli.getState().getPui().enqueueChat(TextPacket.create("SYSTEM", "", message.toString()));
     }
 
@@ -290,7 +290,7 @@ public class ClientGameLogic {
                 Player player = new Player(loginResponse.getPlayerId(),
                         new Vector2f(loginResponse.getSpawnX(), loginResponse.getSpawnY()), GlobalConstants.PLAYER_SIZE,
                         cls);
-                ClientGameLogic.log.info("Login succesful, added Player ID {}", player.getId());
+                ClientGameLogic.log.info("[CLIENT] Login succesful, added Player ID {}", player.getId());
                 player.setSpriteSheet(GameSpriteManager.loadClassSprites(cls));
                 cli.getState().setAccount(loginResponse.getAccount());
                 cli.getState().loadClass(player, cls, true);
@@ -302,7 +302,7 @@ public class ClientGameLogic {
                 cli.getState().getPui().enqueueChat(packet);
             }
         } catch (Exception e) {
-            ClientGameLogic.log.error("Failed to response to login response. Reason: {}", e.getMessage());
+            ClientGameLogic.log.error("[CLIENT] Failed to response to login response. Reason: {}", e.getMessage());
         }
     }
 }

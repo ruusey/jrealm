@@ -1,5 +1,6 @@
 package com.jrealm.game.util;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
@@ -64,6 +65,16 @@ public class WorkerThread extends Thread {
         CompletableFuture<?>[] futures = new CompletableFuture[runnables.length];
         for (int i = 0; i < runnables.length; i++) {
             futures[i] = WorkerThread.submit(runnables[i]);
+        }
+        WorkerThread.allOf(futures);
+    }
+    
+    public static void submitAndRun(List<Runnable> runnables) {
+        if (runnables == null)
+            return;
+        CompletableFuture<?>[] futures = new CompletableFuture[runnables.size()];
+        for (int i = 0; i < runnables.size(); i++) {
+            futures[i] = WorkerThread.submit(runnables.get(i));
         }
         WorkerThread.allOf(futures);
     }
