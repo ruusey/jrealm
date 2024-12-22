@@ -33,11 +33,13 @@ import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.LoginRequestMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
+import com.jrealm.net.server.ServerGameLogic;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
@@ -515,8 +517,17 @@ public class PlayState extends GameState {
             if (this.gsm.isStateActive(GameStateManager.PAUSE)) {
                 this.gsm.pop(GameStateManager.PAUSE);
             } else {
-                PauseState pause = new PauseState(this.gsm, this.getAccount());
-                this.gsm.add(GameStateManager.PAUSE, pause);
+                try {
+					final PlayerAccountDto account = ClientGameLogic.DATA_SERVICE
+					        .executeGet("/data/account/" + this.getAccount().getAccountUuid(), null, PlayerAccountDto.class);
+					this.setAccount(account);
+	                PauseState pause = new PauseState(this.gsm, this.getAccount());
+	                this.gsm.add(GameStateManager.PAUSE, pause);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
             }
         }
 
