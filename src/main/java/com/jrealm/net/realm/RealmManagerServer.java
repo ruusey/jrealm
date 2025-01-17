@@ -947,7 +947,11 @@ public class RealmManagerServer implements Runnable {
 
             // If the ability is non damaging (rogue cloak, priest tome)
         } else if (abilityItem.getEffect() != null) {
-            player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
+        	if(abilityItem.getEffect().getEffectId().equals(EffectType.TELEPORT)) {
+        		player.setPos(pos);
+        	}else {
+                player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
+        	}
         }
 
         UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());

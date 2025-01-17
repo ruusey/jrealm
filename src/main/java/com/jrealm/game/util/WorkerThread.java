@@ -83,12 +83,15 @@ public class WorkerThread extends Thread {
      * Submits runnables that execute in an newly forked thread (good for long
      * running tasks)
      */
-    public static void submitAndForkRun(Runnable... runnables) {
+    public static CompletableFuture<?>[] submitAndForkRun(Runnable... runnables) {
         if (runnables == null)
-            return;
+            return null;
+        
+        final CompletableFuture<?>[] futures = new CompletableFuture[runnables.length];
 
         for (int i = 0; i < runnables.length; i++) {
-            WorkerThread.submit(runnables[i]);
+           futures[i] = WorkerThread.submit(runnables[i]);
         }
+        return futures;
     }
 }
