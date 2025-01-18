@@ -108,7 +108,7 @@ public class GameSpriteManager {
                 if (loadRemote) {
                     spriteImage = GameSpriteManager.loadSpriteRemote(spriteKey);
                 } else {
-                    spriteImage = GameSpriteManager.loadSprite(spriteKey);
+                    spriteImage = GameSpriteManager.loadSprite("entity/"+spriteKey);
                 }
                 if(spriteImage==null) continue;
                 try {
