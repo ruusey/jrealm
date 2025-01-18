@@ -323,7 +323,9 @@ public class GameDataManager {
             GameSpriteManager.loadTileSprites();
             GameSpriteManager.loadItemSprites();
         } catch (Exception e) {
+        	e.printStackTrace();
             GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
+            //System.exit(-1);
         }
     }
 
