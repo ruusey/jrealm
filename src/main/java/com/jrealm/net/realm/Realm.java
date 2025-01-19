@@ -589,6 +589,7 @@ public class Realm {
                     enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
                     int healthMult = ((this.getDepth() == 0  || this.getDepth()==999)? 1 : this.getDepth() + 1);
                     enemy.setHealth(enemy.getHealth() * healthMult);
+                    //enemy.getStats().setHp((short) (enemy.getStats().getHp()*healthMult));
                     enemy.setPos(spawnPos);
                     this.addEnemy(enemy);
                 }

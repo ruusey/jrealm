@@ -369,7 +369,7 @@ public class RealmManagerServer implements Runnable {
 						this.enqueueServerPacket(player.getValue(), updatePacket);
 					} else {
 						final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
-						if (!oldUpdate.equals(updatePacket)) {
+						if (!oldUpdate.equals(updatePacket, false)) {
 							this.playerUpdateState.put(player.getKey(), updatePacket);
 							this.enqueueServerPacket(player.getValue(), updatePacket);
 						}
@@ -430,27 +430,31 @@ public class RealmManagerServer implements Runnable {
 								}
 							}
 						}
-						
+						final ObjectMovePacket movePacket0 = realm
+								.getGameObjectsAsPackets(realm.getTileManager().getRenderViewPort(player.getValue()));
 						Set<Long> nearEnemyIds = new HashSet<>();
-						for(ObjectMovement m : movePacket.getMovements()) {
+						for(ObjectMovement m : movePacket0.getMovements()) {
 							if(m.getEntityType()==EntityType.ENEMY.getEntityTypeId()) {
 								nearEnemyIds.add(m.getEntityId());
 							}
 						}
 						if(nearEnemyIds.size()>0) {
+							Map<Long, UpdatePacket> enemyUpdatePackets = new HashMap<>();
 							for(Long enemyId : nearEnemyIds) {
 								final UpdatePacket updatePacket0 = realm.getEnemyAsPacket(enemyId);
 								// Only transmit this players update data if it has not been sent
 								// or if it has changed since last tick
-								if (this.enemyUpdateState.get(player.getKey()) == null) {
-									this.enemyUpdateState.put(player.getKey(), updatePacket0);
+								boolean doSend = false;
+								if(this.enemyUpdateState.get(enemyId)==null) {
+									this.enemyUpdateState.put(enemyId,updatePacket0);
+									doSend = true;
+								}else if(!this.enemyUpdateState.get(enemyId).equals(updatePacket0, true)) {
+									this.enemyUpdateState.put(enemyId,updatePacket0);
+									doSend=true;
+								}
+								
+								if(doSend) {
 									this.enqueueServerPacket(player.getValue(), updatePacket0);
-								} else {
-									final UpdatePacket oldUpdate = this.enemyUpdateState.get(player.getKey());
-									if (!oldUpdate.equals(updatePacket0)) {
-										this.enemyUpdateState.put(player.getKey(), updatePacket0);
-										this.enqueueServerPacket(player.getValue(), updatePacket0);
-									}
 								}
 							}
 						}
@@ -1511,10 +1515,10 @@ public class RealmManagerServer implements Runnable {
                 character.setStats(newStats);
                 final CharacterDto savedStats = ServerGameLogic.DATA_SERVICE.executePost(
                         "/data/account/character/" + character.getCharacterUuid(), character, CharacterDto.class);
-                RealmManagerServer.log.info("Succesfully persisted user account {}", account.getAccountEmail());
+                RealmManagerServer.log.info("[SERVER] Succesfully persisted user account {}", account.getAccountEmail());
             }
         } catch (Exception e) {
-            RealmManagerServer.log.error("Failed to get player account. Reason: {}", e);
+            RealmManagerServer.log.error("[SERVER] Failed to get player account. Reason: {}", e);
         }
         return true;
     }
@@ -1523,7 +1527,7 @@ public class RealmManagerServer implements Runnable {
         try {
             this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), effect, text));
         } catch (Exception e) {
-            RealmManagerServer.log.error("Failed to send TextEffect Packet to Player {}. Reason: {}", player.getId(),
+            RealmManagerServer.log.error("[SERVER] Failed to send TextEffect Packet to Player {}. Reason: {}", player.getId(),
                     e);
         }
     }

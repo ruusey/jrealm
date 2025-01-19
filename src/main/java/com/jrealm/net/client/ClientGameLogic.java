@@ -50,7 +50,7 @@ public class ClientGameLogic {
             cli.getState().gsm.add(GameStateManager.GAMEOVER);
             cli.getState().gsm.pop(GameStateManager.PLAY);
         } catch (Exception e) {
-            ClientGameLogic.log.error("Failed to handle LoadMap Packet. Reason: {}", e);
+            ClientGameLogic.log.error("[CLIENT] Failed to handle LoadMap Packet. Reason: {}", e);
         }
     }
 
@@ -279,7 +279,7 @@ public class ClientGameLogic {
         }else {
         	final Enemy enemyToUpdate = cli.getRealm().getEnemy((updatePacket.getPlayerId()));
         	enemyToUpdate.applyUpdate(updatePacket, cli.getState());
-        	log.info("Update for enemy {}", enemyToUpdate);
+        	log.info("[CLIENT] Recieved update for enemy {}", enemyToUpdate);
         }
         if (toUpdate == null)
             return;

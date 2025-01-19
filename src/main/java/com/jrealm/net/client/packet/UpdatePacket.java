@@ -134,7 +134,7 @@ public class UpdatePacket extends Packet {
         stream.writeLong(enemy.getId());
         stream.writeInt(enemy.getHealth());
         stream.writeInt(enemy.getMana());
-        stream.writeUTF(enemy.getName()+"enemy");
+        stream.writeUTF("enemy["+enemy.getId()+"]");
 
         if (enemy.getStats() != null) {
             enemy.getStats().write(stream);
@@ -210,12 +210,57 @@ public class UpdatePacket extends Packet {
         return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
     }
 
+    public boolean equals(UpdatePacket other, boolean thinMatch) {
+        boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
+                && (this.health == other.getHealth()) && (this.mana == other.getMana());
+
+        boolean stats = this.stats.equals(other.getStats());
+        if(thinMatch) stats=true;
+        if(inventory.length==1) {
+        	System.out.print("");
+        }
+        boolean inv = true;
+        for (int i = 0; i < this.inventory.length; i++) {
+            if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {
+                if (this.inventory[i].equals(other.getInventory()[i])) {
+                    continue;
+                }
+                inv = false;
+                break;
+            }
+            if ((this.inventory[i] == null) && (other.getInventory()[i] == null)) {
+                continue;
+            }
+            inv = false;
+            break;
+        }
+        if(thinMatch) inv=true;
+
+
+        boolean effects = true;
+        for (int i = 0; i < this.effectIds.length; i++) {
+            if ((this.effectIds[i] != other.getEffectIds()[i]) || (this.effectTimes[i] != other.getEffectTimes()[i])) {
+                effects = false;
+                break;
+            }
+        }
+        if(thinMatch) effects=true;
+        boolean expEqual = this.experience == other.getExperience();
+        boolean result = basic && stats && inv && effects && expEqual;
+        if(!result) {
+        	int i = 0;
+        }
+        return result;
+    }
+    
     public boolean equals(UpdatePacket other) {
         boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
                 && (this.health == other.getHealth()) && (this.mana == other.getMana());
 
         boolean stats = this.stats.equals(other.getStats());
-
+        if(inventory.length==1) {
+        	//System.out.println("");
+        }
         boolean inv = true;
         for (int i = 0; i < this.inventory.length; i++) {
             if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {
@@ -240,6 +285,10 @@ public class UpdatePacket extends Packet {
             }
         }
         boolean expEqual = this.experience == other.getExperience();
-        return basic && stats && inv && effects && expEqual;
+        boolean result = basic && stats && inv && effects && expEqual;
+        if(!result) {
+        	int i = 0;
+        }
+        return result;
     }
 }
