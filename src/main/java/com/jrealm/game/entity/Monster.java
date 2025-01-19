@@ -24,7 +24,7 @@ public class Monster extends Enemy {
         this.chaseRange = (int) model.getChaseRange();
         this.attackRange = (int) model.getAttackRange();
 
-        this.health = Realm.RANDOM.nextInt(1000) + model.getHealth();
+        this.health = model.getHealth();
         this.right = true;
         this.uuid = UUID.randomUUID().toString();
     }

@@ -5,11 +5,9 @@ import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
-import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
@@ -52,9 +50,9 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
         this.model = GameDataManager.ENEMIES.get(enemyId);
         this.enemyId = enemyId;
         this.weaponId = weaponId;
-        this.stats= this.model.getStats().clone();
-        //this.health = stats.getHp();
-        //this.mana = stats.getMp();
+        this.stats = this.model.getStats().clone();
+//        this.health = stats.getHp();
+//        this.mana = stats.getMp();
     }
     
     public void applyStats(Stats stats) {
@@ -83,9 +81,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
     public void applyUpdate(UpdatePacket packet, PlayState state) {
         this.name = packet.getPlayerName();
         this.stats = packet.getStats();
-        if(this.health!=packet.getHealth()) {
-        	System.out.print("");
-        }
         this.health = packet.getHealth();
         this.mana = packet.getMana();
         this.setEffectIds(packet.getEffectIds());
@@ -141,6 +136,15 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
         this.move();
         if (player == null)
             return;
+        
+        float currentHealthPercent = (float) this.getHealth() / (float) this.getStats().getHp();
+        float currentManaPercent = (float) this.getMana() / (float) this.getStats().getMp();
+        if(currentHealthPercent>1.0f) {
+        	System.out.println();
+        }
+        this.setHealthpercent(currentHealthPercent);
+        this.setManapercent(currentManaPercent);
+        this.healthpercent = currentHealthPercent;
         this.chase(player);
 
         if (this.hasEffect(EffectType.PARALYZED)) {
@@ -157,18 +161,22 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
 
     public void update(long realmId, RealmManagerServer mgr, double time) {
         final Realm targetRealm = mgr.getRealms().get(realmId);
-
-        Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.chaseRange);
+        final Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.chaseRange);
         super.update(time);
-
         this.move();
         if (player == null) {
             //this.idle(true);
             return;
         }
         
-
-        
+        float currentHealthPercent = (float) this.getHealth() / (float) this.getStats().getHp();
+        float currentManaPercent = (float) this.getMana() / (float) this.getStats().getMp();
+        if(currentHealthPercent>1.0f) {
+        	System.out.println();
+        }
+        this.setHealthpercent(currentHealthPercent);
+        this.setManapercent(currentManaPercent);
+        this.healthpercent = currentHealthPercent;
         this.chase(player);
         final boolean notInvisible = !player.hasEffect(EffectType.INVISIBLE);
         if ((this.getPos().distanceTo(player.getPos()) < this.attackRange && !this.hasEffect(EffectType.STUNNED))
@@ -212,7 +220,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
                     };
                     WorkerThread.doAsync(enemyAttack);
                 }
-
             }
         } else {
             this.attack = false;
@@ -227,8 +234,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
         this.idle(false);
         this.pos.x += this.dx;
         this.pos.y += this.dy;
-
-
     }
     
     public void idle(boolean applyMovement) {
@@ -257,7 +262,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
             this.pos.x += this.dx;
             this.pos.y += this.dy;   
         }
-
     }
 
     @Override
@@ -292,20 +296,15 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
             }
         }
-        float currentHealthPercent = (float) this.getHealth() / (float) this.getStats().getHp();
-        float currentManaPercent = (float) this.getMana() / (float) this.getStats().getMp();
 
-        this.setHealthpercent(currentHealthPercent);
-        this.setManapercent(currentManaPercent);
-        this.healthpercent = currentHealthPercent;
         // Health Bar UI
         g.setColor(Color.red);
         g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
-                24, 5);
+                16*(this.getSize()/16), 5);
 
         g.setColor(Color.green);
         g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
-                (int) (24 * this.getHealthpercent()), 5);
+                (int) ((16*(this.getSize()/16)) * this.getHealthpercent()), 5);
 
     }
 

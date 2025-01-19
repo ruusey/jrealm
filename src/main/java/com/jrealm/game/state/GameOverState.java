@@ -1,5 +1,6 @@
 package com.jrealm.game.state;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -64,6 +65,8 @@ public class GameOverState extends GameState {
 
     @Override
     public void render(Graphics2D g) {
+    	g.setColor(Color.black);
+    	g.fillRect(0, 0, GamePanel.width, GamePanel.height);
         // SpriteSheet.drawArray(g, gameover, new Vector2f(GamePanel.width / 2 -
         // gameover.length() * (32 / 2), GamePanel.height / 2 - 32 / 2), 32, 32, 32);
         this.btnReset.render(g);

@@ -79,7 +79,6 @@ public class UpdatePacket extends Packet {
         stream.writeShort(this.effectIds.length);
         for (int i = 0; i < this.effectIds.length; i++) {
             stream.writeShort(this.effectIds[i]);
-
         }
 
         stream.writeShort(this.effectTimes.length);
@@ -128,17 +127,17 @@ public class UpdatePacket extends Packet {
         this.experience = dis.readLong();
     }
     
-    public static UpdatePacket from(Enemy player) throws Exception {
+    public static UpdatePacket from(Enemy enemy) throws Exception {
     	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     	final DataOutputStream stream = new DataOutputStream(byteStream);
-    	if(player==null) return null;
-        stream.writeLong(player.getId());
-        stream.writeInt(player.getHealth());
-        stream.writeInt(player.getMana());
-        stream.writeUTF(player.getName()+"enemy");
+    	if(enemy==null) return null;
+        stream.writeLong(enemy.getId());
+        stream.writeInt(enemy.getHealth());
+        stream.writeInt(enemy.getMana());
+        stream.writeUTF(enemy.getName()+"enemy");
 
-        if (player.getStats() != null) {
-            player.getStats().write(stream);
+        if (enemy.getStats() != null) {
+            enemy.getStats().write(stream);
         }
 
         final List<GameItem> lootToDrop = Arrays.asList(GameDataManager.GAME_ITEMS.get(48));
@@ -154,15 +153,14 @@ public class UpdatePacket extends Packet {
             }
         }
         
-        stream.writeShort(player.getEffectIds().length);
-        for (int i = 0; i < player.getEffectIds().length; i++) {
-            stream.writeShort(player.getEffectIds()[i]);
-
+        stream.writeShort(enemy.getEffectIds().length);
+        for (int i = 0; i < enemy.getEffectIds().length; i++) {
+            stream.writeShort(enemy.getEffectIds()[i]);
         }
 
-        stream.writeShort(player.getEffectTimes().length);
-        for (int i = 0; i < player.getEffectTimes().length; i++) {
-            stream.writeLong(player.getEffectTimes()[i]);
+        stream.writeShort(enemy.getEffectTimes().length);
+        for (int i = 0; i < enemy.getEffectTimes().length; i++) {
+            stream.writeLong(enemy.getEffectTimes()[i]);
         }
 
         stream.writeLong(1l);
