@@ -139,9 +139,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
         
         float currentHealthPercent = (float) this.getHealth() / (float) this.getStats().getHp();
         float currentManaPercent = (float) this.getMana() / (float) this.getStats().getMp();
-        if(currentHealthPercent>1.0f) {
-        	System.out.println();
-        }
         this.setHealthpercent(currentHealthPercent);
         this.setManapercent(currentManaPercent);
         this.healthpercent = currentHealthPercent;
@@ -171,9 +168,6 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
         
         float currentHealthPercent = (float) this.getHealth() / (float) this.getStats().getHp();
         float currentManaPercent = (float) this.getMana() / (float) this.getStats().getMp();
-        if(currentHealthPercent>1.0f) {
-        	System.out.println();
-        }
         this.setHealthpercent(currentHealthPercent);
         this.setManapercent(currentManaPercent);
         this.healthpercent = currentHealthPercent;
