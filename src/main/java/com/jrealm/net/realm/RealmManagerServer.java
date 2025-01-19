@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -84,6 +85,7 @@ import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
@@ -117,6 +119,8 @@ public class RealmManagerServer implements Runnable {
     private Map<Long, Long> playerAbilityState = new HashMap<>();
     private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
     private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
+    private Map<Long, UpdatePacket> enemyUpdateState = new HashMap<>();
+
     private Map<Long, UnloadPacket> playerUnloadState = new HashMap<>();
     private Map<Long, LoadMapPacket> playerLoadMapState = new HashMap<>();
     private Map<Long, ObjectMovePacket> playerObjectMoveState = new HashMap<>();
@@ -423,6 +427,30 @@ public class RealmManagerServer implements Runnable {
 								if (moveDiff != null) {
 									this.playerObjectMoveState.put(player.getKey(), movePacket);
 									this.enqueueServerPacket(player.getValue(), movePacket);
+								}
+							}
+						}
+						
+						Set<Long> nearEnemyIds = new HashSet<>();
+						for(ObjectMovement m : movePacket.getMovements()) {
+							if(m.getEntityType()==EntityType.ENEMY.getEntityTypeId()) {
+								nearEnemyIds.add(m.getEntityId());
+							}
+						}
+						if(nearEnemyIds.size()>0) {
+							for(Long enemyId : nearEnemyIds) {
+								final UpdatePacket updatePacket0 = realm.getEnemyAsPacket(enemyId);
+								// Only transmit this players update data if it has not been sent
+								// or if it has changed since last tick
+								if (this.enemyUpdateState.get(player.getKey()) == null) {
+									this.enemyUpdateState.put(player.getKey(), updatePacket0);
+									this.enqueueServerPacket(player.getValue(), updatePacket0);
+								} else {
+									final UpdatePacket oldUpdate = this.enemyUpdateState.get(player.getKey());
+									if (!oldUpdate.equals(updatePacket0)) {
+										this.enemyUpdateState.put(player.getKey(), updatePacket0);
+										this.enqueueServerPacket(player.getValue(), updatePacket0);
+									}
 								}
 							}
 						}

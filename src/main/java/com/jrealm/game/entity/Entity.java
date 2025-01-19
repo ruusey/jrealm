@@ -40,10 +40,10 @@ public abstract class Entity extends GameObject {
     protected boolean canAttack = true;
     protected boolean attacking = false;
 
-    protected int health = 100;
-    protected int mana = 100;
-    protected float healthpercent = 1;
-    protected float manapercent = 1;
+    public int health = 100;
+    public int mana = 100;
+    public float healthpercent = 1;
+    public float manapercent = 1;
 
     protected Rectangle hitBounds;
 

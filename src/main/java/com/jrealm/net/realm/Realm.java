@@ -444,6 +444,18 @@ public class Realm {
         }
         return pack;
     }
+    
+    public UpdatePacket getEnemyAsPacket(long enemyId) {
+        final Enemy p = this.enemies.get(enemyId);
+        UpdatePacket pack = null;
+        try {
+            pack = UpdatePacket.from(p);
+        } catch (Exception e) {
+            Realm.log.error("Failed to create update packet from Enemy. Reason: {}", e);
+        }
+        return pack;
+    }
+
 
     public List<UpdatePacket> getPlayersAsPackets(Rectangle cam) {
         final List<UpdatePacket> playerUpdates = new ArrayList<>();

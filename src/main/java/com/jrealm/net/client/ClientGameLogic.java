@@ -273,9 +273,16 @@ public class ClientGameLogic {
     public static void handleUpdateClient(RealmManagerClient cli, Packet packet) {
         UpdatePacket updatePacket = (UpdatePacket) packet;
         Player toUpdate = cli.getRealm().getPlayer((updatePacket.getPlayerId()));
+        if(toUpdate!=null) {
+            toUpdate.applyUpdate(updatePacket, cli.getState());
+
+        }else {
+        	final Enemy enemyToUpdate = cli.getRealm().getEnemy((updatePacket.getPlayerId()));
+        	enemyToUpdate.applyUpdate(updatePacket, cli.getState());
+        	log.info("Update for enemy {}", enemyToUpdate);
+        }
         if (toUpdate == null)
             return;
-        toUpdate.applyUpdate(updatePacket, cli.getState());
     }
 
     private static void handleServerError(RealmManagerClient cli, ServerErrorMessage message) {

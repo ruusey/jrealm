@@ -5,17 +5,22 @@ import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.entity.item.GameItem;
+import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.script.EnemyScriptBase;
+import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
 import com.jrealm.net.realm.RealmManagerServer;
@@ -40,14 +45,53 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
     private int enemyId;
     private int weaponId = -1;
     private int idleTime = 0;
+    private Stats stats;
 
     public Enemy(long id, int enemyId, Vector2f origin, int size, int weaponId) {
         super(id, origin, size);
         this.model = GameDataManager.ENEMIES.get(enemyId);
         this.enemyId = enemyId;
         this.weaponId = weaponId;
+        this.stats= this.model.getStats().clone();
+        //this.health = stats.getHp();
+        //this.mana = stats.getMp();
+    }
+    
+    public void applyStats(Stats stats) {
+    	this.health = stats.getHp();
+        this.mana = stats.getMp();
+        this.stats.setHp(stats.getHp());
+        this.stats.setMp(stats.getMp());
+        this.stats.setDef(stats.getDef());
+        this.stats.setAtt(stats.getAtt());
+        this.stats.setSpd(stats.getSpd());
+        this.stats.setDex(stats.getDex());
+        this.stats.setVit(stats.getVit());
+        this.stats.setWis(stats.getWis());
     }
 
+    @Override
+    public int getHealth() {
+        return this.health;
+    }
+
+    @Override
+    public int getMana() {
+        return this.mana;
+    }
+    
+    public void applyUpdate(UpdatePacket packet, PlayState state) {
+        this.name = packet.getPlayerName();
+        this.stats = packet.getStats();
+        if(this.health!=packet.getHealth()) {
+        	System.out.print("");
+        }
+        this.health = packet.getHealth();
+        this.mana = packet.getMana();
+        this.setEffectIds(packet.getEffectIds());
+        this.setEffectTimes(packet.getEffectTimes());
+    }
+    
     public void chase(Player player) {
 
         if ((player == null) || player.hasEffect(EffectType.INVISIBLE)) {
@@ -122,6 +166,9 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
             //this.idle(true);
             return;
         }
+        
+
+        
         this.chase(player);
         final boolean notInvisible = !player.hasEffect(EffectType.INVISIBLE);
         if ((this.getPos().distanceTo(player.getPos()) < this.attackRange && !this.hasEffect(EffectType.STUNNED))
@@ -245,7 +292,12 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
             }
         }
+        float currentHealthPercent = (float) this.getHealth() / (float) this.getStats().getHp();
+        float currentManaPercent = (float) this.getMana() / (float) this.getStats().getMp();
 
+        this.setHealthpercent(currentHealthPercent);
+        this.setManapercent(currentManaPercent);
+        this.healthpercent = currentHealthPercent;
         // Health Bar UI
         g.setColor(Color.red);
         g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
@@ -253,7 +305,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
 
         g.setColor(Color.green);
         g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
-                (int) (24 * this.healthpercent), 5);
+                (int) (24 * this.getHealthpercent()), 5);
 
     }
 

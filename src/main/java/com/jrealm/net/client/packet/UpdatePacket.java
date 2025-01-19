@@ -4,8 +4,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.Arrays;
+import java.util.List;
 
 import com.jrealm.game.contants.PacketType;
+import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
@@ -122,6 +126,47 @@ public class UpdatePacket extends Packet {
         }
 
         this.experience = dis.readLong();
+    }
+    
+    public static UpdatePacket from(Enemy player) throws Exception {
+    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    	final DataOutputStream stream = new DataOutputStream(byteStream);
+    	if(player==null) return null;
+        stream.writeLong(player.getId());
+        stream.writeInt(player.getHealth());
+        stream.writeInt(player.getMana());
+        stream.writeUTF(player.getName()+"enemy");
+
+        if (player.getStats() != null) {
+            player.getStats().write(stream);
+        }
+
+        final List<GameItem> lootToDrop = Arrays.asList(GameDataManager.GAME_ITEMS.get(48));
+
+        int invSize = lootToDrop.size();
+        stream.writeShort(invSize);
+        for (int i = 0; i < invSize; i++) {
+        	final GameItem item = lootToDrop.get(i);
+            if (item != null) {
+            	item.write(stream);
+            } else {
+                stream.writeInt(-1);
+            }
+        }
+        
+        stream.writeShort(player.getEffectIds().length);
+        for (int i = 0; i < player.getEffectIds().length; i++) {
+            stream.writeShort(player.getEffectIds()[i]);
+
+        }
+
+        stream.writeShort(player.getEffectTimes().length);
+        for (int i = 0; i < player.getEffectTimes().length; i++) {
+            stream.writeLong(player.getEffectTimes()[i]);
+        }
+
+        stream.writeLong(1l);
+        return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
     }
 
     public static UpdatePacket from(Player player) throws Exception {
