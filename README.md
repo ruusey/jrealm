@@ -7,7 +7,9 @@
 <img src="https://i.imgur.com/PXBqnlh.png" width="312">
 <img src="https://i.imgur.com/glqEiZJ.png" width="312">
 <img src="https://i.imgur.com/G9ilNvu.png" width="312">
-<img src="https://i.imgur.com/5NYzaBo.png" width="312"></div>
+<img src="https://i.imgur.com/8Yz96Oe.png" width="312">
+<img src="https://i.imgur.com/5NYzaBo.png" width="612">
+</div>
 <br>
 
 ### Game Controls
