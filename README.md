@@ -31,14 +31,14 @@
 #### *NOTE: As of release 0.3.0 You are now required to run JRealm-Data alongside JRealm-Server see: https://github.com/ruusey/jrealm-data*
 
 * **General**: <br/>
-```java -jar ./jrealm-{version}.jar {-client | -server | -embedded} {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}```
+```java -jar ./jrealm-{version}.jar {-client | -server | -embedded} {DATA_SERVER_ADDR}```
 
 * **Server**: <br />
-```java -jar ./jrealm-{version}.jar -server {SERVER_ADDR}``` <br />
+```java -jar ./jrealm-{version}.jar -server {DATA_SERVER_ADDR}``` <br />
 The server requires port 2222 to be available
 
 * **Client**: <br />
-```java -jar ./jrealm-{version}.jar -client {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}``` <br />
+```java -jar ./jrealm-{version}.jar -client {DATA_SERVER_ADDR}``` <br />
 Replace `{SERVER_ADDRESS}` with the IP Address of the server you wish to connect to <br />
 Replace `{PLAYER_EMAIL}` with your account's email <br />
 Replace `{PLAYER_PASSWORD}` with your account's password <br />
