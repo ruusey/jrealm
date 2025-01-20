@@ -2,14 +2,12 @@
 ### An 8bit Dungeon Crawler Rogue-Like Game written entirely in Java
 
 <div dsplay="inline">
-<img src="https://i.imgur.com/GPpcD2I.png" width="312">
-<img src="https://i.imgur.com/9xfBgZ4.png" width="312">
+<img src="https://i.imgur.com/WTsZ0Td.png" width="312">
+<img src="https://i.imgur.com/Xai7DRc.png" width="312">
 <img src="https://i.imgur.com/ln8uzmg.png" width="312">
-<img src="https://i.imgur.com/0Dy4bNX.png" width="312">
-<img src="https://i.imgur.com/fa6dt5V.png" width="312">
-<img src="https://i.imgur.com/2dLIVu6.png" width="312">
-
-</div>
+<img src="https://i.imgur.com/glqEiZJ.png" width="312">
+<img src="https://i.imgur.com/G9ilNvu.png" width="312">
+<img src="https://i.imgur.com/5NYzaBo.png" width="312"></div>
 <br>
 
 ### Game Controls
