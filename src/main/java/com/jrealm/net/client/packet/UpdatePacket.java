@@ -216,9 +216,6 @@ public class UpdatePacket extends Packet {
 
         boolean stats = this.stats.equals(other.getStats());
         if(thinMatch) stats=true;
-        if(inventory.length==1) {
-        	System.out.print("");
-        }
         boolean inv = true;
         for (int i = 0; i < this.inventory.length; i++) {
             if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {
@@ -247,9 +244,6 @@ public class UpdatePacket extends Packet {
         if(thinMatch) effects=true;
         boolean expEqual = this.experience == other.getExperience();
         boolean result = basic && stats && inv && effects && expEqual;
-        if(!result) {
-        	int i = 0;
-        }
         return result;
     }
     
