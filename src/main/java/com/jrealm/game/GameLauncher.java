@@ -98,39 +98,27 @@ public class GameLauncher {
     }
 
     private static void startClient(String[] args) {
-    	LoginScreenPanel login = new LoginScreenPanel();
-    	login.setVisible(true);
-    	login.setLocation(GamePanel.width/2, GamePanel.height/2);
-    	login.setSize(GamePanel.width/3, GamePanel.height/3);
-        while(!login.isSubmitted()) {
-        	try {
-        		Thread.sleep(100);
-        	}catch(Exception e) {
-        		
-        	}
+        SocketClient.SERVER_ADDR = args[1];
+        if (SocketClient.SERVER_ADDR == null) {
+            SocketClient.SERVER_ADDR = SocketServer.LOCALHOST;
+            GameLauncher.log.error("Server address not set");
+            GameLauncher.log.error(GameLauncher.HELP_MSG);
+            System.exit(-1);
         }
-        login.dispose();
-//        SocketClient.SERVER_ADDR = args[1];
-//        if (SocketClient.SERVER_ADDR == null) {
-//            SocketClient.SERVER_ADDR = SocketServer.LOCALHOST;
-//            GameLauncher.log.error("Server address not set");
-//            GameLauncher.log.error(GameLauncher.HELP_MSG);
-//            System.exit(-1);
-//        }
-//
-//        SocketClient.PLAYER_EMAIL = args[2];
-//        if (SocketClient.PLAYER_EMAIL == null) {
-//            GameLauncher.log.error("Player email not set");
-//            GameLauncher.log.error(GameLauncher.HELP_MSG);
-//            System.exit(-1);
-//        }
-//        try {
-//            SocketClient.PLAYER_PASSWORD = args[3];
-//        } catch (Exception e) {
-//            GameLauncher.log.error("Player password not set");
-//            GameLauncher.log.error(GameLauncher.HELP_MSG);
-//            System.exit(-1);
-//        }
+
+        SocketClient.PLAYER_EMAIL = args[2];
+        if (SocketClient.PLAYER_EMAIL == null) {
+            GameLauncher.log.error("Player email not set");
+            GameLauncher.log.error(GameLauncher.HELP_MSG);
+            System.exit(-1);
+        }
+        try {
+            SocketClient.PLAYER_PASSWORD = args[3];
+        } catch (Exception e) {
+            GameLauncher.log.error("Player password not set");
+            GameLauncher.log.error(GameLauncher.HELP_MSG);
+            System.exit(-1);
+        }
         try {
             SocketClient.CHARACTER_UUID = args[4];
         } catch (Exception e) {
