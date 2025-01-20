@@ -2,13 +2,13 @@
 ### An 8bit Dungeon Crawler Rogue-Like Game written entirely in Java
 
 <div dsplay="inline">
-<img src="https://i.imgur.com/GPpcD2I.png" width="312">
-<img src="https://i.imgur.com/9xfBgZ4.png" width="312">
-<img src="https://i.imgur.com/ln8uzmg.png" width="312">
-<img src="https://i.imgur.com/0Dy4bNX.png" width="312">
-<img src="https://i.imgur.com/fa6dt5V.png" width="312">
-<img src="https://i.imgur.com/2dLIVu6.png" width="312">
-
+<img src="https://i.imgur.com/WTsZ0Td.png" width="312">
+<img src="https://i.imgur.com/QdzDjJh.png" width="312">
+<img src="https://i.imgur.com/PXBqnlh.png" width="312">
+<img src="https://i.imgur.com/glqEiZJ.png" width="312">
+<img src="https://i.imgur.com/G9ilNvu.png" width="312">
+<img src="https://i.imgur.com/8Yz96Oe.png" width="312">
+<img src="https://i.imgur.com/5NYzaBo.png" width="612">
 </div>
 <br>
 
@@ -31,14 +31,14 @@
 #### *NOTE: As of release 0.3.0 You are now required to run JRealm-Data alongside JRealm-Server see: https://github.com/ruusey/jrealm-data*
 
 * **General**: <br/>
-```java -jar ./jrealm-{version}.jar {-client | -server | -embedded} {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}```
+```java -jar ./jrealm-{version}.jar {-client | -server | -embedded} {DATA_SERVER_ADDR}```
 
 * **Server**: <br />
-```java -jar ./jrealm-{version}.jar -server {SERVER_ADDR}``` <br />
+```java -jar ./jrealm-{version}.jar -server {DATA_SERVER_ADDR}``` <br />
 The server requires port 2222 to be available
 
 * **Client**: <br />
-```java -jar ./jrealm-{version}.jar -client {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}``` <br />
+```java -jar ./jrealm-{version}.jar -client {DATA_SERVER_ADDR}``` <br />
 Replace `{SERVER_ADDRESS}` with the IP Address of the server you wish to connect to <br />
 Replace `{PLAYER_EMAIL}` with your account's email <br />
 Replace `{PLAYER_PASSWORD}` with your account's password <br />
