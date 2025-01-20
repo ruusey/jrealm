@@ -1,4 +1,5 @@
 package com.jrealm.game;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -7,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferStrategy;
 import java.text.MessageFormat;
+import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -24,16 +26,19 @@ import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.account.service.PopupFrameFactory;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.net.client.SocketClient;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+
 @Data
 @Slf4j
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 public class LoginScreenPanel extends JPanel implements ActionListener {
-    private BufferStrategy bs;
+	private BufferStrategy bs;
 
 	private JButton loginButton;
 	private JLabel usernameLabel;
@@ -42,14 +47,14 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 	private JComboBox<String> chars;
 	private JPanel panel;
 	private JTextField usernameText, passwordText, serverAddrText;
-	private boolean isSubmitted=false;
+	private boolean isSubmitted = false;
 	private static final long serialVersionUID = 2394780468624375599L;
-
-
+	private JComboBox<String> classTypes;
+	private JFrame frame;
 	public LoginScreenPanel(int width, int height) {
-        this.setPreferredSize(new Dimension(width, height));
-        this.setFocusable(true);
-        this.requestFocus();
+		this.setPreferredSize(new Dimension(width, height));
+		this.setFocusable(true);
+		this.requestFocus();
 		this.usernameLabel = (this.getUsernameLabel());
 		this.usernameText = (this.getUsernameText());
 		this.passwordLabel = (this.getPasswordLabel());
@@ -60,7 +65,7 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 		this.loginButton.setBounds(100, 110, 90, 25);
 		this.loginButton.setForeground(Color.WHITE);
 		this.loginButton.setBackground(Color.BLACK);
-		this.panel = new JPanel(new GridLayout(6, 2));
+		this.panel = new JPanel(new GridLayout(7, 2));
 		try {
 			JLabel panel = PopupFrameFactory.loadingPanel();
 			this.panel.add(panel);
@@ -82,28 +87,76 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 		this.panel.add(new JSeparator(SwingConstants.VERTICAL));
 		this.add(this.panel, BorderLayout.CENTER);
 		this.loginButton.addActionListener(this);
-        this.setVisible(true);
+		this.setVisible(true);
 	}
-	
+
 	public void setCharacters(PlayerAccountDto account) {
+		if(this.chars!=null) {
+			this.panel.remove(this.chars);
+		}
 		this.chars = new JComboBox<>();
 		this.chars.addItem("-- Select Character --");
 
-		for(CharacterDto character : account.getCharacters()) {
-			
-            int lvl = 0;
-            if (GameDataManager.EXPERIENCE_LVLS.isMaxLvl(character.getStats().getXp())) {
-                lvl = 20;
-            } else {
-                lvl = GameDataManager.EXPERIENCE_LVLS.getLevel(character.getStats().getXp());
-            }
-            
-			 String characterStr = "{0}, lv {1} {2} {3}/8  [{4}]";
-             characterStr = MessageFormat.format(characterStr, account.getAccountName(), lvl, CharacterClass.valueOf(character.getCharacterClass()),
-            		 character.numStatsMaxed(), character.getCharacterUuid());
-             this.chars.addItem(characterStr);
+		for (CharacterDto character : account.getCharacters()) {
+			int lvl = 0;
+			if (GameDataManager.EXPERIENCE_LVLS.isMaxLvl(character.getStats().getXp())) {
+				lvl = 20;
+			} else {
+				lvl = GameDataManager.EXPERIENCE_LVLS.getLevel(character.getStats().getXp());
+			}
+			String characterStr = "{0}, lv {1} {2} {3}/8  [{4}]";
+			characterStr = MessageFormat.format(characterStr, account.getAccountName(), lvl,
+					CharacterClass.valueOf(character.getCharacterClass()), character.numStatsMaxed(),
+					character.getCharacterUuid());
+			this.chars.addItem(characterStr);
 		}
 		this.panel.add(this.chars);
+
+		// this.panel.add(new JLabel("New Character Class:"));
+
+		JButton newCharacterButton = new JButton("New Character");
+		this.panel.remove(newCharacterButton);
+		newCharacterButton.addActionListener(e -> {
+			log.info("[CLIENT] Login - new character button press. Source={}", e.getSource());
+			if(this.classTypes!=null) {
+				this.panel.remove(this.classTypes);
+			}
+			this.classTypes = new JComboBox<>();
+			this.classTypes.addItem("-- Character Type --");
+			this.addClassTypes(this.classTypes);
+			this.panel.add(this.classTypes);
+			final Dimension currSize = this.frame.getSize();
+			currSize.setSize(currSize.getWidth() + 20, currSize.getHeight() + 20);
+			this.frame.setSize(currSize);
+
+			Runnable charSelectRun = ()->{
+				while (this.classTypes.getSelectedItem().equals("-- Character Type --")) {
+					try {
+						Thread.sleep(50);
+					}catch(Exception e1) {}
+				}
+				String chosenClass = this.classTypes.getSelectedItem().toString();
+				int idx = chosenClass.indexOf("[");
+				final String classId = chosenClass.substring(idx + 1, chosenClass.lastIndexOf("]"));
+				try {
+					PlayerAccountDto result = ClientGameLogic.DATA_SERVICE.executePost("data/account/"+account.getAccountUuid()+"/character?classId="+classId, null, PlayerAccountDto.class);
+					this.setCharacters(result);
+				} catch (Exception e1) {
+					log.error("[CLIENT] Failed to create character for account {}. Reason: {}",account.getAccountEmail(), e1.getMessage());
+				}
+			};
+			WorkerThread.submitAndForkRun(charSelectRun);
+		});
+		
+		this.panel.add(newCharacterButton);
+	}
+
+	public void addClassTypes(JComboBox<String> select) {
+		for (CharacterClass cls : CharacterClass.values()) {
+			if (cls.classId > 0) {
+				select.addItem(cls.name() + "[" + cls.classId + "]");
+			}
+		}
 	}
 
 	public JLabel getUsernameLabel() {
@@ -116,7 +169,7 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 		username.setText("ru@jrealm.com");
 		return username;
 	}
-	
+
 	public JTextField getServerAddrText() {
 		final JTextField ip = new JTextField(28);
 		ip.setText("127.0.0.1");
@@ -127,7 +180,7 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 		final JLabel label = new JLabel("Password");
 		return label;
 	}
-	
+
 	public JLabel getServerAddrLabel() {
 		final JLabel label = new JLabel("Server Address");
 		return label;
@@ -145,16 +198,17 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 		String password = this.passwordText.getText();
 		String addr = this.serverAddrText.getText();
 		try {
-			SocketClient.PLAYER_EMAIL=username;
-			SocketClient.PLAYER_PASSWORD=password;
-			SocketClient.SERVER_ADDR=addr;
-			this.isSubmitted=true;
+			SocketClient.PLAYER_EMAIL = username;
+			SocketClient.PLAYER_PASSWORD = password;
+			SocketClient.SERVER_ADDR = addr;
+			this.isSubmitted = true;
 			log.info("[CLIENT] Successfully captured user login data Email={}, Server={}", username, addr);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
 
 	}
+
 	public JFrame getLoginFrame() {
 		final JFrame frame = new JFrame("JRealm Login Page");
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -162,10 +216,10 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 		this.setOpaque(true);
 		frame.add(this);
 		frame.pack();
+		this.frame = frame;
 		return frame;
 	}
-	
-	
+
 	public static void main(String[] args) throws Exception {
 		LoginScreenPanel p = new LoginScreenPanel(800, 300);
 		JFrame frame = p.getLoginFrame();
