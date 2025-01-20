@@ -1,8 +1,14 @@
 package com.jrealm.game;
 
+import java.awt.Dimension;
 import java.net.http.HttpClient;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.swing.JFrame;
 
 import com.jrealm.account.dto.PingResponseDto;
+import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.account.service.JrealmClientDataService;
 import com.jrealm.account.service.JrealmServerDataService;
 import com.jrealm.game.data.GameDataManager;
@@ -12,14 +18,12 @@ import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.ServerGameLogic;
-import com.jrealm.net.server.SocketServer;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GameLauncher {
     public static final String GAME_VERSION = "0.3.5";
-    private static final String HELP_MSG = "Please set the player email, password, server and character UUID. [java -jar ./jrealm-{version}.jar {-client | -server| -embedded} {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}]";
+    //private static final String HELP_MSG = "Please set the player email, password, server and character UUID. [java -jar ./jrealm-{version}.jar {-client | -server| -embedded} {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD} {CHARACTER_UUID}]";
 
     public static void main(String[] args) {
         GameLauncher.log.info("Starting JRealm...");
@@ -98,34 +102,44 @@ public class GameLauncher {
     }
 
     private static void startClient(String[] args) {
-        SocketClient.SERVER_ADDR = args[1];
-        if (SocketClient.SERVER_ADDR == null) {
-            SocketClient.SERVER_ADDR = SocketServer.LOCALHOST;
-            GameLauncher.log.error("Server address not set");
-            GameLauncher.log.error(GameLauncher.HELP_MSG);
-            System.exit(-1);
-        }
+		final LoginScreenPanel p = new LoginScreenPanel(820, 320);
+		final JFrame frame = p.start();
+		frame.setVisible(true);
+		frame.setLocationRelativeTo(null);
 
-        SocketClient.PLAYER_EMAIL = args[2];
-        if (SocketClient.PLAYER_EMAIL == null) {
-            GameLauncher.log.error("Player email not set");
-            GameLauncher.log.error(GameLauncher.HELP_MSG);
-            System.exit(-1);
-        }
-        try {
-            SocketClient.PLAYER_PASSWORD = args[3];
-        } catch (Exception e) {
-            GameLauncher.log.error("Player password not set");
-            GameLauncher.log.error(GameLauncher.HELP_MSG);
-            System.exit(-1);
-        }
-        try {
-            SocketClient.CHARACTER_UUID = args[4];
-        } catch (Exception e) {
-            GameLauncher.log.error("Player character UUID not set");
-            GameLauncher.log.error(GameLauncher.HELP_MSG);
-            System.exit(-1);
-        }
+		while(!p.isSubmitted()) {
+			try {
+				Thread.sleep(100);
+			}catch(Exception e) {}
+		}
+		try {
+			final Map<String, String> loginRequest = new HashMap<>();
+			loginRequest.put("email", p.getUsernameText().getText());
+			loginRequest.put("password", new String(p.getPasswordText().getPassword()));
+
+			final Map<String, Object> response = ClientGameLogic.DATA_SERVICE.executePost("admin/account/login", loginRequest, Map.class);
+			ClientGameLogic.DATA_SERVICE.setSessionToken(response.get("token").toString());
+			final PlayerAccountDto account = ClientGameLogic.DATA_SERVICE
+                    .executeGet("/data/account/" + response.get("accountGuid").toString(), null, PlayerAccountDto.class);
+			p.setCharacters(account);
+			final Dimension currSize = frame.getSize();
+			currSize.setSize(currSize.getWidth()+10, currSize.getHeight()+10);
+			frame.setSize(currSize);
+			while(p.getChars().getSelectedItem().toString().equals("-- Select Character --")){
+				try {
+					Thread.sleep(100);
+				}catch(Exception e) {}
+			}
+			final String selected = p.getChars().getSelectedItem().toString();
+			int idx = selected.indexOf("[");
+			final String charUuid = selected.substring(idx+1, selected.lastIndexOf("]"));
+			SocketClient.CHARACTER_UUID = charUuid;
+			frame.dispose();
+			log.info("[CLIENT] Chose characterUuid={}, disposing login frame", charUuid);
+		}catch(Exception e) {
+			log.error("[CLIENT] Failed to perform login and account fetch. Reason: {}",e.getMessage());
+		}
+		log.info("[CLIENT] Starting game client...");
         new Window();
     }
     

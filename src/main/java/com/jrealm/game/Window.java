@@ -10,7 +10,6 @@ public class Window extends JFrame {
 
     private BufferStrategy bs;
     private GamePanel gp;
-
     public Window() {
         this.setTitle("JRealm " + GameLauncher.GAME_VERSION);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
