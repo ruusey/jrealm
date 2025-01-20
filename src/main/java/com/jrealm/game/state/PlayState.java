@@ -39,7 +39,6 @@ import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.LoginRequestMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
-import com.jrealm.net.server.ServerGameLogic;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;

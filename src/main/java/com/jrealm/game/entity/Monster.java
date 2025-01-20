@@ -5,8 +5,6 @@ import java.util.UUID;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
-import com.jrealm.net.realm.Realm;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

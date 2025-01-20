@@ -27,9 +27,11 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.net.client.SocketClient;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
+@EqualsAndHashCode(callSuper=false)
 public class LoginScreenPanel extends JPanel implements ActionListener {
     private BufferStrategy bs;
 
@@ -153,7 +155,7 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 		}
 
 	}
-	public JFrame start() {
+	public JFrame getLoginFrame() {
 		final JFrame frame = new JFrame("JRealm Login Page");
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		frame.setSize(this.getWidth(), (int) this.getHeight());
@@ -166,7 +168,7 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 	
 	public static void main(String[] args) throws Exception {
 		LoginScreenPanel p = new LoginScreenPanel(800, 300);
-		JFrame frame = p.start();
+		JFrame frame = p.getLoginFrame();
 		frame.setVisible(true);
 	}
 

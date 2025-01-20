@@ -84,9 +84,6 @@ public class GameStateManager {
                     new Rectangle(new Vector2f(0, 0), GamePanel.width + 64, GamePanel.height + 64));
             this.states[GameStateManager.PLAY] = new PlayState(this, GameStateManager.cam);
             break;
-        case GameStateManager.MENU:
-            this.states[GameStateManager.MENU] = new MenuState(this);
-            break;
         case GameStateManager.PAUSE:
             this.states[GameStateManager.PAUSE] = new PauseState(this, null);
             break;
