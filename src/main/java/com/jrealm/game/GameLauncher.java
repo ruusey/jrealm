@@ -120,8 +120,8 @@ public class GameLauncher {
 		}
 		try {
 			final Map<String, String> loginRequest = new HashMap<>();
-			loginRequest.put("email", loginPanel.getUsernameText().getText());
-			loginRequest.put("password", new String(loginPanel.getPasswordText().getPassword()));
+			loginRequest.put("email", loginPanel.getUsernameTextField().getText());
+			loginRequest.put("password", new String(loginPanel.getPasswordTextField().getText()));
 
 			final Map<String, Object> response = ClientGameLogic.DATA_SERVICE.executePost("admin/account/login",
 					loginRequest, Map.class);

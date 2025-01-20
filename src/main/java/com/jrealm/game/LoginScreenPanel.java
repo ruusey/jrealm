@@ -8,12 +8,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferStrategy;
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JSeparator;
@@ -41,6 +44,8 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 	private BufferStrategy bs;
 
 	private JButton loginButton;
+	private JButton registerButton;
+
 	private JLabel usernameLabel;
 	private JLabel passwordLabel;
 	private JLabel serverAddrLabel;
@@ -65,13 +70,16 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 		this.loginButton.setBounds(100, 110, 90, 25);
 		this.loginButton.setForeground(Color.WHITE);
 		this.loginButton.setBackground(Color.BLACK);
-		this.panel = new JPanel(new GridLayout(7, 2));
+		
+		this.registerButton = new JButton("Register");
+		this.registerButton.setBounds(100, 110, 90, 25);
+		this.registerButton.setForeground(Color.WHITE);
+		this.registerButton.setBackground(Color.BLACK);
+		this.panel = new JPanel(new GridLayout(8, 2));
 		try {
 			JLabel panel = PopupFrameFactory.loadingPanel();
 			this.panel.add(panel);
 			this.panel.add(new JSeparator(SwingConstants.VERTICAL));
-			// this.panel.add(new JSeparator());
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -84,10 +92,37 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 		this.panel.add(this.serverAddrText);
 
 		this.panel.add(this.loginButton);
+		this.panel.add(this.registerButton);
+
 		this.panel.add(new JSeparator(SwingConstants.VERTICAL));
 		this.add(this.panel, BorderLayout.CENTER);
 		this.loginButton.addActionListener(this);
+		this.registerButton.addActionListener(this.getRegisterListner());
 		this.setVisible(true);
+	}
+	
+	
+	private ActionListener getRegisterListner() {
+		return e -> {
+			try {
+				final String accountName = JOptionPane.showInputDialog(this.frame, "Choose Account Name", "Itani");
+				final String username = this.usernameText.getText();
+				final String password = this.passwordText.getText();
+				final Map<String, Object> jsonReq = new HashMap<>();
+				jsonReq.put("password", password);
+				jsonReq.put("email", username);
+
+				jsonReq.put("accountName", accountName);
+				jsonReq.put("accountProvisions", Arrays.asList("JREALM"));
+				jsonReq.put("accountSubscriptions", Arrays.asList("TRIAL"));
+				jsonReq.put("admin", false);
+				log.info("Register click with username={}, password={}", username, password);
+				final Map<String, Object> registerResult = ClientGameLogic.DATA_SERVICE.executePost("admin/account/register", jsonReq, Map.class);
+				log.info("Registration successful for account {}", registerResult.get("email"));
+			} catch (Exception e1) {
+				log.error("Failed registering account. Reason: {}", e1.getMessage());
+			}
+		};
 	}
 
 	public void setCharacters(PlayerAccountDto account) {
@@ -129,17 +164,17 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 			currSize.setSize(currSize.getWidth() + 20, currSize.getHeight() + 20);
 			this.frame.setSize(currSize);
 
-			Runnable charSelectRun = ()->{
+			final Runnable charSelectRun = ()->{
 				while (this.classTypes.getSelectedItem().equals("-- Character Type --")) {
 					try {
 						Thread.sleep(50);
 					}catch(Exception e1) {}
 				}
-				String chosenClass = this.classTypes.getSelectedItem().toString();
-				int idx = chosenClass.indexOf("[");
+				final String chosenClass = this.classTypes.getSelectedItem().toString();
+				final int idx = chosenClass.indexOf("[");
 				final String classId = chosenClass.substring(idx + 1, chosenClass.lastIndexOf("]"));
 				try {
-					PlayerAccountDto result = ClientGameLogic.DATA_SERVICE.executePost("data/account/"+account.getAccountUuid()+"/character?classId="+classId, null, PlayerAccountDto.class);
+					final PlayerAccountDto result = ClientGameLogic.DATA_SERVICE.executePost("data/account/"+account.getAccountUuid()+"/character?classId="+classId, null, PlayerAccountDto.class);
 					this.setCharacters(result);
 				} catch (Exception e1) {
 					log.error("[CLIENT] Failed to create character for account {}. Reason: {}",account.getAccountEmail(), e1.getMessage());
@@ -166,14 +201,19 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 
 	public JTextField getUsernameText() {
 		final JTextField username = new JTextField(16);
-		username.setText("ru@jrealm.com");
 		return username;
+	}
+	public JTextField getUsernameTextField() {
+		return this.usernameText;
 	}
 
 	public JTextField getServerAddrText() {
 		final JTextField ip = new JTextField(28);
-		ip.setText("127.0.0.1");
 		return ip;
+	}
+	
+	public JTextField getServerAddrTextField() {
+		return this.serverAddrText;
 	}
 
 	public JLabel getPasswordLabel() {
@@ -188,15 +228,18 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 
 	public JPasswordField getPasswordText() {
 		final JPasswordField password = new JPasswordField(16);
-		password.setText("password");
 		return password;
+	}
+	
+	public JTextField getPasswordTextField() {
+		return this.passwordText;
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		String username = this.usernameText.getText();
-		String password = this.passwordText.getText();
-		String addr = this.serverAddrText.getText();
+		final String username = this.usernameText.getText();
+		final String password = this.passwordText.getText();
+		final String addr = this.serverAddrText.getText();
 		try {
 			SocketClient.PLAYER_EMAIL = username;
 			SocketClient.PLAYER_PASSWORD = password;
