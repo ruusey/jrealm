@@ -26,6 +26,8 @@ public class BossRoomDecorator extends RealmDecoratorBase{
 
         final Enemy enemy = GameObjectUtils.getEnemyFromId(13, spawnPos);
         enemy.setHealth(enemy.getHealth() * 4);
+        enemy.getStats().setHp((short) (enemy.getStats().getHp()*4));
+
         enemy.setPos(spawnPos.clone(200, 0));
 
         input.addEnemy(enemy);

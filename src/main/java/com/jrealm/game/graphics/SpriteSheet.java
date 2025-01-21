@@ -1,6 +1,8 @@
 package com.jrealm.game.graphics;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,12 +52,13 @@ public class SpriteSheet {
     // height of
     // spriteWidth, spriteHeight
     public SpriteSheet(String fileName, int spriteWidth, int spriteHeight, int col, int row) {
-        this(GameSpriteManager.IMAGE_CACHE.get(fileName), spriteWidth, spriteHeight, col, row);
+        this(deepCopy(GameSpriteManager.IMAGE_CACHE.get(fileName)), spriteWidth, spriteHeight, col, row);
     }
 
     // Builds an empty sprite sheet from fileName with spriteWidth and spriteHeight
     public SpriteSheet(String fileName, int spriteWidth, int spriteHeight) {
         BufferedImage toUse = GameSpriteManager.IMAGE_CACHE.get(fileName);
+        toUse = deepCopy(toUse);
         this.spriteImageWidth = spriteWidth;
         this.spriteImageHeight = spriteHeight;
         this.spriteSheetImage = toUse;
@@ -174,7 +177,7 @@ public class SpriteSheet {
     }
 
     public static SpriteSheet fromSpriteModel(SpriteModel model) {
-        BufferedImage toUse = GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey());
+        BufferedImage toUse = deepCopy(GameSpriteManager.IMAGE_CACHE.get(model.getSpriteKey()));
         return new SpriteSheet(toUse, model);
     }
 
@@ -184,5 +187,12 @@ public class SpriteSheet {
 
     public static SpriteSheet x16SpriteSheet(final String fileName) {
         return new SpriteSheet(fileName, GlobalConstants.MEDIUM_ART_SIZE, GlobalConstants.MEDIUM_ART_SIZE);
+    }
+    
+    public static BufferedImage deepCopy(BufferedImage bi) {
+    	 final ColorModel cm = bi.getColorModel();
+    	 final boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+    	 final WritableRaster raster = bi.copyData(null);
+    	 return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
     }
 }
