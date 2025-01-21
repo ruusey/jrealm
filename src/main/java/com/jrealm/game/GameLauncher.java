@@ -6,7 +6,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jrealm.account.dto.PingResponseDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.account.service.JrealmClientDataService;
@@ -78,7 +81,7 @@ public class GameLauncher {
 
 	private static void pingClient() {
 		try {
-			PingResponseDto dataServerOnline = ClientGameLogic.DATA_SERVICE.executeGet("ping", null,
+			PingResponseDto  dataServerOnline = ClientGameLogic.DATA_SERVICE.executeGet("ping", null,
 					PingResponseDto.class);
 			GameLauncher.log.info("Data server online. Response: {}", dataServerOnline);
 		} catch (Exception e) {
@@ -107,11 +110,11 @@ public class GameLauncher {
 
 	@SuppressWarnings("unchecked")
 	private static void startClient(String[] args) {
-		final LoginScreenPanel loginPanel = new LoginScreenPanel(820, 320);
+		final LoginScreenPanel loginPanel = new LoginScreenPanel(1020, 320);
 		final JFrame frame = loginPanel.getLoginFrame();
 		frame.setVisible(true);
 		frame.setLocationRelativeTo(null);
-
+		frame.setResizable(true);
 		while (!loginPanel.isSubmitted()) {
 			try {
 				Thread.sleep(50);
@@ -119,18 +122,19 @@ public class GameLauncher {
 			}
 		}
 		try {
-			final Map<String, String> loginRequest = new HashMap<>();
-			loginRequest.put("email", loginPanel.getUsernameTextField().getText());
-			loginRequest.put("password", new String(loginPanel.getPasswordTextField().getText()));
+			final ObjectNode loginRequest = new ObjectNode(JsonNodeFactory.instance);
+			loginRequest.put("email",  SocketClient.PLAYER_EMAIL);
+			loginRequest.put("password",  SocketClient.PLAYER_PASSWORD);
 
-			final Map<String, Object> response = ClientGameLogic.DATA_SERVICE.executePost("admin/account/login",
-					loginRequest, Map.class);
-			ClientGameLogic.DATA_SERVICE.setSessionToken(response.get("token").toString());
+			final ObjectNode response = ClientGameLogic.DATA_SERVICE.executePost("admin/account/login",
+					loginRequest, ObjectNode.class);
+			ClientGameLogic.DATA_SERVICE.setSessionToken(response.get("token").asText());
 			final PlayerAccountDto account = ClientGameLogic.DATA_SERVICE.executeGet(
-					"/data/account/" + response.get("accountGuid").toString(), null, PlayerAccountDto.class);
+					"/data/account/" + response.get("accountGuid").asText(), null, PlayerAccountDto.class);
 			loginPanel.setCharacters(account);
 			final Dimension currSize = frame.getSize();
-			currSize.setSize(currSize.getWidth() + 20, currSize.getHeight() + 20);
+			currSize.setSize(currSize.getWidth() + 70, currSize.getHeight());
+			loginPanel.setSize(currSize);
 			frame.setSize(currSize);
 			while (loginPanel.getChars().getSelectedItem().toString().equals("-- Select Character --")) {
 				try {
@@ -146,6 +150,8 @@ public class GameLauncher {
 			log.info("[CLIENT] Chose characterUuid={}, disposing login frame", charUuid);
 		} catch (Exception e) {
 			log.error("[CLIENT] Failed to perform login and account fetch. Reason: {}", e.getMessage());
+			JOptionPane.showMessageDialog(loginPanel.getFrame(), e.getMessage());
+			System.exit(-1);
 		}
 		log.info("[CLIENT] Starting game client...");
 		new Window();

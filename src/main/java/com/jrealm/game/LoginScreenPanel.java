@@ -6,6 +6,8 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferStrategy;
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -14,6 +16,7 @@ import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -24,6 +27,8 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.WindowConstants;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jrealm.account.dto.CharacterDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.account.service.PopupFrameFactory;
@@ -58,43 +63,51 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 	private JFrame frame;
 	public LoginScreenPanel(int width, int height) {
 		this.setPreferredSize(new Dimension(width, height));
+		this.setSize(new Dimension(width, height));
 		this.setFocusable(true);
 		this.requestFocus();
 		this.usernameLabel = (this.getUsernameLabel());
+		
 		this.usernameText = (this.getUsernameText());
 		this.passwordLabel = (this.getPasswordLabel());
 		this.passwordText = (this.getPasswordText());
 		this.serverAddrLabel = this.getServerAddrLabel();
 		this.serverAddrText = this.getServerAddrText();
 		this.loginButton = new JButton("Login");
-		this.loginButton.setBounds(100, 110, 90, 25);
+		//this.loginButton.setBounds(100, 110, 90, 25);
 		this.loginButton.setForeground(Color.WHITE);
 		this.loginButton.setBackground(Color.BLACK);
 		
 		this.registerButton = new JButton("Register");
-		this.registerButton.setBounds(100, 110, 90, 25);
+		//this.registerButton.setBounds(100, 110, 90, 25);
 		this.registerButton.setForeground(Color.WHITE);
 		this.registerButton.setBackground(Color.BLACK);
-		this.panel = new JPanel(new GridLayout(8, 2));
+		this.panel = new JPanel(new GridLayout(8, 2, 16,0));
 		try {
 			JLabel panel = PopupFrameFactory.loadingPanel();
 			this.panel.add(panel);
-			this.panel.add(new JSeparator(SwingConstants.VERTICAL));
+			this.panel.add(new JComponent() {});
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		this.panel.add(this.usernameLabel); // set username label to panel
-		this.panel.add(this.usernameText); // set text field to panel
-		this.panel.add(this.passwordLabel); // set password label to panel
-		this.panel.add(this.passwordText); // set text field to panel
+		this.panel.add(this.usernameLabel);
+		this.panel.add(this.usernameText); 
+
+		this.panel.add(this.passwordLabel);
+		this.panel.add(this.passwordText); 
+
 		this.panel.add(this.serverAddrLabel);
 		this.panel.add(this.serverAddrText);
-
+		
+		this.panel.add(new JComponent() {});
 		this.panel.add(this.loginButton);
+		
+		this.panel.add(new JComponent() {});
 		this.panel.add(this.registerButton);
 
-		this.panel.add(new JSeparator(SwingConstants.VERTICAL));
+		//this.panel.add(new JSeparator(SwingConstants.VERTICAL));
 		this.add(this.panel, BorderLayout.CENTER);
 		this.loginButton.addActionListener(this);
 		this.registerButton.addActionListener(this.getRegisterListner());
@@ -108,16 +121,16 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 				final String accountName = JOptionPane.showInputDialog(this.frame, "Choose Account Name", "Itani");
 				final String username = this.usernameText.getText();
 				final String password = this.passwordText.getText();
-				final Map<String, Object> jsonReq = new HashMap<>();
+				final ObjectNode jsonReq = new ObjectNode(JsonNodeFactory.instance);
 				jsonReq.put("password", password);
 				jsonReq.put("email", username);
 
 				jsonReq.put("accountName", accountName);
-				jsonReq.put("accountProvisions", Arrays.asList("JREALM"));
-				jsonReq.put("accountSubscriptions", Arrays.asList("TRIAL"));
+				jsonReq.putArray("accountProvisions").add("JREALM");
+				jsonReq.putArray("accountSubscriptions").add("TRIAL");
 				jsonReq.put("admin", false);
 				log.info("Register click with username={}, password={}", username, password);
-				final Map<String, Object> registerResult = ClientGameLogic.DATA_SERVICE.executePost("admin/account/register", jsonReq, Map.class);
+				final ObjectNode registerResult = ClientGameLogic.DATA_SERVICE.executePost("admin/account/register", jsonReq, ObjectNode.class);
 				log.info("Registration successful for account {}", registerResult.get("email"));
 			} catch (Exception e1) {
 				log.error("Failed registering account. Reason: {}", e1.getMessage());
@@ -145,10 +158,8 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 					character.getCharacterUuid());
 			this.chars.addItem(characterStr);
 		}
+		
 		this.panel.add(this.chars);
-
-		// this.panel.add(new JLabel("New Character Class:"));
-
 		JButton newCharacterButton = new JButton("New Character");
 		this.panel.remove(newCharacterButton);
 		newCharacterButton.addActionListener(e -> {
@@ -184,6 +195,8 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 		});
 		
 		this.panel.add(newCharacterButton);
+		this.panel.add(new JComponent() {});
+
 	}
 
 	public void addClassTypes(JComboBox<String> select) {
@@ -195,12 +208,13 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 	}
 
 	public JLabel getUsernameLabel() {
-		final JLabel label = new JLabel("Username");
+		final JLabel label = new JLabel("Username", SwingConstants.RIGHT);
 		return label;
 	}
 
 	public JTextField getUsernameText() {
 		final JTextField username = new JTextField(16);
+		username.setText("@jrealm.com");
 		return username;
 	}
 	public JTextField getUsernameTextField() {
@@ -209,6 +223,7 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 
 	public JTextField getServerAddrText() {
 		final JTextField ip = new JTextField(28);
+		ip.setText("127.0.0.1");
 		return ip;
 	}
 	
@@ -217,12 +232,12 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 	}
 
 	public JLabel getPasswordLabel() {
-		final JLabel label = new JLabel("Password");
+		final JLabel label = new JLabel("Password", SwingConstants.RIGHT);
 		return label;
 	}
 
 	public JLabel getServerAddrLabel() {
-		final JLabel label = new JLabel("Server Address");
+		final JLabel label = new JLabel("Server Address", SwingConstants.RIGHT);
 		return label;
 	}
 
