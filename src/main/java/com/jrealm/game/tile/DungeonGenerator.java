@@ -6,7 +6,6 @@ import java.util.List;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.game.util.GameObjectUtils;
 import com.jrealm.game.util.Graph;
@@ -184,12 +183,12 @@ public class DungeonGenerator {
 		@SuppressWarnings("unused")
 		// TODO: Implement room shapes
 		final RoomShapeTemplate shape = shapeTemplates.get(Realm.RANDOM.nextInt(shapeTemplates.size()));
-		int roomWidth = minRoomWidth + Realm.RANDOM.nextInt((maxRoomWidth - minRoomWidth) + 1);
-		int roomHeight = minRoomHeight + Realm.RANDOM.nextInt((maxRoomHeight - minRoomHeight) + 1);
-		TileMap baseLayer = new TileMap(tileSize, roomWidth, roomHeight);
+		final int roomWidth = minRoomWidth + Realm.RANDOM.nextInt((maxRoomWidth - minRoomWidth) + 1);
+		final int roomHeight = minRoomHeight + Realm.RANDOM.nextInt((maxRoomHeight - minRoomHeight) + 1);
+		final TileMap baseLayer = new TileMap(tileSize, roomWidth, roomHeight);
 
 		// Currently only supports rectangular rooms because i'm terrible at programming
-		if (shapeTemplates.get(0).equals(RoomShapeTemplate.RECTANGLE)) {
+		if (shape.equals(RoomShapeTemplate.RECTANGLE)) {
 			for (int i = 0; i < roomHeight; i++) {
 				for (int j = 0; j < roomWidth; j++) {
 					TileModel model = GameDataManager.TILES.get(29);
@@ -198,22 +197,20 @@ public class DungeonGenerator {
 			}
 		}
 
-		if (shapeTemplates.get(0).equals(RoomShapeTemplate.OVAL)) {
-			int centerX = roomWidth / 2;
-			int centerY = roomHeight / 2;
-			int radius = centerX;
+		if (shape.equals(RoomShapeTemplate.OVAL)) {
+			final int centerX = roomWidth / 2;
+			final int centerY = roomHeight / 2;
+			//int radius = centerX;
 			final Vector2f pos = new Vector2f(centerX, centerY);
 			for (int i = 0; i < roomHeight; i++) {
 				for (int j = 0; j < roomWidth; j++) {
 					if (pos.distanceTo(new Vector2f(i, j)) < (roomWidth / 2)) {
-						TileModel model = GameDataManager.TILES.get(29);
+						final TileModel model = GameDataManager.TILES.get(29);
 						baseLayer.setTileAt(i, j, (short) model.getTileId(), model.getData());
 					}
-
 				}
 			}
 		}
-
 		return baseLayer;
 	}
 }

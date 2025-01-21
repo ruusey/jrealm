@@ -1278,7 +1278,7 @@ public class RealmManagerServer implements Runnable {
 
             targetRealm.getExpiredEnemies().add(enemy.getId());
             targetRealm.clearHitMap();
-            if ((targetRealm.getMapId() != 5) && (targetRealm.getMapId() != 1)) {
+            if ((targetRealm.getMapId() < 5) && (targetRealm.getMapId() != 1)) {
                 targetRealm.spawnRandomEnemy();
             }
             targetRealm.removeEnemy(enemy);

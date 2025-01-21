@@ -1,8 +1,6 @@
 package com.jrealm.game.model;
 
 import java.util.List;
-import java.util.Map;
-
 import com.jrealm.game.tile.RoomShapeTemplate;
 
 import lombok.AllArgsConstructor;
