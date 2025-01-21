@@ -25,6 +25,7 @@ public class MapModel {
     private int terrainId;
     private int dungeonId;
     private Map<String, int[][]> data;
+    private DungeonGenerationParams dungeonParams;
 
     public Vector2f getCenter() {
         return new Vector2f((this.width / 2) * this.tileSize, ((this.height / 2) * (this.tileSize)));

@@ -15,6 +15,7 @@ import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.DungeonGenerationParams;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileGroup;
@@ -46,8 +47,12 @@ public class TileManager {
             this.mapLayers = this.getLayersFromTerrain(model.getWidth(), model.getHeight(), model.getTileSize(),
                     params);
         }else if (model.getDungeonId()>-1){
-            DungeonGenerator dungeonGenerator = new DungeonGenerator(model.getWidth(), model.getHeight(), model.getTileSize(), 20, 30, 10,15 ,10,15, Arrays.asList(RoomShapeTemplate.OVAL));
-            this.mapLayers = dungeonGenerator.generateDungeon(null);
+        	final DungeonGenerationParams params = model.getDungeonParams();
+			final DungeonGenerator dungeonGenerator = new DungeonGenerator(model.getWidth(), model.getHeight(),
+					model.getTileSize(), params.getMinRooms(), params.getMaxRooms(), params.getMinRoomWidth(),
+					params.getMaxRoomWidth(), params.getMinRoomHeight(), params.getMaxRoomHeight(),
+					params.getShapeTemplates());
+            this.mapLayers = dungeonGenerator.generateDungeon();
         }
     }
 
