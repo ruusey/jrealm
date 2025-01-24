@@ -2,9 +2,6 @@ package com.jrealm.game;
 
 import java.awt.Dimension;
 import java.net.http.HttpClient;
-import java.util.HashMap;
-import java.util.Map;
-
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
