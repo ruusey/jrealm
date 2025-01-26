@@ -24,6 +24,7 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.net.client.ClientGameLogic;
+import com.jrealm.net.core.IOService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -323,6 +324,9 @@ public class GameDataManager {
 			GameSpriteManager.loadSpriteImages(loadRemote);
 			GameSpriteManager.loadTileSprites();
 			GameSpriteManager.loadItemSprites();
+			
+			IOService.mapSerializableData();
+
 		} catch (Exception e) {
 			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
 			// System.exit(-1);
