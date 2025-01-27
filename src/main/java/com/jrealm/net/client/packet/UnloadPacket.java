@@ -10,6 +10,8 @@ import java.util.List;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.nettypes.*;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,10 +21,15 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
 public class UnloadPacket extends Packet {
+	@SerializableField(order = 0, type = SerializableLongArray.class)
     private long[] players;
+	@SerializableField(order = 1, type = SerializableLongArray.class)
     private long[] bullets;
+	@SerializableField(order = 2, type = SerializableLongArray.class)
     private long[] enemies;
+	@SerializableField(order = 3, type = SerializableLongArray.class)
     private long[] containers;
+	@SerializableField(order = 4, type = SerializableLongArray.class)
     private long[] portals;
 
     public UnloadPacket() {
@@ -49,13 +56,7 @@ public class UnloadPacket extends Packet {
         for (int i = 0; i < playersSize; i++) {
             this.players[i] = dis.readLong();
         }
-
-        int containersSize = dis.readInt();
-        this.containers = new long[containersSize];
-        for (int i = 0; i < containersSize; i++) {
-            this.containers[i] = dis.readLong();
-        }
-
+ 
         int bulletsSize = dis.readInt();
         this.bullets = new long[bulletsSize];
         for (int i = 0; i < bulletsSize; i++) {
@@ -66,6 +67,12 @@ public class UnloadPacket extends Packet {
         this.enemies = new long[enemiesSize];
         for (int i = 0; i < enemiesSize; i++) {
             this.enemies[i] = dis.readLong();
+        }
+        
+        int containersSize = dis.readInt();
+        this.containers = new long[containersSize];
+        for (int i = 0; i < containersSize; i++) {
+            this.containers[i] = dis.readLong();
         }
 
         int portalsSize = dis.readInt();
@@ -86,20 +93,20 @@ public class UnloadPacket extends Packet {
         for (long p : this.players) {
             stream.writeLong(p);
         }
-
-        stream.writeInt(this.containers.length);
-        for (long l : this.containers) {
-            stream.writeLong(l);
-        }
-
+        
         stream.writeInt(this.bullets.length);
         for (long b : this.bullets) {
             stream.writeLong(b);
         }
-
+        
         stream.writeInt(this.enemies.length);
         for (long e : this.enemies) {
             stream.writeLong(e);
+        }
+
+        stream.writeInt(this.containers.length);
+        for (long l : this.containers) {
+            stream.writeLong(l);
         }
 
         stream.writeInt(this.portals.length);
@@ -116,12 +123,7 @@ public class UnloadPacket extends Packet {
         for (long p : players) {
             stream.writeLong(p);
         }
-
-        stream.writeInt(containers.length);
-        for (long l : containers) {
-            stream.writeLong(l);
-        }
-
+        
         stream.writeInt(bullets.length);
         for (long b : bullets) {
             stream.writeLong(b);
@@ -130,6 +132,11 @@ public class UnloadPacket extends Packet {
         stream.writeInt(enemies.length);
         for (long e : enemies) {
             stream.writeLong(e);
+        }
+        
+        stream.writeInt(containers.length);
+        for (long l : containers) {
+            stream.writeLong(l);
         }
 
         stream.writeInt(portals.length);

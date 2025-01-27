@@ -26,6 +26,7 @@ import com.jrealm.net.core.nettypes.SerializableByte;
 import com.jrealm.net.core.nettypes.SerializableInt;
 import com.jrealm.net.core.nettypes.SerializableIntArray;
 import com.jrealm.net.core.nettypes.SerializableLong;
+import com.jrealm.net.core.nettypes.SerializableLongArray;
 import com.jrealm.net.core.nettypes.SerializableShort;
 import com.jrealm.net.core.nettypes.SerializableShortArray;
 import com.jrealm.net.core.nettypes.SerializableString;
@@ -81,7 +82,12 @@ public class IOService {
 
 				final String fieldVal = (String) info.getPropertyHandle().get(packet);
 				((SerializableString) serializer).write(fieldVal, stream0);
-			}
+			}else if (serializer instanceof SerializableLongArray) {
+				
+				final long[] fieldVal = (long[]) info.getPropertyHandle().get(packet);
+				((SerializableLongArray) serializer).write(convertLongArray(fieldVal), stream0);
+
+			} 
 		}
     	final ByteArrayOutputStream byteStreamFinal = new ByteArrayOutputStream();
     	final DataOutputStream streamfinal = new DataOutputStream(byteStreamFinal);
@@ -90,6 +96,7 @@ public class IOService {
 		stream.write(byteStreamFinal.toByteArray());
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <T> T read(Class<? extends Packet> clazz, DataInputStream stream) throws Exception {
 		//final byte id = removeHeader(stream);
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
@@ -112,6 +119,7 @@ public class IOService {
 				info.getPropertyHandle().set(packet, fieldVal);
 
 			} else if (serializer instanceof SerializableIntArray) {
+				
 				final Integer[] fieldVal = ((SerializableIntArray) serializer).read(stream);
 				info.getPropertyHandle().set(packet, convertIntArray(fieldVal));
 
@@ -134,7 +142,12 @@ public class IOService {
 				final String fieldVal = ((SerializableString) serializer).read(stream);
 				info.getPropertyHandle().set(packet, fieldVal);
 
-			}
+			}else if (serializer instanceof SerializableLongArray) {
+				
+				final Long[] fieldVal = ((SerializableLongArray) serializer).read(stream);
+				info.getPropertyHandle().set(packet, convertLongArray(fieldVal));
+
+			} 
 		}
 		return (T) packet;
 	}
@@ -149,6 +162,14 @@ public class IOService {
     	int len = stream.readInt();
     	return packetId;
     }
+    
+	public static long[] convertLongArray(Long[] in) {
+		final long[] intArr = new long[in.length];
+		for (int i = 0; i < in.length; i++) {
+			intArr[i] = in[i];
+		}
+		return intArr;
+	}
 	
 	public static int[] convertIntArray(Integer[] in) {
 		final int[] intArr = new int[in.length];
@@ -164,6 +185,14 @@ public class IOService {
 			shortArr[i] = in[i];
 		}
 		return shortArr;
+	}
+	
+	public static Long[] convertLongArray(long[] in) {
+		final Long[] intArr = new Long[in.length];
+		for (int i = 0; i < in.length; i++) {
+			intArr[i] = in[i];
+		}
+		return intArr;
 	}
 
 	public static Integer[] convertIntArray(int[] in) {
@@ -184,6 +213,7 @@ public class IOService {
 
 	public static void mapSerializableData() throws Exception {
 		final List<Class<?>> packetsToMap = getClassesInPackage("com.jrealm.net.server.packet");
+		packetsToMap.addAll(getClassesInPackage("com.jrealm.net.client.packet"));
 		for (Class<?> clazz : packetsToMap) {
 			final List<PacketMappingInformation> mappingForClass = new LinkedList<>();
 			final Field[] fieldsToWrite = clazz.getDeclaredFields();
@@ -217,54 +247,6 @@ public class IOService {
 			if(mappingForClass.size()>0) {
 				MAPPING_DATA.put(clazz, mappingForClass);
 			}
-		}
-		//testWrite();
-	}
-
-	private static void testWrite() {
-		try {
-			// Test 0
-			// Write then Read test packet data via byte stream directly
-			// then read that byte stream into the object model (full ser/des)
-			// Uses ByteArrayOutputStream under hoot
-			long start = System.nanoTime();
-			long diff0 = 0l;
-			long diff1 = 0l;
-
-			TestPacket test = TestPacket.fromRandom();
-			diff0 = (System.nanoTime() - start);
-			log.info("********* Time to read/write packet to stream directly {}", diff0);
-			log.info("Test Before= {}", test);
-
-			// Test 1t
-			// Write the packets data using a reflection based model of pre
-			// mapped fields in the packet and the type of seriazation to use
-			// when sending down wire
-			// Read the packet data back in using a ByteArrayStream same as Test 0
-			start = System.nanoTime();
-			final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-			final DataOutputStream stream = new DataOutputStream(byteStream);
-
-			
-			
-			// Bew reflective write to stream
-			IOService.write(test, stream);
-			
-			final ByteArrayInputStream byteStream0 = new ByteArrayInputStream(byteStream.toByteArray());
-			final DataInputStream stream0 = new DataInputStream(byteStream0);
-			final byte id = stream0.readByte();
-			final int len = stream0.readInt();
-			final TestPacket testAfter = IOService.read(TestPacket.class, stream0);
-			diff1 = (System.nanoTime() - start);
-
-			log.info("******** Time to write packet to stream using reflection {}", diff1);
-			// Matching object data
-			log.info("Test After= {}", testAfter);
-			
-			final double totalDiff = Math.abs(diff0-diff1)/1000000.0d;
-			log.info("Difference in nanos={}. ( {}ms ) ({} x faster}", (diff0-diff1), totalDiff, (double)diff0/(double)diff1);
-		} catch (Exception e) {
-			log.error("Failed write. Reason: {}", e);
 		}
 	}
 

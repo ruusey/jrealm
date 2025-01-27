@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
@@ -87,11 +88,11 @@ public class ProcessingThread extends Thread {
                                 this.remoteBufferIndex - packetLength);
                     }
                     this.remoteBufferIndex -= packetLength;
-            
+                    Class<? extends Packet> packetClass = PacketType.valueOf(packetId).getX();
                     BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
-                    if(newPacket.getId()==7) {
+                    if(newPacket.getId()==7 || newPacket.getId()==10) {
                     	try {
-                        	CommandPacket packet = IOService.read(CommandPacket.class, new DataInputStream(new ByteArrayInputStream(packetBytes)));
+                        	Packet packet = IOService.read(packetClass, new DataInputStream(new ByteArrayInputStream(packetBytes)));
                         	packet.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
                             this.packetQueue.add(packet);
                     	}catch(Exception e) {

@@ -198,7 +198,6 @@ public class UpdatePacket extends Packet {
         stream.writeShort(player.getEffectIds().length);
         for (int i = 0; i < player.getEffectIds().length; i++) {
             stream.writeShort(player.getEffectIds()[i]);
-
         }
 
         stream.writeShort(player.getEffectTimes().length);

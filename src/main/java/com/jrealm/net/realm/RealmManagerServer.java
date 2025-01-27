@@ -90,6 +90,7 @@ import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.core.IOService;
 import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.server.ProcessingThread;
 import com.jrealm.net.server.ServerCommandHandler;
@@ -289,13 +290,20 @@ public class RealmManagerServer implements Runnable {
 
 				final OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
 				final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-
 				for (final Packet packet : packetsToBroadcast) {
-					packet.serializeWrite(dosToClient);
+					if(packet.getId()==7 || packet.getId()==10) {
+						IOService.write(packet, dosToClient);
+					}else {
+						packet.serializeWrite(dosToClient);
+					}
 				}
 
 				for (final Packet packet : playerPackets) {
-					packet.serializeWrite(dosToClient);
+					if(packet.getId()==7 || packet.getId()==10) {
+ 						IOService.write(packet, dosToClient);
+					}else {
+						packet.serializeWrite(dosToClient);
+					}				
 				}
 			} catch (Exception e) {
 				disconnectedClients.add(client.getKey());
@@ -510,7 +518,7 @@ public class RealmManagerServer implements Runnable {
 					final Packet packet = thread.getValue().getPacketQueue().remove();
 					try {
 						Packet created = null;
-						if (!(packet instanceof CommandPacket)) {
+						if (!(packet instanceof CommandPacket) && !(packet instanceof UnloadPacket)) {
 							created = Packet.newInstance(packet.getId(), packet.getData());
 
 						} else {
