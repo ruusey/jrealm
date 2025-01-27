@@ -47,7 +47,11 @@ public abstract class Packet implements GameMessage {
         this.srcIp = srcIp;
     }
 
-    public void addHeader(DataOutputStream stream) throws Exception {
+    public void setId(byte id) {
+		this.id = id;
+	}
+
+	public void addHeader(DataOutputStream stream) throws Exception {
         stream.writeByte(this.id);
         stream.writeInt(this.data.length + NetConstants.PACKET_HEADER_SIZE);
     }

@@ -1,5 +1,7 @@
 package com.jrealm.net.server;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
@@ -11,6 +13,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.server.packet.CommandPacket;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -83,9 +87,21 @@ public class ProcessingThread extends Thread {
                                 this.remoteBufferIndex - packetLength);
                     }
                     this.remoteBufferIndex -= packetLength;
+            
                     BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
-                    newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-                    this.packetQueue.add(newPacket);
+                    if(newPacket.getId()==7) {
+                    	try {
+                        	CommandPacket packet = IOService.read(CommandPacket.class, new DataInputStream(new ByteArrayInputStream(packetBytes)));
+                        	packet.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+                            this.packetQueue.add(packet);
+                    	}catch(Exception e) {
+                    		e.printStackTrace();
+                    	}
+
+                    }else {
+                        newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+                        this.packetQueue.add(newPacket);
+                    }
                 }
             }
         } catch (Exception e) {

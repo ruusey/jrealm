@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.*;
 import com.jrealm.net.realm.Realm;
@@ -40,64 +41,43 @@ public class TestPacket extends Packet {
 		}
 	}
 
+	public static TestPacket fromRandom() throws Exception {
+		TestPacket test = new TestPacket();
+		test.setId(PacketType.TEST_PACKET.getPacketId());
+		int identifier = Realm.RANDOM.nextInt();
+		test.setIdentifier(identifier);
+		int length = Realm.RANDOM.nextInt(10)+2;
+		int[] identifiers = new int[length];
+		for (int i = 0; i < length; i++) {
+			identifiers[i]=(Realm.RANDOM.nextInt());
+		}
+		test.setIdentifiers(identifiers);
+
+		short type = (short) Realm.RANDOM.nextInt(Short.MAX_VALUE/2);
+		test.setType(type);
+		int length0 = Realm.RANDOM.nextInt(10)+2;
+		short[] types = new short[length0];
+		for (int i = 0; i < length0; i++) {
+			types[i]=((short) Realm.RANDOM.nextInt(Short.MAX_VALUE/2));
+		}
+		test.setTypes(types);
+		return test;
+	}
+
 	@Override
 	public void readData(byte[] data) throws Exception {
-		final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-		final DataInputStream dis = new DataInputStream(bis);
-		if ((dis == null) || (dis.available() < 5))
-			throw new IllegalStateException("No Packet data available to read from DataInputStream");
-		this.identifier = dis.readInt();
-		final int idsLength = dis.readInt();
-		this.identifiers = new int[idsLength];
-		for (int i = 0; i < idsLength; i++) {
-			this.identifiers[i] = dis.readInt();
-		}
-
-		this.type = dis.readShort();
-		final int typesLength = dis.readInt();
-		this.types = new short[typesLength];
-		for (int i = 0; i < typesLength; i++) {
-			this.types[i] = dis.readShort();
-		}
+    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+    	final DataInputStream dis = new DataInputStream(bis);
+		TestPacket created = IOService.read(TestPacket.class, dis);
+		this.identifier = created.getIdentifier();
+		this.identifiers = created.getIdentifiers();
+		this.type = created.getType();
+		this.types = created.getTypes();
+		
 	}
 
 	@Override
 	public void serializeWrite(DataOutputStream stream) throws Exception {
-		if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
-			throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-		//this.addHeader(stream);
-		stream.writeInt(this.getIdentifier());
-		stream.writeInt(this.identifiers.length);
-		for (int i = 0; i < this.identifiers.length; i++) {
-			stream.writeInt(this.identifiers[i]);
-		}
-
-		stream.writeShort(this.getType());
-		stream.writeInt(this.types.length);
-		for (int i = 0; i < this.types.length; i++) {
-			stream.writeShort(this.types[i]);
-		}
-	}
-
-	public static TestPacket fromRandom() throws Exception {
-		final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-		final DataOutputStream stream = new DataOutputStream(byteStream);
-
-		int identifier = Realm.RANDOM.nextInt();
-		stream.writeInt(identifier);
-		int length = Realm.RANDOM.nextInt(10)+2;
-		stream.writeInt(length);
-		for (int i = 0; i < length; i++) {
-			stream.writeInt(Realm.RANDOM.nextInt());
-		}
-
-		short type = (short) Realm.RANDOM.nextInt(Short.MAX_VALUE/2);
-		stream.writeShort(type);
-		int length0 = Realm.RANDOM.nextInt(10)+2;
-		stream.writeInt(length0);
-		for (int i = 0; i < length; i++) {
-			stream.writeShort((short) Realm.RANDOM.nextInt(Short.MAX_VALUE/2));
-		}
-		return new TestPacket(PacketType.TEST_PACKET.getPacketId(), byteStream.toByteArray());
+		IOService.write(this, stream);
 	}
 }
