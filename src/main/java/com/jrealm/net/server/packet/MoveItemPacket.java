@@ -9,6 +9,8 @@ import java.util.List;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.nettypes.*;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,11 +25,20 @@ public class MoveItemPacket extends Packet {
     // private static final List<Integer> INV_IDX2
     // =Arrays.asList(12,13,14,15,16,17,18,19);
     private static final List<Integer> GROUND_LOOT_IDX = Arrays.asList(20, 21, 22, 23, 24, 25, 26, 27);
-
+    
+	@SerializableField(order = 0, type = SerializableLong.class)
     private long playerId;
+	
+	@SerializableField(order = 1, type = SerializableByte.class)
     private byte targetSlotIndex;
+	
+	@SerializableField(order = 2, type = SerializableByte.class)
     private byte fromSlotIndex;
+	
+	@SerializableField(order = 3, type = SerializableBoolean.class)
     private boolean drop;
+	
+	@SerializableField(order = 4, type = SerializableBoolean.class)
     private boolean consume;
 
     public MoveItemPacket() {

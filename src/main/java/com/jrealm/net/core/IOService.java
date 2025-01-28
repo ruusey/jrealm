@@ -1,6 +1,5 @@
 package com.jrealm.net.core;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,6 +11,8 @@ import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -30,8 +31,6 @@ import com.jrealm.net.core.nettypes.SerializableLongArray;
 import com.jrealm.net.core.nettypes.SerializableShort;
 import com.jrealm.net.core.nettypes.SerializableShortArray;
 import com.jrealm.net.core.nettypes.SerializableString;
-import com.jrealm.net.server.packet.TestPacket;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -39,11 +38,24 @@ public class IOService {
 	private static final Lookup lookup = MethodHandles.lookup();
 	public static Map<Class<?>, List<PacketMappingInformation>> MAPPING_DATA = new HashMap<>();
 
+	public static <T> T read(Class<? extends Packet> clazz, DataInputStream stream) throws Exception {
+		return readStream(clazz, stream);
+	}
+	
 	public static void write(Packet packet, DataOutputStream stream) throws Exception {
-
     	final ByteArrayOutputStream byteStream0 = new ByteArrayOutputStream();
     	final DataOutputStream stream0 = new DataOutputStream(byteStream0);
+		writeStream(packet, stream0);
+    	final ByteArrayOutputStream byteStreamFinal = new ByteArrayOutputStream();
+    	final DataOutputStream streamfinal = new DataOutputStream(byteStreamFinal);
+		addHeader(packet, byteStream0.toByteArray().length, streamfinal);
+		streamfinal.write(byteStream0.toByteArray());
+		stream.write(byteStreamFinal.toByteArray());
+	}
+	
+	public static void writeStream(Object packet,  DataOutputStream stream0) throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(packet.getClass());
+
 		for (PacketMappingInformation info : mappingInfo) {
 			final SerializableFieldType<?> serializer = info.getSerializer();
 			if (serializer instanceof SerializableBoolean) {
@@ -74,38 +86,37 @@ public class IOService {
 
 				final Long fieldVal = (Long) info.getPropertyHandle().get(packet);
 				((SerializableLong) serializer).write(fieldVal, stream0);
+				
 			}else if (serializer instanceof SerializableByte) {
 
 				final Byte fieldVal = (Byte) info.getPropertyHandle().get(packet);
 				((SerializableByte) serializer).write(fieldVal, stream0);
+				
 			}else if (serializer instanceof SerializableString) {
 
 				final String fieldVal = (String) info.getPropertyHandle().get(packet);
 				((SerializableString) serializer).write(fieldVal, stream0);
-			}else if (serializer instanceof SerializableLongArray) {
 				
+			}else if (serializer instanceof SerializableLongArray) {
+
 				final long[] fieldVal = (long[]) info.getPropertyHandle().get(packet);
 				((SerializableLongArray) serializer).write(convertLongArray(fieldVal), stream0);
-
-			} 
+			}
 		}
-    	final ByteArrayOutputStream byteStreamFinal = new ByteArrayOutputStream();
-    	final DataOutputStream streamfinal = new DataOutputStream(byteStreamFinal);
-		addHeader(packet, byteStream0.toByteArray().length, streamfinal);
-		streamfinal.write(byteStream0.toByteArray());
-		stream.write(byteStreamFinal.toByteArray());
 	}
-
-	@SuppressWarnings("unchecked")
-	public static <T> T read(Class<? extends Packet> clazz, DataInputStream stream) throws Exception {
-		//final byte id = removeHeader(stream);
+	
+	public static <T> T readStream(Class<?> clazz, DataInputStream stream) throws Exception{
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
-		Packet packet = clazz.getDeclaredConstructor().newInstance();
-		packet.setId(PacketType.valueOf(clazz).getPacketId());
-		//packet.setId(id);
+		
+		Object packet = clazz.getDeclaredConstructor().newInstance();
+		if(packet instanceof Packet) {
+			((Packet)packet).setId(PacketType.valueOf(clazz).getPacketId());
+		}
+		
 		for (PacketMappingInformation info : mappingInfo) {
 			final SerializableFieldType<?> serializer = info.getSerializer();
 			if (serializer instanceof SerializableBoolean) {
+				
 				final Boolean fieldVal = ((SerializableBoolean) serializer).read(stream);
 				info.getPropertyHandle().set(packet, fieldVal);
 
@@ -147,10 +158,13 @@ public class IOService {
 				final Long[] fieldVal = ((SerializableLongArray) serializer).read(stream);
 				info.getPropertyHandle().set(packet, convertLongArray(fieldVal));
 
-			} 
+			}
 		}
 		return (T) packet;
+
 	}
+
+
 	
     public static void addHeader(Packet packet, int dataSize, DataOutputStream stream) throws Exception {
         stream.writeByte(packet.getId());
@@ -245,6 +259,14 @@ public class IOService {
 				}
 			}
 			if(mappingForClass.size()>0) {
+				// Sort the properties to be mapped using the order provided in the annotation handles
+				// cases where the implementor wants to write class fields out of sequential order
+				Collections.sort(mappingForClass, new Comparator<PacketMappingInformation>() {
+				    @Override
+				    public int compare(PacketMappingInformation info0, PacketMappingInformation info1) {
+				        return info0.getOrder()-info1.getOrder();
+				    }
+				});
 				MAPPING_DATA.put(clazz, mappingForClass);
 			}
 		}

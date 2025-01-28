@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
 public class UnloadPacket extends Packet {
+	
 	@SerializableField(order = 0, type = SerializableLongArray.class)
     private long[] players;
 	@SerializableField(order = 1, type = SerializableLongArray.class)

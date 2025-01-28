@@ -74,7 +74,7 @@ public enum PacketType {
         return PacketType.map.get(Byte.valueOf((byte) value));
     }
     
-    public static PacketType valueOf(Class<? extends Packet> packetClass) {
+    public static PacketType valueOf(Class<?> packetClass) {
         return PacketType.map.values().stream().filter(packet->packet.getX().equals(packetClass)).map(packet->packet.getY()).findAny().orElse(null);
     }
 }

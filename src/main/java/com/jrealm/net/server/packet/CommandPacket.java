@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
 public class CommandPacket extends Packet {
+	
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long playerId;
 	@SerializableField(order = 1, type = SerializableByte.class)

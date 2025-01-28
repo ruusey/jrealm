@@ -14,6 +14,10 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Packet;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.SerializableFieldType;
+import com.jrealm.net.core.nettypes.*;
+import com.jrealm.net.core.nettypes.game.SerializableStatsObject;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,8 +27,11 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class UpdatePacket extends Packet {
+	@SerializableField(order = 0, type = SerializableLong.class)
     private long playerId;
+	@SerializableField(order = 0, type = SerializableString.class)
     private String playerName;
+	@SerializableField(order = 0, type = SerializableStatsObject.class)
     private Stats stats;
     private int health;
     private int mana;
