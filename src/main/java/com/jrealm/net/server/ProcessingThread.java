@@ -90,19 +90,19 @@ public class ProcessingThread extends Thread {
                     this.remoteBufferIndex -= packetLength;
                     Class<? extends Packet> packetClass = PacketType.valueOf(packetId).getX();
                     BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
-                    if(newPacket.getId()==7 || newPacket.getId()==10) {
-                    	try {
-                        	Packet packet = IOService.read(packetClass, new DataInputStream(new ByteArrayInputStream(packetBytes)));
-                        	packet.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-                            this.packetQueue.add(packet);
-                    	}catch(Exception e) {
-                    		e.printStackTrace();
-                    	}
-
-                    }else {
+//                    if(newPacket.getId()==7 || newPacket.getId()==10) {
+//                    	try {
+//                        	Packet packet = IOService.read(packetClass, new DataInputStream(new ByteArrayInputStream(packetBytes)));
+//                        	packet.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+//                            this.packetQueue.add(packet);
+//                    	}catch(Exception e) {
+//                    		e.printStackTrace();
+//                    	}
+//
+//                    }else {
                         newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
                         this.packetQueue.add(newPacket);
-                    }
+//                    }
                 }
             }
         } catch (Exception e) {

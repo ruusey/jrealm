@@ -15,8 +15,6 @@ import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.net.client.SocketClient;
-import com.jrealm.net.client.packet.UnloadPacket;
-import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 
@@ -76,11 +74,11 @@ public class RealmManagerClient implements Runnable {
             Packet toProcess = this.getClient().getInboundPacketQueue().remove();
             try {
 				Packet created = null;
-            	if (!(toProcess instanceof CommandPacket) && !(toProcess instanceof UnloadPacket)) {
+            	//if (!(toProcess instanceof CommandPacket) && !(toProcess instanceof UnloadPacket)) {
             		created = Packet.newInstance(toProcess.getId(), toProcess.getData());
-				} else {
-					created = toProcess;
-				}
+//				} else {
+//					created = toProcess;
+//				}
                 created.setSrcIp(toProcess.getSrcIp());
                 this.packetCallbacksClient.get(created.getId()).accept(this, created);
             } catch (Exception e) {

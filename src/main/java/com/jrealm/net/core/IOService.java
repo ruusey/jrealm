@@ -161,10 +161,7 @@ public class IOService {
 			}
 		}
 		return (T) packet;
-
 	}
-
-
 	
     public static void addHeader(Packet packet, int dataSize, DataOutputStream stream) throws Exception {
         stream.writeByte(packet.getId());

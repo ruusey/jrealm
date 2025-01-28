@@ -291,19 +291,19 @@ public class RealmManagerServer implements Runnable {
 				final OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
 				final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 				for (final Packet packet : packetsToBroadcast) {
-					if(packet.getId()==7 || packet.getId()==10) {
-						IOService.write(packet, dosToClient);
-					}else {
+//					if(packet.getId()==7 || packet.getId()==10) {
+//						IOService.write(packet, dosToClient);
+//					}else {
 						packet.serializeWrite(dosToClient);
-					}
+//					}
 				}
 
 				for (final Packet packet : playerPackets) {
-					if(packet.getId()==7 || packet.getId()==10) {
- 						IOService.write(packet, dosToClient);
-					}else {
+//					if(packet.getId()==7 || packet.getId()==10) {
+// 						IOService.write(packet, dosToClient);
+//					}else {
 						packet.serializeWrite(dosToClient);
-					}				
+//					}				
 				}
 			} catch (Exception e) {
 				disconnectedClients.add(client.getKey());
