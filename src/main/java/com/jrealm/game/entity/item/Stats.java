@@ -4,6 +4,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.SerializableFieldType;
+import com.jrealm.net.core.nettypes.game.SerializableStatsObject;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Stats implements Streamable<Stats> {
+public class Stats extends SerializableStatsObject {
     private short hp;
     private short mp;
     private short def;
@@ -54,36 +56,36 @@ public class Stats implements Streamable<Stats> {
         return this.spd;
     }
 
-    @Override
-    public Stats read(DataInputStream stream) throws Exception {
-        short att = stream.readShort();
-        short def = stream.readShort();
-
-        short dex = stream.readShort();
-        short spd = stream.readShort();
-
-        short vit = stream.readShort();
-        short wis = stream.readShort();
-
-        short mp = stream.readShort();
-        short hp = stream.readShort();
-
-        return new Stats(hp, mp, def, att, spd, dex, vit, wis);
-    }
-
-    @Override
-    public void write(DataOutputStream stream) throws Exception {
-        stream.writeShort(this.getAtt());
-        stream.writeShort(this.getDef());
-
-        stream.writeShort(this.getSpd());
-        stream.writeShort(this.getDex());
-
-        stream.writeShort(this.getVit());
-        stream.writeShort(this.getWis());
-
-        stream.writeShort(this.getMp());
-        stream.writeShort(this.getHp());
-
-    }
+//    @Override
+//    public Stats read(DataInputStream stream) throws Exception {
+//        short att = stream.readShort();
+//        short def = stream.readShort();
+//
+//        short dex = stream.readShort();
+//        short spd = stream.readShort();
+//
+//        short vit = stream.readShort();
+//        short wis = stream.readShort();
+//
+//        short mp = stream.readShort();
+//        short hp = stream.readShort();
+//
+//        return new Stats(hp, mp, def, att, spd, dex, vit, wis);
+//    }
+//
+//    @Override
+//    public void write(DataOutputStream stream) throws Exception {
+//        stream.writeShort(this.getAtt());
+//        stream.writeShort(this.getDef());
+//
+//        stream.writeShort(this.getSpd());
+//        stream.writeShort(this.getDex());
+//
+//        stream.writeShort(this.getVit());
+//        stream.writeShort(this.getWis());
+//
+//        stream.writeShort(this.getMp());
+//        stream.writeShort(this.getHp());
+//
+//    }
 }

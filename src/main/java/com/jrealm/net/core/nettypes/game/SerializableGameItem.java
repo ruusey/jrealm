@@ -17,12 +17,12 @@ public class SerializableGameItem extends SerializableFieldType<GameItem> {
 		if (itemId == -1) {
 			return null;
 		}
-		String uid = stream.readUTF();
-		String name = stream.readUTF();
-		String description = stream.readUTF();
-		boolean hasStats = stream.readBoolean();
+		final String uid = stream.readUTF();
+		final String name = stream.readUTF();
+		final String description = stream.readUTF();
+		
+		final boolean hasStats = stream.readBoolean();
 		Stats stats = null;
-
 		if (hasStats) {
 			try {
 				stats = new Stats().read(stream);
@@ -31,8 +31,7 @@ public class SerializableGameItem extends SerializableFieldType<GameItem> {
 			}
 		}
 
-		boolean hasDamage = stream.readBoolean();
-
+		final boolean hasDamage = stream.readBoolean();
 		Damage damage = null;
 		if (hasDamage) {
 			try {
@@ -42,9 +41,8 @@ public class SerializableGameItem extends SerializableFieldType<GameItem> {
 			}
 		}
 
-		boolean hasEffect = stream.readBoolean();
+		final boolean hasEffect = stream.readBoolean();
 		Effect effect = null;
-
 		if (hasEffect) {
 			try {
 				effect = new Effect().read(stream);
@@ -53,11 +51,11 @@ public class SerializableGameItem extends SerializableFieldType<GameItem> {
 			}
 		}
 
-		boolean consumable = stream.readBoolean();
-		byte tier = stream.readByte();
-		byte targetSlot = stream.readByte();
-		byte targetClass = stream.readByte();
-		byte fameBonus = stream.readByte();
+		final boolean consumable = stream.readBoolean();
+		final byte tier = stream.readByte();
+		final byte targetSlot = stream.readByte();
+		final byte targetClass = stream.readByte();
+		final byte fameBonus = stream.readByte();
 
 		return new GameItem(itemId, uid, name, description, stats, damage, effect, consumable, tier, targetSlot,
 				targetClass, fameBonus);
@@ -71,21 +69,21 @@ public class SerializableGameItem extends SerializableFieldType<GameItem> {
         stream.writeUTF(value.getDescription());
         if (value.getStats() != null) {
             stream.writeBoolean(true);
-            value.getStats().write(stream);
+            value.getStats().write(value.getStats(), stream);
         } else {
             stream.writeBoolean(false);
         }
 
         if (value.getDamage() != null) {
             stream.writeBoolean(true);
-            value.getDamage().write(stream);
+            value.getDamage().write(value.getDamage(), stream);
         } else {
             stream.writeBoolean(false);
         }
 
         if (value.getEffect() != null) {
             stream.writeBoolean(true);
-            value.getEffect().write(stream);
+            value.getEffect().write(value.getEffect(), stream);
         } else {
             stream.writeBoolean(false);
         }
@@ -95,7 +93,5 @@ public class SerializableGameItem extends SerializableFieldType<GameItem> {
         stream.writeByte(value.getTargetSlot());
         stream.writeByte(value.getTargetClass());
         stream.writeByte(value.getFameBonus());
-
 	}
-
 }

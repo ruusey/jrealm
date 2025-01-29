@@ -8,6 +8,7 @@ import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.model.SpriteModel;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.nettypes.game.SerializableGameItem;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -64,89 +65,12 @@ public class GameItem extends SpriteModel implements Streamable<GameItem> {
 
     @Override
     public GameItem read(DataInputStream stream) throws Exception {
-        int itemId = stream.readInt();
-        if (itemId == -1) {
-            return null;
-        }
-        String uid = stream.readUTF();
-        String name = stream.readUTF();
-        String description = stream.readUTF();
-        boolean hasStats = stream.readBoolean();
-        Stats stats = null;
-
-        if (hasStats) {
-            try {
-                stats = new Stats().read(stream);
-            } catch (Exception e) {
-                log.error("Failed to get stats, no stats present");
-            }
-        }
-
-        boolean hasDamage = stream.readBoolean();
-
-        Damage damage = null;
-        if (hasDamage) {
-            try {
-                damage = new Damage().read(stream);
-            } catch (Exception e) {
-                log.error("Failed to get damage, no damage present");
-            }
-        }
-
-        boolean hasEffect = stream.readBoolean();
-        Effect effect = null;
-
-        if (hasEffect) {
-            try {
-                effect = new Effect().read(stream);
-            } catch (Exception e) {
-                log.error("Failed to get effect, no effect present");
-            }
-        }
-
-        boolean consumable = stream.readBoolean();
-        byte tier = stream.readByte();
-        byte targetSlot = stream.readByte();
-        byte targetClass = stream.readByte();
-        byte fameBonus = stream.readByte();
-
-        return new GameItem(itemId, uid, name, description, stats, damage, effect, consumable, tier, targetSlot,
-                targetClass, fameBonus);
-
+       return new SerializableGameItem().read(stream);
     }
 
     @Override
     public void write(DataOutputStream stream) throws Exception {
-        stream.writeInt(this.itemId);
-        stream.writeUTF(this.uid);
-        stream.writeUTF(this.name);
-        stream.writeUTF(this.description);
-        if (this.stats != null) {
-            stream.writeBoolean(true);
-            this.stats.write(stream);
-        } else {
-            stream.writeBoolean(false);
-        }
-
-        if (this.damage != null) {
-            stream.writeBoolean(true);
-            this.damage.write(stream);
-        } else {
-            stream.writeBoolean(false);
-        }
-
-        if (this.effect != null) {
-            stream.writeBoolean(true);
-            this.effect.write(stream);
-        } else {
-            stream.writeBoolean(false);
-        }
-
-        stream.writeBoolean(this.consumable);
-        stream.writeByte(this.tier);
-        stream.writeByte(this.targetSlot);
-        stream.writeByte(this.targetClass);
-        stream.writeByte(this.fameBonus);
+    	new SerializableGameItem().write(this, stream);
     }
 
     public void applySpriteModel(final SpriteModel model) {
