@@ -67,7 +67,7 @@ public class UpdatePacket extends Packet {
         stream.writeUTF(this.playerName);
 
         if (this.stats != null) {
-            this.stats.write(stream);
+            this.stats.write(this.stats, stream);
         }
 
         int invSize = 0;
@@ -144,7 +144,7 @@ public class UpdatePacket extends Packet {
         stream.writeUTF("enemy["+enemy.getId()+"]");
 
         if (enemy.getStats() != null) {
-            enemy.getStats().write(stream);
+            enemy.getStats().write(enemy.getStats(), stream);
         }
 
         final List<GameItem> lootToDrop = Arrays.asList(GameDataManager.GAME_ITEMS.get(48));
@@ -184,7 +184,7 @@ public class UpdatePacket extends Packet {
         stream.writeUTF(player.getName());
 
         if (player.getStats() != null) {
-            player.getStats().write(stream);
+            player.getStats().write(player.getStats(), stream);
         }
 
         int invSize = 0;

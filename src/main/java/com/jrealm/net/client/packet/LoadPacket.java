@@ -95,7 +95,7 @@ public class LoadPacket extends Packet {
 
         stream.writeInt(this.containers.length);
         for (LootContainer l : this.containers) {
-            l.write(stream);
+            l.write(l, stream);
         }
 
         stream.writeInt(this.bullets.length);
@@ -125,7 +125,7 @@ public class LoadPacket extends Packet {
 
         stream.writeInt(loot.length);
         for (LootContainer l : loot) {
-            l.write(stream);
+            l.write(l, stream);
         }
 
         stream.writeInt(bullets.length);
