@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.*;
 
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Streamable
 public class MoveItemPacket extends Packet {
     private static final List<Integer> EQUIPMENT_IDX = Arrays.asList(0, 1, 2, 3);
     private static final List<Integer> INV_IDX1 = Arrays.asList(4, 5, 6, 7, 8, 9, 10, 11);

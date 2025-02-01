@@ -7,6 +7,9 @@ import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.nettypes.SerializableLong;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,9 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Streamable
 public class HeartbeatPacket extends Packet {
-
+	@SerializableField(order = 0, type = SerializableLong.class)
     private long playerId;
+	@SerializableField(order = 1, type = SerializableLong.class)
     private long timestamp;
 
     public HeartbeatPacket() {

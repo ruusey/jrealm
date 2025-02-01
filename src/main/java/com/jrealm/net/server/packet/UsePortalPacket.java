@@ -7,6 +7,10 @@ import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.nettypes.SerializableByte;
+import com.jrealm.net.core.nettypes.SerializableLong;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,11 +19,17 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @AllArgsConstructor
 @Slf4j
+@Streamable
 public class UsePortalPacket extends Packet {
+	@SerializableField(order = 0, type = SerializableLong.class)	
     private long portalId;
+	@SerializableField(order = 0, type = SerializableLong.class)
     private long fromRealmId;
+	@SerializableField(order = 0, type = SerializableLong.class)
     private long playerId;
+	@SerializableField(order = 0, type = SerializableByte.class)
     private byte toVault;
+	@SerializableField(order = 0, type = SerializableByte.class)
     private byte toNexus;
 
     public UsePortalPacket() {

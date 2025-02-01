@@ -3,6 +3,7 @@ package com.jrealm.net.entity;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
@@ -25,23 +26,21 @@ public class NetBullet extends SerializableFieldType<NetBullet> {
 	private int projectileId;
 	@SerializableField(order = 2, type = SerializableShort.class)
 	private short size;
-	@SerializableField(order = 3, type = SerializableFloat.class)
-	private float posX;
+	@SerializableField(order = 3, type = Vector2f.class)
+	private Vector2f pos;
 	@SerializableField(order = 4, type = SerializableFloat.class)
-	private float posY;
-	@SerializableField(order = 5, type = SerializableFloat.class)
 	private float dX;
-	@SerializableField(order = 6, type = SerializableFloat.class)
+	@SerializableField(order = 5, type = SerializableFloat.class)
 	private float dY;
-	@SerializableField(order = 7, type = SerializableFloat.class)
+	@SerializableField(order = 6, type = SerializableFloat.class)
 	private float angle;
-	@SerializableField(order = 8, type = SerializableFloat.class)
+	@SerializableField(order = 7, type = SerializableFloat.class)
 	private float magnitude;
-	@SerializableField(order = 9, type = SerializableFloat.class)
+	@SerializableField(order = 8, type = SerializableFloat.class)
 	private float range;
-	@SerializableField(order = 10, type = SerializableShort.class)
+	@SerializableField(order = 9, type = SerializableShort.class)
 	private short damage;
-	@SerializableField(order = 11, type = SerializableShortArray.class)
+	@SerializableField(order = 10, type = SerializableShortArray.class)
 	private short[] flags;
 	
 	@Override

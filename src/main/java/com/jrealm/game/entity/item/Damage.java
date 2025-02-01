@@ -3,8 +3,6 @@ package com.jrealm.game.entity.item;
 import java.util.Random;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.jrealm.net.core.nettypes.game.SerializableDamage;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Damage  {
+public class Damage {
     private int projectileGroupId;
     private short min;
     private short max;

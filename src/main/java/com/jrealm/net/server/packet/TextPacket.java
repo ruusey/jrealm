@@ -7,6 +7,9 @@ import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.nettypes.SerializableString;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,9 +18,13 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
+@Streamable
 public class TextPacket extends Packet {
+	@SerializableField(order = 0, type = SerializableString.class)
     private String from;
+	@SerializableField(order = 1, type = SerializableString.class)
     private String to;
+	@SerializableField(order = 2, type = SerializableString.class)
     private String message;
 
     public TextPacket() {

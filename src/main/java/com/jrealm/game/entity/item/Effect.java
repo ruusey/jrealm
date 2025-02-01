@@ -1,7 +1,6 @@
 package com.jrealm.game.entity.item;
 
 import com.jrealm.game.contants.EffectType;
-import com.jrealm.net.core.nettypes.game.SerializableEffect;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +17,4 @@ public class Effect {
     private long duration;
     private long cooldownDuration;
     private short mpCost;
-
-
 }

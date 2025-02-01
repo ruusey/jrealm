@@ -9,6 +9,11 @@ import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.nettypes.SerializableBoolean;
+import com.jrealm.net.core.nettypes.SerializableByte;
+import com.jrealm.net.core.nettypes.SerializableLong;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,9 +22,13 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Streamable
 public class PlayerMovePacket extends Packet {
+	@SerializableField(order = 0, type = SerializableLong.class)
     private long entityId;
+	@SerializableField(order = 1, type = SerializableByte.class)
     private byte dir;
+	@SerializableField(order = 2, type = SerializableBoolean.class)
     private boolean move;
 
     public PlayerMovePacket() {

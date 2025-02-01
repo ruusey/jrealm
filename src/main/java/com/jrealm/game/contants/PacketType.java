@@ -17,7 +17,6 @@ import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
-import com.jrealm.net.server.packet.TestPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
@@ -37,9 +36,7 @@ public enum PacketType {
     MOVE_ITEM((byte) 12, MoveItemPacket.class), 
     USE_PORTAL((byte) 13, UsePortalPacket.class),
     TEXT_EFFECT((byte) 14, TextEffectPacket.class), 
-    PLAYER_DEATH((byte) 15, PlayerDeathPacket.class),
-    TEST_PACKET((byte) 16, TestPacket.class);
-
+    PLAYER_DEATH((byte) 15, PlayerDeathPacket.class);
 
     private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
 

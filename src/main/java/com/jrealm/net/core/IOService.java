@@ -24,6 +24,7 @@ import org.modelmapper.ModelMapper;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.NetConstants;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
 import com.jrealm.net.core.nettypes.SerializableBoolean;
 import com.jrealm.net.core.nettypes.SerializableByte;
 import com.jrealm.net.core.nettypes.SerializableInt;
@@ -230,9 +231,12 @@ public class IOService {
 	}
 
 	public static void mapSerializableData() throws Exception {
-		final List<Class<?>> packetsToMap = getClassesInPackage("com.jrealm.net.server.packet");
-		packetsToMap.addAll(getClassesInPackage("com.jrealm.net.client.packet"));
+		final List<Class<?>> packetsToMap = getClassesInPackage("com.jrealm.net.client.packet");
+		packetsToMap.addAll(getClassesInPackage("com.jrealm.net.server.packet"));
+		packetsToMap.addAll(getClassesInPackage("com.jrealm.net.entity"));
+
 		for (Class<?> clazz : packetsToMap) {
+			if(!isStreamableClass(clazz)) continue;
 			final List<PacketMappingInformation> mappingForClass = new LinkedList<>();
 			final Field[] fieldsToWrite = clazz.getDeclaredFields();
 			for (Field objField : fieldsToWrite) {
@@ -274,6 +278,17 @@ public class IOService {
 				MAPPING_DATA.put(clazz, mappingForClass);
 			}
 		}
+	}
+	
+	private static boolean isStreamableClass(Class<?> clazz) {
+		boolean result = false;
+		for(Annotation annot : clazz.getDeclaredAnnotations()) {
+			if(annot instanceof Streamable) {
+				result=true;
+				break;
+			}
+		}
+		return result;
 	}
 
 	public static List<Class<?>> getClassesInPackage(String packageName) throws Exception {
