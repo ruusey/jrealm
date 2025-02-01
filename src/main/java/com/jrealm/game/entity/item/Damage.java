@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Damage extends SerializableDamage {
+public class Damage  {
     private int projectileGroupId;
     private short min;
     private short max;

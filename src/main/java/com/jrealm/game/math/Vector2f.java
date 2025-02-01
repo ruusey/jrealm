@@ -1,8 +1,14 @@
 package com.jrealm.game.math;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.SerializableFieldType;
 import com.jrealm.net.realm.Realm;
 
-public class Vector2f {
+@Streamable
+public class Vector2f extends SerializableFieldType<Vector2f>{
 
     public float x;
     public float y;
@@ -116,5 +122,18 @@ public class Vector2f {
     public boolean equals(Vector2f other) {
         return (this.x == other.x) && (this.y == other.y);
     }
+
+	@Override
+	public Vector2f read(DataInputStream stream) throws Exception {
+		final float x = stream.readFloat();
+		final float y = stream.readFloat();
+		return new Vector2f(x, y);
+	}
+
+	@Override
+	public void write(Vector2f value, DataOutputStream stream) throws Exception {
+		stream.writeFloat(value.x);
+		stream.writeFloat(value.y);
+	}
 
 }

@@ -11,7 +11,7 @@ import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.net.core.nettypes.game.SerializableLootContainer;
+import com.jrealm.net.entity.NetLootContainer;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LootContainer extends SerializableLootContainer {
+public class LootContainer {
 
     private long lootContainerId;
     private LootTier tier;

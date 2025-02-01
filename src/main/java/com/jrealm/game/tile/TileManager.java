@@ -24,6 +24,7 @@ import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Partition;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.entity.NetTile;
 import com.jrealm.net.realm.Realm;
 
 import lombok.Data;

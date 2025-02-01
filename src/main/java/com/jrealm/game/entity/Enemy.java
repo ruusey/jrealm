@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Slf4j
-public abstract class Enemy extends Entity implements Streamable<Enemy> {
+public abstract class Enemy extends Entity {
     private static final int IDLE_FRAMES = 10;
     private static final float CHASE_SPEED = 1.25f;
     protected EnemyModel model;
@@ -303,7 +303,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
     }
 
     // TODO: Add enemy type identifier
-    @Override
+    //@Override
     public void write(DataOutputStream stream) throws Exception {
         stream.writeLong(this.getId());
         stream.writeInt(this.getEnemyId());
@@ -315,7 +315,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
         stream.writeFloat(this.dy);
     }
 
-    @Override
+    //@Override
     public Enemy read(DataInputStream stream) throws Exception {
         final long id = stream.readLong();
         final int enemyId = stream.readInt();

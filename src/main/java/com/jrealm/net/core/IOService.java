@@ -19,6 +19,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.modelmapper.ModelMapper;
+
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.NetConstants;
 import com.jrealm.net.Packet;
@@ -35,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class IOService {
+	public static ModelMapper MAPPER = new ModelMapper();
 	private static final Lookup lookup = MethodHandles.lookup();
 	public static Map<Class<?>, List<PacketMappingInformation>> MAPPING_DATA = new HashMap<>();
 
@@ -103,6 +106,10 @@ public class IOService {
 				((SerializableLongArray) serializer).write(convertLongArray(fieldVal), stream0);
 			}
 		}
+	}
+	
+	public static <T> T mapModel(Object model, Class<T> target) {
+		return MAPPER.map(model, target);
 	}
 	
 	public static <T> T readStream(Class<?> clazz, DataInputStream stream) throws Exception{

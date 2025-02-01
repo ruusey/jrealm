@@ -19,7 +19,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Portal implements Streamable<Portal> {
+@Streamable
+public class Portal {
     private long id;
     private short portalId;
     private long fromRealmId;
@@ -84,7 +85,7 @@ public class Portal implements Streamable<Portal> {
         this.expires = Long.MAX_VALUE;
     }
 
-    @Override
+    //@Override
     public void write(DataOutputStream stream) throws Exception {
         stream.writeLong(this.id);
         stream.writeShort(this.portalId);
@@ -95,7 +96,7 @@ public class Portal implements Streamable<Portal> {
         stream.writeFloat(this.pos.y);
     }
 
-    @Override
+    //@Override
     public Portal read(DataInputStream stream) throws Exception {
         final long id = stream.readLong();
         final short portalId = stream.readShort();

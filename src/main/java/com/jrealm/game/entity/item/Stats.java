@@ -5,7 +5,7 @@ import java.io.DataOutputStream;
 
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.SerializableFieldType;
-import com.jrealm.net.core.nettypes.game.SerializableStatsObject;
+import com.jrealm.net.core.nettypes.game.SerializableStats;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Stats extends SerializableStatsObject {
+public class Stats {
     private short hp;
     private short mp;
     private short def;

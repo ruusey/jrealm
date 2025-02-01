@@ -18,7 +18,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class Bullet extends GameObject implements Streamable<Bullet> {
+public class Bullet extends GameObject  {
     private int projectileId;
     private float angle;
     private float magnitude;
@@ -206,67 +206,67 @@ public class Bullet extends GameObject implements Streamable<Bullet> {
         g.setTransform(original);
     }
 
-    @Override
-    public void write(DataOutputStream stream) throws Exception {
-        stream.writeLong(this.id);
-        stream.writeInt(this.projectileId);
-        stream.writeInt(this.size);
-        stream.writeFloat(this.pos.x);
-        stream.writeFloat(this.pos.y);
-        stream.writeFloat(this.dx);
-        stream.writeFloat(this.dy);
-        stream.writeFloat(this.angle);
-        stream.writeFloat(this.magnitude);
-        stream.writeFloat(this.range);
-        stream.writeShort(this.damage);
-        stream.writeBoolean(this.isEnemy);
-        stream.writeBoolean(this.playerHit);
-        stream.writeBoolean(this.enemyHit);
-        stream.writeBoolean(this.invert);
-        stream.writeInt(this.flags.size());
-        for (short s : this.flags) {
-            stream.writeShort(s);
-        }
-        stream.writeLong(this.timeStep);
-        stream.writeShort(this.amplitude);
-        stream.writeShort(this.frequency);
-    }
-
-    @Override
-    public Bullet read(DataInputStream stream) throws Exception {
-        final long id = stream.readLong();
-        final int bulletId = stream.readInt();
-        final int size = stream.readInt();
-        final float posX = stream.readFloat();
-        final float posY = stream.readFloat();
-        final float dY = stream.readFloat();
-        final float dX = stream.readFloat();
-        final float angle = stream.readFloat();
-        final float magnitude = stream.readFloat();
-        final float range = stream.readFloat();
-        final short damage = stream.readShort();
-        final boolean isEnemy = stream.readBoolean();
-        final boolean playerHit = stream.readBoolean();
-        final boolean enemyHit = stream.readBoolean();
-        final boolean invert = stream.readBoolean();
-        final int flagsSize = stream.readInt();
-        final short[] flags = new short[flagsSize];
-        for (int i = 0; i < flagsSize; i++) {
-            flags[i] = stream.readShort();
-        }
-        final long timeStep = stream.readLong();
-        final short amplitude = stream.readShort();
-        final short frequency = stream.readShort();
-        List<Short> flagsList = new ArrayList<>();
-        for (short s : flags) {
-            flagsList.add(s);
-        }
-        Bullet newBullet = new Bullet(id, bulletId, new Vector2f(posX, posY), size, angle, magnitude, range, damage,
-                isEnemy, playerHit, enemyHit, flagsList, invert, timeStep, amplitude, frequency);
-        newBullet.setDx(dX);
-        newBullet.setDy(dY);
-        return newBullet;
-    }
+//    @Override
+//    public void write(DataOutputStream stream) throws Exception {
+//        stream.writeLong(this.id);
+//        stream.writeInt(this.projectileId);
+//        stream.writeInt(this.size);
+//        stream.writeFloat(this.pos.x);
+//        stream.writeFloat(this.pos.y);
+//        stream.writeFloat(this.dx);
+//        stream.writeFloat(this.dy);
+//        stream.writeFloat(this.angle);
+//        stream.writeFloat(this.magnitude);
+//        stream.writeFloat(this.range);
+//        stream.writeShort(this.damage);
+//        stream.writeBoolean(this.isEnemy);
+//        stream.writeBoolean(this.playerHit);
+//        stream.writeBoolean(this.enemyHit);
+//        stream.writeBoolean(this.invert);
+//        stream.writeInt(this.flags.size());
+//        for (short s : this.flags) {
+//            stream.writeShort(s);
+//        }
+//        stream.writeLong(this.timeStep);
+//        stream.writeShort(this.amplitude);
+//        stream.writeShort(this.frequency);
+//    }
+//
+//    @Override
+//    public Bullet read(DataInputStream stream) throws Exception {
+//        final long id = stream.readLong();
+//        final int bulletId = stream.readInt();
+//        final int size = stream.readInt();
+//        final float posX = stream.readFloat();
+//        final float posY = stream.readFloat();
+//        final float dY = stream.readFloat();
+//        final float dX = stream.readFloat();
+//        final float angle = stream.readFloat();
+//        final float magnitude = stream.readFloat();
+//        final float range = stream.readFloat();
+//        final short damage = stream.readShort();
+//        final boolean isEnemy = stream.readBoolean();
+//        final boolean playerHit = stream.readBoolean();
+//        final boolean enemyHit = stream.readBoolean();
+//        final boolean invert = stream.readBoolean();
+//        final int flagsSize = stream.readInt();
+//        final short[] flags = new short[flagsSize];
+//        for (int i = 0; i < flagsSize; i++) {
+//            flags[i] = stream.readShort();
+//        }
+//        final long timeStep = stream.readLong();
+//        final short amplitude = stream.readShort();
+//        final short frequency = stream.readShort();
+//        List<Short> flagsList = new ArrayList<>();
+//        for (short s : flags) {
+//            flagsList.add(s);
+//        }
+//        Bullet newBullet = new Bullet(id, bulletId, new Vector2f(posX, posY), size, angle, magnitude, range, damage,
+//                isEnemy, playerHit, enemyHit, flagsList, invert, timeStep, amplitude, frequency);
+//        newBullet.setDx(dX);
+//        newBullet.setDy(dY);
+//        return newBullet;
+//    }
 
     public static Bullet fromStream(DataInputStream stream) throws Exception {
         final long id = stream.readLong();

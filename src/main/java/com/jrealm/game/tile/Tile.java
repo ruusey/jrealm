@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class Tile implements Streamable<Tile> {
+public class Tile  {
     private short tileId;
     private boolean discovered = false;
     private short size;
@@ -54,7 +54,7 @@ public class Tile implements Streamable<Tile> {
                 (int) this.pos.getWorldVar().y, this.size, this.size, null);
     }
 
-    @Override
+    //@Override
     public void write(DataOutputStream stream) throws Exception {
         stream.writeShort(this.tileId);
         stream.writeBoolean(this.discovered);
@@ -66,7 +66,7 @@ public class Tile implements Streamable<Tile> {
         stream.writeByte(this.data.getDamaging());
     }
 
-    @Override
+    //@Override
     public Tile read(DataInputStream stream) throws Exception {
         final short tileId = stream.readShort();
         final boolean discovered = stream.readBoolean();

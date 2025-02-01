@@ -8,19 +8,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jrealm.game.contants.PacketType;
-import com.jrealm.game.tile.NetTile;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.nettypes.SerializableLong;
+import com.jrealm.net.core.nettypes.SerializableShort;
+import com.jrealm.net.entity.NetTile;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Slf4j
+@Streamable
 public class LoadMapPacket extends Packet {
+	@SerializableField(order = 0, type = SerializableLong.class)
     private long realmId;
+	@SerializableField(order = 1, type = SerializableShort.class)
     private short mapId;
+	@SerializableField(order = 2, type = SerializableShort.class)
     private short mapWidth;
+	@SerializableField(order = 3, type = SerializableShort.class)
     private short mapHeight;
+	@SerializableField(order = 4, typeList = NetTile[].class)
     private NetTile[] tiles;
 
     public LoadMapPacket() {
@@ -38,26 +49,23 @@ public class LoadMapPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
+    	
     	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
     	final DataInputStream dis = new DataInputStream(bis);
         if ((dis == null) || (dis.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
-        final long realmId = dis.readLong();
-        final short mapId = dis.readShort();
-        final short mapWidth = dis.readShort();
-        final short mapHeight = dis.readShort();
+        
+    	LoadMapPacket readPacket = IOService.read(getClass(), dis);
 
-        this.realmId = realmId;
-        this.mapId = mapId;
-        this.mapWidth = mapWidth;
-        this.mapHeight = mapHeight;
-        final short tilesSize = dis.readShort();
-        if (tilesSize > 0) {
-            this.tiles = new NetTile[tilesSize];
-            for (int i = 0; i < tilesSize; i++) {
-                this.tiles[i] = new NetTile().read(dis);
-            }
-        }
+    	assign(readPacket);
+    }
+    
+    public void assign(LoadMapPacket packet) {
+    	this.realmId = packet.getRealmId();
+    	this.mapId = packet.getMapId();
+    	this.mapWidth = packet.getMapWidth();
+    	this.mapHeight = packet.getMapHeight();
+    	this.tiles = packet.getTiles();
     }
 
     @Override
@@ -65,15 +73,7 @@ public class LoadMapPacket extends Packet {
         if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
             throw new IllegalStateException("No Packet data available to write to DataOutputStream");
 
-        this.addHeader(stream);
-        stream.writeLong(this.realmId);
-        stream.writeShort(this.mapId);
-        stream.writeShort(this.mapWidth);
-        stream.writeShort(this.mapHeight);
-        stream.writeShort(this.tiles.length);
-        for (NetTile tile : this.tiles) {
-            tile.write(stream);
-        }
+        IOService.write(this, stream);
     }
 
     public static LoadMapPacket from(long realmId, short mapId, short mapWidth, short mapHeight, List<NetTile> tiles) throws Exception {
@@ -85,7 +85,7 @@ public class LoadMapPacket extends Packet {
         stream.writeShort(mapHeight);
         stream.writeShort(tiles.size());
         for (NetTile tile : tiles) {
-            tile.write(stream);
+            tile.write(tile, stream);
         }
 
         return new LoadMapPacket(PacketType.LOAD_MAP.getPacketId(), byteStream.toByteArray());
@@ -100,7 +100,7 @@ public class LoadMapPacket extends Packet {
         stream.writeShort(mapHeight);
         stream.writeShort(tiles.length);
         for (NetTile tile : tiles) {
-            tile.write(stream);
+            tile.write(tile, stream);
         }
 
         return new LoadMapPacket(PacketType.LOAD_MAP.getPacketId(), byteStream.toByteArray());

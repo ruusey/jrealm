@@ -17,6 +17,15 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.entity.NetBullet;
+import com.jrealm.net.entity.NetEnemy;
+import com.jrealm.net.entity.NetLootContainer;
+import com.jrealm.net.entity.NetPlayer;
+import com.jrealm.net.entity.NetPortal;
+import com.jrealm.net.entity.NetTile;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,12 +34,18 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Streamable
 public class LoadPacket extends Packet {
-    private Player[] players;
-    private Enemy[] enemies;
-    private Bullet[] bullets;
-    private LootContainer[] containers;
-    private Portal[] portals;
+	@SerializableField(order = 0, type = NetPlayer.class)
+    private NetPlayer[] players;
+	@SerializableField(order = 1, typeList = NetEnemy[].class)
+    private NetEnemy[] enemies;
+	@SerializableField(order = 2, typeList = NetBullet[].class)
+    private NetBullet[] bullets;
+	@SerializableField(order = 3, typeList = NetLootContainer[].class)
+    private NetLootContainer[] containers;
+	@SerializableField(order = 4, typeList = NetPortal[].class)
+    private NetPortal[] portals;
 
     public LoadPacket() {
 
@@ -50,36 +65,12 @@ public class LoadPacket extends Packet {
     	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
     	final DataInputStream dis = new DataInputStream(bis);
         if ((dis == null) || (dis.available() < 5))
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");
-        int playersSize = dis.readInt();
-        this.players = new Player[playersSize];
-        for (int i = 0; i < playersSize; i++) {
-            this.players[i] = Player.fromStream(dis);
-        }
-
-        int containersSize = dis.readInt();
-        this.containers = new LootContainer[containersSize];
-        for (int i = 0; i < containersSize; i++) {
-            this.containers[i] = new LootContainer().read(dis);
-        }
-
-        int bulletsSize = dis.readInt();
-        this.bullets = new Bullet[bulletsSize];
-        for (int i = 0; i < bulletsSize; i++) {
-            this.bullets[i] = Bullet.fromStream(dis);
-        }
-
-        int enemiesSize = dis.readInt();
-        this.enemies = new Enemy[enemiesSize];
-        for (int i = 0; i < enemiesSize; i++) {
-            this.enemies[i] = Enemy.fromStream(dis);
-        }
-
-        int portalsSize = dis.readInt();
-        this.portals = new Portal[portalsSize];
-        for (int i = 0; i < portalsSize; i++) {
-            this.portals[i] = new Portal().read(dis);
-        }
+            throw new IllegalStateException("No Packet data available to read from DataInputStream");	
+        
+        LoadPacket packet = IOService.read(getClass(), dis);
+        this.players = packet.getPlayers();
+        this.enemies = packet.getEnemies();
+        this.bullets = packet.getBullets();
     }
 
     @Override
@@ -87,31 +78,7 @@ public class LoadPacket extends Packet {
         if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
             throw new IllegalStateException("No Packet data available to write to DataOutputStream");
 
-        this.addHeader(stream);
-        stream.writeInt(this.players.length);
-        for (Player p : this.players) {
-            p.write(stream);
-        }
-
-        stream.writeInt(this.containers.length);
-        for (LootContainer l : this.containers) {
-            l.write(l, stream);
-        }
-
-        stream.writeInt(this.bullets.length);
-        for (Bullet b : this.bullets) {
-            b.write(stream);
-        }
-
-        stream.writeInt(this.enemies.length);
-        for (Enemy e : this.enemies) {
-            e.write(stream);
-        }
-
-        stream.writeInt(this.portals.length);
-        for (Portal p : this.portals) {
-            p.write(stream);
-        }
+       IOService.write(this, stream);
     }
 
     public static LoadPacket from(Player[] players, LootContainer[] loot, Bullet[] bullets, Enemy[] enemies,
@@ -125,12 +92,12 @@ public class LoadPacket extends Packet {
 
         stream.writeInt(loot.length);
         for (LootContainer l : loot) {
-            l.write(l, stream);
+            //l.write(l, stream);
         }
 
         stream.writeInt(bullets.length);
         for (Bullet b : bullets) {
-            b.write(stream);
+            //b.write(stream);
         }
 
         stream.writeInt(enemies.length);
@@ -146,22 +113,22 @@ public class LoadPacket extends Packet {
     }
 
     public boolean equals(LoadPacket other) {
-        final List<Long> playerIdsThis = Stream.of(this.players).map(Player::getId).collect(Collectors.toList());
-        final List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(Player::getId).collect(Collectors.toList());
+        final List<Long> playerIdsThis = Stream.of(this.players).map(NetPlayer::getId).collect(Collectors.toList());
+        final List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(NetPlayer::getId).collect(Collectors.toList());
 
-        final List<Long> lootIdsThis = Stream.of(this.containers).map(LootContainer::getLootContainerId)
+        final List<Long> lootIdsThis = Stream.of(this.containers).map(NetLootContainer::getLootContainerId)
                 .collect(Collectors.toList());
-        final List<Long> lootIdsOther = Stream.of(other.getContainers()).map(LootContainer::getLootContainerId)
+        final List<Long> lootIdsOther = Stream.of(other.getContainers()).map(NetLootContainer::getLootContainerId)
                 .collect(Collectors.toList());
 
-        final List<Long> enemyIdsThis = Stream.of(this.enemies).map(Enemy::getId).collect(Collectors.toList());
-        final List<Long> enemyIdsOther = Stream.of(other.getEnemies()).map(Enemy::getId).collect(Collectors.toList());
+        final List<Long> enemyIdsThis = Stream.of(this.enemies).map(NetEnemy::getId).collect(Collectors.toList());
+        final List<Long> enemyIdsOther = Stream.of(other.getEnemies()).map(NetEnemy::getId).collect(Collectors.toList());
 
-        final List<Long> bulletIdsThis = Stream.of(this.bullets).map(Bullet::getId).collect(Collectors.toList());
-        final List<Long> bulletIdsOther = Stream.of(other.getBullets()).map(Bullet::getId).collect(Collectors.toList());
+        final List<Long> bulletIdsThis = Stream.of(this.bullets).map(NetBullet::getId).collect(Collectors.toList());
+        final List<Long> bulletIdsOther = Stream.of(other.getBullets()).map(NetBullet::getId).collect(Collectors.toList());
 
-        final List<Long> portalIdsThis = Stream.of(this.portals).map(Portal::getId).collect(Collectors.toList());
-        final List<Long> portalIdsOther = Stream.of(other.getPortals()).map(Portal::getId).collect(Collectors.toList());
+        final List<Long> portalIdsThis = Stream.of(this.portals).map(NetPortal::getId).collect(Collectors.toList());
+        final List<Long> portalIdsOther = Stream.of(other.getPortals()).map(NetPortal::getId).collect(Collectors.toList());
 
         boolean containersEq = true;
         if (this.containers.length != other.getContainers().length) {

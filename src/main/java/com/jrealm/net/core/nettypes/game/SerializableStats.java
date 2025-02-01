@@ -6,7 +6,7 @@ import java.io.DataOutputStream;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.core.SerializableFieldType;
 
-public class SerializableStatsObject extends SerializableFieldType<Stats> {
+public class SerializableStats extends SerializableFieldType<Stats> {
 
 	@Override
 	public Stats read(DataInputStream stream) throws Exception {

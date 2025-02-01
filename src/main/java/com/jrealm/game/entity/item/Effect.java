@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Effect extends SerializableEffect {
+public class Effect {
     private boolean self;
     private EffectType effectId;
     private long duration;

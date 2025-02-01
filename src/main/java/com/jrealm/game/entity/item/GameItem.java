@@ -7,8 +7,8 @@ import java.util.UUID;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.model.SpriteModel;
-import com.jrealm.net.Streamable;
-import com.jrealm.net.core.nettypes.game.SerializableGameItem;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.entity.NetGameItem;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Slf4j
 @EqualsAndHashCode(callSuper = false)
-public class GameItem extends SpriteModel implements Streamable<GameItem> {
+public class GameItem extends SpriteModel {
     private int itemId;
     @Builder.Default
     private String uid = UUID.randomUUID().toString();
@@ -63,14 +63,14 @@ public class GameItem extends SpriteModel implements Streamable<GameItem> {
         return itemFinal;
     }
 
-    @Override
+    //@Override
     public GameItem read(DataInputStream stream) throws Exception {
-       return new SerializableGameItem().read(stream);
+       return IOService.mapModel(new NetGameItem().read(stream), GameItem.class) ;
     }
 
-    @Override
+   // @Override
     public void write(DataOutputStream stream) throws Exception {
-    	new SerializableGameItem().write(this, stream);
+    	new NetGameItem().write(IOService.mapModel(this,NetGameItem.class), stream);
     }
 
     public void applySpriteModel(final SpriteModel model) {

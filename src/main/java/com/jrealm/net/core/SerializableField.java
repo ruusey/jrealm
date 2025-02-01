@@ -11,5 +11,7 @@ import java.lang.annotation.Target;
 @Target({ FIELD, LOCAL_VARIABLE })
 public @interface SerializableField {
 	int order();
-	Class<? extends SerializableFieldType<?>> type(); 
+	Class<? extends SerializableFieldType<?>> type() default EmptyField.class; 
+	Class<? extends SerializableFieldType<?>[]> typeList() default EmptyField[].class; 
+
 }
