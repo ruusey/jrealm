@@ -9,6 +9,7 @@ import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableByte;
 import com.jrealm.net.core.nettypes.SerializableLong;
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
+@Streamable
 public class CommandPacket extends Packet {
 	
 	@SerializableField(order = 0, type = SerializableLong.class)

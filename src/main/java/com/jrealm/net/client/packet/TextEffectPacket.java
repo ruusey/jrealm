@@ -9,6 +9,11 @@ import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.nettypes.SerializableByte;
+import com.jrealm.net.core.nettypes.SerializableLong;
+import com.jrealm.net.core.nettypes.SerializableString;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,10 +22,15 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Streamable
 public class TextEffectPacket extends Packet {
+	@SerializableField(order = 0, type = SerializableByte.class)
     private byte textEffectId;
+	@SerializableField(order = 1, type = SerializableByte.class)
     private byte entityType;
+	@SerializableField(order = 2, type = SerializableLong.class)
     private long targetEntityId;
+	@SerializableField(order = 3, type = SerializableString.class)
     private String text;
 
     public TextEffectPacket() {

@@ -10,6 +10,7 @@ import java.util.List;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.*;
 
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Streamable
 public class UnloadPacket extends Packet {
 	
 	@SerializableField(order = 0, type = SerializableLongArray.class)

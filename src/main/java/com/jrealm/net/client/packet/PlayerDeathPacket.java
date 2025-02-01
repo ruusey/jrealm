@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Streamable
 public class PlayerDeathPacket extends Packet {
 
     public PlayerDeathPacket() {

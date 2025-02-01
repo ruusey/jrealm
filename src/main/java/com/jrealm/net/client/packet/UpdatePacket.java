@@ -16,7 +16,6 @@ import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.SerializableField;
-import com.jrealm.net.core.SerializableFieldType;
 import com.jrealm.net.core.nettypes.*;
 import com.jrealm.net.core.nettypes.game.SerializableStats;
 import com.jrealm.net.entity.NetGameItem;
@@ -262,9 +261,7 @@ public class UpdatePacket extends Packet {
         if(thinMatch) effects=true;
         boolean expEqual = this.experience == other.getExperience();
         boolean result = basic && stats && inv && effects && expEqual;
-        if(!result) {
-        	int i = 0;
-        }
+
         return result;
     }
     
@@ -301,9 +298,6 @@ public class UpdatePacket extends Packet {
         }
         boolean expEqual = this.experience == other.getExperience();
         boolean result = basic && stats && inv && effects && expEqual;
-        if(!result) {
-        	int i = 0;
-        }
         return result;
     }
 }

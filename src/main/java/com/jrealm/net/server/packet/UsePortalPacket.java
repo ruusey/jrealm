@@ -23,13 +23,13 @@ import lombok.extern.slf4j.Slf4j;
 public class UsePortalPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)	
     private long portalId;
-	@SerializableField(order = 0, type = SerializableLong.class)
+	@SerializableField(order = 1, type = SerializableLong.class)
     private long fromRealmId;
-	@SerializableField(order = 0, type = SerializableLong.class)
+	@SerializableField(order = 2, type = SerializableLong.class)
     private long playerId;
-	@SerializableField(order = 0, type = SerializableByte.class)
+	@SerializableField(order = 3, type = SerializableByte.class)
     private byte toVault;
-	@SerializableField(order = 0, type = SerializableByte.class)
+	@SerializableField(order = 4, type = SerializableByte.class)
     private byte toNexus;
 
     public UsePortalPacket() {
