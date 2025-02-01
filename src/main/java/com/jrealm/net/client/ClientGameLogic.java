@@ -24,6 +24,12 @@ import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.entity.NetBullet;
+import com.jrealm.net.entity.NetEnemy;
+import com.jrealm.net.entity.NetLootContainer;
+import com.jrealm.net.entity.NetPlayer;
+import com.jrealm.net.entity.NetPortal;
 import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.LoginResponseMessage;
 import com.jrealm.net.messaging.PlayerAccountMessage;
@@ -120,13 +126,16 @@ public class ClientGameLogic {
     public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
         final LoadPacket loadPacket = (LoadPacket) packet;
         try {
-            for (final Player p : loadPacket.getPlayers()) {
+            for (final NetPlayer player : loadPacket.getPlayers()) {
+            	Player p = IOService.mapModel(player, Player.class);
+
                 if (p.getId() == cli.getCurrentPlayerId()) {
                     continue;
                 }
                 cli.getRealm().addPlayerIfNotExists(p);
             }
-            for (final LootContainer lc : loadPacket.getContainers()) {
+            for (final NetLootContainer loot : loadPacket.getContainers()) {
+            	final LootContainer lc = IOService.mapModel(loot, LootContainer.class);
                 if (lc.getContentsChanged()) {
                     LootContainer current = cli.getRealm().getLoot().get(lc.getLootContainerId());
                     current.setContentsChanged(true);
@@ -136,15 +145,18 @@ public class ClientGameLogic {
                 }
             }
 
-            for (final Bullet b : loadPacket.getBullets()) {
+            for (final NetBullet bullet : loadPacket.getBullets()) {
+            	final Bullet b = IOService.mapModel(bullet, Bullet.class);
                 cli.getRealm().addBulletIfNotExists(b);
             }
 
-            for (final Enemy e : loadPacket.getEnemies()) {
+            for (final NetEnemy enemy : loadPacket.getEnemies()) {
+            	final Enemy e = IOService.mapModel(enemy, Enemy.class);
                 cli.getRealm().addEnemyIfNotExists(e);
             }
 
-            for (final Portal p : loadPacket.getPortals()) {
+            for (final NetPortal portal : loadPacket.getPortals()) {
+            	final Portal p = IOService.mapModel(portal, Portal.class);
                 cli.getRealm().addPortalIfNotExists(p);
             }
         } catch (Exception e) {

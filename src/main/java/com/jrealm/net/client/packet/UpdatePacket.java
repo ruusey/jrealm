@@ -14,10 +14,12 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
 import com.jrealm.net.core.nettypes.*;
 import com.jrealm.net.core.nettypes.game.SerializableStats;
+import com.jrealm.net.entity.NetGameItem;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -26,18 +28,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Streamable
 public class UpdatePacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long playerId;
-	@SerializableField(order = 0, type = SerializableString.class)
+	@SerializableField(order = 1, type = SerializableString.class)
     private String playerName;
-	@SerializableField(order = 0, type = SerializableStats.class)
+	@SerializableField(order = 2, type = SerializableStats.class)
     private Stats stats;
+	@SerializableField(order = 3, type = SerializableInt.class)
     private int health;
+	@SerializableField(order = 4, type = SerializableInt.class)
     private int mana;
+	@SerializableField(order = 5, typeList = NetGameItem[].class)
     private GameItem[] inventory;
+	@SerializableField(order = 6, type = SerializableShortArray.class)
     private short[] effectIds;
+	@SerializableField(order = 7, type = SerializableLongArray.class)
     private long[] effectTimes;
+	@SerializableField(order = 8, type = SerializableLong.class)
     private long experience;
 
     // TODO: Rewrite this to only include delta data within the character not the entire character
@@ -67,7 +76,7 @@ public class UpdatePacket extends Packet {
         stream.writeUTF(this.playerName);
 
         if (this.stats != null) {
-            this.stats.write(this.stats, stream);
+            new SerializableStats().write(this.stats, stream);
         }
 
         int invSize = 0;
@@ -107,7 +116,7 @@ public class UpdatePacket extends Packet {
         this.mana = dis.readInt();
         this.playerName = dis.readUTF();
 
-        this.stats = new Stats().read(dis);
+        this.stats = new SerializableStats().read(dis);
         int invSize = dis.readShort();
 
         if (invSize > 0) {
@@ -144,7 +153,7 @@ public class UpdatePacket extends Packet {
         stream.writeUTF("enemy["+enemy.getId()+"]");
 
         if (enemy.getStats() != null) {
-            enemy.getStats().write(enemy.getStats(), stream);
+            new SerializableStats().write(enemy.getStats(), stream);
         }
 
         final List<GameItem> lootToDrop = Arrays.asList(GameDataManager.GAME_ITEMS.get(48));
@@ -184,7 +193,7 @@ public class UpdatePacket extends Packet {
         stream.writeUTF(player.getName());
 
         if (player.getStats() != null) {
-            player.getStats().write(player.getStats(), stream);
+            new SerializableStats().write(player.getStats(), stream);
         }
 
         int invSize = 0;

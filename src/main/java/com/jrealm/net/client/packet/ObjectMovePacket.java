@@ -10,6 +10,9 @@ import java.util.List;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.net.Packet;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.entity.NetGameItem;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ObjectMovePacket extends Packet {
 
+	@SerializableField(order = 0, typeList = ObjectMovement[].class)
     private ObjectMovement[] movements;
 
     public ObjectMovePacket() {
@@ -37,29 +41,16 @@ public class ObjectMovePacket extends Packet {
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        if (this.getId() < 1 || this.getData() == null || this.getData().length < 5)
-            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-
-        this.addHeader(stream);
-        stream.writeInt(this.movements.length);
-        for (ObjectMovement movement : this.movements) {
-            movement.write(stream);
-        }
+        IOService.write(this, stream);
     }
 
     @Override
     public void readData(byte[] data) throws Exception {
     	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
     	final DataInputStream dis = new DataInputStream(bis);
-        if (dis == null || dis.available() < 5)
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");
-
-        final int movementsSize = dis.readInt();
-        this.movements = new ObjectMovement[movementsSize];
-        for (int i = 0; i < movementsSize; i++) {
-            this.movements[i] = new ObjectMovement().read(dis);
-        }
-
+        
+    	final ObjectMovePacket read = IOService.read(getClass(), dis);
+    	this.movements = read.getMovements();
     }
 
     public ObjectMovePacket getMoveDiff(ObjectMovePacket newMove) throws Exception {
@@ -88,7 +79,8 @@ public class ObjectMovePacket extends Packet {
 
         stream.writeInt(objects.length);
         for (final GameObject obj : objects) {
-            new ObjectMovement(obj).write(stream);
+        	ObjectMovement toWrite = new ObjectMovement(obj);
+        	toWrite.write(toWrite, stream);
         }
 
         return new ObjectMovePacket(PacketType.OBJECT_MOVE.getPacketId(), byteStream.toByteArray());
@@ -111,7 +103,7 @@ public class ObjectMovePacket extends Packet {
 
         stream.writeInt(objects.length);
         for (final ObjectMovement obj : objects) {
-            obj.write(stream);
+            obj.write(obj, stream);
         }
 
         return new ObjectMovePacket(PacketType.OBJECT_MOVE.getPacketId(), byteStream.toByteArray());
