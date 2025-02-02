@@ -40,14 +40,15 @@ public class UpdatePacket extends Packet {
     private int health;
 	@SerializableField(order = 4, type = SerializableInt.class)
     private int mana;
-	@SerializableField(order = 5, type = NetGameItem.class, isCollection=true)
-    private NetGameItem[] inventory;
-	@SerializableField(order = 6, type = SerializableShort.class, isCollection=true)
-    private Short[] effectIds;
-	@SerializableField(order = 7, type = SerializableLong.class, isCollection=true)
-    private Long[] effectTimes;
-	@SerializableField(order = 8, type = SerializableLong.class)
+	@SerializableField(order = 5, type = SerializableLong.class)
     private long experience;
+	@SerializableField(order = 6, type = NetGameItem.class, isCollection=true)
+    private NetGameItem[] inventory;
+	@SerializableField(order = 7, type = SerializableShort.class, isCollection=true)
+    private Short[] effectIds;
+	@SerializableField(order = 8, type = SerializableLong.class, isCollection=true)
+    private Long[] effectTimes;
+
 
     // TODO: Rewrite this to only include delta data within the character not the entire character
     public UpdatePacket() {

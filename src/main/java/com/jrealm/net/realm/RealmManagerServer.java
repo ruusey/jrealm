@@ -518,7 +518,7 @@ public class RealmManagerServer implements Runnable {
 					final Packet packet = thread.getValue().getPacketQueue().remove();
 					try {
 						Packet created = packet;
-						
+						;
 						created.setSrcIp(packet.getSrcIp());
 						// Invoke packet callback
 						final List<MethodHandle> packetHandles = this.userPacketCallbacksServer.get(packet.getId());

@@ -174,8 +174,8 @@ public class SocketClient implements Runnable {
             while (!this.shutdown) {
                 try {
                     final long bytesRead = this.currentBytesRecieved;
-                    SocketClient.log.info("[CLIENT] current read rate = {} kbit/s",
-                            (float) (bytesRead / 1024.0f) * 8.0f);
+//                    SocketClient.log.info("[CLIENT] current read rate = {} kbit/s",
+//                            (float) (bytesRead / 1024.0f) * 8.0f);
                     this.currentBytesRecieved = 0;
                     Thread.sleep(1000);
                 } catch (Exception e) {
