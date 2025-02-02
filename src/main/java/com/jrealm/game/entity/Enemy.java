@@ -19,6 +19,7 @@ import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.core.IOService;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
 import com.jrealm.net.realm.RealmManagerServer;
@@ -45,6 +46,10 @@ public abstract class Enemy extends Entity {
     private int idleTime = 0;
     private Stats stats;
 
+    public Enemy() {
+        super(0, null, 0);
+    }
+    
     public Enemy(long id, int enemyId, Vector2f origin, int size, int weaponId) {
         super(id, origin, size);
         this.model = GameDataManager.ENEMIES.get(enemyId);
@@ -80,7 +85,7 @@ public abstract class Enemy extends Entity {
     
     public void applyUpdate(UpdatePacket packet, PlayState state) {
         this.name = packet.getPlayerName();
-        this.stats = packet.getStats();
+        this.stats = IOService.mapModel(packet.getStats(), Stats.class);
         this.health = packet.getHealth();
         this.mana = packet.getMana();
         this.setEffectIds(packet.getEffectIds());

@@ -5,7 +5,7 @@ import java.io.DataOutputStream;
 
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.SerializableFieldType;
-import com.jrealm.net.core.nettypes.game.SerializableStats;
+import com.jrealm.net.entity.NetStats;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

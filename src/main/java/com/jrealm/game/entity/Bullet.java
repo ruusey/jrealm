@@ -15,6 +15,7 @@ import com.jrealm.net.Streamable;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -38,7 +39,10 @@ public class Bullet extends GameObject  {
     private short frequency = 25;
 
     private long createdTime;
-
+    
+    public Bullet() {
+    	super(0l,null,0);
+    }
     public Bullet(long id, int bulletId, Vector2f origin, int size) {
         super(id, origin, size);
         this.flags = new ArrayList<>();

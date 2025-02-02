@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 public class NetBullet extends SerializableFieldType<NetBullet> {
 	@SerializableField(order = 0, type = SerializableLong.class)
 	private long id;
-	@SerializableField(order = 1, type = SerializableLong.class)
+	@SerializableField(order = 1, type = SerializableInt.class)
 	private int projectileId;
 	@SerializableField(order = 2, type = SerializableShort.class)
 	private short size;
@@ -40,8 +40,8 @@ public class NetBullet extends SerializableFieldType<NetBullet> {
 	private float range;
 	@SerializableField(order = 9, type = SerializableShort.class)
 	private short damage;
-	@SerializableField(order = 10, type = SerializableShortArray.class)
-	private short[] flags;
+	@SerializableField(order = 10, type = SerializableShort.class, isCollection=true)
+	private Short[] flags;
 	
 	@Override
 	public NetBullet read(DataInputStream stream) throws Exception {

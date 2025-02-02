@@ -24,16 +24,16 @@ import lombok.extern.slf4j.Slf4j;
 @Streamable
 public class UnloadPacket extends Packet {
 	
-	@SerializableField(order = 0, type = SerializableLongArray.class)
-    private long[] players;
-	@SerializableField(order = 1, type = SerializableLongArray.class)
-    private long[] bullets;
-	@SerializableField(order = 2, type = SerializableLongArray.class)
-    private long[] enemies;
-	@SerializableField(order = 3, type = SerializableLongArray.class)
-    private long[] containers;
-	@SerializableField(order = 4, type = SerializableLongArray.class)
-    private long[] portals;
+	@SerializableField(order = 0, type = SerializableLong.class, isCollection=true)
+    private Long[] players;
+	@SerializableField(order = 1, type = SerializableLong.class, isCollection=true)
+    private Long[] bullets;
+	@SerializableField(order = 2, type = SerializableLong.class, isCollection=true)
+    private Long[] enemies;
+	@SerializableField(order = 3, type = SerializableLong.class, isCollection=true)
+    private Long[] containers;
+	@SerializableField(order = 4, type = SerializableLong.class, isCollection=true)
+    private Long[] portals;
 
     public UnloadPacket() {
 
@@ -55,31 +55,31 @@ public class UnloadPacket extends Packet {
         if ((dis == null) || (dis.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
         int playersSize = dis.readInt();
-        this.players = new long[playersSize];
+        this.players = new Long[playersSize];
         for (int i = 0; i < playersSize; i++) {
             this.players[i] = dis.readLong();
         }
  
         int bulletsSize = dis.readInt();
-        this.bullets = new long[bulletsSize];
+        this.bullets = new Long[bulletsSize];
         for (int i = 0; i < bulletsSize; i++) {
             this.bullets[i] = dis.readLong();
         }
 
         int enemiesSize = dis.readInt();
-        this.enemies = new long[enemiesSize];
+        this.enemies = new Long[enemiesSize];
         for (int i = 0; i < enemiesSize; i++) {
             this.enemies[i] = dis.readLong();
         }
         
         int containersSize = dis.readInt();
-        this.containers = new long[containersSize];
+        this.containers = new Long[containersSize];
         for (int i = 0; i < containersSize; i++) {
             this.containers[i] = dis.readLong();
         }
 
         int portalsSize = dis.readInt();
-        this.portals = new long[portalsSize];
+        this.portals = new Long[portalsSize];
         for (int i = 0; i < portalsSize; i++) {
             this.portals[i] = dis.readLong();
         }

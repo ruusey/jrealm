@@ -27,6 +27,7 @@ import com.jrealm.net.entity.NetPlayer;
 import com.jrealm.net.entity.NetPortal;
 import com.jrealm.net.entity.NetTile;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -35,16 +36,17 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
 @Streamable
+@AllArgsConstructor
 public class LoadPacket extends Packet {
-	@SerializableField(order = 0, type = NetPlayer.class)
+	@SerializableField(order = 0, type = NetPlayer.class, isCollection=true)
     private NetPlayer[] players;
-	@SerializableField(order = 1, typeList = NetEnemy[].class)
+	@SerializableField(order = 1, type = NetEnemy.class, isCollection=true)
     private NetEnemy[] enemies;
-	@SerializableField(order = 2, typeList = NetBullet[].class)
+	@SerializableField(order = 2, type = NetBullet.class, isCollection=true)
     private NetBullet[] bullets;
-	@SerializableField(order = 3, typeList = NetLootContainer[].class)
+	@SerializableField(order = 3, type = NetLootContainer.class, isCollection=true)
     private NetLootContainer[] containers;
-	@SerializableField(order = 4, typeList = NetPortal[].class)
+	@SerializableField(order = 4, type = NetPortal.class, isCollection=true)
     private NetPortal[] portals;
 
     public LoadPacket() {
@@ -67,49 +69,28 @@ public class LoadPacket extends Packet {
         if ((dis == null) || (dis.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");	
         
-        LoadPacket packet = IOService.read(getClass(), dis);
+        LoadPacket packet = IOService.readPacket(getClass(), dis);
         this.players = packet.getPlayers();
         this.enemies = packet.getEnemies();
         this.bullets = packet.getBullets();
+        this.containers = packet.getContainers();
+        this.portals = packet.getPortals();
     }
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
-            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-
-       IOService.write(this, stream);
+       IOService.writePacket(this, stream);
     }
 
     public static LoadPacket from(Player[] players, LootContainer[] loot, Bullet[] bullets, Enemy[] enemies,
             Portal[] portals) throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-        stream.writeInt(players.length);
-        for (Player p : players) {
-            p.write(stream);
-        }
+        final NetPlayer[] mappedPlayers = IOService.mapModel(players, NetPlayer[].class);
+        final NetEnemy[] mappedEnemies = IOService.mapModel(enemies, NetEnemy[].class);
+        final NetBullet[] mappedBullets = IOService.mapModel(bullets, NetBullet[].class);
+        final NetLootContainer[] mappedLoot = IOService.mapModel(loot, NetLootContainer[].class);
+        final NetPortal[] mappedPortals = IOService.mapModel(portals, NetPortal[].class);
 
-        stream.writeInt(loot.length);
-        for (LootContainer l : loot) {
-            //l.write(l, stream);
-        }
-
-        stream.writeInt(bullets.length);
-        for (Bullet b : bullets) {
-            //b.write(stream);
-        }
-
-        stream.writeInt(enemies.length);
-        for (Enemy e : enemies) {
-            e.write(stream);
-        }
-
-        stream.writeInt(portals.length);
-        for (Portal p : portals) {
-            p.write(stream);
-        }
-        return new LoadPacket(PacketType.LOAD.getPacketId(), byteStream.toByteArray());
+        return new LoadPacket(mappedPlayers, mappedEnemies, mappedBullets, mappedLoot, mappedPortals);
     }
 
     public boolean equals(LoadPacket other) {
@@ -206,8 +187,8 @@ public class LoadPacket extends Packet {
                 portalDiff.add(p);
             }
         }
-        return LoadPacket.from(playersDiff.toArray(new Player[0]), lootDiff.toArray(new LootContainer[0]),
-                bulletsDiff.toArray(new Bullet[0]), enemyDiff.toArray(new Enemy[0]), portalDiff.toArray(new Portal[0]));
+        return new LoadPacket(playersDiff.toArray(new NetPlayer[0]), enemyDiff.toArray(new NetEnemy[0]),
+                bulletsDiff.toArray(new NetBullet[0]), lootDiff.toArray(new NetLootContainer[0]), portalDiff.toArray(new NetPortal[0]));
     }
 
     public UnloadPacket difference(LoadPacket other) throws Exception {

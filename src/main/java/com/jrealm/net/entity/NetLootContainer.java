@@ -3,11 +3,6 @@ package com.jrealm.net.entity;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import com.jrealm.game.contants.LootTier;
-import com.jrealm.game.entity.item.Chest;
-import com.jrealm.game.entity.item.GameItem;
-import com.jrealm.game.entity.item.LootContainer;
-import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
@@ -15,13 +10,16 @@ import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
 import com.jrealm.net.core.nettypes.SerializableBoolean;
 import com.jrealm.net.core.nettypes.SerializableByte;
-import com.jrealm.net.core.nettypes.SerializableInt;
 import com.jrealm.net.core.nettypes.SerializableLong;
 import com.jrealm.net.core.nettypes.SerializableString;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 @Data
 @Streamable
+@AllArgsConstructor
+@NoArgsConstructor
 public class NetLootContainer extends SerializableFieldType<NetLootContainer>{
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long lootContainerId;
@@ -31,7 +29,7 @@ public class NetLootContainer extends SerializableFieldType<NetLootContainer>{
     private boolean isChest;
 	@SerializableField(order = 3, type = SerializableByte.class)
     private byte tier;
-	@SerializableField(order = 4, typeList = NetGameItem[].class)
+	@SerializableField(order = 4, type = NetGameItem.class, isCollection = true)
     private NetGameItem[] items;
 	@SerializableField(order = 5, type = Vector2f.class)
     private Vector2f pos;

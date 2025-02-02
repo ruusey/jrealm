@@ -28,7 +28,7 @@ public class Portal {
     private long expires;
     private Vector2f pos;
     private Sprite sprite;
-
+    
     public Portal(long id, short portalId, Vector2f pos) {
         this.id = id;
         this.portalId = portalId;

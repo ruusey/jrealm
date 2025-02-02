@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.jrealm.game.contants.PacketType;
@@ -13,8 +14,6 @@ import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
-import com.jrealm.net.entity.NetGameItem;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Streamable
 public class ObjectMovePacket extends Packet {
 
-	@SerializableField(order = 0, typeList = ObjectMovement[].class)
+	@SerializableField(order = 0, type = ObjectMovement.class, isCollection=true)
     private ObjectMovement[] movements;
 
     public ObjectMovePacket() {
@@ -43,18 +42,19 @@ public class ObjectMovePacket extends Packet {
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        IOService.write(this, stream);
+        byte[] write = IOService.writePacket(this, stream);
+        byte[] cp = Arrays.copyOf(write, write.length);
+        ObjectMovePacket read = IOService.readPacket(getClass(), cp);
+        System.out.print("");
     }
 
     @Override
     public void readData(byte[] data) throws Exception {
-    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-    	final DataInputStream dis = new DataInputStream(bis);
-        
-    	final ObjectMovePacket read = IOService.read(getClass(), dis);
+    	final ObjectMovePacket read = IOService.readPacket(getClass(), data);
     	this.movements = read.getMovements();
     }
 
+    
     public ObjectMovePacket getMoveDiff(ObjectMovePacket newMove) throws Exception {
     	final List<ObjectMovement> moveDiff = new ArrayList<>();
         for (final ObjectMovement movement : newMove.getMovements()) {
@@ -75,22 +75,27 @@ public class ObjectMovePacket extends Packet {
         return false;
     }
 
-    public static ObjectMovePacket from(GameObject[] objects) throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-
-        stream.writeInt(objects.length);
-        for (final GameObject obj : objects) {
-        	ObjectMovement toWrite = new ObjectMovement(obj);
-        	toWrite.write(toWrite, stream);
-        }
-
-        return new ObjectMovePacket(PacketType.OBJECT_MOVE.getPacketId(), byteStream.toByteArray());
-    }
+	public static ObjectMovePacket from(GameObject[] objects) throws Exception {
+		final ObjectMovement[] results = new ObjectMovement[objects.length];
+		for (int i = 0; i < objects.length; i++) {
+			final ObjectMovement toWrite = new ObjectMovement(objects[i]);
+			results[i] = toWrite;
+		}
+		final ObjectMovePacket packet = new ObjectMovePacket();
+		packet.setMovements(results);
+		return packet;
+	}
 
     public boolean equals(ObjectMovePacket other) {
         if (other == null)
             return false;
+        if(this.movements==null && other.getMovements()==null) {
+        	return true;
+        }else if(this.movements!=null && other.getMovements()==null) {
+        	return false;
+        }else if(this.movements==null && other.getMovements()!=null) {
+        	return false;
+        }
         for (final ObjectMovement movement : other.getMovements()) {
             if (!this.containsMovement(movement)) {
                 return false;
@@ -100,14 +105,8 @@ public class ObjectMovePacket extends Packet {
     }
 
     public static ObjectMovePacket from(ObjectMovement[] objects) throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-
-        stream.writeInt(objects.length);
-        for (final ObjectMovement obj : objects) {
-            obj.write(obj, stream);
-        }
-
-        return new ObjectMovePacket(PacketType.OBJECT_MOVE.getPacketId(), byteStream.toByteArray());
+    	ObjectMovePacket packet = new ObjectMovePacket();
+    	packet.setMovements(objects);
+    	return packet;
     }
 }

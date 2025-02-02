@@ -4,12 +4,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.Arrays;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableByte;
 import com.jrealm.net.core.nettypes.SerializableLong;
@@ -56,46 +58,42 @@ public class CommandPacket extends Packet {
         DataInputStream dis = new DataInputStream(bis);
         if (dis == null || dis.available() < 5)
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
-        this.playerId = dis.readLong();
-        this.commandId = dis.readByte();
-        this.command = dis.readUTF();
+        final CommandPacket readPacket = IOService.readPacket(getClass(), dis);
+        this.playerId = readPacket.getPlayerId();
+        this.commandId = readPacket.getCommandId();
+        this.command = readPacket.getCommand();
     }
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        if (this.getId() < 1 || this.getData() == null || this.getData().length < 5)
-            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-        this.addHeader(stream);
-        stream.writeLong(this.playerId);
-        stream.writeByte(this.commandId);
-        stream.writeUTF(this.command);
+        byte[] res = IOService.writePacket(this, stream);
+//        byte[] res0 = Arrays.copyOf(res, res.length);
+//        CommandPacket p = IOService.read(getClass(), res0);
+//        log.info("Read/wrote packet {}", p);
     }
 
     public static CommandPacket from(Player target, byte commandId, String command) throws Exception {
-    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    	final DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeLong(target.getId());
-        dos.writeByte(commandId);
-        dos.writeUTF(command);
-        return new CommandPacket(PacketType.COMMAND.getPacketId(), baos.toByteArray());
+    	CommandPacket com = new CommandPacket();
+    	com.setPlayerId(target.getId());
+    	com.setCommandId(commandId);
+    	com.setCommand(command);
+        return com;
     }
 
     public static CommandPacket from(long targetEntity, byte commandId, String command) throws Exception {
-    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeLong(targetEntity);
-        dos.writeByte(commandId);
-        dos.writeUTF(command);
-        return new CommandPacket(PacketType.COMMAND.getPacketId(), baos.toByteArray());
+    	CommandPacket com = new CommandPacket();
+    	com.setPlayerId(targetEntity);
+    	com.setCommandId(commandId);
+    	com.setCommand(command);
+        return com;
     }
 
     public static CommandPacket from(CommandType cmd, Object command) throws Exception {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeLong(-1l);
-        dos.writeByte(cmd.getCommandId());
-        dos.writeUTF(GameDataManager.JSON_MAPPER.writeValueAsString(command));
-        return new CommandPacket(PacketType.COMMAND.getPacketId(), baos.toByteArray());
+    	CommandPacket com = new CommandPacket();
+    	com.setPlayerId(-1l);
+    	com.setCommandId(cmd.getCommandId());
+    	com.setCommand(GameDataManager.JSON_MAPPER.writeValueAsString(command));
+        return com;
     }
 
     public static CommandPacket create(Player target, CommandType type, Object command) {

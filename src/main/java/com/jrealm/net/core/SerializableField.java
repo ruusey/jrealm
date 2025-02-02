@@ -12,6 +12,6 @@ import java.lang.annotation.Target;
 public @interface SerializableField {
 	int order();
 	Class<? extends SerializableFieldType<?>> type() default EmptyField.class; 
-	Class<? extends SerializableFieldType<?>[]> typeList() default EmptyField[].class; 
+	boolean  isCollection() default false; 
 
 }

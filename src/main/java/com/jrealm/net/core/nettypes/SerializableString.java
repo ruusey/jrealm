@@ -14,6 +14,6 @@ public class SerializableString extends SerializableFieldType<String> {
 
 	@Override
 	public void write(String value, DataOutputStream stream) throws Exception {
-		stream.writeUTF(value);
+		stream.writeUTF(value==null?"":value);
 	}
 }

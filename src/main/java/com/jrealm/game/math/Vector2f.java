@@ -4,13 +4,19 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
+import com.jrealm.net.core.nettypes.SerializableFloat;
 import com.jrealm.net.realm.Realm;
 
-@Streamable
-public class Vector2f extends SerializableFieldType<Vector2f>{
+import lombok.Data;
 
+@Streamable
+@Data
+public class Vector2f extends SerializableFieldType<Vector2f>{
+	@SerializableField(order = 0, type = SerializableFloat.class)
     public float x;
+	@SerializableField(order = 1, type = SerializableFloat.class)
     public float y;
 
     public static float worldX;

@@ -26,7 +26,7 @@ public class NetPlayer extends SerializableFieldType<NetPlayer>{
 	private String accountUuid;
 	@SerializableField(order = 3, type = SerializableString.class)
 	private String characterUuid;
-	@SerializableField(order = 4, type = SerializableLong.class)
+	@SerializableField(order = 4, type = SerializableInt.class)
 	private int classId;
 	@SerializableField(order = 5, type = SerializableShort.class)
 	private short size;

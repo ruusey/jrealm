@@ -15,10 +15,11 @@ import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.*;
-import com.jrealm.net.core.nettypes.game.SerializableStats;
 import com.jrealm.net.entity.NetGameItem;
+import com.jrealm.net.entity.NetStats;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,18 +34,18 @@ public class UpdatePacket extends Packet {
     private long playerId;
 	@SerializableField(order = 1, type = SerializableString.class)
     private String playerName;
-	@SerializableField(order = 2, type = SerializableStats.class)
-    private Stats stats;
+	@SerializableField(order = 2, type = NetStats.class)
+    private NetStats stats;
 	@SerializableField(order = 3, type = SerializableInt.class)
     private int health;
 	@SerializableField(order = 4, type = SerializableInt.class)
     private int mana;
-	@SerializableField(order = 5, typeList = NetGameItem[].class)
-    private GameItem[] inventory;
-	@SerializableField(order = 6, type = SerializableShortArray.class)
-    private short[] effectIds;
-	@SerializableField(order = 7, type = SerializableLongArray.class)
-    private long[] effectTimes;
+	@SerializableField(order = 5, type = NetGameItem.class, isCollection=true)
+    private NetGameItem[] inventory;
+	@SerializableField(order = 6, type = SerializableShort.class, isCollection=true)
+    private Short[] effectIds;
+	@SerializableField(order = 7, type = SerializableLong.class, isCollection=true)
+    private Long[] effectTimes;
 	@SerializableField(order = 8, type = SerializableLong.class)
     private long experience;
 
@@ -65,43 +66,10 @@ public class UpdatePacket extends Packet {
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
-            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-        this.addHeader(stream);
-
-        stream.writeLong(this.playerId);
-        stream.writeInt(this.health);
-        stream.writeInt(this.mana);
-        stream.writeUTF(this.playerName);
-
-        if (this.stats != null) {
-            new SerializableStats().write(this.stats, stream);
-        }
-
-        int invSize = 0;
-        if (this.inventory != null) {
-            invSize = this.inventory.length;
-        }
-        stream.writeShort(invSize);
-
-        for (int i = 0; i < invSize; i++) {
-            if (this.inventory[i] != null) {
-                this.inventory[i].write(stream);
-            } else {
-                stream.writeInt(-1);
-            }
-        }
-        stream.writeShort(this.effectIds.length);
-        for (int i = 0; i < this.effectIds.length; i++) {
-            stream.writeShort(this.effectIds[i]);
-        }
-
-        stream.writeShort(this.effectTimes.length);
-        for (int i = 0; i < this.effectTimes.length; i++) {
-            stream.writeLong(this.effectTimes[i]);
-        }
-
-        stream.writeLong(this.experience);
+       final byte[] write = IOService.writePacket(this, stream);
+       final byte[] cp = Arrays.copyOf(write, write.length);
+       final UpdatePacket test = IOService.readPacket(getClass(), cp);
+       System.out.print("");
     }
 
     @Override
@@ -110,118 +78,124 @@ public class UpdatePacket extends Packet {
     	final DataInputStream dis = new DataInputStream(bis);
         if ((dis == null) || (dis.available() < 5))
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
-        this.playerId = dis.readLong();
-        this.health = dis.readInt();
-        this.mana = dis.readInt();
-        this.playerName = dis.readUTF();
-
-        this.stats = new SerializableStats().read(dis);
-        int invSize = dis.readShort();
-
-        if (invSize > 0) {
-            this.inventory = new GameItem[invSize];
-            for (int i = 0; i < invSize; i++) {
-                this.inventory[i] = new GameItem().read(dis);
-            }
-        } else {
-            this.inventory = new GameItem[20];
-        }
-
-        int effectsSize = dis.readShort();
-        this.effectIds = new short[effectsSize];
-        for (int i = 0; i < effectsSize; i++) {
-            this.effectIds[i] = dis.readShort();
-        }
-
-        int effectTimesSize = dis.readShort();
-        this.effectTimes = new long[effectTimesSize];
-        for (int i = 0; i < effectsSize; i++) {
-            this.effectTimes[i] = dis.readLong();
-        }
-
-        this.experience = dis.readLong();
+        final UpdatePacket read = IOService.readPacket(getClass(), dis);
+    	this.setPlayerId(read.getId());
+    	this.setHealth(read.getHealth());
+    	this.setMana(read.getMana());
+    	this.setPlayerName(read.getPlayerName());
+    	this.setStats(read.getStats());
+    	this.setInventory(read.getInventory());
+    	this.setEffectTimes(read.getEffectTimes());
+    	this.setEffectIds(read.getEffectIds());
+    	this.setExperience(read.getExperience());
     }
     
     public static UpdatePacket from(Enemy enemy) throws Exception {
     	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     	final DataOutputStream stream = new DataOutputStream(byteStream);
     	if(enemy==null) return null;
-        stream.writeLong(enemy.getId());
-        stream.writeInt(enemy.getHealth());
-        stream.writeInt(enemy.getMana());
-        stream.writeUTF("enemy["+enemy.getId()+"]");
+      final List<NetGameItem> lootToDrop = Arrays.asList(IOService.mapModel(GameDataManager.GAME_ITEMS.get(48), NetGameItem.class));
 
-        if (enemy.getStats() != null) {
-            new SerializableStats().write(enemy.getStats(), stream);
-        }
-
-        final List<GameItem> lootToDrop = Arrays.asList(GameDataManager.GAME_ITEMS.get(48));
-
-        int invSize = lootToDrop.size();
-        stream.writeShort(invSize);
-        for (int i = 0; i < invSize; i++) {
-        	final GameItem item = lootToDrop.get(i);
-            if (item != null) {
-            	item.write(stream);
-            } else {
-                stream.writeInt(-1);
-            }
-        }
-        
-        stream.writeShort(enemy.getEffectIds().length);
-        for (int i = 0; i < enemy.getEffectIds().length; i++) {
-            stream.writeShort(enemy.getEffectIds()[i]);
-        }
-
-        stream.writeShort(enemy.getEffectTimes().length);
-        for (int i = 0; i < enemy.getEffectTimes().length; i++) {
-            stream.writeLong(enemy.getEffectTimes()[i]);
-        }
-
-        stream.writeLong(1l);
-        return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
+    	UpdatePacket test = new UpdatePacket();
+    	test.setPlayerId(enemy.getId());
+    	test.setHealth(enemy.getHealth());
+    	test.setMana(enemy.getMana());
+    	test.setPlayerName("enemy["+enemy.getId()+"]");
+    	test.setStats(IOService.mapModel(enemy.getStats(), NetStats.class));
+    	test.setInventory(lootToDrop.toArray(new NetGameItem[0]));
+    	test.setEffectTimes(enemy.getEffectTimes());
+    	test.setEffectIds(enemy.getEffectIds());
+    	test.setExperience(1l);
+    	return test;
+//        stream.writeLong(enemy.getId());
+//        stream.writeInt(enemy.getHealth());
+//        stream.writeInt(enemy.getMana());
+//        stream.writeUTF("enemy["+enemy.getId()+"]");
+//
+//        if (enemy.getStats() != null) {
+//            new NetStats().write(enemy.getStats(), stream);
+//        }
+//
+//        final List<GameItem> lootToDrop = Arrays.asList(GameDataManager.GAME_ITEMS.get(48));
+//
+//        int invSize = lootToDrop.size();
+//        stream.writeShort(invSize);
+//        for (int i = 0; i < invSize; i++) {
+//        	final GameItem item = lootToDrop.get(i);
+//            if (item != null) {
+//            	item.write(stream);
+//            } else {
+//                stream.writeInt(-1);
+//            }
+//        }
+//        
+//        stream.writeShort(enemy.getEffectIds().length);
+//        for (int i = 0; i < enemy.getEffectIds().length; i++) {
+//            stream.writeShort(enemy.getEffectIds()[i]);
+//        }
+//
+//        stream.writeShort(enemy.getEffectTimes().length);
+//        for (int i = 0; i < enemy.getEffectTimes().length; i++) {
+//            stream.writeLong(enemy.getEffectTimes()[i]);
+//        }
+//
+//        stream.writeLong(1l);
+//        return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
     }
 
     public static UpdatePacket from(Player player) throws Exception {
     	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     	final DataOutputStream stream = new DataOutputStream(byteStream);
     	if(player==null) return null;
-        stream.writeLong(player.getId());
-        stream.writeInt(player.getHealth());
-        stream.writeInt(player.getMana());
-        stream.writeUTF(player.getName());
-
-        if (player.getStats() != null) {
-            new SerializableStats().write(player.getStats(), stream);
-        }
-
-        int invSize = 0;
-        if (player.getInventory() != null) {
-            invSize = player.getInventory().length;
-        }
-        stream.writeShort(invSize);
-
-        for (int i = 0; i < invSize; i++) {
-        	final GameItem item = player.getInventory()[i];
-            if (item != null) {
-                player.getInventory()[i].write(stream);
-            } else {
-                stream.writeInt(-1);
-            }
-        }
-
-        stream.writeShort(player.getEffectIds().length);
-        for (int i = 0; i < player.getEffectIds().length; i++) {
-            stream.writeShort(player.getEffectIds()[i]);
-        }
-
-        stream.writeShort(player.getEffectTimes().length);
-        for (int i = 0; i < player.getEffectTimes().length; i++) {
-            stream.writeLong(player.getEffectTimes()[i]);
-        }
-
-        stream.writeLong(player.getExperience());
-        return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
+    	
+    	
+    	UpdatePacket test = new UpdatePacket();
+    	test.setPlayerId(player.getId());
+    	test.setHealth(player.getHealth());
+    	test.setMana(player.getMana());
+    	test.setPlayerName(player.getName());
+    	test.setStats(IOService.mapModel(player.getStats(), NetStats.class));
+    	test.setInventory(IOService.mapModel(player.getInventory(), NetGameItem[].class));
+    	test.setEffectTimes(player.getEffectTimes());
+    	test.setEffectIds(player.getEffectIds());
+    	test.setExperience(player.getExperience());
+    	return test;
+//        stream.writeLong(player.getId());
+//        stream.writeInt(player.getHealth());
+//        stream.writeInt(player.getMana());
+//        stream.writeUTF(player.getName());
+//
+//        if (player.getStats() != null) {
+//            new NetStats().write(player.getStats(), stream);
+//        }
+//
+//        int invSize = 0;
+//        if (player.getInventory() != null) {
+//            invSize = player.getInventory().length;
+//        }
+//        stream.writeShort(invSize);
+//
+//        for (int i = 0; i < invSize; i++) {
+//        	final GameItem item = player.getInventory()[i];
+//            if (item != null) {
+//                player.getInventory()[i].write(stream);
+//            } else {
+//                stream.writeInt(-1);
+//            }
+//        }
+//
+//        stream.writeShort(player.getEffectIds().length);
+//        for (int i = 0; i < player.getEffectIds().length; i++) {
+//            stream.writeShort(player.getEffectIds()[i]);
+//        }
+//
+//        stream.writeShort(player.getEffectTimes().length);
+//        for (int i = 0; i < player.getEffectTimes().length; i++) {
+//            stream.writeLong(player.getEffectTimes()[i]);
+//        }
+//
+//        stream.writeLong(player.getExperience());
+//        return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
     }
 
     public boolean equals(UpdatePacket other, boolean thinMatch) {
@@ -230,9 +204,6 @@ public class UpdatePacket extends Packet {
 
         boolean stats = this.stats.equals(other.getStats());
         if(thinMatch) stats=true;
-        if(inventory.length==1) {
-        	System.out.print("");
-        }
         boolean inv = true;
         for (int i = 0; i < this.inventory.length; i++) {
             if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {

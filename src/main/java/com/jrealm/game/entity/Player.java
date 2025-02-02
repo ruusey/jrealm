@@ -27,6 +27,7 @@ import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.Tuple;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.core.IOService;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -46,6 +47,10 @@ public class Player extends Entity {
 	private Stats stats;
 	private boolean headless;
 
+    public Player() {
+        super(0, null, 0);
+    }
+	
 	public Player(GameItem[] inventory, long lastStatsTime, LootContainer currentLootContainer, int classId,
 			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless) {
 		super(0, null, 0);
@@ -365,8 +370,8 @@ public class Player extends Entity {
 
 	public void applyUpdate(UpdatePacket packet, PlayState state) {
 		this.name = packet.getPlayerName();
-		this.stats = packet.getStats();
-		this.inventory = packet.getInventory();
+		this.stats = IOService.mapModel(packet.getStats(), Stats.class);
+		this.inventory = IOService.mapModel(packet.getInventory(), GameItem[].class);
 		for (GameItem item : this.inventory) {
 			if (item != null) {
 				GameDataManager.loadSpriteModel(item);

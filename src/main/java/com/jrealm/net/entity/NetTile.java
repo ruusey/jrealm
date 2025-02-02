@@ -20,7 +20,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-
 @Streamable
 public class NetTile extends SerializableFieldType<NetTile> {
 	@SerializableField(order = 0, type = SerializableShort.class)

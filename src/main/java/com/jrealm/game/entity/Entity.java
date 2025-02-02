@@ -47,8 +47,8 @@ public abstract class Entity extends GameObject {
 
     protected Rectangle hitBounds;
 
-    private short[] effectIds;
-    private long[] effectTimes;
+    private Short[] effectIds;
+    private Long[] effectTimes;
 
     public Entity(long id, Vector2f origin, int size) {
         super(id, origin, size);
@@ -60,8 +60,8 @@ public abstract class Entity extends GameObject {
     public void removeEffect(short effectId) {
         for (int i = 0; i < this.effectIds.length; i++) {
             if (this.effectIds[i] == effectId) {
-                this.effectIds[i] = -1;
-                this.effectTimes[i] = -1;
+                this.effectIds[i] = (short)-1;
+                this.effectTimes[i] = (long)-1;
             }
         }
     }
@@ -70,8 +70,8 @@ public abstract class Entity extends GameObject {
         for (int i = 0; i < this.effectIds.length; i++) {
             if (this.effectIds[i] != -1) {
                 if (Instant.now().toEpochMilli() > this.effectTimes[i]) {
-                    this.effectIds[i] = -1;
-                    this.effectTimes[i] = -1;
+                    this.effectIds[i] = (short) -1;
+                    this.effectTimes[i] = (long) -1;
                 }
             }
         }
@@ -96,8 +96,8 @@ public abstract class Entity extends GameObject {
     }
 
     public void resetEffects() {
-        this.effectIds = new short[] { -1, -1, -1, -1, -1, -1, -1, -1 };
-        this.effectTimes = new long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
+        this.effectIds = new Short[] { -1, -1, -1, -1, -1, -1, -1, -1 };
+        this.effectTimes = new Long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
     }
 
     public void addEffect(EffectType effect, long duration) {
