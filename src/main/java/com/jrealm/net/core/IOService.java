@@ -9,6 +9,7 @@ import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
@@ -51,151 +52,60 @@ public class IOService {
 
 	}
 
-	public static <T> T readPacket(Class<? extends Packet> clazz, byte[] data) throws Exception {
+	public static synchronized <T> T readPacket(Class<? extends Packet> clazz, byte[] data) throws Exception {
 		final ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		final DataInputStream dis = new DataInputStream(bis);
 		byte packetIdRead = removeHeader(dis);
 		return readStream(clazz, dis);
 	}
 
-	public static <T> T readPacket(Class<? extends Packet> clazz, DataInputStream stream) throws Exception {
+	public static synchronized <T> T readPacket(Class<? extends Packet> clazz, DataInputStream stream)
+			throws Exception {
 		byte packetIdRead = removeHeader(stream);
 		return readStream(clazz, stream);
 	}
 
-	public static byte[] writePacket(Packet packet, DataOutputStream stream) throws Exception {
+	public static synchronized byte[] writePacket(Packet packet, DataOutputStream stream) throws Exception {
 		final ByteArrayOutputStream byteStream0 = new ByteArrayOutputStream();
 		final DataOutputStream stream0 = new DataOutputStream(byteStream0);
 		writeStream(packet, stream0);
+
 		final ByteArrayOutputStream byteStreamFinal = new ByteArrayOutputStream();
 		final DataOutputStream streamfinal = new DataOutputStream(byteStreamFinal);
 		addHeader(packet, byteStream0.toByteArray().length, streamfinal);
 		streamfinal.write(byteStream0.toByteArray());
 		stream.write(byteStreamFinal.toByteArray());
-		//stream.flush();
+		// stream.flush();
 		return byteStreamFinal.toByteArray();
 	}
 
-	public static void writeStream(Object model, DataOutputStream stream0) throws Exception {
+	public static synchronized void writeStream(Object model, DataOutputStream stream0) throws Exception {
+		if(model==null) {
+			int asd = 1;
+		}
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(model.getClass());
+		if (log.isDebugEnabled())
+			log.info("[WRITE] class {} begin. ToWrite = {}", model.getClass(), model);
 		if (mappingInfo == null) {
-			log.error("NO MAPPING FOR CLASS {}", model.getClass());
+			log.error("[WRITE] NO MAPPING FOR CLASS {}", model.getClass());
 			return;
 		}
 		for (PacketMappingInformation info : mappingInfo) {
-			if(log.isDebugEnabled())
-				log.info("[WRITE] Begin write mapping for MODEL {} field {}", model.getClass(), info.getPropertyHandle().varType());
-			Object[] collection = null;
-			int collectionLength = 1;
-			if (info.isCollection()) {
-				if(log.isDebugEnabled())
-					log.info("[WRITE] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
-							info.getPropertyHandle().varType());
-				try {
-					collection = (Object[]) info.getPropertyHandle().get(model);
-					if(log.isDebugEnabled())
-						log.info("[WRITE] Fetched FieldType {} as collection. Length = {}", info.getPropertyHandle().varType(),
-								collection.length);
-
-					if (collection != null && collection.length >= 0) {
-						collectionLength = collection.length;
-						stream0.writeInt(collectionLength);
-						if(log.isDebugEnabled())
-							log.info("[WRITE] Writing collectionSize. Length = {}", collectionLength);
-
-					} else {
-						if(log.isDebugEnabled())
-							log.info("[WRITE] Writing empty collectionSize. Length = {}", 0);
-						stream0.writeInt(0);
-					}
-
-				} catch (Exception e) {
-					if(log.isDebugEnabled())
-						log.error("[WRITE] Failed to extract collection info frorm class {}", model.getClass());
-				}
-			}
-			for (int i = 0; i < collectionLength; i++) {
-				if (info.isCollection()) {
-					if(log.isDebugEnabled())
-						log.info("[WRITE] Writing Object {} {}/{}", info.getPropertyHandle().varType(), i, collectionLength);
-				}
-				if(log.isDebugEnabled())
-					log.info("[WRITE] Begin write mapping for MODEL {} field {}", model.getClass(),
+			if (log.isDebugEnabled())
+				log.info("[WRITE] Begin write mapping for MODEL {} field {}", model.getClass(),
 						info.getPropertyHandle().varType());
-
-				final SerializableFieldType<?> serializer = info.getSerializer();
-				if (serializer instanceof SerializableBoolean) {
-					Boolean fieldVal = null;
-					if (info.isCollection()) {
-						fieldVal = (Boolean) collection[i];
-					} else {
-						fieldVal = (Boolean) info.getPropertyHandle().get(model);
-					}
-					((SerializableBoolean) serializer).write(fieldVal, stream0);
-
-				} else if (serializer instanceof SerializableShort) {
-					Short fieldVal = null;
-					if (info.isCollection()) {
-						fieldVal = (Short) collection[i];
-					} else {
-						fieldVal = (Short) info.getPropertyHandle().get(model);
-					}
-					((SerializableShort) serializer).write(fieldVal, stream0);
-
-				} else if (serializer instanceof SerializableInt) {
-
-					final Integer fieldVal = (Integer) info.getPropertyHandle().get(model);
-					((SerializableInt) serializer).write(fieldVal, stream0);
-
-				} else if (serializer instanceof SerializableLong) {
-					Long fieldVal = null;
-					if (info.isCollection()) {
-						fieldVal = (Long) collection[i];
-					} else {
-						fieldVal = (Long) info.getPropertyHandle().get(model);
-					}
-					((SerializableLong) serializer).write(fieldVal, stream0);
-
-				} else if (serializer instanceof SerializableByte) {
-
-					final Byte fieldVal = (Byte) info.getPropertyHandle().get(model);
-					((SerializableByte) serializer).write(fieldVal, stream0);
-
-				} else if (serializer instanceof SerializableString) {
-
-					final String fieldVal = (String) info.getPropertyHandle().get(model);
-					((SerializableString) serializer).write(fieldVal, stream0);
-
-				} else if (serializer instanceof SerializableFloat) {
-					final Float fieldVal = (Float) info.getPropertyHandle().get(model);
-					((SerializableFloat) serializer).write(fieldVal, stream0);
+			final SerializableFieldType serializer = info.getSerializer();
+			if(info.isCollection()) {
+				final Object[] collection = (Object[]) info.getPropertyHandle().get(model);;
+				final int collectionLength = collection!=null?collection.length:0;
+				stream0.writeInt(collectionLength);
+				for (int i = 0; i < collectionLength; i++) {
+					serializer.write(collection[i], stream0);
 				}
-
-				else {
-					Object value = null;
-					if(log.isDebugEnabled())
-						log.info("[WRITE] writing sub object {}", info.getPropertyHandle().varType());
-
-					if (info.isCollection()) {
-						final Object toWrite = collection[i];
-						if (toWrite != null) {
-							if(log.isDebugEnabled())
-								log.info("[WRITE] adding value {} to collection sub object {}", value,
-										info.getPropertyHandle().varType());
-							writeStream(collection[i], stream0);
-						}
-					} else {
-
-						value = info.getPropertyHandle().get(model);
-						if (value != null) {
-							if(log.isDebugEnabled())
-								log.info("[WRITE] wrote Object to Model {}. Value {}", info.getPropertyHandle().varType(),
-										value);
-
-							writeStream(value, stream0);
-						}
-					}
-				}
+				System.out.print("");
+			}else {
+				final Object obj = info.getPropertyHandle().get(model);
+				serializer.write(obj, stream0);
 			}
 		}
 	}
@@ -204,132 +114,50 @@ public class IOService {
 		return MAPPER.map(model, target);
 	}
 
-	public static <T> T readStreamRecursive(Class<?> clazz, DataInputStream stream, Object result) throws Exception {
+	public static synchronized <T> T readStreamRecursive(Class<?> clazz, DataInputStream stream, Object result)
+			throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
-		if(log.isDebugEnabled())
+		if (log.isDebugEnabled())
 			log.info("[READ] class {} begin. CurrentRessults = {}", clazz, result);
 		if (result == null) {
 			final Object packet = clazz.getDeclaredConstructor().newInstance();
 			if (packet instanceof Packet) {
-
 				((Packet) packet).setId(PacketType.valueOf(clazz).getPacketId());
 			}
 			result = packet;
 		}
 
 		for (PacketMappingInformation info : mappingInfo) {
-			if(log.isDebugEnabled())
+			if (log.isDebugEnabled())
 				log.info("[READ] Begin read mapping for MODEL {} field {}", clazz, info.getPropertyHandle().varType());
 
-			Integer collectionLength = 1;
-			Object[] collection = null;
-
+			final SerializableFieldType<?> serializer = info.getSerializer();
 			if (info.isCollection()) {
-				if(log.isDebugEnabled())
+				if (log.isDebugEnabled())
 					log.info("[READ] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
 							info.getPropertyHandle().varType());
-				collectionLength = stream.readInt();
-				collection = new Object[collectionLength];
-			}
-			final SerializableFieldType<?> serializer = info.getSerializer();
-			for (int i = 0; i < collectionLength; i++) {
-				if (info.isCollection()) {
-					if(log.isDebugEnabled())
-						log.info("[READ] Reading object {} {}/{}", info.getPropertyHandle().varType(), i,
-							collectionLength);
+				int collectionLength = stream.readInt();
+				Object[] collection = (Object[]) Array.newInstance(info.getPropertyHandle().varType().getComponentType(), collectionLength);
+				for (int i = 0; i < collectionLength; i++) {
 
+					final Object obj = serializer.read(stream);
+					collection[i] = obj;
 				}
-				if(log.isDebugEnabled())
-					log.info("[READ] Begin write mapping for MODEL {} field {}", clazz,
-						info.getPropertyHandle().varType());
-
-				if (serializer instanceof SerializableBoolean) {
-					final Boolean fieldVal = ((SerializableBoolean) serializer).read(stream);
-					if (info.isCollection()) {
-						collection[i] = fieldVal;
-					} else {
-						info.getPropertyHandle().set(result, fieldVal);
-					}
-				} else if (serializer instanceof SerializableShort) {
-					final Short fieldVal = ((SerializableShort) serializer).read(stream);
-					if (info.isCollection()) {
-						collection[i] = fieldVal;
-					} else {
-						info.getPropertyHandle().set(result, fieldVal);
-					}
-				} else if (serializer instanceof SerializableInt) {
-					final Integer fieldVal = ((SerializableInt) serializer).read(stream);
-					if (info.isCollection()) {
-						collection[i] = fieldVal;
-					} else {
-						info.getPropertyHandle().set(result, fieldVal);
-					}
-				} else if (serializer instanceof SerializableLong) {
-					final Long fieldVal = ((SerializableLong) serializer).read(stream);
-					if (info.isCollection()) {
-						collection[i] = fieldVal;
-					} else {
-						info.getPropertyHandle().set(result, fieldVal);
-					}
-				} else if (serializer instanceof SerializableByte) {
-					final Byte fieldVal = ((SerializableByte) serializer).read(stream);
-					if (info.isCollection()) {
-						collection[i] = fieldVal;
-					} else {
-						info.getPropertyHandle().set(result, fieldVal);
-					}
-				} else if (serializer instanceof SerializableString) {
-					final String fieldVal = ((SerializableString) serializer).read(stream);
-					if (info.isCollection()) {
-						collection[i] = fieldVal;
-					} else {
-						info.getPropertyHandle().set(result, fieldVal);
-					}
-				} else if (serializer instanceof SerializableFloat) {
-					final Float fieldVal = ((SerializableFloat) serializer).read(stream);
-					if (info.isCollection()) {
-						collection[i] = fieldVal;
-					} else {
-						info.getPropertyHandle().set(result, fieldVal);
-					}
-				} else {
-					Class<?> targetObjClass = info.getPropertyHandle().varType();
-					if(targetObjClass.isArray()) {
-						targetObjClass = targetObjClass.getComponentType();
-					}
-					//final Object subObject = serializer.read(stream);
-					Object read = readStreamRecursive(targetObjClass, stream, null);
-					if(log.isDebugEnabled()) {
-						log.info("[READ] reading sub object {}", read);
-
-					}
-
-					if (read != null && info.isCollection()) {
-						if(log.isDebugEnabled())
-							log.info("[READ] Sub Object {} Added to collection at index {}", read, i);
-
-						collection[i] = read;
-					} else if (read != null) {
-						if(log.isDebugEnabled())
-							log.info("[READ] Sub Object {} set on {}", read, result);
-
-						info.getPropertyHandle().set(result, read);
-					}
-				}
-			}
-			if (info.isCollection()) {
-				info.getPropertyHandle().set(result,
-						IOService.mapModel(collection, info.getPropertyHandle().varType()));
+				
+				info.getPropertyHandle().set(result, collection);
+			} else {
+				final Object obj = serializer.read(stream);
+				info.getPropertyHandle().set(result, obj);
 			}
 		}
 		return (T) result;
 	}
 
-	public static <T> T readStream(Class<?> clazz, DataInputStream stream) throws Exception {
+	public synchronized static <T> T readStream(Class<?> clazz, DataInputStream stream) throws Exception {
 		return readStreamRecursive(clazz, stream, null);
 	}
 
-	public static <T> T readStream(Class<?> clazz, byte[] stream) throws Exception {
+	public static synchronized <T> T readStream(Class<?> clazz, byte[] stream) throws Exception {
 		final ByteArrayInputStream bis = new ByteArrayInputStream(stream);
 		final DataInputStream dis = new DataInputStream(bis);
 		return readStreamRecursive(clazz, dis, null);

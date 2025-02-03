@@ -19,7 +19,6 @@ import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 @Streamable
 public class NetTile extends SerializableFieldType<NetTile> {
 	@SerializableField(order = 0, type = SerializableShort.class)
@@ -31,6 +30,13 @@ public class NetTile extends SerializableFieldType<NetTile> {
 	@SerializableField(order = 3, type = SerializableInt.class)
     private Integer yIndex;
 
+	public NetTile() {
+		this.tileId = -1;
+		this.layer = -1;
+		this.xIndex = -1;
+		this.yIndex = -1;
+	}
+	
 	@Override
 	public NetTile read(DataInputStream stream) throws Exception {
 		return IOService.readStream(getClass(), stream);

@@ -371,7 +371,7 @@ public class Player extends Entity {
 	public void applyUpdate(UpdatePacket packet, PlayState state) {
 		this.name = packet.getPlayerName();
 		this.stats = IOService.mapModel(packet.getStats(), Stats.class);
-		this.inventory = IOService.mapModel(packet.getInventory(), GameItem[].class);
+		this.inventory = packet.getInventory()==null? null:IOService.mapModel(packet.getInventory(), GameItem[].class);
 		for (GameItem item : this.inventory) {
 			if (item != null) {
 				GameDataManager.loadSpriteModel(item);

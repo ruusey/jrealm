@@ -17,7 +17,6 @@ import lombok.NoArgsConstructor;
 @Data
 @Streamable
 @AllArgsConstructor
-@NoArgsConstructor
 public class NetStats extends SerializableFieldType<NetStats> {
 	@SerializableField(order = 0, type = SerializableShort.class)
 	private Short hp;
@@ -35,7 +34,18 @@ public class NetStats extends SerializableFieldType<NetStats> {
 	private Short vit;
 	@SerializableField(order = 7, type = SerializableShort.class)
 	private Short wis;
-
+	
+	public NetStats() {
+		this.hp = 0;
+		this.mp = 0;
+		this.def = 0;
+		this.att = 0;
+		this.spd = 0;
+		this.dex = 0;
+		this.vit = 0;
+		this.wis = 0;
+	}
+	
 	@Override
 	public NetStats read(DataInputStream stream) throws Exception {
 		return IOService.readStream(getClass(), stream);
@@ -43,6 +53,9 @@ public class NetStats extends SerializableFieldType<NetStats> {
 
 	@Override
 	public void write(NetStats value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+		NetStats toWrite = value == null ? new NetStats() : value;
+		IOService.writeStream(toWrite, stream);
 	}
+
+
 }

@@ -93,6 +93,9 @@ public class SocketClient implements Runnable {
                         break;
                     }
                     final byte packetId = this.remoteBuffer[0];
+                    if(packetLength<-1) {
+                    	int i = 0;
+                    }
                     final byte[] packetBytes = new byte[packetLength];
                     System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
                     if (this.remoteBufferIndex > packetLength) {

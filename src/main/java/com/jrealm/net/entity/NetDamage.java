@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 @Data
 @Streamable
 @AllArgsConstructor
-@NoArgsConstructor
 public class NetDamage extends SerializableFieldType<NetDamage> {
 	@SerializableField(order = 0, type = SerializableInt.class)
 	private Integer projectileGroupId;
@@ -24,7 +23,12 @@ public class NetDamage extends SerializableFieldType<NetDamage> {
 	private Short min;
 	@SerializableField(order = 2, type = SerializableShort.class)
 	private Short max;
-
+ 
+	public NetDamage() {
+		this.projectileGroupId = -1;
+		this.min = -1;
+		this.max =-1;
+	}
 	@Override
 	public NetDamage read(DataInputStream stream) throws Exception {
 		return IOService.readStream(getClass(), stream);
@@ -32,6 +36,7 @@ public class NetDamage extends SerializableFieldType<NetDamage> {
 
 	@Override
 	public void write(NetDamage value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+		NetDamage toWrite = value == null ? new NetDamage() : value;
+		IOService.writeStream(toWrite, stream);
 	}
 }

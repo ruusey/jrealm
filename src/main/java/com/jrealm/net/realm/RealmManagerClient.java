@@ -78,7 +78,7 @@ public class RealmManagerClient implements Runnable {
 //            		created = Packet.newInstance(toProcess.getId(), toProcess.getData());
 //				
 					created = toProcess;
-				log.info("Processing client packet {} ", created);
+				log.info("[CLIENT] Processing client packet {} ", created);
                 created.setSrcIp(toProcess.getSrcIp());
                 this.packetCallbacksClient.get(created.getId()).accept(this, created);
             } catch (Exception e) {

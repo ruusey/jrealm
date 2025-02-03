@@ -518,8 +518,9 @@ public class RealmManagerServer implements Runnable {
 					final Packet packet = thread.getValue().getPacketQueue().remove();
 					try {
 						Packet created = packet;
-						;
 						created.setSrcIp(packet.getSrcIp());
+						log.info("[SERVER] Processing server packet {} ", created);
+
 						// Invoke packet callback
 						final List<MethodHandle> packetHandles = this.userPacketCallbacksServer.get(packet.getId());
 						long start = System.nanoTime();

@@ -67,7 +67,7 @@ public class UpdatePacket extends Packet {
 
 	@Override
 	public void serializeWrite(DataOutputStream stream) throws Exception {
-		IOService.writeStream(this, stream);
+		IOService.writePacket(this, stream);
 		// Object t0 = IOService.writePacket((Packet)t, stream);
 //       final byte[] cp = Arrays.copyOf(write, write.length);
 //       final UpdatePacket test = IOService.readPacket(getClass(), cp);

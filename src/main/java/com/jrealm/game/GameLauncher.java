@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GameLauncher {
 	public static final String GAME_VERSION = "0.3.5";
+	public static final Boolean DEBUG_MODE = true;
 	// private static final String HELP_MSG = "Please set the player email,
 	// password, server and character UUID. [java -jar ./jrealm-{version}.jar
 	// {-client | -server| -embedded} {SERVER_ADDR} {PLAYER_EMAIL} {PLAYER_PASSWORD}
@@ -30,6 +31,8 @@ public class GameLauncher {
 
 	public static void main(String[] args) {
 		GameLauncher.log.info("Starting JRealm...");
+		
+
 		if (args.length < 2) {
 			GameLauncher.log
 					.error("Run option {-client | -server| -embedded} and {SERVER_ADDR} are required arguments");

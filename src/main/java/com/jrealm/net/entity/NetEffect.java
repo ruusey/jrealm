@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.entity.item.Effect;
-import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
@@ -16,12 +15,10 @@ import com.jrealm.net.core.nettypes.SerializableShort;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @Streamable
 @AllArgsConstructor
-@NoArgsConstructor
 public class NetEffect extends SerializableFieldType<NetEffect> {
 	@SerializableField(order = 0, type = SerializableBoolean.class)
 	private Boolean self;
@@ -34,6 +31,14 @@ public class NetEffect extends SerializableFieldType<NetEffect> {
 	@SerializableField(order = 4, type = SerializableShort.class)
 	private Short mpCost;
 
+	public NetEffect() {
+		this.self = false;
+		this.effectId = -1;
+		this.duration = -1l;
+		this.cooldownDuration = -1l;
+		this.mpCost = -1;
+	}
+
 	@Override
 	public NetEffect read(DataInputStream stream) throws Exception {
 		return IOService.readStream(getClass(), stream);
@@ -41,11 +46,13 @@ public class NetEffect extends SerializableFieldType<NetEffect> {
 
 	@Override
 	public void write(NetEffect value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+		NetEffect toWrite = value == null ? new NetEffect() : value;
+		IOService.writeStream(toWrite, stream);
 	}
 
 	public Effect asEffect() {
 		return Effect.builder().self(this.self).effectId(EffectType.valueOf(this.effectId)).duration(this.duration)
 				.cooldownDuration(this.cooldownDuration).mpCost(this.mpCost).build();
 	}
+
 }

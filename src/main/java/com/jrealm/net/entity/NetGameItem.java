@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
+
 @Streamable
 public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	@SerializableField(order = 0, type = SerializableInt.class)
@@ -47,6 +47,7 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
     private Byte fameBonus;
 	
 	
+	
 	@Override
 	public NetGameItem read(DataInputStream stream) throws Exception {
 		return IOService.readStream(getClass(), stream);
@@ -56,7 +57,24 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	public void write(NetGameItem value, DataOutputStream stream) throws Exception {
 		if(value==null) {
 			 IOService.writeStream(new NetGameItem(), stream);
+		}else {
+		    IOService.writeStream(value, stream);
 		}
-	    IOService.writeStream(value, stream);
+	}
+
+	public NetGameItem() {
+		this.itemId = -1;
+		this.uid = "";
+		
+		this.name = "";
+		this.description = "";
+		this.stats = new NetStats();
+		this.damage = new NetDamage();
+		this.effect = new NetEffect();
+		this.consumable = false;
+		this.tier = -2;
+		this.targetSlot = -1;
+		this.targetClass = -1;
+		this.fameBonus = -1;
 	}
 }
