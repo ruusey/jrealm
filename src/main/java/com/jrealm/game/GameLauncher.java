@@ -107,49 +107,65 @@ public class GameLauncher {
 
 	@SuppressWarnings("unchecked")
 	private static void startClient(String[] args) {
-		final LoginScreenPanel loginPanel = new LoginScreenPanel(1020, 320);
-		final JFrame frame = loginPanel.getLoginFrame();
-		frame.setVisible(true);
-		frame.setLocationRelativeTo(null);
-		frame.setResizable(true);
-		while (!loginPanel.isSubmitted()) {
-			try {
-				Thread.sleep(50);
-			} catch (Exception e) {
-			}
+		boolean skipLogin=false;
+		if(args.length>2) {
+			SocketClient.SERVER_ADDR = args[1];
+			SocketClient.PLAYER_EMAIL = args[2];
+			SocketClient.PLAYER_PASSWORD = args[3];
+			SocketClient.CHARACTER_UUID = args[4];
+			skipLogin=true;
+				
 		}
+		final LoginScreenPanel loginPanel = new LoginScreenPanel(1020, 320);
 		try {
-			final ObjectNode loginRequest = new ObjectNode(JsonNodeFactory.instance);
-			loginRequest.put("email",  SocketClient.PLAYER_EMAIL);
-			loginRequest.put("password",  SocketClient.PLAYER_PASSWORD);
-
-			final ObjectNode response = ClientGameLogic.DATA_SERVICE.executePost("admin/account/login",
-					loginRequest, ObjectNode.class);
-			ClientGameLogic.DATA_SERVICE.setSessionToken(response.get("token").asText());
-			final PlayerAccountDto account = ClientGameLogic.DATA_SERVICE.executeGet(
-					"/data/account/" + response.get("accountGuid").asText(), null, PlayerAccountDto.class);
-			loginPanel.setCharacters(account);
-			final Dimension currSize = frame.getSize();
-			currSize.setSize(currSize.getWidth() + 70, currSize.getHeight());
-			loginPanel.setSize(currSize);
-			frame.setSize(currSize);
-			while (loginPanel.getChars().getSelectedItem().toString().equals("-- Select Character --")) {
-				try {
-					Thread.sleep(50);
-				} catch (Exception e) {
+			final JFrame frame = loginPanel.getLoginFrame();
+			frame.setVisible(true);
+			frame.setLocationRelativeTo(null);
+			frame.setResizable(true);
+			while(true) {
+				while (!loginPanel.isSubmitted() && !skipLogin) {
+					try {
+						Thread.sleep(50);
+					} catch (Exception e) {
+					}
 				}
+				final ObjectNode loginRequest = new ObjectNode(JsonNodeFactory.instance);
+				loginRequest.put("email",  SocketClient.PLAYER_EMAIL);
+				loginRequest.put("password",  SocketClient.PLAYER_PASSWORD);
+
+				final ObjectNode response = ClientGameLogic.DATA_SERVICE.executePost("admin/account/login",
+						loginRequest, ObjectNode.class);
+				ClientGameLogic.DATA_SERVICE.setSessionToken(response.get("token").asText());
+				final PlayerAccountDto account = ClientGameLogic.DATA_SERVICE.executeGet(
+						"/data/account/" + response.get("accountGuid").asText(), null, PlayerAccountDto.class);
+				loginPanel.setCharacters(account);
+				final Dimension currSize = frame.getSize();
+				currSize.setSize(currSize.getWidth() + 70, currSize.getHeight());
+				loginPanel.setSize(currSize);
+				frame.setSize(currSize);
+				while (loginPanel.getChars().getSelectedItem().toString().equals("-- Select Character --") && !skipLogin) {
+					try {
+						Thread.sleep(50);
+					} catch (Exception e) {
+					}
+				}
+				final String selected = loginPanel.getChars().getSelectedItem().toString();
+				int idx = selected.indexOf("[");
+				final String charUuid = selected.substring(idx + 1, selected.lastIndexOf("]"));
+				SocketClient.CHARACTER_UUID = charUuid;
+				frame.dispose();
+				log.info("[CLIENT] Chose characterUuid={}, disposing login frame", charUuid);
+				break;
 			}
-			final String selected = loginPanel.getChars().getSelectedItem().toString();
-			int idx = selected.indexOf("[");
-			final String charUuid = selected.substring(idx + 1, selected.lastIndexOf("]"));
-			SocketClient.CHARACTER_UUID = charUuid;
-			frame.dispose();
-			log.info("[CLIENT] Chose characterUuid={}, disposing login frame", charUuid);
+			
 		} catch (Exception e) {
 			log.error("[CLIENT] Failed to perform login and account fetch. Reason: {}", e.getMessage());
 			JOptionPane.showMessageDialog(loginPanel.getFrame(), e.getMessage());
-			System.exit(-1);
+			//System.exit(-1);
 		}
+		
+		
+
 		log.info("[CLIENT] Starting game client...");
 		new Window();
 	}

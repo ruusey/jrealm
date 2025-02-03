@@ -23,13 +23,13 @@ import lombok.NoArgsConstructor;
 @Streamable
 public class NetTile extends SerializableFieldType<NetTile> {
 	@SerializableField(order = 0, type = SerializableShort.class)
-    private short tileId;
+    private Short tileId;
 	@SerializableField(order = 1, type = SerializableByte.class)
-    private byte layer;
+    private Byte layer;
 	@SerializableField(order = 2, type = SerializableInt.class)
-    private int xIndex;
+    private Integer xIndex;
 	@SerializableField(order = 3, type = SerializableInt.class)
-    private int yIndex;
+    private Integer yIndex;
 
 	@Override
 	public NetTile read(DataInputStream stream) throws Exception {

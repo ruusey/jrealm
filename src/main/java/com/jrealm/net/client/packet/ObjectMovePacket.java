@@ -43,14 +43,12 @@ public class ObjectMovePacket extends Packet {
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
         byte[] write = IOService.writePacket(this, stream);
-        byte[] cp = Arrays.copyOf(write, write.length);
-        ObjectMovePacket read = IOService.readPacket(getClass(), cp);
-        System.out.print("");
     }
 
     @Override
     public void readData(byte[] data) throws Exception {
     	final ObjectMovePacket read = IOService.readPacket(getClass(), data);
+    	read.setId(PacketType.OBJECT_MOVE.getPacketId());
     	this.movements = read.getMovements();
     }
 
@@ -62,7 +60,6 @@ public class ObjectMovePacket extends Packet {
                 moveDiff.add(movement);
             }
         }
-
         return moveDiff.size() == 0 ? null : ObjectMovePacket.from(moveDiff.toArray(new ObjectMovement[0]));
     }
 
@@ -82,6 +79,7 @@ public class ObjectMovePacket extends Packet {
 			results[i] = toWrite;
 		}
 		final ObjectMovePacket packet = new ObjectMovePacket();
+		packet.setId(PacketType.COMMAND.getPacketId());
 		packet.setMovements(results);
 		return packet;
 	}
@@ -107,6 +105,7 @@ public class ObjectMovePacket extends Packet {
     public static ObjectMovePacket from(ObjectMovement[] objects) throws Exception {
     	ObjectMovePacket packet = new ObjectMovePacket();
     	packet.setMovements(objects);
+    	packet.setId(PacketType.OBJECT_MOVE.getPacketId());
     	return packet;
     }
 }

@@ -31,83 +31,85 @@ import lombok.extern.slf4j.Slf4j;
 @Streamable
 public class UpdatePacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
-    private long playerId;
+	private long playerId;
 	@SerializableField(order = 1, type = SerializableString.class)
-    private String playerName;
+	private String playerName;
 	@SerializableField(order = 2, type = NetStats.class)
-    private NetStats stats;
+	private NetStats stats;
 	@SerializableField(order = 3, type = SerializableInt.class)
-    private int health;
+	private int health;
 	@SerializableField(order = 4, type = SerializableInt.class)
-    private int mana;
+	private int mana;
 	@SerializableField(order = 5, type = SerializableLong.class)
-    private long experience;
-	@SerializableField(order = 6, type = NetGameItem.class, isCollection=true)
-    private NetGameItem[] inventory;
-	@SerializableField(order = 7, type = SerializableShort.class, isCollection=true)
-    private Short[] effectIds;
-	@SerializableField(order = 8, type = SerializableLong.class, isCollection=true)
-    private Long[] effectTimes;
+	private long experience;
+	@SerializableField(order = 6, type = NetGameItem.class, isCollection = true)
+	private NetGameItem[] inventory;
+	@SerializableField(order = 7, type = SerializableShort.class, isCollection = true)
+	private Short[] effectIds;
+	@SerializableField(order = 8, type = SerializableLong.class, isCollection = true)
+	private Long[] effectTimes;
 
+	// TODO: Rewrite this to only include delta data within the character not the
+	// entire character
+	public UpdatePacket() {
 
-    // TODO: Rewrite this to only include delta data within the character not the entire character
-    public UpdatePacket() {
+	}
 
-    }
+	public UpdatePacket(byte id, byte[] data) {
+		super(id, data);
+		try {
+			this.readData(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+			UpdatePacket.log.error("Failed to build Stats Packet. Reason: {}", e.getMessage());
+		}
+	}
 
-    public UpdatePacket(byte id, byte[] data) {
-        super(id, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            e.printStackTrace();
-            UpdatePacket.log.error("Failed to build Stats Packet. Reason: {}", e.getMessage());
-        }
-    }
+	@Override
+	public void serializeWrite(DataOutputStream stream) throws Exception {
+		IOService.writeStream(this, stream);
+		// Object t0 = IOService.writePacket((Packet)t, stream);
+//       final byte[] cp = Arrays.copyOf(write, write.length);
+//       final UpdatePacket test = IOService.readPacket(getClass(), cp);
+		System.out.print("");
+	}
 
-    @Override
-    public void serializeWrite(DataOutputStream stream) throws Exception {
-       final byte[] write = IOService.writePacket(this, stream);
-       final byte[] cp = Arrays.copyOf(write, write.length);
-       final UpdatePacket test = IOService.readPacket(getClass(), cp);
-       System.out.print("");
-    }
+	@Override
+	public void readData(byte[] data) throws Exception {
+		final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+		final DataInputStream dis = new DataInputStream(bis);
+		if ((dis == null) || (dis.available() < 5))
+			throw new IllegalStateException("No Packet data available to read from DataInputStream");
+		final UpdatePacket read = IOService.readPacket(getClass(), dis);
+		this.setPlayerId(read.getId());
+		this.setHealth(read.getHealth());
+		this.setMana(read.getMana());
+		this.setPlayerName(read.getPlayerName());
+		this.setStats(read.getStats());
+		this.setInventory(read.getInventory());
+		this.setEffectTimes(read.getEffectTimes());
+		this.setEffectIds(read.getEffectIds());
+		this.setExperience(read.getExperience());
+	}
 
-    @Override
-    public void readData(byte[] data) throws Exception {
-    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-    	final DataInputStream dis = new DataInputStream(bis);
-        if ((dis == null) || (dis.available() < 5))
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");
-        final UpdatePacket read = IOService.readPacket(getClass(), dis);
-    	this.setPlayerId(read.getId());
-    	this.setHealth(read.getHealth());
-    	this.setMana(read.getMana());
-    	this.setPlayerName(read.getPlayerName());
-    	this.setStats(read.getStats());
-    	this.setInventory(read.getInventory());
-    	this.setEffectTimes(read.getEffectTimes());
-    	this.setEffectIds(read.getEffectIds());
-    	this.setExperience(read.getExperience());
-    }
-    
-    public static UpdatePacket from(Enemy enemy) throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-    	if(enemy==null) return null;
-      final List<NetGameItem> lootToDrop = Arrays.asList(IOService.mapModel(GameDataManager.GAME_ITEMS.get(48), NetGameItem.class));
+	public static UpdatePacket from(Enemy enemy) throws Exception {
+		if (enemy == null)
+			return null;
+		final List<NetGameItem> lootToDrop = Arrays
+				.asList(IOService.mapModel(GameDataManager.GAME_ITEMS.get(48), NetGameItem.class));
 
-    	UpdatePacket test = new UpdatePacket();
-    	test.setPlayerId(enemy.getId());
-    	test.setHealth(enemy.getHealth());
-    	test.setMana(enemy.getMana());
-    	test.setPlayerName("enemy["+enemy.getId()+"]");
-    	test.setStats(IOService.mapModel(enemy.getStats(), NetStats.class));
-    	test.setInventory(lootToDrop.toArray(new NetGameItem[0]));
-    	test.setEffectTimes(enemy.getEffectTimes());
-    	test.setEffectIds(enemy.getEffectIds());
-    	test.setExperience(1l);
-    	return test;
+		UpdatePacket test = new UpdatePacket();
+		test.setPlayerId(enemy.getId());
+		test.setHealth(enemy.getHealth());
+		test.setMana(enemy.getMana());
+		test.setPlayerName("enemy[" + enemy.getId() + "]");
+		test.setStats(IOService.mapModel(enemy.getStats(), NetStats.class));
+		test.setInventory(lootToDrop.toArray(new NetGameItem[0]));
+		test.setEffectTimes(enemy.getEffectTimes());
+		test.setEffectIds(enemy.getEffectIds());
+		test.setId(PacketType.UPDATE.getPacketId());
+		test.setExperience(1l);
+		return test;
 //        stream.writeLong(enemy.getId());
 //        stream.writeInt(enemy.getHealth());
 //        stream.writeInt(enemy.getMana());
@@ -142,25 +144,25 @@ public class UpdatePacket extends Packet {
 //
 //        stream.writeLong(1l);
 //        return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
-    }
+	}
 
-    public static UpdatePacket from(Player player) throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-    	if(player==null) return null;
-    	
-    	
-    	UpdatePacket test = new UpdatePacket();
-    	test.setPlayerId(player.getId());
-    	test.setHealth(player.getHealth());
-    	test.setMana(player.getMana());
-    	test.setPlayerName(player.getName());
-    	test.setStats(IOService.mapModel(player.getStats(), NetStats.class));
-    	test.setInventory(IOService.mapModel(player.getInventory(), NetGameItem[].class));
-    	test.setEffectTimes(player.getEffectTimes());
-    	test.setEffectIds(player.getEffectIds());
-    	test.setExperience(player.getExperience());
-    	return test;
+	public static UpdatePacket from(Player player) throws Exception {
+
+		if (player == null)
+			return null;
+
+		UpdatePacket test = new UpdatePacket();
+		test.setPlayerId(player.getId());
+		test.setHealth(player.getHealth());
+		test.setMana(player.getMana());
+		test.setPlayerName(player.getName());
+		test.setStats(IOService.mapModel(player.getStats(), NetStats.class));
+		test.setInventory(IOService.mapModel(player.getInventory(), NetGameItem[].class));
+		test.setEffectTimes(player.getEffectTimes());
+		test.setEffectIds(player.getEffectIds());
+		test.setExperience(player.getExperience());
+		test.setId(PacketType.UPDATE.getPacketId());
+		return test;
 //        stream.writeLong(player.getId());
 //        stream.writeInt(player.getHealth());
 //        stream.writeInt(player.getMana());
@@ -197,79 +199,81 @@ public class UpdatePacket extends Packet {
 //
 //        stream.writeLong(player.getExperience());
 //        return new UpdatePacket(PacketType.UPDATE.getPacketId(), byteStream.toByteArray());
-    }
+	}
 
-    public boolean equals(UpdatePacket other, boolean thinMatch) {
-        boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
-                && (this.health == other.getHealth()) && (this.mana == other.getMana());
+	public boolean equals(UpdatePacket other, boolean thinMatch) {
+		boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
+				&& (this.health == other.getHealth()) && (this.mana == other.getMana());
 
-        boolean stats = this.stats.equals(other.getStats());
-        if(thinMatch) stats=true;
-        boolean inv = true;
-        for (int i = 0; i < this.inventory.length; i++) {
-            if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {
-                if (this.inventory[i].equals(other.getInventory()[i])) {
-                    continue;
-                }
-                inv = false;
-                break;
-            }
-            if ((this.inventory[i] == null) && (other.getInventory()[i] == null)) {
-                continue;
-            }
-            inv = false;
-            break;
-        }
-        if(thinMatch) inv=true;
+		boolean stats = this.stats.equals(other.getStats());
+		if (thinMatch)
+			stats = true;
+		boolean inv = true;
+		for (int i = 0; i < this.inventory.length; i++) {
+			if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {
+				if (this.inventory[i].equals(other.getInventory()[i])) {
+					continue;
+				}
+				inv = false;
+				break;
+			}
+			if ((this.inventory[i] == null) && (other.getInventory()[i] == null)) {
+				continue;
+			}
+			inv = false;
+			break;
+		}
+		if (thinMatch)
+			inv = true;
 
+		boolean effects = true;
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if ((this.effectIds[i] != other.getEffectIds()[i]) || (this.effectTimes[i] != other.getEffectTimes()[i])) {
+				effects = false;
+				break;
+			}
+		}
+		if (thinMatch)
+			effects = true;
+		boolean expEqual = this.experience == other.getExperience();
+		boolean result = basic && stats && inv && effects && expEqual;
 
-        boolean effects = true;
-        for (int i = 0; i < this.effectIds.length; i++) {
-            if ((this.effectIds[i] != other.getEffectIds()[i]) || (this.effectTimes[i] != other.getEffectTimes()[i])) {
-                effects = false;
-                break;
-            }
-        }
-        if(thinMatch) effects=true;
-        boolean expEqual = this.experience == other.getExperience();
-        boolean result = basic && stats && inv && effects && expEqual;
+		return result;
+	}
 
-        return result;
-    }
-    
-    public boolean equals(UpdatePacket other) {
-        boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
-                && (this.health == other.getHealth()) && (this.mana == other.getMana());
+	public boolean equals(UpdatePacket other) {
+		boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
+				&& (this.health == other.getHealth()) && (this.mana == other.getMana());
 
-        boolean stats = this.stats.equals(other.getStats());
-        if(inventory.length==1) {
-        	//System.out.println("");
-        }
-        boolean inv = true;
-        for (int i = 0; i < this.inventory.length; i++) {
-            if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {
-                if (this.inventory[i].equals(other.getInventory()[i])) {
-                    continue;
-                }
-                inv = false;
-                break;
-            }
-            if ((this.inventory[i] == null) && (other.getInventory()[i] == null)) {
-                continue;
-            }
-            inv = false;
-            break;
-        }
+		boolean stats = this.stats.equals(other.getStats());
+		if (inventory.length == 1) {
+			// System.out.println("");
+		}
+		boolean inv = true;
+		for (int i = 0; i < this.inventory.length; i++) {
+			if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {
+				if (this.inventory[i].equals(other.getInventory()[i])) {
+					continue;
+				}
+				inv = false;
+				break;
+			}
+			if ((this.inventory[i] == null) && (other.getInventory()[i] == null)) {
+				continue;
+			}
+			inv = false;
+			break;
+		}
 
-        boolean effects = true;
-        for (int i = 0; i < this.effectIds.length; i++) {
-            if ((this.effectIds[i] != other.getEffectIds()[i]) || (this.effectTimes[i] != other.getEffectTimes()[i])) {
-                effects = false;
-                break;
-            }
-        }
-        boolean expEqual = this.experience == other.getExperience();
-        boolean result = basic && stats && inv && effects && expEqual;
-        return result;
-    }
+		boolean effects = true;
+		for (int i = 0; i < this.effectIds.length; i++) {
+			if ((this.effectIds[i] != other.getEffectIds()[i]) || (this.effectTimes[i] != other.getEffectTimes()[i])) {
+				effects = false;
+				break;
+			}
+		}
+		boolean expEqual = this.experience == other.getExperience();
+		boolean result = basic && stats && inv && effects && expEqual;
+		return result;
+	}
 }

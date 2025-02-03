@@ -20,21 +20,21 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NetStats extends SerializableFieldType<NetStats> {
 	@SerializableField(order = 0, type = SerializableShort.class)
-	private short hp;
+	private Short hp;
 	@SerializableField(order = 1, type = SerializableShort.class)
-	private short mp;
+	private Short mp;
 	@SerializableField(order = 2, type = SerializableShort.class)
-	private short def;
+	private Short def;
 	@SerializableField(order = 3, type = SerializableShort.class)
-	private short att;
+	private Short att;
 	@SerializableField(order = 4, type = SerializableShort.class)
-	private short spd;
+	private Short spd;
 	@SerializableField(order = 5, type = SerializableShort.class)
-	private short dex;
+	private Short dex;
 	@SerializableField(order = 6, type = SerializableShort.class)
-	private short vit;
+	private Short vit;
 	@SerializableField(order = 7, type = SerializableShort.class)
-	private short wis;
+	private Short wis;
 
 	@Override
 	public NetStats read(DataInputStream stream) throws Exception {

@@ -22,21 +22,21 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NetLootContainer extends SerializableFieldType<NetLootContainer>{
 	@SerializableField(order = 0, type = SerializableLong.class)
-    private long lootContainerId;
+    private Long lootContainerId;
 	@SerializableField(order = 1, type = SerializableString.class)
     private String uid;
 	@SerializableField(order = 2, type = SerializableBoolean.class)
-    private boolean isChest;
+    private Boolean isChest;
 	@SerializableField(order = 3, type = SerializableByte.class)
-    private byte tier;
+    private Byte tier;
 	@SerializableField(order = 4, type = NetGameItem.class, isCollection = true)
     private NetGameItem[] items;
 	@SerializableField(order = 5, type = Vector2f.class)
     private Vector2f pos;
 	@SerializableField(order = 6, type = SerializableLong.class)
-    private long spawnedTime;
+    private Long spawnedTime;
 	@SerializableField(order = 7, type = SerializableBoolean.class)
-    private boolean contentsChanged;
+    private Boolean contentsChanged;
 	
 	@Override
 	public NetLootContainer read(DataInputStream stream) throws Exception {

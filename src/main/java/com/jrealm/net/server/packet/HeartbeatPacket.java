@@ -8,9 +8,11 @@ import java.io.DataOutputStream;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableLong;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Streamable
+@AllArgsConstructor
 public class HeartbeatPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long playerId;
@@ -40,29 +43,18 @@ public class HeartbeatPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-    	final DataInputStream dis = new DataInputStream(bis);
-        if (dis == null || dis.available() < 5)
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");
-        this.playerId = dis.readLong();
-        this.timestamp = dis.readLong();
+    	final HeartbeatPacket read = IOService.readPacket(getClass(), data);
+    	this.playerId = read.getPlayerId();
+    	this.timestamp = read.getTimestamp();
+    	this.setId(PacketType.HEARTBEAT.getPacketId());
     }
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        if (this.getId() < 1 || this.getData() == null || this.getData().length < 5)
-            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-        this.addHeader(stream);
-        stream.writeLong(this.playerId);
-        stream.writeLong(this.timestamp);
+    	IOService.writePacket(this, stream);
     }
 
     public static HeartbeatPacket from(long playerId, long timestamp) throws Exception {
-    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    	final DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeLong(playerId);
-        dos.writeLong(timestamp);
-
-        return new HeartbeatPacket(PacketType.HEARTBEAT.getPacketId(), baos.toByteArray());
+        return new HeartbeatPacket(playerId, timestamp);
     }
 }

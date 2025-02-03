@@ -13,7 +13,7 @@ public class SerializableShort extends SerializableFieldType<Short> {
 			Short res = stream.readShort();
 			return res;
 		}catch(Exception e) {
-			return 0;
+			return (short)0;
 		}
 	}
 

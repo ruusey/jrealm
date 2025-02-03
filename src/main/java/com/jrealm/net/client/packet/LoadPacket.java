@@ -75,6 +75,8 @@ public class LoadPacket extends Packet {
         this.bullets = packet.getBullets();
         this.containers = packet.getContainers();
         this.portals = packet.getPortals();
+    	this.setId(PacketType.LOAD.getPacketId());
+
     }
 
     @Override
@@ -89,8 +91,10 @@ public class LoadPacket extends Packet {
         final NetBullet[] mappedBullets = IOService.mapModel(bullets, NetBullet[].class);
         final NetLootContainer[] mappedLoot = IOService.mapModel(loot, NetLootContainer[].class);
         final NetPortal[] mappedPortals = IOService.mapModel(portals, NetPortal[].class);
+        LoadPacket load = new LoadPacket(mappedPlayers, mappedEnemies, mappedBullets, mappedLoot, mappedPortals);
+    	load.setId(PacketType.LOAD.getPacketId());
 
-        return new LoadPacket(mappedPlayers, mappedEnemies, mappedBullets, mappedLoot, mappedPortals);
+        return load;
     }
 
     public boolean equals(LoadPacket other) {
@@ -126,7 +130,7 @@ public class LoadPacket extends Packet {
         }
 
         for (final NetLootContainer c : this.containers) {
-            if (c.isContentsChanged()) {
+            if (c.getContentsChanged()) {
                 containersEq = false;
                 break;
             }
@@ -169,7 +173,7 @@ public class LoadPacket extends Packet {
 
         final List<NetLootContainer> lootDiff = new ArrayList<>();
         for (final NetLootContainer p : loot) {
-            if (!lootIdsThis.contains(p.getLootContainerId()) || p.isContentsChanged()) {
+            if (!lootIdsThis.contains(p.getLootContainerId()) || p.getContentsChanged()) {
                 lootDiff.add(p);
             }
         }

@@ -29,9 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 public class CommandPacket extends Packet {
 	
 	@SerializableField(order = 0, type = SerializableLong.class)
-    private long playerId;
+    private Long playerId;
 	@SerializableField(order = 1, type = SerializableByte.class)
-    private byte commandId;
+    private Byte commandId;
 	@SerializableField(order = 2, type = SerializableString.class)
     private String command;
 
@@ -67,9 +67,9 @@ public class CommandPacket extends Packet {
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
         byte[] res = IOService.writePacket(this, stream);
-//        byte[] res0 = Arrays.copyOf(res, res.length);
-//        CommandPacket p = IOService.read(getClass(), res0);
-//        log.info("Read/wrote packet {}", p);
+        byte[] res0 = Arrays.copyOf(res, res.length);
+        CommandPacket p = IOService.readPacket(getClass(), res0);
+        log.info("Read/wrote packet {}", res);
     }
 
     public static CommandPacket from(Player target, byte commandId, String command) throws Exception {

@@ -9,11 +9,16 @@ public class SerializableByte extends SerializableFieldType<Byte> {
 
 	@Override
 	public Byte read(DataInputStream stream) throws Exception {
-		return stream.readByte();
+		try {
+			Byte res = stream.readByte();
+			return res;
+		}catch(Exception e) {
+			return 0;
+		}
 	}
 
 	@Override
 	public void write(Byte value, DataOutputStream stream) throws Exception {
-		stream.writeByte(value);
+		stream.writeByte(value==null?0:value);
 	}
 }

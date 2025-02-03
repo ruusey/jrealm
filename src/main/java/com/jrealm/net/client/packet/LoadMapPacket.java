@@ -68,6 +68,7 @@ public class LoadMapPacket extends Packet {
     	this.mapWidth = packet.getMapWidth();
     	this.mapHeight = packet.getMapHeight();
     	this.tiles = packet.getTiles();
+    	this.setId(PacketType.LOAD_MAP.getPacketId());
     }
 
     @Override
@@ -76,9 +77,7 @@ public class LoadMapPacket extends Packet {
 //            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
 
         byte[] res = IOService.writePacket(this, stream);
-        byte[] copy = Arrays.copyOf(res, res.length);
-        LoadMapPacket lm = IOService.readPacket(LoadMapPacket.class, copy);
-       System.out.print("");
+      
     }
 
     public static LoadMapPacket from(long realmId, short mapId, short mapWidth, short mapHeight, List<NetTile> tiles) throws Exception {

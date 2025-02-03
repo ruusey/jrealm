@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Slf4j
-public abstract class Enemy extends Entity {
+public class Enemy extends Entity {
     private static final int IDLE_FRAMES = 10;
     private static final float CHASE_SPEED = 1.25f;
     protected EnemyModel model;

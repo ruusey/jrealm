@@ -12,7 +12,10 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class Monster extends Enemy {
     private String uuid;
-
+    
+    public Monster() {
+    	super(0, 0, null, 0 ,0);
+    }
     public Monster(long id, int enemyId, Vector2f origin, int size, int weaponId) {
         super(id, enemyId, origin, size, weaponId);
         EnemyModel model = GameDataManager.ENEMIES.get(enemyId);

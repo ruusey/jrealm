@@ -298,7 +298,11 @@ public class GameDataManager {
 
 	public static void loadSpriteModel(GameItem item) {
 		if (item.getItemId() > -1) {
-			item.applySpriteModel(GameDataManager.GAME_ITEMS.get(item.getItemId()));
+			GameItem fetched = GameDataManager.GAME_ITEMS.get(item.getItemId());
+			if(fetched==null) {
+				int i =0;
+			}
+			item.applySpriteModel(fetched);
 		}
 	}
 

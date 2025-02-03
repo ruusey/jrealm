@@ -9,7 +9,12 @@ public class SerializableBoolean extends SerializableFieldType<Boolean> {
 
 	@Override
 	public Boolean read(DataInputStream stream) throws Exception {
-		return stream.readBoolean();
+		try {
+			return stream.readBoolean();
+
+		}catch(Exception e) {
+			return false;
+		}
 	}
 
 	@Override

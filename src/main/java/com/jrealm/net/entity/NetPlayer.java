@@ -19,7 +19,7 @@ import com.jrealm.net.core.nettypes.*;
 @Streamable
 public class NetPlayer extends SerializableFieldType<NetPlayer>{
 	@SerializableField(order = 0, type = SerializableLong.class)
-	private long id;
+	private Long id;
 	@SerializableField(order = 1, type = SerializableString.class)
 	private String name;
 	@SerializableField(order = 2, type = SerializableString.class)
@@ -27,15 +27,15 @@ public class NetPlayer extends SerializableFieldType<NetPlayer>{
 	@SerializableField(order = 3, type = SerializableString.class)
 	private String characterUuid;
 	@SerializableField(order = 4, type = SerializableInt.class)
-	private int classId;
+	private Integer classId;
 	@SerializableField(order = 5, type = SerializableShort.class)
-	private short size;
+	private Short size;
 	@SerializableField(order = 6, type = Vector2f.class)
 	private Vector2f pos;
 	@SerializableField(order = 7, type = SerializableFloat.class)
-	private float dX;
+	private Float dX;
 	@SerializableField(order = 8, type = SerializableFloat.class)
-	private float dY;
+	private Float dY;
 	
 	@Override
 	public NetPlayer read(DataInputStream stream) throws Exception {

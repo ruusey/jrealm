@@ -15,7 +15,7 @@ public class SerializableString extends SerializableFieldType<String> {
 		try {
 			return stream.readUTF();
 		}catch(Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			//.println("ERROR Failed to read String from streaam. Reason "+e.getMessage());
 			return "";
 		}
@@ -23,6 +23,7 @@ public class SerializableString extends SerializableFieldType<String> {
 
 	@Override
 	public void write(String value, DataOutputStream stream) throws Exception {
-		stream.writeUTF(value==null?"":value);
+		String toUse = value==null?"":value;
+		stream.writeUTF(toUse);
 	}
 }

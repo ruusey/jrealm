@@ -72,7 +72,7 @@ public class IOService {
 		addHeader(packet, byteStream0.toByteArray().length, streamfinal);
 		streamfinal.write(byteStream0.toByteArray());
 		stream.write(byteStreamFinal.toByteArray());
-		stream.flush();
+		//stream.flush();
 		return byteStreamFinal.toByteArray();
 	}
 
@@ -83,37 +83,44 @@ public class IOService {
 			return;
 		}
 		for (PacketMappingInformation info : mappingInfo) {
-
-			log.info("[WRITE] Begin write mapping for MODEL {} field {}", model.getClass(), info.getPropertyHandle().varType());
+			if(log.isDebugEnabled())
+				log.info("[WRITE] Begin write mapping for MODEL {} field {}", model.getClass(), info.getPropertyHandle().varType());
 			Object[] collection = null;
 			int collectionLength = 1;
 			if (info.isCollection()) {
-				log.info("[WRITE] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
-						info.getPropertyHandle().varType());
+				if(log.isDebugEnabled())
+					log.info("[WRITE] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
+							info.getPropertyHandle().varType());
 				try {
 					collection = (Object[]) info.getPropertyHandle().get(model);
-					log.info("[WRITE] Fetched FieldType {} as collection. Length = {}", info.getPropertyHandle().varType(),
-							collection.length);
+					if(log.isDebugEnabled())
+						log.info("[WRITE] Fetched FieldType {} as collection. Length = {}", info.getPropertyHandle().varType(),
+								collection.length);
 
 					if (collection != null && collection.length >= 0) {
 						collectionLength = collection.length;
 						stream0.writeInt(collectionLength);
-						log.info("[WRITE] Writing collectionSize. Length = {}", collectionLength);
+						if(log.isDebugEnabled())
+							log.info("[WRITE] Writing collectionSize. Length = {}", collectionLength);
 
 					} else {
-						log.info("[WRITE] Writing empty collectionSize. Length = {}", 0);
+						if(log.isDebugEnabled())
+							log.info("[WRITE] Writing empty collectionSize. Length = {}", 0);
 						stream0.writeInt(0);
 					}
 
 				} catch (Exception e) {
-					log.error("[WRITE] Failed to extract collection info frorm class {}", model.getClass());
+					if(log.isDebugEnabled())
+						log.error("[WRITE] Failed to extract collection info frorm class {}", model.getClass());
 				}
 			}
 			for (int i = 0; i < collectionLength; i++) {
 				if (info.isCollection()) {
-					log.info("[WRITE] Writing Object {} {}/{}", info.getPropertyHandle().varType(), i, collectionLength);
+					if(log.isDebugEnabled())
+						log.info("[WRITE] Writing Object {} {}/{}", info.getPropertyHandle().varType(), i, collectionLength);
 				}
-				log.info("[WRITE] Begin write mapping for MODEL {} field {}", model.getClass(),
+				if(log.isDebugEnabled())
+					log.info("[WRITE] Begin write mapping for MODEL {} field {}", model.getClass(),
 						info.getPropertyHandle().varType());
 
 				final SerializableFieldType<?> serializer = info.getSerializer();
@@ -166,21 +173,24 @@ public class IOService {
 
 				else {
 					Object value = null;
-					log.info("[WRITE] writing sub object {}", info.getPropertyHandle().varType());
+					if(log.isDebugEnabled())
+						log.info("[WRITE] writing sub object {}", info.getPropertyHandle().varType());
 
 					if (info.isCollection()) {
 						final Object toWrite = collection[i];
 						if (toWrite != null) {
-							log.info("[WRITE] adding value {} to collection sub object {}", value,
-									info.getPropertyHandle().varType());
+							if(log.isDebugEnabled())
+								log.info("[WRITE] adding value {} to collection sub object {}", value,
+										info.getPropertyHandle().varType());
 							writeStream(collection[i], stream0);
 						}
 					} else {
 
 						value = info.getPropertyHandle().get(model);
 						if (value != null) {
-							log.info("[WRITE] wrote Object to Model {}. Value {}", info.getPropertyHandle().varType(),
-									value);
+							if(log.isDebugEnabled())
+								log.info("[WRITE] wrote Object to Model {}. Value {}", info.getPropertyHandle().varType(),
+										value);
 
 							writeStream(value, stream0);
 						}
@@ -196,7 +206,8 @@ public class IOService {
 
 	public static <T> T readStreamRecursive(Class<?> clazz, DataInputStream stream, Object result) throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
-		log.info("[READ] class {} begin. CurrentRessults = {}", clazz, result);
+		if(log.isDebugEnabled())
+			log.info("[READ] class {} begin. CurrentRessults = {}", clazz, result);
 		if (result == null) {
 			final Object packet = clazz.getDeclaredConstructor().newInstance();
 			if (packet instanceof Packet) {
@@ -207,25 +218,29 @@ public class IOService {
 		}
 
 		for (PacketMappingInformation info : mappingInfo) {
-			log.info("[READ] Begin read mapping for MODEL {} field {}", clazz, info.getPropertyHandle().varType());
+			if(log.isDebugEnabled())
+				log.info("[READ] Begin read mapping for MODEL {} field {}", clazz, info.getPropertyHandle().varType());
 
 			Integer collectionLength = 1;
 			Object[] collection = null;
 
 			if (info.isCollection()) {
-				log.info("[READ] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
-						info.getPropertyHandle().varType());
+				if(log.isDebugEnabled())
+					log.info("[READ] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
+							info.getPropertyHandle().varType());
 				collectionLength = stream.readInt();
 				collection = new Object[collectionLength];
 			}
 			final SerializableFieldType<?> serializer = info.getSerializer();
 			for (int i = 0; i < collectionLength; i++) {
 				if (info.isCollection()) {
-					log.info("[READ] Reading object {} {}/{}", info.getPropertyHandle().varType(), i,
+					if(log.isDebugEnabled())
+						log.info("[READ] Reading object {} {}/{}", info.getPropertyHandle().varType(), i,
 							collectionLength);
 
 				}
-				log.info("[READ] Begin write mapping for MODEL {} field {}", clazz,
+				if(log.isDebugEnabled())
+					log.info("[READ] Begin write mapping for MODEL {} field {}", clazz,
 						info.getPropertyHandle().varType());
 
 				if (serializer instanceof SerializableBoolean) {
@@ -278,20 +293,27 @@ public class IOService {
 						info.getPropertyHandle().set(result, fieldVal);
 					}
 				} else {
-					if (serializer instanceof NetDamage) {
-						int h = 0;
+					Class<?> targetObjClass = info.getPropertyHandle().varType();
+					if(targetObjClass.isArray()) {
+						targetObjClass = targetObjClass.getComponentType();
 					}
-					final Object subObject = serializer.read(stream);
-					log.info("[READ] reading sub object {}", subObject);
-					// Object read = readStreamRecursive(subObject.getClass(), stream, subObject);
-					if (subObject != null && info.isCollection()) {
-						log.info("[READ] Sub Object {} Added to collection at index {}", subObject, i);
+					//final Object subObject = serializer.read(stream);
+					Object read = readStreamRecursive(targetObjClass, stream, null);
+					if(log.isDebugEnabled()) {
+						log.info("[READ] reading sub object {}", read);
 
-						collection[i] = subObject;
-					} else if (subObject != null) {
-						log.info("[READ] Sub Object {} set on {}", subObject, result);
+					}
 
-						info.getPropertyHandle().set(result, subObject);
+					if (read != null && info.isCollection()) {
+						if(log.isDebugEnabled())
+							log.info("[READ] Sub Object {} Added to collection at index {}", read, i);
+
+						collection[i] = read;
+					} else if (read != null) {
+						if(log.isDebugEnabled())
+							log.info("[READ] Sub Object {} set on {}", read, result);
+
+						info.getPropertyHandle().set(result, read);
 					}
 				}
 			}

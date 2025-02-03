@@ -19,11 +19,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NetDamage extends SerializableFieldType<NetDamage> {
 	@SerializableField(order = 0, type = SerializableInt.class)
-	private int projectileGroupId;
+	private Integer projectileGroupId;
 	@SerializableField(order = 1, type = SerializableShort.class)
-	private short min;
+	private Short min;
 	@SerializableField(order = 2, type = SerializableShort.class)
-	private short max;
+	private Short max;
 
 	@Override
 	public NetDamage read(DataInputStream stream) throws Exception {

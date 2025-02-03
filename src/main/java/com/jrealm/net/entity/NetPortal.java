@@ -21,19 +21,19 @@ import lombok.NoArgsConstructor;
 @Streamable
 public class NetPortal extends SerializableFieldType<NetPortal> {
 	@SerializableField(order = 0, type = SerializableLong.class)
-	private long id;
+	private Long id;
 	@SerializableField(order = 1, type = SerializableShort.class)
-	private short portalId;
+	private Short portalId;
 	@SerializableField(order = 2, type = SerializableLong.class)
-	private long fromRealmId;
+	private Long fromRealmId;
 	@SerializableField(order = 3, type = SerializableLong.class)
-	private long toRealmId;
+	private Long toRealmId;
 	@SerializableField(order = 4, type = SerializableLong.class)
-	private long expires;
+	private Long expires;
 	@SerializableField(order = 5, type = SerializableFloat.class)
-	private float posX;
+	private Float posX;
 	@SerializableField(order = 6, type = SerializableFloat.class)
-	private float posY;
+	private Float posY;
 
 	@Override
 	public NetPortal read(DataInputStream stream) throws Exception {

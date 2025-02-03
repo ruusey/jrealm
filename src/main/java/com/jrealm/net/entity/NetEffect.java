@@ -24,15 +24,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NetEffect extends SerializableFieldType<NetEffect> {
 	@SerializableField(order = 0, type = SerializableBoolean.class)
-	private boolean self;
+	private Boolean self;
 	@SerializableField(order = 1, type = SerializableShort.class)
-	private short effectId;
+	private Short effectId;
 	@SerializableField(order = 2, type = SerializableLong.class)
-	private long duration;
+	private Long duration;
 	@SerializableField(order = 3, type = SerializableLong.class)
-	private long cooldownDuration;
+	private Long cooldownDuration;
 	@SerializableField(order = 4, type = SerializableShort.class)
-	private short mpCost;
+	private Short mpCost;
 
 	@Override
 	public NetEffect read(DataInputStream stream) throws Exception {
