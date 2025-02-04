@@ -37,6 +37,7 @@ public class NetEnemy extends SerializableFieldType<NetEnemy>{
 	private Float dX;
 	@SerializableField(order = 6, type = SerializableFloat.class)
 	private Float dY;
+	
 	@Override
 	public NetEnemy read(DataInputStream stream) throws Exception {
 		return IOService.readStream(getClass(), stream);

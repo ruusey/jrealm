@@ -27,42 +27,34 @@ import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.NetConstants;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.client.packet.UnloadPacket;
-import com.jrealm.net.core.converters.ShortToEnumConverter;
-import com.jrealm.net.core.converters.EnumToShortConverter;
-import com.jrealm.net.core.nettypes.SerializableBoolean;
-import com.jrealm.net.core.nettypes.SerializableByte;
-import com.jrealm.net.core.nettypes.SerializableFloat;
-import com.jrealm.net.core.nettypes.SerializableInt;
-import com.jrealm.net.core.nettypes.SerializableLong;
-import com.jrealm.net.core.nettypes.SerializableShort;
-import com.jrealm.net.core.nettypes.SerializableString;
-import com.jrealm.net.entity.NetDamage;
-
+import com.jrealm.net.core.converters.*;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@SuppressWarnings({"unused","rawtypes", "unchecked"})
 public class IOService {
 	public static ModelMapper MAPPER = new ModelMapper();
 	private static final Lookup lookup = MethodHandles.lookup();
 	public static Map<Class<?>, List<PacketMappingInformation>> MAPPING_DATA = new HashMap<>();
 	static {
-		MAPPER.addConverter(new ShortToEnumConverter());
-		MAPPER.addConverter(new EnumToShortConverter());
+		MAPPER.addConverter(new ShortToEffectTypeConverter());
+		MAPPER.addConverter(new EffectTypeToShortConverter());
+		MAPPER.addConverter(new ByteToLootTierConverter());
+		MAPPER.addConverter(new LootTierToByteConverter());
 
 	}
 
 	public static synchronized <T> T readPacket(Class<? extends Packet> clazz, byte[] data) throws Exception {
 		final ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		final DataInputStream dis = new DataInputStream(bis);
-		byte packetIdRead = removeHeader(dis);
+		final byte packetIdRead = removeHeader(dis);
 		return readStream(clazz, dis);
 	}
 
 	public static synchronized <T> T readPacket(Class<? extends Packet> clazz, DataInputStream stream)
 			throws Exception {
-		byte packetIdRead = removeHeader(stream);
+		final byte packetIdRead = removeHeader(stream);
 		return readStream(clazz, stream);
 	}
 
@@ -100,7 +92,6 @@ public class IOService {
 				for (int i = 0; i < collectionLength; i++) {
 					serializer.write(collection[i], stream0);
 				}
-				//System.out.print("");
 			}else {
 				final Object obj = info.getPropertyHandle().get(model);
 				serializer.write(obj, stream0);

@@ -86,19 +86,27 @@ public class LoadPacket extends Packet {
 
     public static LoadPacket from(Player[] players, LootContainer[] loot, Bullet[] bullets, Enemy[] enemies,
             Portal[] portals) throws Exception {
-        final NetPlayer[] mappedPlayers = IOService.mapModel(players, NetPlayer[].class);
-        final NetEnemy[] mappedEnemies = IOService.mapModel(enemies, NetEnemy[].class);
-        final NetBullet[] mappedBullets = IOService.mapModel(bullets, NetBullet[].class);
-        final NetLootContainer[] mappedLoot = IOService.mapModel(loot, NetLootContainer[].class);
-        final NetPortal[] mappedPortals = IOService.mapModel(portals, NetPortal[].class);
-        LoadPacket load = new LoadPacket(mappedPlayers, mappedEnemies, mappedBullets, mappedLoot, mappedPortals);
-    	load.setId(PacketType.LOAD.getPacketId());
+    	 LoadPacket load = null;
+    	try {
+            final NetPlayer[] mappedPlayers = IOService.mapModel(players, NetPlayer[].class);
+            final NetEnemy[] mappedEnemies = IOService.mapModel(enemies, NetEnemy[].class);
+            final NetBullet[] mappedBullets = IOService.mapModel(bullets, NetBullet[].class);
+            final NetLootContainer[] mappedLoot = IOService.mapModel(loot, NetLootContainer[].class);
+            final NetPortal[] mappedPortals = IOService.mapModel(portals, NetPortal[].class);
+            load = new LoadPacket(mappedPlayers, mappedEnemies, mappedBullets, mappedLoot, mappedPortals);
+        	load.setId(PacketType.LOAD.getPacketId());
+    	}catch(Exception e) {
+    		log.error("Failed to build load packet from mapped game data. Reason {}", e);
+    	}
+
 
         return load;
     }
 
     public boolean equals(LoadPacket other) {
-    	if(other == null) return false;
+    	if(other == null) {
+    		return false;
+    	}
         final List<Long> playerIdsThis = Stream.of(this.players).map(NetPlayer::getId).collect(Collectors.toList());
         final List<Long> playerIdsOther = Stream.of(other.getPlayers()).map(NetPlayer::getId).collect(Collectors.toList());
 
@@ -145,7 +153,9 @@ public class LoadPacket extends Packet {
     }
 
     public LoadPacket combine(final LoadPacket other) throws Exception {
-    	if(other==null) return this;
+    	if(other==null) {
+    		return this;
+    	}
         final List<Long> playerIdsThis = Stream.of(this.players).map(NetPlayer::getId).collect(Collectors.toList());
         final List<Long> lootIdsThis = Stream.of(this.containers).map(NetLootContainer::getLootContainerId)
                 .collect(Collectors.toList());
@@ -218,7 +228,6 @@ public class LoadPacket extends Packet {
                 bulletsDiff.add(b.getId());
             }
         }
-        bulletsDiff.add(0l);
 
         final List<Long> portalsDiff = new ArrayList<>();
         for (final NetPortal p : portals) {
@@ -226,8 +235,6 @@ public class LoadPacket extends Packet {
                 portalsDiff.add(p.getId());
             }
         }
-        portalsDiff.add(0l);
-
 
         final List<Long> playersDiff = new ArrayList<>();
         for (final NetPlayer p : players) {
@@ -235,8 +242,6 @@ public class LoadPacket extends Packet {
                 playersDiff.add(p.getId());
             }
         }
-        playersDiff.add(0l);
-
 
         final List<Long> lootDiff = new ArrayList<>();
         for (final NetLootContainer p : loot) {
@@ -244,8 +249,6 @@ public class LoadPacket extends Packet {
                 lootDiff.add(p.getLootContainerId());
             }
         }
-        lootDiff.add(0l);
-
 
         final List<Long> enemyDiff = new ArrayList<>();
         for (final NetEnemy e : enemies) {
@@ -253,7 +256,6 @@ public class LoadPacket extends Packet {
                 enemyDiff.add(e.getId());
             }
         }
-        enemyDiff.add(0l);
 
 		return UnloadPacket.from(playersDiff.toArray(new Long[0]), bulletsDiff.toArray(new Long[0]),
 				enemyDiff.toArray(new Long[0]), lootDiff.toArray(new Long[0]), portalsDiff.toArray(new Long[0]));
