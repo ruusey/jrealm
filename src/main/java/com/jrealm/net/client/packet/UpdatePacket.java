@@ -1,7 +1,6 @@
 package com.jrealm.net.client.packet;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Arrays;
@@ -11,8 +10,6 @@ import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.entity.item.GameItem;
-import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
@@ -68,9 +65,6 @@ public class UpdatePacket extends Packet {
 	@Override
 	public void serializeWrite(DataOutputStream stream) throws Exception {
 		IOService.writePacket(this, stream);
-		// Object t0 = IOService.writePacket((Packet)t, stream);
-//       final byte[] cp = Arrays.copyOf(write, write.length);
-//       final UpdatePacket test = IOService.readPacket(getClass(), cp);
 	}
 
 	@Override

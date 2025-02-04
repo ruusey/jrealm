@@ -1,7 +1,6 @@
 package com.jrealm.net.client.packet;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
@@ -25,8 +24,6 @@ import com.jrealm.net.entity.NetEnemy;
 import com.jrealm.net.entity.NetLootContainer;
 import com.jrealm.net.entity.NetPlayer;
 import com.jrealm.net.entity.NetPortal;
-import com.jrealm.net.entity.NetTile;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

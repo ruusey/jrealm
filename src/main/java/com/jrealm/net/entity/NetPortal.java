@@ -8,7 +8,6 @@ import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
-import com.jrealm.net.core.nettypes.SerializableFloat;
 import com.jrealm.net.core.nettypes.SerializableLong;
 import com.jrealm.net.core.nettypes.SerializableShort;
 

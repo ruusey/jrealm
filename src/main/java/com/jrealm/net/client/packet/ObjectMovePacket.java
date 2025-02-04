@@ -1,11 +1,7 @@
 package com.jrealm.net.client.packet;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.jrealm.game.contants.PacketType;
@@ -42,7 +38,7 @@ public class ObjectMovePacket extends Packet {
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        byte[] write = IOService.writePacket(this, stream);
+        IOService.writePacket(this, stream);
     }
 
     @Override
