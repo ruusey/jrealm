@@ -71,7 +71,6 @@ public class UpdatePacket extends Packet {
 		// Object t0 = IOService.writePacket((Packet)t, stream);
 //       final byte[] cp = Arrays.copyOf(write, write.length);
 //       final UpdatePacket test = IOService.readPacket(getClass(), cp);
-		System.out.print("");
 	}
 
 	@Override

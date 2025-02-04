@@ -1,8 +1,5 @@
 package com.jrealm.net.client.packet;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,7 +66,7 @@ public class UnloadPacket extends Packet {
         IOService.writePacket(this, stream);
     }
 
-    public static UnloadPacket from(Long[] players, Long[] containers, Long[] bullets, Long[] enemies, Long[] portals)
+    public static UnloadPacket from(Long[] players, Long[] bullets, Long[] enemies, Long[] containers, Long[] portals)
             throws Exception {
     	final UnloadPacket packet = UnloadPacket.builder().players(players).containers(containers).bullets(bullets).enemies(enemies).portals(portals).build();
     	packet.setId(PacketType.UNLOAD.getPacketId());

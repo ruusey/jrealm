@@ -28,6 +28,7 @@ import com.jrealm.net.NetConstants;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.client.packet.ObjectMovement;
+import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.core.converters.ShortToEnumConverter;
 import com.jrealm.net.core.converters.EnumToShortConverter;
 import com.jrealm.net.core.nettypes.SerializableBoolean;
@@ -80,9 +81,6 @@ public class IOService {
 	}
 
 	public static synchronized void writeStream(Object model, DataOutputStream stream0) throws Exception {
-		if(model==null) {
-			int asd = 1;
-		}
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(model.getClass());
 		if (log.isDebugEnabled())
 			log.info("[WRITE] class {} begin. ToWrite = {}", model.getClass(), model);
@@ -102,7 +100,7 @@ public class IOService {
 				for (int i = 0; i < collectionLength; i++) {
 					serializer.write(collection[i], stream0);
 				}
-				System.out.print("");
+				//System.out.print("");
 			}else {
 				final Object obj = info.getPropertyHandle().get(model);
 				serializer.write(obj, stream0);
@@ -117,6 +115,9 @@ public class IOService {
 	public static synchronized <T> T readStreamRecursive(Class<?> clazz, DataInputStream stream, Object result)
 			throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
+		if(clazz.equals(UnloadPacket.class)) {
+			int i = 1;
+		}
 		if (log.isDebugEnabled())
 			log.info("[READ] class {} begin. CurrentRessults = {}", clazz, result);
 		if (result == null) {

@@ -18,6 +18,7 @@ import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.core.IOService;
 
@@ -93,9 +94,6 @@ public class SocketClient implements Runnable {
                         break;
                     }
                     final byte packetId = this.remoteBuffer[0];
-                    if(packetLength<-1) {
-                    	int i = 0;
-                    }
                     final byte[] packetBytes = new byte[packetLength];
                     System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
                     if (this.remoteBufferIndex > packetLength) {
@@ -105,12 +103,10 @@ public class SocketClient implements Runnable {
                     this.currentBytesRecieved += packetLength;
                     this.remoteBufferIndex -= packetLength;
                     Class<? extends Packet> packetClass = PacketType.valueOf(packetId).getX();
-                    if(packetClass.equals(UpdatePacket.class) || packetClass.equals(LoadPacket.class)) {
-                    	System.out.print("");
-                    }
                     Packet nPacket = IOService.readStream(packetClass, packetBytes);
-                    final BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
-                    newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+                    if(nPacket instanceof UnloadPacket) {
+                    	int i = 0;
+                    }
                     nPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
 
                     this.inboundPacketQueue.add(nPacket);

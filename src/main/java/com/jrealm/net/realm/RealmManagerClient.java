@@ -73,12 +73,8 @@ public class RealmManagerClient implements Runnable {
         while (!this.getClient().getInboundPacketQueue().isEmpty()) {
             Packet toProcess = this.getClient().getInboundPacketQueue().remove();
             try {
-				Packet created = null;
-//            	//if (!(toProcess instanceof CommandPacket) && !(toProcess instanceof UnloadPacket)) {
-//            		created = Packet.newInstance(toProcess.getId(), toProcess.getData());
-//				
-					created = toProcess;
-				log.info("[CLIENT] Processing client packet {} ", created);
+				Packet created = toProcess;
+				//log.info("[CLIENT] Processing client packet {} ", created);
                 created.setSrcIp(toProcess.getSrcIp());
                 this.packetCallbacksClient.get(created.getId()).accept(this, created);
             } catch (Exception e) {
