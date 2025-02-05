@@ -18,7 +18,6 @@ import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-
 @Streamable
 public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	@SerializableField(order = 0, type = SerializableInt.class)
