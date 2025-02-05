@@ -45,20 +45,20 @@ public class IOService {
 
 	}
 
-	public static synchronized <T> T readPacket(Class<? extends Packet> clazz, byte[] data) throws Exception {
+	public static <T> T readPacket(Class<? extends Packet> clazz, byte[] data) throws Exception {
 		final ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		final DataInputStream dis = new DataInputStream(bis);
 		final byte packetIdRead = removeHeader(dis);
 		return readStream(clazz, dis);
 	}
 
-	public static synchronized <T> T readPacket(Class<? extends Packet> clazz, DataInputStream stream)
+	public static <T> T readPacket(Class<? extends Packet> clazz, DataInputStream stream)
 			throws Exception {
 		final byte packetIdRead = removeHeader(stream);
 		return readStream(clazz, stream);
 	}
 
-	public static synchronized byte[] writePacket(Packet packet, DataOutputStream stream) throws Exception {
+	public static byte[] writePacket(Packet packet, DataOutputStream stream) throws Exception {
 		final ByteArrayOutputStream byteStream0 = new ByteArrayOutputStream();
 		final DataOutputStream stream0 = new DataOutputStream(byteStream0);
 		writeStream(packet, stream0);
@@ -72,7 +72,7 @@ public class IOService {
 		return byteStreamFinal.toByteArray();
 	}
 
-	public static synchronized void writeStream(Object model, DataOutputStream stream0) throws Exception {
+	public static void writeStream(Object model, DataOutputStream stream0) throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(model.getClass());
 		if (log.isDebugEnabled())
 			log.info("[WRITE] class {} begin. ToWrite = {}", model.getClass(), model);
@@ -103,7 +103,7 @@ public class IOService {
 		return MAPPER.map(model, target);
 	}
 
-	public static synchronized <T> T readStreamRecursive(Class<?> clazz, DataInputStream stream, Object result)
+	public static <T> T readStreamRecursive(Class<?> clazz, DataInputStream stream, Object result)
 			throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
 		if(clazz.equals(UnloadPacket.class)) {
@@ -145,11 +145,11 @@ public class IOService {
 		return (T) result;
 	}
 
-	public synchronized static <T> T readStream(Class<?> clazz, DataInputStream stream) throws Exception {
+	public static <T> T readStream(Class<?> clazz, DataInputStream stream) throws Exception {
 		return readStreamRecursive(clazz, stream, null);
 	}
 
-	public static synchronized <T> T readStream(Class<?> clazz, byte[] stream) throws Exception {
+	public static <T> T readStream(Class<?> clazz, byte[] stream) throws Exception {
 		final ByteArrayInputStream bis = new ByteArrayInputStream(stream);
 		final DataInputStream dis = new DataInputStream(bis);
 		return readStreamRecursive(clazz, dis, null);
