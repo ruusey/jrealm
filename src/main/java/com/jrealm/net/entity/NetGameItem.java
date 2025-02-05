@@ -3,6 +3,10 @@ package com.jrealm.net.entity;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.entity.item.Damage;
+import com.jrealm.game.entity.item.Effect;
+import com.jrealm.game.entity.item.GameItem;
+import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
@@ -59,6 +63,24 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 		}else {
 		    IOService.writeStream(value, stream);
 		}
+	}
+	
+	public GameItem asGameItem() {
+		GameItem item = new GameItem();
+		item.setItemId(this.itemId);
+		item.setUid(this.uid);
+		item.setName(this.name);
+		item.setDescription(this.description);
+		item.setStats(IOService.mapModel(this.stats, Stats.class));
+		item.setDamage(IOService.mapModel(this.damage, Damage.class));
+		item.setEffect(IOService.mapModel(this.stats, Effect.class));
+		item.setConsumable(this.consumable);
+		item.setTier(this.tier);
+		item.setTargetSlot(this.targetSlot);
+		item.setTargetClass(this.targetClass);
+		item.setFameBonus(this.fameBonus);
+		return item;
+
 	}
 
 	public NetGameItem() {

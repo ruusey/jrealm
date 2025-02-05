@@ -198,6 +198,9 @@ public class UpdatePacket extends Packet {
 		boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
 				&& (this.health == other.getHealth()) && (this.mana == other.getMana());
 
+		if(this.health!=other.getHealth() || this.stats.getHp()!=other.getStats().getHp()) {
+			int i = 0;
+		}
 		boolean stats = this.stats.equals(other.getStats());
 		if (thinMatch)
 			stats = true;
@@ -226,8 +229,11 @@ public class UpdatePacket extends Packet {
 				break;
 			}
 		}
-		if (thinMatch)
+		if (thinMatch) {
+			inv = true;
 			effects = true;
+		}
+		
 		boolean expEqual = this.experience == other.getExperience();
 		boolean result = basic && stats && inv && effects && expEqual;
 

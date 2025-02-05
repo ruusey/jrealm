@@ -114,7 +114,7 @@ public class LoadMapPacket extends Packet {
             return false;
         }
         for (int i = 0; i < myTiles.length; i++) {
-        	final  NetTile myTile = myTiles[i];
+        	final NetTile myTile = myTiles[i];
         	final NetTile otherTile = otherTiles[i];
             if (!myTile.equals(otherTile))
                 return false;

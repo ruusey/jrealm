@@ -38,7 +38,7 @@ public class PlayerUI {
     private Map<String, ItemTooltip> tooltips;
     private Graphics2D tempGraphics;
     private long lastAction = Instant.now().toEpochMilli();
-
+    private Button menuButton = null;
     public PlayerUI(PlayState p) {
         SpriteSheet bars = new SpriteSheet("fillbars.png", 12, 12);
         BufferedImage[] barSpritesHp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(39, 0, 7, 14),
@@ -78,9 +78,9 @@ public class PlayerUI {
         return items;
     }
 
-    public int firstNullIdx(Object[] objs) {
+    public int firstNullIdx(GameItem[] objs) {
         for (int i = 0; i < objs.length; i++) {
-            if (objs[i] == null)
+            if (objs[i] == null || objs[i].getItemId()==-1)
                 return i;
         }
         return -1;
@@ -396,7 +396,7 @@ public class PlayerUI {
             int xOffset = 128;
             int yOffset = 42;
             int startY = 350;
-
+            
             Stats stats = this.playState.getPlayer().getComputedStats();
             Vector2f posHp = new Vector2f(GamePanel.width - 64, 128 + 32);
             Vector2f posMp = posHp.clone(0, 32);

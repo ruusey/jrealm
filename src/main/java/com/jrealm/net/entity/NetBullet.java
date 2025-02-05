@@ -2,7 +2,9 @@ package com.jrealm.net.entity;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.Arrays;
 
+import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
@@ -42,6 +44,16 @@ public class NetBullet extends SerializableFieldType<NetBullet> {
 	private short damage;
 	@SerializableField(order = 10, type = SerializableShort.class, isCollection=true)
 	private Short[] flags;
+	@SerializableField(order = 11, type = SerializableBoolean.class)
+	private boolean invert;
+	@SerializableField(order = 12, type = SerializableLong.class)
+	private long timeStep;
+	@SerializableField(order = 13, type = SerializableShort.class)
+	private short amplitude;
+	@SerializableField(order = 14, type = SerializableShort.class)
+	private short frequency;
+	@SerializableField(order = 15, type = SerializableLong.class)
+	private long createdTime;
 	
 	@Override
 	public NetBullet read(DataInputStream stream) throws Exception {
@@ -51,5 +63,26 @@ public class NetBullet extends SerializableFieldType<NetBullet> {
 	@Override
 	public void write(NetBullet value, DataOutputStream stream) throws Exception {
 		IOService.writeStream(value, stream);
+	}
+	
+	public Bullet asBullet() {
+		Bullet bullet = new Bullet();
+		bullet.setId(this.id);
+		bullet.setProjectileId(this.projectileId);
+		bullet.setSize(this.size);
+		bullet.setPos(this.pos);
+		bullet.setDx(this.dX);
+		bullet.setDy(this.dY);
+		bullet.setAngle(this.angle);
+		bullet.setMagnitude(this.magnitude);
+		bullet.setRange(this.range);
+		bullet.setDamage(this.damage);
+		bullet.setFlags(Arrays.asList(this.flags));
+		bullet.setInvert(this.invert);
+		bullet.setTimeStep(this.timeStep);
+		bullet.setAmplitude(this.amplitude);
+		bullet.setFrequency(this.frequency);
+		bullet.setCreatedTime(this.createdTime);
+		return bullet;
 	}
 }

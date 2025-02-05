@@ -127,7 +127,7 @@ public class ClientGameLogic {
         final LoadPacket loadPacket = (LoadPacket) packet;
         try {
             for (final NetPlayer player : loadPacket.getPlayers()) {
-            	Player p = IOService.mapModel(player, Player.class);
+            	Player p = player.toPlayer();
 
                 if (p.getId() == cli.getCurrentPlayerId()) {
                     continue;
@@ -135,7 +135,7 @@ public class ClientGameLogic {
                 cli.getRealm().addPlayerIfNotExists(p);
             }
             for (final NetLootContainer loot : loadPacket.getContainers()) {
-            	final LootContainer lc = IOService.mapModel(loot, LootContainer.class);
+            	final LootContainer lc = loot.asLootContainer();
                 if (lc.getContentsChanged()) {
                     LootContainer current = cli.getRealm().getLoot().get(lc.getLootContainerId());
                     if(current==null) {
@@ -152,7 +152,7 @@ public class ClientGameLogic {
             }
 
             for (final NetBullet bullet : loadPacket.getBullets()) {
-            	final Bullet b = IOService.mapModel(bullet, Bullet.class);
+            	final Bullet b = bullet.asBullet();
                 cli.getRealm().addBulletIfNotExists(b);
             }
 
@@ -297,7 +297,7 @@ public class ClientGameLogic {
         }else {
         	final Enemy enemyToUpdate = cli.getRealm().getEnemy((updatePacket.getPlayerId()));
         	enemyToUpdate.applyUpdate(updatePacket, cli.getState());
-        	//log.info("[CLIENT] Recieved update for enemy {}", enemyToUpdate);
+        	log.info("[CLIENT] Recieved update for enemy {}", enemyToUpdate);
         }
     }
 

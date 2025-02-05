@@ -3,6 +3,7 @@ package com.jrealm.net.entity;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
@@ -45,5 +46,19 @@ public class NetPlayer extends SerializableFieldType<NetPlayer>{
 	public void write(NetPlayer value, DataOutputStream stream) throws Exception {
 		IOService.writeStream(value, stream);
 		
+	}
+	
+	public Player toPlayer() {
+		Player p = new Player();
+		p.setId(this.id);
+		p.setName(this.name);
+		p.setAccountUuid(this.accountUuid);
+		p.setCharacterUuid(this.characterUuid);
+		p.setClassId(this.classId);
+		p.setSize(this.size);
+		p.setPos(this.pos);
+		p.setDx(this.dX);
+		p.setDy(this.dY);
+		return p;
 	}
 }
