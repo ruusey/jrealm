@@ -21,15 +21,15 @@ import lombok.NoArgsConstructor;
 @Streamable
 public class NetPortal extends SerializableFieldType<NetPortal> {
 	@SerializableField(order = 0, type = SerializableLong.class)
-	private Long id;
+	private long id;
 	@SerializableField(order = 1, type = SerializableShort.class)
-	private Short portalId;
+	private short portalId;
 	@SerializableField(order = 2, type = SerializableLong.class)
-	private Long fromRealmId;
+	private long fromRealmId;
 	@SerializableField(order = 3, type = SerializableLong.class)
-	private Long toRealmId;
+	private long toRealmId;
 	@SerializableField(order = 4, type = SerializableLong.class)
-	private Long expires;
+	private long expires;
 	@SerializableField(order = 5, type = Vector2f.class)
 	private Vector2f pos;
 

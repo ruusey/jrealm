@@ -105,6 +105,7 @@ public class PlayerUI {
 
         for (int i = 0; i < loot.length; i++) {
             GameItem item = loot[i];
+            if(item ==null || item.getItemId()==-1) continue;
             this.buildGroundLootSlotButton(i, item, g);
         }
     }
@@ -143,6 +144,7 @@ public class PlayerUI {
             });
 
             b.onMouseUp(event -> {
+            	System.out.println();
                 this.tooltips.clear();
                 if (this.canSwap()) {
                     this.setActionTime();
@@ -166,6 +168,7 @@ public class PlayerUI {
     private void buildEquipmentSlots(GameItem[] equipment) {
         for (int i = 0; i < equipment.length; i++) {
             GameItem item = equipment[i];
+            if(item.getItemId()==-1) continue;
             this.buildEquipmentSlotButton(i, item);
         }
     }
@@ -208,6 +211,7 @@ public class PlayerUI {
     private void buildInventorySlots(GameItem[] inventory) {
         for (int i = 0; i < (inventory.length); i++) {
             GameItem item = inventory[i];
+            if(item.getItemId()==-1) continue;
             this.buildInventorySlotsButton(i, item);
         }
     }

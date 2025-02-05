@@ -136,7 +136,7 @@ public class LoadPacket extends Packet {
         }
 
         for (final NetLootContainer c : this.containers) {
-            if (c.getContentsChanged()) {
+            if (c.isContentsChanged()) {
                 containersEq = false;
                 break;
             }
@@ -182,7 +182,7 @@ public class LoadPacket extends Packet {
 
         final List<NetLootContainer> lootDiff = new ArrayList<>();
         for (final NetLootContainer p : loot) {
-            if (!lootIdsThis.contains(p.getLootContainerId()) || p.getContentsChanged()) {
+            if (!lootIdsThis.contains(p.getLootContainerId()) || p.isContentsChanged()) {
                 lootDiff.add(p);
             }
         }

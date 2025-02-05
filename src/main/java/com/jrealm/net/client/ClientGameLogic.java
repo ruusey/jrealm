@@ -140,10 +140,12 @@ public class ClientGameLogic {
                     LootContainer current = cli.getRealm().getLoot().get(lc.getLootContainerId());
                     if(current==null) {
                         cli.getRealm().addLootContainerIfNotExists(lc);
-                        current = cli.getRealm().getLoot().get(lc.getLootContainerId());
+                        //current = cli.getRealm().getLoot().get(lc.getLootContainerId());
+                    }else {
+                        current.setContentsChanged(true);
+                        current.setItemsUncondensed(LootContainer.getCondensedItems(lc));
                     }
-                    current.setContentsChanged(true);
-                    current.setItemsUncondensed(LootContainer.getCondensedItems(lc));
+
                 } else {
                     cli.getRealm().addLootContainerIfNotExists(lc);
                 }

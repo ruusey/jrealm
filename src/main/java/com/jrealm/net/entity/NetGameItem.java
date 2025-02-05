@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Streamable
 public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	@SerializableField(order = 0, type = SerializableInt.class)
-    private Integer itemId;
+    private int itemId;
 	@SerializableField(order = 1, type = SerializableString.class)
     private String uid;
 	@SerializableField(order = 2, type = SerializableString.class)
@@ -35,15 +35,15 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	@SerializableField(order = 6, type = NetEffect.class)
     private NetEffect effect;
 	@SerializableField(order = 7, type = SerializableBoolean.class)
-    private Boolean consumable;
+    private boolean consumable;
 	@SerializableField(order = 8, type = SerializableByte.class)
-    private Byte tier;
+    private byte tier;
 	@SerializableField(order = 9, type = SerializableByte.class)
-    private Byte targetSlot;
+    private byte targetSlot;
 	@SerializableField(order = 10, type = SerializableByte.class)
-    private Byte targetClass;
+    private byte targetClass;
 	@SerializableField(order = 11, type = SerializableByte.class)
-    private Byte fameBonus;
+    private byte fameBonus;
 	
 	
 	

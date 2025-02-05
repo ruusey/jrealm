@@ -21,15 +21,15 @@ import lombok.Data;
 @AllArgsConstructor
 public class NetEffect extends SerializableFieldType<NetEffect> {
 	@SerializableField(order = 0, type = SerializableBoolean.class)
-	private Boolean self;
+	private boolean self;
 	@SerializableField(order = 1, type = SerializableShort.class)
-	private Short effectId;
+	private short effectId;
 	@SerializableField(order = 2, type = SerializableLong.class)
-	private Long duration;
+	private long duration;
 	@SerializableField(order = 3, type = SerializableLong.class)
-	private Long cooldownDuration;
+	private long cooldownDuration;
 	@SerializableField(order = 4, type = SerializableShort.class)
-	private Short mpCost;
+	private short mpCost;
 
 	public NetEffect() {
 		this.self = false;

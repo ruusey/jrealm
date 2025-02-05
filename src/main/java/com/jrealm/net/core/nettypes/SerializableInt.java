@@ -15,18 +15,17 @@ public class SerializableInt extends SerializableFieldType<Integer> {
 		Integer result = 0;
 		try {
 			result = stream.readInt();
-		}catch(Exception e) {
-			//log.error("Failed to read integerr. Reason: {}", e.getMessage());
+		} catch (Exception e) {
+			// log.error("Failed to read integerr. Reason: {}", e.getMessage());
 		}
 		return result;
 	}
 
 	@Override
 	public void write(Integer value, DataOutputStream stream) throws Exception {
-		if(value!=null) {
+		if (value != null) {
 			stream.writeInt(value);
-
-		}else {
+		} else {
 			stream.writeInt(0);
 		}
 	}

@@ -34,7 +34,6 @@ public class LootContainer {
     private long spawnedTime;
 
     private boolean contentsChanged;
-
     public LootContainer(LootTier tier, Vector2f pos) {
         this.tier = tier;
         this.sprite = LootTier.getLootSprite(tier.tierId);

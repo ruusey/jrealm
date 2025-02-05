@@ -11,14 +11,14 @@ public class SerializableBoolean extends SerializableFieldType<Boolean> {
 	public Boolean read(DataInputStream stream) throws Exception {
 		try {
 			return stream.readBoolean();
-		}catch(Exception e) {
+		} catch (Exception e) {
 			return false;
 		}
 	}
 
 	@Override
 	public void write(Boolean value, DataOutputStream stream) throws Exception {
-		final Boolean toWrite = value==null?false:value;
+		final Boolean toWrite = value == null ? false : value;
 		stream.writeBoolean(toWrite);
 	}
 }

@@ -24,19 +24,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NetEnemy extends SerializableFieldType<NetEnemy>{
 	@SerializableField(order = 0, type = SerializableLong.class)
-	private Long id;
+	private long id;
 	@SerializableField(order = 1, type = SerializableInt.class)
-	private Integer enemyId;
+	private int enemyId;
 	@SerializableField(order = 2, type = SerializableInt.class)
-	private Integer weaponId;
+	private int weaponId;
 	@SerializableField(order = 3, type = SerializableShort.class)
-	private Short size;
+	private short size;
 	@SerializableField(order = 4, type = Vector2f.class)
 	private Vector2f pos;
 	@SerializableField(order = 5, type = SerializableFloat.class)
-	private Float dX;
+	private float dX;
 	@SerializableField(order = 6, type = SerializableFloat.class)
-	private Float dY;
+	private float dY;
 	
 	@Override
 	public NetEnemy read(DataInputStream stream) throws Exception {

@@ -13,13 +13,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
-import com.jrealm.net.client.packet.LoadMapPacket;
-import com.jrealm.net.client.packet.LoadPacket;
-import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UnloadPacket;
-import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.core.IOService;
 
 import lombok.Data;
@@ -104,11 +99,7 @@ public class SocketClient implements Runnable {
                     this.remoteBufferIndex -= packetLength;
                     Class<? extends Packet> packetClass = PacketType.valueOf(packetId).getX();
                     Packet nPacket = IOService.readStream(packetClass, packetBytes);
-                    if(nPacket instanceof UnloadPacket) {
-                    	int i = 0;
-                    }
                     nPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-
                     this.inboundPacketQueue.add(nPacket);
                 }
             }

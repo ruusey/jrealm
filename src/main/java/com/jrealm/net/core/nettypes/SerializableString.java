@@ -14,16 +14,14 @@ public class SerializableString extends SerializableFieldType<String> {
 	public String read(DataInputStream stream) throws Exception {
 		try {
 			return stream.readUTF();
-		}catch(Exception e) {
-			//e.printStackTrace();
-			//.println("ERROR Failed to read String from streaam. Reason "+e.getMessage());
+		} catch (Exception e) {
 			return "";
 		}
 	}
 
 	@Override
 	public void write(String value, DataOutputStream stream) throws Exception {
-		String toUse = value==null?"":value;
+		String toUse = value == null ? "" : value;
 		stream.writeUTF(toUse);
 	}
 }

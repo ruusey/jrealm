@@ -106,9 +106,6 @@ public class IOService {
 	public static <T> T readStreamRecursive(Class<?> clazz, DataInputStream stream, Object result)
 			throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
-		if(clazz.equals(UnloadPacket.class)) {
-			int i = 1;
-		}
 		if (log.isDebugEnabled())
 			log.info("[READ] class {} begin. CurrentRessults = {}", clazz, result);
 		if (result == null) {

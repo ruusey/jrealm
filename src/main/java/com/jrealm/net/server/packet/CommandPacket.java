@@ -29,9 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 public class CommandPacket extends Packet {
 	
 	@SerializableField(order = 0, type = SerializableLong.class)
-    private Long playerId;
+    private long playerId;
 	@SerializableField(order = 1, type = SerializableByte.class)
-    private Byte commandId;
+    private byte commandId;
 	@SerializableField(order = 2, type = SerializableString.class)
     private String command;
 

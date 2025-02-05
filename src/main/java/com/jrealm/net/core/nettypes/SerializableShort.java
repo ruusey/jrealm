@@ -10,15 +10,15 @@ public class SerializableShort extends SerializableFieldType<Short> {
 	@Override
 	public Short read(DataInputStream stream) throws Exception {
 		try {
-			Short res = stream.readShort();
+			final Short res = stream.readShort();
 			return res;
-		}catch(Exception e) {
-			return (short)0;
+		} catch (Exception e) {
+			return (short) 0;
 		}
 	}
 
 	@Override
 	public void write(Short value, DataOutputStream stream) throws Exception {
-		stream.writeShort(value==null?0:value);
+		stream.writeShort(value == null ? 0 : value);
 	}
 }

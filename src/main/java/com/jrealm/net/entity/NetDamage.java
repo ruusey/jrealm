@@ -9,20 +9,20 @@ import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
 import com.jrealm.net.core.nettypes.SerializableInt;
 import com.jrealm.net.core.nettypes.SerializableShort;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @Streamable
 @AllArgsConstructor
 public class NetDamage extends SerializableFieldType<NetDamage> {
 	@SerializableField(order = 0, type = SerializableInt.class)
-	private Integer projectileGroupId;
+	private int projectileGroupId;
 	@SerializableField(order = 1, type = SerializableShort.class)
-	private Short min;
+	private short min;
 	@SerializableField(order = 2, type = SerializableShort.class)
-	private Short max;
+	private short max;
  
 	public NetDamage() {
 		this.projectileGroupId = -1;

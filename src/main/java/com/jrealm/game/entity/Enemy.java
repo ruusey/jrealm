@@ -17,7 +17,6 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.script.EnemyScriptBase;
 import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.Streamable;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.realm.Realm;
