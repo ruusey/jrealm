@@ -6,7 +6,9 @@ import java.util.Map.Entry;
 
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.util.CommandHandler;
+import com.jrealm.net.client.packet.FinalizeTradePacket;
 import com.jrealm.net.client.packet.RequestTradePacket;
+import com.jrealm.net.entity.NetTradeSelection;
 import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
@@ -35,7 +37,7 @@ public class ServerTradeManager {
 		if(isTradeReqPending(target.getId())) {
 			throw new Exception("You already have a pending trade request");
 		}
-		final Player playerTarget = findPlayerByName(message.getArgs().get(0));
+		final Player playerTarget = ServerTradeManager.findPlayerByName(message.getArgs().get(0));
 		final RequestTradePacket packet = new RequestTradePacket(target.getName());
 		mgr.enqueueServerPacket(playerTarget, packet);
 
@@ -78,9 +80,10 @@ public class ServerTradeManager {
 		
 		try {
 			final Player toRespond = mgr.getPlayerById(ServerTradeManager.inverseRequestedTrades().get(target.getId()));
-
 			if (Boolean.parseBoolean(message.getArgs().get(0))) {
-				finalizeTrade(target.getId(), toRespond.getId(), null);
+				final NetTradeSelection selection = NetTradeSelection.getTradeSelection(target, toRespond, new boolean[8], new boolean[8]);
+				final FinalizeTradePacket packet = new FinalizeTradePacket(selection);
+				ServerTradeManager.finalizeTrade(packet);
 			}else {
 				mgr.enqueueServerPacket(toRespond, TextPacket.create(target.getName(), toRespond.getName(),
 						target.getName() + " has rejected your trade request"));
@@ -91,9 +94,9 @@ public class ServerTradeManager {
 	}
 	
 	@SuppressWarnings("unused")
-	public static void finalizeTrade(long playerId0, long playerId1, Object tradeMatrix) {
-		final Player source = mgr.getPlayerById(playerId0);
-		final Player target = mgr.getPlayerById(playerId1);
+	public static void finalizeTrade(FinalizeTradePacket finalizedTrade) {
+		final Player source = mgr.getPlayerById(finalizedTrade.getSelection().getPlayer0Selection().getPlayerId());
+		final Player target = mgr.getPlayerById(finalizedTrade.getSelection().getPlayer1Selection().getPlayerId());
 		playerActiveTrades.remove(source.getId());
 		playerRequestedTrades.remove(source.getId());
 		playerActiveTrades.remove(target.getId());
