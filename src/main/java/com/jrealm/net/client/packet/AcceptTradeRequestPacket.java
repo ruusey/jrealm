@@ -18,6 +18,11 @@ public class AcceptTradeRequestPacket extends Packet{
 	@SerializableField(order = 0, type = SerializableBoolean.class)
 	private boolean accepted;
 	
+	public AcceptTradeRequestPacket(boolean accepted) {
+		this.accepted = accepted;
+		this.setId(PacketType.ACCEPT_TRADE_REQUEST.getPacketId());
+	}
+	
 	@Override
 	public void readData(byte[] data) throws Exception {
 		AcceptTradeRequestPacket read = IOService.readPacket(getClass(), data);
@@ -29,11 +34,4 @@ public class AcceptTradeRequestPacket extends Packet{
 	public void serializeWrite(DataOutputStream stream) throws Exception {
 		IOService.writePacket(this, stream);
 	}
-	
-	public AcceptTradeRequestPacket(boolean accepted) {
-		this.accepted = accepted;
-		this.setId(PacketType.ACCEPT_TRADE_REQUEST.getPacketId());
-
-	}
-
 }
