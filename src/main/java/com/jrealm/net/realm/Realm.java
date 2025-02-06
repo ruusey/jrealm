@@ -227,8 +227,6 @@ public class Realm {
         return p;
     }
     
-
-
     public Bullet getBullet(long bulletId) {
         return this.bullets.get(bulletId);
     }
@@ -600,7 +598,7 @@ public class Realm {
     public void spawnRandomEnemy() {
         final Vector2f spawnPos = new Vector2f(
                 this.tileManager.getMapLayers().get(0).getTileSize()
-                        * Realm.RANDOM.nextInt(this.tileManager.getMapLayers().get(0).getWidth()),
+                        * Realm.RANDOM.nextInt(this.tileManager.getMapLayers().get(0).getWidth()* this.tileManager.getBaseLayer().getTileSize()),
                 this.tileManager.getMapLayers().get(0).getTileSize()
                         * Realm.RANDOM.nextInt(this.tileManager.getMapLayers().get(0).getHeight()));
 
@@ -621,17 +619,17 @@ public class Realm {
     }
 
     private Runnable getStatsThread() {
-        Runnable r = () -> {
+        final Runnable statsThread = () -> {
             while (!this.shutdown) {
-                double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
-//                Realm.log.info("--- Realm: {} | MapId: {} | Depth: {} ---", this.getRealmId(), this.getMapId(), this.getDepth());
-//                Realm.log.info("Enemies: {}", this.enemies.size());
-//                Realm.log.info("Players: {}", this.players.size());
-//                Realm.log.info("Loot: {}", this.loot.size());
-//                Realm.log.info("Bullets: {}", this.bullets.size());
-//                Realm.log.info("BulletHits: {}", this.bulletHits.size());
-//                Realm.log.info("Portals: {}", this.portals.size());
-//                Realm.log.info("Heap Mem: {}", heapSize);
+                final double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
+                Realm.log.info("--- Realm: {} | MapId: {} | Depth: {} ---", this.getRealmId(), this.getMapId(), this.getDepth());
+                Realm.log.info("Enemies: {}", this.enemies.size());
+                Realm.log.info("Players: {}", this.players.size());
+                Realm.log.info("Loot: {}", this.loot.size());
+                Realm.log.info("Bullets: {}", this.bullets.size());
+                Realm.log.info("BulletHits: {}", this.bulletHits.size());
+                Realm.log.info("Portals: {}", this.portals.size());
+                Realm.log.info("Heap Mem: {}", heapSize);
 
                 try {
                     Thread.sleep(10000);
@@ -641,7 +639,7 @@ public class Realm {
             }
             log.info("Realm {} destroyed", this.getRealmId());
         };
-        return r;
+        return statsThread;
     }
 
     private void acquirePlayerLock() {

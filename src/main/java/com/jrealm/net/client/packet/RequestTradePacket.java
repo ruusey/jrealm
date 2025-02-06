@@ -25,7 +25,7 @@ public class RequestTradePacket extends Packet{
 	public void readData(byte[] data) throws Exception {
 		RequestTradePacket read = IOService.readPacket(getClass(), data);
 		this.requestingPlayerName = read.getRequestingPlayerName();
-		this.setId(PacketType.INIT_TRADE_REQUEST.getPacketId());
+		this.setId(PacketType.TRADE_REQUEST.getPacketId());
 	}
 
 	@Override
@@ -35,7 +35,7 @@ public class RequestTradePacket extends Packet{
 	
 	public RequestTradePacket(String requestingPlayerName) {
 		this.requestingPlayerName = requestingPlayerName;
-		this.setId(PacketType.INIT_TRADE_REQUEST.getPacketId());
+		this.setId(PacketType.TRADE_REQUEST.getPacketId());
 
 	}
 

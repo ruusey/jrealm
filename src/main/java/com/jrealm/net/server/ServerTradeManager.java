@@ -31,7 +31,7 @@ public class ServerTradeManager {
 			throws Exception {
 		if (message.getArgs() == null || message.getArgs().size() != 1)
 			throw new IllegalArgumentException("Usage: /trade {PLAYER_NAME}");
-		final Player playerTarget = findPlayerById(message.getArgs().get(0));
+		final Player playerTarget = findPlayerByName(message.getArgs().get(0));
 		final RequestTradePacket packet = new RequestTradePacket(target.getName());
 		mgr.enqueueServerPacket(playerTarget, packet);
 
@@ -58,19 +58,49 @@ public class ServerTradeManager {
 			} else {
 				mgr.enqueueServerPacket(toRespond, TextPacket.create(from.getName(), toRespond.getName(),
 						from.getName() + " has rejected your trade request"));
-
 			}
 		} catch (Exception e) {
 			throw new Exception("Unparseable boolean value " + message.getArgs().get(0));
 		}
 	}
 	
+	@CommandHandler(value = "finalize", description = "Accepts trade proposed to user")
+	public static void finalizeTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+			throws Exception {
+		if (message.getArgs() == null || message.getArgs().size() != 1)
+			throw new IllegalArgumentException("Usage: /finalize {true | false}");
+		
+		try {
+			final Player toRespond = mgr.getPlayerById(ServerTradeManager.inverseRequestedTrades().get(target.getId()));
+
+			if (Boolean.parseBoolean(message.getArgs().get(0))) {
+				finalizeTrade(target.getId(), toRespond.getId(), null);
+			}else {
+				mgr.enqueueServerPacket(toRespond, TextPacket.create(target.getName(), toRespond.getName(),
+						target.getName() + " has rejected your trade request"));
+			}
+		}catch(Exception e) {
+			throw new Exception(e.getMessage());
+		}
+	}
+	
+	@SuppressWarnings("unused")
 	public static void finalizeTrade(long playerId0, long playerId1, Object tradeMatrix) {
 		final Player source = mgr.getPlayerById(playerId0);
 		final Player target = mgr.getPlayerById(playerId1);
+		playerActiveTrades.remove(source.getId());
+		playerRequestedTrades.remove(source.getId());
+		playerActiveTrades.remove(target.getId());
+		playerRequestedTrades.remove(target.getId());
+		
+		mgr.enqueueServerPacket(source, TextPacket.create(target.getName(), source.getName(),
+				target.getName() + " finalized the trade"));
+		
+		mgr.enqueueServerPacket(target, TextPacket.create(source.getName(), target.getName(),
+				source.getName() + " finalized the trade"));
 	}
 
-	public static Player findPlayerById(String name) {
+	public static Player findPlayerByName(String name) {
 		Player result = null;
 		for (Realm realm : mgr.getRealms().values()) {
 			for (Player player : realm.getPlayers().values()) {
@@ -87,7 +117,7 @@ public class ServerTradeManager {
 	}
 
 	public static void initTrade(Player requestor, RequestTradePacket request) throws IllegalArgumentException {
-		final Player target = findPlayerById(request.getRequestingPlayerName());
+		final Player target = findPlayerByName(request.getRequestingPlayerName());
 		if (target == null) {
 			throw new IllegalArgumentException("Unknown player " + request.getRequestingPlayerName());
 		}else if (!isTradeReqPending(requestor.getId()) && !isTrading(requestor.getId(), target.getId())) {

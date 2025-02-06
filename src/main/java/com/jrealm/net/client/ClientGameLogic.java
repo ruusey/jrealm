@@ -16,7 +16,6 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.EffectText;
 import com.jrealm.game.util.PacketHandlerClient;
-import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
