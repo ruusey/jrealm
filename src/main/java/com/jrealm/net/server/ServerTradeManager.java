@@ -31,6 +31,10 @@ public class ServerTradeManager {
 			throws Exception {
 		if (message.getArgs() == null || message.getArgs().size() != 1)
 			throw new IllegalArgumentException("Usage: /trade {PLAYER_NAME}");
+		
+		if(isTradeReqPending(target.getId())) {
+			throw new Exception("You already have a pending trade request");
+		}
 		final Player playerTarget = findPlayerByName(message.getArgs().get(0));
 		final RequestTradePacket packet = new RequestTradePacket(target.getName());
 		mgr.enqueueServerPacket(playerTarget, packet);
@@ -58,6 +62,8 @@ public class ServerTradeManager {
 			} else {
 				mgr.enqueueServerPacket(toRespond, TextPacket.create(from.getName(), toRespond.getName(),
 						from.getName() + " has rejected your trade request"));
+				playerActiveTrades.remove(from.getId());
+				playerRequestedTrades.remove(from.getId());
 			}
 		} catch (Exception e) {
 			throw new Exception("Unparseable boolean value " + message.getArgs().get(0));
