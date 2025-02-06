@@ -47,7 +47,6 @@ public class GamePanel extends JPanel implements Runnable {
     private long lastRenderTime;
 
     private long lastSecondTime;
-
     public GamePanel(BufferStrategy bs, int width, int height) {
         GamePanel.width = width;
         GamePanel.height = height;

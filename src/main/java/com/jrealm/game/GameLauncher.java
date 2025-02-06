@@ -108,7 +108,6 @@ public class GameLauncher {
 		WorkerThread.submitAndForkRun(server);
 	}
 
-	@SuppressWarnings("unchecked")
 	private static void startClient(String[] args) {
 		boolean skipLogin=false;
 		if(args.length>2) {

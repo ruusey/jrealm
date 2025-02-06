@@ -21,11 +21,9 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.state.PlayState;
-import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.Tuple;
-import com.jrealm.net.Streamable;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.core.IOService;
 
@@ -284,40 +282,31 @@ public class Player extends Entity {
 	}
 
 	public void input(MouseHandler mouse, KeyHandler key) {
-		if (!this.isFallen()) {
-			if (key.up.down) {
-				this.up = true;
-			} else {
-				this.up = false;
-			}
-			if (key.down.down) {
-				this.down = true;
-			} else {
-				this.down = false;
-			}
-			if (key.left.down) {
-				this.left = true;
-			} else {
-				this.left = false;
-			}
-			if (key.right.down) {
-				this.right = true;
-			} else {
-				this.right = false;
-			}
-
-			if (this.up && this.down) {
-				this.up = false;
-				this.down = false;
-			}
-
-			if (this.right && this.left) {
-				this.right = false;
-				this.left = false;
-			}
+		if (key.up.down) {
+			this.up = true;
 		} else {
 			this.up = false;
+		}
+		if (key.down.down) {
+			this.down = true;
+		} else {
 			this.down = false;
+		}
+		if (key.left.down) {
+			this.left = true;
+		} else {
+			this.left = false;
+		}
+		if (key.right.down) {
+			this.right = true;
+		} else {
+			this.right = false;
+		}
+		if (this.up && this.down) {
+			this.up = false;
+			this.down = false;
+		}
+		if (this.right && this.left) {
 			this.right = false;
 			this.left = false;
 		}
@@ -352,9 +341,9 @@ public class Player extends Entity {
 	}
 
 	public void incrementExperience(long experience) {
-		long newExperience = this.getExperience() + experience;
-		int currentLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(this.experience);
-		int newLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(newExperience);
+		final long newExperience = this.getExperience() + experience;
+		final int currentLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(this.experience);
+		final int newLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(newExperience);
 		final CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(this.getClassId());
 		// On level up
 		if (newLevel > currentLevel) {
@@ -398,8 +387,8 @@ public class Player extends Entity {
 	}
 
 	public boolean isStatMaxed(int statIdx) {
-		CharacterClassModel characterClass = GameDataManager.CHARACTER_CLASSES.get(this.classId);
-		Stats maxStats = characterClass.getMaxStats();
+		final CharacterClassModel characterClass = GameDataManager.CHARACTER_CLASSES.get(this.classId);
+		final Stats maxStats = characterClass.getMaxStats();
 		boolean maxed = false;
 		switch (statIdx) {
 		case 0:

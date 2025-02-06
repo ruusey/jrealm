@@ -1,6 +1,5 @@
 package com.jrealm.net.client.packet;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;
@@ -41,9 +40,6 @@ public class PlayerDeathPacket extends Packet {
     }
 
     public static PlayerDeathPacket from() throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-
-        return new PlayerDeathPacket(PacketType.PLAYER_DEATH.getPacketId(), byteStream.toByteArray());
+        return new PlayerDeathPacket(PacketType.PLAYER_DEATH.getPacketId(), new byte[0]);
     }
 }

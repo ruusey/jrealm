@@ -14,7 +14,6 @@ import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
-import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.core.IOService;
 
 import lombok.Data;

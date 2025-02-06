@@ -2,9 +2,6 @@ package com.jrealm.game.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
@@ -55,8 +52,8 @@ public class Enemy extends Entity {
         this.enemyId = enemyId;
         this.weaponId = weaponId;
         this.stats = this.model.getStats().clone();
-//        this.health = stats.getHp();
-//        this.mana = stats.getMp();
+        this.health = stats.getHp();
+        this.mana = stats.getMp();
     }
     
     public void applyStats(Stats stats) {
@@ -294,6 +291,7 @@ public class Enemy extends Entity {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
             }
         }
+        EnemyModel model = GameDataManager.ENEMIES.get(this.getEnemyId());
 
         // Health Bar UI
         g.setColor(Color.red);
@@ -302,7 +300,7 @@ public class Enemy extends Entity {
 
         g.setColor(Color.green);
         g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
-                (int) ((16*(this.getSize()/16)) * this.getHealthpercent()), 5);
+                (int) ((16*(this.getSize()/16)) * ((float)this.health/(float)model.getHealth())), 5);
 
     }
 

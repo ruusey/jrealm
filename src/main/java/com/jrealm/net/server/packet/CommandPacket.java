@@ -1,12 +1,10 @@
 package com.jrealm.net.server.packet;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Arrays;
 
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Packet;
@@ -67,9 +65,9 @@ public class CommandPacket extends Packet {
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
         byte[] res = IOService.writePacket(this, stream);
-        byte[] res0 = Arrays.copyOf(res, res.length);
-        CommandPacket p = IOService.readPacket(getClass(), res0);
-        log.info("Read/wrote packet {}", res);
+        final byte[] res0 = Arrays.copyOf(res, res.length);
+        final CommandPacket p = IOService.readPacket(getClass(), res0);
+        log.info("Read/wrote packet {}. Packet {}", res, p);
     }
 
     public static CommandPacket from(Player target, byte commandId, String command) throws Exception {

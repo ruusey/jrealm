@@ -1194,7 +1194,8 @@ public class RealmManagerServer implements Runnable {
 			}
 			targetRealm.hitEnemy(b.getId(), e.getId());
 			e.setHealth(e.getHealth() - dmgToInflict);
-			e.setHealthpercent(e.getHealth() / model.getHealth());
+			e.getStats().setHp((short) e.getHealth());
+			e.setHealthpercent((float)e.getHealth() / (float)model.getHealth());
 			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {

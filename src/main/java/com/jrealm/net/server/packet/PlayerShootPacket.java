@@ -1,7 +1,5 @@
 package com.jrealm.net.server.packet;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;

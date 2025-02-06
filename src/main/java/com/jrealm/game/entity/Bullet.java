@@ -3,7 +3,6 @@ package com.jrealm.game.entity;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,11 +10,8 @@ import java.util.List;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.net.Streamable;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = false)

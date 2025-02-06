@@ -289,8 +289,8 @@ public class ClientGameLogic {
     }
 
     public static void handleUpdateClient(RealmManagerClient cli, Packet packet) {
-        UpdatePacket updatePacket = (UpdatePacket) packet;
-        Player toUpdate = cli.getRealm().getPlayer((updatePacket.getPlayerId()));
+        final UpdatePacket updatePacket = (UpdatePacket) packet;
+        final Player toUpdate = cli.getRealm().getPlayer((updatePacket.getPlayerId()));
         if(toUpdate!=null) {
             toUpdate.applyUpdate(updatePacket, cli.getState());
 
@@ -309,8 +309,8 @@ public class ClientGameLogic {
     private static void doLoginResponse(RealmManagerClient cli, LoginResponseMessage loginResponse) {
         try {
             if (loginResponse.isSuccess()) {
-                CharacterClass cls = CharacterClass.valueOf(loginResponse.getClassId());
-                Player player = new Player(loginResponse.getPlayerId(),
+                final CharacterClass cls = CharacterClass.valueOf(loginResponse.getClassId());
+                final Player player = new Player(loginResponse.getPlayerId(),
                         new Vector2f(loginResponse.getSpawnX(), loginResponse.getSpawnY()), GlobalConstants.PLAYER_SIZE,
                         cls);
                 ClientGameLogic.log.info("[CLIENT] Login succesful, added Player ID {}", player.getId());
@@ -321,7 +321,7 @@ public class ClientGameLogic {
                 cli.setCurrentPlayerId(player.getId());
                 cli.getState().setPlayerId(player.getId());
                 cli.startHeartbeatThread();
-                TextPacket packet = TextPacket.create("SYSTEM", "Player",
+                final TextPacket packet = TextPacket.create("SYSTEM", "Player",
                         "Welcome to JRealm " + GameLauncher.GAME_VERSION + "!");
                 cli.getState().getPui().enqueueChat(packet);
             }

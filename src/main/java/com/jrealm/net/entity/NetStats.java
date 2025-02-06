@@ -3,7 +3,6 @@ package com.jrealm.net.entity;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
@@ -12,7 +11,6 @@ import com.jrealm.net.core.nettypes.SerializableShort;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @Streamable

@@ -38,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = false)
+@SuppressWarnings("serial")
 public class LoginScreenPanel extends JPanel implements ActionListener {
 	private BufferStrategy bs;
 
@@ -54,6 +55,7 @@ public class LoginScreenPanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 2394780468624375599L;
 	private JComboBox<String> classTypes;
 	private JFrame frame;
+
 	public LoginScreenPanel(int width, int height) {
 		this.setPreferredSize(new Dimension(width, height));
 		this.setSize(new Dimension(width, height));

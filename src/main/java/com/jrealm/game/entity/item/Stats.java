@@ -1,12 +1,5 @@
 package com.jrealm.game.entity.item;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
-import com.jrealm.net.Streamable;
-import com.jrealm.net.core.SerializableFieldType;
-import com.jrealm.net.entity.NetStats;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
