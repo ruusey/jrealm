@@ -222,8 +222,8 @@ public class Button {
                 this.pressed = true;
 
                 this.pressedtime = System.nanoTime() / 1000000;
-                for (int i = 0; i < this.mouseDownEvents.size(); i++) {
-                    this.mouseDownEvents.get(i).action(1);
+                for (int i = 0; i < this.mouseUpEvents.size(); i++) {
+                    this.mouseUpEvents.get(i).action(new Vector2f(mouse.getX(), mouse.getY()));
                 }
             } else if (mouse.isPressed(MouseEvent.BUTTON3) && !this.clicked) {
                 this.clicked = true;

@@ -1,8 +1,5 @@
 package com.jrealm.net.client.packet;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +7,9 @@ import java.util.List;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.net.Packet;
-
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.SerializableField;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -18,8 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Streamable
 public class ObjectMovePacket extends Packet {
 
+	@SerializableField(order = 0, type = ObjectMovement.class, isCollection=true)
     private ObjectMovement[] movements;
 
     public ObjectMovePacket() {
@@ -37,31 +38,17 @@ public class ObjectMovePacket extends Packet {
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        if (this.getId() < 1 || this.getData() == null || this.getData().length < 5)
-            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-
-        this.addHeader(stream);
-        stream.writeInt(this.movements.length);
-        for (ObjectMovement movement : this.movements) {
-            movement.write(stream);
-        }
+        IOService.writePacket(this, stream);
     }
 
     @Override
     public void readData(byte[] data) throws Exception {
-    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-    	final DataInputStream dis = new DataInputStream(bis);
-        if (dis == null || dis.available() < 5)
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");
-
-        final int movementsSize = dis.readInt();
-        this.movements = new ObjectMovement[movementsSize];
-        for (int i = 0; i < movementsSize; i++) {
-            this.movements[i] = new ObjectMovement().read(dis);
-        }
-
+    	final ObjectMovePacket read = IOService.readPacket(getClass(), data);
+    	read.setId(PacketType.OBJECT_MOVE.getPacketId());
+    	this.movements = read.getMovements();
     }
 
+    
     public ObjectMovePacket getMoveDiff(ObjectMovePacket newMove) throws Exception {
     	final List<ObjectMovement> moveDiff = new ArrayList<>();
         for (final ObjectMovement movement : newMove.getMovements()) {
@@ -69,7 +56,6 @@ public class ObjectMovePacket extends Packet {
                 moveDiff.add(movement);
             }
         }
-
         return moveDiff.size() == 0 ? null : ObjectMovePacket.from(moveDiff.toArray(new ObjectMovement[0]));
     }
 
@@ -82,21 +68,28 @@ public class ObjectMovePacket extends Packet {
         return false;
     }
 
-    public static ObjectMovePacket from(GameObject[] objects) throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-
-        stream.writeInt(objects.length);
-        for (final GameObject obj : objects) {
-            new ObjectMovement(obj).write(stream);
-        }
-
-        return new ObjectMovePacket(PacketType.OBJECT_MOVE.getPacketId(), byteStream.toByteArray());
-    }
+	public static ObjectMovePacket from(GameObject[] objects) throws Exception {
+		final ObjectMovement[] results = new ObjectMovement[objects.length];
+		for (int i = 0; i < objects.length; i++) {
+			final ObjectMovement toWrite = new ObjectMovement(objects[i]);
+			results[i] = toWrite;
+		}
+		final ObjectMovePacket packet = new ObjectMovePacket();
+		packet.setId(PacketType.COMMAND.getPacketId());
+		packet.setMovements(results);
+		return packet;
+	}
 
     public boolean equals(ObjectMovePacket other) {
         if (other == null)
             return false;
+        if(this.movements==null && other.getMovements()==null) {
+        	return true;
+        }else if(this.movements!=null && other.getMovements()==null) {
+        	return false;
+        }else if(this.movements==null && other.getMovements()!=null) {
+        	return false;
+        }
         for (final ObjectMovement movement : other.getMovements()) {
             if (!this.containsMovement(movement)) {
                 return false;
@@ -106,14 +99,9 @@ public class ObjectMovePacket extends Packet {
     }
 
     public static ObjectMovePacket from(ObjectMovement[] objects) throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-
-        stream.writeInt(objects.length);
-        for (final ObjectMovement obj : objects) {
-            obj.write(stream);
-        }
-
-        return new ObjectMovePacket(PacketType.OBJECT_MOVE.getPacketId(), byteStream.toByteArray());
+    	ObjectMovePacket packet = new ObjectMovePacket();
+    	packet.setMovements(objects);
+    	packet.setId(PacketType.OBJECT_MOVE.getPacketId());
+    	return packet;
     }
 }

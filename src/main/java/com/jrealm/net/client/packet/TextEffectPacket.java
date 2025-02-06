@@ -1,14 +1,17 @@
 package com.jrealm.net.client.packet;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.nettypes.SerializableByte;
+import com.jrealm.net.core.nettypes.SerializableLong;
+import com.jrealm.net.core.nettypes.SerializableString;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,10 +20,15 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Streamable
 public class TextEffectPacket extends Packet {
+	@SerializableField(order = 0, type = SerializableByte.class)
     private byte textEffectId;
+	@SerializableField(order = 1, type = SerializableByte.class)
     private byte entityType;
+	@SerializableField(order = 2, type = SerializableLong.class)
     private long targetEntityId;
+	@SerializableField(order = 3, type = SerializableString.class)
     private String text;
 
     public TextEffectPacket() {
@@ -38,36 +46,27 @@ public class TextEffectPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-    	final DataInputStream stream = new DataInputStream(bis);
-        if ((stream == null) || (stream.available() < 5))
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");
-
-        this.textEffectId = stream.readByte();
-        this.entityType = stream.readByte();
-        this.targetEntityId = stream.readLong();
-        this.text = stream.readUTF();
+    	final TextEffectPacket textEffect = IOService.readPacket(getClass(), data);
+    	this.textEffectId = textEffect.textEffectId;
+    	this.entityType = textEffect.entityType;
+    	this.targetEntityId = textEffect.targetEntityId;
+    	this.text = textEffect.text;
+    	this.setId(PacketType.TEXT_EFFECT.getPacketId());
     }
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
-            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-        this.addHeader(stream);
-        stream.writeByte(this.textEffectId);
-        stream.writeByte(this.entityType);
-        stream.writeLong(this.targetEntityId);
-        stream.writeUTF(this.text);
+        IOService.writePacket(this, stream);
     }
 
     public static TextEffectPacket from(EntityType entityType, long targetEntityId, TextEffect effect, String text)
             throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-        stream.writeByte(effect.ordinal());
-        stream.writeByte(entityType.getEntityTypeId());
-        stream.writeLong(targetEntityId);
-        stream.writeUTF(text);
-        return new TextEffectPacket(PacketType.TEXT_EFFECT.getPacketId(), byteStream.toByteArray());
+    	final TextEffectPacket packet = new TextEffectPacket();
+    	packet.textEffectId = (byte) effect.ordinal();
+    	packet.entityType = entityType.getEntityTypeId();
+    	packet.targetEntityId = targetEntityId;
+    	packet.text = text;
+    	packet.setId(PacketType.TEXT.getPacketId());
+        return packet;
     }
 }

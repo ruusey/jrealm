@@ -24,6 +24,7 @@ import com.jrealm.game.util.Camera;
 import com.jrealm.game.util.Partition;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.entity.NetTile;
 import com.jrealm.net.realm.Realm;
 
 import lombok.Data;
@@ -393,6 +394,9 @@ public class TileManager {
 
     public void mergeMap(LoadMapPacket packet) {
         // Resize the map on dimension change
+    	if(packet==null) {
+    		int ii=00;
+    	}
         if(getMapHeight()!=packet.getMapHeight() || getMapWidth()!=packet.getMapWidth()) {
            MapModel model = GameDataManager.MAPS.get((int)packet.getMapId());
            TileMap baseLayer = new TileMap((short) model.getMapId(), model.getTileSize(), model.getWidth(),

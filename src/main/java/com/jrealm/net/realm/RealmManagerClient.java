@@ -1,20 +1,33 @@
 package com.jrealm.net.realm;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
+
+import org.reflections.Reflections;
+import org.reflections.scanners.Scanners;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.state.PlayState;
+import com.jrealm.game.util.PacketHandlerClient;
+import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.net.client.SocketClient;
+import com.jrealm.net.server.ServerGameLogic;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 
@@ -26,6 +39,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @EqualsAndHashCode(callSuper = false)
 public class RealmManagerClient implements Runnable {
+	private Reflections classPathScanner = new Reflections("com.jrealm", Scanners.SubTypes, Scanners.MethodsAnnotated);
+	private MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
+	private final Map<Byte, List<MethodHandle>> userPacketCallbacksClient = new HashMap<>();
+
     private SocketClient client;
     private PlayState state;
     private Realm realm;
@@ -36,6 +53,7 @@ public class RealmManagerClient implements Runnable {
 
     public RealmManagerClient(PlayState state, Realm realm) {
         this.registerPacketCallbacks();
+        this.registerPacketCallbacksReflection();
         this.realm = realm;
         this.client = new SocketClient(SocketClient.SERVER_ADDR, 2222);
         this.state = state;
@@ -73,14 +91,28 @@ public class RealmManagerClient implements Runnable {
         while (!this.getClient().getInboundPacketQueue().isEmpty()) {
             Packet toProcess = this.getClient().getInboundPacketQueue().remove();
             try {
-				Packet created = null;
-            	//if (!(toProcess instanceof CommandPacket) && !(toProcess instanceof UnloadPacket)) {
-            		created = Packet.newInstance(toProcess.getId(), toProcess.getData());
-//				} else {
-//					created = toProcess;
-//				}
+				Packet created = toProcess;
+				//log.info("[CLIENT] Processing client packet {} ", created);
                 created.setSrcIp(toProcess.getSrcIp());
-                this.packetCallbacksClient.get(created.getId()).accept(this, created);
+                BiConsumer<RealmManagerClient, Packet> consumer = this.packetCallbacksClient.get(created.getId());
+                if(consumer!=null) {
+                	consumer.accept(this, created);
+                }
+              
+                final List<MethodHandle> packetHandles = this.userPacketCallbacksClient.get(created.getId());
+				long start = System.nanoTime();
+				if (packetHandles != null) {
+					for (MethodHandle handler : packetHandles) {
+						try {
+							handler.invokeExact(this, created);
+						} catch (Throwable e) {
+							log.error("Failed to invoke packet callback. Reason: {}", e);
+						}
+					}
+					log.info("Invoked {} packet callbacks for PacketType {} using reflection in {} nanos",
+							packetHandles.size(), PacketType.valueOf(created.getId()).getY(),
+							(System.nanoTime() - start));
+				}
             } catch (Exception e) {
                 RealmManagerClient.log.error("Failed to process client packets {}", e);
             }
@@ -98,6 +130,33 @@ public class RealmManagerClient implements Runnable {
         this.registerPacketCallback(PacketType.TEXT_EFFECT.getPacketId(), ClientGameLogic::handleTextEffectClient);
         this.registerPacketCallback(PacketType.PLAYER_DEATH.getPacketId(), ClientGameLogic::handlePlayerDeathClient);
     }
+    
+    private void registerPacketCallbacksReflection() {
+		log.info("Registering packet handlers using reflection");
+		final MethodType mt = MethodType.methodType(void.class, RealmManagerClient.class, Packet.class);
+		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandlerClient.class);
+		for (final Method method : subclasses) {
+			try {
+				final PacketHandlerClient packetToHandle = method.getDeclaredAnnotation(PacketHandlerClient.class);
+				final MethodHandle handleToHandler = this.publicLookup.findStatic(ClientGameLogic.class,
+						method.getName(), mt);
+				if (handleToHandler != null) {
+					final PacketType targetPacketType = PacketType.valueOf(packetToHandle.value());
+					List<MethodHandle> existing = this.userPacketCallbacksClient.get(targetPacketType.getPacketId());
+					if (existing == null) {
+						existing = new ArrayList<>();
+					}
+					existing.add(handleToHandler);
+					log.info("Added new packet handler for packet {}. Handler method: {} in class {}", targetPacketType,
+							method.toString(), method.getDeclaringClass());
+					this.userPacketCallbacksClient.put(targetPacketType.getPacketId(), existing);
+
+				}
+			} catch (Exception e) {
+				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
+			}
+		}
+	}
 
     private void registerPacketCallback(byte packetId, BiConsumer<RealmManagerClient, Packet> callback) {
         this.packetCallbacksClient.put(packetId, callback);

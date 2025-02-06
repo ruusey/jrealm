@@ -1,8 +1,6 @@
 package com.jrealm.game.entity.item;
 
 import java.awt.Graphics2D;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,7 +11,7 @@ import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.net.Streamable;
+import com.jrealm.net.entity.NetLootContainer;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +22,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LootContainer implements Streamable<LootContainer> {
+public class LootContainer {
 
     private long lootContainerId;
     private LootTier tier;
@@ -36,7 +34,6 @@ public class LootContainer implements Streamable<LootContainer> {
     private long spawnedTime;
 
     private boolean contentsChanged;
-
     public LootContainer(LootTier tier, Vector2f pos) {
         this.tier = tier;
         this.sprite = LootTier.getLootSprite(tier.tierId);
@@ -137,53 +134,6 @@ public class LootContainer implements Streamable<LootContainer> {
     public void render(Graphics2D g) {
         g.drawImage(this.sprite.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), 32, 32,
                 null);
-    }
-
-    @Override
-    public void write(DataOutputStream stream) throws Exception {
-        stream.writeLong(this.getLootContainerId());
-        stream.writeUTF(this.getUid());
-        stream.writeBoolean(this instanceof Chest);
-        stream.writeByte(this.getTier().tierId);
-        GameItem[] toWrite = LootContainer.getCondensedItems(this);
-        stream.writeInt(toWrite.length);
-        for (int i = 0; i < toWrite.length; i++) {
-            toWrite[i].write(stream);
-        }
-
-        stream.writeFloat(this.pos.x);
-        stream.writeFloat(this.pos.y);
-        stream.writeLong(this.spawnedTime);
-        stream.writeBoolean(this.contentsChanged);
-    }
-
-    @Override
-    public LootContainer read(DataInputStream stream) throws Exception {
-
-        long lootContainerId = stream.readLong();
-        String uid = stream.readUTF();
-        boolean isChest = stream.readBoolean();
-        byte tier = stream.readByte();
-        int itemsSize = stream.readInt();
-        GameItem[] items = new GameItem[8];
-        for (int i = 0; i < itemsSize; i++) {
-            items[i] = new GameItem().read(stream);
-        }
-        float posX = stream.readFloat();
-        float posY = stream.readFloat();
-
-        long spawnedTime = stream.readLong();
-        boolean contentsChanged = stream.readBoolean();
-        LootContainer container = LootContainer.builder().lootContainerId(lootContainerId).tier(LootTier.valueOf(tier))
-                .uid(uid).items(items).pos(new Vector2f(posX, posY)).spawnedTime(spawnedTime)
-                .contentsChanged(contentsChanged).sprite(null).build();
-        if (isChest) {
-            Chest chest = new Chest(container);
-            chest.setPos(new Vector2f(posX, posY));
-            return chest;
-        }
-        return container;
-
     }
 
     public int getNonEmptySlotCount() {

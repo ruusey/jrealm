@@ -9,7 +9,7 @@ import com.jrealm.net.Packet;
 
 @Target({ ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface PacketHandler {
+public @interface PacketHandlerServer {
     public Class<? extends Packet> value ();
     //public byte packetId();
 }

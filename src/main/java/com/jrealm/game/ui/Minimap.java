@@ -9,8 +9,8 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.state.PlayState;
-import com.jrealm.game.tile.NetTile;
 import com.jrealm.game.tile.TileManager;
+import com.jrealm.net.entity.NetTile;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;

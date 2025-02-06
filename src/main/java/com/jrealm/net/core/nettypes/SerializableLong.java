@@ -5,15 +5,20 @@ import java.io.DataOutputStream;
 
 import com.jrealm.net.core.SerializableFieldType;
 
-public class SerializableLong extends SerializableFieldType<Long>{
+public class SerializableLong extends SerializableFieldType<Long> {
 
 	@Override
 	public Long read(DataInputStream stream) throws Exception {
-		return stream.readLong();
+		try {
+			final Long res = stream.readLong();
+			return res;
+		} catch (Exception e) {
+			return 0l;
+		}
 	}
 
 	@Override
-	public void write(Long value, DataOutputStream stream) throws Exception{
-		stream.writeLong(value);
+	public void write(Long value, DataOutputStream stream) throws Exception {
+		stream.writeLong(value == null ? 0l : value);
 	}
 }

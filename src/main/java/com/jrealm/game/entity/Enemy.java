@@ -2,9 +2,6 @@ package com.jrealm.game.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
@@ -17,8 +14,8 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.script.EnemyScriptBase;
 import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.Streamable;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.core.IOService;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
 import com.jrealm.net.realm.RealmManagerServer;
@@ -30,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Slf4j
-public abstract class Enemy extends Entity implements Streamable<Enemy> {
+public class Enemy extends Entity {
     private static final int IDLE_FRAMES = 10;
     private static final float CHASE_SPEED = 1.25f;
     protected EnemyModel model;
@@ -45,14 +42,18 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
     private int idleTime = 0;
     private Stats stats;
 
+    public Enemy() {
+        super(0, null, 0);
+    }
+    
     public Enemy(long id, int enemyId, Vector2f origin, int size, int weaponId) {
         super(id, origin, size);
         this.model = GameDataManager.ENEMIES.get(enemyId);
         this.enemyId = enemyId;
         this.weaponId = weaponId;
         this.stats = this.model.getStats().clone();
-//        this.health = stats.getHp();
-//        this.mana = stats.getMp();
+        this.health = stats.getHp();
+        this.mana = stats.getMp();
     }
     
     public void applyStats(Stats stats) {
@@ -80,7 +81,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
     
     public void applyUpdate(UpdatePacket packet, PlayState state) {
         this.name = packet.getPlayerName();
-        this.stats = packet.getStats();
+        this.stats = IOService.mapModel(packet.getStats(), Stats.class);
         this.health = packet.getHealth();
         this.mana = packet.getMana();
         this.setEffectIds(packet.getEffectIds());
@@ -290,6 +291,7 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
             }
         }
+        EnemyModel model = GameDataManager.ENEMIES.get(this.getEnemyId());
 
         // Health Bar UI
         g.setColor(Color.red);
@@ -298,54 +300,8 @@ public abstract class Enemy extends Entity implements Streamable<Enemy> {
 
         g.setColor(Color.green);
         g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
-                (int) ((16*(this.getSize()/16)) * this.getHealthpercent()), 5);
+                (int) ((16*(this.getSize()/16)) * ((float)this.health/(float)model.getHealth())), 5);
 
-    }
-
-    // TODO: Add enemy type identifier
-    @Override
-    public void write(DataOutputStream stream) throws Exception {
-        stream.writeLong(this.getId());
-        stream.writeInt(this.getEnemyId());
-        stream.writeInt(this.getWeaponId());
-        stream.writeShort(this.getSize());
-        stream.writeFloat(this.getPos().x);
-        stream.writeFloat(this.getPos().y);
-        stream.writeFloat(this.dx);
-        stream.writeFloat(this.dy);
-    }
-
-    @Override
-    public Enemy read(DataInputStream stream) throws Exception {
-        final long id = stream.readLong();
-        final int enemyId = stream.readInt();
-        final int weaponId = stream.readInt();
-        final short size = stream.readShort();
-        final float posX = stream.readFloat();
-        final float posY = stream.readFloat();
-        final float dx = stream.readFloat();
-        final float dy = stream.readFloat();
-
-        final Enemy newEnemy = new Monster(id, enemyId, new Vector2f(posX, posY), size, weaponId);
-        newEnemy.setDy(dy);
-        newEnemy.setDx(dx);
-        return newEnemy;
-    }
-
-    public static Enemy fromStream(DataInputStream stream) throws Exception {
-        final long id = stream.readLong();
-        final int enemyId = stream.readInt();
-        final int weaponId = stream.readInt();
-        final short size = stream.readShort();
-        final float posX = stream.readFloat();
-        final float posY = stream.readFloat();
-        final float dx = stream.readFloat();
-        final float dy = stream.readFloat();
-
-        final Enemy newEnemy = new Monster(id, enemyId, new Vector2f(posX, posY), size, weaponId);
-        newEnemy.setDy(dy);
-        newEnemy.setDx(dx);
-        return newEnemy;
     }
 
 }

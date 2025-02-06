@@ -1,10 +1,10 @@
 package com.jrealm.net.client.packet;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Streamable
 public class PlayerDeathPacket extends Packet {
 
     public PlayerDeathPacket() {
@@ -39,9 +40,6 @@ public class PlayerDeathPacket extends Packet {
     }
 
     public static PlayerDeathPacket from() throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-
-        return new PlayerDeathPacket(PacketType.PLAYER_DEATH.getPacketId(), byteStream.toByteArray());
+        return new PlayerDeathPacket(PacketType.PLAYER_DEATH.getPacketId(), new byte[0]);
     }
 }

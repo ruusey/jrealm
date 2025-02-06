@@ -10,10 +10,12 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
-import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
+import com.jrealm.net.core.IOService;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -94,9 +96,10 @@ public class SocketClient implements Runnable {
                     }
                     this.currentBytesRecieved += packetLength;
                     this.remoteBufferIndex -= packetLength;
-                    final BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
-                    newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-                    this.inboundPacketQueue.add(newPacket);
+                    Class<? extends Packet> packetClass = PacketType.valueOf(packetId).getX();
+                    Packet nPacket = IOService.readStream(packetClass, packetBytes);
+                    nPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+                    this.inboundPacketQueue.add(nPacket);
                 }
             }
         } catch (Exception e) {

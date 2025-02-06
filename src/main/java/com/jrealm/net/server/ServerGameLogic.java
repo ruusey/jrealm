@@ -30,7 +30,7 @@ import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.util.Cardinality;
-import com.jrealm.game.util.PacketHandler;
+import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.messaging.CommandType;
@@ -239,7 +239,7 @@ public class ServerGameLogic {
         ServerGameLogic.log.info("[SERVER] Recieved UseAbility Packet For Player {}", useAbilityPacket.getPlayerId());
     }
     
-    @PacketHandler(TextPacket.class)
+    @PacketHandlerServer(TextPacket.class)
     public static void handleText0(RealmManagerServer mgr, Packet packet) {
         final TextPacket textPacket = (TextPacket) packet;
         final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
