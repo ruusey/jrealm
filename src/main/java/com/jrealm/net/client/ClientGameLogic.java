@@ -15,12 +15,15 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.EffectText;
+import com.jrealm.game.util.PacketHandlerClient;
+import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.client.packet.PlayerDeathPacket;
+import com.jrealm.net.client.packet.RequestTradePacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
@@ -45,7 +48,15 @@ import lombok.extern.slf4j.Slf4j;
 public class ClientGameLogic {
     public static JrealmClientDataService DATA_SERVICE = null;
 
-	
+    @PacketHandlerClient(RequestTradePacket.class)
+    public static void handleTradeRequestClient(RealmManagerClient cli, Packet packet) {
+        final RequestTradePacket tradeRequest = (RequestTradePacket) packet;
+		cli.getState().getPui().getPlayerChat().addChatMessage(TextPacket.create(tradeRequest.getRequestingPlayerName(),
+				cli.getState().getPlayer().getName(),
+				tradeRequest.getRequestingPlayerName() + " has proposed a trade, type /accept to initiate the trade"));
+
+    }
+    	
     public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
         @SuppressWarnings("unused")
         // Unused until this contains user spefic death data.

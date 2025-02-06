@@ -202,6 +202,7 @@ public class Player extends Entity {
 	}
 
 	public Stats getComputedStats() {
+		if(this.stats==null) return new Stats();
 		Stats stats = this.stats.clone();
 		GameItem[] equipment = this.getSlots(0, 4);
 		for (GameItem item : equipment) {

@@ -77,7 +77,7 @@ import com.jrealm.game.tile.decorators.Grasslands0Decorator;
 import com.jrealm.game.tile.decorators.RealmDecorator;
 import com.jrealm.game.tile.decorators.RealmDecoratorBase;
 import com.jrealm.game.util.CommandHandler;
-import com.jrealm.game.util.PacketHandler;
+import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
@@ -95,6 +95,7 @@ import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.server.ProcessingThread;
 import com.jrealm.net.server.ServerCommandHandler;
 import com.jrealm.net.server.ServerGameLogic;
+import com.jrealm.net.server.ServerTradeManager;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.TextPacket;
@@ -158,6 +159,7 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void doRunServer() {
+		ServerTradeManager.mgr = this;
 		WorkerThread.submitAndForkRun(this.server);
 	}
 
@@ -786,11 +788,18 @@ public class RealmManagerServer implements Runnable {
 				// Get the annotation on the method
 				final CommandHandler commandToHandle = method.getDeclaredAnnotation(CommandHandler.class);
 				// Find the static method with given name in the target class
-				final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerCommandHandler.class,
-						method.getName(), mt);
+				MethodHandle handleToHandler = null;
+				try {
+					handleToHandler = this.publicLookup.findStatic(ServerCommandHandler.class,
+							method.getName(), mt);
+				}catch(Exception e) {
+					handleToHandler = this.publicLookup.findStatic(ServerTradeManager.class,
+							method.getName(), mt);
+				}
 				if (handleToHandler != null) {
 					ServerCommandHandler.COMMAND_CALLBACKS.put(commandToHandle.value(), handleToHandler);
 					ServerCommandHandler.COMMAND_DESCRIPTIONS.put(commandToHandle.value(), commandToHandle);
+					log.info("Registered Command handler in class {}. Method: {}{}", method.getDeclaringClass(), method.getName(), mt.toString());
 				}
 			} catch (Exception e) {
 				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
@@ -802,12 +811,16 @@ public class RealmManagerServer implements Runnable {
 	private void registerPacketCallbacksReflection() {
 		log.info("Registering packet handlers using reflection");
 		final MethodType mt = MethodType.methodType(void.class, RealmManagerServer.class, Packet.class);
-		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandler.class);
+		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandlerServer.class);
 		for (final Method method : subclasses) {
 			try {
-				final PacketHandler packetToHandle = method.getDeclaredAnnotation(PacketHandler.class);
-				final MethodHandle handleToHandler = this.publicLookup.findStatic(ServerGameLogic.class,
+				final PacketHandlerServer packetToHandle = method.getDeclaredAnnotation(PacketHandlerServer.class);
+				MethodHandle handleToHandler = this.publicLookup.findStatic(ServerGameLogic.class,
 						method.getName(), mt);
+				if(handleToHandler==null) {
+					handleToHandler = this.publicLookup.findStatic(ServerTradeManager.class,
+							method.getName(), mt);
+				}
 				if (handleToHandler != null) {
 					final PacketType targetPacketType = PacketType.valueOf(packetToHandle.value());
 					List<MethodHandle> existing = this.userPacketCallbacksServer.get(targetPacketType.getPacketId());
@@ -1505,6 +1518,10 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 		return players;
+	}
+	
+	public Player getPlayerById(long playerId) {
+		return this.getPlayers().stream().filter(p->p.getId()==playerId).findAny().orElse(null);
 	}
 
 	public void safeRemoveRealm(final Realm realm) {

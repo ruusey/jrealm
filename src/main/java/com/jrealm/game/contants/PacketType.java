@@ -9,7 +9,9 @@ import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.PlayerDeathPacket;
+import com.jrealm.net.client.packet.RequestTradePacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
+import com.jrealm.net.client.packet.InitTradeRequestPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.packet.CommandPacket;
@@ -36,7 +38,12 @@ public enum PacketType {
     MOVE_ITEM((byte) 12, MoveItemPacket.class), 
     USE_PORTAL((byte) 13, UsePortalPacket.class),
     TEXT_EFFECT((byte) 14, TextEffectPacket.class), 
-    PLAYER_DEATH((byte) 15, PlayerDeathPacket.class);
+    PLAYER_DEATH((byte) 15, PlayerDeathPacket.class),
+    INIT_TRADE_REQUEST((byte) 16, InitTradeRequestPacket.class),
+    TRADE_REQUEST((byte) 17, RequestTradePacket.class),
+    ACCEPT_TRADE_REQUEST((byte) 18, RequestTradePacket.class);
+
+
 
     private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
 
