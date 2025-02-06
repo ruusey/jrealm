@@ -38,7 +38,7 @@ public class PlayerUI {
     private Map<String, ItemTooltip> tooltips;
     private Graphics2D tempGraphics;
     private long lastAction = Instant.now().toEpochMilli();
-
+    private Button menuButton = null;
     public PlayerUI(PlayState p) {
         SpriteSheet bars = new SpriteSheet("fillbars.png", 12, 12);
         BufferedImage[] barSpritesHp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(39, 0, 7, 14),
@@ -78,9 +78,9 @@ public class PlayerUI {
         return items;
     }
 
-    public int firstNullIdx(Object[] objs) {
+    public int firstNullIdx(GameItem[] objs) {
         for (int i = 0; i < objs.length; i++) {
-            if (objs[i] == null)
+            if (objs[i] == null || objs[i].getItemId()==-1)
                 return i;
         }
         return -1;
@@ -102,9 +102,10 @@ public class PlayerUI {
 
     public void setGroundLoot(GameItem[] loot, Graphics2D g) {
         this.groundLoot = new Slots[8];
-
+        //GamePanel.ui2.createItemIcons(loot);
         for (int i = 0; i < loot.length; i++) {
             GameItem item = loot[i];
+            if(item ==null || item.getItemId()==-1) continue;
             this.buildGroundLootSlotButton(i, item, g);
         }
     }
@@ -143,6 +144,7 @@ public class PlayerUI {
             });
 
             b.onMouseUp(event -> {
+            	System.out.println();
                 this.tooltips.clear();
                 if (this.canSwap()) {
                     this.setActionTime();
@@ -166,6 +168,7 @@ public class PlayerUI {
     private void buildEquipmentSlots(GameItem[] equipment) {
         for (int i = 0; i < equipment.length; i++) {
             GameItem item = equipment[i];
+            if(item.getItemId()==-1) continue;
             this.buildEquipmentSlotButton(i, item);
         }
     }
@@ -208,6 +211,7 @@ public class PlayerUI {
     private void buildInventorySlots(GameItem[] inventory) {
         for (int i = 0; i < (inventory.length); i++) {
             GameItem item = inventory[i];
+            if(item.getItemId()==-1) continue;
             this.buildInventorySlotsButton(i, item);
         }
     }
@@ -392,7 +396,7 @@ public class PlayerUI {
             int xOffset = 128;
             int yOffset = 42;
             int startY = 350;
-
+            
             Stats stats = this.playState.getPlayer().getComputedStats();
             Vector2f posHp = new Vector2f(GamePanel.width - 64, 128 + 32);
             Vector2f posMp = posHp.clone(0, 32);

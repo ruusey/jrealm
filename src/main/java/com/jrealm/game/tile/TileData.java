@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TileData implements Streamable<TileData> {
+public class TileData {
     private byte hasCollision;
     private byte slows;
     private byte damaging;
@@ -29,14 +29,14 @@ public class TileData implements Streamable<TileData> {
         return this.damaging != 0;
     }
 
-    @Override
+    //@Override
     public void write(DataOutputStream stream) throws Exception {
         stream.writeByte(this.hasCollision);
         stream.writeByte(this.slows);
         stream.writeByte(this.damaging);
     }
 
-    @Override
+    //@Override
     public TileData read(DataInputStream stream) throws Exception {
         final byte hasCollision = stream.readByte();
         final byte slows = stream.readByte();

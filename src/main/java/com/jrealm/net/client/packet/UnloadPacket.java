@@ -1,8 +1,5 @@
 package com.jrealm.net.client.packet;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,28 +7,35 @@ import java.util.List;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.*;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Streamable
+@Builder
+@AllArgsConstructor
 public class UnloadPacket extends Packet {
 	
-	@SerializableField(order = 0, type = SerializableLongArray.class)
-    private long[] players;
-	@SerializableField(order = 1, type = SerializableLongArray.class)
-    private long[] bullets;
-	@SerializableField(order = 2, type = SerializableLongArray.class)
-    private long[] enemies;
-	@SerializableField(order = 3, type = SerializableLongArray.class)
-    private long[] containers;
-	@SerializableField(order = 4, type = SerializableLongArray.class)
-    private long[] portals;
+	@SerializableField(order = 0, type = SerializableLong.class, isCollection=true)
+    private Long[] players;
+	@SerializableField(order = 1, type = SerializableLong.class, isCollection=true)
+    private Long[] bullets;
+	@SerializableField(order = 2, type = SerializableLong.class, isCollection=true)
+    private Long[] enemies;
+	@SerializableField(order = 3, type = SerializableLong.class, isCollection=true)
+    private Long[] containers;
+	@SerializableField(order = 4, type = SerializableLong.class, isCollection=true)
+    private Long[] portals;
 
     public UnloadPacket() {
 
@@ -48,103 +52,25 @@ public class UnloadPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-    	final DataInputStream dis = new DataInputStream(bis);
-        if ((dis == null) || (dis.available() < 5))
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");
-        int playersSize = dis.readInt();
-        this.players = new long[playersSize];
-        for (int i = 0; i < playersSize; i++) {
-            this.players[i] = dis.readLong();
-        }
- 
-        int bulletsSize = dis.readInt();
-        this.bullets = new long[bulletsSize];
-        for (int i = 0; i < bulletsSize; i++) {
-            this.bullets[i] = dis.readLong();
-        }
-
-        int enemiesSize = dis.readInt();
-        this.enemies = new long[enemiesSize];
-        for (int i = 0; i < enemiesSize; i++) {
-            this.enemies[i] = dis.readLong();
-        }
-        
-        int containersSize = dis.readInt();
-        this.containers = new long[containersSize];
-        for (int i = 0; i < containersSize; i++) {
-            this.containers[i] = dis.readLong();
-        }
-
-        int portalsSize = dis.readInt();
-        this.portals = new long[portalsSize];
-        for (int i = 0; i < portalsSize; i++) {
-            this.portals[i] = dis.readLong();
-        }
-
+    	UnloadPacket read = IOService.readPacket(getClass(), data);
+    	this.players = read.getPlayers();
+    	this.bullets = read.getBullets();
+    	this.enemies = read.getEnemies();
+    	this.containers = read.getContainers();
+    	this.portals = read.getPortals();
+    	this.setId(PacketType.UNLOAD.getPacketId());
     }
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
-            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-
-        this.addHeader(stream);
-        stream.writeInt(this.players.length);
-        for (long p : this.players) {
-            stream.writeLong(p);
-        }
-        
-        stream.writeInt(this.bullets.length);
-        for (long b : this.bullets) {
-            stream.writeLong(b);
-        }
-        
-        stream.writeInt(this.enemies.length);
-        for (long e : this.enemies) {
-            stream.writeLong(e);
-        }
-
-        stream.writeInt(this.containers.length);
-        for (long l : this.containers) {
-            stream.writeLong(l);
-        }
-
-        stream.writeInt(this.portals.length);
-        for (long p : this.portals) {
-            stream.writeLong(p);
-        }
+        IOService.writePacket(this, stream);
     }
 
-    public static UnloadPacket from(Long[] players, Long[] containers, Long[] bullets, Long[] enemies, Long[] portals)
+    public static UnloadPacket from(Long[] players, Long[] bullets, Long[] enemies, Long[] containers, Long[] portals)
             throws Exception {
-    	final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    	final DataOutputStream stream = new DataOutputStream(byteStream);
-        stream.writeInt(players.length);
-        for (long p : players) {
-            stream.writeLong(p);
-        }
-        
-        stream.writeInt(bullets.length);
-        for (long b : bullets) {
-            stream.writeLong(b);
-        }
-
-        stream.writeInt(enemies.length);
-        for (long e : enemies) {
-            stream.writeLong(e);
-        }
-        
-        stream.writeInt(containers.length);
-        for (long l : containers) {
-            stream.writeLong(l);
-        }
-
-        stream.writeInt(portals.length);
-        for (long p : portals) {
-            stream.writeLong(p);
-        }
-        return new UnloadPacket(PacketType.UNLOAD.getPacketId(), byteStream.toByteArray());
+    	final UnloadPacket packet = UnloadPacket.builder().players(players).containers(containers).bullets(bullets).enemies(enemies).portals(portals).build();
+    	packet.setId(PacketType.UNLOAD.getPacketId());
+    	return packet;
     }
 
     public boolean isNotEmpty() {

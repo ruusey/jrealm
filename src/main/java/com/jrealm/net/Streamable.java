@@ -1,16 +1,14 @@
 package com.jrealm.net;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-/**
- * Interface that enforces the implementation of stream write and read
- * functionality for a given object
- * 
- * @param <T> - Type of the streamable object
- */
-public interface Streamable<T> {
-    void write(DataOutputStream stream) throws Exception;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-    T read(DataInputStream stream) throws Exception;
+
+@Retention(RUNTIME)
+@Target({ TYPE })
+public @interface Streamable {
+    
 }

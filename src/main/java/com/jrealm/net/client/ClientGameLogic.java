@@ -15,15 +15,24 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.EffectText;
+import com.jrealm.game.util.PacketHandlerClient;
+import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.client.packet.PlayerDeathPacket;
+import com.jrealm.net.client.packet.RequestTradePacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.entity.NetBullet;
+import com.jrealm.net.entity.NetEnemy;
+import com.jrealm.net.entity.NetLootContainer;
+import com.jrealm.net.entity.NetPlayer;
+import com.jrealm.net.entity.NetPortal;
 import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.LoginResponseMessage;
 import com.jrealm.net.messaging.PlayerAccountMessage;
@@ -39,7 +48,15 @@ import lombok.extern.slf4j.Slf4j;
 public class ClientGameLogic {
     public static JrealmClientDataService DATA_SERVICE = null;
 
-	
+    @PacketHandlerClient(RequestTradePacket.class)
+    public static void handleTradeRequestClient(RealmManagerClient cli, Packet packet) {
+        final RequestTradePacket tradeRequest = (RequestTradePacket) packet;
+		cli.getState().getPui().getPlayerChat().addChatMessage(TextPacket.create(tradeRequest.getRequestingPlayerName(),
+				cli.getState().getPlayer().getName(),
+				tradeRequest.getRequestingPlayerName() + " has proposed a trade, type /accept to initiate the trade"));
+
+    }
+    	
     public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
         @SuppressWarnings("unused")
         // Unused until this contains user spefic death data.
@@ -120,31 +137,43 @@ public class ClientGameLogic {
     public static void handleLoadClient(RealmManagerClient cli, Packet packet) {
         final LoadPacket loadPacket = (LoadPacket) packet;
         try {
-            for (final Player p : loadPacket.getPlayers()) {
+            for (final NetPlayer player : loadPacket.getPlayers()) {
+            	Player p = player.toPlayer();
+
                 if (p.getId() == cli.getCurrentPlayerId()) {
                     continue;
                 }
                 cli.getRealm().addPlayerIfNotExists(p);
             }
-            for (final LootContainer lc : loadPacket.getContainers()) {
+            for (final NetLootContainer loot : loadPacket.getContainers()) {
+            	final LootContainer lc = loot.asLootContainer();
                 if (lc.getContentsChanged()) {
                     LootContainer current = cli.getRealm().getLoot().get(lc.getLootContainerId());
-                    current.setContentsChanged(true);
-                    current.setItemsUncondensed(LootContainer.getCondensedItems(lc));
+                    if(current==null) {
+                        cli.getRealm().addLootContainerIfNotExists(lc);
+                        //current = cli.getRealm().getLoot().get(lc.getLootContainerId());
+                    }else {
+                        current.setContentsChanged(true);
+                        current.setItemsUncondensed(LootContainer.getCondensedItems(lc));
+                    }
+
                 } else {
                     cli.getRealm().addLootContainerIfNotExists(lc);
                 }
             }
 
-            for (final Bullet b : loadPacket.getBullets()) {
+            for (final NetBullet bullet : loadPacket.getBullets()) {
+            	final Bullet b = bullet.asBullet();
                 cli.getRealm().addBulletIfNotExists(b);
             }
 
-            for (final Enemy e : loadPacket.getEnemies()) {
+            for (final NetEnemy enemy : loadPacket.getEnemies()) {
+            	final Enemy e = IOService.mapModel(enemy, Enemy.class);
                 cli.getRealm().addEnemyIfNotExists(e);
             }
 
-            for (final Portal p : loadPacket.getPortals()) {
+            for (final NetPortal portal : loadPacket.getPortals()) {
+            	final Portal p = IOService.mapModel(portal, Portal.class);
                 cli.getRealm().addPortalIfNotExists(p);
             }
         } catch (Exception e) {
@@ -271,15 +300,15 @@ public class ClientGameLogic {
     }
 
     public static void handleUpdateClient(RealmManagerClient cli, Packet packet) {
-        UpdatePacket updatePacket = (UpdatePacket) packet;
-        Player toUpdate = cli.getRealm().getPlayer((updatePacket.getPlayerId()));
+        final UpdatePacket updatePacket = (UpdatePacket) packet;
+        final Player toUpdate = cli.getRealm().getPlayer((updatePacket.getPlayerId()));
         if(toUpdate!=null) {
             toUpdate.applyUpdate(updatePacket, cli.getState());
 
         }else {
         	final Enemy enemyToUpdate = cli.getRealm().getEnemy((updatePacket.getPlayerId()));
         	enemyToUpdate.applyUpdate(updatePacket, cli.getState());
-        	//log.info("[CLIENT] Recieved update for enemy {}", enemyToUpdate);
+        	log.info("[CLIENT] Recieved update for enemy {}", enemyToUpdate);
         }
     }
 
@@ -291,8 +320,8 @@ public class ClientGameLogic {
     private static void doLoginResponse(RealmManagerClient cli, LoginResponseMessage loginResponse) {
         try {
             if (loginResponse.isSuccess()) {
-                CharacterClass cls = CharacterClass.valueOf(loginResponse.getClassId());
-                Player player = new Player(loginResponse.getPlayerId(),
+                final CharacterClass cls = CharacterClass.valueOf(loginResponse.getClassId());
+                final Player player = new Player(loginResponse.getPlayerId(),
                         new Vector2f(loginResponse.getSpawnX(), loginResponse.getSpawnY()), GlobalConstants.PLAYER_SIZE,
                         cls);
                 ClientGameLogic.log.info("[CLIENT] Login succesful, added Player ID {}", player.getId());
@@ -303,7 +332,7 @@ public class ClientGameLogic {
                 cli.setCurrentPlayerId(player.getId());
                 cli.getState().setPlayerId(player.getId());
                 cli.startHeartbeatThread();
-                TextPacket packet = TextPacket.create("SYSTEM", "Player",
+                final TextPacket packet = TextPacket.create("SYSTEM", "Player",
                         "Welcome to JRealm " + GameLauncher.GAME_VERSION + "!");
                 cli.getState().getPui().enqueueChat(packet);
             }

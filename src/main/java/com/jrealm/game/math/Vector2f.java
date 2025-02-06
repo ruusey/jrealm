@@ -1,10 +1,22 @@
 package com.jrealm.game.math;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+
+import com.jrealm.net.Streamable;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.SerializableFieldType;
+import com.jrealm.net.core.nettypes.SerializableFloat;
 import com.jrealm.net.realm.Realm;
 
-public class Vector2f {
+import lombok.Data;
 
+@Streamable
+@Data
+public class Vector2f extends SerializableFieldType<Vector2f>{
+	@SerializableField(order = 0, type = SerializableFloat.class)
     public float x;
+	@SerializableField(order = 1, type = SerializableFloat.class)
     public float y;
 
     public static float worldX;
@@ -116,5 +128,18 @@ public class Vector2f {
     public boolean equals(Vector2f other) {
         return (this.x == other.x) && (this.y == other.y);
     }
+
+	@Override
+	public Vector2f read(DataInputStream stream) throws Exception {
+		final float x = stream.readFloat();
+		final float y = stream.readFloat();
+		return new Vector2f(x, y);
+	}
+
+	@Override
+	public void write(Vector2f value, DataOutputStream stream) throws Exception {
+		stream.writeFloat(value.x);
+		stream.writeFloat(value.y);
+	}
 
 }

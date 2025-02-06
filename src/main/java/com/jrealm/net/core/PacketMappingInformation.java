@@ -15,4 +15,5 @@ public class PacketMappingInformation {
 	private int order;
 	private VarHandle propertyHandle;
 	private SerializableFieldType<?> serializer;
+	private boolean isCollection;
 }

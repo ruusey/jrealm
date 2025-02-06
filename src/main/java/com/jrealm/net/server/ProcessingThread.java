@@ -1,7 +1,5 @@
 package com.jrealm.net.server;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
@@ -15,8 +13,6 @@ import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.BlankPacket;
 import com.jrealm.net.Packet;
 import com.jrealm.net.core.IOService;
-import com.jrealm.net.server.packet.CommandPacket;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -87,22 +83,14 @@ public class ProcessingThread extends Thread {
                         System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
                                 this.remoteBufferIndex - packetLength);
                     }
-                    this.remoteBufferIndex -= packetLength;
-                    Class<? extends Packet> packetClass = PacketType.valueOf(packetId).getX();
-                    BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
-//                    if(newPacket.getId()==7 || newPacket.getId()==10) {
-//                    	try {
-//                        	Packet packet = IOService.read(packetClass, new DataInputStream(new ByteArrayInputStream(packetBytes)));
-//                        	packet.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-//                            this.packetQueue.add(packet);
-//                    	}catch(Exception e) {
-//                    		e.printStackTrace();
-//                    	}
-//
-//                    }else {
-                        newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-                        this.packetQueue.add(newPacket);
-//                    }
+					this.remoteBufferIndex -= packetLength;
+					final Class<?> packetClass = PacketType.valueOf(packetId).getX();
+					final Packet nPacket = IOService.readStream(packetClass, packetBytes);
+					final BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
+
+					nPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+					newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+					this.packetQueue.add(nPacket);
                 }
             }
         } catch (Exception e) {

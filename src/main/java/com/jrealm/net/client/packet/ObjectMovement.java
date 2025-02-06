@@ -9,6 +9,12 @@ import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.SerializableFieldType;
+import com.jrealm.net.core.nettypes.SerializableByte;
+import com.jrealm.net.core.nettypes.SerializableFloat;
+import com.jrealm.net.core.nettypes.SerializableLong;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,12 +23,19 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ObjectMovement implements Streamable<ObjectMovement> {
+@Streamable
+public class ObjectMovement extends SerializableFieldType<ObjectMovement> {
+	@SerializableField(order = 0, type = SerializableLong.class)
     private long entityId;
+	@SerializableField(order = 1, type = SerializableByte.class)
     private byte entityType;
+	@SerializableField(order = 2, type = SerializableFloat.class)
     private float posX;
+	@SerializableField(order = 3, type = SerializableFloat.class)
     private float posY;
+	@SerializableField(order = 4, type = SerializableFloat.class)
     private float velX;
+	@SerializableField(order = 5, type = SerializableFloat.class)
     private float velY;
 
     public ObjectMovement(float posX, float posY) {
@@ -52,24 +65,13 @@ public class ObjectMovement implements Streamable<ObjectMovement> {
     }
 
     @Override
-    public void write(DataOutputStream stream) throws Exception {
-        stream.writeLong(this.entityId);
-        stream.writeByte(this.entityType);
-        stream.writeFloat(this.posX);
-        stream.writeFloat(this.posY);
-        stream.writeFloat(this.velY);
-        stream.writeFloat(this.velX);
+    public void write(ObjectMovement value, DataOutputStream stream) throws Exception {
+        IOService.writeStream(value, stream);
     }
 
     @Override
     public ObjectMovement read(DataInputStream stream) throws Exception {
-        final long id = stream.readLong();
-        final byte entityType = stream.readByte();
-        final float posX = stream.readFloat();
-        final float posY = stream.readFloat();
-        final float velX = stream.readFloat();
-        final float velY = stream.readFloat();
-        return new ObjectMovement(id, entityType, posX, posY, velX, velY);
+       return IOService.readStream(getClass(), stream);
     }
 
     public boolean equals(ObjectMovement other) {

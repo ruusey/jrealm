@@ -7,7 +7,8 @@ import java.util.UUID;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.model.SpriteModel;
-import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.entity.NetGameItem;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Slf4j
 @EqualsAndHashCode(callSuper = false)
-public class GameItem extends SpriteModel implements Streamable<GameItem> {
+public class GameItem extends SpriteModel {
     private int itemId;
     @Builder.Default
     private String uid = UUID.randomUUID().toString();
@@ -62,91 +63,14 @@ public class GameItem extends SpriteModel implements Streamable<GameItem> {
         return itemFinal;
     }
 
-    @Override
+    //@Override
     public GameItem read(DataInputStream stream) throws Exception {
-        int itemId = stream.readInt();
-        if (itemId == -1) {
-            return null;
-        }
-        String uid = stream.readUTF();
-        String name = stream.readUTF();
-        String description = stream.readUTF();
-        boolean hasStats = stream.readBoolean();
-        Stats stats = null;
-
-        if (hasStats) {
-            try {
-                stats = new Stats().read(stream);
-            } catch (Exception e) {
-                log.error("Failed to get stats, no stats present");
-            }
-        }
-
-        boolean hasDamage = stream.readBoolean();
-
-        Damage damage = null;
-        if (hasDamage) {
-            try {
-                damage = new Damage().read(stream);
-            } catch (Exception e) {
-                log.error("Failed to get damage, no damage present");
-            }
-        }
-
-        boolean hasEffect = stream.readBoolean();
-        Effect effect = null;
-
-        if (hasEffect) {
-            try {
-                effect = new Effect().read(stream);
-            } catch (Exception e) {
-                log.error("Failed to get effect, no effect present");
-            }
-        }
-
-        boolean consumable = stream.readBoolean();
-        byte tier = stream.readByte();
-        byte targetSlot = stream.readByte();
-        byte targetClass = stream.readByte();
-        byte fameBonus = stream.readByte();
-
-        return new GameItem(itemId, uid, name, description, stats, damage, effect, consumable, tier, targetSlot,
-                targetClass, fameBonus);
-
+       return IOService.mapModel(new NetGameItem().read(stream), GameItem.class) ;
     }
 
-    @Override
+   // @Override
     public void write(DataOutputStream stream) throws Exception {
-        stream.writeInt(this.itemId);
-        stream.writeUTF(this.uid);
-        stream.writeUTF(this.name);
-        stream.writeUTF(this.description);
-        if (this.stats != null) {
-            stream.writeBoolean(true);
-            this.stats.write(stream);
-        } else {
-            stream.writeBoolean(false);
-        }
-
-        if (this.damage != null) {
-            stream.writeBoolean(true);
-            this.damage.write(stream);
-        } else {
-            stream.writeBoolean(false);
-        }
-
-        if (this.effect != null) {
-            stream.writeBoolean(true);
-            this.effect.write(stream);
-        } else {
-            stream.writeBoolean(false);
-        }
-
-        stream.writeBoolean(this.consumable);
-        stream.writeByte(this.tier);
-        stream.writeByte(this.targetSlot);
-        stream.writeByte(this.targetClass);
-        stream.writeByte(this.fameBonus);
+    	new NetGameItem().write(IOService.mapModel(this,NetGameItem.class), stream);
     }
 
     public void applySpriteModel(final SpriteModel model) {
