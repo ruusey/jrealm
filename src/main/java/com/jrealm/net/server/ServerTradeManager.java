@@ -92,10 +92,8 @@ public class ServerTradeManager {
 		playerRequestedTrades.remove(source.getId());
 		playerActiveTrades.remove(target.getId());
 		playerRequestedTrades.remove(target.getId());
-		
 		mgr.enqueueServerPacket(source, TextPacket.create(target.getName(), source.getName(),
 				target.getName() + " finalized the trade"));
-		
 		mgr.enqueueServerPacket(target, TextPacket.create(source.getName(), target.getName(),
 				source.getName() + " finalized the trade"));
 	}
