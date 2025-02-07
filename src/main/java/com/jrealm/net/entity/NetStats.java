@@ -3,6 +3,7 @@ package com.jrealm.net.entity;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.entity.item.Stats;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
@@ -55,5 +56,8 @@ public class NetStats extends SerializableFieldType<NetStats> {
 		IOService.writeStream(toWrite, stream);
 	}
 
+	public Stats asStats() {
+		return Stats.builder().hp(hp).mp(mp).def(def).att(att).spd(spd).dex(dex).vit(vit).wis(wis).build();
+	}
 
 }

@@ -360,7 +360,7 @@ public class Player extends Entity {
 
 	public void applyUpdate(UpdatePacket packet, PlayState state) {
 		this.name = packet.getPlayerName();
-		this.stats = IOService.mapModel(packet.getStats(), Stats.class);
+		this.stats = packet.getStats().asStats();
 		this.inventory = packet.getInventory()==null? null:IOService.mapModel(packet.getInventory(), GameItem[].class);
 		for (GameItem item : this.inventory) {
 			if (item != null) {

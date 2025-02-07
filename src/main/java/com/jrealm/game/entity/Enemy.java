@@ -81,7 +81,7 @@ public class Enemy extends Entity {
     
     public void applyUpdate(UpdatePacket packet, PlayState state) {
         this.name = packet.getPlayerName();
-        this.stats = IOService.mapModel(packet.getStats(), Stats.class);
+        this.stats = packet.getStats().asStats();
         this.health = packet.getHealth();
         this.mana = packet.getMana();
         this.setEffectIds(packet.getEffectIds());
