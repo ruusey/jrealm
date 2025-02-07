@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GameLauncher {
-	public static final String GAME_VERSION = "0.3.5";
+	public static final String GAME_VERSION = "0.3.7";
 	public static final Boolean DEBUG_MODE = true;
 	// private static final String HELP_MSG = "Please set the player email,
 	// password, server and character UUID. [java -jar ./jrealm-{version}.jar

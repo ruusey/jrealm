@@ -44,7 +44,7 @@ public class ServerTradeManager {
 		ServerTradeManager.playerRequestedTrades.put(target.getId(), playerTarget.getId());
 		log.info("Player {} requested trade with Player {}", target.getName(), playerTarget.getName(), target.getPos());
 	}
-
+	// TODO: Remove and move to client side 
 	@CommandHandler(value = "accept", description = "Accepts trade proposed to user")
 	public static void acceptTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message)
 			throws Exception {
@@ -54,6 +54,7 @@ public class ServerTradeManager {
 		if(toRespond== null) {
 			throw new Exception("No trade requests to accept");
 		}
+		// Simulate receiving an AcceptTradeRequesstPacket
 		final Player from = mgr.getPlayerById(ServerTradeManager.playerRequestedTrades.get(toRespond.getId()));
 		try {
 			if (Boolean.parseBoolean(message.getArgs().get(0))) {
