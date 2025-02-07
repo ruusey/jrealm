@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.jrealm.account.dto.AccountDto;
 import com.jrealm.game.GameLauncher;
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.contants.GlobalConstants;
@@ -66,6 +67,44 @@ public class ServerCommandHandler {
             mgr.enqueueServerPacket(fromPlayer, errorResponse);
         }
     }
+    
+	@CommandHandler(value = "op", description = "Promote a user to administrator. Or demote them back to a regular user")
+	public static void invokeOpUser(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+		if (message.getArgs() == null || message.getArgs().size() < 1)
+			throw new IllegalArgumentException("Usage: /op {PLAYER_NAME}");
+		log.info("**Playe OP** Player {} is promoting/demoting {} to/from server operator", target.getAccountUuid(),
+				message.getArgs().get(0));
+		try {
+			final AccountDto callerAccount = ServerGameLogic.DATA_SERVICE
+					.executeGet("/admin/account/" + target.getAccountUuid(), null, AccountDto.class);
+			if (!callerAccount.isAdmin()) {
+				throw new IllegalArgumentException("You are required to be a server operator to invoke this command");
+			}
+			final Player toOp = mgr.findPlayerByName(message.getArgs().get(0));
+			if (toOp == null) {
+				throw new IllegalArgumentException("Player " + message.getArgs().get(0) + " does not exist.");
+			} else if (toOp.getAccountUuid().equals(target.getAccountUuid())) {
+				throw new IllegalArgumentException("You cannot OP yourself. Idiot.");
+			}
+
+			final AccountDto targetAccount = ServerGameLogic.DATA_SERVICE
+					.executeGet("/admin/account/" + toOp.getAccountUuid(), null, AccountDto.class);
+			boolean removed = false;
+			if (targetAccount.isAdmin()) {
+				targetAccount.removeAdminSubscription();
+				removed = true;
+			} else {
+				targetAccount.addAdminSubscription();
+			}
+			ServerGameLogic.DATA_SERVICE.executePut("/admin/account/" + targetAccount.getAccountGuid(), null,
+					AccountDto.class);
+			final String operation = " is " + (removed ? "no longer " : "now ");
+			final String msg = "Player " + message.getArgs().get(0) + operation + "a server operator";
+			mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), msg));
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Failed to op user. Reason: " + e.getMessage());
+		}
+	}
 
     // Handler methods are passed a reference to the current RealmManager, the
     // invoking Player object
@@ -130,7 +169,6 @@ public class ServerCommandHandler {
                 "Players connected: " + mgr.getRealms().values().stream().map(realm -> realm.getPlayers().size()).collect(Collectors.summingInt(count -> count)),
                 "Players in my realm: " + mgr.findPlayerRealm(target.getId()).getPlayers().size());
         mgr.enqueChunkedText(target, text);
-
         log.info("Player {} request command about.", target.getName());
     }
     

@@ -1,6 +1,7 @@
 package com.jrealm.account.dto;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,19 @@ public class AccountDto implements Serializable {
     public boolean isAdmin() {
         return this.accountSubscriptions != null && this.accountSubscriptions.size() > 0
                 && this.accountSubscriptions.contains(AccountSubscription.ADMIN);
+    }
+    
+    public void addAdminSubscription() {
+    	if(this.accountSubscriptions==null){
+    		this.accountSubscriptions = new ArrayList<>();
+    	}
+		this.accountSubscriptions.add(AccountSubscription.ADMIN);
+    }
+    
+    public void removeAdminSubscription() {
+    	if(this.accountSubscriptions!=null){
+    		this.accountSubscriptions.remove(AccountSubscription.ADMIN);
+    	}
     }
 
     @Override

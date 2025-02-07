@@ -10,7 +10,6 @@ import com.jrealm.net.client.packet.FinalizeTradePacket;
 import com.jrealm.net.client.packet.RequestTradePacket;
 import com.jrealm.net.entity.NetTradeSelection;
 import com.jrealm.net.messaging.ServerCommandMessage;
-import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.TextPacket;
 
@@ -37,7 +36,7 @@ public class ServerTradeManager {
 		if(isTradeReqPending(target.getId())) {
 			throw new Exception("You already have a pending trade request");
 		}
-		final Player playerTarget = ServerTradeManager.findPlayerByName(message.getArgs().get(0));
+		final Player playerTarget = mgr.findPlayerByName(message.getArgs().get(0));
 		final RequestTradePacket packet = new RequestTradePacket(target.getName());
 		mgr.enqueueServerPacket(playerTarget, packet);
 
@@ -108,24 +107,10 @@ public class ServerTradeManager {
 				source.getName() + " finalized the trade"));
 	}
 
-	public static Player findPlayerByName(String name) {
-		Player result = null;
-		for (Realm realm : mgr.getRealms().values()) {
-			for (Player player : realm.getPlayers().values()) {
-				if (player.getName().equals(name)) {
-					result = player;
-					break;
-				}
-			}
-			if (result != null) {
-				break;
-			}
-		}
-		return result;
-	}
+	
 
 	public static void initTrade(Player requestor, RequestTradePacket request) throws IllegalArgumentException {
-		final Player target = findPlayerByName(request.getRequestingPlayerName());
+		final Player target = mgr.findPlayerByName(request.getRequestingPlayerName());
 		if (target == null) {
 			throw new IllegalArgumentException("Unknown player " + request.getRequestingPlayerName());
 		}else if (!isTradeReqPending(requestor.getId()) && !isTrading(requestor.getId(), target.getId())) {

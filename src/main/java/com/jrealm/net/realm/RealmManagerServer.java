@@ -1452,6 +1452,22 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 	}
+	
+	public Player findPlayerByName(String name) {
+		Player result = null;
+		for (Realm realm : this.getRealms().values()) {
+			for (Player player : realm.getPlayers().values()) {
+				if (player.getName().equals(name)) {
+					result = player;
+					break;
+				}
+			}
+			if (result != null) {
+				break;
+			}
+		}
+		return result;
+	}
 
 	public Player searchRealmsForPlayer(String playerName) {
 		Player found = null;

@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 public class PlayerChat {
-    private static final int CHAT_SIZE = 10;
+    private static final int CHAT_SIZE = 15;
     private Map<String, TextPacket> playerChat;
     private String currentMessage;
     private boolean chatOpen;

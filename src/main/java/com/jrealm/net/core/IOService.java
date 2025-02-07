@@ -24,6 +24,7 @@ import java.util.Map;
 import org.modelmapper.ModelMapper;
 
 import com.jrealm.game.contants.PacketType;
+import com.jrealm.game.util.ClasspathInspector;
 import com.jrealm.net.NetConstants;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
@@ -212,11 +213,9 @@ public class IOService {
 	}
 
 	public static void mapSerializableData() throws Exception {
-		final List<Class<?>> packetsToMap = getClassesInPackage("com.jrealm.net.client.packet");
-		packetsToMap.addAll(getClassesInPackage("com.jrealm.net.server.packet"));
-		packetsToMap.addAll(getClassesInPackage("com.jrealm.net.entity"));
-		packetsToMap.addAll(getClassesInPackage("com.jrealm.game.math"));
-
+		log.info("Loading classes to map packet data");
+		final List<Class<?>> packetsToMap = getClassesOnClasspath();
+		
 		for (Class<?> clazz : packetsToMap) {
 			if (!isStreamableClass(clazz))
 				continue;
@@ -280,26 +279,19 @@ public class IOService {
 		return result;
 	}
 
-	public static List<Class<?>> getClassesInPackage(String packageName) throws Exception {
-		List<Class<?>> classes = new ArrayList<>();
-		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-		String path = packageName.replace('.', '/');
-		Enumeration<URL> resources = classLoader.getResources(path);
+	public static List<Class<?>> getClassesOnClasspath() throws Exception {
+		final List<Class<?>> classes = new ArrayList<>();
+		final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		final Enumeration<URL> resources = classLoader.getResources("");
 
-		while (resources.hasMoreElements()) {
-			URL resource = resources.nextElement();
-			File directory = new File(resource.toURI());
-
-			if (directory.exists()) {
-				for (File file : directory.listFiles()) {
-					if (file.isFile() && file.getName().endsWith(".class")) {
-						String className = packageName + '.' + file.getName().substring(0, file.getName().length() - 6);
-						Class<?> clazz = Class.forName(className);
-						classes.add(clazz);
-					}
+		for(Class<?> clazz :  ClasspathInspector.getAllKnownClasses()) {
+			for(Annotation annotation : clazz.getAnnotations()) {
+				if(annotation instanceof Streamable) {
+					classes.add(clazz);
 				}
 			}
-		}
+		}						
+		
 		return classes;
 	}
 

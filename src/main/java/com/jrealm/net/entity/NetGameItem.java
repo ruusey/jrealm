@@ -48,8 +48,6 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	@SerializableField(order = 11, type = SerializableByte.class)
     private byte fameBonus;
 	
-	
-	
 	@Override
 	public NetGameItem read(DataInputStream stream) throws Exception {
 		return IOService.readStream(getClass(), stream);
@@ -85,7 +83,6 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	public NetGameItem() {
 		this.itemId = -1;
 		this.uid = "";
-		
 		this.name = "";
 		this.description = "";
 		this.stats = new NetStats();

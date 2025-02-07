@@ -46,7 +46,6 @@ import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
