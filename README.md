@@ -56,7 +56,7 @@ routine of `RealmManagerClient` and `RealmManagerServer`. Packet callbacks metho
 any method matching this signature can be used as a packet callback. 
 <br />
 
-**As of JRealm 0.3.5**, developers can now make use of the **@PacketHandler(Class<? extends Packet> packetClass)** to mark a method as a packet handler in server code. Generally
+**As of JRealm 0.3.5**, developers can now make use of the **@PacketHandler(Class<? extends Packet> packetClass)** annotation to mark a method as a packet handler in server code. Generally
 The **@PacketHandler** annotation sacrifices performance for convenience as the reflection mechanism used to trigger such callbacks is computationally expensive.
 
 **Example (Register by mapping)**
