@@ -3,7 +3,6 @@ package com.jrealm.net.server.packet;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.util.Arrays;
 
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Player;
@@ -52,8 +51,8 @@ public class CommandPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        DataInputStream dis = new DataInputStream(bis);
+        final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+        final DataInputStream dis = new DataInputStream(bis);
         if (dis == null || dis.available() < 5)
             throw new IllegalStateException("No Packet data available to read from DataInputStream");
         final CommandPacket readPacket = IOService.readPacket(getClass(), dis);
@@ -64,14 +63,11 @@ public class CommandPacket extends Packet {
 
     @Override
     public void serializeWrite(DataOutputStream stream) throws Exception {
-        byte[] res = IOService.writePacket(this, stream);
-        final byte[] res0 = Arrays.copyOf(res, res.length);
-        final CommandPacket p = IOService.readPacket(getClass(), res0);
-        log.info("Read/wrote packet {}. Packet {}", res, p);
+        IOService.writePacket(this, stream);
     }
 
     public static CommandPacket from(Player target, byte commandId, String command) throws Exception {
-    	CommandPacket com = new CommandPacket();
+    	final CommandPacket com = new CommandPacket();
     	com.setPlayerId(target.getId());
     	com.setCommandId(commandId);
     	com.setCommand(command);
@@ -79,7 +75,7 @@ public class CommandPacket extends Packet {
     }
 
     public static CommandPacket from(long targetEntity, byte commandId, String command) throws Exception {
-    	CommandPacket com = new CommandPacket();
+    	final CommandPacket com = new CommandPacket();
     	com.setPlayerId(targetEntity);
     	com.setCommandId(commandId);
     	com.setCommand(command);
@@ -87,7 +83,7 @@ public class CommandPacket extends Packet {
     }
 
     public static CommandPacket from(CommandType cmd, Object command) throws Exception {
-    	CommandPacket com = new CommandPacket();
+    	final CommandPacket com = new CommandPacket();
     	com.setPlayerId(-1l);
     	com.setCommandId(cmd.getCommandId());
     	com.setCommand(GameDataManager.JSON_MAPPER.writeValueAsString(command));

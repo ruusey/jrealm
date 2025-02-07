@@ -11,7 +11,6 @@ import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.net.entity.NetLootContainer;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
