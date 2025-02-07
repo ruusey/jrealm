@@ -75,9 +75,15 @@ public class ClasspathInspector {
 					JarEntry entry = en.nextElement();
 					if (entry.getName().endsWith("class")) {
 						String className = fromFileToClassName(entry.getName());
+						if(!className.contains("jrealm")) continue;
 						log("\tgetClassesFromJarFile: found " + className);
-						Class claz = Class.forName(className);
-						classes.add(claz);
+						try {
+							Class<?> claz = Class.forName(className);
+							classes.add(claz);
+						}catch(Exception e) {
+							log("failed to load class "+className);
+						}
+
 					}
 				}
 			}

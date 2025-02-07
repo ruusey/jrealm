@@ -281,9 +281,6 @@ public class IOService {
 
 	public static List<Class<?>> getClassesOnClasspath() throws Exception {
 		final List<Class<?>> classes = new ArrayList<>();
-		final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-		final Enumeration<URL> resources = classLoader.getResources("");
-
 		for(Class<?> clazz :  ClasspathInspector.getAllKnownClasses()) {
 			for(Annotation annotation : clazz.getAnnotations()) {
 				if(annotation instanceof Streamable) {
