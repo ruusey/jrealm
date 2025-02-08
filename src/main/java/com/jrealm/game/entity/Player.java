@@ -473,7 +473,7 @@ public class Player extends Entity {
 		stream.writeFloat(this.dy);
 	}
 	
-	public GameItem[] selectGameItems(boolean[] selectedIdx) {
+	public GameItem[] selectGameItems(Boolean[] selectedIdx) {
 		GameItem[] inv = this.getSlots(4, 12);
 		if(selectedIdx.length!=inv.length) {
 			System.err.println("SELECT GAME ITEM IDX SIZES NOT EQUAL");
@@ -481,6 +481,8 @@ public class Player extends Entity {
 		}
 		List<GameItem> selected = new ArrayList<>();
 		for(int i = 0 ; i<inv.length;i++) {
+			if(inv[i]==null) continue;
+
 			if(selectedIdx[i]) {
 				selected.add(inv[i]);
 			}
@@ -492,6 +494,7 @@ public class Player extends Entity {
 		GameItem[] inv = this.getSlots(4, 12);
 		List<NetGameItemRef> results = new ArrayList<>();
 		for(int i = 0 ; i < inv.length; i++) {
+			if(inv[i]==null) continue;
 			results.add(inv[i].asNetGameItemRef(i+4));
 		}
 		return results.toArray(new NetGameItemRef[0]);
@@ -500,6 +503,7 @@ public class Player extends Entity {
 	
 	public void addItems(GameItem[] items) {
 		for(GameItem item : items) {
+			if(item == null) continue;
 			this.inventory[this.firstEmptyInvSlot()] = item;
 		}
 	}
@@ -510,6 +514,7 @@ public class Player extends Entity {
 
 		for(int i = 0 ; i<inv.length;i++) {
 			GameItem invItem = inv[i];
+			if(invItem==null) continue;
 			for(GameItem toRemove: items) {
 				if(invItem !=null && invItem.getUid()!=null && invItem.getUid().equals(toRemove.getUid())) {
 					invItem=null;

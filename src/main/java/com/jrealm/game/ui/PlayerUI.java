@@ -106,17 +106,17 @@ public class PlayerUI {
     }
 
     public void setGroundLoot(GameItem[] loot, Graphics2D g) {
-    	if(this.isTrading) {
+    	if(this.isTrading && this.currentTradeSelection!=null) {
     		loot = this.currentTradeSelection.getPlayer1Selection().getGameItems();
-    	}else {
-    		this.groundLoot = new Slots[8];
-            //GamePanel.ui2.createItemIcons(loot);
-            for (int i = 0; i < loot.length; i++) {
-                GameItem item = loot[i];
-                if(item ==null || item.getItemId()==-1) continue;
-                this.buildGroundLootSlotButton(i, item, g);
-            }
     	}
+		this.groundLoot = new Slots[8];
+        //GamePanel.ui2.createItemIcons(loot);
+        for (int i = 0; i < loot.length; i++) {
+            GameItem item = loot[i];
+            if(item ==null || item.getItemId()==-1) continue;
+            this.buildGroundLootSlotButton(i, item, g);
+        }
+    	
     }
 
     public int getNonEmptySlotCount() {

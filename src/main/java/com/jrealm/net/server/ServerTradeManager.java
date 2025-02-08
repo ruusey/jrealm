@@ -105,8 +105,17 @@ public class ServerTradeManager {
 				ServerTradeManager.playerActiveTrades.put(toRespond.getId(), target.getId());
 				ServerTradeManager.playerActiveTrades.put(target.getId(), toRespond.getId());
 
-				playerTradeSelections.put(target.getId(), new NetInventorySelection(target.getId(), new boolean[8], target.getInventoryAsNetGameItemRefs()));
-				playerTradeSelections.put(toRespond.getId(), new NetInventorySelection(toRespond.getId(), new boolean[8], toRespond.getInventoryAsNetGameItemRefs()));
+				playerTradeSelections.put(target.getId(), new NetInventorySelection(target.getId(), new Boolean[8], target.getInventoryAsNetGameItemRefs()));
+				playerTradeSelections.put(toRespond.getId(), new NetInventorySelection(toRespond.getId(), new Boolean[8], toRespond.getInventoryAsNetGameItemRefs()));
+				
+				final NetTradeSelection selection = NetTradeSelection.getTradeSelection(target, toRespond, new Boolean[8], new Boolean[8]);
+				//final NetTradeSelection selection = NetTradeSelection.getTradeSelection(toRespond, toRespond, new Boolean[8], new Boolean[8]);
+
+				final UpdateTradePacket packet = new UpdateTradePacket(selection);
+				
+				mgr.enqueueServerPacket(target, packet);
+				mgr.enqueueServerPacket(toRespond, packet);
+
 
 			} else {
 				mgr.enqueueServerPacket(toRespond, TextPacket.create(from.getName(), toRespond.getName(),
@@ -147,7 +156,7 @@ public class ServerTradeManager {
 
 
 				}
-				final NetTradeSelection selection = NetTradeSelection.getTradeSelection(target, toRespond, new boolean[8], new boolean[8]);
+				final NetTradeSelection selection = NetTradeSelection.getTradeSelection(target, toRespond, new Boolean[8], new Boolean[8]);
 				final UpdateTradePacket packet = new UpdateTradePacket(selection);
 				ServerTradeManager.finalizeTrade(packet);
 			}else {

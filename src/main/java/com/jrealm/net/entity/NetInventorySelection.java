@@ -28,7 +28,7 @@ public class NetInventorySelection extends SerializableFieldType<NetInventorySel
 	@SerializableField(order = 0, type = SerializableLong.class)
 	private long playerId;
 	@SerializableField(order = 1, type = SerializableBoolean.class, isCollection = true)
-	private boolean[] selection;
+	private Boolean[] selection;
 	@SerializableField(order = 2, type = NetGameItemRef.class, isCollection = true)
 	private NetGameItemRef[] itemRefs;
 
@@ -42,7 +42,7 @@ public class NetInventorySelection extends SerializableFieldType<NetInventorySel
 		IOService.writeStream(value, stream);
 	}
 
-	public static NetInventorySelection fromPlayer(Player player, boolean[] selectedSlots) {
+	public static NetInventorySelection fromPlayer(Player player, Boolean[] selectedSlots) {
 		return NetInventorySelection.builder().playerId(player.getId()).selection(selectedSlots).build();
 	}
 

@@ -38,10 +38,10 @@ public class UpdatePlayerTradeSelectionPacket extends Packet {
 	
 	public static UpdatePlayerTradeSelectionPacket fromSelection(Player player, PlayerUI ui) {
 		final Slots[] uiSlots = ui.getSlots(4, 12);
-		final boolean[] selected = new boolean[uiSlots.length];
+		final Boolean[] selected = new Boolean[uiSlots.length];
 		for(int i = 0 ; i< uiSlots.length; i++){
 			Slots slot = uiSlots[i];
-			
+			if(slot==null) continue;
 			if(slot.isSelected()) {
 				selected[i]=true;
 			}

@@ -34,8 +34,8 @@ public class NetTradeSelection extends SerializableFieldType<NetTradeSelection> 
 		IOService.writeStream(value, stream);
 	}
 
-	public static NetTradeSelection getTradeSelection(Player p0, Player p1, boolean[] p0Selection,
-			boolean[] p1Selection) {
+	public static NetTradeSelection getTradeSelection(Player p0, Player p1, Boolean[] p0Selection,
+			Boolean[] p1Selection) {
 		final NetInventorySelection p0Inv = NetInventorySelection.fromPlayer(p0, p0Selection);
 		final NetInventorySelection p1Inv = NetInventorySelection.fromPlayer(p1, p1Selection);
 		return new NetTradeSelection(p0Inv, p1Inv);
