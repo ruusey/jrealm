@@ -75,17 +75,21 @@ public class ClientGameLogic {
 	@PacketHandlerClient(UpdatePlayerTradeSelectionPacket.class)
 	public static void handleUpdateTradeSelection(RealmManagerClient mgr, Packet packet) {
 		final UpdatePlayerTradeSelectionPacket updateTrade = (UpdatePlayerTradeSelectionPacket) packet;
-		final NetInventorySelection slection = updateTrade.getSelection();
+		final NetInventorySelection selection = updateTrade.getSelection();
 
-		mgr.getState().getPui().getCurrentTradeSelection().applyUpdate(slection);
+		mgr.getState().getPui().getCurrentTradeSelection().applyUpdate(selection);
 	}
 
 	@PacketHandlerClient(UpdateTradePacket.class)
 	public static void handleUpdateTrade(RealmManagerClient mgr, Packet packet) {
 		final UpdateTradePacket updateTrade = (UpdateTradePacket) packet;
-		final NetTradeSelection slection = updateTrade.getSelections();
+		final NetTradeSelection selection = updateTrade.getSelections();
 
-		mgr.getState().getPui().getCurrentTradeSelection().applyUpdate(slection);
+		NetTradeSelection currSelection = mgr.getState().getPui().getCurrentTradeSelection();
+		if(currSelection==null) {
+			currSelection = selection;
+		}
+		mgr.getState().getPui().getCurrentTradeSelection().applyUpdate(selection);
 
 	}
 
