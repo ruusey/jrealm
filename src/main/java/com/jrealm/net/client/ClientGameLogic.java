@@ -88,8 +88,10 @@ public class ClientGameLogic {
 		NetTradeSelection currSelection = mgr.getState().getPui().getCurrentTradeSelection();
 		if(currSelection==null) {
 			currSelection = selection;
+			mgr.getState().getPui().setCurrentTradeSelection(selection);
+		}else {
+			currSelection.applyUpdate(selection);
 		}
-		mgr.getState().getPui().getCurrentTradeSelection().applyUpdate(selection);
 
 	}
 
