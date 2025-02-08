@@ -1,13 +1,22 @@
 package com.jrealm.net.server;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.jrealm.game.entity.Player;
+import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.util.CommandHandler;
-import com.jrealm.net.client.packet.FinalizeTradePacket;
+import com.jrealm.game.util.PacketHandlerServer;
+import com.jrealm.net.client.packet.UpdateTradePacket;
+import com.jrealm.net.Packet;
+import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
 import com.jrealm.net.client.packet.RequestTradePacket;
+import com.jrealm.net.client.packet.UpdatePlayerTradeSelectionPacket;
+import com.jrealm.net.entity.NetInventorySelection;
 import com.jrealm.net.entity.NetTradeSelection;
 import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.realm.RealmManagerServer;
@@ -18,15 +27,39 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServerTradeManager {
 	public static RealmManagerServer mgr;
-
+	public static boolean shutdown=false;
 	private static Map<Long, Long> playerActiveTrades;
 	private static Map<Long, Long> playerRequestedTrades;
-
+	private static Map<Long, NetInventorySelection> playerTradeSelections;
+	private static Map<Long, Long> playerTradeTtl;
 	static {
 		ServerTradeManager.playerActiveTrades = new HashMap<>();
 		ServerTradeManager.playerRequestedTrades = new HashMap<>();
+		ServerTradeManager.playerTradeSelections = new HashMap<>();
+		ServerTradeManager.playerTradeTtl = new HashMap<>();
+
+	}
+	
+	
+	public static void runTradeExpiryCheck() {
+		Runnable check = () ->{
+			while(!shutdown) {
+				try {
+					for(Entry<Long, Long> entry : playerTradeTtl.entrySet()) {
+						if((Instant.now().toEpochMilli()-entry.getValue())>15000) {
+							
+						}
+					}
+					Thread.sleep(0);
+				}catch(Exception e) {
+					
+				}
+			}
+		};
 	}
 
+	
+	
 	@CommandHandler(value = "trade", description = "Initiated a trade")
 	public static void invokeTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message)
 			throws Exception {
@@ -41,6 +74,7 @@ public class ServerTradeManager {
 		mgr.enqueueServerPacket(playerTarget, packet);
 
 		ServerTradeManager.playerRequestedTrades.put(target.getId(), playerTarget.getId());
+		ServerTradeManager.playerTradeTtl.put(target.getId(), Instant.now().toEpochMilli());
 		log.info("Player {} requested trade with Player {}", target.getName(), playerTarget.getName(), target.getPos());
 	}
 	// TODO: Remove and move to client side 
@@ -49,40 +83,72 @@ public class ServerTradeManager {
 			throws Exception {
 		if (message.getArgs() == null || message.getArgs().size() != 1)
 			throw new IllegalArgumentException("Usage: /accept {true | false}");
-		final Player toRespond = mgr.getPlayerById(ServerTradeManager.inverseRequestedTrades().get(target.getId()));
+		long targetId = target.getId();
+		long otherTraderId = ServerTradeManager.inverseRequestedTrades().get(target.getId());
+		
+		
+
+		final Player toRespond = mgr.getPlayerById(otherTraderId);
 		if(toRespond== null) {
 			throw new Exception("No trade requests to accept");
 		}
 		// Simulate receiving an AcceptTradeRequesstPacket
-		final Player from = mgr.getPlayerById(ServerTradeManager.playerRequestedTrades.get(toRespond.getId()));
+		final Player from = toRespond;
 		try {
 			if (Boolean.parseBoolean(message.getArgs().get(0))) {
-				
 				mgr.enqueueServerPacket(toRespond, TextPacket.create(from.getName(), toRespond.getName(),
 						from.getName() + " has accepted your trade request"));
+				mgr.enqueueServerPacket(target, TextPacket.create("SYSTEM", target.getName(),
+						"Now trading with player"+ toRespond.getName()));
+				mgr.enqueueServerPacket(target, new AcceptTradeRequestPacket(true));
+				mgr.enqueueServerPacket(toRespond, new AcceptTradeRequestPacket(true));
 				ServerTradeManager.playerActiveTrades.put(toRespond.getId(), target.getId());
+				ServerTradeManager.playerActiveTrades.put(target.getId(), toRespond.getId());
+
+				playerTradeSelections.put(target.getId(), new NetInventorySelection(target.getId(), new boolean[8], target.getInventoryAsNetGameItemRefs()));
+				playerTradeSelections.put(toRespond.getId(), new NetInventorySelection(toRespond.getId(), new boolean[8], toRespond.getInventoryAsNetGameItemRefs()));
+
 			} else {
 				mgr.enqueueServerPacket(toRespond, TextPacket.create(from.getName(), toRespond.getName(),
 						from.getName() + " has rejected your trade request"));
 				playerActiveTrades.remove(from.getId());
 				playerRequestedTrades.remove(from.getId());
+				playerTradeSelections.remove(target.getId());
+				playerTradeSelections.remove(toRespond.getId());
+
 			}
 		} catch (Exception e) {
 			throw new Exception("Unparseable boolean value " + message.getArgs().get(0));
 		}
 	}
 	
-	@CommandHandler(value = "finalize", description = "Accepts trade proposed to user")
+	@CommandHandler(value = "confirm", description = "Accepts trade proposed to user")
 	public static void finalizeTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message)
 			throws Exception {
 		if (message.getArgs() == null || message.getArgs().size() != 1)
-			throw new IllegalArgumentException("Usage: /finalize {true | false}");
+			throw new IllegalArgumentException("Usage: /confirm {true | false}");
 		
 		try {
 			final Player toRespond = mgr.getPlayerById(ServerTradeManager.inverseRequestedTrades().get(target.getId()));
 			if (Boolean.parseBoolean(message.getArgs().get(0))) {
+				
+				if(playerTradeSelections.get(target.getId())!=null || playerTradeSelections.get(toRespond.getId())!=null) {
+					NetInventorySelection selection0 = playerTradeSelections.get(target.getId());
+					NetInventorySelection selection1 = playerTradeSelections.get(toRespond.getId());
+					GameItem[] p0Selection = target.selectGameItems(selection0.getSelection());
+					GameItem[] p0Cloned = Stream.of(p0Selection).map(GameItem::clone).collect(Collectors.toList()).toArray(new GameItem[0]);
+					GameItem[] p1Selection = toRespond.selectGameItems(selection1.getSelection());
+					GameItem[] p1Cloned = Stream.of(p1Selection).map(GameItem::clone).collect(Collectors.toList()).toArray(new GameItem[0]);
+					target.removeItems(p0Selection);
+					toRespond.removeItems(p1Selection);
+					
+					target.addItems(p1Cloned);
+					target.addItems(p0Cloned);
+
+
+				}
 				final NetTradeSelection selection = NetTradeSelection.getTradeSelection(target, toRespond, new boolean[8], new boolean[8]);
-				final FinalizeTradePacket packet = new FinalizeTradePacket(selection);
+				final UpdateTradePacket packet = new UpdateTradePacket(selection);
 				ServerTradeManager.finalizeTrade(packet);
 			}else {
 				mgr.enqueueServerPacket(toRespond, TextPacket.create(target.getName(), toRespond.getName(),
@@ -93,10 +159,25 @@ public class ServerTradeManager {
 		}
 	}
 	
+	 @PacketHandlerServer(UpdatePlayerTradeSelectionPacket.class)
+	 public static void handleUpdateTrade(RealmManagerServer mgr, Packet packet) {
+		final UpdatePlayerTradeSelectionPacket updateTrade = (UpdatePlayerTradeSelectionPacket)packet;
+		final NetInventorySelection selection = updateTrade.getSelection();
+		final Player toRespond = mgr.getPlayerById(ServerTradeManager.inverseRequestedTrades().get(selection.getPlayerId()));
+		final Player updateSource = mgr.getPlayerById(selection.getPlayerId());
+		final NetInventorySelection otherSelection = ServerTradeManager.playerTradeSelections.get(toRespond.getId());
+		ServerTradeManager.playerTradeSelections.put(selection.getPlayerId(), selection);
+		final NetTradeSelection playersSelections = new NetTradeSelection(selection, otherSelection);
+		final UpdateTradePacket toSendToTraders = new UpdateTradePacket(playersSelections);
+		mgr.enqueueServerPacket(toRespond, toSendToTraders);
+		mgr.enqueueServerPacket(updateSource, toSendToTraders);
+
+	}
+	
 	@SuppressWarnings("unused")
-	public static void finalizeTrade(FinalizeTradePacket finalizedTrade) {
-		final Player source = mgr.getPlayerById(finalizedTrade.getSelection().getPlayer0Selection().getPlayerId());
-		final Player target = mgr.getPlayerById(finalizedTrade.getSelection().getPlayer1Selection().getPlayerId());
+	public static void finalizeTrade(UpdateTradePacket finalizedTrade) {
+		final Player source = mgr.getPlayerById(finalizedTrade.getSelections().getPlayer0Selection().getPlayerId());
+		final Player target = mgr.getPlayerById(finalizedTrade.getSelections().getPlayer1Selection().getPlayerId());
 		playerActiveTrades.remove(source.getId());
 		playerRequestedTrades.remove(source.getId());
 		playerActiveTrades.remove(target.getId());
@@ -119,7 +200,7 @@ public class ServerTradeManager {
 	}
 
 	public static boolean isTradeReqPending(Long srcPlayerId) {
-		return ServerTradeManager.playerActiveTrades.get(srcPlayerId) == null;
+		return ServerTradeManager.playerRequestedTrades.get(srcPlayerId) != null;
 	}
 
 	public static boolean isTrading(long playerId0, long playerId1) {

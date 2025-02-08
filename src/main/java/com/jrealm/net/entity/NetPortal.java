@@ -3,6 +3,7 @@ package com.jrealm.net.entity;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.entity.Portal;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
@@ -41,6 +42,19 @@ public class NetPortal extends SerializableFieldType<NetPortal> {
 	@Override
 	public void write(NetPortal value, DataOutputStream stream) throws Exception {
 		IOService.writeStream(value, stream);
+	}
+	
+	public Portal asPortal() {
+		Portal p = new Portal();
+		p.setId(this.getId());
+		p.setPortalId(this.getPortalId());
+		p.setFromRealmId(this.getFromRealmId());
+		p.setToRealmId(this.getToRealmId());
+		p.setExpires(this.getExpires());
+		p.setPos(this.getPos());
+		
+		return p;
+		
 	}
 
 }

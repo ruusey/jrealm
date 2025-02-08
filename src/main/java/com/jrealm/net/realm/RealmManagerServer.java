@@ -255,7 +255,7 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.error("Failed to sleep");
 		}
 	}
-
+	long sendCount = 0;
 	private void sendGameData() {
 		long startNanos = System.nanoTime();
 		final List<Packet> packetsToBroadcast = new ArrayList<>();
@@ -275,16 +275,22 @@ public class RealmManagerServer implements Runnable {
 				this.server.getClients().remove(thread.getKey());
 				this.server.getClients().remove(thread.getKey(), thread.getValue());
 			} catch (Exception e) {
-				log.error("Failed to remove stale processing threads. Reason:  {}", e);
+				log.error("[SERVER] Failed to remove stale processing threads. Reason:  {}", e);
 			}
 		});
 		final List<String> disconnectedClients = new ArrayList<>();
 		for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
 			try {
+				final Player player = this.getPlayerByRemoteAddress(client.getKey());
+				if(player==null) {
+					log.error("[SERVER] Failed to find player {} to broadcast data to", client.getKey());
+					continue;
+				}
+			
 				// Dequeue and send any player specific packets
 				final List<Packet> playerPackets = new ArrayList<>();
 				final ConcurrentLinkedQueue<Packet> playerPacketsToSend = this.playerOutboundPacketQueue
-						.get(this.remoteAddresses.get(client.getKey()));
+						.get(player.getId());
 
 				while ((playerPacketsToSend != null) && !playerPacketsToSend.isEmpty()) {
 					playerPackets.add(playerPacketsToSend.remove());
@@ -293,27 +299,22 @@ public class RealmManagerServer implements Runnable {
 				final OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
 				final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
 				for (final Packet packet : packetsToBroadcast) {
-//					if(packet.getId()==7 || packet.getId()==10) {
-//						IOService.write(packet, dosToClient);
-//					}else {
-						packet.serializeWrite(dosToClient);
-//					}
+					packet.serializeWrite(dosToClient);
 				}
-
+				if(player.getName().equals("TradeTest")) {
+					int ten = 9;
+				}
 				for (final Packet packet : playerPackets) {
-//					if(packet.getId()==7 || packet.getId()==10) {
-// 						IOService.write(packet, dosToClient);
-//					}else {
-						packet.serializeWrite(dosToClient);
-//					}				
+					packet.serializeWrite(dosToClient);				
 				}
 			} catch (Exception e) {
 				disconnectedClients.add(client.getKey());
-				RealmManagerServer.log.error("Failed to get OutputStream to Client. Reason: {}", e);
+				RealmManagerServer.log.error("[SERVER] Failed to get OutputStream to Client. Reason: {}", e);
 			}
 		}
 		long nanosDiff = System.nanoTime() - startNanos;
 		log.debug("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double) nanosDiff / (double) 1000000l));
+		sendCount++;
 	}
 
 	// Enqueues outbound game packets every tick. Manages
@@ -414,10 +415,7 @@ public class RealmManagerServer implements Runnable {
 									}
 								}
 							}
-							this.transmitLoadPacket = false;
-						} else {
-							this.transmitLoadPacket = true;
-						}
+						} 
 						// Recently added tick skipping for game entity movements.
 						// This greatly reduced bytes going down the wire but some
 						// fidelity is lost
@@ -442,6 +440,7 @@ public class RealmManagerServer implements Runnable {
 									}
 								}
 							}
+
 							final ObjectMovePacket movePacket0 = realm
 									.getGameObjectsAsPackets(realm.getTileManager().getRenderViewPort(player.getValue()));
 							Set<Long> nearEnemyIds = new HashSet<>();
@@ -470,10 +469,7 @@ public class RealmManagerServer implements Runnable {
 									}
 								}
 							}
-							this.transmitMovement = false;
-						} else {
-							this.transmitMovement = true;
-						}
+						} 
 
 						final Long playerLastHeartbeatTime = this.playerLastHeartbeatTime.get(player.getKey());
 						if (playerLastHeartbeatTime != null
@@ -493,6 +489,12 @@ public class RealmManagerServer implements Runnable {
 								e);
 					}
 				}
+				if(!this.disablePartialTransmission) {
+					this.transmitLoadPacket = !this.transmitLoadPacket;
+					this.transmitMovement = !this.transmitMovement;
+				}
+
+
 				for (Player player : toRemove) {
 					this.disconnectPlayer(player);
 				}

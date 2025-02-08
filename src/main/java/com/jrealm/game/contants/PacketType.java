@@ -6,7 +6,7 @@ import java.util.Map;
 import com.jrealm.game.util.Tuple;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
-import com.jrealm.net.client.packet.FinalizeTradePacket;
+import com.jrealm.net.client.packet.UpdateTradePacket;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
@@ -15,6 +15,7 @@ import com.jrealm.net.client.packet.RequestTradePacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.client.packet.UpdatePlayerTradeSelectionPacket;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
@@ -42,7 +43,8 @@ public enum PacketType {
     PLAYER_DEATH			((byte) 15, PlayerDeathPacket.class),
     TRADE_REQUEST			((byte) 16, RequestTradePacket.class),
     ACCEPT_TRADE_REQUEST	((byte) 17, AcceptTradeRequestPacket.class),
-    FINALIZE_TRADE			((byte) 18, FinalizeTradePacket.class);
+    UPDATE_TRADE_SELECTION  ((byte) 18, UpdatePlayerTradeSelectionPacket.class),
+    UPDATE_TRADE			((byte) 19, UpdateTradePacket.class);
 
 
     private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();

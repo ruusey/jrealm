@@ -1,5 +1,6 @@
 package com.jrealm.game.ui;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
@@ -22,7 +23,7 @@ import lombok.NoArgsConstructor;
 public class Slots {
     private GameItem item;
     private Button button;
-
+    private boolean selected;
     private Vector2f dragPos;
 
     public Slots(Button button, GameItem item) {
@@ -54,6 +55,14 @@ public class Slots {
         if (this.getItem().getSpriteKey() == null) {
             GameDataManager.loadSpriteModel(this.getItem());
         }
+        if(this.isSelected()) {
+            g.setColor(Color.yellow);
+            g.fillRect((int) pos.x, (int) pos.y, 64, 64);
+        }else {
+        	 g.setColor(Color.gray);
+             g.fillRect((int) pos.x, (int) pos.y, 64, 64);
+        }
+
         BufferedImage itemImage = GameSpriteManager.ITEM_SPRITES.get(this.item.getItemId());
         if (itemImage == null)
             return;

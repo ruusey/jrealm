@@ -9,6 +9,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.model.SpriteModel;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.entity.NetGameItem;
+import com.jrealm.net.entity.NetGameItemRef;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -79,6 +80,14 @@ public class GameItem extends SpriteModel {
         this.setAngleOffset(model.getAngleOffset());
         this.setSpriteKey(model.getSpriteKey());
     }
+    
+    public GameItemRefDto toGameItemRefDto(int idx) {
+    	return new GameItemRefDto(this.itemId, idx, this.uid);
+    }
+    
+    public NetGameItemRef asNetGameItemRef(int idx) {
+    	return new NetGameItemRef(itemId, idx, this.uid);
+    }
 
     public static GameItem fromGameItemRef(final GameItemRefDto gameItem) {
         GameItem item = GameDataManager.GAME_ITEMS.get(gameItem.getItemId());
@@ -86,4 +95,12 @@ public class GameItem extends SpriteModel {
         GameDataManager.loadSpriteModel(item);
         return item;
     }
+    
+    public static GameItem fromGameItemRef(final NetGameItemRef gameItem) {
+        GameItem item = GameDataManager.GAME_ITEMS.get(gameItem.getItemId());
+        item.setUid(gameItem.getItemUuid());
+        GameDataManager.loadSpriteModel(item);
+        return item;
+    }
+    
 }

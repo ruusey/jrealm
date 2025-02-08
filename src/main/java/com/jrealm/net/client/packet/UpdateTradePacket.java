@@ -17,16 +17,16 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class FinalizeTradePacket extends Packet {
+public class UpdateTradePacket extends Packet {
 
 	@SerializableField(order = 0, type = NetTradeSelection.class)
-	private NetTradeSelection selection;
+	private NetTradeSelection selections;
 
 	@Override
 	public void readData(byte[] data) throws Exception {
-		final FinalizeTradePacket read = IOService.readPacket(getClass(), data);
-		this.selection = read.getSelection();
-		this.setId(PacketType.FINALIZE_TRADE.getPacketId());
+		final UpdateTradePacket read = IOService.readPacket(getClass(), data);
+		this.selections = read.getSelections();
+		this.setId(PacketType.UPDATE_TRADE.getPacketId());
 	}
 
 	@Override

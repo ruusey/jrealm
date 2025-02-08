@@ -5,7 +5,9 @@ import java.awt.Graphics2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,6 +28,7 @@ import com.jrealm.game.util.MouseHandler;
 import com.jrealm.game.util.Tuple;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.core.IOService;
+import com.jrealm.net.entity.NetGameItemRef;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -468,6 +471,52 @@ public class Player extends Entity {
 		stream.writeFloat(this.getPos().y);
 		stream.writeFloat(this.dx);
 		stream.writeFloat(this.dy);
+	}
+	
+	public GameItem[] selectGameItems(boolean[] selectedIdx) {
+		GameItem[] inv = this.getSlots(4, 12);
+		if(selectedIdx.length!=inv.length) {
+			System.err.println("SELECT GAME ITEM IDX SIZES NOT EQUAL");
+			return null;
+		}
+		List<GameItem> selected = new ArrayList<>();
+		for(int i = 0 ; i<inv.length;i++) {
+			if(selectedIdx[i]) {
+				selected.add(inv[i]);
+			}
+		}
+		return selected.toArray(new GameItem[0]);
+	}
+	
+	public NetGameItemRef[] getInventoryAsNetGameItemRefs() {
+		GameItem[] inv = this.getSlots(4, 12);
+		List<NetGameItemRef> results = new ArrayList<>();
+		for(int i = 0 ; i < inv.length; i++) {
+			results.add(inv[i].asNetGameItemRef(i+4));
+		}
+		return results.toArray(new NetGameItemRef[0]);
+
+	}
+	
+	public void addItems(GameItem[] items) {
+		for(GameItem item : items) {
+			this.inventory[this.firstEmptyInvSlot()] = item;
+		}
+	}
+	
+	public void removeItems(GameItem[] items) {
+		List<Integer> idxToRemove = new ArrayList<>();
+		GameItem[] inv = this.getSlots(4, 12);
+
+		for(int i = 0 ; i<inv.length;i++) {
+			GameItem invItem = inv[i];
+			for(GameItem toRemove: items) {
+				if(invItem !=null && invItem.getUid()!=null && invItem.getUid().equals(toRemove.getUid())) {
+					invItem=null;
+				}
+
+			}
+		}
 	}
 
 	public Player read(DataInputStream stream) throws Exception {

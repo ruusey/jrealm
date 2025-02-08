@@ -19,12 +19,15 @@ import com.jrealm.game.model.ItemTooltip;
 import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.KeyHandler;
 import com.jrealm.game.util.MouseHandler;
+import com.jrealm.net.client.packet.UpdatePlayerTradeSelectionPacket;
+import com.jrealm.net.entity.NetTradeSelection;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.Data;
 
 @Data
 public class PlayerUI {
+	private boolean isTrading;
     private FillBars hp;
     private FillBars mp;
     private FillBars xp;
@@ -39,6 +42,8 @@ public class PlayerUI {
     private Graphics2D tempGraphics;
     private long lastAction = Instant.now().toEpochMilli();
     private Button menuButton = null;
+    
+    private NetTradeSelection currentTradeSelection = null;
     public PlayerUI(PlayState p) {
         SpriteSheet bars = new SpriteSheet("fillbars.png", 12, 12);
         BufferedImage[] barSpritesHp = { bars.cropImage(12, 2, 7, 16), bars.cropImage(39, 0, 7, 14),
@@ -52,7 +57,7 @@ public class PlayerUI {
         Vector2f posHp = new Vector2f(GamePanel.width - 356, 128);
         Vector2f posMp = posHp.clone(0, 32);
         Vector2f posXp = posHp.clone(0, -32);
-
+        this.isTrading = false;
         this.playState = p;
         this.hp = new FillBars(p.getPlayer(), barSpritesHp, posHp, 16, 16, "getHealthPercent");
         this.mp = new FillBars(p.getPlayer(), barSpritesMp, posMp, 16, 16, "getManaPercent");
@@ -101,13 +106,17 @@ public class PlayerUI {
     }
 
     public void setGroundLoot(GameItem[] loot, Graphics2D g) {
-        this.groundLoot = new Slots[8];
-        //GamePanel.ui2.createItemIcons(loot);
-        for (int i = 0; i < loot.length; i++) {
-            GameItem item = loot[i];
-            if(item ==null || item.getItemId()==-1) continue;
-            this.buildGroundLootSlotButton(i, item, g);
-        }
+    	if(this.isTrading) {
+    		loot = this.currentTradeSelection.getPlayer1Selection().getGameItems();
+    	}else {
+    		this.groundLoot = new Slots[8];
+            //GamePanel.ui2.createItemIcons(loot);
+            for (int i = 0; i < loot.length; i++) {
+                GameItem item = loot[i];
+                if(item ==null || item.getItemId()==-1) continue;
+                this.buildGroundLootSlotButton(i, item, g);
+            }
+    	}
     }
 
     public int getNonEmptySlotCount() {
@@ -213,6 +222,7 @@ public class PlayerUI {
             GameItem item = inventory[i];
             if(item.getItemId()==-1) continue;
             this.buildInventorySlotsButton(i, item);
+            
         }
     }
 
@@ -240,12 +250,27 @@ public class PlayerUI {
             });
 
             b.onRightClick(event -> {
-                Slots dropped = this.getOverlapping(event);
-                if ((dropped != null) && this.canSwap()) {
-                    this.setActionTime();
-                    int idx = this.getOverlapIdx(event);
-                    this.playState.getRealmManager().moveItem(-1, idx, true, false);
-                }
+            	if(this.isTrading) {
+            		Slots dropped = this.getOverlapping(event);
+            		if ((dropped != null)) {
+            			dropped.setSelected(!dropped.isSelected());
+            			final UpdatePlayerTradeSelectionPacket updatedTrade = UpdatePlayerTradeSelectionPacket.fromSelection(this.getPlayState().getPlayer(), this);
+            			try {
+							this.playState.getRealmManager().getClient().sendRemote(updatedTrade);
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+            		}
+            	}else {
+            		Slots dropped = this.getOverlapping(event);
+                    if ((dropped != null) && this.canSwap()) {
+                        this.setActionTime();
+                        int idx = this.getOverlapIdx(event);
+                        this.playState.getRealmManager().moveItem(-1, idx, true, false);
+                    }
+            	}
+                
             });
 
             this.inventory[actualIdx] = new Slots(b, item);

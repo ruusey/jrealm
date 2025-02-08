@@ -86,10 +86,7 @@ public class ProcessingThread extends Thread {
 					this.remoteBufferIndex -= packetLength;
 					final Class<?> packetClass = PacketType.valueOf(packetId).getX();
 					final Packet nPacket = IOService.readStream(packetClass, packetBytes);
-					final BlankPacket newPacket = new BlankPacket(packetId, packetBytes);
-
 					nPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-					newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
 					this.packetQueue.add(nPacket);
                 }
             }

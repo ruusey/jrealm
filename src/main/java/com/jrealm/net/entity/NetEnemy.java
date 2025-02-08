@@ -3,6 +3,7 @@ package com.jrealm.net.entity;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
@@ -47,5 +48,19 @@ public class NetEnemy extends SerializableFieldType<NetEnemy>{
 	public void write(NetEnemy value, DataOutputStream stream) throws Exception {
 		IOService.writeStream(value, stream);
 		
+	}
+	
+	
+	public Enemy asEnemy() {
+		Enemy e = new Enemy();
+		e.setId(this.getId());
+		e.setEnemyId(this.getEnemyId());
+		e.setWeaponId(this.getWeaponId());
+		e.setSize(this.getSize());
+		e.setPos(this.getPos());
+		e.setDx(this.getDX());
+		e.setDy(this.getDY());
+		
+		return e;
 	}
 }
