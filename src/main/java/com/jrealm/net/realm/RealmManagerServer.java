@@ -544,7 +544,23 @@ public class RealmManagerServer implements Runnable {
 									(System.nanoTime() - start));
 						}
 						start = System.nanoTime();
-						this.packetCallbacksServer.get(created.getId()).accept(this, created);
+						if(this.packetCallbacksServer.get(created.getId())==null) {
+							List<MethodHandle> callBacHandles = this.userPacketCallbacksServer.get(created.getId());
+							if(callBacHandles!=null) {
+								callBacHandles.forEach(callBack->{
+									try {
+										callBack.invokeExact(this, created);
+									} catch (Throwable e) {
+										log.error("Failed to invoke user server packet callback for packet id {}. Callback: {}", created.getId(), callBack);
+									}
+								});
+							}
+							
+							
+						}else {
+							this.packetCallbacksServer.get(created.getId()).accept(this, created);
+
+						}
 						log.debug("Invoked callback for PacketType {} using map in {} nanos",
 								PacketType.valueOf(created.getId()).getY(), (System.nanoTime() - start));
 					} catch (Exception e) {
@@ -813,16 +829,20 @@ public class RealmManagerServer implements Runnable {
 	private void registerPacketCallbacksReflection() {
 		log.info("Registering packet handlers using reflection");
 		final MethodType mt = MethodType.methodType(void.class, RealmManagerServer.class, Packet.class);
+
 		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandlerServer.class);
 		for (final Method method : subclasses) {
 			try {
 				final PacketHandlerServer packetToHandle = method.getDeclaredAnnotation(PacketHandlerServer.class);
-				MethodHandle handleToHandler = this.publicLookup.findStatic(ServerGameLogic.class,
-						method.getName(), mt);
-				if(handleToHandler==null) {
+				MethodHandle handleToHandler = null;
+				try {
+					handleToHandler = this.publicLookup.findStatic(ServerGameLogic.class,
+							method.getName(), mt);
+				}catch(Exception e) {
 					handleToHandler = this.publicLookup.findStatic(ServerTradeManager.class,
 							method.getName(), mt);
 				}
+		
 				if (handleToHandler != null) {
 					final PacketType targetPacketType = PacketType.valueOf(packetToHandle.value());
 					List<MethodHandle> existing = this.userPacketCallbacksServer.get(targetPacketType.getPacketId());
@@ -833,7 +853,6 @@ public class RealmManagerServer implements Runnable {
 					log.info("Added new packet handler for packet {}. Handler method: {}", targetPacketType,
 							handleToHandler.toString());
 					this.userPacketCallbacksServer.put(targetPacketType.getPacketId(), existing);
-
 				}
 			} catch (Exception e) {
 				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);

@@ -47,6 +47,7 @@ public enum PacketType {
     UPDATE_TRADE			((byte) 19, UpdateTradePacket.class);
 
 
+
     private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
 
     private byte packetId;

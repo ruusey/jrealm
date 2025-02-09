@@ -57,8 +57,6 @@ public class ServerTradeManager {
 			}
 		};
 	}
-
-	
 	
 	@CommandHandler(value = "trade", description = "Initiated a trade")
 	public static void invokeTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message)
