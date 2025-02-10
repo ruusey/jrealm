@@ -28,16 +28,17 @@ import lombok.extern.slf4j.Slf4j;
 public class ServerTradeManager {
 	public static RealmManagerServer mgr;
 	public static boolean shutdown=false;
+	
 	private static Map<Long, Long> playerActiveTrades;
 	private static Map<Long, Long> playerRequestedTrades;
 	private static Map<Long, NetInventorySelection> playerTradeSelections;
 	private static Map<Long, Long> playerTradeTtl;
+	
 	static {
 		ServerTradeManager.playerActiveTrades = new HashMap<>();
 		ServerTradeManager.playerRequestedTrades = new HashMap<>();
 		ServerTradeManager.playerTradeSelections = new HashMap<>();
 		ServerTradeManager.playerTradeTtl = new HashMap<>();
-
 	}
 	
 	
@@ -47,10 +48,10 @@ public class ServerTradeManager {
 				try {
 					for(Entry<Long, Long> entry : playerTradeTtl.entrySet()) {
 						if((Instant.now().toEpochMilli()-entry.getValue())>15000) {
-							
+							// Expirie the trade request
 						}
 					}
-					Thread.sleep(0);
+					Thread.sleep(50);
 				}catch(Exception e) {
 					
 				}
@@ -58,7 +59,7 @@ public class ServerTradeManager {
 		};
 	}
 	
-	@CommandHandler(value = "trade", description = "Initiated a trade")
+	@CommandHandler(value = "trade", description = "Initiate a trade with a player")
 	public static void invokeTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message)
 			throws Exception {
 		if (message.getArgs() == null || message.getArgs().size() != 1)
@@ -79,8 +80,7 @@ public class ServerTradeManager {
 	@CommandHandler(value = "accept", description = "Accepts trade proposed to user")
 	public static void acceptTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message)
 			throws Exception {
-		if (message.getArgs() == null || message.getArgs().size() != 1)
-			throw new IllegalArgumentException("Usage: /accept {true | false}");
+	
 		long targetId = target.getId();
 		long otherTraderId = ServerTradeManager.inverseRequestedTrades().get(target.getId());
 		
@@ -93,7 +93,7 @@ public class ServerTradeManager {
 		// Simulate receiving an AcceptTradeRequesstPacket
 		final Player from = toRespond;
 		try {
-			if (Boolean.parseBoolean(message.getArgs().get(0))) {
+			
 				mgr.enqueueServerPacket(toRespond, TextPacket.create(from.getName(), toRespond.getName(),
 						from.getName() + " has accepted your trade request"));
 				mgr.enqueueServerPacket(target, TextPacket.create("SYSTEM", target.getName(),
@@ -115,18 +115,28 @@ public class ServerTradeManager {
 				mgr.enqueueServerPacket(toRespond, packet);
 
 
-			} else {
-				mgr.enqueueServerPacket(toRespond, TextPacket.create(from.getName(), toRespond.getName(),
-						from.getName() + " has rejected your trade request"));
-				playerActiveTrades.remove(from.getId());
-				playerRequestedTrades.remove(from.getId());
-				playerTradeSelections.remove(target.getId());
-				playerTradeSelections.remove(toRespond.getId());
-
-			}
+			
 		} catch (Exception e) {
 			throw new Exception("Unparseable boolean value " + message.getArgs().get(0));
 		}
+	}
+	
+	
+	@CommandHandler(value = "decliine" , description ="Decline a trade request")
+	public static void declineTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+		
+		long otherTraderId = ServerTradeManager.inverseRequestedTrades().get(target.getId());
+		
+	
+		final Player toRespond = mgr.getPlayerById(otherTraderId);
+		
+		mgr.enqueueServerPacket(toRespond, TextPacket.create(toRespond.getName(), toRespond.getName(),
+				toRespond.getName() + " has rejected your trade request"));
+		playerActiveTrades.remove(toRespond.getId());
+		playerRequestedTrades.remove(target.getId());
+		playerTradeSelections.remove(toRespond.getId());
+		playerTradeSelections.remove(target.getId());
+
 	}
 	
 	@CommandHandler(value = "confirm", description = "Accepts trade proposed to user")

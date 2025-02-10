@@ -483,7 +483,7 @@ public class Player extends Entity {
 		for(int i = 0 ; i<inv.length;i++) {
 			if(inv[i]==null) continue;
 
-			if(selectedIdx[i]) {
+			if(selectedIdx[i]!=null && selectedIdx[i]) {
 				selected.add(inv[i]);
 			}
 		}

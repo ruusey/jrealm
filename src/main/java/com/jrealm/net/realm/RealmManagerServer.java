@@ -415,7 +415,8 @@ public class RealmManagerServer implements Runnable {
 									}
 								}
 							}
-						} 
+						}
+						
 						// Recently added tick skipping for game entity movements.
 						// This greatly reduced bytes going down the wire but some
 						// fidelity is lost
