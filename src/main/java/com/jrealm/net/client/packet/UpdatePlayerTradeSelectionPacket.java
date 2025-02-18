@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdatePlayerTradeSelectionPacket extends Packet {
-	@SerializableField(order = 0 , type = NetInventorySelection.class)
+	@SerializableField(order = 0, type = NetInventorySelection.class)
 	NetInventorySelection selection;
 
 	@Override
@@ -35,18 +35,20 @@ public class UpdatePlayerTradeSelectionPacket extends Packet {
 	public void serializeWrite(DataOutputStream stream) throws Exception {
 		IOService.writePacket(this, stream);
 	}
-	
+
 	public static UpdatePlayerTradeSelectionPacket fromSelection(Player player, PlayerUI ui) {
 		final Slots[] uiSlots = ui.getSlots(4, 12);
 		final Boolean[] selected = new Boolean[uiSlots.length];
-		for(int i = 0 ; i< uiSlots.length; i++){
+		for (int i = 0; i < uiSlots.length; i++) {
 			Slots slot = uiSlots[i];
-			if(slot==null) continue;
-			if(slot.isSelected()) {
-				selected[i]=true;
+			if (slot == null)
+				continue;
+			if (slot.isSelected()) {
+				selected[i] = true;
 			}
 		}
-		final NetInventorySelection updatedSelection = NetInventorySelection.builder().playerId(player.getId()).selection(selected).build();
+		final NetInventorySelection updatedSelection = NetInventorySelection.builder().playerId(player.getId())
+				.selection(selected).build();
 		return new UpdatePlayerTradeSelectionPacket(updatedSelection);
 	}
 }

@@ -183,7 +183,7 @@ public class ServerCommandHandler {
             if(tile==null) continue;
             tile.setTileId(newTileId);
         }
-        log.info("Player {} request command about.", target.getName());
+        log.info("Player {} request command tile.", target.getName());
     }
 
     @CommandHandler(value="help", description="This command")

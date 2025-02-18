@@ -33,17 +33,17 @@ import com.jrealm.net.core.converters.*;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@SuppressWarnings({"unused","rawtypes", "unchecked"})
+@SuppressWarnings({ "unused", "rawtypes", "unchecked" })
 public class IOService {
 	public static ModelMapper MAPPER = new ModelMapper();
 	private static final Lookup lookup = MethodHandles.lookup();
 	public static Map<Class<?>, List<PacketMappingInformation>> MAPPING_DATA = new HashMap<>();
+	
 	static {
 		MAPPER.addConverter(new ShortToEffectTypeConverter());
 		MAPPER.addConverter(new EffectTypeToShortConverter());
 		MAPPER.addConverter(new ByteToLootTierConverter());
 		MAPPER.addConverter(new LootTierToByteConverter());
-
 	}
 
 	public static <T> T readPacket(Class<? extends Packet> clazz, byte[] data) throws Exception {
@@ -53,8 +53,7 @@ public class IOService {
 		return readStream(clazz, dis);
 	}
 
-	public static <T> T readPacket(Class<? extends Packet> clazz, DataInputStream stream)
-			throws Exception {
+	public static <T> T readPacket(Class<? extends Packet> clazz, DataInputStream stream) throws Exception {
 		final byte packetIdRead = removeHeader(stream);
 		return readStream(clazz, stream);
 	}
@@ -86,14 +85,15 @@ public class IOService {
 				log.info("[WRITE] Begin write mapping for MODEL {} field {}", model.getClass(),
 						info.getPropertyHandle().varType());
 			final SerializableFieldType serializer = info.getSerializer();
-			if(info.isCollection()) {
-				final Object[] collection = (Object[]) info.getPropertyHandle().get(model);;
-				final int collectionLength = collection!=null?collection.length:0;
+			if (info.isCollection()) {
+				final Object[] collection = (Object[]) info.getPropertyHandle().get(model);
+				;
+				final int collectionLength = collection != null ? collection.length : 0;
 				stream0.writeInt(collectionLength);
 				for (int i = 0; i < collectionLength; i++) {
 					serializer.write(collection[i], stream0);
 				}
-			}else {
+			} else {
 				final Object obj = info.getPropertyHandle().get(model);
 				serializer.write(obj, stream0);
 			}
@@ -104,8 +104,7 @@ public class IOService {
 		return MAPPER.map(model, target);
 	}
 
-	public static <T> T readStreamRecursive(Class<?> clazz, DataInputStream stream, Object result)
-			throws Exception {
+	public static <T> T readStreamRecursive(Class<?> clazz, DataInputStream stream, Object result) throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
 		if (log.isDebugEnabled())
 			log.info("[READ] class {} begin. CurrentRessults = {}", clazz, result);
@@ -127,13 +126,14 @@ public class IOService {
 					log.info("[READ] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
 							info.getPropertyHandle().varType());
 				int collectionLength = stream.readInt();
-				Object[] collection = (Object[]) Array.newInstance(info.getPropertyHandle().varType().getComponentType(), collectionLength);
+				Object[] collection = (Object[]) Array
+						.newInstance(info.getPropertyHandle().varType().getComponentType(), collectionLength);
 				for (int i = 0; i < collectionLength; i++) {
 
 					final Object obj = serializer.read(stream);
 					collection[i] = obj;
 				}
-				
+
 				info.getPropertyHandle().set(result, collection);
 			} else {
 				final Object obj = serializer.read(stream);
@@ -215,7 +215,7 @@ public class IOService {
 	public static void mapSerializableData() throws Exception {
 		log.info("Loading classes to map packet data");
 		final List<Class<?>> packetsToMap = getClassesOnClasspath();
-		
+
 		for (Class<?> clazz : packetsToMap) {
 			if (!isStreamableClass(clazz))
 				continue;
@@ -281,14 +281,14 @@ public class IOService {
 
 	public static List<Class<?>> getClassesOnClasspath() throws Exception {
 		final List<Class<?>> classes = new ArrayList<>();
-		for(Class<?> clazz :  ClasspathInspector.getAllKnownClasses()) {
-			for(Annotation annotation : clazz.getAnnotations()) {
-				if(annotation instanceof Streamable) {
+		for (Class<?> clazz : ClasspathInspector.getAllKnownClasses()) {
+			for (Annotation annotation : clazz.getAnnotations()) {
+				if (annotation instanceof Streamable) {
 					classes.add(clazz);
 				}
 			}
-		}						
-		
+		}
+
 		return classes;
 	}
 
