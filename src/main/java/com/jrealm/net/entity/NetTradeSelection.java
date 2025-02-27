@@ -41,7 +41,6 @@ public class NetTradeSelection extends SerializableFieldType<NetTradeSelection> 
 		return new NetTradeSelection(p0Inv, p1Inv);
 	}
 
-
 	public void applyUpdate(NetTradeSelection playerSelection) {
 		this.player0Selection = playerSelection.getPlayer0Selection();
 		this.player1Selection = playerSelection.getPlayer1Selection();
