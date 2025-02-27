@@ -104,7 +104,8 @@ public class IOService {
 		return MAPPER.map(model, target);
 	}
 
-	public static <T> T readStreamRecursive(Class<?> clazz, DataInputStream stream, Object result) throws Exception {
+	// Nominate me for a nobel peace prize or somethin
+	public static <T> T readStream(Class<?> clazz, DataInputStream stream, Object result) throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
 		if (log.isDebugEnabled())
 			log.info("[READ] class {} begin. CurrentRessults = {}", clazz, result);
@@ -116,24 +117,24 @@ public class IOService {
 			result = packet;
 		}
 
+		// For each network serializable field in the class
 		for (PacketMappingInformation info : mappingInfo) {
 			if (log.isDebugEnabled())
 				log.info("[READ] Begin read mapping for MODEL {} field {}", clazz, info.getPropertyHandle().varType());
 
 			final SerializableFieldType<?> serializer = info.getSerializer();
+			// Basic collection handling (write collection length followed by each entity)
 			if (info.isCollection()) {
 				if (log.isDebugEnabled())
 					log.info("[READ] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
 							info.getPropertyHandle().varType());
-				int collectionLength = stream.readInt();
-				Object[] collection = (Object[]) Array
+				final int collectionLength = stream.readInt();
+				final Object[] collection = (Object[]) Array
 						.newInstance(info.getPropertyHandle().varType().getComponentType(), collectionLength);
 				for (int i = 0; i < collectionLength; i++) {
-
 					final Object obj = serializer.read(stream);
 					collection[i] = obj;
 				}
-
 				info.getPropertyHandle().set(result, collection);
 			} else {
 				final Object obj = serializer.read(stream);
@@ -144,13 +145,13 @@ public class IOService {
 	}
 
 	public static <T> T readStream(Class<?> clazz, DataInputStream stream) throws Exception {
-		return readStreamRecursive(clazz, stream, null);
+		return readStream(clazz, stream, null);
 	}
 
 	public static <T> T readStream(Class<?> clazz, byte[] stream) throws Exception {
 		final ByteArrayInputStream bis = new ByteArrayInputStream(stream);
 		final DataInputStream dis = new DataInputStream(bis);
-		return readStreamRecursive(clazz, dis, null);
+		return readStream(clazz, dis, null);
 	}
 
 	public static void addHeader(Packet packet, int dataSize, DataOutputStream stream) throws Exception {
@@ -212,9 +213,11 @@ public class IOService {
 		return shortArr;
 	}
 
+	// Map annotated Net entity members into an in memory map
+	// for runtime serdes
 	public static void mapSerializableData() throws Exception {
 		log.info("Loading classes to map packet data");
-		final List<Class<?>> packetsToMap = getClassesOnClasspath();
+		final List<Class<?>> packetsToMap = IOService.getClassesOnClasspath();
 
 		for (Class<?> clazz : packetsToMap) {
 			if (!isStreamableClass(clazz))
@@ -230,6 +233,7 @@ public class IOService {
 						final int order = serdesAnnotation.order();
 						SerializableFieldType<?> serializer = null;
 						try {
+							// Try to lookup private members within @Streamable classes
 							final Lookup tempLookup = MethodHandles.privateLookupIn(clazz, lookup);
 							final Class<? extends SerializableFieldType<?>> serializerType = serdesAnnotation.type();
 							final boolean isCollection = serdesAnnotation.isCollection();
@@ -252,11 +256,11 @@ public class IOService {
 					}
 				}
 			}
+			
 			if (mappingForClass.size() > 0) {
 				// Sort the properties to be mapped using the order provided in the annotation
-				// handles
-				// cases where the implementor wants to write class fields out of sequential
-				// order
+				// handles cases where the implementor wants to write class fields out 
+				// of sequential order
 				Collections.sort(mappingForClass, new Comparator<PacketMappingInformation>() {
 					@Override
 					public int compare(PacketMappingInformation info0, PacketMappingInformation info1) {
@@ -268,6 +272,7 @@ public class IOService {
 		}
 	}
 
+	// Check if the class is annotated @Streamable
 	private static boolean isStreamableClass(Class<?> clazz) {
 		boolean result = false;
 		for (Annotation annot : clazz.getDeclaredAnnotations()) {
@@ -278,21 +283,15 @@ public class IOService {
 		}
 		return result;
 	}
-
+	
+	// Load all @Streamable types into a list
 	public static List<Class<?>> getClassesOnClasspath() throws Exception {
 		final List<Class<?>> classes = new ArrayList<>();
 		for (Class<?> clazz : ClasspathInspector.getAllKnownClasses()) {
-			for (Annotation annotation : clazz.getAnnotations()) {
-				if (annotation instanceof Streamable) {
-					classes.add(clazz);
-				}
+			if(IOService.isStreamableClass(clazz)) {
+				classes.add(clazz);
 			}
 		}
-
 		return classes;
 	}
-
-	public static void main(String[] args) {
-	}
-
 }

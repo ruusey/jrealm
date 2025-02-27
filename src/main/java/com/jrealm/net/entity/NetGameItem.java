@@ -77,7 +77,6 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 		item.setTargetClass(this.targetClass);
 		item.setFameBonus(this.fameBonus);
 		return item;
-
 	}
 
 	public NetGameItem() {

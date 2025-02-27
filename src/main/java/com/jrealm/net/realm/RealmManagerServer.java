@@ -255,7 +255,7 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.error("Failed to sleep");
 		}
 	}
-	long sendCount = 0;
+
 	private void sendGameData() {
 		long startNanos = System.nanoTime();
 		final List<Packet> packetsToBroadcast = new ArrayList<>();
@@ -298,12 +298,13 @@ public class RealmManagerServer implements Runnable {
 
 				final OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
 				final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
+				
+				
+				// Globally sent packets
 				for (final Packet packet : packetsToBroadcast) {
 					packet.serializeWrite(dosToClient);
 				}
-				if(player.getName().equals("TradeTest")) {
-					int ten = 9;
-				}
+
 				for (final Packet packet : playerPackets) {
 					packet.serializeWrite(dosToClient);				
 				}
@@ -314,7 +315,7 @@ public class RealmManagerServer implements Runnable {
 		}
 		long nanosDiff = System.nanoTime() - startNanos;
 		log.debug("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double) nanosDiff / (double) 1000000l));
-		sendCount++;
+
 	}
 
 	// Enqueues outbound game packets every tick. Manages
@@ -328,7 +329,7 @@ public class RealmManagerServer implements Runnable {
 
 			// Prevent concurrent modification errors by acquiring a semaphore lease
 			// while we are building the game data for this tick
-			// realm ticking is global so each realm should recieve a new tick at
+			// realm ticking is global so each realm should receive a new tick at
 			// roughly the same time regardless of its depth.
 			this.acquireRealmLock();
 
@@ -807,16 +808,16 @@ public class RealmManagerServer implements Runnable {
 				// Get the annotation on the method
 				final CommandHandler commandToHandle = method.getDeclaredAnnotation(CommandHandler.class);
 				// Find the static method with given name in the target class
-				MethodHandle handleToHandler = null;
+				MethodHandle handlerMethod = null;
 				try {
-					handleToHandler = this.publicLookup.findStatic(ServerCommandHandler.class,
+					handlerMethod = this.publicLookup.findStatic(ServerCommandHandler.class,
 							method.getName(), mt);
 				}catch(Exception e) {
-					handleToHandler = this.publicLookup.findStatic(ServerTradeManager.class,
+					handlerMethod = this.publicLookup.findStatic(ServerTradeManager.class,
 							method.getName(), mt);
 				}
-				if (handleToHandler != null) {
-					ServerCommandHandler.COMMAND_CALLBACKS.put(commandToHandle.value(), handleToHandler);
+				if (handlerMethod != null) {
+					ServerCommandHandler.COMMAND_CALLBACKS.put(commandToHandle.value(), handlerMethod);
 					ServerCommandHandler.COMMAND_DESCRIPTIONS.put(commandToHandle.value(), commandToHandle);
 					log.info("Registered Command handler in class {}. Method: {}{}", method.getDeclaringClass(), method.getName(), mt.toString());
 				}
@@ -862,10 +863,9 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	// For packet callbacks requiring high performance we will invoke them in a
-	// functional manner using
-	// a hashmap to store the references. The server operator is encouraged to add
-	// auxilary packet
-	// handling functionality using the @PacketHandler annotation
+	// functional manner using hashmap to store the references. 
+	// The server operator is encouraged to add auxiliary packet handling 
+	// functionality using the @PacketHandler annotation
 	private void registerPacketCallbacks() {
 		this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), ServerGameLogic::handlePlayerMoveServer);
 		this.registerPacketCallback(PacketType.PLAYER_SHOOT.getPacketId(), ServerGameLogic::handlePlayerShootServer);
