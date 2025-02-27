@@ -150,7 +150,7 @@ public class DungeonGenerator {
 
 		if (yDiff > 0) {
 			for (int i = srcY; i < srcY + yDiff; i++) {
-				log.info("Filling Y walkway tile at {}, {}", srcX, i);
+				//log.info("Filling Y walkway tile at {}, {}", srcX, i);
 				targetLayer.setTileAt(i, destX, model);
 				try {
 					targetLayer.setTileAt(i, destX - 1, model0);
@@ -162,7 +162,7 @@ public class DungeonGenerator {
 			}
 		} else {
 			for (int i = srcY; i > (srcY + yDiff); i--) {
-				log.info("Filling Y walkway tile at {}, {}", srcX, i);
+				//log.info("Filling Y walkway tile at {}, {}", srcX, i);
 				targetLayer.setTileAt(i, destX, model);
 				try {
 					targetLayer.setTileAt(i, destX - 1, model0);

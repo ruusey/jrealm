@@ -126,6 +126,7 @@ public class UpdatePacket extends Packet {
 	}
 
 	public boolean equals(UpdatePacket other, boolean thinMatch) {
+		if(other==null) return false;
 		boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
 				&& (this.health == other.getHealth()) && (this.mana == other.getMana());
 
