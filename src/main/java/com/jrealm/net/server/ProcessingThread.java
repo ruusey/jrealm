@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ProcessingThread extends Thread {
-    private static final int BUFFER_CAPACITY = 65536 * 100;
+    private static final int BUFFER_CAPACITY = 65536 * 10;
 
     private Socket clientSocket;
     private SocketServer server;
