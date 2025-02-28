@@ -52,7 +52,7 @@ Applicable classes:
 `com.jrealm.game.realm.RealmManagerServer, com.jrealm.game.realm.RealmManagerClient, com.jrealm.net.server.ServerGameLogic, com.jrealm.net.server.ClientGameLogic`
 
 **JRealm** packet handlers exist on both the server and client realm managers to hook callbacks into recieved packets. In general packet callbacks are registered during the `registerPacketCallbacks()`
-routine of `RealmManagerClient` and `RealmManagerServer`. Packet callbacks methods will typically be a static method with signature `BiConsumer<RealmManager, Packet>` that is passed the target packet and Realm Manager on receiving the packet, although
+routine of `RealmManagerClient` and `RealmManagerServer`. Packet callback methods will typically be a static method with signature `BiConsumer<RealmManager, Packet>` that is passed the target packet and Realm Manager on receiving the packet, although
 any method matching this signature can be used as a packet callback. 
 <br />
 
