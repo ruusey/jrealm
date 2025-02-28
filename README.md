@@ -52,14 +52,14 @@ Applicable classes:
 `com.jrealm.game.realm.RealmManagerServer, com.jrealm.game.realm.RealmManagerClient, com.jrealm.net.server.ServerGameLogic, com.jrealm.net.server.ClientGameLogic`
 
 **JRealm** packet handlers exist on both the server and client realm managers to hook callbacks into recieved packets. In general packet callbacks are registered during the `registerPacketCallbacks()`
-routine of `RealmManagerClient` and `RealmManagerServer`. Packet callbacks methods will typically be a static method with signature `BiConsumer<RealmManager, Packet>` that is passed the target packet and Realm Manager on receiving the packet, although
+routine of `RealmManagerClient` and `RealmManagerServer`. Packet callback methods will typically be a static method with signature `BiConsumer<RealmManager, Packet>` that is passed the target packet and Realm Manager on receiving the packet, although
 any method matching this signature can be used as a packet callback. 
 <br />
 
 **As of JRealm 0.3.5**, developers can now make use of the **@PacketHandler(Class<? extends Packet> packetClass)** annotation to mark a method as a packet handler in server code. Generally
 The **@PacketHandler** annotation sacrifices performance for convenience as the reflection mechanism used to trigger such callbacks is computationally expensive.
 
-**Example (Register by mapping)**
+**Example (Register by mapping, high performance)**
 ```java
 // RealmManagerServer.java
 private void registerPacketCallbacks() {
@@ -86,7 +86,7 @@ public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet)
     }
 }
 ```
-**Example (Register by annotation)**
+**Example (Register by annotation,  ease  of use, intrroduces some but minimal performance overhead)**
 ```java
 @PacketHandler(TextPacket.class)
 public static void handleText0(RealmManagerServer mgr, Packet packet) {
