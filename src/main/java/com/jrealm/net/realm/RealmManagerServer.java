@@ -389,7 +389,7 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						if (this.transmitLoadPacket || this.disablePartialTransmission) {
+						if (this.transmitLoadPacket) {
 							// Get LoadPacket for this player
 							// Contains newly spawned bullets, entities, players
 							final LoadPacket loadPacket = realm
@@ -446,11 +446,14 @@ public class RealmManagerServer implements Runnable {
 							final ObjectMovePacket movePacket0 = realm
 									.getGameObjectsAsPackets(realm.getTileManager().getRenderViewPort(player.getValue()));
 							Set<Long> nearEnemyIds = new HashSet<>();
-							for (ObjectMovement m : movePacket0.getMovements()) {
-								if (m.getEntityType() == EntityType.ENEMY.getEntityTypeId()) {
-									nearEnemyIds.add(m.getEntityId());
+							if(movePacket0!=null) {
+								for (ObjectMovement m : movePacket0.getMovements()) {
+									if (m.getEntityType() == EntityType.ENEMY.getEntityTypeId()) {
+										nearEnemyIds.add(m.getEntityId());
+									}
 								}
 							}
+
 							if (nearEnemyIds.size() > 0) {
 								Map<Long, UpdatePacket> enemyUpdatePackets = new HashMap<>();
 								for (Long enemyId : nearEnemyIds) {
