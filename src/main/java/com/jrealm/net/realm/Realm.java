@@ -444,10 +444,10 @@ public class Realm {
     }
     
     public UpdatePacket getEnemyAsPacket(long enemyId) {
-        final Enemy p = this.enemies.get(enemyId);
+        final Enemy enemy = this.enemies.get(enemyId);
         UpdatePacket pack = null;
         try {
-            pack = UpdatePacket.from(p);
+            pack = UpdatePacket.from(enemy);
         } catch (Exception e) {
             Realm.log.error("Failed to create update packet from Enemy. Reason: {}", e);
         }

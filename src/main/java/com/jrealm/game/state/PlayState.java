@@ -3,6 +3,7 @@ package com.jrealm.game.state;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -64,6 +65,10 @@ public class PlayState extends GameState {
     public long lastShotTick = 0;
     public long lastAbilityTick = 0;
     public long playerId = -1l;
+    
+    private long lastSampleTime;
+    private long frames;
+    private long lastFrames;
 
     private Map<Cardinality, Boolean> lastDirectionMap;
     private boolean sentChat = false;
@@ -198,6 +203,12 @@ public class PlayState extends GameState {
             for (final LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
                 lc.setContentsChanged(false);
             }
+        }
+        this.frames++;
+        if((Instant.now().toEpochMilli()-lastSampleTime)>=1000) {
+        	this.lastFrames = frames;
+            this.lastSampleTime = Instant.now().toEpochMilli();
+            this.frames=0;
         }
     }
 
@@ -661,8 +672,8 @@ public class PlayState extends GameState {
 
         g.setColor(Color.white);
 
-//        String fps = GamePanel.oldFrameCount + " FPS";
-//        g.drawString(fps, 0 + (6 * 32), 32);
+        String fps = this.lastFrames + " FPS";
+        g.drawString(fps, 0 + (6 * 32), 32);
 //
 //        String tps = GamePanel.oldTickCount + " TPS";
 //        g.drawString(tps, 0 + (6 * 32), 64);

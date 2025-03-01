@@ -11,5 +11,4 @@ import com.jrealm.net.Packet;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PacketHandlerServer {
     public Class<? extends Packet> value ();
-    //public byte packetId();
 }

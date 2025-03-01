@@ -1,4 +1,5 @@
 package com.jrealm.game.util;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.Serializable;
@@ -17,7 +18,6 @@ import java.util.jar.JarFile;
  * @author P&aring;l Brattberg, brattberg@gmail.com
  * @see http://gist.github.com/pal
  */
-@SuppressWarnings("unchecked")
 public class ClasspathInspector {
 	static boolean DEBUG = false;
 
@@ -43,7 +43,7 @@ public class ClasspathInspector {
 		return matchingClasses;
 	}
 
-	public static List<Class<?>> getMatchingClasses(String validPackagePrefix, Class interfaceOrSuperclass) {
+	public static List<Class<?>> getMatchingClasses(String validPackagePrefix, Class<?> interfaceOrSuperclass) {
 		throw new IllegalStateException("Not yet implemented!");
 	}
 
@@ -75,17 +75,19 @@ public class ClasspathInspector {
 					JarEntry entry = en.nextElement();
 					if (entry.getName().endsWith("class")) {
 						String className = fromFileToClassName(entry.getName());
-						if(!className.contains("jrealm")) continue;
+						if (!className.contains("jrealm"))
+							continue;
 						log("\tgetClassesFromJarFile: found " + className);
 						try {
 							Class<?> claz = Class.forName(className);
 							classes.add(claz);
-						}catch(Exception e) {
-							log("failed to load class "+className);
+						} catch (Exception e) {
+							log("failed to load class " + className);
 						}
 
 					}
 				}
+				jar.close();
 			}
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to read classes from jar file: " + path, e);

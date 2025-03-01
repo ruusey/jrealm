@@ -46,6 +46,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
+import com.jrealm.game.entity.Monster;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.Effect;
@@ -141,9 +142,11 @@ public class RealmManagerServer implements Runnable {
 	private long tickSampleTime = 0;
 
 	// Disables the sending of LoadPacket and ObjectMovePacket every other tick
-	private boolean disablePartialTransmission = true;
+	private boolean disablePartialTransmission = false;
 	private boolean transmitMovement = false;
 	private boolean transmitLoadPacket = false;
+	private boolean transmitLoadMapPacket = false;
+	private boolean transmitPlayerUpdatePacket = false;
 
 	public RealmManagerServer() {
 		this.registerRealmDecorators();
@@ -372,22 +375,26 @@ public class RealmManagerServer implements Runnable {
 								}
 							}
 						}
-
-						// Get UpdatePacket for this player and all players in this players viewport
-						// Contains, player stat info, inventory, status effects, health and mana data
-						final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
-						// Only transmit this players update data if it has not been sent
-						// or if it has changed since last tick
-						if (this.playerUpdateState.get(player.getKey()) == null) {
-							this.playerUpdateState.put(player.getKey(), updatePacket);
-							this.enqueueServerPacket(player.getValue(), updatePacket);
-						} else {
-							final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
-							if (!oldUpdate.equals(updatePacket, false)) {
+						
+						
+						if(this.transmitPlayerUpdatePacket || this.disablePartialTransmission) {
+							// Get UpdatePacket for this player and all players in this players viewport
+							// Contains, player stat info, inventory, status effects, health and mana data
+							final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
+							// Only transmit this players update data if it has not been sent
+							// or if it has changed since last tick
+							if (this.playerUpdateState.get(player.getKey()) == null) {
 								this.playerUpdateState.put(player.getKey(), updatePacket);
 								this.enqueueServerPacket(player.getValue(), updatePacket);
+							} else {
+								final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
+								if (!oldUpdate.equals(updatePacket, false)) {
+									this.playerUpdateState.put(player.getKey(), updatePacket);
+									this.enqueueServerPacket(player.getValue(), updatePacket);
+								}
 							}
 						}
+						
 
 						if (this.transmitLoadPacket || this.disablePartialTransmission) {
 							// Get LoadPacket for this player
@@ -463,15 +470,15 @@ public class RealmManagerServer implements Runnable {
 									final UpdatePacket updatePacket0 = realm.getEnemyAsPacket(enemyId);
 									// Only transmit this players update data if it has not been sent
 									// or if it has changed since last tick
+									final UpdatePacket oldState = this.enemyUpdateState.get(enemyId);
 									boolean doSend = false;
 									if (this.enemyUpdateState.get(enemyId) == null) {
 										this.enemyUpdateState.put(enemyId, updatePacket0);
 										doSend = true;
-									} else if (!this.enemyUpdateState.get(enemyId).equals(updatePacket0, true)) {
+									} else if (!oldState.equals(updatePacket0, true)) {
 										this.enemyUpdateState.put(enemyId, updatePacket0);
 										doSend = true;
-									}
-
+									} 
 									if (doSend) {
 										this.enqueueServerPacket(player.getValue(), updatePacket0);
 									}
@@ -500,6 +507,8 @@ public class RealmManagerServer implements Runnable {
 				if(!this.disablePartialTransmission) {
 					this.transmitLoadPacket = !this.transmitLoadPacket;
 					this.transmitMovement = !this.transmitMovement;
+					this.transmitLoadMapPacket = !this.transmitLoadMapPacket;
+					this.transmitPlayerUpdatePacket = !this.transmitPlayerUpdatePacket;
 				}
 
 
@@ -878,7 +887,7 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(PacketType.HEARTBEAT.getPacketId(), ServerGameLogic::handleHeartbeatServer);
 		this.registerPacketCallback(PacketType.TEXT.getPacketId(), ServerGameLogic::handleTextServer);
 		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), ServerGameLogic::handleCommandServer);
-		this.registerPacketCallback(PacketType.LOAD_MAP.getPacketId(), ServerGameLogic::handleLoadMapServer);
+		//this.registerPacketCallback(PacketType.LOAD_MAP.getPacketId(), ServerGameLogic::handleLoadMapServer);
 		this.registerPacketCallback(PacketType.USE_ABILITY.getPacketId(), ServerGameLogic::handleUseAbilityServer);
 		this.registerPacketCallback(PacketType.MOVE_ITEM.getPacketId(), ServerGameLogic::handleMoveItemServer);
 		this.registerPacketCallback(PacketType.USE_PORTAL.getPacketId(), ServerGameLogic::handleUsePortalServer);
@@ -917,7 +926,7 @@ public class RealmManagerServer implements Runnable {
 			final Runnable processGameObjects = () -> {
 				final GameObject[] gameObject = realm.getAllGameObjects();
 				for (int i = 0; i < gameObject.length; i++) {
-					if (gameObject[i] instanceof Enemy) {
+					if (gameObject[i] instanceof Enemy || gameObject[i] instanceof Monster) {
 						final Enemy enemy = ((Enemy) gameObject[i]);
 						enemy.update(realm.getRealmId(), this, time);
 						enemy.removeExpiredEffects();

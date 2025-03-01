@@ -98,8 +98,8 @@ public class UpdatePacket extends Packet {
 		test.setPlayerName("enemy[" + enemy.getId() + "]");
 		test.setStats(IOService.mapModel(enemy.getStats(), NetStats.class));
 		test.setInventory(lootToDrop.toArray(new NetGameItem[0]));
-		test.setEffectTimes(enemy.getEffectTimes());
-		test.setEffectIds(enemy.getEffectIds());
+		test.setEffectTimes(enemy.getEffectTimes().clone());
+		test.setEffectIds(enemy.getEffectIds().clone());
 		test.setId(PacketType.UPDATE.getPacketId());
 		test.setExperience(1l);
 		return test;
@@ -118,8 +118,8 @@ public class UpdatePacket extends Packet {
 		test.setPlayerName(player.getName());
 		test.setStats(IOService.mapModel(player.getStats(), NetStats.class));
 		test.setInventory(IOService.mapModel(player.getInventory(), NetGameItem[].class));
-		test.setEffectTimes(player.getEffectTimes());
-		test.setEffectIds(player.getEffectIds());
+		test.setEffectTimes(player.getEffectTimes().clone());
+		test.setEffectIds(player.getEffectIds().clone());
 		test.setExperience(player.getExperience());
 		test.setId(PacketType.UPDATE.getPacketId());
 		return test;
@@ -160,7 +160,6 @@ public class UpdatePacket extends Packet {
 		}
 		if (thinMatch) {
 			inv = true;
-			effects = true;
 		}
 		
 		boolean expEqual = this.experience == other.getExperience();

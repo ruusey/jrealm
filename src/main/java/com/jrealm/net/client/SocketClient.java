@@ -96,10 +96,10 @@ public class SocketClient implements Runnable {
                     }
                     this.currentBytesRecieved += packetLength;
                     this.remoteBufferIndex -= packetLength;
-                    Class<? extends Packet> packetClass = PacketType.valueOf(packetId).getX();
-                    Packet nPacket = IOService.readStream(packetClass, packetBytes);
-                    nPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
-                    this.inboundPacketQueue.add(nPacket);
+                    final Class<? extends Packet> packetClass = PacketType.valueOf(packetId).getX();
+                    final Packet newPacket = IOService.readStream(packetClass, packetBytes);
+                    newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+                    this.inboundPacketQueue.add(newPacket);
                 }
             }
         } catch (Exception e) {

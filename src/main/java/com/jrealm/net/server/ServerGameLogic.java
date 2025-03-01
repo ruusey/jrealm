@@ -269,7 +269,7 @@ public class ServerGameLogic {
 			if (player.hasEffect(EffectType.SPEEDY)) {
 				dex = dex * 1.5;
 			}
-			canShoot = ((System.currentTimeMillis() - realm.getPlayerLastShotTime().get(player.getId())) > (1000
+			canShoot = ((Instant.now().toEpochMilli() - realm.getPlayerLastShotTime().get(player.getId())) > (1000
 					/ dex));
 			if (canShoot && !player.hasEffect(EffectType.STUNNED)) {
 				realm.getPlayerLastShotTime().put(player.getId(), Instant.now().toEpochMilli());
@@ -318,7 +318,10 @@ public class ServerGameLogic {
 			ServerGameLogic.log.error("Failed to send welcome message. Reason: {}", e);
 		}
 	}
-
+	
+	private static final byte LOGIN_REQUEST_MSG_CODE = 1;
+	private static final byte SERVER_COMMAND_MSG_CODE = 3;
+	
 	public static void handleCommandServer(RealmManagerServer mgr, Packet packet) {
 		final CommandPacket commandPacket = (CommandPacket) packet;
 		if (commandPacket.getCommandId() != 1 && !validateCallingPlayer(mgr, packet, commandPacket.getPlayerId())) {
@@ -328,10 +331,10 @@ public class ServerGameLogic {
 				commandPacket.getPlayerId(), commandPacket.getCommand(), commandPacket.getSrcIp());
 		try {
 			switch (commandPacket.getCommandId()) {
-			case 1:
+			case LOGIN_REQUEST_MSG_CODE:
 				ServerGameLogic.doLogin(mgr, CommandType.fromPacket(commandPacket), commandPacket);
 				break;
-			case 3:
+			case SERVER_COMMAND_MSG_CODE:
 				ServerCommandHandler.invokeCommand(mgr, commandPacket);
 				break;
 			}
@@ -353,10 +356,10 @@ public class ServerGameLogic {
 		}
 	}
 
-	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {
-		@SuppressWarnings("unused")
-		final LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
-	}
+//	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {
+//		@SuppressWarnings("unused")
+//		final LoadMapPacket loadMapPacket = (LoadMapPacket) packet;
+//	}
 
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
 		CommandPacket commandResponse = null;
@@ -409,7 +412,8 @@ public class ServerGameLogic {
 			final Vector2f playerPos = new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 					(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE);
 			final Player player = new Player(assignedId, playerPos, GlobalConstants.PLAYER_SIZE, cls);
-
+			final Realm targetRealm = mgr.getTopRealm();
+			final ProcessingThread userThread = mgr.getServer().getClients().get(command.getSrcIp());
 			player.setAccountUuid(accountUuid);
 			player.setCharacterUuid(targetCharacter.getCharacterUuid());
 			player.equipSlots(loadedEquipment);
@@ -417,10 +421,10 @@ public class ServerGameLogic {
 			player.setName(accountName);
 			player.setHeadless(false);
 			player.addEffect(EffectType.INVINCIBLE, 3000);
-			Realm targetRealm = mgr.getTopRealm();
 			player.setPos(targetRealm.getTileManager().getSafePosition());
 			targetRealm.addPlayer(player);
-			mgr.getServer().getClients().get(command.getSrcIp()).setHandshakeComplete(true);
+			// Begin processing.
+			userThread.setHandshakeComplete(true);
 
 			final LoginResponseMessage message = LoginResponseMessage.builder()
 					.classId(targetCharacter.getCharacterClass()).spawnX(player.getPos().x).spawnY(player.getPos().y)

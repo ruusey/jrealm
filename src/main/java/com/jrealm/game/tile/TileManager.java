@@ -394,10 +394,7 @@ public class TileManager {
 
     public void mergeMap(LoadMapPacket packet) {
         // Resize the map on dimension change
-    	if(packet==null) {
-    		int ii=00;
-    	}
-        if(getMapHeight()!=packet.getMapHeight() || getMapWidth()!=packet.getMapWidth()) {
+        if(this.getMapHeight()!=packet.getMapHeight() || this.getMapWidth()!=packet.getMapWidth()) {
            MapModel model = GameDataManager.MAPS.get((int)packet.getMapId());
            TileMap baseLayer = new TileMap((short) model.getMapId(), model.getTileSize(), model.getWidth(),
                    model.getHeight());
@@ -450,14 +447,17 @@ public class TileManager {
                 }
             }
         }
-       List<List<Tile>> i =  Partition.ofSize(toRender, 64);
-        i.forEach(tile->{
-            Runnable r = () ->{
-                for(Tile t : tile) {
-                    t.render(g);
-                }
-            };
-            WorkerThread.submitAndRun(r);
-        });
+        for(Tile tile : toRender) {
+        	tile.render(g);
+        }
+//       List<List<Tile>> i =  Partition.ofSize(toRender, 64);
+//        i.forEach(tile->{
+//            Runnable r = () ->{
+//                for(Tile t : tile) {
+//                    t.render(g);
+//                }
+//            };
+//            WorkerThread.submitAndRun(r);
+//        });
     }
 }

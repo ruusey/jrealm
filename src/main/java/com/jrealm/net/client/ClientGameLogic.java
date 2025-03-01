@@ -16,7 +16,6 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.EffectText;
 import com.jrealm.game.util.PacketHandlerClient;
-import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
 import com.jrealm.net.client.packet.LoadMapPacket;
@@ -44,8 +43,6 @@ import com.jrealm.net.messaging.PlayerAccountMessage;
 import com.jrealm.net.messaging.ServerErrorMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
-import com.jrealm.net.realm.RealmManagerServer;
-import com.jrealm.net.server.ServerTradeManager;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
@@ -268,30 +265,33 @@ public class ClientGameLogic {
 		try {
 			cli.getState().getPui().enqueueChat(textPacket.clone());
 		} catch (Exception e) {
-			ClientGameLogic.log.error("[CLIENT] Failed to response to initial text packet. Reason: {}", e.getMessage());
+			ClientGameLogic.log.error("[CLIENT] Failed to handle text packet. Reason: {}", e.getMessage());
 		}
 	}
-
+	
+	// Client command codes for readability
+	private static final byte LOGIN_RESPONSE_MSG_CODE = 2;
+	private static final byte SERVER_ERROR_MSG_CODE = 4;
+	private static final byte PLAYER_ACCOUNT_MSG_CODE = 5;
+	// Switched command packet message type handler
 	public static void handleCommandClient(RealmManagerClient cli, Packet packet) {
 		final CommandPacket commandPacket = (CommandPacket) packet;
 		ClientGameLogic.log.info("[CLIENT] Recieved Command Packet for Player {} Command={}",
 				commandPacket.getPlayerId(), commandPacket.getCommand());
 		try {
 			switch (commandPacket.getCommandId()) {
-			case 2:
+			case LOGIN_RESPONSE_MSG_CODE:
 				final LoginResponseMessage loginResponse = CommandType.fromPacket(commandPacket);
 				ClientGameLogic.doLoginResponse(cli, loginResponse);
 				break;
-			case 4:
+			case SERVER_ERROR_MSG_CODE:
 				final ServerErrorMessage serverError = CommandType.fromPacket(commandPacket);
 				ClientGameLogic.handleServerError(cli, serverError);
 				break;
-			case 5:
+			case PLAYER_ACCOUNT_MSG_CODE:
 				final PlayerAccountMessage playerAccount = CommandType.fromPacket(commandPacket);
 				cli.getState().setAccount(playerAccount.getAccount());
-				// cli.getState().getGameStateManager().add(GameStateManager.PAUSE);
 				break;
-
 			}
 		} catch (Exception e) {
 			ClientGameLogic.log.error("[CLIENT] Failed to handle client command packet. Reason: {}", e.getMessage());
@@ -346,7 +346,7 @@ public class ClientGameLogic {
 		} else {
 			final Enemy enemyToUpdate = cli.getRealm().getEnemy((updatePacket.getPlayerId()));
 			enemyToUpdate.applyUpdate(updatePacket, cli.getState());
-			log.info("[CLIENT] Recieved update for enemy {}", enemyToUpdate);
+			log.info("[CLIENT] Recieved update for enemy {}", updatePacket);
 		}
 	}
 
@@ -375,7 +375,7 @@ public class ClientGameLogic {
 				cli.getState().getPui().enqueueChat(packet);
 			}
 		} catch (Exception e) {
-			ClientGameLogic.log.error("[CLIENT] Failed to response to login response. Reason: {}", e.getMessage());
+			ClientGameLogic.log.error("[CLIENT] Failed to respond to login response. Reason: {}", e.getMessage());
 		}
 	}
 }
