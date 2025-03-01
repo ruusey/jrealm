@@ -39,7 +39,7 @@ public class ServerCommandHandler {
     public static final Map<String, MethodHandle> COMMAND_CALLBACKS = new HashMap<>();
     public static final Map<String, CommandHandler> COMMAND_DESCRIPTIONS = new HashMap<>();
     public static final Set<String> ADMIN_RESTRICTED_COMMANDS = new HashSet<>();
-    
+    public static final Set<Long> ADMIN_USER_CACHE = new HashSet<>();
     public static void invokeCommand(RealmManagerServer mgr, CommandPacket command) throws Exception {
         final ServerCommandMessage message = CommandType.fromPacket(command);
         final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
@@ -48,13 +48,17 @@ public class ServerCommandHandler {
         // Look up this players account to see if they are allowed
         // to run Admin server commands
         try {
-        	if(ADMIN_RESTRICTED_COMMANDS.contains(message.getCommand().toLowerCase())) {
-        		log.info("Player {} attempting to invvoke admin restricted command '{}'... validating authority", fromPlayer.getName(), message.getCommand());
+        	if(ADMIN_RESTRICTED_COMMANDS.contains(message.getCommand().toLowerCase()) || !ADMIN_USER_CACHE.contains(fromPlayer.getId())) {
+        	  log.info("Player {} attempting to invvoke admin restricted command '{}'... validating authority", fromPlayer.getName(), message.getCommand());
               final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE.executeGet("/admin/account/" + fromPlayer.getAccountUuid(), null, AccountDto.class);
         		// has Subscription 'ADMIN'
-              if (!playerAccount.isAdmin())
-                  throw new IllegalStateException(
+              if (!playerAccount.isAdmin()) {
+            	  throw new IllegalStateException(
                           "Player " + playerAccount.getAccountName() + " is not allowed to use Admin commands.");
+              }else {
+            	  ADMIN_USER_CACHE.add(fromPlayer.getId());
+            	  log.info("Player {} attempting to invvoke admin restricted command '{}'... validating authority", fromPlayer.getName(), message.getCommand());
+              }
         	}
             
             final MethodHandle methodHandle = COMMAND_CALLBACKS.get(message.getCommand().toLowerCase());
@@ -98,6 +102,7 @@ public class ServerCommandHandler {
 			boolean removed = false;
 			if (targetAccount.isAdmin()) {
 				targetAccount.removeAdminSubscription();
+				ADMIN_USER_CACHE.remove(toOp.getId());
 				removed = true;
 			} else {
 				targetAccount.addAdminSubscription();

@@ -43,9 +43,20 @@ public class SocketServer implements Runnable {
                     socket.setTcpNoDelay(true);
 
                     String remoteAddr = socket.getInetAddress().getHostAddress();
-                    ProcessingThread processingThread = new ProcessingThread(this, socket);
-                    this.clients.put(remoteAddr, processingThread);
-                    processingThread.start();
+                    if(this.clients.get(remoteAddr+",0")!=null) {
+                    	final String newConnection = remoteAddr+",1";
+                    	
+                        ProcessingThread processingThread = new ProcessingThread(this, socket);
+                        this.clients.put(newConnection, processingThread);
+
+                        processingThread.start();
+
+                    }else {
+                        ProcessingThread processingThread = new ProcessingThread(this, socket);
+                        this.clients.put(remoteAddr+",0", processingThread);
+                        processingThread.start();
+                    }
+
                     SocketServer.log.info("Server accepted new connection from Remote Address {}", remoteAddr);
                 } catch (Exception e) {
                     SocketServer.log.error("Failed to accept incoming socket connection, exiting...", e);
