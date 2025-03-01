@@ -77,6 +77,7 @@ import com.jrealm.game.tile.decorators.Beach0Decorator;
 import com.jrealm.game.tile.decorators.Grasslands0Decorator;
 import com.jrealm.game.tile.decorators.RealmDecorator;
 import com.jrealm.game.tile.decorators.RealmDecoratorBase;
+import com.jrealm.game.util.AdminRestrictedCommand;
 import com.jrealm.game.util.CommandHandler;
 import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.game.util.TimedWorkerThread;
@@ -366,7 +367,6 @@ public class RealmManagerServer implements Runnable {
 						final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(),
 								(short) realm.getMapId(), realm.getTileManager().getMapWidth(),
 								realm.getTileManager().getMapHeight(), netTilesForPlayer);
-
 						// If we dont have load map state for this player, map it and
 						// then transmit all the tiles
 						if (this.playerLoadMapState.get(player.getKey()) == null) {
@@ -376,8 +376,10 @@ public class RealmManagerServer implements Runnable {
 							// Get the previous loadMap packet and check for Delta,
 							// only send the delta to the client
 							final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
-
-							if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
+							// Map change... send all viewport tiles
+							if((oldLoadMapPacket!=null && newLoadMapPacket!=null) && newLoadMapPacket.getMapId()!=oldLoadMapPacket.getMapId()) {
+								this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
+							}else if(!oldLoadMapPacket.equals(newLoadMapPacket)){
 								final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
 								this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
 								if (loadMapDiff != null) {
@@ -411,6 +413,7 @@ public class RealmManagerServer implements Runnable {
 							// Contains newly spawned bullets, entities, players
 							final LoadPacket loadPacket = realm
 									.getLoadPacket(realm.getTileManager().getRenderViewPort(player.getValue()));
+							
 							// Only transmit the LoadPacket if its state is changed (it can potentially be
 							// large).
 							// If the state is changed, only transmit the DELTA data
@@ -832,6 +835,8 @@ public class RealmManagerServer implements Runnable {
 			try {
 				// Get the annotation on the method
 				final CommandHandler commandToHandle = method.getDeclaredAnnotation(CommandHandler.class);
+				final AdminRestrictedCommand isAdminRestricted = method.getDeclaredAnnotation(AdminRestrictedCommand.class);
+
 				// Find the static method with given name in the target class
 				MethodHandle handlerMethod = null;
 				try {
@@ -844,7 +849,11 @@ public class RealmManagerServer implements Runnable {
 				if (handlerMethod != null) {
 					ServerCommandHandler.COMMAND_CALLBACKS.put(commandToHandle.value(), handlerMethod);
 					ServerCommandHandler.COMMAND_DESCRIPTIONS.put(commandToHandle.value(), commandToHandle);
-					log.info("Registered Command handler in class {}. Method: {}{}", method.getDeclaringClass(), method.getName(), mt.toString());
+					if(isAdminRestricted!=null) {
+						ServerCommandHandler.ADMIN_RESTRICTED_COMMANDS.add(commandToHandle.value());
+						log.info("Command {} registered as Admin Restricted", commandToHandle.value());
+					}
+					log.info("Registered Command handler in {}. Method: {}{}", method.getDeclaringClass(), method.getName(), mt.toString());
 				}
 			} catch (Exception e) {
 				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);

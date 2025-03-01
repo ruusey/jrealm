@@ -3,8 +3,10 @@ package com.jrealm.net.server;
 import java.lang.invoke.MethodHandle;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.jrealm.account.dto.AccountDto;
@@ -20,6 +22,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.tile.Tile;
+import com.jrealm.game.util.AdminRestrictedCommand;
 import com.jrealm.game.util.CommandHandler;
 import com.jrealm.game.util.GameObjectUtils;
 import com.jrealm.net.messaging.CommandType;
@@ -35,7 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ServerCommandHandler {
     public static final Map<String, MethodHandle> COMMAND_CALLBACKS = new HashMap<>();
     public static final Map<String, CommandHandler> COMMAND_DESCRIPTIONS = new HashMap<>();
-
+    public static final Set<String> ADMIN_RESTRICTED_COMMANDS = new HashSet<>();
+    
     public static void invokeCommand(RealmManagerServer mgr, CommandPacket command) throws Exception {
         final ServerCommandMessage message = CommandType.fromPacket(command);
         final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
@@ -43,19 +47,20 @@ public class ServerCommandHandler {
         final Player fromPlayer = playerRealm.getPlayer(fromPlayerId);
         // Look up this players account to see if they are allowed
         // to run Admin server commands
-//        final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE
-//                .executeGet("/admin/account/" + fromPlayer.getAccountUuid(), null, AccountDto.class);
-
         try {
-            // has Subscription 'ADMIN'
-//            if (!playerAccount.isAdmin())
-//                throw new IllegalStateException(
-//                        "Player " + playerAccount.getAccountName() + " is not allowed to use Admin commands.");
-
-            MethodHandle methodHandle = COMMAND_CALLBACKS.get(message.getCommand().toLowerCase());
+        	if(ADMIN_RESTRICTED_COMMANDS.contains(message.getCommand().toLowerCase())) {
+        		log.info("Player {} attempting to invvoke admin restricted command '{}'... validating authority", fromPlayer.getName(), message.getCommand());
+              final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE.executeGet("/admin/account/" + fromPlayer.getAccountUuid(), null, AccountDto.class);
+        		// has Subscription 'ADMIN'
+              if (!playerAccount.isAdmin())
+                  throw new IllegalStateException(
+                          "Player " + playerAccount.getAccountName() + " is not allowed to use Admin commands.");
+        	}
+            
+            final MethodHandle methodHandle = COMMAND_CALLBACKS.get(message.getCommand().toLowerCase());
 
             if (methodHandle == null) {
-                CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 501,
+                final CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 501,
                         "Unknown command " + message.getCommand());
                 mgr.enqueueServerPacket(fromPlayer, errorResponse);
             } else {
@@ -69,6 +74,7 @@ public class ServerCommandHandler {
     }
     
 	@CommandHandler(value = "op", description = "Promote a user to administrator. Or demote them back to a regular user")
+	@AdminRestrictedCommand
 	public static void invokeOpUser(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs() == null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /op {PLAYER_NAME}");
@@ -110,6 +116,7 @@ public class ServerCommandHandler {
     // invoking Player object
     // and the ServerCommand message object.
     @CommandHandler(value="stat", description="Modify or max individual Player stats")
+	@AdminRestrictedCommand
     public static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
         if (message.getArgs() == null || message.getArgs().size() < 1)
             throw new IllegalArgumentException("Usage: /stat {STAT_NAME} {STAT_VALUE}");
@@ -151,6 +158,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="testplayers", description="Spawns a variable number of headless test players at the user")
+	@AdminRestrictedCommand
     public static void invokeSpawnTest(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() != 1)
@@ -173,6 +181,7 @@ public class ServerCommandHandler {
     }
     
     @CommandHandler(value="tile", description="Change all tiles in the viewport to the provided tile ID")
+	@AdminRestrictedCommand
     public static void invokeSetTile(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         final Short newTileId = Short.parseShort(message.getArgs().get(0));
@@ -203,6 +212,7 @@ public class ServerCommandHandler {
     }
     
     @CommandHandler(value="heal", description="Restores all Player health and mp")
+	@AdminRestrictedCommand
     public static void invokePlayerHeal(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         target.setHealth(target.getComputedStats().getHp());
@@ -211,6 +221,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="spawn", description="Spawn a given Enemy by it's id")
+	@AdminRestrictedCommand
     public static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() != 1)
@@ -223,6 +234,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="seteffect", description="Add or remove Player stat effects")
+	@AdminRestrictedCommand
     public static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
@@ -264,6 +276,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="item", description="Spawn a given Item by its id")
+	@AdminRestrictedCommand
     public static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
