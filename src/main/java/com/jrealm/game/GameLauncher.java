@@ -163,7 +163,11 @@ public class GameLauncher {
 				break;
 			}
 			
-		} catch (Exception e) {
+		} catch (IndexOutOfBoundsException e) {
+			log.error("[CLIENT] Automatically logged in as user {}", SocketClient.PLAYER_EMAIL);
+			JOptionPane.showMessageDialog(loginPanel.getFrame(), "Automatic login as "+SocketClient.PLAYER_EMAIL+" successful");
+			//System.exit(-1);
+		}catch (Exception e) {
 			log.error("[CLIENT] Failed to perform login and account fetch. Reason: {}", e.getMessage());
 			JOptionPane.showMessageDialog(loginPanel.getFrame(), e.getMessage());
 			//System.exit(-1);

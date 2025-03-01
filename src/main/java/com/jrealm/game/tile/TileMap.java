@@ -99,4 +99,33 @@ public class TileMap {
             t.render(g);
         }
     }
+    
+    @SuppressWarnings("unused")
+	private Tile[][] to2dArray(Tile[] tiles){
+    	Tile[][] result = new Tile[maxY(tiles)][maxX(tiles)];
+    	for(Tile t : tiles) {
+    		result[(int) (t.getPos().y/t.getSize())][(int) (t.getPos().x/t.getSize())] = t;
+    	}
+    	return result;
+    }
+    
+    private int maxX(Tile[] tiles) {
+    	Integer best = Integer.MIN_VALUE;
+    	for(Tile tile : tiles) {
+    		if(tile.getPos().x>best) {
+    			best = (int) tile.getPos().x;
+    		}
+    	}
+    	return best;
+    }
+    
+    private int maxY(Tile[] tiles) {
+    	Integer best = Integer.MIN_VALUE;
+    	for(Tile tile : tiles) {
+    		if(tile.getPos().y>best) {
+    			best = (int) tile.getPos().y;
+    		}
+    	}
+    	return best;
+    }
 }

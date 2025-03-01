@@ -141,7 +141,7 @@ public class RealmManagerServer implements Runnable {
 	private long tickSampleTime = 0;
 
 	// Disables the sending of LoadPacket and ObjectMovePacket every other tick
-	private boolean disablePartialTransmission = false;
+	private boolean disablePartialTransmission = true;
 	private boolean transmitMovement = false;
 	private boolean transmitLoadPacket = false;
 
@@ -389,7 +389,7 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						if (this.transmitLoadPacket) {
+						if (this.transmitLoadPacket || this.disablePartialTransmission) {
 							// Get LoadPacket for this player
 							// Contains newly spawned bullets, entities, players
 							final LoadPacket loadPacket = realm
@@ -413,6 +413,9 @@ public class RealmManagerServer implements Runnable {
 									final UnloadPacket unloadDelta = oldLoad.difference(loadPacket);
 									if (unloadDelta.isNotEmpty()) {
 										this.enqueueServerPacket(player.getValue(), unloadDelta);
+										for(long unloadedEnemy : unloadDelta.getEnemies()) {
+											this.enemyUpdateState.remove(unloadedEnemy);
+										}
 									}
 								}
 							}
@@ -1428,6 +1431,9 @@ public class RealmManagerServer implements Runnable {
 		this.playerLoadMapState.remove(playerId);
 		this.playerObjectMoveState.remove(playerId);
 		this.playerAbilityState.remove(playerId);
+		this.playerLoadMapState.remove(playerId);
+		this.playerLastHeartbeatTime.remove(playerId);
+		this.playerGroundDamageState.remove(playerId);
 	}
 
 	public PortalModel getPortalToDepth(int targetDepth) {
