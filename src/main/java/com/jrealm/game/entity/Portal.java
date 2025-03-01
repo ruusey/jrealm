@@ -85,33 +85,6 @@ public class Portal {
         this.expires = Long.MAX_VALUE;
     }
 
-    //@Override
-    public void write(DataOutputStream stream) throws Exception {
-        stream.writeLong(this.id);
-        stream.writeShort(this.portalId);
-        stream.writeLong(this.fromRealmId);
-        stream.writeLong(this.toRealmId);
-        stream.writeLong(this.expires);
-        stream.writeFloat(this.pos.x);
-        stream.writeFloat(this.pos.y);
-    }
-
-    //@Override
-    public Portal read(DataInputStream stream) throws Exception {
-        final long id = stream.readLong();
-        final short portalId = stream.readShort();
-        final long fromRealmId = stream.readLong();
-        final long toRealmId = stream.readLong();
-        final long expires = stream.readLong();
-        final float posX = stream.readFloat();
-        final float posY = stream.readFloat();
-        final Portal newPortal = new Portal(id, portalId, new Vector2f(posX, posY));
-        newPortal.setExpires(expires);
-        newPortal.setFromRealmId(fromRealmId);
-        newPortal.setToRealmId(toRealmId);
-        return newPortal;
-    }
-
     public boolean equals(Portal other) {
         return (this.id == other.getId()) && (this.portalId == other.getPortalId())
                 && this.fromRealmId == other.getFromRealmId() && this.getToRealmId() == other.getToRealmId()

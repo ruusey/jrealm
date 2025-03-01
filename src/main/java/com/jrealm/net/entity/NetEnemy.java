@@ -18,7 +18,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @Streamable
 @AllArgsConstructor
@@ -45,14 +44,12 @@ public class NetEnemy extends SerializableFieldType<NetEnemy>{
 	}
 
 	@Override
-	public void write(NetEnemy value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
-		
+	public int write(NetEnemy value, DataOutputStream stream) throws Exception {
+		return IOService.writeStream(value, stream);
 	}
 	
-	
 	public Enemy asEnemy() {
-		Enemy e = new Enemy();
+		final Enemy e = new Enemy();
 		e.setId(this.getId());
 		e.setEnemyId(this.getEnemyId());
 		e.setWeaponId(this.getWeaponId());
@@ -60,7 +57,6 @@ public class NetEnemy extends SerializableFieldType<NetEnemy>{
 		e.setPos(this.getPos());
 		e.setDx(this.getDX());
 		e.setDy(this.getDY());
-		
 		return e;
 	}
 }

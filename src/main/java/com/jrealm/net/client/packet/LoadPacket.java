@@ -77,8 +77,8 @@ public class LoadPacket extends Packet {
     }
 
     @Override
-    public void serializeWrite(DataOutputStream stream) throws Exception {
-       IOService.writePacket(this, stream);
+    public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
     }
 
     public static LoadPacket from(Player[] players, LootContainer[] loot, Bullet[] bullets, Enemy[] enemies,

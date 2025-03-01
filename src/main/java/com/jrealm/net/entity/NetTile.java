@@ -15,7 +15,6 @@ import com.jrealm.net.core.nettypes.SerializableShort;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
@@ -43,8 +42,8 @@ public class NetTile extends SerializableFieldType<NetTile> {
 	}
 
 	@Override
-	public void write(NetTile value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+	public int write(NetTile value, DataOutputStream stream) throws Exception {
+		return IOService.writeStream(value, stream);
 	}
 
     public static NetTile from(Tile tile, TileModel model, byte layer, int xIndex, int yIndex) {

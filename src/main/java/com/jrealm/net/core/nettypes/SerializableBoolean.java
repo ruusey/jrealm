@@ -3,6 +3,7 @@ package com.jrealm.net.core.nettypes;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.net.NetConstants;
 import com.jrealm.net.core.SerializableFieldType;
 
 public class SerializableBoolean extends SerializableFieldType<Boolean> {
@@ -17,8 +18,9 @@ public class SerializableBoolean extends SerializableFieldType<Boolean> {
 	}
 
 	@Override
-	public void write(Boolean value, DataOutputStream stream) throws Exception {
+	public int write(Boolean value, DataOutputStream stream) throws Exception {
 		final Boolean toWrite = value == null ? false : value;
 		stream.writeBoolean(toWrite);
+		return NetConstants.BOOLEAN_LENGTH;
 	}
 }

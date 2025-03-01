@@ -47,8 +47,8 @@ public class HeartbeatPacket extends Packet {
     }
 
     @Override
-    public void serializeWrite(DataOutputStream stream) throws Exception {
-    	IOService.writePacket(this, stream);
+    public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
     }
 
     public static HeartbeatPacket from(long playerId, long timestamp) throws Exception {

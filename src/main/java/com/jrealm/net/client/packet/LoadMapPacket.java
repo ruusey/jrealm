@@ -1,12 +1,9 @@
 package com.jrealm.net.client.packet;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
@@ -50,32 +47,17 @@ public class LoadMapPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-    	
-    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-    	final DataInputStream dis = new DataInputStream(bis);
-        if ((dis == null) || (dis.available() < 5))
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");
-     
-    	LoadMapPacket readPacket = IOService.readPacket(getClass(), dis);
-    	assign(readPacket);
-    }
-    
-    public void assign(LoadMapPacket packet) {
-    	this.realmId = packet.getRealmId();
-    	this.mapId = packet.getMapId();
-    	this.mapWidth = packet.getMapWidth();
-    	this.mapHeight = packet.getMapHeight();
-    	this.tiles = packet.getTiles();
-    	this.setId(PacketType.LOAD_MAP.getPacketId());
+    	final LoadMapPacket readPacket = IOService.readPacket(getClass(), data);
+    	this.realmId = readPacket.getRealmId();
+    	this.mapId = readPacket.getMapId();
+    	this.mapWidth = readPacket.getMapWidth();
+    	this.mapHeight = readPacket.getMapHeight();
+    	this.tiles = readPacket.getTiles();
     }
 
     @Override
-    public void serializeWrite(DataOutputStream stream) throws Exception {
-//        if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
-//            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-
-        byte[] res = IOService.writePacket(this, stream);
-      
+    public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
     }
 
     public static LoadMapPacket from(long realmId, short mapId, short mapWidth, short mapHeight, List<NetTile> tiles) throws Exception {

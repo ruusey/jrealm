@@ -3,6 +3,7 @@ package com.jrealm.game.math;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.net.NetConstants;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
@@ -137,9 +138,11 @@ public class Vector2f extends SerializableFieldType<Vector2f>{
 	}
 
 	@Override
-	public void write(Vector2f value, DataOutputStream stream) throws Exception {
+	public int write(Vector2f value, DataOutputStream stream) throws Exception {
 		stream.writeFloat(value.x);
 		stream.writeFloat(value.y);
+		
+		return NetConstants.FLOAT_LENGTH * 2;
 	}
 
 }

@@ -1,7 +1,5 @@
 package com.jrealm.net.client.packet;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -61,30 +59,27 @@ public class UpdatePacket extends Packet {
 			UpdatePacket.log.error("Failed to build Stats Packet. Reason: {}", e.getMessage());
 		}
 	}
-
-	@Override
-	public void serializeWrite(DataOutputStream stream) throws Exception {
-		IOService.writePacket(this, stream);
-	}
-
+	
 	@Override
 	public void readData(byte[] data) throws Exception {
-		final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-		final DataInputStream dis = new DataInputStream(bis);
-		if ((dis == null) || (dis.available() < 5))
-			throw new IllegalStateException("No Packet data available to read from DataInputStream");
-		final UpdatePacket read = IOService.readPacket(getClass(), dis);
-		this.setPlayerId(read.getId());
-		this.setHealth(read.getHealth());
-		this.setMana(read.getMana());
-		this.setPlayerName(read.getPlayerName());
-		this.setStats(read.getStats());
-		this.setInventory(read.getInventory());
-		this.setEffectTimes(read.getEffectTimes());
-		this.setEffectIds(read.getEffectIds());
-		this.setExperience(read.getExperience());
+		final UpdatePacket readPacket = IOService.readPacket(this.getClass(), data);
+		this.playerId = readPacket.getPlayerId();
+		this.playerName = readPacket.getPlayerName();
+		this.stats = readPacket.getStats();
+		this.health = readPacket.getHealth();
+		this.mana = readPacket.getMana();
+		this.experience = readPacket.getExperience();
+		this.inventory = readPacket.getInventory();
+		this.effectIds = readPacket.getEffectIds();
+		this.effectTimes = readPacket.getEffectTimes();
 	}
 
+	@Override
+	public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
+	}
+
+	
 	public static UpdatePacket from(Enemy enemy) throws Exception {
 		if (enemy == null)
 			return null;

@@ -8,6 +8,7 @@ import java.io.DataOutputStream;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableByte;
 import com.jrealm.net.core.nettypes.SerializableLong;
@@ -68,15 +69,9 @@ public class UsePortalPacket extends Packet {
     }
 
     @Override
-    public void serializeWrite(DataOutputStream stream) throws Exception {
-        if ((this.getId() < 1) || (this.getData() == null) || (this.getData().length < 5))
-            throw new IllegalStateException("No Packet data available to write to DataOutputStream");
-        this.addHeader(stream);
-        stream.writeLong(this.portalId);
-        stream.writeLong(this.fromRealmId);
-        stream.writeLong(this.playerId);
-        stream.writeByte(this.toVault);
-        stream.writeByte(this.toNexus);
+    public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
+
     }
 
     public static UsePortalPacket from(long portalId, long fromRealmId, long playerId) throws Exception {

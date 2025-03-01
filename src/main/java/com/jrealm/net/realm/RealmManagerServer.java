@@ -82,6 +82,7 @@ import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.game.util.TimedWorkerThread;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
+import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
@@ -258,7 +259,8 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.error("Failed to sleep");
 		}
 	}
-
+	private long lastWriteSampleTime = Instant.now().toEpochMilli();
+	private long bytesWritten = 0;
 	private void sendGameData() {
 		long startNanos = System.nanoTime();
 		final List<Packet> packetsToBroadcast = new ArrayList<>();
@@ -305,16 +307,24 @@ public class RealmManagerServer implements Runnable {
 				
 				// Globally sent packets
 				for (final Packet packet : packetsToBroadcast) {
-					packet.serializeWrite(dosToClient);
+					this.bytesWritten += packet.serializeWrite(dosToClient);
 				}
 
 				for (final Packet packet : playerPackets) {
-					packet.serializeWrite(dosToClient);				
+					this.bytesWritten += packet.serializeWrite(dosToClient);				
 				}
 			} catch (Exception e) {
 				disconnectedClients.add(client.getKey());
 				RealmManagerServer.log.error("[SERVER] Failed to get OutputStream to Client. Reason: {}", e);
 			}
+		}
+		//  Print server write rate to all connected clients (kbit/s) 
+		if (Instant.now().toEpochMilli() - lastWriteSampleTime > 1000) {
+			this.lastWriteSampleTime = Instant.now().toEpochMilli();
+			RealmManagerServer.log.info("[SERVERR] current write rate = {} kbit/s",
+					(float) (this.bytesWritten / 1024.0f) * 8.0f);
+			this.bytesWritten = 0;
+
 		}
 		long nanosDiff = System.nanoTime() - startNanos;
 		log.debug("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double) nanosDiff / (double) 1000000l));

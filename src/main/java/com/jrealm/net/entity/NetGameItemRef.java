@@ -37,7 +37,7 @@ public class NetGameItemRef extends SerializableFieldType<NetGameItemRef>{
 	}
 
 	@Override
-	public void write(NetGameItemRef value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+	public int write(NetGameItemRef value, DataOutputStream stream) throws Exception {
+		return IOService.writeStream(value, stream);
 	}
 }

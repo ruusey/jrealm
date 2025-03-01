@@ -30,8 +30,8 @@ public class NetTradeSelection extends SerializableFieldType<NetTradeSelection> 
 	}
 
 	@Override
-	public void write(NetTradeSelection value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+	public int write(NetTradeSelection value, DataOutputStream stream) throws Exception {
+		return IOService.writeStream(value, stream);
 	}
 
 	public static NetTradeSelection getTradeSelection(Player p0, Player p1, Boolean[] p0Selection,

@@ -3,6 +3,7 @@ package com.jrealm.net.core.nettypes;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.net.NetConstants;
 import com.jrealm.net.core.SerializableFieldType;
 
 public class SerializableLong extends SerializableFieldType<Long> {
@@ -18,7 +19,8 @@ public class SerializableLong extends SerializableFieldType<Long> {
 	}
 
 	@Override
-	public void write(Long value, DataOutputStream stream) throws Exception {
+	public int write(Long value, DataOutputStream stream) throws Exception {
 		stream.writeLong(value == null ? 0l : value);
+		return NetConstants.INT64_LENGTH;
 	}
 }

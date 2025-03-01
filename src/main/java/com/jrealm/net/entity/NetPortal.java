@@ -40,8 +40,8 @@ public class NetPortal extends SerializableFieldType<NetPortal> {
 	}
 
 	@Override
-	public void write(NetPortal value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+	public int write(NetPortal value, DataOutputStream stream) throws Exception {
+		return IOService.writeStream(value, stream);
 	}
 	
 	public Portal asPortal() {

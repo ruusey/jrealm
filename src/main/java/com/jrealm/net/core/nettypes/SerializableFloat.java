@@ -3,6 +3,7 @@ package com.jrealm.net.core.nettypes;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.net.NetConstants;
 import com.jrealm.net.core.SerializableFieldType;
 
 public class SerializableFloat extends SerializableFieldType<Float> {
@@ -13,7 +14,8 @@ public class SerializableFloat extends SerializableFieldType<Float> {
 	}
 
 	@Override
-	public void write(Float value, DataOutputStream stream) throws Exception {
+	public int write(Float value, DataOutputStream stream) throws Exception {
 		stream.writeFloat(value);
+		return NetConstants.FLOAT_LENGTH;
 	}
 }

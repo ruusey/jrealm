@@ -3,6 +3,7 @@ package com.jrealm.net.core.nettypes;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import com.jrealm.net.NetConstants;
 import com.jrealm.net.core.SerializableFieldType;
 
 public class SerializableByte extends SerializableFieldType<Byte> {
@@ -18,7 +19,8 @@ public class SerializableByte extends SerializableFieldType<Byte> {
 	}
 
 	@Override
-	public void write(Byte value, DataOutputStream stream) throws Exception {
+	public int write(Byte value, DataOutputStream stream) throws Exception {
 		stream.writeByte(value == null ? 0 : value);
+		return NetConstants.BYTE_LENGTH;
 	}
 }

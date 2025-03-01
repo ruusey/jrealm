@@ -35,8 +35,8 @@ public class NetDamage extends SerializableFieldType<NetDamage> {
 	}
 
 	@Override
-	public void write(NetDamage value, DataOutputStream stream) throws Exception {
+	public int write(NetDamage value, DataOutputStream stream) throws Exception {
 		NetDamage toWrite = value == null ? new NetDamage() : value;
-		IOService.writeStream(toWrite, stream);
+		return IOService.writeStream(toWrite, stream);
 	}
 }

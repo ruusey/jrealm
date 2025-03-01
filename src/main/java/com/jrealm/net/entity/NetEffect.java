@@ -45,9 +45,9 @@ public class NetEffect extends SerializableFieldType<NetEffect> {
 	}
 
 	@Override
-	public void write(NetEffect value, DataOutputStream stream) throws Exception {
-		NetEffect toWrite = value == null ? new NetEffect() : value;
-		IOService.writeStream(toWrite, stream);
+	public int write(NetEffect value, DataOutputStream stream) throws Exception {
+		final NetEffect toWrite = value == null ? new NetEffect() : value;
+		return IOService.writeStream(toWrite, stream);
 	}
 
 	public Effect asEffect() {

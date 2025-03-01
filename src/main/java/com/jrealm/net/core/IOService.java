@@ -72,14 +72,15 @@ public class IOService {
 		return byteStreamFinal.toByteArray();
 	}
 
-	public static void writeStream(Object model, DataOutputStream stream0) throws Exception {
+	public static int writeStream(Object model, DataOutputStream stream0) throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(model.getClass());
 		if (log.isDebugEnabled())
 			log.info("[WRITE] class {} begin. ToWrite = {}", model.getClass(), model);
 		if (mappingInfo == null) {
 			log.error("[WRITE] NO MAPPING FOR CLASS {}", model.getClass());
-			return;
+			return 0;
 		}
+		int bytesWritten = 0;
 		for (PacketMappingInformation info : mappingInfo) {
 			if (log.isDebugEnabled())
 				log.info("[WRITE] Begin write mapping for MODEL {} field {}", model.getClass(),
@@ -87,17 +88,18 @@ public class IOService {
 			final SerializableFieldType serializer = info.getSerializer();
 			if (info.isCollection()) {
 				final Object[] collection = (Object[]) info.getPropertyHandle().get(model);
-				;
 				final int collectionLength = collection != null ? collection.length : 0;
 				stream0.writeInt(collectionLength);
+				bytesWritten += NetConstants.INT32_LENGTH;
 				for (int i = 0; i < collectionLength; i++) {
-					serializer.write(collection[i], stream0);
+					bytesWritten += serializer.write(collection[i], stream0);
 				}
 			} else {
 				final Object obj = info.getPropertyHandle().get(model);
-				serializer.write(obj, stream0);
+				bytesWritten += serializer.write(obj, stream0);
 			}
 		}
+		return bytesWritten;
 	}
 
 	public static <T> T mapModel(Object model, Class<T> target) {

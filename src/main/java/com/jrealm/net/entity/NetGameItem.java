@@ -24,44 +24,44 @@ import lombok.Data;
 @Streamable
 public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	@SerializableField(order = 0, type = SerializableInt.class)
-    private int itemId;
+	private int itemId;
 	@SerializableField(order = 1, type = SerializableString.class)
-    private String uid;
+	private String uid;
 	@SerializableField(order = 2, type = SerializableString.class)
-    private String name;
+	private String name;
 	@SerializableField(order = 3, type = SerializableString.class)
-    private String description;
+	private String description;
 	@SerializableField(order = 4, type = NetStats.class)
-    private NetStats stats;
+	private NetStats stats;
 	@SerializableField(order = 5, type = NetDamage.class)
-    private NetDamage damage;
+	private NetDamage damage;
 	@SerializableField(order = 6, type = NetEffect.class)
-    private NetEffect effect;
+	private NetEffect effect;
 	@SerializableField(order = 7, type = SerializableBoolean.class)
-    private boolean consumable;
+	private boolean consumable;
 	@SerializableField(order = 8, type = SerializableByte.class)
-    private byte tier;
+	private byte tier;
 	@SerializableField(order = 9, type = SerializableByte.class)
-    private byte targetSlot;
+	private byte targetSlot;
 	@SerializableField(order = 10, type = SerializableByte.class)
-    private byte targetClass;
+	private byte targetClass;
 	@SerializableField(order = 11, type = SerializableByte.class)
-    private byte fameBonus;
-	
+	private byte fameBonus;
+
 	@Override
 	public NetGameItem read(DataInputStream stream) throws Exception {
 		return IOService.readStream(getClass(), stream);
 	}
 
 	@Override
-	public void write(NetGameItem value, DataOutputStream stream) throws Exception {
-		if(value==null) {
-			 IOService.writeStream(new NetGameItem(), stream);
-		}else {
-		    IOService.writeStream(value, stream);
+	public int write(NetGameItem value, DataOutputStream stream) throws Exception {
+		if (value == null) {
+			return IOService.writeStream(new NetGameItem(), stream);
+		} else {
+			return IOService.writeStream(value, stream);
 		}
 	}
-	
+
 	public GameItem asGameItem() {
 		GameItem item = new GameItem();
 		item.setItemId(this.itemId);

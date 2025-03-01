@@ -65,8 +65,8 @@ public class ObjectMovement extends SerializableFieldType<ObjectMovement> {
     }
 
     @Override
-    public void write(ObjectMovement value, DataOutputStream stream) throws Exception {
-        IOService.writeStream(value, stream);
+    public int write(ObjectMovement value, DataOutputStream stream) throws Exception {
+        return IOService.writeStream(value, stream);
     }
 
     @Override

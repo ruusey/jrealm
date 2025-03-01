@@ -1,9 +1,6 @@
 package com.jrealm.game.tile;
 
 import java.awt.Graphics2D;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
 import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
@@ -50,32 +47,5 @@ public class Tile {
 	public void render(Graphics2D g) {
 		g.drawImage(GameSpriteManager.TILE_SPRITES.get((int) this.tileId), (int) this.pos.getWorldVar().x,
 				(int) this.pos.getWorldVar().y, this.size, this.size, null);
-	}
-
-	// @Override
-	public void write(DataOutputStream stream) throws Exception {
-		stream.writeShort(this.tileId);
-		stream.writeBoolean(this.discovered);
-		stream.writeShort(this.size);
-		stream.writeFloat(this.pos.x);
-		stream.writeFloat(this.pos.y);
-		stream.writeByte(this.data.getHasCollision());
-		stream.writeByte(this.data.getSlows());
-		stream.writeByte(this.data.getDamaging());
-	}
-
-	// @Override
-	public Tile read(DataInputStream stream) throws Exception {
-		final short tileId = stream.readShort();
-		final boolean discovered = stream.readBoolean();
-		final short size = stream.readShort();
-		final float posX = stream.readFloat();
-		final float posY = stream.readFloat();
-		final byte hasCollision = stream.readByte();
-		final byte slows = stream.readByte();
-		final byte damaging = stream.readByte();
-
-		return new Tile(tileId, new Vector2f(posX, posY), new TileData(hasCollision, slows, damaging), size,
-				discovered);
 	}
 }

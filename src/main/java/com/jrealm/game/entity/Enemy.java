@@ -15,7 +15,6 @@ import com.jrealm.game.script.EnemyScriptBase;
 import com.jrealm.game.state.PlayState;
 import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.UpdatePacket;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
 import com.jrealm.net.realm.RealmManagerServer;
@@ -291,7 +290,7 @@ public class Enemy extends Entity {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
             }
         }
-        EnemyModel model = GameDataManager.ENEMIES.get(this.getEnemyId());
+        final EnemyModel model = GameDataManager.ENEMIES.get(this.getEnemyId());
 
         // Health Bar UI
         g.setColor(Color.red);

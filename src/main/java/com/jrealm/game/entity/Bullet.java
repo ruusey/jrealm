@@ -2,7 +2,6 @@ package com.jrealm.game.entity;
 
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
-import java.io.DataInputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +9,7 @@ import java.util.List;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ProjectileGroup;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -143,12 +143,12 @@ public class Bullet extends GameObject  {
     public void update() {
         // if is flagged to be rendered as a parametric projectile
         if (this.hasFlag((short) 12)) {
-            this.update(1);
+            this.updateParametric();
         } else {
             // Regular straight line projectile
-            Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
+            final Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
                     (float) (Math.cos(this.angle) * this.magnitude));
-            double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
+            final double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
             this.range -= dist;
             this.pos.addX(vel.x);
             this.pos.addY(vel.y);
@@ -157,12 +157,12 @@ public class Bullet extends GameObject  {
         }
     }
 
-    public void update(int i) {
+    public void updateParametric() {
         this.timeStep = (this.timeStep + this.frequency) % 360;
 
-        Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
+        final Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
                 (float) (Math.cos(this.angle) * this.magnitude));
-        double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
+        final double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
         this.range -= dist;
         // 'invert'
         if (this.hasFlag((short) 13)) {
@@ -188,118 +188,21 @@ public class Bullet extends GameObject  {
 
     @Override
     public void render(Graphics2D g) {
-        AffineTransform original = g.getTransform();
-        AffineTransform t = new AffineTransform();
-        ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.getProjectileId());
-        float angleOffset = Float.parseFloat(group.getAngleOffset());
+        final AffineTransform original = g.getTransform();
+        final AffineTransform rotationTransform = new AffineTransform();
+        final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.getProjectileId());
+        final float angleOffset = Float.parseFloat(group.getAngleOffset());
         if (angleOffset > 0.0f) {
-            t.rotate(-this.getAngle() + (this.tfAngle + angleOffset), this.pos.getWorldVar().x + (this.size / 2),
+            rotationTransform.rotate(-this.getAngle() + (this.tfAngle + angleOffset), this.pos.getWorldVar().x + (this.size / 2),
                     this.pos.getWorldVar().y + (this.size / 2));
         } else {
-            t.rotate(-this.getAngle() + this.tfAngle, this.pos.getWorldVar().x + (this.size / 2),
+            rotationTransform.rotate(-this.getAngle() + this.tfAngle, this.pos.getWorldVar().x + (this.size / 2),
                     this.pos.getWorldVar().y + (this.size / 2));
         }
 
-        g.setTransform(t);
+        g.setTransform(rotationTransform);
         g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x),
                 (int) (this.pos.getWorldVar().y), this.size, this.size, null);
         g.setTransform(original);
-    }
-
-//    @Override
-//    public void write(DataOutputStream stream) throws Exception {
-//        stream.writeLong(this.id);
-//        stream.writeInt(this.projectileId);
-//        stream.writeInt(this.size);
-//        stream.writeFloat(this.pos.x);
-//        stream.writeFloat(this.pos.y);
-//        stream.writeFloat(this.dx);
-//        stream.writeFloat(this.dy);
-//        stream.writeFloat(this.angle);
-//        stream.writeFloat(this.magnitude);
-//        stream.writeFloat(this.range);
-//        stream.writeShort(this.damage);
-//        stream.writeBoolean(this.isEnemy);
-//        stream.writeBoolean(this.playerHit);
-//        stream.writeBoolean(this.enemyHit);
-//        stream.writeBoolean(this.invert);
-//        stream.writeInt(this.flags.size());
-//        for (short s : this.flags) {
-//            stream.writeShort(s);
-//        }
-//        stream.writeLong(this.timeStep);
-//        stream.writeShort(this.amplitude);
-//        stream.writeShort(this.frequency);
-//    }
-//
-//    @Override
-//    public Bullet read(DataInputStream stream) throws Exception {
-//        final long id = stream.readLong();
-//        final int bulletId = stream.readInt();
-//        final int size = stream.readInt();
-//        final float posX = stream.readFloat();
-//        final float posY = stream.readFloat();
-//        final float dY = stream.readFloat();
-//        final float dX = stream.readFloat();
-//        final float angle = stream.readFloat();
-//        final float magnitude = stream.readFloat();
-//        final float range = stream.readFloat();
-//        final short damage = stream.readShort();
-//        final boolean isEnemy = stream.readBoolean();
-//        final boolean playerHit = stream.readBoolean();
-//        final boolean enemyHit = stream.readBoolean();
-//        final boolean invert = stream.readBoolean();
-//        final int flagsSize = stream.readInt();
-//        final short[] flags = new short[flagsSize];
-//        for (int i = 0; i < flagsSize; i++) {
-//            flags[i] = stream.readShort();
-//        }
-//        final long timeStep = stream.readLong();
-//        final short amplitude = stream.readShort();
-//        final short frequency = stream.readShort();
-//        List<Short> flagsList = new ArrayList<>();
-//        for (short s : flags) {
-//            flagsList.add(s);
-//        }
-//        Bullet newBullet = new Bullet(id, bulletId, new Vector2f(posX, posY), size, angle, magnitude, range, damage,
-//                isEnemy, playerHit, enemyHit, flagsList, invert, timeStep, amplitude, frequency);
-//        newBullet.setDx(dX);
-//        newBullet.setDy(dY);
-//        return newBullet;
-//    }
-
-    public static Bullet fromStream(DataInputStream stream) throws Exception {
-        final long id = stream.readLong();
-        final int bulletId = stream.readInt();
-        final int size = stream.readInt();
-        final float posX = stream.readFloat();
-        final float posY = stream.readFloat();
-        final float dY = stream.readFloat();
-        final float dX = stream.readFloat();
-        final float angle = stream.readFloat();
-        final float magnitude = stream.readFloat();
-        final float range = stream.readFloat();
-        final short damage = stream.readShort();
-        final boolean isEnemy = stream.readBoolean();
-        final boolean playerHit = stream.readBoolean();
-        final boolean enemyHit = stream.readBoolean();
-        final boolean invert = stream.readBoolean();
-        final int flagsSize = stream.readInt();
-        final short[] flags = new short[flagsSize];
-        for (int i = 0; i < flagsSize; i++) {
-            flags[i] = stream.readShort();
-        }
-        final long timeStep = stream.readLong();
-        final short amplitude = stream.readShort();
-        final short frequency = stream.readShort();
-        List<Short> flagsList = new ArrayList<>();
-        for (short s : flags) {
-            flagsList.add(s);
-        }
-        Bullet newBullet = new Bullet(id, bulletId, new Vector2f(posX, posY), size, angle, magnitude, range, damage,
-                isEnemy, playerHit, enemyHit, flagsList, invert, timeStep, amplitude, frequency);
-        newBullet.setDx(dX);
-        newBullet.setDy(dY);
-        return newBullet;
     }
 }

@@ -38,8 +38,8 @@ public class NetInventorySelection extends SerializableFieldType<NetInventorySel
 	}
 
 	@Override
-	public void write(NetInventorySelection value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+	public int write(NetInventorySelection value, DataOutputStream stream) throws Exception {
+		return IOService.writeStream(value, stream);
 	}
 
 	public static NetInventorySelection fromPlayer(Player player, Boolean[] selectedSlots) {

@@ -9,8 +9,6 @@ import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
-import com.jrealm.net.core.nettypes.SerializableLong;
-import com.jrealm.net.core.nettypes.SerializableShort;
 import com.jrealm.net.entity.NetInventorySelection;
 
 import lombok.AllArgsConstructor;
@@ -32,8 +30,8 @@ public class UpdatePlayerTradeSelectionPacket extends Packet {
 	}
 
 	@Override
-	public void serializeWrite(DataOutputStream stream) throws Exception {
-		IOService.writePacket(this, stream);
+	public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
 	}
 
 	public static UpdatePlayerTradeSelectionPacket fromSelection(Player player, PlayerUI ui) {

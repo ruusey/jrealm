@@ -1,10 +1,5 @@
 package com.jrealm.game.tile;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
-import com.jrealm.net.Streamable;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,21 +22,6 @@ public class TileData {
 
     public boolean damaging() {
         return this.damaging != 0;
-    }
-
-    //@Override
-    public void write(DataOutputStream stream) throws Exception {
-        stream.writeByte(this.hasCollision);
-        stream.writeByte(this.slows);
-        stream.writeByte(this.damaging);
-    }
-
-    //@Override
-    public TileData read(DataInputStream stream) throws Exception {
-        final byte hasCollision = stream.readByte();
-        final byte slows = stream.readByte();
-        final byte damaging = stream.readByte();
-        return new TileData(hasCollision, slows, damaging);
     }
     
     public static TileData withCollision() {

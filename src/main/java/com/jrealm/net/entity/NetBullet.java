@@ -61,12 +61,12 @@ public class NetBullet extends SerializableFieldType<NetBullet> {
 	}
 
 	@Override
-	public void write(NetBullet value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+	public int write(NetBullet value, DataOutputStream stream) throws Exception {
+		return IOService.writeStream(value, stream);
 	}
 	
 	public Bullet asBullet() {
-		Bullet bullet = new Bullet();
+		final Bullet bullet = new Bullet();
 		bullet.setId(this.id);
 		bullet.setProjectileId(this.projectileId);
 		bullet.setSize(this.size);

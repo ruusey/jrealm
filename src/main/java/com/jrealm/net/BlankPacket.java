@@ -14,7 +14,7 @@ public class BlankPacket extends Packet {
     }
 
     @Override
-    public void serializeWrite(DataOutputStream stream) throws Exception {
-        // NO OP
+    public int serializeWrite(DataOutputStream stream) throws Exception {
+       return 0;
     }
 }

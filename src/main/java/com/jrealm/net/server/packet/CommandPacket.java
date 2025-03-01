@@ -51,19 +51,15 @@ public class CommandPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-        final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        final DataInputStream dis = new DataInputStream(bis);
-        if (dis == null || dis.available() < 5)
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");
-        final CommandPacket readPacket = IOService.readPacket(getClass(), dis);
-        this.playerId = readPacket.getPlayerId();
-        this.commandId = readPacket.getCommandId();
-        this.command = readPacket.getCommand();
+    	final CommandPacket read = IOService.readPacket(getClass(), data);
+    	this.playerId = read.getPlayerId();
+    	this.commandId = read.getCommandId();
+    	this.command = read.getCommand();
     }
 
     @Override
-    public void serializeWrite(DataOutputStream stream) throws Exception {
-        IOService.writePacket(this, stream);
+    public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
     }
 
     public static CommandPacket from(Player target, byte commandId, String command) throws Exception {

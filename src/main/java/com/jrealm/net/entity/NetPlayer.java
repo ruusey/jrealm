@@ -43,8 +43,8 @@ public class NetPlayer extends SerializableFieldType<NetPlayer>{
 		return IOService.readStream(getClass(), stream);
 	}
 	@Override
-	public void write(NetPlayer value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+	public int write(NetPlayer value, DataOutputStream stream) throws Exception {
+		return IOService.writeStream(value, stream);
 		
 	}
 	

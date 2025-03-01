@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.jrealm.game.util.WorkerThread;
+import com.jrealm.net.client.SocketClient;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -52,5 +53,16 @@ public class SocketServer implements Runnable {
             }
         };
         WorkerThread.submitAndForkRun(socketAccept);
+    }
+    
+    public static void main(String[] args) {
+    	SocketServer server = new SocketServer(2222);
+    	
+		WorkerThread.submitAndForkRun(server);
+
+    	SocketClient client = new SocketClient("127.0.0.1", 2222);
+    	
+        WorkerThread.submitAndForkRun(client);
+
     }
 }

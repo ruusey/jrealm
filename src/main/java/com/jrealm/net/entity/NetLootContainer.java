@@ -50,8 +50,8 @@ public class NetLootContainer extends SerializableFieldType<NetLootContainer>{
 		return IOService.readStream(getClass(), stream);
 	}
 	@Override
-	public void write(NetLootContainer value, DataOutputStream stream) throws Exception {
-		IOService.writeStream(value, stream);
+	public int write(NetLootContainer value, DataOutputStream stream) throws Exception {
+		return IOService.writeStream(value, stream);
 	}
 	
 	public LootContainer asLootContainer() {

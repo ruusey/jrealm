@@ -15,8 +15,8 @@ public class EmptyField extends SerializableFieldType<EmptyField>{
 	}
 
 	@Override
-	public void write(EmptyField value, DataOutputStream stream) throws Exception {
-		// TODO Auto-generated method stub
+	public int write(EmptyField value, DataOutputStream stream) throws Exception {
+		return 0;
 		
 	}
 

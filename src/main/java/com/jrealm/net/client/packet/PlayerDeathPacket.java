@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.IOService;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -35,8 +36,9 @@ public class PlayerDeathPacket extends Packet {
     }
 
     @Override
-    public void serializeWrite(DataOutputStream stream) throws Exception {
-        this.addHeader(stream);
+    public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
+
     }
 
     public static PlayerDeathPacket from() throws Exception {

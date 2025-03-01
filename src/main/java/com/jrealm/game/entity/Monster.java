@@ -16,9 +16,10 @@ public class Monster extends Enemy {
     public Monster() {
     	super(0, 0, null, 0 ,0);
     }
+    
     public Monster(long id, int enemyId, Vector2f origin, int size, int weaponId) {
         super(id, enemyId, origin, size, weaponId);
-        EnemyModel model = GameDataManager.ENEMIES.get(enemyId);
+        final EnemyModel model = GameDataManager.ENEMIES.get(enemyId);
         this.acc = 1f;
         this.deacc = 2f;
         this.maxSpeed = 1.4f;
@@ -29,5 +30,4 @@ public class Monster extends Enemy {
         this.right = true;
         this.uuid = UUID.randomUUID().toString();
     }
-
 }

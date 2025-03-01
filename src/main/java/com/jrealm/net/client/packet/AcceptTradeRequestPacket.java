@@ -31,7 +31,7 @@ public class AcceptTradeRequestPacket extends Packet{
 	}
 
 	@Override
-	public void serializeWrite(DataOutputStream stream) throws Exception {
-		IOService.writePacket(this, stream);
+	public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
 	}
 }

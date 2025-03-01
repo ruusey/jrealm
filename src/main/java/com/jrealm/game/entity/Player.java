@@ -2,7 +2,6 @@ package com.jrealm.game.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,9 +29,9 @@ import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.entity.NetGameItemRef;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Builder;
 
 @Data
 @Builder
@@ -491,8 +490,8 @@ public class Player extends Entity {
 	}
 	
 	public NetGameItemRef[] getInventoryAsNetGameItemRefs() {
-		GameItem[] inv = this.getSlots(4, 12);
-		List<NetGameItemRef> results = new ArrayList<>();
+		final GameItem[] inv = this.getSlots(4, 12);
+		final List<NetGameItemRef> results = new ArrayList<>();
 		for(int i = 0 ; i < inv.length; i++) {
 			if(inv[i]==null) continue;
 			results.add(inv[i].asNetGameItemRef(i+4));
@@ -509,8 +508,8 @@ public class Player extends Entity {
 	}
 	
 	public void removeItems(GameItem[] items) {
-		List<Integer> idxToRemove = new ArrayList<>();
-		GameItem[] inv = this.getSlots(4, 12);
+		//List<Integer> idxToRemove = new ArrayList<>();
+		final GameItem[] inv = this.getSlots(4, 12);
 
 		for(int i = 0 ; i<inv.length;i++) {
 			GameItem invItem = inv[i];
@@ -524,56 +523,9 @@ public class Player extends Entity {
 		}
 	}
 
-	public Player read(DataInputStream stream) throws Exception {
-		long id = stream.readLong();
-		String name = stream.readUTF();
-		String accountUuid = stream.readUTF();
-		String characterUuid = stream.readUTF();
-		int classId = stream.readInt();
-		short size = stream.readShort();
-		float posX = stream.readFloat();
-		float posY = stream.readFloat();
-		float dX = stream.readFloat();
-		float dY = stream.readFloat();
-		Player player = Player.fromData(id, name, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
-		player.setDx(dX);
-		player.setDy(dY);
-		player.setName(name);
-		player.setAccountUuid(accountUuid);
-		player.setCharacterUuid(characterUuid);
-		return player;
-	}
-
-	public static Player fromData(long id, String name, Vector2f origin, int size, CharacterClass characterClass) {
-		Player player = new Player(id, origin, size, characterClass);
-		player.setName(name);
-		return player;
-	}
-
-	public static Player fromStream(DataInputStream stream) throws Exception {
-		long id = stream.readLong();
-		String name = stream.readUTF();
-		String accountUuid = stream.readUTF();
-		String characterUuid = stream.readUTF();
-		int classId = stream.readInt();
-		short size = stream.readShort();
-		float posX = stream.readFloat();
-		float posY = stream.readFloat();
-		float dX = stream.readFloat();
-		float dY = stream.readFloat();
-		Player player = new Player(id, new Vector2f(posX, posY), size, CharacterClass.valueOf(classId));
-		player.setDx(dX);
-		player.setDy(dY);
-		player.setName(name);
-		player.setAccountUuid(accountUuid);
-		player.setCharacterUuid(characterUuid);
-		return player;
-	}
-
 	@Override
 	public String toString() {
 		return this.getId() + " , Pos: " + this.pos.toString() + ", Class: " + this.getClassId() + ", Headless: "
 				+ this.isHeadless();
 	}
-
 }
