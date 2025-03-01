@@ -11,6 +11,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.util.CommandHandler;
 import com.jrealm.game.util.PacketHandlerServer;
+import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.UpdateTradePacket;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
@@ -51,12 +52,13 @@ public class ServerTradeManager {
 							// Expirie the trade request
 						}
 					}
-					Thread.sleep(50);
+					Thread.sleep(500);
 				}catch(Exception e) {
 					
 				}
 			}
 		};
+		WorkerThread.submitAndForkRun(check);
 	}
 	
 	@CommandHandler(value = "trade", description = "Initiate a trade with a player")
@@ -81,10 +83,8 @@ public class ServerTradeManager {
 	public static void acceptTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message)
 			throws Exception {
 	
-		long targetId = target.getId();
+		//long targetId = target.getId();
 		long otherTraderId = ServerTradeManager.inverseRequestedTrades().get(target.getId());
-		
-		
 
 		final Player toRespond = mgr.getPlayerById(otherTraderId);
 		if(toRespond== null) {
@@ -93,7 +93,6 @@ public class ServerTradeManager {
 		// Simulate receiving an AcceptTradeRequesstPacket
 		final Player from = toRespond;
 		try {
-			
 				mgr.enqueueServerPacket(toRespond, TextPacket.create(from.getName(), toRespond.getName(),
 						from.getName() + " has accepted your trade request"));
 				mgr.enqueueServerPacket(target, TextPacket.create("SYSTEM", target.getName(),

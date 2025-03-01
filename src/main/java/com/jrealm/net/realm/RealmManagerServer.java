@@ -1522,6 +1522,7 @@ public class RealmManagerServer implements Runnable {
 		return found;
 	}
 
+	// Background thread for persisting player data to DB
 	private void beginPlayerSync() {
 		final Runnable playerSync = () -> {
 			try {
@@ -1534,11 +1535,10 @@ public class RealmManagerServer implements Runnable {
 				RealmManagerServer.log.error("Failed to perform player data sync.");
 			}
 		};
-
-		// Thread syncThread = new Thread(playerSync);
 		WorkerThread.submitAndForkRun(playerSync);
 	}
 
+	// Server shutdown task. Attempts to save all player data before JVM exit
 	public Thread shutdownHook() {
 		final Runnable shutdownTask = () -> {
 			RealmManagerServer.log.info("Performing pre-shutdown player sync...");
