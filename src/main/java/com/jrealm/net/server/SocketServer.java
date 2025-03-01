@@ -55,14 +55,5 @@ public class SocketServer implements Runnable {
         WorkerThread.submitAndForkRun(socketAccept);
     }
     
-    public static void main(String[] args) {
-    	SocketServer server = new SocketServer(2222);
-    	
-		WorkerThread.submitAndForkRun(server);
-
-    	SocketClient client = new SocketClient("127.0.0.1", 2222);
-    	
-        WorkerThread.submitAndForkRun(client);
-
-    }
+ 
 }

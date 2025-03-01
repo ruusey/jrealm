@@ -22,6 +22,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Streamable
 public class NetBullet extends SerializableFieldType<NetBullet> {
+	
 	@SerializableField(order = 0, type = SerializableLong.class)
 	private long id;
 	@SerializableField(order = 1, type = SerializableInt.class)
