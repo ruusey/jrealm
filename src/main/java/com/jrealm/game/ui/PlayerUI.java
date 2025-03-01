@@ -153,7 +153,6 @@ public class PlayerUI {
             });
 
             b.onMouseUp(event -> {
-            	System.out.println();
                 this.tooltips.clear();
                 if (this.canSwap()) {
                     this.setActionTime();
