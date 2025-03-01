@@ -346,7 +346,7 @@ public class ClientGameLogic {
 		} else {
 			final Enemy enemyToUpdate = cli.getRealm().getEnemy((updatePacket.getPlayerId()));
 			enemyToUpdate.applyUpdate(updatePacket, cli.getState());
-			log.info("[CLIENT] Recieved update for enemy {}", updatePacket);
+			log.debug("[CLIENT] Recieved update for enemy {}", updatePacket);
 		}
 	}
 
