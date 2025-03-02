@@ -176,7 +176,7 @@ public class PlayerUI {
     private void buildEquipmentSlots(GameItem[] equipment) {
         for (int i = 0; i < equipment.length; i++) {
             GameItem item = equipment[i];
-            if(item.getItemId()==-1) continue;
+            if(item==null || item.getItemId()==-1) continue;
             this.buildEquipmentSlotButton(i, item);
         }
     }
@@ -219,7 +219,7 @@ public class PlayerUI {
     private void buildInventorySlots(GameItem[] inventory) {
         for (int i = 0; i < (inventory.length); i++) {
             GameItem item = inventory[i];
-            if(item.getItemId()==-1) continue;
+            if(item==null || item.getItemId()==-1) continue;
             this.buildInventorySlotsButton(i, item);
             
         }

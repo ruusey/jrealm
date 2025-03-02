@@ -121,7 +121,7 @@ public class ServerTradeManager {
 	}
 	
 	
-	@CommandHandler(value = "decliine" , description ="Decline a trade request")
+	@CommandHandler(value = "decline" , description ="Decline a trade request")
 	public static void declineTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		
 		long otherTraderId = ServerTradeManager.inverseRequestedTrades().get(target.getId());

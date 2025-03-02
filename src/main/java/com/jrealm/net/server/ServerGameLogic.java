@@ -32,7 +32,6 @@ import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.util.Cardinality;
 import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.net.Packet;
-import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.LoginRequestMessage;
 import com.jrealm.net.messaging.LoginResponseMessage;
@@ -46,6 +45,7 @@ import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -150,8 +150,8 @@ public class ServerGameLogic {
 				mgr.safeRemoveRealm(currentRealm.getRealmId());
 			}
 		}
+		//mgr.clearPlayerState(user.getId());
 		currentRealm.removePlayer(user);
-		mgr.clearPlayerState(user.getId());
 		onPlayerJoin(mgr, targetRealm, user);
 	}
 

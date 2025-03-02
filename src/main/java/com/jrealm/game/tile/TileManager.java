@@ -242,7 +242,7 @@ public class TileManager {
         final TileMap collisionLayer = this.getBaseLayer();
         final int tileX = (int) ((float)pos.x + dx) / collisionLayer.getTileSize();
         final int tileY = (int) ((float)pos.y + dy)/ collisionLayer.getTileSize();
-        if(tileY>collisionLayer.getBlocks().length || tileX>collisionLayer.getBlocks()[0].length) {
+        if(tileY>=collisionLayer.getBlocks().length || tileX>=collisionLayer.getBlocks()[0].length) {
             return false;
         }
         final Tile currentTile = collisionLayer.getBlocks()[tileY][tileX];

@@ -378,6 +378,7 @@ public class RealmManagerServer implements Runnable {
 							final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
 							// Map change... send all viewport tiles
 							if((oldLoadMapPacket!=null && newLoadMapPacket!=null) && newLoadMapPacket.getMapId()!=oldLoadMapPacket.getMapId()) {
+								this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
 								this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
 							}else if(!oldLoadMapPacket.equals(newLoadMapPacket)){
 								final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
@@ -629,6 +630,9 @@ public class RealmManagerServer implements Runnable {
 
 	public Player getPlayerByRemoteAddress(String remoteAddr) {
 		final Long playerId = this.remoteAddresses.get(remoteAddr);
+		if(playerId==null) {
+			return null;
+		}
 		final Player found = this.searchRealmsForPlayer(playerId);
 		return found;
 	}
@@ -1456,7 +1460,7 @@ public class RealmManagerServer implements Runnable {
 		this.playerLoadState.remove(playerId);
 		this.playerUpdateState.remove(playerId);
 		this.playerUnloadState.remove(playerId);
-		this.playerLoadMapState.remove(playerId);
+		//this.playerLoadMapState.remove(playerId);
 		this.playerObjectMoveState.remove(playerId);
 		this.playerAbilityState.remove(playerId);
 		this.playerLoadMapState.remove(playerId);
