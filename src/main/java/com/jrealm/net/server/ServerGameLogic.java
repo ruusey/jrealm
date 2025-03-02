@@ -78,6 +78,11 @@ public class ServerGameLogic {
 			final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 			final MapModel mapModel = GameDataManager.MAPS.get(1);
 			final Realm generatedRealm = new Realm(true, 1, -1);
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				log.error("Failed to sleep after generating realm");
+			}
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, chestLoc);
 			exitPortal.setNeverExpires();
@@ -103,6 +108,11 @@ public class ServerGameLogic {
 			Optional<Realm> realmAtDepth = mgr.findRealmAtDepth(portalUsed.getTargetRealmDepth());
 			if (realmAtDepth.isEmpty()) {
 				final Realm generatedRealm = new Realm(true, portalUsed.getMapId(), portalUsed.getTargetRealmDepth());
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					log.error("Failed to sleep after generating realm");
+				}
 				targetRealm = generatedRealm;
 				if (portalUsed.getMapId() == 5) {
 					final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
@@ -150,7 +160,7 @@ public class ServerGameLogic {
 				mgr.safeRemoveRealm(currentRealm.getRealmId());
 			}
 		}
-		//mgr.clearPlayerState(user.getId());
+		mgr.clearPlayerState(user.getId());
 		currentRealm.removePlayer(user);
 		onPlayerJoin(mgr, targetRealm, user);
 	}

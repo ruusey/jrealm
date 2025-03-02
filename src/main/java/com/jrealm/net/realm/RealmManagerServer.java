@@ -1460,10 +1460,9 @@ public class RealmManagerServer implements Runnable {
 		this.playerLoadState.remove(playerId);
 		this.playerUpdateState.remove(playerId);
 		this.playerUnloadState.remove(playerId);
-		//this.playerLoadMapState.remove(playerId);
 		this.playerObjectMoveState.remove(playerId);
 		this.playerAbilityState.remove(playerId);
-		this.playerLoadMapState.remove(playerId);
+		//this.playerLoadMapState.remove(playerId);
 		this.playerLastHeartbeatTime.remove(playerId);
 		this.playerGroundDamageState.remove(playerId);
 	}
