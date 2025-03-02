@@ -70,6 +70,8 @@ public class ServerGameLogic {
 		if (!validateCallingPlayer(mgr, packet, usePortalPacket.getPlayerId())) {
 			return;
 		}
+		mgr.acquireRealmLock();
+		
 		if (usePortalPacket.isToVault()) {
 			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
 			if (currentRealm.getMapId() == 1)
@@ -78,11 +80,6 @@ public class ServerGameLogic {
 			final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 			final MapModel mapModel = GameDataManager.MAPS.get(1);
 			final Realm generatedRealm = new Realm(true, 1, -1);
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				log.error("Failed to sleep after generating realm");
-			}
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, chestLoc);
 			exitPortal.setNeverExpires();
@@ -101,6 +98,7 @@ public class ServerGameLogic {
 		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
 		Realm targetRealm = mgr.getRealms().get(used.getToRealmId());
 		final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
+		currentRealm.removePlayer(user);
 
 		// Generate target, remove player from current, add to target.
 		if (targetRealm == null) {
@@ -108,11 +106,6 @@ public class ServerGameLogic {
 			Optional<Realm> realmAtDepth = mgr.findRealmAtDepth(portalUsed.getTargetRealmDepth());
 			if (realmAtDepth.isEmpty()) {
 				final Realm generatedRealm = new Realm(true, portalUsed.getMapId(), portalUsed.getTargetRealmDepth());
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					log.error("Failed to sleep after generating realm");
-				}
 				targetRealm = generatedRealm;
 				if (portalUsed.getMapId() == 5) {
 					final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
@@ -161,8 +154,10 @@ public class ServerGameLogic {
 			}
 		}
 		mgr.clearPlayerState(user.getId());
-		currentRealm.removePlayer(user);
-		onPlayerJoin(mgr, targetRealm, user);
+		//onPlayerJoin(mgr, targetRealm, user);
+		mgr.releaseRealmLock();
+
+
 	}
 
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {

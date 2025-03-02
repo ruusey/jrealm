@@ -144,7 +144,7 @@ public class RealmManagerServer implements Runnable {
 	private long tickSampleTime = 0;
 
 	// Disables the sending of LoadPacket and ObjectMovePacket every other tick
-	private boolean disablePartialTransmission = false;
+	private boolean disablePartialTransmission = true;
 	private boolean transmitMovement = false;
 	private boolean transmitLoadPacket = false;
 	private boolean transmitLoadMapPacket = false;
@@ -1664,7 +1664,7 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	private void acquireRealmLock() {
+	public void acquireRealmLock() {
 		try {
 			this.realmLock.acquire();
 		} catch (Exception e) {
@@ -1672,7 +1672,7 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	private void releaseRealmLock() {
+	public void releaseRealmLock() {
 		try {
 			this.realmLock.release();
 		} catch (Exception e) {

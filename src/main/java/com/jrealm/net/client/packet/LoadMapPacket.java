@@ -91,6 +91,10 @@ public class LoadMapPacket extends Packet {
 
         if (this.getRealmId() != other.getRealmId())
             return false;
+        
+        if(this.getMapId()!=other.getMapId()) {
+        	return false;
+        }
 
         if(this.mapHeight!=other.getMapHeight() || this.mapWidth!=other.getMapWidth()) {
             return false;
