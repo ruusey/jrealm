@@ -292,6 +292,7 @@ public class RealmManagerServer implements Runnable {
 				final Player player = this.getPlayerByRemoteAddress(client.getKey());
 				if (player == null) {
 					log.error("[SERVER] Failed to find player {} to broadcast data to", client.getKey());
+					disconnectedClients.add(client.getKey());
 					continue;
 				}
 
@@ -320,6 +321,10 @@ public class RealmManagerServer implements Runnable {
 				RealmManagerServer.log.error("[SERVER] Failed to get OutputStream to Client. Reason: {}", e);
 			}
 		}
+		
+//		for(String disconnectedClient : disconnectedClients) {
+//			this.server.getClients().remove(disconnectedClient);
+//		}
 		// Print server write rate to all connected clients (kbit/s)
 		if (Instant.now().toEpochMilli() - lastWriteSampleTime > 1000) {
 			this.lastWriteSampleTime = Instant.now().toEpochMilli();
