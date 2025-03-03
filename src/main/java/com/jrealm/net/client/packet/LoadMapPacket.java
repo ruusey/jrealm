@@ -96,9 +96,11 @@ public class LoadMapPacket extends Packet {
         	return false;
         }
 
-        if(this.mapHeight!=other.getMapHeight() || this.mapWidth!=other.getMapWidth()) {
+        if(this.getMapHeight()!=other.getMapHeight() || this.getMapWidth()!=other.getMapWidth()) {
             return false;
         }
+        
+        // Calculate per-tile difference
         for (int i = 0; i < myTiles.length; i++) {
         	final NetTile myTile = myTiles[i];
         	final NetTile otherTile = otherTiles[i];

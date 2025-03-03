@@ -154,7 +154,7 @@ public class ServerGameLogic {
 			}
 		}
 		mgr.clearPlayerState(user.getId());
-		//onPlayerJoin(mgr, targetRealm, user);
+		onPlayerJoin(mgr, targetRealm, user);
 		mgr.releaseRealmLock();
 
 
