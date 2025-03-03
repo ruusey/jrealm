@@ -563,7 +563,7 @@ public class Realm {
         TerrainGenerationParameters params = GameDataManager.TERRAINS
                 .get(GameDataManager.MAPS.get(mapId).getTerrainId());
         if(params==null) {
-            log.error("No Terrain generation params found for MapId {}", mapId);
+            log.warn("No Terrain generation params found for MapId {}, using default values", mapId);
             params = GameDataManager.TERRAINS
                     .get(GameDataManager.MAPS.get(4).getTerrainId());
             //return;

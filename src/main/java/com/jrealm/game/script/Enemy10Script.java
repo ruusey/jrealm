@@ -37,15 +37,7 @@ public class Enemy10Script extends EnemyScriptBase {
         super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle-0.1f, group);
         super.sleep(100);
         super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle-0.1f, group);
-        super.sleep(100);
-        super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle-0.1f, group);
-        super.sleep(100);
-        super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle-0.1f, group);
         
-        super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
-        super.sleep(100);
-        super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
-        super.sleep(100);
         super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
         super.sleep(100);
         super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
@@ -61,9 +53,6 @@ public class Enemy10Script extends EnemyScriptBase {
         super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle+0.1f, group);
         super.sleep(100);
         super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle+0.1f, group);
-        super.sleep(100);
-        super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle+0.1f, group);
-        super.sleep(100);
-        super.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle+0.1f, group);
+
     }
 }
