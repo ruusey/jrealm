@@ -130,9 +130,11 @@ public class IOService {
 				if (log.isDebugEnabled())
 					log.info("[READ] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
 							info.getPropertyHandle().varType());
+				// Read collection length. Always int32
 				final int collectionLength = stream.readInt();
 				final Object[] collection = (Object[]) Array
 						.newInstance(info.getPropertyHandle().varType().getComponentType(), collectionLength);
+				// Read each collection element
 				for (int i = 0; i < collectionLength; i++) {
 					final Object obj = serializer.read(stream);
 					collection[i] = obj;
