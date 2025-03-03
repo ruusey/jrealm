@@ -41,6 +41,7 @@ public class ServerTradeManager {
 		ServerTradeManager.playerRequestedTrades = new HashMap<>();
 		ServerTradeManager.playerTradeSelections = new HashMap<>();
 		ServerTradeManager.playerTradeTtl = new HashMap<>();
+		ServerTradeManager.playerTradeConfirmation = new HashMap<>();
 	}
 
 	public static void runTradeExpiryCheck() {
