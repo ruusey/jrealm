@@ -144,7 +144,7 @@ public class RealmManagerServer implements Runnable {
 	private long tickSampleTime = 0;
 
 	// Disables the sending of LoadPacket and ObjectMovePacket every other tick
-	private boolean disablePartialTransmission = true;
+	private boolean disablePartialTransmission = false;
 	private boolean transmitMovement = false;
 	private boolean transmitLoadPacket = false;
 	private boolean transmitLoadMapPacket = false;

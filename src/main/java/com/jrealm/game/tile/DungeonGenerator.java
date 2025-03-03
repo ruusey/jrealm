@@ -43,7 +43,6 @@ public class DungeonGenerator {
 	}
 
 	public List<TileMap> generateDungeon() {
-
 		final TileMap baseLayer = new TileMap(this.tileSize, this.width, this.height);
 		final TileMap collisionLayer = new TileMap(this.tileSize, this.width, this.height);
 
@@ -54,6 +53,8 @@ public class DungeonGenerator {
 		TileMap previousRoom = null;
 		int previousRoomOffsetX = 0;
 		int previousRoomOffsetY = 0;
+		log.info("[DungeonGen] Generating new procedural dungeon realm with room count {}. Params: {}", numRooms, this);
+
 		for (int i = 0; i < numRooms; i++) {
 
 			final TileMap room = this.getRoom(this.tileSize, this.minRoomWidth, this.maxRoomWidth, this.minRoomHeight,
@@ -89,7 +90,7 @@ public class DungeonGenerator {
 //            final int offsetY = Realm.RANDOM.nextInt(this.height-room.getHeight());
 
 			baseLayer.append(room, offsetX, offsetY);
-			log.info("Dungeon room added at {}, {}", offsetX, offsetY);
+			log.info("[DungeonGen] Dungeon room added at coordinates {}, {}", offsetX, offsetY);
 			if (previousRoom != null) {
 				final int previousRoomCenterX = previousRoomOffsetX + (previousRoom.getWidth() / 2);
 				final int previousRoomCenterY = previousRoomOffsetY + (previousRoom.getHeight() / 2);
@@ -122,28 +123,28 @@ public class DungeonGenerator {
 		final TileModel model = GameDataManager.TILES.get(29);
 		final TileModel model0 = GameDataManager.TILES.get(29);
 
-		log.info("Connecting rooms SRC {}, {}. TARGET {}, {}", srcX, srcY, destX, destY);
+		log.info("[DungeonGen] Connecting rooms SRC {}, {}. TARGET {}, {}", srcX, srcY, destX, destY);
 
 		if (xDiff > 0) {
 			for (int i = srcX; i < srcX + xDiff; i++) {
-				log.info("Filling X walkway tile at {}, {}", i, srcY);
+				//log.info("Filling X walkway tile at {}, {}", i, srcY);
 				targetLayer.setTileAt(srcY, i, model);
 				try {
 					targetLayer.setTileAt(srcY - 1, i, model0);
 					targetLayer.setTileAt(srcY + 1, i, model0);
 				} catch (Exception e) {
-
+					log.debug("[DungeonGen] Failed to fill inter-room walkway. Reason: {}", e.getMessage());
 				}
 			}
 		} else {
 			for (int i = srcX; i > (srcX + xDiff); i--) {
-				log.info("Filling X walkway tile at {}, {}", i, srcY);
+				//log.info("Filling X walkway tile at {}, {}", i, srcY);
 				targetLayer.setTileAt(srcY, i, model);
 				try {
 					targetLayer.setTileAt(srcY - 1, i, model0);
 					targetLayer.setTileAt(srcY + 1, i, model0);
 				} catch (Exception e) {
-
+					log.debug("[DungeonGen] Failed to fill inter-room walkway. Reason: {}", e.getMessage());
 				}
 			}
 		}
@@ -156,7 +157,7 @@ public class DungeonGenerator {
 					targetLayer.setTileAt(i, destX - 1, model0);
 					targetLayer.setTileAt(i, destX + 1, model0);
 				} catch (Exception e) {
-
+					log.debug("[DungeonGen] Failed to fill inter-room walkway. Reason: {}", e.getMessage());
 				}
 
 			}
@@ -168,6 +169,7 @@ public class DungeonGenerator {
 					targetLayer.setTileAt(i, destX - 1, model0);
 					targetLayer.setTileAt(i, destX + 1, model0);
 				} catch (Exception e) {
+					log.debug("[DungeonGen] Failed to fill inter-room walkway. Reason: {}", e.getMessage());
 
 				}
 			}
@@ -186,6 +188,7 @@ public class DungeonGenerator {
 		final int roomWidth = minRoomWidth + Realm.RANDOM.nextInt((maxRoomWidth - minRoomWidth) + 1);
 		final int roomHeight = minRoomHeight + Realm.RANDOM.nextInt((maxRoomHeight - minRoomHeight) + 1);
 		final TileMap baseLayer = new TileMap(tileSize, roomWidth, roomHeight);
+		log.info("[DungeonGen] Generating room with params tileSize={}, roomWidth={}, roomHeight={}, shape={}", tileSize, roomWidth, roomHeight, shape);
 
 		// Currently only supports rectangular rooms because i'm terrible at programming
 		if (shape.equals(RoomShapeTemplate.RECTANGLE)) {

@@ -48,37 +48,4 @@ public class Stats {
     public short getSpd() {
         return this.spd;
     }
-
-//    @Override
-//    public Stats read(DataInputStream stream) throws Exception {
-//        short att = stream.readShort();
-//        short def = stream.readShort();
-//
-//        short dex = stream.readShort();
-//        short spd = stream.readShort();
-//
-//        short vit = stream.readShort();
-//        short wis = stream.readShort();
-//
-//        short mp = stream.readShort();
-//        short hp = stream.readShort();
-//
-//        return new Stats(hp, mp, def, att, spd, dex, vit, wis);
-//    }
-//
-//    @Override
-//    public void write(DataOutputStream stream) throws Exception {
-//        stream.writeShort(this.getAtt());
-//        stream.writeShort(this.getDef());
-//
-//        stream.writeShort(this.getSpd());
-//        stream.writeShort(this.getDex());
-//
-//        stream.writeShort(this.getVit());
-//        stream.writeShort(this.getWis());
-//
-//        stream.writeShort(this.getMp());
-//        stream.writeShort(this.getHp());
-//
-//    }
 }
