@@ -379,8 +379,8 @@ public class RealmManagerServer implements Runnable {
 
 							if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
 								final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
+								this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
 								if (loadMapDiff != null) {
-									this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
 									this.enqueueServerPacket(player.getValue(), loadMapDiff);
 								}
 							}
