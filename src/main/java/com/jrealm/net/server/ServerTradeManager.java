@@ -100,7 +100,7 @@ public class ServerTradeManager {
 			mgr.enqueueServerPacket(toRespond, TextPacket.create(from.getName(), toRespond.getName(),
 					from.getName() + " has accepted your trade request"));
 			mgr.enqueueServerPacket(target,
-					TextPacket.create("SYSTEM", target.getName(), "Now trading with player" + toRespond.getName()));
+					TextPacket.create("SYSTEM", target.getName(), "Now trading with player " + toRespond.getName()));
 			mgr.enqueueServerPacket(target, new AcceptTradeRequestPacket(true));
 			mgr.enqueueServerPacket(toRespond, new AcceptTradeRequestPacket(true));
 			ServerTradeManager.playerActiveTrades.put(toRespond.getId(), target.getId());
