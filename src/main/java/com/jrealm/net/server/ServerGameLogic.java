@@ -70,7 +70,6 @@ public class ServerGameLogic {
 		if (!validateCallingPlayer(mgr, packet, usePortalPacket.getPlayerId())) {
 			return;
 		}
-		//mgr.acquireRealmLock();
 		
 		if (usePortalPacket.isToVault()) {
 			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
@@ -87,9 +86,9 @@ public class ServerGameLogic {
 			generatedRealm.setupChests(user);
 			user.setPos(mapModel.getCenter());
 			generatedRealm.addPortal(exitPortal);
-			generatedRealm.addPlayer(user);
-			mgr.addRealm(generatedRealm);
 			currentRealm.removePlayer(user);
+			mgr.addRealm(generatedRealm);
+			generatedRealm.addPlayer(user);
 			return;
 		}
 
@@ -111,7 +110,6 @@ public class ServerGameLogic {
 					final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
 							GlobalConstants.BASE_TILE_SIZE * 13);
 					user.setPos(spawnPos);
-					generatedRealm.addPlayer(user);
 				} else {
 					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3,
 							generatedRealm.getTileManager().getSafePosition());
@@ -123,7 +121,6 @@ public class ServerGameLogic {
 
 					generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
 					generatedRealm.addPortal(exitPortal);
-					generatedRealm.addPlayer(user);
 				}
 				mgr.addRealm(generatedRealm);
 			} else {
@@ -132,7 +129,6 @@ public class ServerGameLogic {
 		}
 		// Remove player from current, add to target ( realm already exists)
 		else {
-			targetRealm.addPlayer(user);
 			user.setPos(targetRealm.getTileManager().getSafePosition());
 
 			// If we are coming from the vault, save the data and destroy the realm
@@ -153,11 +149,9 @@ public class ServerGameLogic {
 				mgr.safeRemoveRealm(currentRealm.getRealmId());
 			}
 		}
+		targetRealm.addPlayer(user);
 		mgr.clearPlayerState(user.getId());
 		onPlayerJoin(mgr, targetRealm, user);
-		//mgr.releaseRealmLock();
-
-
 	}
 
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {

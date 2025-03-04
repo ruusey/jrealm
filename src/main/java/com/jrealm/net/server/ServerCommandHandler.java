@@ -304,7 +304,7 @@ public class ServerCommandHandler {
             throw new IllegalArgumentException("Usage: /realm {up | down}");
 
         final Realm currentRealm = mgr.findPlayerRealm(target.getId());
-        
+        currentRealm.getPlayers().remove(target.getId());
         if (message.getArgs().get(0).equalsIgnoreCase("down")) {
             final PortalModel bossPortal = GameDataManager.PORTALS.get(5);
             final Realm generatedRealm = new Realm(true, bossPortal.getMapId(), bossPortal.getTargetRealmDepth());
@@ -314,15 +314,12 @@ public class ServerCommandHandler {
             generatedRealm.addPlayer(target);
             mgr.addRealm(generatedRealm);
             ServerGameLogic.onPlayerJoin(mgr,  generatedRealm, target);
-
         }  else if(message.getArgs().get(0).equalsIgnoreCase("up")) {
             currentRealm.removePlayer(target);
             mgr.getTopRealm().addPlayer(target);
             ServerGameLogic.onPlayerJoin(mgr,  mgr.getTopRealm(), target);
-
         }else {
             throw new IllegalArgumentException("Usage: /realm down");
         }
-        currentRealm.getPlayers().remove(target.getId());
     }
 }

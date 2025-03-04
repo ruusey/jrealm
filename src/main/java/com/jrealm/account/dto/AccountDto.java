@@ -30,8 +30,6 @@ public class AccountDto implements Serializable {
     private Integer externalId;
     private String identifier;
     private String accountGuid;
-
-    @JsonProperty("email")
     private String email;
     private String password;
     private String accountName;
