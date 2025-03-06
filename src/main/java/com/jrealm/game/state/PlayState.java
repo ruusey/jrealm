@@ -222,7 +222,6 @@ public class PlayState extends GameState {
                 && !this.getRealmManager().getRealm().getTileManager().isVoidTile(p.getPos().clone(p.getSize()/2, p.getSize()/2), p.getDx(), 0)) {
             p.xCol = false;
             if (p.getDx() != 0.0f) {
-                // p.applyMovementLerp(p.getDx(), 0, 0.65f);
                 p.getPos().x += (p.getDx() * 0.45f);
             }
         } else {
@@ -234,13 +233,11 @@ public class PlayState extends GameState {
                 && !this.getRealmManager().getRealm().getTileManager().isVoidTile(p.getPos().clone(p.getSize()/2, p.getSize()/2), 0, p.getDy())) {
             p.yCol = false;
             if (p.getDy() != 0.0f) {
-                // p.applyMovementLerp(0, p.getDy(), 0.65f);
                 p.getPos().y += (p.getDy() * 0.45f);
             }
         } else {
             p.yCol = true;
         }
-        p.move();
     }
 
     public synchronized void addProjectile(int projectileGroupId, int projectileId, Vector2f src, Vector2f dest, short size, float magnitude,

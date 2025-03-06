@@ -974,14 +974,27 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	private void movePlayer(final long realmId, final Player p) {
+		// If the player is paralyzed, stop them and return.
+        if (p.hasEffect(EffectType.PARALYZED)) {
+            p.setUp(false);
+            p.setDown(false);
+            p.setRight(false);
+            p.setLeft(false);
+            return;
+        }
+		
 		final Realm targetRealm = this.realms.get(realmId);
 		float dxToUse = p.getDx();
 		float dyToUse = p.getDy();
 		
+		// if the player has the 'speedy' status effect (1.5x dex, spd)
 		if (p.hasEffect(EffectType.SPEEDY)) {
 			dxToUse = dxToUse * 1.5f;
 			dyToUse = dyToUse * 1.5f;
 		}
+		
+		// Move in x, y direction at speed dx, dy unless we 
+		// will run into terrain/out of bounds
 		if (!targetRealm.getTileManager().collisionTile(p, dxToUse, 0)
 				&& !targetRealm.getTileManager().collidesXLimit(p, dxToUse) && !targetRealm.getTileManager()
 						.isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), dxToUse, 0)) {
@@ -993,16 +1006,6 @@ public class RealmManagerServer implements Runnable {
 			}
 		} else {
 			p.xCol = true;
-		}
-
-		if (targetRealm.getTileManager().collidesDamagingTile(p)) {
-			final Long lastDamageTime = this.playerGroundDamageState.get(p.getId());
-			if (lastDamageTime == null || (Instant.now().toEpochMilli() - lastDamageTime) > 650) {
-				int damageToInflict = 30 + Realm.RANDOM.nextInt(15);
-				this.sendTextEffectToPlayer(p, TextEffect.DAMAGE, "-" + damageToInflict);
-				p.setHealth(p.getHealth() - damageToInflict);
-				this.playerGroundDamageState.put(p.getId(), Instant.now().toEpochMilli());
-			}
 		}
 
 		if (!targetRealm.getTileManager().collisionTile(p, 0, dyToUse)
@@ -1017,7 +1020,17 @@ public class RealmManagerServer implements Runnable {
 		} else {
 			p.yCol = true;
 		}
-		p.move();
+
+		// Calculate if we should apply ground damage
+		if (targetRealm.getTileManager().collidesDamagingTile(p)) {
+			final Long lastDamageTime = this.playerGroundDamageState.get(p.getId());
+			if (lastDamageTime == null || (Instant.now().toEpochMilli() - lastDamageTime) > 450) {
+				int damageToInflict = 30 + Realm.RANDOM.nextInt(15);
+				this.sendTextEffectToPlayer(p, TextEffect.DAMAGE, "-" + damageToInflict);
+				p.setHealth(p.getHealth() - damageToInflict);
+				this.playerGroundDamageState.put(p.getId(), Instant.now().toEpochMilli());
+			}
+		}
 	}
 
 	// Invokes an ability usage server side for the given player at the
@@ -1063,6 +1076,7 @@ public class RealmManagerServer implements Runnable {
 						p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(),
 						p.getAmplitude(), p.getFrequency());
 			}
+		
 		} else if ((abilityItem.getDamage() != null)) {
 			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
 					.get(abilityItem.getDamage().getProjectileGroupId());
@@ -1086,8 +1100,8 @@ public class RealmManagerServer implements Runnable {
 				player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
 			}
 		}
-
-		UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
+		// Invoke any item specific scripts
+		final UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
 		if (script != null) {
 			script.invokeItemAbility(targetRealm, player, abilityItem);
 		}

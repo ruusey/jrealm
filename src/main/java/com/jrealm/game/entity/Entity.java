@@ -107,15 +107,6 @@ public abstract class Entity extends GameObject {
         return -1;
     }
 
-    public void move() {
-        if (this.hasEffect(EffectType.PARALYZED)) {
-            this.up = false;
-            this.down = false;
-            this.right = false;
-            this.left = false;
-            return;
-        }
-    }
 
     public void update(double time) {
         if (this.getSpriteSheet() != null) {

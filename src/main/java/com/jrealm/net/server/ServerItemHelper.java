@@ -6,6 +6,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.item.Stats;
+import com.jrealm.game.script.item.UseableItemScriptBase;
 import com.jrealm.net.Packet;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
@@ -18,11 +19,24 @@ public class ServerItemHelper {
     // I like spaghetti, what about you?
     public static void handleMoveItemPacket(RealmManagerServer mgr, Packet packet) throws Exception {
         final MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
-        ServerItemHelper.log.info("[SERVER] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
+        ServerItemHelper.log.info("[ItemMoveHelper] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
 
         final Realm realm = mgr.findPlayerRealm(moveItemPacket.getPlayerId());
 
         final Player player = realm.getPlayer(moveItemPacket.getPlayerId());
+        
+        // Check for consumeable item scripts
+        if(moveItemPacket.isConsume()) {
+        	GameItem targetItem = player.getInventory()[moveItemPacket.getFromSlotIndex()];
+    		final UseableItemScriptBase script = mgr.getItemScript(targetItem.getItemId());
+    		if (script != null) {
+    			log.info("[ItemMoveHelper]  Invoking usable item script for game item {}, player {}", targetItem, player );
+    			script.invokeUseItem(realm, player, player.getInventory()[moveItemPacket.getFromSlotIndex()]);
+    			// TODO, no further processing if there is a script defined for this item?
+    			return;
+    		}
+        }
+
         // if moving item from inventory
         final GameItem currentEquip = moveItemPacket.getTargetSlotIndex() == -1 ? null
                 : player.getInventory()[moveItemPacket.getTargetSlotIndex()];

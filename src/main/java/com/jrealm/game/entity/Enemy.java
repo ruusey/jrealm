@@ -133,7 +133,6 @@ public class Enemy extends Entity {
     public void update(RealmManagerClient mgr, double time) {
         Player player = mgr.getClosestPlayer(this.getPos(), this.chaseRange);
         super.update(time);
-        this.move();
         if (player == null)
             return;
         
@@ -160,7 +159,6 @@ public class Enemy extends Entity {
         final Realm targetRealm = mgr.getRealms().get(realmId);
         final Player player = mgr.getClosestPlayer(targetRealm.getRealmId(), this.getPos(), this.chaseRange);
         super.update(time);
-        this.move();
         if (player == null) {
             //this.idle(true);
             return;

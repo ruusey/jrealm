@@ -139,6 +139,15 @@ public class Player extends Entity {
 			this.equipSlot(entry.getKey(), entry.getValue());
 		}
 	}
+	
+	public int findItemIndex(GameItem item) {
+		for(int i = 0; i < this.inventory.length ; i++) {
+			if(this.inventory[i]!=null && this.inventory[i].getUid().equals(item.getUid())) {
+				return i;
+			}
+		}
+		return -1;
+	}
 
 	public GameItem getSlot(int slot) {
 		return this.inventory[slot];
