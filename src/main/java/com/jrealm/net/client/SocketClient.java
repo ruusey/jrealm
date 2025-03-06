@@ -103,8 +103,9 @@ public class SocketClient implements Runnable {
                 }
             }
         } catch (Exception e) {
-            this.readPacketThread.setShutdown(true);
+            this.shutdown=true;
             this.sendPacketThread.setShutdown(true);
+            this.readPacketThread.setShutdown(true);
             SocketClient.log.error("Failed to parse client input. Reason {}", e);
         }
     }
@@ -117,7 +118,7 @@ public class SocketClient implements Runnable {
             return;
         }
         final DataOutputStream dos = new DataOutputStream(stream);
-        while (!this.outboundPacketQueue.isEmpty()) {
+        while (!this.outboundPacketQueue.isEmpty() && !this.shutdown) {
             final Packet toSend = this.outboundPacketQueue.remove();
             try {
                 toSend.serializeWrite(dos);

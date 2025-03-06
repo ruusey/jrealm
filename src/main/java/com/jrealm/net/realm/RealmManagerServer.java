@@ -1039,7 +1039,7 @@ public class RealmManagerServer implements Runnable {
 		final Realm targetRealm = this.realms.get(realmId);
 
 		final Player player = targetRealm.getPlayer(playerId);
-		final GameItem abilityItem = player.getAbility();
+		final GameItem abilityItem = GameDataManager.GAME_ITEMS.get(player.getAbility().getItemId());
 		if ((abilityItem == null))
 			return;
 		final Effect effect = abilityItem.getEffect();

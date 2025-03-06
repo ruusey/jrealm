@@ -59,6 +59,7 @@ public class TimedWorkerThread implements Runnable {
                 // updates = 0;
             }
         }
+        log.info("Timed worker thread {} shutdown", this);
 
     }
 }
