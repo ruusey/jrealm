@@ -286,13 +286,11 @@ public class RealmManagerServer implements Runnable {
 				log.error("[SERVER] Failed to remove stale processing threads. Reason:  {}", e);
 			}
 		});
-		final List<String> disconnectedClients = new ArrayList<>();
 		for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
 			try {
 				final Player player = this.getPlayerByRemoteAddress(client.getKey());
 				if (player == null) {
 					log.error("[SERVER] Failed to find player {} to broadcast data to", client.getKey());
-					disconnectedClients.add(client.getKey());
 					continue;
 				}
 
@@ -317,7 +315,6 @@ public class RealmManagerServer implements Runnable {
 					this.bytesWritten += packet.serializeWrite(dosToClient);
 				}
 			} catch (Exception e) {
-				disconnectedClients.add(client.getKey());
 				RealmManagerServer.log.error("[SERVER] Failed to get OutputStream to Client. Reason: {}", e);
 			}
 		}
