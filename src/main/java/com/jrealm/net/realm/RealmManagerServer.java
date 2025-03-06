@@ -225,6 +225,7 @@ public class RealmManagerServer implements Runnable {
 			this.tick();
 			this.update(0);
 		};
+		
 
 		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 64);
 		WorkerThread.submitAndForkRun(workerThread);
@@ -241,7 +242,7 @@ public class RealmManagerServer implements Runnable {
 			final Runnable processServerPackets = () -> {
 				this.processServerPackets();
 			};
-
+			
 			final Runnable sendGameData = () -> {
 				this.sendGameData();
 			};
@@ -352,15 +353,17 @@ public class RealmManagerServer implements Runnable {
 
 			final List<Runnable> perRealmWork = new ArrayList<>();
 			for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
-				final Realm realm = realmEntry.getValue();
+				Realm realm = realmEntry.getValue();
 				// Runnable representing processing work to performed on this Realm (TODO)
 				// final Runnable realmWork = () -> {
 				final List<Player> toRemove = new ArrayList<>();
 				for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
+					
 					if (player.getValue().isHeadless()) {
 						continue;
 					}
 					try {
+						realm = this.findPlayerRealm(player.getKey());
 
 						// Get the background + collision tiles in this players viewport
 						// condensed into a single array
