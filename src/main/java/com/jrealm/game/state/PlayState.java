@@ -541,8 +541,10 @@ public class PlayState extends GameState {
             }
         }
 
-        int dex = (int) ((6.5 * (this.getPlayer().getComputedStats().getDex() + 17.3)) / 75);
-
+        double dex = (int) ((6.5 * (this.getPlayer().getComputedStats().getDex() + 17.3)) / 75);
+		if (player.hasEffect(EffectType.SPEEDY)) {
+			dex = dex * 1.5;
+		}
         boolean canShoot = (System.currentTimeMillis() - this.lastShotTick) > (1000 / dex + 10);
         boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
         if ((mouse.isPressed(MouseEvent.BUTTON1)) && canShoot) {

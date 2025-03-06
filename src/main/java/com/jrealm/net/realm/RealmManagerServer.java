@@ -144,7 +144,7 @@ public class RealmManagerServer implements Runnable {
 	private long tickSampleTime = 0;
 
 	// Disables the sending of LoadPacket and ObjectMovePacket every other tick
-	private boolean disablePartialTransmission = true;
+	private boolean disablePartialTransmission = false;
 	private boolean transmitMovement = false;
 	private boolean transmitLoadPacket = false;
 	private boolean transmitLoadMapPacket = false;
@@ -409,7 +409,7 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						if (this.transmitLoadPacket || this.disablePartialTransmission) {
+						//if (this.transmitLoadPacket || this.disablePartialTransmission) {
 							// Get LoadPacket for this player
 							// Contains newly spawned bullets, entities, players
 							final LoadPacket loadPacket = realm
@@ -440,7 +440,7 @@ public class RealmManagerServer implements Runnable {
 									}
 								}
 							}
-						}
+						//}
 
 						// Recently added tick skipping for game entity movements.
 						// This greatly reduced bytes going down the wire but some
@@ -975,15 +975,21 @@ public class RealmManagerServer implements Runnable {
 
 	private void movePlayer(final long realmId, final Player p) {
 		final Realm targetRealm = this.realms.get(realmId);
-
-		if (!targetRealm.getTileManager().collisionTile(p, p.getDx(), 0)
-				&& !targetRealm.getTileManager().collidesXLimit(p, p.getDx()) && !targetRealm.getTileManager()
-						.isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), p.getDx(), 0)) {
+		float dxToUse = p.getDx();
+		float dyToUse = p.getDy();
+		
+		if (p.hasEffect(EffectType.SPEEDY)) {
+			dxToUse = dxToUse * 1.5f;
+			dyToUse = dyToUse * 1.5f;
+		}
+		if (!targetRealm.getTileManager().collisionTile(p, dxToUse, 0)
+				&& !targetRealm.getTileManager().collidesXLimit(p, dxToUse) && !targetRealm.getTileManager()
+						.isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), dxToUse, 0)) {
 			p.xCol = false;
 			if (targetRealm.getTileManager().collidesSlowTile(p)) {
-				p.getPos().x += p.getDx() / 3.0f;
+				p.getPos().x += dxToUse / 3.0f;
 			} else {
-				p.getPos().x += p.getDx();
+				p.getPos().x += dxToUse;
 			}
 		} else {
 			p.xCol = true;
@@ -999,14 +1005,14 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 
-		if (!targetRealm.getTileManager().collisionTile(p, 0, p.getDy())
-				&& !targetRealm.getTileManager().collidesYLimit(p, p.getDy()) && !targetRealm.getTileManager()
-						.isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), 0, p.getDy())) {
+		if (!targetRealm.getTileManager().collisionTile(p, 0, dyToUse)
+				&& !targetRealm.getTileManager().collidesYLimit(p, dyToUse) && !targetRealm.getTileManager()
+						.isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), 0, dyToUse)) {
 			p.yCol = false;
 			if (targetRealm.getTileManager().collidesSlowTile(p)) {
-				p.getPos().y += p.getDy() / 3.0f;
+				p.getPos().y += dyToUse / 3.0f;
 			} else {
-				p.getPos().y += p.getDy();
+				p.getPos().y += dyToUse;
 			}
 		} else {
 			p.yCol = true;
