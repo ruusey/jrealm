@@ -73,11 +73,14 @@ public class ServerGameLogic {
 		mgr.acquireRealmLock();
 		
 		if (usePortalPacket.isToVault()) {
+			
 			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
+			
 			if (currentRealm.getMapId() == 1)
 				return;
 
 			final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
+
 			final MapModel mapModel = GameDataManager.MAPS.get(1);
 			final Realm generatedRealm = new Realm(true, 1, -1);
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
@@ -87,9 +90,11 @@ public class ServerGameLogic {
 			generatedRealm.setupChests(user);
 			user.setPos(mapModel.getCenter());
 			generatedRealm.addPortal(exitPortal);
-			currentRealm.removePlayer(user);
 			mgr.addRealm(generatedRealm);
 			generatedRealm.addPlayer(user);
+			mgr.clearPlayerState(user.getId());
+			onPlayerJoin(mgr, generatedRealm, user);
+			mgr.releaseRealmLock();
 			return;
 		}
 
