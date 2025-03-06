@@ -70,6 +70,7 @@ public class ServerGameLogic {
 		if (!validateCallingPlayer(mgr, packet, usePortalPacket.getPlayerId())) {
 			return;
 		}
+		mgr.acquireRealmLock();
 		
 		if (usePortalPacket.isToVault()) {
 			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
@@ -152,6 +153,7 @@ public class ServerGameLogic {
 		targetRealm.addPlayer(user);
 		mgr.clearPlayerState(user.getId());
 		onPlayerJoin(mgr, targetRealm, user);
+		mgr.releaseRealmLock();
 	}
 
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {

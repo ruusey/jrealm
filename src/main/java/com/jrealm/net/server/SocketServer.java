@@ -32,6 +32,7 @@ public class SocketServer implements Runnable {
 			this.serverSocket = new ServerSocket(port);
 		} catch (Exception e) {
 			SocketServer.log.error("Failed to create server socket. Reason: {}", e.getMessage());
+			System.exit(-1);
 		}
 	}
 
@@ -43,6 +44,7 @@ public class SocketServer implements Runnable {
 				try {
 					final Socket socket = this.serverSocket.accept();
 					socket.setTcpNoDelay(true);
+					socket.setSoTimeout(2500);
 					final String remoteAddr = socket.getInetAddress().getHostAddress();
 					final ProcessingThread processingThread = new ProcessingThread(this, socket);
 					this.clients.put(remoteAddr, processingThread);
