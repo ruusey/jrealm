@@ -45,11 +45,10 @@ public class UseAbilityPacket extends Packet {
 
 	@Override
 	public void readData(byte[] data) throws Exception {
-		final UseAbilityPacket read = IOService.readPacket(getClass(), data);
-		this.playerId = read.getPlayerId();
-		this.posX = read.getPosX();
-		this.posY = read.getPosY();
-		this.setId(PacketType.USE_ABILITY.getPacketId());
+		final UseAbilityPacket packet = IOService.readPacket(this.getClass(), data);
+		this.playerId = packet.getPlayerId();
+		this.posX = packet.getPosX();
+		this.posY = packet.getPosY();
 	}
 
 	@Override

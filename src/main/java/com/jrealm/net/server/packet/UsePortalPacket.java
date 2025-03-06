@@ -1,11 +1,7 @@
 package com.jrealm.net.server.packet;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
@@ -56,54 +52,31 @@ public class UsePortalPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-    	final DataInputStream dis = new DataInputStream(bis);
-        if ((dis == null) || (dis.available() < 5))
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");
-
-        this.portalId = dis.readLong();
-        this.fromRealmId = dis.readLong();
-        this.playerId = dis.readLong();
-        this.toVault = dis.readByte();
-        this.toNexus = dis.readByte();
+    	final UsePortalPacket packet = IOService.readStream(this.getClass(), data);
+    	this.portalId = packet.getPortalId();
+    	this.fromRealmId = packet.getFromRealmId();
+    	this.playerId = packet.getPlayerId();
+    	this.toVault = packet.getToVault();
+    	this.toNexus = packet.getToNexus();
     }
 
     @Override
     public int serializeWrite(DataOutputStream stream) throws Exception {
 		return IOService.writePacket(this, stream).length;
-
     }
 
     public static UsePortalPacket from(long portalId, long fromRealmId, long playerId) throws Exception {
-    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    	final DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeLong(portalId);
-        dos.writeLong(fromRealmId);
-        dos.writeLong(playerId);
-        dos.writeByte(-1);
-        dos.writeByte(-1);
-        return new UsePortalPacket(PacketType.USE_PORTAL.getPacketId(), baos.toByteArray());
+    	final UsePortalPacket packet = new UsePortalPacket(portalId, fromRealmId, playerId, (byte)-1, (byte)-1);
+        return packet;
     }
 
     public static UsePortalPacket toNexus(long fromRealmId, long playerId) throws Exception {
-    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    	final DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeLong(-1l);
-        dos.writeLong(fromRealmId);
-        dos.writeLong(playerId);
-        dos.writeByte(-1);
-        dos.writeByte(1);
-        return new UsePortalPacket(PacketType.USE_PORTAL.getPacketId(), baos.toByteArray());
+    	final UsePortalPacket packet = new UsePortalPacket(-1, fromRealmId, playerId, (byte)-1, (byte)1);
+        return packet;
     }
 
     public static UsePortalPacket toVault(long fromRealmId, long playerId) throws Exception {
-    	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    	final DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeLong(-1l);
-        dos.writeLong(fromRealmId);
-        dos.writeLong(playerId);
-        dos.writeByte(1);
-        dos.writeByte(-1);
-        return new UsePortalPacket(PacketType.USE_PORTAL.getPacketId(), baos.toByteArray());
+    	final UsePortalPacket packet = new UsePortalPacket(-1, fromRealmId, playerId, (byte)1, (byte)-1);
+        return packet;
     }
 }

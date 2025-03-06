@@ -1,7 +1,5 @@
 package com.jrealm.net.server.packet;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.data.GameDataManager;
@@ -19,6 +17,7 @@ import com.jrealm.net.messaging.ServerErrorMessage;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
