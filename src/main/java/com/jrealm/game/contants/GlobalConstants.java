@@ -16,6 +16,8 @@ public class GlobalConstants {
     public static final int LARGE_ART_SIZE = 32;
 
     public static final int PLAYER_SIZE = 28;
+    
+    public static final long SOCKET_READ_TIMEOUT = 1750;
 
     public static final Double[] UNIT_CIRCLE = { 0.0d, };
 }

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.util.WorkerThread;
 
 import lombok.Data;
@@ -44,7 +45,7 @@ public class SocketServer implements Runnable {
 				try {
 					final Socket socket = this.serverSocket.accept();
 					socket.setTcpNoDelay(true);
-					socket.setSoTimeout(2500);
+					socket.setSoTimeout((int)GlobalConstants.SOCKET_READ_TIMEOUT);
 					final String remoteAddr = socket.getInetAddress().getHostAddress();
 					final ProcessingThread processingThread = new ProcessingThread(this, socket);
 					this.clients.put(remoteAddr, processingThread);
@@ -65,7 +66,7 @@ public class SocketServer implements Runnable {
 					final Set<String> toRemove = new HashSet<>();
 					for(Map.Entry<String,ProcessingThread> entry : this.clients.entrySet()) {
 						final long timeSinceConnect = Instant.now().toEpochMilli()-this.clientConnectTime.get(entry.getKey());
-						if(timeSinceConnect>2500 && !entry.getValue().isHandshakeComplete()) {
+						if(timeSinceConnect>GlobalConstants.SOCKET_READ_TIMEOUT && !entry.getValue().isHandshakeComplete()) {
 							toRemove.add(entry.getKey());
 						}
 					}
