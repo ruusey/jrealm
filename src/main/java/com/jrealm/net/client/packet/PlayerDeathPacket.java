@@ -2,23 +2,29 @@ package com.jrealm.net.client.packet;
 
 import java.io.DataOutputStream;
 
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.core.nettypes.SerializableLong;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 @Slf4j
 @Streamable
 public class PlayerDeathPacket extends Packet {
-
-    public PlayerDeathPacket() {
-        // TODO Auto-generated constructor stub
+	@SerializableField(order = 0, type = SerializableLong.class)
+	private long playerId;
+	
+	
+    public PlayerDeathPacket(long playerId) {
+       this.playerId = playerId;
     }
 
     public PlayerDeathPacket(final byte id, final byte[] data) {
@@ -32,7 +38,8 @@ public class PlayerDeathPacket extends Packet {
 
     @Override
     public void readData(byte[] data) throws Exception {
-
+    	final PlayerDeathPacket packet = IOService.readPacket(this.getClass(), data);
+    	this.playerId = packet.getPlayerId();
     }
 
     @Override
@@ -41,7 +48,7 @@ public class PlayerDeathPacket extends Packet {
 
     }
 
-    public static PlayerDeathPacket from() throws Exception {
-        return new PlayerDeathPacket(PacketType.PLAYER_DEATH.getPacketId(), new byte[0]);
+    public static PlayerDeathPacket from(long playerId) throws Exception {
+        return new PlayerDeathPacket(playerId);
     }
 }

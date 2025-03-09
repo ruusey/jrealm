@@ -19,6 +19,18 @@ public class WorkerThread extends Thread {
             return null;
         return CompletableFuture.runAsync(runnable, WorkerThread.executor);
     }
+    
+    public static void runLater(Runnable runnable, long ms) {
+    	final Runnable wrappedTask = () ->{
+    		try{
+    			Thread.sleep(ms);
+    			runnable.run();
+    		}catch(Exception e) {
+    			log.error("Failed to execute runnable in the future. Reason: {}", e.getMessage());
+    		}
+    	};
+    	submitAndRun(wrappedTask);		
+    }
 
     public static CompletableFuture<Void> doAsync(Runnable task) {
         final CompletableFuture<Void> cf = CompletableFuture.runAsync(() -> {

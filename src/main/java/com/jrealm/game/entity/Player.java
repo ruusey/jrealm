@@ -187,7 +187,7 @@ public class Player extends Entity {
 		if (((Instant.now().toEpochMilli() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
 			float mult = 1.0f;
-			if (this.hasEffect(EffectType.HEALING)) {
+			if (this.hasEffect(EffectType.BUFFED)) {
 				mult = 1.5f;
 			}
 			final int vit = (int) ((0.24f * (stats.getVit() + 4.2f)) * mult);
@@ -265,7 +265,7 @@ public class Player extends Entity {
 			}
 		}
 
-		if (this.hasEffect(EffectType.HEALING)) {
+		if (this.hasEffect(EffectType.BUFFED)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.REDISH)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.REDISH);
 			}

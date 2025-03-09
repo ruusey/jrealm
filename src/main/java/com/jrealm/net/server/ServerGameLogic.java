@@ -38,6 +38,7 @@ import com.jrealm.net.messaging.LoginResponseMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.CommandPacket;
+import com.jrealm.net.server.packet.DeathAckPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
@@ -360,6 +361,19 @@ public class ServerGameLogic {
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to handle MoveItem packet. Reason: {}", e);
 		}
+	}
+	
+	@PacketHandlerServer(DeathAckPacket.class)
+	public static void handleDeathAckServer(RealmManagerServer mgr, Packet packet) {
+		final Player real = mgr.getPlayerByRemoteAddress(packet.getSrcIp());
+		final DeathAckPacket deathPacket = (DeathAckPacket) packet;
+		if(real.getId()!=deathPacket.getPlayerId()) {
+			log.error("**DEATH ACK PLAYER ID DID NOT MATCH, REAL={}, attempted={}, BAN THEM**", real, deathPacket.getPlayerId());
+			return;
+		}
+
+		final Realm playerRealm = mgr.findPlayerRealm(deathPacket.getPlayerId());
+		playerRealm.removePlayer(real.getId());
 	}
 
 //	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {

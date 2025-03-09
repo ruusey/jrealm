@@ -44,6 +44,7 @@ import com.jrealm.net.messaging.ServerErrorMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
 import com.jrealm.net.server.packet.CommandPacket;
+import com.jrealm.net.server.packet.DeathAckPacket;
 import com.jrealm.net.server.packet.TextPacket;
 
 import lombok.extern.slf4j.Slf4j;
@@ -97,6 +98,11 @@ public class ClientGameLogic {
 		// Unused until this contains user spefic death data.
 		final PlayerDeathPacket playerDeath = (PlayerDeathPacket) packet;
 		try {
+			cli.getClient().sendRemote(new DeathAckPacket(cli.getState().getPlayer().getId()));
+			// Give the client time to send the death acknowledgement... this is just a courtesy to the server
+			// ??Better way to do this??
+			Thread.sleep(100);
+			 
 			cli.getState().getRealmManager().getClient().setShutdown(true);
 			cli.getState().getRealmManager().getWorkerThread().setShutdown(true);
 			cli.getState().gsm.add(GameStateManager.GAMEOVER);

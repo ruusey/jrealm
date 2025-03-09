@@ -313,6 +313,9 @@ public class RealmManagerServer implements Runnable {
 				}
 
 				for (final Packet packet : playerPackets) {
+					if(packet instanceof PlayerDeathPacket) {
+						System.out.println();
+					}
 					this.bytesWritten += packet.serializeWrite(dosToClient);
 				}
 			} catch (Exception e) {
@@ -1452,17 +1455,18 @@ public class RealmManagerServer implements Runnable {
 			final String remoteAddrDeath = this.getRemoteAddressMapReversed().get(player.getId());
 			final LootContainer graveLoot = new LootContainer(LootTier.GRAVE, player.getPos().clone(),
 					player.getSlots(0, 12));
-			// this.getServer().getClients().remove(remoteAddrDeath);
 			targetRealm.addLootContainer(graveLoot);
 			targetRealm.getExpiredPlayers().add(player.getId());
-			targetRealm.removePlayer(player);
-			if (player.isHeadless())
+			if (player.isHeadless()) {
+				targetRealm.removePlayer(player);
 				return;
-			this.enqueueServerPacket(player, PlayerDeathPacket.from());
+			}
+
+			this.enqueueServerPacket(player, PlayerDeathPacket.from(player.getId()));
 			if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
 				ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + player.getCharacterUuid(),
 						Object.class);
-			} else {
+			} else { 
 				// Remove their amulet and let them respawn
 				TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
 						player.getName() + "'s Amulet shatters as they disappear.");

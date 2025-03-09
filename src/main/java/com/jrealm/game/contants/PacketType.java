@@ -17,6 +17,7 @@ import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.client.packet.UpdatePlayerTradeSelectionPacket;
 import com.jrealm.net.server.packet.CommandPacket;
+import com.jrealm.net.server.packet.DeathAckPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
@@ -44,7 +45,9 @@ public enum PacketType {
     TRADE_REQUEST			((byte) 16, RequestTradePacket.class),
     ACCEPT_TRADE_REQUEST	((byte) 17, AcceptTradeRequestPacket.class),
     UPDATE_TRADE_SELECTION  ((byte) 18, UpdatePlayerTradeSelectionPacket.class),
-    UPDATE_TRADE			((byte) 19, UpdateTradePacket.class);
+    UPDATE_TRADE			((byte) 19, UpdateTradePacket.class),
+    DEATH_ACK			    ((byte) 20, DeathAckPacket.class);
+
 
 
 
