@@ -367,13 +367,15 @@ public class ServerGameLogic {
 	public static void handleDeathAckServer(RealmManagerServer mgr, Packet packet) {
 		final Player real = mgr.getPlayerByRemoteAddress(packet.getSrcIp());
 		final DeathAckPacket deathPacket = (DeathAckPacket) packet;
-		if(real.getId()!=deathPacket.getPlayerId()) {
+		
+		if (!validateCallingPlayer(mgr, packet, deathPacket.getPlayerId())) {
 			log.error("**DEATH ACK PLAYER ID DID NOT MATCH, REAL={}, attempted={}, BAN THEM**", real, deathPacket.getPlayerId());
 			return;
 		}
 
-		final Realm playerRealm = mgr.findPlayerRealm(deathPacket.getPlayerId());
-		playerRealm.removePlayer(real.getId());
+		//final Realm playerRealm = mgr.findPlayerRealm(deathPacket.getPlayerId());
+		mgr.disconnectPlayer(real);
+
 	}
 
 //	public static void handleLoadMapServer(RealmManagerServer mgr, Packet packet) {
@@ -386,6 +388,7 @@ public class ServerGameLogic {
 		long assignedId = -1l;
 		PlayerAccountDto account = null;
 		log.info("[SERVER] Recieved login command {}", request);
+		Player player = null;
 		try {
 			SessionTokenDto loginToken = null;
 			String accountName = request.getEmail();
@@ -393,7 +396,6 @@ public class ServerGameLogic {
 			Optional<CharacterDto> characterClass = null;
 			try {
 				loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
-				// ServerGameLogic.DATA_SERVICE.setSessionToken(loginToken.getToken());
 				account = ServerGameLogic.DATA_SERVICE.executeGet("/data/account/" + loginToken.getAccountGuid(), null,
 						PlayerAccountDto.class);
 				accountName = account.getAccountName();
@@ -411,6 +413,7 @@ public class ServerGameLogic {
 			final Player existing = mgr.searchRealmsForPlayer(account.getAccountName());
 
 			if (existing != null) {
+				player = existing;
 				final Realm currentRealm = mgr.findPlayerRealm(existing.getId());
 				currentRealm.removePlayer(existing);
 				if (currentRealm.getMapId() == 1) {
@@ -431,7 +434,7 @@ public class ServerGameLogic {
 			final CharacterClass cls = CharacterClass.valueOf(targetCharacter.getCharacterClass());
 			final Vector2f playerPos = new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 					(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE);
-			final Player player = new Player(assignedId, playerPos, GlobalConstants.PLAYER_SIZE, cls);
+			player = new Player(assignedId, playerPos, GlobalConstants.PLAYER_SIZE, cls);
 			final Realm targetRealm = mgr.getTopRealm();
 			final ProcessingThread userThread = mgr.getServer().getClients().get(command.getSrcIp());
 			player.setAccountUuid(accountUuid);
@@ -453,25 +456,15 @@ public class ServerGameLogic {
 
 			commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
 
-			// accountResponse = CommandPacket.create(player, CommandType.PLAYER_ACCOUNT,
-			// PlayerAccountMessage.builder().account(account).build());
 			ServerGameLogic.onPlayerJoin(mgr, targetRealm, player);
+			log.info("Player {} logged in successfully", player);
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
 			commandResponse = CommandPacket.createError(assignedId, 503,
 					"Failed to perform Client Login. Reason: " + e.getMessage());
 		} finally {
-			log.info("Login successfuly, adding player.");
-			OutputStream toClientStream;
-			try {
-				toClientStream = mgr.getServer().getClients().get(command.getSrcIp()).getClientSocket()
-						.getOutputStream();
-				final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-				// accountResponse.serializeWrite(dosToClient);
-				commandResponse.serializeWrite(dosToClient);
-			} catch (Exception e) {
-				log.error("Failed to write login response to client. Reason: {}", e);
-			}
+			// Enqueue the response packet
+			mgr.enqueueServerPacket(player, commandResponse);
 		}
 	}
 
@@ -482,6 +475,8 @@ public class ServerGameLogic {
 		return response;
 	}
 
+	// Looks up a player by source IP, which is determined by the server and less likely to be
+	// vulnerable to spoofing assuming someone reverse engineers the packet protocol
 	private static boolean validateCallingPlayer(RealmManagerServer mgr, Packet packet, Long declaredPlayerId) {
 		final Long actualPlayerId = mgr.getRemoteAddresses().get(packet.getSrcIp());
 		final Player actualPlayer = mgr.searchRealmsForPlayer(actualPlayerId);
@@ -491,6 +486,7 @@ public class ServerGameLogic {
 		if (actualPlayer.getId() != declaredPlayerId) {
 			log.info("Player ids do not match for Packet {}. Actual PlayerId: {}. Declared PlayerId: {}", packet,
 					actualPlayerId, declaredPlayerId);
+			// Disconnect the player
 			mgr.disconnectPlayer(actualPlayer);
 			return false;
 		}

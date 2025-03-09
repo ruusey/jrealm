@@ -95,7 +95,6 @@ public class ClientGameLogic {
 
 	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
 		@SuppressWarnings("unused")
-		// Unused until this contains user spefic death data.
 		final PlayerDeathPacket playerDeath = (PlayerDeathPacket) packet;
 		try {
 			cli.getClient().sendRemote(new DeathAckPacket(cli.getState().getPlayer().getId()));
@@ -108,7 +107,7 @@ public class ClientGameLogic {
 			cli.getState().gsm.add(GameStateManager.GAMEOVER);
 			cli.getState().gsm.pop(GameStateManager.PLAY);
 		} catch (Exception e) {
-			ClientGameLogic.log.error("[CLIENT] Failed to handle LoadMap Packet. Reason: {}", e);
+			ClientGameLogic.log.error("[CLIENT] Failed to handle PlayerDeath Packet. Reason: {}", e);
 		}
 	}
 
