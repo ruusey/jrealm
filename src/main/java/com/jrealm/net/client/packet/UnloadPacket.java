@@ -126,6 +126,5 @@ public class UnloadPacket extends Packet {
 
         return UnloadPacket.from(players.toArray(new Long[0]), loot.toArray(new Long[0]), bullets.toArray(new Long[0]),
                 enemies.toArray(new Long[0]), portals.toArray(new Long[0]));
-
     }
 }

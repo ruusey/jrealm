@@ -86,38 +86,36 @@ public class UpdatePacket extends Packet {
 		final List<NetGameItem> lootToDrop = Arrays
 				.asList(IOService.mapModel(GameDataManager.GAME_ITEMS.get(48), NetGameItem.class));
 
-		UpdatePacket test = new UpdatePacket();
-		test.setPlayerId(enemy.getId());
-		test.setHealth(enemy.getHealth());
-		test.setMana(enemy.getMana());
-		test.setPlayerName("enemy[" + enemy.getId() + "]");
-		test.setStats(IOService.mapModel(enemy.getStats(), NetStats.class));
-		test.setInventory(lootToDrop.toArray(new NetGameItem[0]));
-		test.setEffectTimes(enemy.getEffectTimes().clone());
-		test.setEffectIds(enemy.getEffectIds().clone());
-		test.setId(PacketType.UPDATE.getPacketId());
-		test.setExperience(1l);
-		return test;
-
+		final UpdatePacket updatePacket = new UpdatePacket();
+		updatePacket.setPlayerId(enemy.getId());
+		updatePacket.setHealth(enemy.getHealth());
+		updatePacket.setMana(enemy.getMana());
+		updatePacket.setPlayerName("enemy[" + enemy.getId() + "]");
+		updatePacket.setStats(IOService.mapModel(enemy.getStats(), NetStats.class));
+		updatePacket.setInventory(lootToDrop.toArray(new NetGameItem[0]));
+		updatePacket.setEffectTimes(enemy.getEffectTimes().clone());
+		updatePacket.setEffectIds(enemy.getEffectIds().clone());
+		updatePacket.setId(PacketType.UPDATE.getPacketId());
+		updatePacket.setExperience(1l);
+		return updatePacket;
 	}
 
 	public static UpdatePacket from(Player player) throws Exception {
-
 		if (player == null)
 			return null;
 
-		UpdatePacket test = new UpdatePacket();
-		test.setPlayerId(player.getId());
-		test.setHealth(player.getHealth());
-		test.setMana(player.getMana());
-		test.setPlayerName(player.getName());
-		test.setStats(IOService.mapModel(player.getStats(), NetStats.class));
-		test.setInventory(IOService.mapModel(player.getInventory(), NetGameItem[].class));
-		test.setEffectTimes(player.getEffectTimes().clone());
-		test.setEffectIds(player.getEffectIds().clone());
-		test.setExperience(player.getExperience());
-		test.setId(PacketType.UPDATE.getPacketId());
-		return test;
+		final UpdatePacket updatePacket = new UpdatePacket();
+		updatePacket.setPlayerId(player.getId());
+		updatePacket.setHealth(player.getHealth());
+		updatePacket.setMana(player.getMana());
+		updatePacket.setPlayerName(player.getName());
+		updatePacket.setStats(IOService.mapModel(player.getStats(), NetStats.class));
+		updatePacket.setInventory(IOService.mapModel(player.getInventory(), NetGameItem[].class));
+		updatePacket.setEffectTimes(player.getEffectTimes().clone());
+		updatePacket.setEffectIds(player.getEffectIds().clone());
+		updatePacket.setExperience(player.getExperience());
+		updatePacket.setId(PacketType.UPDATE.getPacketId());
+		return updatePacket;
 	}
 
 	public boolean equals(UpdatePacket other, boolean thinMatch) {

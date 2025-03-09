@@ -45,7 +45,6 @@ public class PlayerDeathPacket extends Packet {
     @Override
     public int serializeWrite(DataOutputStream stream) throws Exception {
 		return IOService.writePacket(this, stream).length;
-
     }
 
     public static PlayerDeathPacket from(long playerId) throws Exception {
