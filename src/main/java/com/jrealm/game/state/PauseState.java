@@ -66,18 +66,19 @@ public class PauseState extends GameState {
 
     @Override
     public void input(MouseHandler mouse, KeyHandler key) {
-        btnResume.input(mouse, key);
-        btnExit.input(mouse, key);
-        charSelectButtons.forEach(button->button.input(mouse, key));
-
+        this.btnResume.input(mouse, key);
+        this.btnExit.input(mouse, key);
+        if(this.charSelectButtons!=null) {
+        	this.charSelectButtons.forEach(button->button.input(mouse, key));
+        }
     }
 
     @Override
     public void render(Graphics2D g) {
         int i = 0;
 
-        btnResume.render(g);
-        btnExit.render(g);
+        this.btnResume.render(g);
+        this.btnExit.render(g);
         int rowWidth = 500;
         int rowHeight = 100;
         if (this.account != null) {
@@ -112,9 +113,8 @@ public class PauseState extends GameState {
                         } catch (Exception e) {
                             log.error("Failed to perform character switch login. Reason: {}", e);
                         }
-
-                        gsm.pop(GameStateManager.PAUSE);
-                        gsm.add(GameStateManager.PLAY);
+                        this.gsm.pop(GameStateManager.PAUSE);
+                        this.gsm.add(GameStateManager.PLAY);
                     }
                     this.characterSwitchRequested = true;
                 });

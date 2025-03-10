@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
 import com.jrealm.game.contants.GlobalConstants;
@@ -26,23 +27,25 @@ import com.jrealm.net.entity.NetTile;
 import com.jrealm.net.realm.Realm;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public class TileManager {
     private static final Integer VIEWPORT_TILE_MIN = 10;
     private static final Integer VIEWPORT_TILE_MAX = 20;
-
+    private Semaphore mapLock = new Semaphore(1);
     private List<TileMap> mapLayers;
 
     // Server side constructor
     public TileManager(int mapId) {
         MapModel model = GameDataManager.MAPS.get(mapId);
+        log.info("[TileManager] Building map {}", model);
         // Three types of maps. Fixed data, generated terrain and generated dungeon
         if (model.getData() != null) {
             this.mapLayers = this.getLayersFromData(model);
-
         } else if(model.getTerrainId()>-1){
-            TerrainGenerationParameters params = GameDataManager.TERRAINS.get(model.getTerrainId());
+            final TerrainGenerationParameters params = GameDataManager.TERRAINS.get(model.getTerrainId());
             this.mapLayers = this.getLayersFromTerrain(model.getWidth(), model.getHeight(), model.getTileSize(),
                     params);
         }else if (model.getDungeonId()>-1){
@@ -232,6 +235,10 @@ public class TileManager {
         final TileMap collisionLayer = this.getCollisionLayer();
         final int tileX = (int) pos.x / collisionLayer.getTileSize();
         final int tileY = (int) pos.y / collisionLayer.getTileSize();
+        // If the player clicks off the map
+        if(!collisionLayer.isValidPosition(tileX, tileY)){
+        	return true;
+        }
         final Tile currentTile = collisionLayer.getBlocks()[tileY][tileX];
         return (currentTile != null) && !currentTile.isVoid();
     }
@@ -391,6 +398,9 @@ public class TileManager {
     }
 
     public void mergeMap(LoadMapPacket packet) {
+    	// Acquire the map lock to prevent the render thread from displaying out of 
+    	// date tile information
+    	this.acquireMapLock();
         // Resize the map on dimension change
         if(this.getMapHeight()!=packet.getMapHeight() || this.getMapWidth()!=packet.getMapWidth()) {
            MapModel model = GameDataManager.MAPS.get((int)packet.getMapId());
@@ -402,14 +412,20 @@ public class TileManager {
            this.mapLayers.add(baseLayer);
            this.mapLayers.add(collisionLayer);
         }
+
         for (NetTile tile : packet.getTiles()) {
             TileData data = GameDataManager.TILES.get((int) tile.getTileId()).getData();
+            
             this.mapLayers.get((int) tile.getLayer()).setTileAt(tile.getXIndex(), tile.getYIndex(), tile.getTileId(),
                     data);
         }
+        this.releaseMapLock();
     }
 
     public void render(Player player, Graphics2D g) {
+    	// Acquire the map lock to prevent the render thread from displaying out of 
+    	// date tile information
+    	this.acquireMapLock();
         final int playerSize = player.getSize() / 2;
         final Vector2f pos = player.getPos().clone(playerSize, playerSize);
         final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
@@ -448,6 +464,7 @@ public class TileManager {
         for(Tile tile : toRender) {
         	tile.render(g);
         }
+        this.releaseMapLock();
 //       List<List<Tile>> i =  Partition.ofSize(toRender, 64);
 //        i.forEach(tile->{
 //            Runnable r = () ->{
@@ -457,5 +474,21 @@ public class TileManager {
 //            };
 //            WorkerThread.submitAndRun(r);
 //        });
+    }
+    
+    public void releaseMapLock() {
+    	try {
+    		this.mapLock.release();
+    	}catch(Exception e) {
+    		log.error("[TileManager] Failed to release map lock. Reason: {}", e.getMessage());
+    	}
+    }
+    
+    public void acquireMapLock() {
+    	try {
+    		this.mapLock.acquire();
+    	}catch(Exception e) {
+    		log.error("[TileManager] Failed to acquire map lock. Reason: {}", e.getMessage());
+    	}
     }
 }

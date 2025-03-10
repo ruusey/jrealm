@@ -20,9 +20,6 @@ public class Monster extends Enemy {
     public Monster(long id, int enemyId, Vector2f origin, int size, int weaponId) {
         super(id, enemyId, origin, size, weaponId);
         final EnemyModel model = GameDataManager.ENEMIES.get(enemyId);
-        this.acc = 1f;
-        this.deacc = 2f;
-        this.maxSpeed = 1.4f;
         this.chaseRange = (int) model.getChaseRange();
         this.attackRange = (int) model.getAttackRange();
 

@@ -1097,7 +1097,8 @@ public class RealmManagerServer implements Runnable {
 
 			// If the ability is non damaging (rogue cloak, priest tome)
 		} else if (abilityItem.getEffect() != null) {
-			if (abilityItem.getEffect().getEffectId().equals(EffectType.TELEPORT)) {
+			// Special case for teleporting
+			if (abilityItem.getEffect().getEffectId().equals(EffectType.TELEPORT) && !targetRealm.getTileManager().isCollisionTile(pos)) {
 				player.setPos(pos);
 			} else {
 				player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
@@ -1137,6 +1138,7 @@ public class RealmManagerServer implements Runnable {
 					toRemove.add(lc);
 				}
 			}
+			// fight me for using both kinds of loops
 			toRemove.forEach(lc -> {
 				realm.removeLootContainer(lc);
 			});

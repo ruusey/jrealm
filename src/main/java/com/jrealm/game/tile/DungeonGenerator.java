@@ -175,22 +175,21 @@ public class DungeonGenerator {
 			}
 		}
 	}
-
+	// TODO: Implement different kinds of bridging
 	public List<Integer> getRoomLinkParams(TileMap room0, TileMap room1) {
 		return null;
 	}
 
 	public TileMap getRoom(int tileSize, int minRoomWidth, int maxRoomWidth, int minRoomHeight, int maxRoomHeight,
 			List<RoomShapeTemplate> shapeTemplates) {
-		@SuppressWarnings("unused")
 		// TODO: Implement room shapes
 		final RoomShapeTemplate shape = shapeTemplates.get(Realm.RANDOM.nextInt(shapeTemplates.size()));
 		final int roomWidth = minRoomWidth + Realm.RANDOM.nextInt((maxRoomWidth - minRoomWidth) + 1);
 		final int roomHeight = minRoomHeight + Realm.RANDOM.nextInt((maxRoomHeight - minRoomHeight) + 1);
 		final TileMap baseLayer = new TileMap(tileSize, roomWidth, roomHeight);
 		log.info("[DungeonGen] Generating room with params tileSize={}, roomWidth={}, roomHeight={}, shape={}", tileSize, roomWidth, roomHeight, shape);
-
-		// Currently only supports rectangular rooms because i'm terrible at programming
+		// Currently only supports rectangular and oval 
+		// sub-rooms because i'm terrible at programming
 		if (shape.equals(RoomShapeTemplate.RECTANGLE)) {
 			for (int i = 0; i < roomHeight; i++) {
 				for (int j = 0; j < roomWidth; j++) {
@@ -214,6 +213,8 @@ public class DungeonGenerator {
 				}
 			}
 		}
+		
+		// TODO: More room shapes!
 		return baseLayer;
 	}
 }

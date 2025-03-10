@@ -93,6 +93,10 @@ public class TileMap {
         }
         return results.toArray(new Tile[0]);
     }
+    
+    public boolean isValidPosition(float x, float y) {
+    	return x > -1 && x<this.getWidth() && y>-1 && y<this.getHeight();
+    }
 
     public void render(Graphics2D g, Rectangle cam) {
         for (Tile t : this.getBlocksInBounds(cam)) {

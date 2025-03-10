@@ -108,15 +108,6 @@ public class Camera {
 
     public void target(Entity e) {
         this.e = e;
-        if (e != null) {
-            this.acc = e.getAcc();
-            this.deacc = e.getDeacc();
-            this.maxSpeed = e.getMaxSpeed();
-        } else {
-            this.acc = 3;
-            this.deacc = 0.3f;
-            this.maxSpeed = 8;
-        }
     }
 
     public void setMaxSpeed(float maxSpeed) {

@@ -23,11 +23,6 @@ public abstract class GameObject {
     protected float dx;
     protected float dy;
 
-    protected float maxSpeed = 4f;
-    protected float acc = 2f;
-    protected float deacc = 1.0f;
-    protected float force = 25f;
-
     protected boolean teleported = false;
     protected String name = "";
 
