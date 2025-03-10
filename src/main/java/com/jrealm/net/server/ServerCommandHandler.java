@@ -40,6 +40,10 @@ public class ServerCommandHandler {
     public static final Map<String, CommandHandler> COMMAND_DESCRIPTIONS = new HashMap<>();
     public static final Set<String> ADMIN_RESTRICTED_COMMANDS = new HashSet<>();
     public static final Set<Long> ADMIN_USER_CACHE = new HashSet<>();
+    
+    // Handler methods are passed a reference to the current RealmManager, the
+    // invoking Player object
+    // and the ServerCommand message object.
     public static void invokeCommand(RealmManagerServer mgr, CommandPacket command) throws Exception {
         final ServerCommandMessage message = CommandType.fromPacket(command);
         final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
@@ -82,7 +86,7 @@ public class ServerCommandHandler {
 	public static void invokeOpUser(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs() == null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /op {PLAYER_NAME}");
-		log.info("**Playe OP** Player {} is promoting/demoting {} to/from server operator", target.getAccountUuid(),
+		log.info("**Player OP** Player {} is promoting/demoting {} to/from server operator", target.getAccountUuid(),
 				message.getArgs().get(0));
 		try {
 			final AccountDto callerAccount = ServerGameLogic.DATA_SERVICE
@@ -117,9 +121,6 @@ public class ServerCommandHandler {
 		}
 	}
 
-    // Handler methods are passed a reference to the current RealmManager, the
-    // invoking Player object
-    // and the ServerCommand message object.
     @CommandHandler(value="stat", description="Modify or max individual Player stats")
 	@AdminRestrictedCommand
     public static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {

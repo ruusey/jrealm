@@ -122,17 +122,17 @@ public class RealmManagerServer implements Runnable {
 	private List<Vector2f> shotDestQueue;
 	private Map<Long, Realm> realms = new HashMap<>();
 	private Map<String, Long> remoteAddresses = new HashMap<>();
+	
 	private Map<Long, Long> playerAbilityState = new HashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
 	private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
 	private Map<Long, UpdatePacket> enemyUpdateState = new HashMap<>();
-
 	private Map<Long, UnloadPacket> playerUnloadState = new HashMap<>();
 	private Map<Long, LoadMapPacket> playerLoadMapState = new HashMap<>();
 	private Map<Long, ObjectMovePacket> playerObjectMoveState = new HashMap<>();
-
 	private Map<Long, Long> playerGroundDamageState = new HashMap<>();
 	private Map<Long, Long> playerLastHeartbeatTime = new HashMap<>();
+	
 	private UnloadPacket lastUnload;
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
@@ -226,7 +226,6 @@ public class RealmManagerServer implements Runnable {
 			this.update(0);
 		};
 		
-
 		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 64);
 		WorkerThread.submitAndForkRun(workerThread);
 		RealmManagerServer.log.info("[SERVER] RealmManagerServer exiting run().");
@@ -313,9 +312,6 @@ public class RealmManagerServer implements Runnable {
 				}
 
 				for (final Packet packet : playerPackets) {
-					if(packet instanceof PlayerDeathPacket) {
-						System.out.println();
-					}
 					this.bytesWritten += packet.serializeWrite(dosToClient);
 				}
 			} catch (Exception e) {
@@ -327,7 +323,7 @@ public class RealmManagerServer implements Runnable {
 //			this.server.getClients().remove(disconnectedClient);
 //		}
 		// Print server write rate to all connected clients (kbit/s)
-		if (Instant.now().toEpochMilli() - lastWriteSampleTime > 1000) {
+		if (Instant.now().toEpochMilli() - this.lastWriteSampleTime > 1000) {
 			this.lastWriteSampleTime = Instant.now().toEpochMilli();
 			RealmManagerServer.log.info("[SERVERR] current write rate = {} kbit/s",
 					(float) (this.bytesWritten / 1024.0f) * 8.0f);
@@ -472,7 +468,7 @@ public class RealmManagerServer implements Runnable {
 
 							final ObjectMovePacket movePacket0 = realm.getGameObjectsAsPackets(
 									realm.getTileManager().getRenderViewPort(player.getValue()));
-							Set<Long> nearEnemyIds = new HashSet<>();
+							final Set<Long> nearEnemyIds = new HashSet<>();
 							if (movePacket0 != null) {
 								for (ObjectMovement m : movePacket0.getMovements()) {
 									if (m.getEntityType() == EntityType.ENEMY.getEntityTypeId()) {
@@ -482,7 +478,7 @@ public class RealmManagerServer implements Runnable {
 							}
 
 							if (nearEnemyIds.size() > 0) {
-								Map<Long, UpdatePacket> enemyUpdatePackets = new HashMap<>();
+								final Map<Long, UpdatePacket> enemyUpdatePackets = new HashMap<>();
 								for (Long enemyId : nearEnemyIds) {
 									final UpdatePacket updatePacket0 = realm.getEnemyAsPacket(enemyId);
 									// Only transmit this players update data if it has not been sent
@@ -546,7 +542,6 @@ public class RealmManagerServer implements Runnable {
 		} catch (Exception e) {
 			log.error("Failed to enqueue game data. Reason: {}", e);
 		}
-
 	}
 
 	// For each connected client, dequeue all pending packets
@@ -578,22 +573,20 @@ public class RealmManagerServer implements Runnable {
 						}
 						start = System.nanoTime();
 						if (this.packetCallbacksServer.get(created.getId()) == null) {
-							List<MethodHandle> callBacHandles = this.userPacketCallbacksServer.get(created.getId());
+							final List<MethodHandle> callBacHandles = this.userPacketCallbacksServer.get(created.getId());
 							if (callBacHandles != null) {
 								callBacHandles.forEach(callBack -> {
 									try {
 										callBack.invokeExact(this, created);
 									} catch (Throwable e) {
 										log.error(
-												"Failed to invoke user server packet callback for packet id {}. Callback: {}",
-												created.getId(), callBack);
+												"Failed to invoke user server packet callback for packet id {}. Callback: {}. Reason: {}",
+												created.getId(), callBack, e.getMessage());
 									}
 								});
 							}
-
 						} else {
 							this.packetCallbacksServer.get(created.getId()).accept(this, created);
-
 						}
 						log.debug("Invoked callback for PacketType {} using map in {} nanos",
 								PacketType.valueOf(created.getId()).getY(), (System.nanoTime() - start));
