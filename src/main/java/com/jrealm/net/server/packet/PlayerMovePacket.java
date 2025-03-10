@@ -4,7 +4,6 @@ import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.Player;
-import com.jrealm.game.util.Cardinality;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
@@ -12,6 +11,7 @@ import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableBoolean;
 import com.jrealm.net.core.nettypes.SerializableByte;
 import com.jrealm.net.core.nettypes.SerializableLong;
+import com.jrealm.util.Cardinality;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

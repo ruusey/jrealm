@@ -9,9 +9,6 @@ import java.util.stream.Stream;
 
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
-import com.jrealm.game.util.CommandHandler;
-import com.jrealm.game.util.PacketHandlerServer;
-import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.UpdateTradePacket;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
@@ -22,6 +19,9 @@ import com.jrealm.net.entity.NetTradeSelection;
 import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.TextPacket;
+import com.jrealm.util.CommandHandler;
+import com.jrealm.util.PacketHandlerServer;
+import com.jrealm.util.WorkerThread;
 
 import lombok.extern.slf4j.Slf4j;
 

@@ -7,9 +7,9 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.TileModel;
-import com.jrealm.game.util.GameObjectUtils;
-import com.jrealm.game.util.Graph;
 import com.jrealm.net.realm.Realm;
+import com.jrealm.util.GameObjectUtils;
+import com.jrealm.util.Graph;
 
 import lombok.extern.slf4j.Slf4j;
 

@@ -2,8 +2,8 @@ package com.jrealm.game.state;
 
 import java.awt.Graphics2D;
 
-import com.jrealm.game.util.KeyHandler;
-import com.jrealm.game.util.MouseHandler;
+import com.jrealm.util.KeyHandler;
+import com.jrealm.util.MouseHandler;
 
 public abstract class GameState {
 

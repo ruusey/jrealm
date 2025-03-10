@@ -8,9 +8,9 @@ import com.jrealm.game.graphics.Fontf;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.util.Camera;
-import com.jrealm.game.util.KeyHandler;
-import com.jrealm.game.util.MouseHandler;
+import com.jrealm.util.Camera;
+import com.jrealm.util.KeyHandler;
+import com.jrealm.util.MouseHandler;
 
 public class GameStateManager {
 

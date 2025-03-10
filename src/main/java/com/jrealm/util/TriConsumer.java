@@ -1,4 +1,4 @@
-package com.jrealm.game.util;
+package com.jrealm.util;
 
 @FunctionalInterface
 public interface TriConsumer<A, B, C> {

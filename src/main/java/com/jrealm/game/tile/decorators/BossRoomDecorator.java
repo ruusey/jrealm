@@ -4,9 +4,9 @@ import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.util.GameObjectUtils;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
+import com.jrealm.util.GameObjectUtils;
 
 public class BossRoomDecorator extends RealmDecoratorBase{
 

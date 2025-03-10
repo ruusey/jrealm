@@ -11,10 +11,10 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.game.contants.PacketType;
-import com.jrealm.game.util.TimedWorkerThread;
-import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.Packet;
 import com.jrealm.net.core.IOService;
+import com.jrealm.util.TimedWorkerThread;
+import com.jrealm.util.WorkerThread;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -1,4 +1,4 @@
-package com.jrealm.game.util;
+package com.jrealm.util;
 
 import java.util.AbstractList;
 import java.util.ArrayList;

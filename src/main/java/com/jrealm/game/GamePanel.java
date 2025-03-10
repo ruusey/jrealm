@@ -12,9 +12,9 @@ import javax.swing.JPanel;
 
 import com.jrealm.game.graphics.ImageUtils;
 import com.jrealm.game.state.GameStateManager;
-import com.jrealm.game.util.KeyHandler;
-import com.jrealm.game.util.MouseHandler;
-import com.jrealm.game.util.WorkerThread;
+import com.jrealm.util.KeyHandler;
+import com.jrealm.util.MouseHandler;
+import com.jrealm.util.WorkerThread;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -17,11 +17,11 @@ import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ItemTooltip;
 import com.jrealm.game.state.PlayState;
-import com.jrealm.game.util.KeyHandler;
-import com.jrealm.game.util.MouseHandler;
 import com.jrealm.net.client.packet.UpdatePlayerTradeSelectionPacket;
 import com.jrealm.net.entity.NetTradeSelection;
 import com.jrealm.net.server.packet.TextPacket;
+import com.jrealm.util.KeyHandler;
+import com.jrealm.util.MouseHandler;
 
 import lombok.Data;
 

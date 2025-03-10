@@ -15,7 +15,6 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.EffectText;
-import com.jrealm.game.util.PacketHandlerClient;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
 import com.jrealm.net.client.packet.LoadMapPacket;
@@ -46,6 +45,7 @@ import com.jrealm.net.realm.RealmManagerClient;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.DeathAckPacket;
 import com.jrealm.net.server.packet.TextPacket;
+import com.jrealm.util.PacketHandlerClient;
 
 import lombok.extern.slf4j.Slf4j;
 

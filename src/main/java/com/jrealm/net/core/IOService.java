@@ -24,12 +24,13 @@ import java.util.Map;
 import org.modelmapper.ModelMapper;
 
 import com.jrealm.game.contants.PacketType;
-import com.jrealm.game.util.ClasspathInspector;
 import com.jrealm.net.NetConstants;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.core.converters.*;
+import com.jrealm.util.ClasspathInspector;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

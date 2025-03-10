@@ -22,15 +22,15 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.tile.Tile;
-import com.jrealm.game.util.AdminRestrictedCommand;
-import com.jrealm.game.util.CommandHandler;
-import com.jrealm.game.util.GameObjectUtils;
 import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.TextPacket;
+import com.jrealm.util.AdminRestrictedCommand;
+import com.jrealm.util.CommandHandler;
+import com.jrealm.util.GameObjectUtils;
 
 import lombok.extern.slf4j.Slf4j;
 

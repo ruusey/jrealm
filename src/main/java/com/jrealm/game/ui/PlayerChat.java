@@ -8,13 +8,13 @@ import java.util.Map;
 
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.state.PlayState;
-import com.jrealm.game.util.KeyHandler;
-import com.jrealm.game.util.MouseHandler;
 import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.TextPacket;
+import com.jrealm.util.KeyHandler;
+import com.jrealm.util.MouseHandler;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;

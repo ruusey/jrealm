@@ -8,8 +8,8 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.util.KeyHandler;
-import com.jrealm.game.util.MouseHandler;
+import com.jrealm.util.KeyHandler;
+import com.jrealm.util.MouseHandler;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

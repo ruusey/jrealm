@@ -3,7 +3,6 @@ package com.jrealm.game.contants;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.jrealm.game.util.Tuple;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
 import com.jrealm.net.client.packet.UpdateTradePacket;
@@ -25,6 +24,7 @@ import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
+import com.jrealm.util.Tuple;
 
 public enum PacketType {
     PLAYER_MOVE				((byte) 1, PlayerMovePacket.class), 

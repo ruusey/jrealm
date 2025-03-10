@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.jrealm.game.util.Tuple;
+import com.jrealm.util.Tuple;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package com.jrealm.game.util;
+package com.jrealm.util;
 
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Enemy;

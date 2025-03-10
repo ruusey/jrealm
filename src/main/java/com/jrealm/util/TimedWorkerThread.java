@@ -1,4 +1,4 @@
-package com.jrealm.game.util;
+package com.jrealm.util;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

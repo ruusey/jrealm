@@ -28,7 +28,7 @@ import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
-import com.jrealm.game.util.Pair;
+import com.jrealm.util.Pair;
 
 public class PopupFrameFactory {
 

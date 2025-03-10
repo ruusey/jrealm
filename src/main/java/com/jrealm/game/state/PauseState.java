@@ -17,9 +17,9 @@ import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.ui.Button;
-import com.jrealm.game.util.KeyHandler;
-import com.jrealm.game.util.MouseHandler;
 import com.jrealm.net.client.SocketClient;
+import com.jrealm.util.KeyHandler;
+import com.jrealm.util.MouseHandler;
 
 import lombok.extern.slf4j.Slf4j;
 

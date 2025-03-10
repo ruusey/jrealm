@@ -1,13 +1,14 @@
-package com.jrealm.game.util;
+package com.jrealm.util;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ ElementType.METHOD, ElementType.TYPE })
+import com.jrealm.net.Packet;
+
+@Target({ ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface CommandHandler {
-    public String value();
-    public String description() default "";
+public @interface PacketHandlerClient {
+    public Class<? extends Packet> value ();
 }

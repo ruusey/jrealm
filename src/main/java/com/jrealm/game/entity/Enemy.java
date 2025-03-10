@@ -13,11 +13,11 @@ import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.script.EnemyScriptBase;
 import com.jrealm.game.state.PlayState;
-import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
 import com.jrealm.net.realm.RealmManagerServer;
+import com.jrealm.util.WorkerThread;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

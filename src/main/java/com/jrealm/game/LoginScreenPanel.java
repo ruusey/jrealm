@@ -27,9 +27,9 @@ import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.account.service.PopupFrameFactory;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.data.GameDataManager;
-import com.jrealm.game.util.WorkerThread;
 import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.net.client.SocketClient;
+import com.jrealm.util.WorkerThread;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

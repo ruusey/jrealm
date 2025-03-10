@@ -10,7 +10,7 @@ import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.graphics.Sprite.EffectEnum;
 import com.jrealm.game.model.SpriteModel;
-import com.jrealm.game.util.Tuple;
+import com.jrealm.util.Tuple;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

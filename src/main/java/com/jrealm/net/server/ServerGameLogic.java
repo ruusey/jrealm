@@ -29,8 +29,6 @@ import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
-import com.jrealm.game.util.Cardinality;
-import com.jrealm.game.util.PacketHandlerServer;
 import com.jrealm.net.Packet;
 import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.LoginRequestMessage;
@@ -46,6 +44,8 @@ import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
+import com.jrealm.util.Cardinality;
+import com.jrealm.util.PacketHandlerServer;
 
 import lombok.extern.slf4j.Slf4j;
 

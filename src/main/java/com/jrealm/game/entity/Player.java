@@ -22,12 +22,12 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.state.PlayState;
-import com.jrealm.game.util.KeyHandler;
-import com.jrealm.game.util.MouseHandler;
-import com.jrealm.game.util.Tuple;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.entity.NetGameItemRef;
+import com.jrealm.util.KeyHandler;
+import com.jrealm.util.MouseHandler;
+import com.jrealm.util.Tuple;
 
 import lombok.Builder;
 import lombok.Data;

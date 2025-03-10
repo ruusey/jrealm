@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.jrealm.game.contants.GlobalConstants;
-import com.jrealm.game.util.WorkerThread;
+import com.jrealm.util.WorkerThread;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
