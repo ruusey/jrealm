@@ -1,4 +1,4 @@
-package com.jrealm.net;
+package com.jrealm.net.test;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -6,6 +6,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -23,6 +24,7 @@ public class TestBed {
 
     public static void main(String[] args) {
         try {
+        	final ServerConnectionManager accepter = new ServerConnectionManager(PORT);
             final ServerSocket server = getServerSocket(PORT);
             runServerSocket(server);
             runServerRoutine(server);
@@ -79,7 +81,6 @@ public class TestBed {
                             outputStreamToClient.flush();
                         }
                     }
-                    Thread.sleep(100);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -93,7 +94,7 @@ public class TestBed {
         final Runnable runServerSocketSeparateThread = () -> {
             while (runClient) {
                 try {
-                    final byte[] bytesToWrite = "Hello World".getBytes();
+                    final byte[] bytesToWrite = (UUID.randomUUID().toString()+", "+UUID.randomUUID().toString()).getBytes();
                     final OutputStream outputStream = client.getOutputStream();
                     // No stream established yet
                     if (outputStream == null)
@@ -109,7 +110,6 @@ public class TestBed {
                         final String inputContent = new String(readBytes, StandardCharsets.UTF_8);
                         System.out.println("Client recieved message (" + numBytesRead + " bytes)" + inputContent);
                     }
-                    Thread.sleep(100);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

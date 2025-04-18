@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ProcessingThread extends Thread {
+	// 80 KB buffer per client
     private static final int BUFFER_CAPACITY = 65536 * 10;
 
     private Socket clientSocket;

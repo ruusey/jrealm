@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class SocketClient implements Runnable {
+	// 80 KB buffer for the client
     private static final int BUFFER_CAPACITY = 65536 * 10;
 
     public static String PLAYER_EMAIL = null;

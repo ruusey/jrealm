@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class WorkerThread extends Thread {
+public class WorkerThread {
     private static final int THREAD_POOL_COUNT = 40;
     private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
             .newFixedThreadPool(WorkerThread.THREAD_POOL_COUNT, Executors.privilegedThreadFactory());

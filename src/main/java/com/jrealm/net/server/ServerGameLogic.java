@@ -74,9 +74,7 @@ public class ServerGameLogic {
 		mgr.acquireRealmLock();
 		
 		if (usePortalPacket.isToVault()) {
-			
 			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
-			
 			if (currentRealm.getMapId() == 1)
 				return;
 
@@ -200,7 +198,7 @@ public class ServerGameLogic {
 			toMove.setLeft(doMove);
 			toMove.setDx(doMove ? -spd : 0.0f);
 		}
-
+		
 		if (toMove.getIsUp() && toMove.getIsRight()) {
 			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
 			toMove.setDy(doMove ? -spd : 0.0f);
