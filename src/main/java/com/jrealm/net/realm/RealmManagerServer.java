@@ -325,7 +325,7 @@ public class RealmManagerServer implements Runnable {
 		// Print server write rate to all connected clients (kbit/s)
 		if (Instant.now().toEpochMilli() - this.lastWriteSampleTime > 1000) {
 			this.lastWriteSampleTime = Instant.now().toEpochMilli();
-			RealmManagerServer.log.info("[SERVERR] current write rate = {} kbit/s",
+			RealmManagerServer.log.info("[SERVER] current write rate = {} kbit/s",
 					(float) (this.bytesWritten / 1024.0f) * 8.0f);
 			this.bytesWritten = 0;
 
