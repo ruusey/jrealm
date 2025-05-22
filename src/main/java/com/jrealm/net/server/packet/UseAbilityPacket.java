@@ -15,6 +15,7 @@ import com.jrealm.net.core.nettypes.SerializableLong;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 @Streamable
 @AllArgsConstructor
+@NoArgsConstructor
 public class UseAbilityPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
 	private long playerId;
@@ -30,25 +32,10 @@ public class UseAbilityPacket extends Packet {
 	@SerializableField(order = 2, type = SerializableFloat.class)
 	private float posY;
 
-	public UseAbilityPacket() {
-
-	}
-
-	public UseAbilityPacket(byte packetId, byte[] data) {
-		super(packetId, data);
-		try {
-			this.readData(data);
-		} catch (Exception e) {
-			UseAbilityPacket.log.error("Failed to create Use Ability Packet. Reason: {}", e);
-		}
-	}
-
 	@Override
 	public void readData(byte[] data) throws Exception {
 		final UseAbilityPacket packet = IOService.readPacket(this.getClass(), data);
-		this.playerId = packet.getPlayerId();
-		this.posX = packet.getPosX();
-		this.posY = packet.getPosY();
+		this.assignData(this, packet);
 	}
 
 	@Override
@@ -58,7 +45,12 @@ public class UseAbilityPacket extends Packet {
 
 	public static UseAbilityPacket from(Player player, Vector2f pos) throws Exception {
 		final UseAbilityPacket packet = new UseAbilityPacket(player.getId(), pos.x, pos.y);
-		packet.setId(PacketType.USE_ABILITY.getPacketId());
 		return packet;
+	}
+	
+	@Override
+	public byte getPacketId() {
+		// TODO Auto-generated method stub
+		return (byte) 11;
 	}
 }

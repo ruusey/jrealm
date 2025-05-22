@@ -11,12 +11,14 @@ import com.jrealm.net.core.nettypes.SerializableLong;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
-@AllArgsConstructor
 @Slf4j
 @Streamable
+@AllArgsConstructor
+@NoArgsConstructor
 public class UsePortalPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)	
     private long portalId;
@@ -29,19 +31,6 @@ public class UsePortalPacket extends Packet {
 	@SerializableField(order = 4, type = SerializableByte.class)
     private byte toNexus;
 
-    public UsePortalPacket() {
-
-    }
-
-    public UsePortalPacket(final byte id, final byte[] data) {
-        super(id, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            UsePortalPacket.log.error("Failed to parse UsePortal packet, Reason: {}", e);
-        }
-    }
-
     public boolean isToNexus() {
         return this.toNexus != (byte) -1;
     }
@@ -53,11 +42,7 @@ public class UsePortalPacket extends Packet {
     @Override
     public void readData(byte[] data) throws Exception {
     	final UsePortalPacket packet = IOService.readStream(this.getClass(), data);
-    	this.portalId = packet.getPortalId();
-    	this.fromRealmId = packet.getFromRealmId();
-    	this.playerId = packet.getPlayerId();
-    	this.toVault = packet.getToVault();
-    	this.toNexus = packet.getToNexus();
+    	this.assignData(data, packet);
     }
 
     @Override
@@ -79,4 +64,10 @@ public class UsePortalPacket extends Packet {
     	final UsePortalPacket packet = new UsePortalPacket(-1, fromRealmId, playerId, (byte)1, (byte)-1);
         return packet;
     }
+
+	@Override
+	public byte getPacketId() {
+		// TODO Auto-generated method stub
+		return (byte) 13;
+	}
 }

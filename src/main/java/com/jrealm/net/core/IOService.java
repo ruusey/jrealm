@@ -20,19 +20,53 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import org.modelmapper.AbstractConverter;
 import org.modelmapper.ModelMapper;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.NetConstants;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.core.converters.*;
 import com.jrealm.util.ClasspathInspector;
 
 import lombok.extern.slf4j.Slf4j;
-
+/** 
+ * @author Robert Usey
+ * <br>
+ * <p>IOService.class - Service  layer for reading and writing JNET
+ * objects to and from and input/output streams (typically for use with sockets)
+ * </p>
+ * <p>
+ * IOService is in conjunction with {@link Streamable} packet objects
+ * to build robust socket-based communication applications in a manner similar to gRPC
+ * 
+ * Packet objects are classes extending the {@link Packet}  superclass and
+ * made up of {@link SerialzableField} members where a {@link SerialzableField} 
+ * is simply a member that is also {@link Streamable}
+ * </p>
+ * </br>
+ * <b> Read Usage:</b>
+ * <pre>
+ *     <code>
+ * final byte[] data = ...
+ * final MyPacket readPacket = IOService.readPacket(MyPacket.class, data);
+ *     </code>
+ * </pre>
+ * <b>Write Usage:</b>
+ * <pre>
+ *     <code> 
+ * final DataOutputStream outputStream = ...
+ * final MyPacket toWrite = ...
+ * IOService.writePacket(toWrite, outputStream);
+ *     </code>
+ * </pre>
+ *     
+ */
 @Slf4j
 @SuppressWarnings({ "unused", "rawtypes", "unchecked" })
 public class IOService {
@@ -41,17 +75,29 @@ public class IOService {
 	public static Map<Class<?>, List<PacketMappingInformation>> MAPPING_DATA = new HashMap<>();
 	
 	static {
-		MAPPER.addConverter(new ShortToEffectTypeConverter());
-		MAPPER.addConverter(new EffectTypeToShortConverter());
-		MAPPER.addConverter(new ByteToLootTierConverter());
-		MAPPER.addConverter(new LootTierToByteConverter());
+		try {
+			registerModelConverter(new ShortToEffectTypeConverter());
+			registerModelConverter(new EffectTypeToShortConverter());
+			registerModelConverter(new ByteToLootTierConverter());
+			registerModelConverter(new LootTierToByteConverter());
+		}catch(Exception e) {
+			log.error("[IOService] Failed to register custom mapper. Reason: {}", e.getMessage());
+		}
+	}
+	
+	// Register a model mapper custom converter to aid in transforming
+	// byte level data structures into POJOs
+	public static void registerModelConverter(AbstractConverter converter) throws Exception {
+		MAPPER.addConverter(converter);
 	}
 
 	public static <T> T readPacket(Class<? extends Packet> clazz, byte[] data) throws Exception {
 		final ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		final DataInputStream dis = new DataInputStream(bis);
 		final byte packetIdRead = removeHeader(dis);
-		return readStream(clazz, dis);
+		final Packet read = ((Packet)readStream(clazz, dis));
+		read.setId(packetIdRead);
+		return (T) read;
 	}
 
 	public static <T> T readPacket(Class<? extends Packet> clazz, DataInputStream stream) throws Exception {
@@ -60,31 +106,37 @@ public class IOService {
 	}
 
 	public static byte[] writePacket(Packet packet, DataOutputStream stream) throws Exception {
-		final ByteArrayOutputStream byteStream0 = new ByteArrayOutputStream();
-		final DataOutputStream stream0 = new DataOutputStream(byteStream0);
-		writeStream(packet, stream0);
+		// Write the data bytes to a separate output stream so we know what 
+		// length to include in the header. Look into preserving the original packet data
+		// underlying byte array to use its length instead of calculating it at write time
+		final ByteArrayOutputStream tempByteStream = new ByteArrayOutputStream();
+		final DataOutputStream tempOutStream = new DataOutputStream(tempByteStream);
+		writeStream(packet, tempOutStream);
 
 		final ByteArrayOutputStream byteStreamFinal = new ByteArrayOutputStream();
 		final DataOutputStream streamfinal = new DataOutputStream(byteStreamFinal);
-		addHeader(packet, byteStream0.toByteArray().length, streamfinal);
-		streamfinal.write(byteStream0.toByteArray());
+		// Write header
+		addHeader(packet, tempByteStream.toByteArray().length, streamfinal);
+		// Write data
+		streamfinal.write(tempByteStream.toByteArray());
+		// Write result to output stream
 		stream.write(byteStreamFinal.toByteArray());
-		// stream.flush();
+		// return written bytes length
 		return byteStreamFinal.toByteArray();
 	}
 
 	public static int writeStream(Object model, DataOutputStream stream0) throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(model.getClass());
 		if (log.isDebugEnabled())
-			log.info("[WRITE] class {} begin. ToWrite = {}", model.getClass(), model);
+			log.info("[IOService::WRITE] class {} begin. ToWrite = {}", model.getClass(), model);
 		if (mappingInfo == null) {
-			log.error("[WRITE] NO MAPPING FOR CLASS {}", model.getClass());
+			log.error("[IOService::WRITE] NO MAPPING FOR CLASS {}", model.getClass());
 			return 0;
 		}
 		int bytesWritten = 0;
 		for (PacketMappingInformation info : mappingInfo) {
 			if (log.isDebugEnabled())
-				log.info("[WRITE] Begin write mapping for MODEL {} field {}", model.getClass(),
+				log.info("[IOService::WRITE] Begin write mapping for MODEL {} field {}", model.getClass(),
 						info.getPropertyHandle().varType());
 			final SerializableFieldType serializer = info.getSerializer();
 			if (info.isCollection()) {
@@ -111,25 +163,22 @@ public class IOService {
 	public static <T> T readStream(Class<?> clazz, DataInputStream stream, Object result) throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
 		if (log.isDebugEnabled())
-			log.info("[READ] class {} begin. CurrentRessults = {}", clazz, result);
+			log.info("[IOService::READ] class {} begin. CurrentRessults = {}", clazz, result);
 		if (result == null) {
 			final Object packet = clazz.getDeclaredConstructor().newInstance();
-			if (packet instanceof Packet) {
-				((Packet) packet).setId(PacketType.valueOf(clazz).getPacketId());
-			}
 			result = packet;
 		}
 
 		// For each network serializable field in the class
 		for (PacketMappingInformation info : mappingInfo) {
 			if (log.isDebugEnabled())
-				log.info("[READ] Begin read mapping for MODEL {} field {}", clazz, info.getPropertyHandle().varType());
+				log.info("[IOService::READ] Begin read mapping for MODEL {} field {}", clazz, info.getPropertyHandle().varType());
 
 			final SerializableFieldType<?> serializer = info.getSerializer();
 			// Basic collection handling (write collection length followed by each entity)
 			if (info.isCollection()) {
 				if (log.isDebugEnabled())
-					log.info("[READ] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
+					log.info("[IOService::READ] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
 							info.getPropertyHandle().varType());
 				// Read collection length. Always int32
 				final int collectionLength = stream.readInt();
@@ -160,13 +209,19 @@ public class IOService {
 	}
 
 	public static void addHeader(Packet packet, int dataSize, DataOutputStream stream) throws Exception {
-		stream.writeByte(PacketType.valueOf(packet.getClass()).getPacketId());
+		Entry<Byte, Class<? extends Packet>> targetPacket = PacketType.valueOf(packet.getClass());
+		if(targetPacket==null) {
+			System.out.println();
+		}
+		stream.writeByte(targetPacket.getKey());
 		stream.writeInt(dataSize + NetConstants.PACKET_HEADER_SIZE);
 	}
 
 	public static byte removeHeader(DataInputStream stream) throws Exception {
-		byte packetId = stream.readByte();
-		int len = stream.readInt();
+		// read the first byte of the stream as packetId
+		final byte packetId = stream.readByte();
+		// read the next 4 bytes of the stream as signed int32
+		final int len = stream.readInt();
 		return packetId;
 	}
 
@@ -218,13 +273,14 @@ public class IOService {
 		return shortArr;
 	}
 
-	// Map annotated Net entity members into an in memory map
-	// for runtime serdes
+	// Map annotated JNET entity members into an in memory map
+	// for runtime serialization/deserialization from byte streams
 	public static void mapSerializableData() throws Exception {
-		log.info("Loading classes to map packet data");
+		log.info("[IOService::INIT] Loading classes to map packet data");
 		final List<Class<?>> packetsToMap = IOService.getClassesOnClasspath();
 
 		for (Class<?> clazz : packetsToMap) {
+			// If not streamable at all dont bother
 			if (!isStreamableClass(clazz))
 				continue;
 			final List<PacketMappingInformation> mappingForClass = new LinkedList<>();
@@ -248,7 +304,7 @@ public class IOService {
 									objField.getType());
 
 							log.info(
-									"Successfully located serializable packet field in Class {}. Field: {}. Serializer: {}. isCollection: {}. Order: {}",
+									"[IOService::INIT] Successfully located serializable packet field in Class {}. Field: {}. Serializer: {}. isCollection: {}. Order: {}",
 									clazz.getName(), objField.getName(), serializer.getClass(), isCollection, order);
 
 							final PacketMappingInformation mappingInfo = PacketMappingInformation.builder()
@@ -256,7 +312,7 @@ public class IOService {
 									.isCollection(isCollection).build();
 							mappingForClass.add(mappingInfo);
 						} catch (Exception e) {
-							log.error("**[CRITICAL]** Failed parsing serializable types in packets. Reason: {}", e);
+							log.error("[IOService::INIT] **CRITICAL** Failed parsing serializable types in packets. Reason: {}", e);
 						}
 					}
 				}
@@ -275,10 +331,12 @@ public class IOService {
 				MAPPING_DATA.put(clazz, mappingForClass);
 			}
 		}
+		log.info("[IOService::INIT] Mapping completed");
 	}
 
 	// Check if the class is annotated @Streamable
-	private static boolean isStreamableClass(Class<?> clazz) {
+	public static boolean isStreamableClass(Class<?> clazz) {
+		if(clazz==null) return false;
 		boolean result = false;
 		for (Annotation annot : clazz.getDeclaredAnnotations()) {
 			if (annot instanceof Streamable) {

@@ -39,15 +39,6 @@ public class LoadMapPacket extends Packet {
 
     }
 
-    public LoadMapPacket(final byte id, final byte[] data) {
-        super(id, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            LoadMapPacket.log.error("Failed to parse ObjectMove packet, Reason: {}", e);
-        }
-    }
-
     @Override
     public void readData(byte[] data) throws Exception {
     	final LoadMapPacket readPacket = IOService.readPacket(getClass(), data);
@@ -120,4 +111,9 @@ public class LoadMapPacket extends Packet {
         }
         return false;
     }
+
+	@Override
+	public byte getPacketId() {
+		return (byte) 8;
+	}
 }

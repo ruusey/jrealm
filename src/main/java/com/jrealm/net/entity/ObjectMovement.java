@@ -1,4 +1,4 @@
-package com.jrealm.net.client.packet;
+package com.jrealm.net.entity;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

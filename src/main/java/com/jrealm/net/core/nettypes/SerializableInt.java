@@ -17,13 +17,16 @@ public class SerializableInt extends SerializableFieldType<Integer> {
 		try {
 			result = stream.readInt();
 		} catch (Exception e) {
-			// log.error("Failed to read integerr. Reason: {}", e.getMessage());
+			if(log.isDebugEnabled()) {
+				log.debug("SerializableInt failed to read stream. Reason: {}", e);
+			}
 		}
 		return result;
 	}
 
 	@Override
 	public int write(Integer value, DataOutputStream stream) throws Exception {
+		if(stream==null)throw new Exception("SerializableInt Error: target stream cannot be null");
 		if (value != null) {
 			stream.writeInt(value);
 		} else {

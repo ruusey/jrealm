@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -33,7 +34,7 @@ public class TestServerMapper {
 	
 	private void registerPacketCallbacksReflection() {
 		log.info("Registering packet handlers using reflection");
-		final MethodType mt = MethodType.methodType(Packet.class, Packet.class);
+		final MethodType mt = MethodType.methodType(Packet.class, ServerConnectionManager.class, Packet.class);
 
 		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandler.class);
 		for (final Method method : subclasses) {
@@ -47,15 +48,15 @@ public class TestServerMapper {
 				}
 
 				if (handleToHandler != null) {
-					final PacketType targetPacketType = PacketType.valueOf(packetToHandle.value());
-					List<MethodHandle> existing = this.userPacketCallbacksServer.get(targetPacketType.getPacketId());
+					final Entry<Byte, Class<? extends Packet>> targetPacketType = PacketType.valueOf(packetToHandle.value());
+					List<MethodHandle> existing = this.userPacketCallbacksServer.get(targetPacketType.getKey());
 					if (existing == null) {
 						existing = new ArrayList<>();
 					}
 					existing.add(handleToHandler);
 					log.info("Added new packet handler for packet {}. Handler method: {}", targetPacketType,
 							handleToHandler.toString());
-					this.userPacketCallbacksServer.put(targetPacketType.getPacketId(), existing);
+					this.userPacketCallbacksServer.put(targetPacketType.getKey(), existing);
 				}
 			} catch (Exception e) {
 				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);

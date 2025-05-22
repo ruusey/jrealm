@@ -14,6 +14,7 @@ import com.jrealm.net.core.nettypes.*;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,6 +25,7 @@ import lombok.Builder;
 @Streamable
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class UnloadPacket extends Packet {
 	
 	@SerializableField(order = 0, type = SerializableLong.class, isCollection=true)
@@ -37,28 +39,10 @@ public class UnloadPacket extends Packet {
 	@SerializableField(order = 4, type = SerializableLong.class, isCollection=true)
     private Long[] portals;
 
-    public UnloadPacket() {
-
-    }
-
-    public UnloadPacket(final byte id, final byte[] data) {
-        super(id, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            UnloadPacket.log.error("Failed to parse LoadPacket packet, Reason: {}", e);
-        }
-    }
-
     @Override
     public void readData(byte[] data) throws Exception {
-    	UnloadPacket read = IOService.readPacket(getClass(), data);
-    	this.players = read.getPlayers();
-    	this.bullets = read.getBullets();
-    	this.enemies = read.getEnemies();
-    	this.containers = read.getContainers();
-    	this.portals = read.getPortals();
-    	this.setId(PacketType.UNLOAD.getPacketId());
+    	final UnloadPacket read = IOService.readPacket(getClass(), data);
+    	this.assignData(this, read);
     }
 
     @Override
@@ -69,7 +53,6 @@ public class UnloadPacket extends Packet {
     public static UnloadPacket from(Long[] players, Long[] bullets, Long[] enemies, Long[] containers, Long[] portals)
             throws Exception {
     	final UnloadPacket packet = UnloadPacket.builder().players(players).containers(containers).bullets(bullets).enemies(enemies).portals(portals).build();
-    	packet.setId(PacketType.UNLOAD.getPacketId());
     	return packet;
     }
 
@@ -127,4 +110,10 @@ public class UnloadPacket extends Packet {
         return UnloadPacket.from(players.toArray(new Long[0]), loot.toArray(new Long[0]), bullets.toArray(new Long[0]),
                 enemies.toArray(new Long[0]), portals.toArray(new Long[0]));
     }
+
+	@Override
+	public byte getPacketId() {
+		// TODO Auto-generated method stub
+		return (byte) 10;
+	}
 }

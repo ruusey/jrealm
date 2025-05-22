@@ -82,13 +82,13 @@ import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
-import com.jrealm.net.client.packet.ObjectMovement;
 import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.entity.NetTile;
+import com.jrealm.net.entity.ObjectMovement;
 import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.server.ProcessingThread;
 import com.jrealm.net.server.ServerCommandHandler;
@@ -96,7 +96,13 @@ import com.jrealm.net.server.ServerGameLogic;
 import com.jrealm.net.server.ServerTradeManager;
 import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
+import com.jrealm.net.server.packet.HeartbeatPacket;
+import com.jrealm.net.server.packet.MoveItemPacket;
+import com.jrealm.net.server.packet.PlayerMovePacket;
+import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
+import com.jrealm.net.server.packet.UseAbilityPacket;
+import com.jrealm.net.server.packet.UsePortalPacket;
 import com.jrealm.util.AdminRestrictedCommand;
 import com.jrealm.util.CommandHandler;
 import com.jrealm.util.PacketHandlerServer;
@@ -116,7 +122,7 @@ public class RealmManagerServer implements Runnable {
 	private boolean shutdown = false;
 	private Reflections classPathScanner = new Reflections("com.jrealm", Scanners.SubTypes, Scanners.MethodsAnnotated);
 	private MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
-	private final Map<Byte, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
+	private final Map<Class<? extends Packet>, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
 	private final Map<Byte, List<MethodHandle>> userPacketCallbacksServer = new HashMap<>();
 
 	private List<Vector2f> shotDestQueue;
@@ -134,6 +140,7 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, Long> playerLastHeartbeatTime = new HashMap<>();
 	
 	private UnloadPacket lastUnload;
+	// Potentially accessed by many threads. M
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
 	private List<RealmDecoratorBase> realmDecorators = new ArrayList<>();
@@ -568,11 +575,11 @@ public class RealmManagerServer implements Runnable {
 								}
 							}
 							log.info("Invoked {} packet callbacks for PacketType {} using reflection in {} nanos",
-									packetHandles.size(), PacketType.valueOf(created.getId()).getY(),
+									packetHandles.size(), PacketType.valueOf(created.getId()),
 									(System.nanoTime() - start));
 						}
 						start = System.nanoTime();
-						if (this.packetCallbacksServer.get(created.getId()) == null) {
+						if (this.packetCallbacksServer.get(created.getClass()) == null) {
 							final List<MethodHandle> callBacHandles = this.userPacketCallbacksServer.get(created.getId());
 							if (callBacHandles != null) {
 								callBacHandles.forEach(callBack -> {
@@ -586,10 +593,10 @@ public class RealmManagerServer implements Runnable {
 								});
 							}
 						} else {
-							this.packetCallbacksServer.get(created.getId()).accept(this, created);
+							this.packetCallbacksServer.get(created.getClass()).accept(this, created);
 						}
 						log.debug("Invoked callback for PacketType {} using map in {} nanos",
-								PacketType.valueOf(created.getId()).getY(), (System.nanoTime() - start));
+								PacketType.valueOf(created.getId()), (System.nanoTime() - start));
 					} catch (Exception e) {
 						RealmManagerServer.log.error("Failed to process server packets {}", e);
 						thread.getValue().setShutdownProcessing(true);
@@ -878,15 +885,15 @@ public class RealmManagerServer implements Runnable {
 				}
 
 				if (handleToHandler != null) {
-					final PacketType targetPacketType = PacketType.valueOf(packetToHandle.value());
-					List<MethodHandle> existing = this.userPacketCallbacksServer.get(targetPacketType.getPacketId());
+					final Entry<Byte, Class<? extends Packet>> targetPacketType = PacketType.valueOf(packetToHandle.value());
+					List<MethodHandle> existing = this.userPacketCallbacksServer.get(targetPacketType.getKey());
 					if (existing == null) {
 						existing = new ArrayList<>();
 					}
 					existing.add(handleToHandler);
 					log.info("Added new packet handler for packet {}. Handler method: {}", targetPacketType,
 							handleToHandler.toString());
-					this.userPacketCallbacksServer.put(targetPacketType.getPacketId(), existing);
+					this.userPacketCallbacksServer.put(targetPacketType.getKey(), existing);
 				}
 			} catch (Exception e) {
 				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
@@ -899,19 +906,19 @@ public class RealmManagerServer implements Runnable {
 	// The server operator is encouraged to add auxiliary packet handling
 	// functionality using the @PacketHandler annotation
 	private void registerPacketCallbacks() {
-		this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), ServerGameLogic::handlePlayerMoveServer);
-		this.registerPacketCallback(PacketType.PLAYER_SHOOT.getPacketId(), ServerGameLogic::handlePlayerShootServer);
-		this.registerPacketCallback(PacketType.HEARTBEAT.getPacketId(), ServerGameLogic::handleHeartbeatServer);
-		this.registerPacketCallback(PacketType.TEXT.getPacketId(), ServerGameLogic::handleTextServer);
-		this.registerPacketCallback(PacketType.COMMAND.getPacketId(), ServerGameLogic::handleCommandServer);
+		this.registerPacketCallback(PlayerMovePacket.class, ServerGameLogic::handlePlayerMoveServer);
+		this.registerPacketCallback(PlayerShootPacket.class, ServerGameLogic::handlePlayerShootServer);
+		this.registerPacketCallback(HeartbeatPacket.class, ServerGameLogic::handleHeartbeatServer);
+		this.registerPacketCallback(TextPacket.class, ServerGameLogic::handleTextServer);
+		this.registerPacketCallback(CommandPacket.class, ServerGameLogic::handleCommandServer);
 		// this.registerPacketCallback(PacketType.LOAD_MAP.getPacketId(),
 		// ServerGameLogic::handleLoadMapServer);
-		this.registerPacketCallback(PacketType.USE_ABILITY.getPacketId(), ServerGameLogic::handleUseAbilityServer);
-		this.registerPacketCallback(PacketType.MOVE_ITEM.getPacketId(), ServerGameLogic::handleMoveItemServer);
-		this.registerPacketCallback(PacketType.USE_PORTAL.getPacketId(), ServerGameLogic::handleUsePortalServer);
+		this.registerPacketCallback(UseAbilityPacket.class, ServerGameLogic::handleUseAbilityServer);
+		this.registerPacketCallback(MoveItemPacket.class, ServerGameLogic::handleMoveItemServer);
+		this.registerPacketCallback(UsePortalPacket.class, ServerGameLogic::handleUsePortalServer);
 	}
 
-	private void registerPacketCallback(final byte packetId, final BiConsumer<RealmManagerServer, Packet> callback) {
+	private void registerPacketCallback(final Class<? extends Packet> packetId, final BiConsumer<RealmManagerServer, Packet> callback) {
 		this.packetCallbacksServer.put(packetId, callback);
 	}
 

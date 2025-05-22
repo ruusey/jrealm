@@ -12,6 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import com.jrealm.net.core.IOService;
+import com.jrealm.util.WorkerThread;
+
 public class TestBed {
     private static Boolean runServer = true;
     private static Boolean runClient = true;
@@ -22,18 +25,24 @@ public class TestBed {
     private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10, Executors.privilegedThreadFactory());
     private static final Integer PORT = 4199;
 
-    public static void main(String[] args) {
-        try {
-        	final ServerConnectionManager accepter = new ServerConnectionManager(PORT);
-            final ServerSocket server = getServerSocket(PORT);
-            runServerSocket(server);
-            runServerRoutine(server);
-            final Socket client = getClientSocket("127.0.0.1", PORT);
-            runClientRoutine(client);
-        } catch (Exception e) {
-            e.printStackTrace();
-            shutDown();
-        }
+    public static void main(String[] args) throws Exception {
+    	IOService.mapSerializableData();
+    	ServerConnectionManager mgr = new ServerConnectionManager(12345);
+    	WorkerThread.submitAndForkRun(mgr);
+    	TestClient cli = new TestClient("127.0.0.1", 12345);
+    	WorkerThread.submitAndForkRun(cli);
+
+//        try {
+//        	final ServerConnectionManager accepter = new ServerConnectionManager(PORT);
+//            final ServerSocket server = getServerSocket(PORT);
+//            runServerSocket(server);
+//            runServerRoutine(server);
+//            final Socket client = getClientSocket("127.0.0.1", PORT);
+//            runClientRoutine(client);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            shutDown();
+//        }
 
     }
 

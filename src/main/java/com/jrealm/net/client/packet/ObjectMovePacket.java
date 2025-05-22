@@ -10,31 +10,22 @@ import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
+import com.jrealm.net.entity.ObjectMovement;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
 @Streamable
+@NoArgsConstructor
 public class ObjectMovePacket extends Packet {
 
 	@SerializableField(order = 0, type = ObjectMovement.class, isCollection=true)
     private ObjectMovement[] movements;
-
-    public ObjectMovePacket() {
-
-    }
-
-    public ObjectMovePacket(final byte id, final byte[] data) {
-        super(id, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            log.error("Failed to parse ObjectMove packet, Reason: {}", e);
-        }
-    }
 
     @Override
     public int serializeWrite(DataOutputStream stream) throws Exception {
@@ -44,8 +35,7 @@ public class ObjectMovePacket extends Packet {
     @Override
     public void readData(byte[] data) throws Exception {
     	final ObjectMovePacket read = IOService.readPacket(getClass(), data);
-    	read.setId(PacketType.OBJECT_MOVE.getPacketId());
-    	this.movements = read.getMovements();
+    	this.assignData(this, read);
     }
 
     
@@ -75,7 +65,6 @@ public class ObjectMovePacket extends Packet {
 			results[i] = toWrite;
 		}
 		final ObjectMovePacket packet = new ObjectMovePacket();
-		packet.setId(PacketType.COMMAND.getPacketId());
 		packet.setMovements(results);
 		return packet;
 	}
@@ -99,9 +88,14 @@ public class ObjectMovePacket extends Packet {
     }
 
     public static ObjectMovePacket from(ObjectMovement[] objects) throws Exception {
-    	ObjectMovePacket packet = new ObjectMovePacket();
+    	final ObjectMovePacket packet = new ObjectMovePacket();
     	packet.setMovements(objects);
-    	packet.setId(PacketType.OBJECT_MOVE.getPacketId());
     	return packet;
     }
+
+	@Override
+	public byte getPacketId() {
+		// TODO Auto-generated method stub
+		return (byte)3;
+	}
 }

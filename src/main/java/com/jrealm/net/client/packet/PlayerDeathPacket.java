@@ -26,20 +26,11 @@ public class PlayerDeathPacket extends Packet {
     public PlayerDeathPacket(long playerId) {
        this.playerId = playerId;
     }
-
-    public PlayerDeathPacket(final byte id, final byte[] data) {
-        super(id, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            PlayerDeathPacket.log.error("Failed to parse PlayerDeath packet, Reason: {}", e);
-        }
-    }
-
+    
     @Override
     public void readData(byte[] data) throws Exception {
     	final PlayerDeathPacket packet = IOService.readPacket(this.getClass(), data);
-    	this.playerId = packet.getPlayerId();
+    	this.assignData(this, packet);
     }
 
     @Override
@@ -50,4 +41,10 @@ public class PlayerDeathPacket extends Packet {
     public static PlayerDeathPacket from(long playerId) throws Exception {
         return new PlayerDeathPacket(playerId);
     }
+
+	@Override
+	public byte getPacketId() {
+		// TODO Auto-generated method stub
+		return (byte)15;
+	}
 }

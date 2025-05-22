@@ -61,18 +61,22 @@ public abstract class Packet implements GameMessage {
         stream.writeInt(contentLength + NetConstants.PACKET_HEADER_SIZE);
     }
 
-    public Tuple<Class<? extends Packet>, PacketType> getPacketType() {
+    public Class<? extends Packet> getPacketType() {
         return PacketType.valueOf(id);
+    }
+    
+    public void assignData(Object target, Object src) {
+    	if(target==null || src==null) return;
+    	target = src;
     }
 
     public static Packet newInstance(final byte packetId, final byte[] data) {
-        final Tuple<Class<? extends Packet>, PacketType> typeInfo = PacketType.valueOf(packetId);
-        final Class<? extends Packet> packetClass = typeInfo.getX();
+        final Class<? extends Packet> typeInfo = PacketType.valueOf(packetId);
         Packet packetObj = null;
         try {
-            packetObj = packetClass.getDeclaredConstructor(byte.class, byte[].class).newInstance(packetId, data);
+            packetObj = typeInfo.getDeclaredConstructor(byte.class, byte[].class).newInstance(packetId, data);
         } catch (Exception e) {
-            log.error("Failed to construct instance of {}. Reason: {}", packetClass, e.getMessage());
+            log.error("Failed to construct instance of {}. Reason: {}", typeInfo, e.getMessage());
         }
         return packetObj;
     }

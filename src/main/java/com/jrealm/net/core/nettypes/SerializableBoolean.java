@@ -6,21 +6,28 @@ import java.io.DataOutputStream;
 import com.jrealm.net.NetConstants;
 import com.jrealm.net.core.SerializableFieldType;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class SerializableBoolean extends SerializableFieldType<Boolean> {
 
 	@Override
 	public Boolean read(DataInputStream stream) throws Exception {
+		Boolean res = null;
 		try {
-			return stream.readBoolean();
+			res = stream.readBoolean();
 		} catch (Exception e) {
-			return false;
+			if(log.isDebugEnabled()) {
+				log.debug("SerializableBoolean failed to read stream. Reason: {}", e);
+			}
 		}
+		return res;
 	}
 
 	@Override
 	public int write(Boolean value, DataOutputStream stream) throws Exception {
-		final Boolean toWrite = value == null ? false : value;
-		stream.writeBoolean(toWrite);
+		if(stream==null) throw new Exception("SerializableBoolean Error: target stream cannot be null");
+		stream.writeBoolean(value == null ? false : value);
 		return NetConstants.BOOLEAN_LENGTH;
 	}
 }

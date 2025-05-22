@@ -17,4 +17,10 @@ public class BlankPacket extends Packet {
     public int serializeWrite(DataOutputStream stream) throws Exception {
        return 0;
     }
+
+	@Override
+	public byte getPacketId() {
+		// TODO Auto-generated method stub
+		return -1;
+	}
 }

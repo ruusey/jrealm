@@ -97,7 +97,7 @@ public class SocketClient implements Runnable {
                     }
                     this.currentBytesRecieved += packetLength;
                     this.remoteBufferIndex -= packetLength;
-                    final Class<? extends Packet> packetClass = PacketType.valueOf(packetId).getX();
+                    final Class<? extends Packet> packetClass = PacketType.valueOf(packetId);
                     final Packet newPacket = IOService.readStream(packetClass, packetBytes);
                     newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
                     this.inboundPacketQueue.add(newPacket);

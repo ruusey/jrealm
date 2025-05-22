@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdatePlayerTradeSelectionPacket extends Packet {
 	@SerializableField(order = 0, type = NetInventorySelection.class)
-	NetInventorySelection selection;
+	private NetInventorySelection selection;
 
 	@Override
 	public void readData(byte[] data) throws Exception {
@@ -48,5 +48,11 @@ public class UpdatePlayerTradeSelectionPacket extends Packet {
 		final NetInventorySelection updatedSelection = NetInventorySelection.builder().playerId(player.getId())
 				.selection(selected).build();
 		return new UpdatePlayerTradeSelectionPacket(updatedSelection);
+	}
+
+	@Override
+	public byte getPacketId() {
+		// TODO Auto-generated method stub
+		return (byte) 18;
 	}
 }

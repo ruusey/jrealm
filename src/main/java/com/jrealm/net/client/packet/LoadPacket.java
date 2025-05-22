@@ -1,7 +1,5 @@
 package com.jrealm.net.client.packet;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +25,7 @@ import com.jrealm.net.entity.NetPortal;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
@@ -34,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Streamable
 @AllArgsConstructor
+@NoArgsConstructor
 public class LoadPacket extends Packet {
 	@SerializableField(order = 0, type = NetPlayer.class, isCollection=true)
     private NetPlayer[] players;
@@ -46,34 +46,10 @@ public class LoadPacket extends Packet {
 	@SerializableField(order = 4, type = NetPortal.class, isCollection=true)
     private NetPortal[] portals;
 
-    public LoadPacket() {
-
-    }
-
-    public LoadPacket(final byte id, final byte[] data) {
-        super(id, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            LoadPacket.log.error("Failed to parse LoadPacket packet, Reason: {}", e);
-        }
-    }
-
     @Override
     public void readData(byte[] data) throws Exception {
-    	final ByteArrayInputStream bis = new ByteArrayInputStream(data);
-    	final DataInputStream dis = new DataInputStream(bis);
-        if ((dis == null) || (dis.available() < 5))
-            throw new IllegalStateException("No Packet data available to read from DataInputStream");	
-        
-        LoadPacket packet = IOService.readPacket(getClass(), dis);
-        this.players = packet.getPlayers();
-        this.enemies = packet.getEnemies();
-        this.bullets = packet.getBullets();
-        this.containers = packet.getContainers();
-        this.portals = packet.getPortals();
-    	this.setId(PacketType.LOAD.getPacketId());
-
+        final LoadPacket packet = IOService.readPacket(getClass(), data);
+        this.assignData(data, packet);
     }
 
     @Override
@@ -91,12 +67,9 @@ public class LoadPacket extends Packet {
             final NetLootContainer[] mappedLoot = IOService.mapModel(loot, NetLootContainer[].class);
             final NetPortal[] mappedPortals = IOService.mapModel(portals, NetPortal[].class);
             load = new LoadPacket(mappedPlayers, mappedEnemies, mappedBullets, mappedLoot, mappedPortals);
-        	load.setId(PacketType.LOAD.getPacketId());
     	}catch(Exception e) {
     		log.error("Failed to build load packet from mapped game data. Reason {}", e);
     	}
-
-
         return load;
     }
 
@@ -301,4 +274,9 @@ public class LoadPacket extends Packet {
         }
         return false;
     }
+
+	@Override
+	public byte getPacketId() {
+		return (byte) 9;
+	}
 }

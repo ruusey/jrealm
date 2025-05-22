@@ -1,66 +1,41 @@
 package com.jrealm.game.contants;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.jrealm.net.Packet;
-import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
-import com.jrealm.net.client.packet.UpdateTradePacket;
-import com.jrealm.net.client.packet.LoadMapPacket;
-import com.jrealm.net.client.packet.LoadPacket;
-import com.jrealm.net.client.packet.ObjectMovePacket;
-import com.jrealm.net.client.packet.PlayerDeathPacket;
-import com.jrealm.net.client.packet.RequestTradePacket;
-import com.jrealm.net.client.packet.TextEffectPacket;
-import com.jrealm.net.client.packet.UnloadPacket;
-import com.jrealm.net.client.packet.UpdatePacket;
-import com.jrealm.net.client.packet.UpdatePlayerTradeSelectionPacket;
-import com.jrealm.net.server.packet.CommandPacket;
-import com.jrealm.net.server.packet.DeathAckPacket;
-import com.jrealm.net.server.packet.HeartbeatPacket;
-import com.jrealm.net.server.packet.MoveItemPacket;
-import com.jrealm.net.server.packet.PlayerMovePacket;
-import com.jrealm.net.server.packet.PlayerShootPacket;
-import com.jrealm.net.server.packet.TextPacket;
-import com.jrealm.net.server.packet.UseAbilityPacket;
-import com.jrealm.net.server.packet.UsePortalPacket;
-import com.jrealm.util.Tuple;
+import com.jrealm.net.core.IOService;
+import lombok.extern.slf4j.Slf4j;
 
-public enum PacketType {
-    PLAYER_MOVE				((byte) 1, PlayerMovePacket.class), 
-    UPDATE					((byte) 2, UpdatePacket.class),
-    OBJECT_MOVE				((byte) 3, ObjectMovePacket.class), 
-    TEXT					((byte) 4, TextPacket.class),
-    HEARTBEAT				((byte) 5, HeartbeatPacket.class), 
-    PLAYER_SHOOT			((byte) 6, PlayerShootPacket.class),
-    COMMAND					((byte) 7, CommandPacket.class), 
-    LOAD_MAP				((byte) 8, LoadMapPacket.class), 
-    LOAD					((byte) 9, LoadPacket.class),
-    UNLOAD					((byte) 10, UnloadPacket.class), 
-    USE_ABILITY				((byte) 11, UseAbilityPacket.class),
-    MOVE_ITEM				((byte) 12, MoveItemPacket.class), 
-    USE_PORTAL				((byte) 13, UsePortalPacket.class),
-    TEXT_EFFECT				((byte) 14, TextEffectPacket.class), 
-    PLAYER_DEATH			((byte) 15, PlayerDeathPacket.class),
-    TRADE_REQUEST			((byte) 16, RequestTradePacket.class),
-    ACCEPT_TRADE_REQUEST	((byte) 17, AcceptTradeRequestPacket.class),
-    UPDATE_TRADE_SELECTION  ((byte) 18, UpdatePlayerTradeSelectionPacket.class),
-    UPDATE_TRADE			((byte) 19, UpdateTradePacket.class),
-    DEATH_ACK			    ((byte) 20, DeathAckPacket.class);
-
-
-
-
-    private static Map<Byte, Tuple<Class<? extends Packet>, PacketType>> map = new HashMap<>();
+@Slf4j
+public class PacketType {
+    private static Map<Byte, Class<? extends Packet>> map = new HashMap<>();
 
     private byte packetId;
     private Class<? extends Packet> packetClass;
 
     static {
-        for (PacketType et : PacketType.values()) {
-            PacketType.map.put(et.getPacketId(),
-                    new Tuple<Class<? extends Packet>, PacketType>(et.getPacketClass(), et));
-        }
+    	try {
+    		final List<Class<?>> packetsToMap = IOService.getClassesOnClasspath();
+    		for (Class<?> clazz : packetsToMap) {
+    			// If not streamable at all dont bother
+    			if (!IOService.isStreamableClass(clazz) || !clazz.getSuperclass().equals(Packet.class))
+    				continue;
+    			
+    			Packet packet = (Packet)clazz.getDeclaredConstructor().newInstance();
+    			if(PacketType.map.get(packet.getPacketId())!=null) {
+    				log.error("[PacketMapper] **CRITICAL** Duplicate packet mapping for packetId {} -  Classes {} and {}", packet.getPacketId(), PacketType.map.get(packet.getPacketId()), packet.getClass());
+    			}else {
+        			PacketType.map.put(packet.getPacketId(), packet.getClass());
+    			}
+    		}
+    	}catch(Exception e) {
+    		log.error("[PacketMapper] **CRITICAL** Failed to load packet types from classpath. Reason: {}", e);
+    		System.exit(-1);
+    	}
+    	
     }
 
     private PacketType(byte entityTypeId, Class<? extends Packet> packetClass) {
@@ -76,15 +51,15 @@ public enum PacketType {
         return this.packetClass;
     }
 
-    public static Tuple<Class<? extends Packet>, PacketType> valueOf(byte value) {
+    public static Class<? extends Packet> valueOf(byte value) {
         return PacketType.map.get(Byte.valueOf(value));
     }
 
-    public static Tuple<Class<? extends Packet>, PacketType> valueOf(int value) {
+    public static Class<? extends Packet> valueOf(int value) {
         return PacketType.map.get(Byte.valueOf((byte) value));
     }
     
-    public static PacketType valueOf(Class<?> packetClass) {
-        return PacketType.map.values().stream().filter(packet->packet.getX().equals(packetClass)).map(packet->packet.getY()).findAny().orElse(null);
+    public static Entry<Byte, Class<? extends Packet>> valueOf(Class<?> packetClass) {
+        return PacketType.map.entrySet().stream().filter(packet->packet.getValue().equals(packetClass)).findAny().orElse(null);
     }
 }

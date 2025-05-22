@@ -11,34 +11,22 @@ import com.jrealm.net.core.nettypes.SerializableLong;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Data
 @Streamable
 @AllArgsConstructor
+@NoArgsConstructor
 public class DeathAckPacket extends Packet{
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long playerId;
-	
-	public DeathAckPacket(){
-		
-	}
-	
-	public DeathAckPacket(byte packetId, byte[] data) {
-        super(packetId, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            log.error("Failed to create DeathAck Packet. Reason: {}", e);
-        }
-    }
 
     @Override
     public void readData(byte[] data) throws Exception {
     	final DeathAckPacket read = IOService.readPacket(getClass(), data);
-    	this.playerId = read.getPlayerId();
-    	this.setId(PacketType.DEATH_ACK.getPacketId());
+    	this.assignData(this, read);
     }
 
     @Override
@@ -49,4 +37,10 @@ public class DeathAckPacket extends Packet{
     public static DeathAckPacket from(long playerId) throws Exception {
         return new DeathAckPacket(playerId);
     }
+
+	@Override
+	public byte getPacketId() {
+		// TODO Auto-generated method stub
+		return (byte) 20;
+	}
 }

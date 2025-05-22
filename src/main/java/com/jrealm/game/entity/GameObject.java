@@ -5,7 +5,7 @@ import java.awt.Graphics2D;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.net.client.packet.ObjectMovement;
+import com.jrealm.net.entity.ObjectMovement;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;

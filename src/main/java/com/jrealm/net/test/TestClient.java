@@ -55,9 +55,20 @@ public class TestClient implements Runnable {
 		final Runnable sendPackets = () -> {
 			this.sendPackets();
 		};
+		
+		final Runnable testSend = () -> {
+			try {
+				this.sendRemote(TestPacket.generate());
+			}catch(Exception e) {
+				log.error("Failed to send test packet. Reason: {}", e.getMessage());
+			}
+		};
+		TimedWorkerThread testSendThread = new TimedWorkerThread(testSend, 1104);
+
 		this.sendPacketThread = new TimedWorkerThread(sendPackets, 64);
 		this.readPacketThread = new TimedWorkerThread(readPackets, 64);
 		WorkerThread.submitAndForkRun(this.readPacketThread, this.sendPacketThread);
+		WorkerThread.submitAndForkRun(testSendThread);
 	}
 
 	private void readPackets() {
@@ -87,7 +98,7 @@ public class TestClient implements Runnable {
 					}
 					this.currentBytesRecieved += packetLength;
 					this.remoteBufferIndex -= packetLength;
-					final Class<? extends Packet> packetClass = PacketType.valueOf(packetId).getX();
+					final Class<? extends Packet> packetClass = PacketType.valueOf(packetId);
 					final Packet newPacket = IOService.readStream(packetClass, packetBytes);
 					newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
 					this.inboundPacketQueue.add(newPacket);
