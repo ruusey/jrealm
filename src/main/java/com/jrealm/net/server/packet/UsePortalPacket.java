@@ -31,14 +31,6 @@ public class UsePortalPacket extends Packet {
 	@SerializableField(order = 4, type = SerializableByte.class)
     private byte toNexus;
 
-    public boolean isToNexus() {
-        return this.toNexus != (byte) -1;
-    }
-
-    public boolean isToVault() {
-        return this.toVault != (byte) -1;
-    }
-
     @Override
     public void readData(byte[] data) throws Exception {
     	final UsePortalPacket packet = IOService.readStream(this.getClass(), data);
@@ -49,6 +41,11 @@ public class UsePortalPacket extends Packet {
     public int serializeWrite(DataOutputStream stream) throws Exception {
 		return IOService.writePacket(this, stream).length;
     }
+    
+    @Override
+	public byte getPacketId() {
+		return (byte) 13;
+	}
 
     public static UsePortalPacket from(long portalId, long fromRealmId, long playerId) throws Exception {
     	final UsePortalPacket packet = new UsePortalPacket(portalId, fromRealmId, playerId, (byte)-1, (byte)-1);
@@ -64,10 +61,12 @@ public class UsePortalPacket extends Packet {
     	final UsePortalPacket packet = new UsePortalPacket(-1, fromRealmId, playerId, (byte)1, (byte)-1);
         return packet;
     }
+    
+    public boolean isToNexus() {
+        return this.toNexus != (byte) -1;
+    }
 
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte) 13;
-	}
+    public boolean isToVault() {
+        return this.toVault != (byte) -1;
+    }
 }

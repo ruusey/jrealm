@@ -44,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
  * objects to and from and input/output streams (typically for use with sockets)
  * </p>
  * <p>
- * IOService is in conjunction with {@link Streamable} packet objects
+ * IOService is used in conjunction with {@link Streamable} packet objects
  * to build robust socket-based communication applications in a manner similar to gRPC.
  * </p>
  * <p>
