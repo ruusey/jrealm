@@ -32,17 +32,17 @@ import lombok.extern.slf4j.Slf4j;
 public class GameDataManager {
 	public static final transient ObjectMapper JSON_MAPPER = new ObjectMapper();
 
-	public static Map<Integer, ProjectileGroup> PROJECTILE_GROUPS = null;
-	public static Map<Integer, GameItem> GAME_ITEMS = null;
-	public static Map<Integer, EnemyModel> ENEMIES = null;
-	public static Map<Integer, TileModel> TILES = null;
-	public static Map<Integer, MapModel> MAPS = null;
-	public static Map<Integer, TerrainGenerationParameters> TERRAINS = null;
-	public static Map<Integer, PortalModel> PORTALS = null;
-	public static Map<Integer, CharacterClassModel> CHARACTER_CLASSES = null;
-	public static Map<Integer, LootTableModel> LOOT_TABLES = null;
-	public static Map<Integer, LootGroupModel> LOOT_GROUPS = null;
-	public static ExperienceModel EXPERIENCE_LVLS = null;
+	public static Map<Integer, ProjectileGroup>               PROJECTILE_GROUPS = null;
+	public static Map<Integer, GameItem>                      GAME_ITEMS = null;
+	public static Map<Integer, EnemyModel>                    ENEMIES = null;
+	public static Map<Integer, TileModel>                     TILES = null;
+	public static Map<Integer, MapModel>                      MAPS = null;
+	public static Map<Integer, TerrainGenerationParameters>   TERRAINS = null;
+	public static Map<Integer, PortalModel>                   PORTALS = null;
+	public static Map<Integer, CharacterClassModel>           CHARACTER_CLASSES = null;
+	public static Map<Integer, LootTableModel>                LOOT_TABLES = null;
+	public static Map<Integer, LootGroupModel>                LOOT_GROUPS = null;
+	public static ExperienceModel                             EXPERIENCE_LVLS = null;
 
 	private static void loadLootGroups(final boolean remote) throws Exception {
 		GameDataManager.log.info("Loading Loot Groups...");
