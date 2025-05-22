@@ -100,9 +100,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @SuppressWarnings({ "unused", "rawtypes", "unchecked" })
 public class IOService {
-	public static ModelMapper MAPPER = new ModelMapper();
-	private static final Lookup lookup = MethodHandles.lookup();
-	public static Map<Class<?>, List<PacketMappingInformation>> MAPPING_DATA = new HashMap<>();
+	private static final ModelMapper MAPPER = new ModelMapper();
+	private static final Lookup METHOD_LOOKUP = MethodHandles.lookup();
+	private static final Map<Class<?>, List<PacketMappingInformation>> MAPPING_DATA = new HashMap<>();
 	
 	static {
 		try {
@@ -158,9 +158,9 @@ public class IOService {
 	public static int writeStream(Object model, DataOutputStream stream0) throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(model.getClass());
 		if (log.isDebugEnabled())
-			log.info("[IOService::WRITE] class {} begin. ToWrite = {}", model.getClass(), model);
+			log.info("[IOService::WRITE] class {} begin. data = {}", model.getClass(), model);
 		if (mappingInfo == null) {
-			log.error("[IOService::WRITE] NO MAPPING FOR CLASS {}", model.getClass());
+			log.error("[IOService::WRITE] **CRITICAL** No mapping for class {}", model.getClass());
 			return 0;
 		}
 		int bytesWritten = 0;
@@ -192,6 +192,10 @@ public class IOService {
 	// Nominate me for a nobel peace prize or somethin
 	public static <T> T readStream(Class<?> clazz, DataInputStream stream, Object result) throws Exception {
 		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
+		if(mappingInfo==null) {
+			log.error("[IOService::READ] **CRITICAL** No mapping for class {}", clazz);
+			throw new Exception("No mapping for class "+clazz.getSimpleName());
+		}
 		if (log.isDebugEnabled())
 			log.info("[IOService::READ] class {} begin. CurrentRessults = {}", clazz, result);
 		if (result == null) {
@@ -325,7 +329,7 @@ public class IOService {
 						SerializableFieldType<?> serializer = null;
 						try {
 							// Try to lookup private members within @Streamable classes
-							final Lookup tempLookup = MethodHandles.privateLookupIn(clazz, lookup);
+							final Lookup tempLookup = MethodHandles.privateLookupIn(clazz, METHOD_LOOKUP);
 							final Class<? extends SerializableFieldType<?>> serializerType = serdesAnnotation.type();
 							final boolean isCollection = serdesAnnotation.isCollection();
 
