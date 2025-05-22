@@ -29,6 +29,7 @@ public class NetDamage extends SerializableFieldType<NetDamage> {
 		this.min = -1;
 		this.max =-1;
 	}
+	
 	@Override
 	public NetDamage read(DataInputStream stream) throws Exception {
 		return IOService.readStream(getClass(), stream);

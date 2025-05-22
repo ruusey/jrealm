@@ -13,7 +13,6 @@ import com.jrealm.net.core.nettypes.SerializableShort;
 import com.jrealm.net.entity.NetTile;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -37,15 +36,6 @@ public class LoadMapPacket extends Packet {
 
     public LoadMapPacket() {
 
-    }
-
-    public LoadMapPacket(final byte id, final byte[] data) {
-        super(id, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            LoadMapPacket.log.error("Failed to parse ObjectMove packet, Reason: {}", e);
-        }
     }
 
     @Override
@@ -120,4 +110,9 @@ public class LoadMapPacket extends Packet {
         }
         return false;
     }
+
+	@Override
+	public byte getPacketId() {
+		return (byte) 8;
+	}
 }

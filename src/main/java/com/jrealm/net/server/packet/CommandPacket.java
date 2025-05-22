@@ -16,12 +16,14 @@ import com.jrealm.net.messaging.ServerErrorMessage;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
 @Streamable
+@NoArgsConstructor
 public class CommandPacket extends Packet {
 	
 	@SerializableField(order = 0, type = SerializableLong.class)
@@ -31,23 +33,10 @@ public class CommandPacket extends Packet {
 	@SerializableField(order = 2, type = SerializableString.class)
     private String command;
 
-    public CommandPacket() {
-
-    }
-
     public <T> T messageAs(Class<T> type) throws Exception {
         return GameDataManager.JSON_MAPPER.readValue(this.command, type);
     }
-
-    public CommandPacket(byte packetId, byte[] data) {
-        super(packetId, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            log.error("Failed to create Command Packet. Reason: {}", e);
-        }
-    }
-
+    
     @Override
     public void readData(byte[] data) throws Exception {
     	final CommandPacket read = IOService.readPacket(getClass(), data);
@@ -107,4 +96,9 @@ public class CommandPacket extends Packet {
         final ServerErrorMessage error = ServerErrorMessage.from(code, message);
         return CommandPacket.create(targetEntityId, CommandType.SERVER_ERROR, error);
     }
+
+	@Override
+	public byte getPacketId() {
+		return (byte) 7;
+	}
 }

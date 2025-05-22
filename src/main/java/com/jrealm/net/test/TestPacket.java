@@ -90,4 +90,9 @@ public class TestPacket extends Packet {
 				.test2(r.nextLong()).test3((short) r.nextInt(Short.MAX_VALUE)).test4(b).build();
 	}
 
+	@Override
+	public byte getPacketId() {
+		return (byte) 101;
+	}
+
 }

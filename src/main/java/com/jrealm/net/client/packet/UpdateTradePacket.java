@@ -2,7 +2,6 @@ package com.jrealm.net.client.packet;
 
 import java.io.DataOutputStream;
 
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
@@ -25,12 +24,17 @@ public class UpdateTradePacket extends Packet {
 	@Override
 	public void readData(byte[] data) throws Exception {
 		final UpdateTradePacket read = IOService.readPacket(getClass(), data);
-		this.selections = read.getSelections();
-		this.setId(PacketType.UPDATE_TRADE.getPacketId());
+		this.assignData(this, read);
 	}
 
 	@Override
 	public int serializeWrite(DataOutputStream stream) throws Exception {
 		return IOService.writePacket(this, stream).length;
+	}
+
+	@Override
+	public byte getPacketId() {
+		// TODO Auto-generated method stub
+		return (byte) 19;
 	}
 }

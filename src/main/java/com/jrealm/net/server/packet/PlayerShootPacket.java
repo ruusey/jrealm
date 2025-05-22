@@ -2,7 +2,6 @@ package com.jrealm.net.server.packet;
 
 import java.io.DataOutputStream;
 
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Packet;
@@ -16,13 +15,15 @@ import com.jrealm.net.core.nettypes.SerializableLong;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@AllArgsConstructor
 @Data
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
 @Streamable
+@NoArgsConstructor
+@AllArgsConstructor
 public class PlayerShootPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long projectileId;
@@ -39,30 +40,10 @@ public class PlayerShootPacket extends Packet {
 	@SerializableField(order = 6, type = SerializableFloat.class)
     private float srcY;
 
-    public PlayerShootPacket() {
-
-    }
-
-    public PlayerShootPacket(final byte id, final byte[] data) {
-        super(id, data);
-        try {
-            this.readData(data);
-        } catch (Exception e) {
-            log.error("Failed to parse ObjectMove packet, Reason: {}", e);
-        }
-    }
-
     @Override
     public void readData(byte[] data) throws Exception {
-    	PlayerShootPacket read = IOService.readPacket(getClass(), data);
-    	this.projectileId = read.getProjectileId();
-    	this.entityId = read.getEntityId();
-    	this.projectileGroupId = read.getProjectileGroupId();
-    	this.destX = read.getDestX();
-    	this.destY = read.getDestY();
-    	this.srcX = read.getSrcX();
-    	this.srcY = read.getSrcY();
-    	this.setId(PacketType.PLAYER_SHOOT.getPacketId());
+    	final PlayerShootPacket read = IOService.readPacket(getClass(), data);
+    	this.assignData(data, read);
     }
 
     @Override
@@ -71,7 +52,7 @@ public class PlayerShootPacket extends Packet {
     }
 
     public static PlayerShootPacket from(long newProjectileId, Player p, Vector2f dest) throws Exception {
-    	final  PlayerShootPacket data = new PlayerShootPacket();
+    	final PlayerShootPacket data = new PlayerShootPacket();
     	data.projectileId = newProjectileId;
     	data.entityId  = p.getId();
     	data.projectileGroupId = p.getWeaponId();
@@ -85,7 +66,12 @@ public class PlayerShootPacket extends Packet {
     	
     	data.srcX = p.getPos().x;
     	data.srcY = p.getPos().y;
-    	data.setId(PacketType.PLAYER_SHOOT.getPacketId());
     	return data;
     }
+
+	@Override
+	public byte getPacketId() {
+		// TODO Auto-generated method stub
+		return (byte) 6;
+	}
 }

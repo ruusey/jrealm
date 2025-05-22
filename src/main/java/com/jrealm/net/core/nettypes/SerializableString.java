@@ -16,12 +16,16 @@ public class SerializableString extends SerializableFieldType<String> {
 		try {
 			return stream.readUTF();
 		} catch (Exception e) {
+			if(log.isDebugEnabled()) {
+				log.debug("SerializableString failed to read stream. Reason: {}", e);
+			}
 			return "";
 		}
 	}
 
 	@Override
 	public int write(String value, DataOutputStream stream) throws Exception {
+		if(stream==null)throw new Exception("SerializableString Error: target stream cannot be null");
 		final String toUse = value == null ? "" : value;
 		stream.writeUTF(toUse);
 		// UTF net encoding

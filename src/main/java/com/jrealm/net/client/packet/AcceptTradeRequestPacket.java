@@ -2,12 +2,12 @@ package com.jrealm.net.client.packet;
 
 import java.io.DataOutputStream;
 
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableBoolean;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -20,18 +20,21 @@ public class AcceptTradeRequestPacket extends Packet{
 	
 	public AcceptTradeRequestPacket(boolean accepted) {
 		this.accepted = accepted;
-		this.setId(PacketType.ACCEPT_TRADE_REQUEST.getPacketId());
 	}
 	
 	@Override
 	public void readData(byte[] data) throws Exception {
-		AcceptTradeRequestPacket read = IOService.readPacket(getClass(), data);
-		this.accepted = read.isAccepted();
-		this.setId(PacketType.ACCEPT_TRADE_REQUEST.getPacketId());
+		final AcceptTradeRequestPacket read = IOService.readPacket(getClass(), data);
+		this.assignData(this, read);
 	}
 
 	@Override
 	public int serializeWrite(DataOutputStream stream) throws Exception {
 		return IOService.writePacket(this, stream).length;
+	}
+
+	@Override
+	public byte getPacketId() {
+		return (byte) 17;
 	}
 }

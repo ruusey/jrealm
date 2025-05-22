@@ -4,7 +4,6 @@ import java.io.DataOutputStream;
 import java.util.Arrays;
 import java.util.List;
 
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
@@ -12,18 +11,23 @@ import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
-import com.jrealm.net.core.nettypes.*;
+import com.jrealm.net.core.nettypes.SerializableInt;
+import com.jrealm.net.core.nettypes.SerializableLong;
+import com.jrealm.net.core.nettypes.SerializableShort;
+import com.jrealm.net.core.nettypes.SerializableString;
 import com.jrealm.net.entity.NetGameItem;
 import com.jrealm.net.entity.NetStats;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Streamable
+@NoArgsConstructor
 public class UpdatePacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
 	private long playerId;
@@ -44,41 +48,16 @@ public class UpdatePacket extends Packet {
 	@SerializableField(order = 8, type = SerializableLong.class, isCollection = true)
 	private Long[] effectTimes;
 
-	// TODO: Rewrite this to only include delta data within the character not the
-	// entire character
-	public UpdatePacket() {
-
-	}
-
-	public UpdatePacket(byte id, byte[] data) {
-		super(id, data);
-		try {
-			this.readData(data);
-		} catch (Exception e) {
-			e.printStackTrace();
-			UpdatePacket.log.error("Failed to build Stats Packet. Reason: {}", e.getMessage());
-		}
-	}
-	
 	@Override
 	public void readData(byte[] data) throws Exception {
 		final UpdatePacket readPacket = IOService.readPacket(this.getClass(), data);
-		this.playerId = readPacket.getPlayerId();
-		this.playerName = readPacket.getPlayerName();
-		this.stats = readPacket.getStats();
-		this.health = readPacket.getHealth();
-		this.mana = readPacket.getMana();
-		this.experience = readPacket.getExperience();
-		this.inventory = readPacket.getInventory();
-		this.effectIds = readPacket.getEffectIds();
-		this.effectTimes = readPacket.getEffectTimes();
+		this.assignData(this, readPacket);
 	}
 
 	@Override
 	public int serializeWrite(DataOutputStream stream) throws Exception {
 		return IOService.writePacket(this, stream).length;
 	}
-
 	
 	public static UpdatePacket from(Enemy enemy) throws Exception {
 		if (enemy == null)
@@ -95,7 +74,6 @@ public class UpdatePacket extends Packet {
 		updatePacket.setInventory(lootToDrop.toArray(new NetGameItem[0]));
 		updatePacket.setEffectTimes(enemy.getEffectTimes().clone());
 		updatePacket.setEffectIds(enemy.getEffectIds().clone());
-		updatePacket.setId(PacketType.UPDATE.getPacketId());
 		updatePacket.setExperience(1l);
 		return updatePacket;
 	}
@@ -114,7 +92,6 @@ public class UpdatePacket extends Packet {
 		updatePacket.setEffectTimes(player.getEffectTimes().clone());
 		updatePacket.setEffectIds(player.getEffectIds().clone());
 		updatePacket.setExperience(player.getExperience());
-		updatePacket.setId(PacketType.UPDATE.getPacketId());
 		return updatePacket;
 	}
 
@@ -195,5 +172,10 @@ public class UpdatePacket extends Packet {
 		boolean expEqual = this.experience == other.getExperience();
 		boolean result = basic && stats && inv && effects && expEqual;
 		return result;
+	}
+
+	@Override
+	public byte getPacketId() {
+		return (byte) 2;
 	}
 }
