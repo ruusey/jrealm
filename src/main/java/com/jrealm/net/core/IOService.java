@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Robert Usey
  * <br>
  * <p>IOService.class - Service  layer for reading and writing JNET
- * objects to and from and input/output streams (typically for use with sockets)
+ * objects to and from and input/output streams (typically for use with sockets).
  * </p>
  * <p>
  * IOService is used in conjunction with {@link Streamable} packet objects
@@ -50,7 +50,8 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * Packet objects are classes extending the {@link Packet}  superclass and
  * made up of {@link SerialzableField} members where a {@link SerialzableField} 
- * is simply a member that is also {@link Streamable}
+ * is simply a member that is also {@link Streamable}. SerializableFields at
+ * their lowest level are simply wrappers for the core Java primitive types.
  * </p>
  * <p>
  * {@link SerializableField} Packet members must have 3 properties 
@@ -58,7 +59,7 @@ import lombok.extern.slf4j.Slf4j;
  * denotes the serialization order of the field when going down the wire
  * as bytes, <b>type</b> denotes the POJO class to map to/from bytes
  * and <b>isCollection</b> which tells JNET whether to write the object
- * as a collection of object or as a single value
+ * as a collection of object or as a single value.
  * (collections have an extra 4 byte int32 length value written at the 
  * start of serialization)
  * <b>examples:</b>
@@ -76,7 +77,7 @@ import lombok.extern.slf4j.Slf4j;
  * Once you have built your packet model and any accompanying SerializableField models
  * you can read and write your object to a socket input or output stream using the following routines:
  * <b>note:</b> all {@link SerializableField} members are automatically written and read
- * to/from the stream automatically when reading/writing the containing packet
+ * to/from the stream automatically when reading/writing the containing packet.
  * </p>
  * </br>
  * <b> Read Usage:</b>
