@@ -74,7 +74,7 @@ import lombok.extern.slf4j.Slf4j;
  * </pre>
  * <p> 
  * Once you have built your packet model and any accompanying SerializableField models
- * you can read and write your object do a socket input or output stream using:
+ * you can read and write your object to a socket input or output stream using the following routines:
  * <b>note:</b> all {@link SerializableField} members are automatically written and read
  * to/from the stream automatically when reading/writing the containing packet
  * </p>
