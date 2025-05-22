@@ -4,7 +4,6 @@ import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;

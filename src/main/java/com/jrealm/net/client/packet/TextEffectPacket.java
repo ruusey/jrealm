@@ -3,7 +3,6 @@ package com.jrealm.net.client.packet;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.EntityType;
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;

@@ -13,7 +13,6 @@ import com.jrealm.net.core.nettypes.SerializableShort;
 import com.jrealm.net.entity.NetTile;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;

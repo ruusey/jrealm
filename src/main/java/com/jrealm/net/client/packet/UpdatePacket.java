@@ -4,7 +4,6 @@ import java.io.DataOutputStream;
 import java.util.Arrays;
 import java.util.List;
 
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
@@ -12,7 +11,10 @@ import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
-import com.jrealm.net.core.nettypes.*;
+import com.jrealm.net.core.nettypes.SerializableInt;
+import com.jrealm.net.core.nettypes.SerializableLong;
+import com.jrealm.net.core.nettypes.SerializableShort;
+import com.jrealm.net.core.nettypes.SerializableString;
 import com.jrealm.net.entity.NetGameItem;
 import com.jrealm.net.entity.NetStats;
 

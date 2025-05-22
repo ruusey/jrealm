@@ -32,6 +32,8 @@ import com.jrealm.net.Streamable;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.core.converters.*;
+import com.jrealm.net.core.nettypes.SerializableLong;
+import com.jrealm.net.entity.NetTile;
 import com.jrealm.util.ClasspathInspector;
 
 import lombok.extern.slf4j.Slf4j;
@@ -43,11 +45,38 @@ import lombok.extern.slf4j.Slf4j;
  * </p>
  * <p>
  * IOService is in conjunction with {@link Streamable} packet objects
- * to build robust socket-based communication applications in a manner similar to gRPC
- * 
+ * to build robust socket-based communication applications in a manner similar to gRPC.
+ * </p>
+ * <p>
  * Packet objects are classes extending the {@link Packet}  superclass and
  * made up of {@link SerialzableField} members where a {@link SerialzableField} 
  * is simply a member that is also {@link Streamable}
+ * </p>
+ * <p>
+ * {@link SerializableField} Packet members must have 3 properties 
+ * <b> order, type, isCollection (default false)</b> where <b>order</b>
+ * denotes the serialization order of the field when going down the wire
+ * as bytes, <b>type</b> denotes the POJO class to map to/from bytes
+ * and <b>isCollection</b> which tells JNET whether to write the object
+ * as a collection of object or as a single value
+ * (collections have an extra 4 byte int32 length value written at the 
+ * start of serialization)
+ * <b>examples:</b>
+ * </p>
+ * <pre>
+ * <code>
+ *{@link @SerializableField}(order = 0, type = NetTile.class, isCollection=true)
+ * private NetTile[] tiles;
+ *   
+ *{@link @SerializableField}(order = 1, type = SerializableLong.class)
+ * private long realmId;
+ * </code>
+ * </pre>
+ * <p> 
+ * Once you have built your packet model and any accompanying SerializableField models
+ * you can read and write your object do a socket input or output stream using:
+ * <b>note:</b> all {@link SerializableField} members are automatically written and read
+ * to/from the stream automatically when reading/writing the containing packet
  * </p>
  * </br>
  * <b> Read Usage:</b>
