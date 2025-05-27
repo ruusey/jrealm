@@ -52,7 +52,7 @@ public class ServerCommandHandler {
         // Look up this players account to see if they are allowed
         // to run Admin server commands
         try {
-        	if(ADMIN_RESTRICTED_COMMANDS.contains(message.getCommand().toLowerCase()) || !ADMIN_USER_CACHE.contains(fromPlayer.getId())) {
+        	if(ADMIN_RESTRICTED_COMMANDS.contains(message.getCommand().toLowerCase()) && !ADMIN_USER_CACHE.contains(fromPlayer.getId())) {
         	  log.info("Player {} attempting to invvoke admin restricted command '{}'... validating authority", fromPlayer.getName(), message.getCommand());
               final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE.executeGet("/admin/account/" + fromPlayer.getAccountUuid(), null, AccountDto.class);
         		// has Subscription 'ADMIN'

@@ -140,7 +140,9 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, Long> playerLastHeartbeatTime = new HashMap<>();
 	
 	private UnloadPacket lastUnload;
-	// Potentially accessed by many threads. M
+	// Potentially accessed by many threads many times a second.
+	// volatile to make sure each time game data is sent that we are
+	// not sending cached objects
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
 	private List<RealmDecoratorBase> realmDecorators = new ArrayList<>();
@@ -1185,23 +1187,29 @@ public class RealmManagerServer implements Runnable {
 		this.proccessTerrainHit(realmId, p);
 	}
 
-	// This may not need to be synchronized
-	// Enqueues a server packet to be transmitted to all players
-	public synchronized void enqueueServerPacket(final Packet packet) {
-		this.outboundPacketQueue.add(packet);
+	
+	public void enqueueServerPacket(final Packet packet) {
+		// Synchronize access to the outbound packet queue
+		// To prevent multiple threads enqueuing packets at the same time
+		synchronized (this.outboundPacketQueue) {
+			this.outboundPacketQueue.add(packet);
+		}
 	}
 
-	// This may not need to be synchronized
-	// Enqueues a packet to be transmitted to only Player player
-	public synchronized void enqueueServerPacket(final Player player, final Packet packet) {
+	public void enqueueServerPacket(final Player player, final Packet packet) {
 		if (player == null || packet == null)
 			return;
-		if (this.playerOutboundPacketQueue.get(player.getId()) == null) {
-			final ConcurrentLinkedQueue<Packet> packets = new ConcurrentLinkedQueue<>();
-			packets.add(packet);
-			this.playerOutboundPacketQueue.put(player.getId(), packets);
-		} else {
-			this.playerOutboundPacketQueue.get(player.getId()).add(packet);
+		
+		// Synchronize access to the player's outbound packet queue
+		// To prevent multiple threads enqueuing packets at the same time
+		synchronized (this.playerOutboundPacketQueue) {
+			if (this.playerOutboundPacketQueue.get(player.getId()) == null) {
+				final ConcurrentLinkedQueue<Packet> packets = new ConcurrentLinkedQueue<>();
+				packets.add(packet);
+				this.playerOutboundPacketQueue.put(player.getId(), packets);
+			} else {
+				this.playerOutboundPacketQueue.get(player.getId()).add(packet);
+			}
 		}
 	}
 
