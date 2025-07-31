@@ -1626,11 +1626,11 @@ public class RealmManagerServer implements Runnable {
 			try {
 				while (!this.shutdown) {
 					Thread.sleep(12000);
-					RealmManagerServer.log.info("Performing asynchronous player data sync.");
+					RealmManagerServer.log.info("[SERVER] Performing asynchronous player data sync.");
 					this.persistsPlayersAsync();
 				}
 			} catch (Exception e) {
-				RealmManagerServer.log.error("Failed to perform player data sync.");
+				RealmManagerServer.log.error("[SERVER] Failed to perform player data sync. Reason: {}", e.getMessage());
 			}
 		};
 		WorkerThread.submitAndForkRun(playerSync);
@@ -1639,9 +1639,9 @@ public class RealmManagerServer implements Runnable {
 	// Server shutdown task. Attempts to save all player data before JVM exit
 	public Thread shutdownHook() {
 		final Runnable shutdownTask = () -> {
-			RealmManagerServer.log.info("Performing pre-shutdown player sync...");
+			RealmManagerServer.log.info("[SERVER] Performing pre-shutdown player sync...");
 			this.persistsPlayersAsync();
-			RealmManagerServer.log.info("Shutdown player sync complete");
+			RealmManagerServer.log.info("[SERVER] Shutdown player sync complete");
 		};
 		return new Thread(shutdownTask);
 	}
@@ -1726,7 +1726,7 @@ public class RealmManagerServer implements Runnable {
 		try {
 			this.enqueueServerPacket(TextEffectPacket.from(entityType, entity.getId(), effect, text));
 		} catch (Exception e) {
-			RealmManagerServer.log.error("Failed to broadcast TextEffect Packet for Entity {}. Reason: {}",
+			RealmManagerServer.log.error("[SERVER] Failed to broadcast TextEffect Packet for Entity {}. Reason: {}",
 					entity.getId(), e);
 		}
 	}
@@ -1735,7 +1735,7 @@ public class RealmManagerServer implements Runnable {
 		try {
 			this.realmLock.acquire();
 		} catch (Exception e) {
-			log.error("Failed to acquire the realm lock. Reason: {}", e.getMessage());
+			log.error("[SERVER] Failed to acquire the realm lock. Reason: {}", e.getMessage());
 		}
 	}
 
@@ -1743,7 +1743,7 @@ public class RealmManagerServer implements Runnable {
 		try {
 			this.realmLock.release();
 		} catch (Exception e) {
-			log.error("Failed to release the realm lock. Reason: {}", e.getMessage());
+			log.error("[SERVER] Failed to release the realm lock. Reason: {}", e.getMessage());
 		}
 	}
 }

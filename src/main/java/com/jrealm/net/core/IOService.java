@@ -245,7 +245,8 @@ public class IOService {
 	public static void addHeader(Packet packet, int dataSize, DataOutputStream stream) throws Exception {
 		Entry<Byte, Class<? extends Packet>> targetPacket = PacketType.valueOf(packet.getClass());
 		if(targetPacket==null) {
-			System.out.println();
+			log.error("[IOService] NO PACKET MAPPING FOR PACKET {}", packet);
+			return;
 		}
 		stream.writeByte(targetPacket.getKey());
 		stream.writeInt(dataSize + NetConstants.PACKET_HEADER_SIZE);

@@ -1,8 +1,6 @@
 package com.jrealm.game.entity;
 
 import java.awt.Graphics2D;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.time.Instant;
 
 import com.jrealm.game.data.GameDataManager;
