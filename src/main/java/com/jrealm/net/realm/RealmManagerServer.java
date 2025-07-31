@@ -188,7 +188,7 @@ public class RealmManagerServer implements Runnable {
 	
 	private void doSetup() {
 		if(this.isSetup) {
-			log.warn("Server is already setup, ignoring extra call");
+			log.warn("[SERVER] Server is already setup, ignoring extra call");
 			return;
 		}
 		// Start listening for connections
@@ -262,8 +262,7 @@ public class RealmManagerServer implements Runnable {
 
 	@Override
 	public void run() {
-		RealmManagerServer.log.info("Starting JRealm Server");
-		this.doSetup();
+		RealmManagerServer.log.info("[SERVER] Starting JRealm Server");
 		final Runnable tick = () -> {
 			this.tick();
 			this.update(0);
@@ -555,7 +554,7 @@ public class RealmManagerServer implements Runnable {
 						}
 
 					} catch (Exception e) {
-						RealmManagerServer.log.error("Failed to build game data for Player {}. Reason: {}",
+						RealmManagerServer.log.error("[SERVER] Failed to build game data for Player {}. Reason: {}",
 								player.getKey(), e);
 					}
 				}
@@ -575,14 +574,14 @@ public class RealmManagerServer implements Runnable {
 
 			}
 			final long processingStart = Instant.now().toEpochMilli();
-			log.debug("Parellelizing game data enqueue for {} realms");
+			log.debug("[SERVER] Parellelizing game data enqueue for {} realms");
 
 			long nanosDiff = System.nanoTime() - startNanos;
-			log.debug("Game data for {} realms enqueued in {} nanos ({}ms}", perRealmWork.size(), nanosDiff,
+			log.debug("[SERVER] Game data for {} realms enqueued in {} nanos ({}ms}", perRealmWork.size(), nanosDiff,
 					((double) nanosDiff / (double) 1000000l));
 			this.releaseRealmLock();
 		} catch (Exception e) {
-			log.error("Failed to enqueue game data. Reason: {}", e);
+			log.error("[SERVER] Failed to enqueue game data. Reason: {}", e);
 		}
 	}
 
@@ -606,10 +605,10 @@ public class RealmManagerServer implements Runnable {
 								try {
 									handler.invokeExact(this, created);
 								} catch (Throwable e) {
-									log.error("Failed to invoke packet callback. Reason: {}", e);
+									log.error("[SERVER] Failed to invoke packet callback. Reason: {}", e);
 								}
 							}
-							log.info("Invoked {} packet callbacks for PacketType {} using reflection in {} nanos",
+							log.info("[SERVER] Invoked {} packet callbacks for PacketType {} using reflection in {} nanos",
 									packetHandles.size(), PacketType.valueOf(created.getId()),
 									(System.nanoTime() - start));
 						}
@@ -622,7 +621,7 @@ public class RealmManagerServer implements Runnable {
 										callBack.invokeExact(this, created);
 									} catch (Throwable e) {
 										log.error(
-												"Failed to invoke user server packet callback for packet id {}. Callback: {}. Reason: {}",
+												"[SERVER] Failed to invoke user server packet callback for packet id {}. Callback: {}. Reason: {}",
 												created.getId(), callBack, e.getMessage());
 									}
 								});
@@ -630,7 +629,7 @@ public class RealmManagerServer implements Runnable {
 						} else {
 							this.packetCallbacksServer.get(created.getClass()).accept(this, created);
 						}
-						log.debug("Invoked callback for PacketType {} using map in {} nanos",
+						log.debug("[SERVER] Invoked callback for PacketType {} using map in {} nanos",
 								PacketType.valueOf(created.getId()), (System.nanoTime() - start));
 					} catch (Exception e) {
 						RealmManagerServer.log.error("Failed to process server packets {}", e);
@@ -687,13 +686,13 @@ public class RealmManagerServer implements Runnable {
 		final ProcessingThread playerThread = this.getPlayerProcessingThread(player);
 		final String playerRemoteAddr = this.getPlayerRemoteAddress(player);
 		try {
-			log.info("Disconnecting Player {}", player.getName());
+			log.info("[SERVER] Disconnecting Player {}", player.getName());
 			final Realm playerRealm = this.findPlayerRealm(player.getId());
 			playerRealm.removePlayer(player);
 			playerThread.setShutdownProcessing(true);
 			this.server.getClients().remove(playerRemoteAddr);
 		} catch (Exception e) {
-			log.error("Failed to disconnect player. Reason:  {}", e);
+			log.error("[SERVER] Failed to disconnect player. Reason:  {}", e);
 		}
 	}
 
@@ -826,7 +825,7 @@ public class RealmManagerServer implements Runnable {
 						.newInstance(this);
 				this.realmDecorators.add(realmDecoratorInstance);
 			} catch (Exception e) {
-				log.error("Failed to register realm decorator for script {}. Reason: {}", clazz, e.getMessage());
+				log.error("[SERVER] Failed to register realm decorator for script {}. Reason: {}", clazz, e.getMessage());
 			}
 		}
 	}
@@ -844,7 +843,7 @@ public class RealmManagerServer implements Runnable {
 						.newInstance(this);
 				this.enemyScripts.add(realmDecoratorInstance);
 			} catch (Exception e) {
-				log.error("Failed to register enemy script for script {}. Reason: {}", clazz, e.getMessage());
+				log.error("[SERVER] Failed to register enemy script for script {}. Reason: {}", clazz, e.getMessage());
 			}
 		}
 	}
@@ -862,7 +861,7 @@ public class RealmManagerServer implements Runnable {
 						.getDeclaredConstructor(RealmManagerServer.class).newInstance(this);
 				this.itemScripts.add(realmDecoratorInstance);
 			} catch (Exception e) {
-				log.error("Failed to register useable item script for script {}. Reason: {}", clazz, e.getMessage());
+				log.error("[SERVER] Failed to register useable item script for script {}. Reason: {}", clazz, e.getMessage());
 			}
 		}
 	}
@@ -890,22 +889,22 @@ public class RealmManagerServer implements Runnable {
 				if (handlerMethod != null) {
 					ServerCommandHandler.COMMAND_CALLBACKS.put(commandToHandle.value(), handlerMethod);
 					ServerCommandHandler.COMMAND_DESCRIPTIONS.put(commandToHandle.value(), commandToHandle);
+					log.info("[SERVER] Registered Command handler in {}. Method: {}{}", method.getDeclaringClass(),
+							method.getName(), mt.toString());
 					if (isAdminRestricted != null) {
 						ServerCommandHandler.ADMIN_RESTRICTED_COMMANDS.add(commandToHandle.value());
-						log.info("Command {} registered as Admin Restricted", commandToHandle.value());
+						log.info("[SERVER] Command {} registered as Admin Restricted", commandToHandle.value());
 					}
-					log.info("Registered Command handler in {}. Method: {}{}", method.getDeclaringClass(),
-							method.getName(), mt.toString());
 				}
 			} catch (Exception e) {
-				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
+				log.error("[SERVER] Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
 			}
 		}
 	}
 
 	// Registers any user defined packet callbacks with the server
 	private void registerPacketCallbacksReflection() {
-		log.info("Registering packet handlers using reflection");
+		log.info("[SERVER] Registering packet handlers using reflection");
 		final MethodType mt = MethodType.methodType(void.class, RealmManagerServer.class, Packet.class);
 
 		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandlerServer.class);
@@ -926,12 +925,12 @@ public class RealmManagerServer implements Runnable {
 						existing = new ArrayList<>();
 					}
 					existing.add(handleToHandler);
-					log.info("Added new packet handler for packet {}. Handler method: {}", targetPacketType,
+					log.info("[SERVER] Added new packet handler for packet {}. Handler method: {}", targetPacketType,
 							handleToHandler.toString());
 					this.userPacketCallbacksServer.put(targetPacketType.getKey(), existing);
 				}
 			} catch (Exception e) {
-				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
+				log.error("[SERVER] Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
 			}
 		}
 	}
@@ -1436,7 +1435,7 @@ public class RealmManagerServer implements Runnable {
 					this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
 							TextEffect.PLAYER_INFO, xpToGive + "xp"));
 				} catch (Exception ex) {
-					RealmManagerServer.log.error("Failed to create player experience text effect. Reason: {}", ex);
+					RealmManagerServer.log.error("[SERVER] Failed to create player experience text effect. Reason: {}", ex);
 				}
 			}
 
@@ -1456,11 +1455,11 @@ public class RealmManagerServer implements Runnable {
 				final Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth() - 1);
 				if (realmAtDepth.isEmpty()) {
 					toNewRealmPortal.linkPortal(targetRealm, null);
-					log.info("New portal created. Will generate realm id {} on use", portalModel.getTargetRealmDepth());
+					log.info("[SERVER] New portal created. Will generate realm id {} on use", portalModel.getTargetRealmDepth());
 
 				} else {
 					toNewRealmPortal.linkPortal(targetRealm, realmAtDepth.get());
-					log.info("Linking Portal {} to existing realm {}", toNewRealmPortal,
+					log.info("[SERVER] Linking Portal {} to existing realm {}", toNewRealmPortal,
 							realmAtDepth.get().getRealmId());
 				}
 				targetRealm.addPortal(toNewRealmPortal);
@@ -1477,7 +1476,7 @@ public class RealmManagerServer implements Runnable {
 			// Try to get the loot model mapped by this enemyId
 			final LootTableModel lootTable = GameDataManager.LOOT_TABLES.get(enemy.getEnemyId());
 			if (lootTable == null) {
-				log.warn("No loot table registered for enemy {}", enemy.getEnemyId());
+				log.warn("[SERVER] No loot table registered for enemy {}", enemy.getEnemyId());
 				throw new IllegalStateException("No loot table registered for enemy " + enemy.getEnemyId());
 			}
 			// Get a random loot bag drop based on this enemies loot table
@@ -1488,7 +1487,7 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.addLootContainer(dropsBag);
 			}
 		} catch (Exception e) {
-			RealmManagerServer.log.error("Failed to handle dead Enemy {}. Reason: {}", enemy.getId(), e);
+			RealmManagerServer.log.error("[SERVER] Failed to handle dead Enemy {}. Reason: {}", enemy.getId(), e);
 		}
 	}
 
@@ -1519,7 +1518,7 @@ public class RealmManagerServer implements Runnable {
 			}
 
 		} catch (Exception e) {
-			RealmManagerServer.log.error("Failed to Remove dead Player {}. Reason: {}", e);
+			RealmManagerServer.log.error("[SERVER] Failed to Remove dead Player {}. Reason: {}", e);
 		}
 	}
 
@@ -1577,7 +1576,7 @@ public class RealmManagerServer implements Runnable {
 				textPacket = TextPacket.from("SYSTEM", target.getName(), line);
 				this.enqueueServerPacket(target, textPacket);
 			} catch (Exception e) {
-				log.error("Failed to send text line {} to player {}. Reason: {}", line, target.getName(), e);
+				log.error("[SERVER] Failed to send text line {} to player {}. Reason: {}", line, target.getName(), e);
 			}
 		}
 	}

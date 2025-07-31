@@ -30,11 +30,11 @@ public class SocketServer implements Runnable {
 	private volatile Map<String, Long> clientConnectTime = new ConcurrentHashMap<>();
 
 	public SocketServer(int port) {
-		SocketServer.log.info("Creating local server at port {}", port);
+		SocketServer.log.info("[SERVER] Creating local server at port {}", port);
 		try {
 			this.serverSocket = new ServerSocket(port);
 		} catch (Exception e) {
-			SocketServer.log.error("Failed to create server socket. Reason: {}", e.getMessage());
+			SocketServer.log.error("[SERVER] Failed to create server socket. Reason: {}", e.getMessage());
 			System.exit(-1);
 		}
 	}
@@ -42,7 +42,7 @@ public class SocketServer implements Runnable {
 	@Override
 	public void run() {
 		final Runnable socketAccept = () -> {
-			SocketServer.log.info("Server now accepting inbound connections...");
+			SocketServer.log.info("[SERVER] Server now accepting inbound connections...");
 			while (!this.shutdownSocketAccept) {
 				try {
 					final Socket socket = this.serverSocket.accept();
@@ -52,17 +52,17 @@ public class SocketServer implements Runnable {
 					final ProcessingThread processingThread = new ProcessingThread(this, socket);
 					this.clients.put(remoteAddr, processingThread);
 					processingThread.start();
-					SocketServer.log.info("Server accepted new connection from Remote Address {}", remoteAddr);
+					SocketServer.log.info("[SERVER] Server accepted new connection from Remote Address {}", remoteAddr);
 					this.clientConnectTime.put(remoteAddr, Instant.now().toEpochMilli());
 				} catch (Exception e) {
-					SocketServer.log.error("Failed to accept incoming socket connection, exiting...", e);
+					SocketServer.log.error("[SERVER] Failed to accept incoming socket connection, exiting...", e);
 				}
 			}
 		};
 
 		// Expire connections if the handshake is not complete after 2.5 seconds
 		final Runnable timeoutCheck = () -> {
-			SocketServer.log.info("Beginning connection timeout check...");
+			SocketServer.log.info("[SERVER] Beginning connection timeout check...");
 			while (!this.shutdownSocketAccept) {
 				try {
 					final Set<String> toRemove = new HashSet<>();
@@ -78,11 +78,11 @@ public class SocketServer implements Runnable {
 					for (String remove : toRemove) {
 						ProcessingThread thread = this.clients.remove(remove);
 						thread.setShutdownProcessing(true);
-						SocketServer.log.info("Removed expired connection {}", thread.getClientSocket());
+						SocketServer.log.info("[SERVER] Removed expired connection {}", thread.getClientSocket());
 					}
 					Thread.sleep(250);
 				} catch (Exception e) {
-					SocketServer.log.error("Failed to check expired connections. Reason: {}", e);
+					SocketServer.log.error("[SERVER] Failed to check expired connections. Reason: {}", e);
 				}
 			}
 		};

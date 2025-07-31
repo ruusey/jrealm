@@ -41,11 +41,7 @@ public class LoadMapPacket extends Packet {
     @Override
     public void readData(byte[] data) throws Exception {
     	final LoadMapPacket readPacket = IOService.readPacket(getClass(), data);
-    	this.realmId = readPacket.getRealmId();
-    	this.mapId = readPacket.getMapId();
-    	this.mapWidth = readPacket.getMapWidth();
-    	this.mapHeight = readPacket.getMapHeight();
-    	this.tiles = readPacket.getTiles();
+        this.assignData(data, readPacket);
     }
 
     @Override

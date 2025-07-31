@@ -70,7 +70,7 @@ public class RealmManagerClient implements Runnable {
 
     @Override
     public void run() {
-        RealmManagerClient.log.info("Starting JRealm Client");
+        RealmManagerClient.log.info("[CLIENT] Starting JRealm Client");
 
         final Runnable tick = () -> {
             this.tick();
@@ -91,7 +91,7 @@ public class RealmManagerClient implements Runnable {
 
             WorkerThread.submitAndRun(processClientPackets);
         } catch (Exception e) {
-            RealmManagerClient.log.error("Failed to sleep");
+            RealmManagerClient.log.error("[CLIENT] Failed to sleep");
         }
     }
 
@@ -117,12 +117,12 @@ public class RealmManagerClient implements Runnable {
 							log.error("Failed to invoke packet callback. Reason: {}", e);
 						}
 					}
-					log.info("Invoked {} packet callbacks for PacketType {} using reflection in {} nanos",
+					log.info("[CLIENT] Invoked {} packet callbacks for PacketType {} using reflection in {} nanos",
 							packetHandles.size(), PacketType.valueOf(created.getId()),
 							(System.nanoTime() - start));
 				}
             } catch (Exception e) {
-                RealmManagerClient.log.error("Failed to process client packets {}", e);
+                RealmManagerClient.log.error("[CLIENT] Failed to process client packets {}", e);
             }
         }
     }
@@ -140,7 +140,7 @@ public class RealmManagerClient implements Runnable {
     }
     
     private void registerPacketCallbacksReflection() {
-		log.info("Registering packet handlers using reflection");
+		log.info("[CLIENT] Registering packet handlers using reflection");
 		final MethodType mt = MethodType.methodType(void.class, RealmManagerClient.class, Packet.class);
 		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandlerClient.class);
 		for (final Method method : subclasses) {
@@ -155,13 +155,13 @@ public class RealmManagerClient implements Runnable {
 						existing = new ArrayList<>();
 					}
 					existing.add(handleToHandler);
-					log.info("Added new packet handler for packet {}. Handler method: {} in class {}", targetPacketType,
+					log.info("[CLIENT] Added new packet handler for packet {}. Handler method: {} in class {}", targetPacketType,
 							method.toString(), method.getDeclaringClass());
 					this.userPacketCallbacksClient.put(targetPacketType.getKey(), existing);
 
 				}
 			} catch (Exception e) {
-				log.error("Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
+				log.error("[CLIENT] Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
 			}
 		}
 	}
@@ -198,7 +198,7 @@ public class RealmManagerClient implements Runnable {
                     (byte) fromSlotIndex, drop, consume);
             this.getClient().sendRemote(moveItem);
         } catch (Exception e) {
-            RealmManagerClient.log.error("Failed to send MoveItem packet. Reason: {}", e);
+            RealmManagerClient.log.error("[CLIENT] Failed to send MoveItem packet. Reason: {}", e);
         }
     }
 
