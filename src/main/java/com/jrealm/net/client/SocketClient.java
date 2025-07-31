@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -60,10 +61,18 @@ public class SocketClient implements Runnable {
         // this.monitorLastReceived();
 
         final Runnable readPackets = () -> {
-            this.readPackets();
+        	try {
+                this.readPackets();
+        	}catch(Exception e) {
+        		this.readPacketThread.setShutdown(true);
+        	}
         };
         final Runnable sendPackets = () -> {
-            this.sendPackets();
+        	try {
+                this.sendPackets();
+        	}catch(Exception e) {
+        		this.sendPacketThread.setShutdown(true);
+        	}
         };
         this.sendPacketThread= new TimedWorkerThread(sendPackets, 64);
         this.readPacketThread= new TimedWorkerThread(readPackets, 64);
@@ -76,7 +85,7 @@ public class SocketClient implements Runnable {
 
             final int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
                     this.remoteBuffer.length - this.remoteBufferIndex);
-            this.lastDataTime = System.currentTimeMillis();
+            this.lastDataTime = Instant.now().toEpochMilli();
             if (bytesRead == -1)
                 throw new SocketException("end of stream");
             if (bytesRead > 0) {
@@ -107,7 +116,7 @@ public class SocketClient implements Runnable {
             this.shutdown=true;
             this.sendPacketThread.setShutdown(true);
             this.readPacketThread.setShutdown(true);
-            SocketClient.log.error("Failed to parse client input. Reason {}", e);
+            SocketClient.log.error("Failed to parse client input. Reason {}", e.getMessage());
         }
     }
 

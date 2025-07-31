@@ -31,7 +31,6 @@ public class TimedWorkerThread implements Runnable {
     @SuppressWarnings("unused")
     @Override
     public void run() {
-
         log.info("TimedThread processing start...");
 
         double rate = targetFps;
@@ -43,23 +42,26 @@ public class TimedWorkerThread implements Runnable {
         long timer = System.currentTimeMillis();
         int frames = 0;
         while (!this.shutdown) {
-            long now = System.nanoTime();
-            delta += (now - lastTime) / ns;
-            lastTime = now;
-            while (delta >= 1) {
-                WorkerThread.submitAndRun(this.runnable);
-                delta--;
-            }
-            frames++;
+        	try {
+        		long now = System.nanoTime();
+                delta += (now - lastTime) / ns;
+                lastTime = now;
+                while (delta >= 1) {
+                    WorkerThread.submitAndRun(this.runnable);
+                    delta--;
+                }
+                frames++;
 
-            if (System.currentTimeMillis() - timer > 1000) {
-                timer += 1000;
-                // log.info("Timed worker thread {} frames={}",runnable.);
-                frames = 0;
-                // updates = 0;
-            }
+                if (System.currentTimeMillis() - timer > 1000) {
+                    timer += 1000;
+                    frames = 0;
+                }
+        	}catch(Exception e) {
+        		this.shutdown=true;
+        	}
+            
         }
-        log.info("Timed worker thread {} shutdown", this);
+        log.info("Timed worker thread SHUTDOWN. Runnable = {}", this.runnable);
 
     }
 }

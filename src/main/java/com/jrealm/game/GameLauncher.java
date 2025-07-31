@@ -165,7 +165,7 @@ public class GameLauncher {
 			}
 			
 		} catch (IndexOutOfBoundsException e) {
-			log.error("[CLIENT] Automatically logged in as user {}", SocketClient.PLAYER_EMAIL);
+			log.info("[CLIENT] Automatically logged in as user {}", SocketClient.PLAYER_EMAIL);
 			JOptionPane.showMessageDialog(loginPanel.getFrame(), "Automatic login as "+SocketClient.PLAYER_EMAIL+" successful");
 			//System.exit(-1);
 		}catch (Exception e) {
