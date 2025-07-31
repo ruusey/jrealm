@@ -62,14 +62,18 @@ public class SocketClient implements Runnable {
 
         final Runnable readPackets = () -> {
         	try {
-                this.readPackets();
+        		if(!this.readPacketThread.isShutdown()) {
+        			this.readPackets();
+        		}
         	}catch(Exception e) {
         		this.readPacketThread.setShutdown(true);
         	}
         };
         final Runnable sendPackets = () -> {
         	try {
-                this.sendPackets();
+        		if(!this.sendPacketThread.isShutdown()) {
+                    this.sendPackets();
+        		}
         	}catch(Exception e) {
         		this.sendPacketThread.setShutdown(true);
         	}

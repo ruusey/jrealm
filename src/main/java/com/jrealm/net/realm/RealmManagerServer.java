@@ -118,6 +118,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = false)
 @SuppressWarnings("unused")
 public class RealmManagerServer implements Runnable {
+	
 	private SocketServer server;
 	private boolean shutdown = false;
 	private Reflections classPathScanner = new Reflections("com.jrealm", Scanners.SubTypes, Scanners.MethodsAnnotated);
@@ -125,7 +126,7 @@ public class RealmManagerServer implements Runnable {
 	private final Map<Class<? extends Packet>, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
 	private final Map<Byte, List<MethodHandle>> userPacketCallbacksServer = new HashMap<>();
 
-	private List<Vector2f> shotDestQueue;
+	private List<Vector2f> shotDestQueue = new ArrayList<>();
 	private Map<Long, Realm> realms = new HashMap<>();
 	private Map<String, Long> remoteAddresses = new HashMap<>();
 	
@@ -141,8 +142,8 @@ public class RealmManagerServer implements Runnable {
 	
 	private UnloadPacket lastUnload;
 	// Potentially accessed by many threads many times a second.
-	// volatile to make sure each time game data is sent that we are
-	// not sending cached objects
+	// marked volatile to make sure each time this queue is accessed
+	// we are not looking at a cached version. Make a PR if my assumption is wrong :)
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
 	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
 	private List<RealmDecoratorBase> realmDecorators = new ArrayList<>();
@@ -159,22 +160,54 @@ public class RealmManagerServer implements Runnable {
 	private boolean transmitLoadMapPacket = false;
 	private boolean transmitPlayerUpdatePacket = false;
 
+	private boolean  isSetup = false;
+	
+	private long lastWriteSampleTime = Instant.now().toEpochMilli();
+	private long bytesWritten = 0;
+	
 	public RealmManagerServer() {
+		// Probably dont want to auto start the server so migrating
+		// this to be invoked from somewhere else (GameLauncher.class)
+//		this.doRunServer();
+	}
+	
+	public void doRunServer() {
+		// TODO: Make the trade manager a class variable so we dont
+		// have to do this whacky static assignment
+		ServerTradeManager.mgr = this;
+		
+		// Spawn initial realm and add the global
+		// save player shutdown hook to the Runtime
+		this.doSetup();
+		
+		// Two core threads, the inbound connection listener
+		// and the actual realm manager thread to handle game processing
+		WorkerThread.submitAndForkRun(this.server);
+		WorkerThread.submitAndForkRun(this);
+	}
+	
+	private void doSetup() {
+		if(this.isSetup) {
+			log.warn("Server is already setup, ignoring extra call");
+			return;
+		}
+		// Start listening for connections
+		this.server = new SocketServer(2222);
 		this.registerRealmDecorators();
 		this.registerEnemyScripts();
 		this.registerPacketCallbacks();
 		this.registerPacketCallbacksReflection();
 		this.registerItemScripts();
 		this.registerCommandHandlersReflection();
-		this.server = new SocketServer(2222);
-		this.shotDestQueue = new ArrayList<>();
 		this.beginPlayerSync();
-		this.doRunServer();
-	}
-
-	public void doRunServer() {
-		ServerTradeManager.mgr = this;
-		WorkerThread.submitAndForkRun(this.server);
+		
+		final Realm realm = new Realm(true, 2);
+		realm.spawnRandomEnemies(realm.getMapId());
+		this.addRealm(realm);
+		
+		Runtime.getRuntime().addShutdownHook(this.shutdownHook());
+		
+		this.isSetup = true;
 	}
 
 	// Adds a specified amount of random headless players
@@ -230,6 +263,7 @@ public class RealmManagerServer implements Runnable {
 	@Override
 	public void run() {
 		RealmManagerServer.log.info("Starting JRealm Server");
+		this.doSetup();
 		final Runnable tick = () -> {
 			this.tick();
 			this.update(0);
@@ -270,8 +304,7 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	private long lastWriteSampleTime = Instant.now().toEpochMilli();
-	private long bytesWritten = 0;
+
 
 	private void sendGameData() {
 		long startNanos = System.nanoTime();

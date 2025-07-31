@@ -96,20 +96,14 @@ public class GameLauncher {
 	}
 
 	private static void startServer() {
-		Realm realm = new Realm(true, 2);
 		try {
-			String sysToken = ServerGameLogic.DATA_SERVICE.executeGet("token", null);
+			final String sysToken = ServerGameLogic.DATA_SERVICE.executeGet("token", null);
 			ServerGameLogic.DATA_SERVICE.setBearerToken(sysToken);
 		} catch (Exception e) {
 			log.error("Failed to get Server SYS_TOKEN. Reason: {}", e);
 		}
-		RealmManagerServer server = new RealmManagerServer();
-		Runtime.getRuntime().addShutdownHook(server.shutdownHook());
-
-		server.addRealm(realm);
-		realm.spawnRandomEnemies(realm.getMapId());
-		// server.spawnTestPlayers(realm.getRealmId(), 10);
-		WorkerThread.submitAndForkRun(server);
+		final RealmManagerServer server = new RealmManagerServer();
+		server.doRunServer();
 	}
 
 	private static void startClient(String[] args) {

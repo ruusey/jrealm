@@ -1,5 +1,7 @@
 package com.jrealm.util;
 
+import java.time.Instant;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -39,7 +41,7 @@ public class TimedWorkerThread implements Runnable {
         double amountOfTicks = rate;
         double ns = 1000000000 / amountOfTicks;
         double delta = 0;
-        long timer = System.currentTimeMillis();
+        long timer = Instant.now().toEpochMilli();
         int frames = 0;
         while (!this.shutdown) {
         	try {
@@ -59,9 +61,7 @@ public class TimedWorkerThread implements Runnable {
         	}catch(Exception e) {
         		this.shutdown=true;
         	}
-            
         }
         log.info("Timed worker thread SHUTDOWN. Runnable = {}", this.runnable);
-
     }
 }
