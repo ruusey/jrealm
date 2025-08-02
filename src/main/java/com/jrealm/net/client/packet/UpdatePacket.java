@@ -1,6 +1,5 @@
 package com.jrealm.net.client.packet;
 
-import java.io.DataOutputStream;
 import java.util.Arrays;
 import java.util.List;
 
@@ -47,17 +46,6 @@ public class UpdatePacket extends Packet {
 	private Short[] effectIds;
 	@SerializableField(order = 8, type = SerializableLong.class, isCollection = true)
 	private Long[] effectTimes;
-
-	@Override
-	public void readData(byte[] data) throws Exception {
-		final UpdatePacket readPacket = IOService.readPacket(this.getClass(), data);
-		this.assignData(this, readPacket);
-	}
-
-	@Override
-	public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-	}
 	
 	public static UpdatePacket from(Enemy enemy) throws Exception {
 		if (enemy == null)

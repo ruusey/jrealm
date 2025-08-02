@@ -3,6 +3,7 @@ package com.jrealm.net;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;
+import com.jrealm.net.core.IOService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,6 +50,17 @@ public abstract class Packet implements GameMessage {
     public void setId(byte id) {
 		this.id = id;
 	}
+    
+    @Override
+    public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
+    }
+
+    @Override
+    public void readData(byte[] data) throws Exception {
+    	final Packet read = IOService.readPacket(getClass(), data);
+    	this.assignData(this, read);
+    }
 
 	public void addHeader(DataOutputStream stream) throws Exception {
         stream.writeByte(this.id);

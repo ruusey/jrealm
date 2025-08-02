@@ -1,12 +1,9 @@
 package com.jrealm.net.server.packet;
 
-import java.io.DataOutputStream;
-
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableFloat;
 import com.jrealm.net.core.nettypes.SerializableLong;
@@ -30,17 +27,6 @@ public class UseAbilityPacket extends Packet {
 	private float posX;
 	@SerializableField(order = 2, type = SerializableFloat.class)
 	private float posY;
-
-	@Override
-	public void readData(byte[] data) throws Exception {
-		final UseAbilityPacket packet = IOService.readPacket(this.getClass(), data);
-		this.assignData(this, packet);
-	}
-
-	@Override
-	public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-	}
 
 	public static UseAbilityPacket from(Player player, Vector2f pos) throws Exception {
 		final UseAbilityPacket packet = new UseAbilityPacket(player.getId(), pos.x, pos.y);

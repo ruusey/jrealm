@@ -1,13 +1,11 @@
 package com.jrealm.net.client.packet;
 
-import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.entity.ObjectMovement;
 
@@ -25,18 +23,6 @@ public class ObjectMovePacket extends Packet {
 
 	@SerializableField(order = 0, type = ObjectMovement.class, isCollection=true)
     private ObjectMovement[] movements;
-
-    @Override
-    public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-    }
-
-    @Override
-    public void readData(byte[] data) throws Exception {
-    	final ObjectMovePacket read = IOService.readPacket(getClass(), data);
-    	this.assignData(this, read);
-    }
-
     
     public ObjectMovePacket getMoveDiff(ObjectMovePacket newMove) throws Exception {
     	final List<ObjectMovement> moveDiff = new ArrayList<>();

@@ -30,17 +30,6 @@ public class TextEffectPacket extends Packet {
 	@SerializableField(order = 3, type = SerializableString.class)
     private String text;
 
-    @Override
-    public void readData(byte[] data) throws Exception {
-    	final TextEffectPacket textEffect = IOService.readPacket(getClass(), data);
-    	this.assignData(this, textEffect);
-    }
-
-    @Override
-    public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-    }
-
     public static TextEffectPacket from(EntityType entityType, long targetEntityId, TextEffect effect, String text)
             throws Exception {
     	final TextEffectPacket packet = new TextEffectPacket();

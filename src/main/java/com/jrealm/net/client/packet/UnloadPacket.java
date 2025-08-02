@@ -1,13 +1,11 @@
 package com.jrealm.net.client.packet;
 
-import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableLong;
 
@@ -37,17 +35,6 @@ public class UnloadPacket extends Packet {
     private Long[] containers;
 	@SerializableField(order = 4, type = SerializableLong.class, isCollection=true)
     private Long[] portals;
-
-    @Override
-    public void readData(byte[] data) throws Exception {
-    	final UnloadPacket read = IOService.readPacket(getClass(), data);
-    	this.assignData(this, read);
-    }
-
-    @Override
-    public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-    }
 
     public static UnloadPacket from(Long[] players, Long[] bullets, Long[] enemies, Long[] containers, Long[] portals)
             throws Exception {

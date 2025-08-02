@@ -1,11 +1,7 @@
 package com.jrealm.net.server.packet;
 
-import java.io.DataOutputStream;
-
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableLong;
 
@@ -26,17 +22,6 @@ public class HeartbeatPacket extends Packet {
     private long playerId;
 	@SerializableField(order = 1, type = SerializableLong.class)
     private long timestamp;
-
-    @Override
-    public void readData(byte[] data) throws Exception {
-    	final HeartbeatPacket read = IOService.readPacket(getClass(), data);
-    	this.assignData(this, read);
-    }
-
-    @Override
-    public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-    }
 
     public static HeartbeatPacket from(long playerId, long timestamp) throws Exception {
         return new HeartbeatPacket(playerId, timestamp);

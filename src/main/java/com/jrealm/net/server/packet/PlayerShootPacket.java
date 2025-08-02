@@ -1,12 +1,9 @@
 package com.jrealm.net.server.packet;
 
-import java.io.DataOutputStream;
-
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableFloat;
 import com.jrealm.net.core.nettypes.SerializableInt;
@@ -39,17 +36,6 @@ public class PlayerShootPacket extends Packet {
     private float srcX;
 	@SerializableField(order = 6, type = SerializableFloat.class)
     private float srcY;
-
-    @Override
-    public void readData(byte[] data) throws Exception {
-    	final PlayerShootPacket read = IOService.readPacket(getClass(), data);
-    	this.assignData(data, read);
-    }
-
-    @Override
-    public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-    }
 
     public static PlayerShootPacket from(long newProjectileId, Player p, Vector2f dest) throws Exception {
     	final PlayerShootPacket data = new PlayerShootPacket();

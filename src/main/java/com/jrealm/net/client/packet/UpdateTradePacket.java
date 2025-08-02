@@ -22,19 +22,7 @@ public class UpdateTradePacket extends Packet {
 	private NetTradeSelection selections;
 
 	@Override
-	public void readData(byte[] data) throws Exception {
-		final UpdateTradePacket read = IOService.readPacket(getClass(), data);
-		this.assignData(this, read);
-	}
-
-	@Override
-	public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-	}
-
-	@Override
 	public byte getPacketId() {
-		// TODO Auto-generated method stub
 		return (byte) 19;
 	}
 }

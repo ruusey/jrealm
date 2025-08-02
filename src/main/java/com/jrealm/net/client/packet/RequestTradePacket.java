@@ -1,10 +1,7 @@
 package com.jrealm.net.client.packet;
 
-import java.io.DataOutputStream;
-
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableString;
 
@@ -20,17 +17,6 @@ public class RequestTradePacket extends Packet{
 	
 	public RequestTradePacket(String requestingPlayerName) {
 		this.requestingPlayerName = requestingPlayerName;
-	}
-	
-	@Override
-	public void readData(byte[] data) throws Exception {
-		final RequestTradePacket read = IOService.readPacket(getClass(), data);
-		this.assignData(this, read);
-	}
-
-	@Override
-	public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
 	}
 
 	@Override

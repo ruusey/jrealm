@@ -1,11 +1,8 @@
 package com.jrealm.net.server.packet;
 
-import java.io.DataOutputStream;
-
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableBoolean;
 import com.jrealm.net.core.nettypes.SerializableByte;
@@ -31,17 +28,6 @@ public class PlayerMovePacket extends Packet {
     private byte dir;
 	@SerializableField(order = 2, type = SerializableBoolean.class)
     private boolean move;
-
-    @Override
-    public void readData(byte[] data) throws Exception {
-        final PlayerMovePacket read = IOService.readPacket(getClass(), data);
-        this.assignData(this, read);
-    }
-
-    @Override
-    public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-    }
 
     public static PlayerMovePacket from(Player player, Cardinality direction, boolean move) throws Exception {
     	final PlayerMovePacket read = new PlayerMovePacket(player.getId(), direction.cardinalityId, move);

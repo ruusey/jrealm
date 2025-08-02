@@ -1,6 +1,5 @@
 package com.jrealm.net.client.packet;
 
-import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +20,7 @@ import com.jrealm.net.entity.NetEnemy;
 import com.jrealm.net.entity.NetLootContainer;
 import com.jrealm.net.entity.NetPlayer;
 import com.jrealm.net.entity.NetPortal;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -44,17 +44,6 @@ public class LoadPacket extends Packet {
     private NetLootContainer[] containers;
 	@SerializableField(order = 4, type = NetPortal.class, isCollection=true)
     private NetPortal[] portals;
-
-    @Override
-    public void readData(byte[] data) throws Exception {
-        final LoadPacket packet = IOService.readPacket(getClass(), data);
-        this.assignData(data, packet);
-    }
-
-    @Override
-    public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-    }
 
     public static LoadPacket from(Player[] players, LootContainer[] loot, Bullet[] bullets, Enemy[] enemies,
             Portal[] portals) throws Exception {
