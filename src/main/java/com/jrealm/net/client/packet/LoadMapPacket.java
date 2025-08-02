@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableLong;
 import com.jrealm.net.core.nettypes.SerializableShort;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Streamable
 @AllArgsConstructor
+@PacketId(packetId = (byte)8)
 public class LoadMapPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long realmId;
@@ -93,9 +95,4 @@ public class LoadMapPacket extends Packet {
         }
         return false;
     }
-
-	@Override
-	public byte getPacketId() {
-		return (byte) 8;
-	}
 }

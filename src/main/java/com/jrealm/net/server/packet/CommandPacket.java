@@ -4,6 +4,7 @@ import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableByte;
 import com.jrealm.net.core.nettypes.SerializableLong;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 @Streamable
 @NoArgsConstructor
+@PacketId(packetId = (byte)7)
 public class CommandPacket extends Packet {
 	
 	@SerializableField(order = 0, type = SerializableLong.class)
@@ -80,9 +82,4 @@ public class CommandPacket extends Packet {
         final ServerErrorMessage error = ServerErrorMessage.from(code, message);
         return CommandPacket.create(targetEntityId, CommandType.SERVER_ERROR, error);
     }
-
-	@Override
-	public byte getPacketId() {
-		return (byte) 7;
-	}
 }

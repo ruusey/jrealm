@@ -4,6 +4,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableFloat;
 import com.jrealm.net.core.nettypes.SerializableLong;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Streamable
 @AllArgsConstructor
 @NoArgsConstructor
+@PacketId(packetId = (byte)11)
 public class UseAbilityPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
 	private long playerId;
@@ -31,11 +33,5 @@ public class UseAbilityPacket extends Packet {
 	public static UseAbilityPacket from(Player player, Vector2f pos) throws Exception {
 		final UseAbilityPacket packet = new UseAbilityPacket(player.getId(), pos.x, pos.y);
 		return packet;
-	}
-	
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte) 11;
 	}
 }

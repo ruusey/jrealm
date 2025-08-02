@@ -3,6 +3,7 @@ package com.jrealm.net.server.packet;
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableBoolean;
 import com.jrealm.net.core.nettypes.SerializableByte;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Streamable
 @AllArgsConstructor
 @NoArgsConstructor
+@PacketId(packetId = (byte)1)
 public class PlayerMovePacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long entityId;
@@ -37,10 +39,4 @@ public class PlayerMovePacket extends Packet {
     public Cardinality getDirection() {
         return Cardinality.valueOf(this.dir);
     }
-
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte) 1;
-	}
 }

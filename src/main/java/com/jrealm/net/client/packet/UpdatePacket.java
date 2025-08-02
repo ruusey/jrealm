@@ -9,6 +9,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableInt;
 import com.jrealm.net.core.nettypes.SerializableLong;
@@ -27,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 @Streamable
 @NoArgsConstructor
+@PacketId(packetId = (byte)2)
+
 public class UpdatePacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
 	private long playerId;
@@ -160,10 +163,5 @@ public class UpdatePacket extends Packet {
 		boolean expEqual = this.experience == other.getExperience();
 		boolean result = basic && stats && inv && effects && expEqual;
 		return result;
-	}
-
-	@Override
-	public byte getPacketId() {
-		return (byte) 2;
 	}
 }

@@ -1,12 +1,10 @@
 package com.jrealm.net.client.packet;
 
-import java.io.DataOutputStream;
-
 import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableByte;
 import com.jrealm.net.core.nettypes.SerializableLong;
@@ -20,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
 @Streamable
+@PacketId(packetId = (byte)14)
 public class TextEffectPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableByte.class)
     private byte textEffectId;
@@ -39,10 +38,4 @@ public class TextEffectPacket extends Packet {
     	packet.text = text;
         return packet;
     }
-
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte) 14;
-	}
 }

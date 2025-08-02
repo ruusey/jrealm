@@ -5,13 +5,10 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.function.IntFunction;
-import java.util.function.Supplier;
-
-import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.client.packet.RequestTradePacket;
 import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.*;
 
@@ -28,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Streamable
 @Slf4j
+@PacketId(packetId = (byte)101)
 public class TestPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableString.class)
 	private String test0;
@@ -90,9 +88,5 @@ public class TestPacket extends Packet {
 				.test2(r.nextLong()).test3((short) r.nextInt(Short.MAX_VALUE)).test4(b).build();
 	}
 
-	@Override
-	public byte getPacketId() {
-		return (byte) 101;
-	}
 
 }

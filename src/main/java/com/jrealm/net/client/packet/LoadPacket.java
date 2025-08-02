@@ -14,6 +14,7 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.entity.NetBullet;
 import com.jrealm.net.entity.NetEnemy;
@@ -33,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Streamable
 @AllArgsConstructor
 @NoArgsConstructor
+@PacketId(packetId = (byte)9)
 public class LoadPacket extends Packet {
 	@SerializableField(order = 0, type = NetPlayer.class, isCollection=true)
     private NetPlayer[] players;
@@ -262,9 +264,4 @@ public class LoadPacket extends Packet {
         }
         return false;
     }
-
-	@Override
-	public byte getPacketId() {
-		return (byte) 9;
-	}
 }

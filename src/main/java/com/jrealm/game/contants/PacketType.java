@@ -7,6 +7,8 @@ import java.util.Map.Entry;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.core.IOService;
+import com.jrealm.net.core.PacketId;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -25,10 +27,15 @@ public class PacketType {
     				continue;
     			
     			Packet packet = (Packet)clazz.getDeclaredConstructor().newInstance();
-    			if(PacketType.map.get(packet.getPacketId())!=null) {
-    				log.error("[PacketMapper] **CRITICAL** Duplicate packet mapping for packetId {} -  Classes {} and {}", packet.getPacketId(), PacketType.map.get(packet.getPacketId()), packet.getClass());
+    			PacketId id = packet.getClass().getAnnotation(PacketId.class);
+    			if(id == null) {
+    				log.error("[PacketMapper] **CRITICAL** No @PacketId declared for class {}. Skipping ", packet);
+    				continue;
+    			}
+    			if(PacketType.map.get(id.packetId())!=null) {
+    				log.error("[PacketMapper] **CRITICAL** Duplicate packet mapping for packetId {} -  Classes {} and {}", id.packetId(), PacketType.map.get(id.packetId()), packet.getClass());
     			}else {
-        			PacketType.map.put(packet.getPacketId(), packet.getClass());
+        			PacketType.map.put(id.packetId(), packet.getClass());
     			}
     		}
     	}catch(Exception e) {

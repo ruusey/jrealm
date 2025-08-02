@@ -6,6 +6,7 @@ import java.util.List;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.entity.ObjectMovement;
 
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Streamable
 @NoArgsConstructor
+@PacketId(packetId = (byte)3)
 public class ObjectMovePacket extends Packet {
 
 	@SerializableField(order = 0, type = ObjectMovement.class, isCollection=true)
@@ -77,10 +79,4 @@ public class ObjectMovePacket extends Packet {
     	packet.setMovements(objects);
     	return packet;
     }
-
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte)3;
-	}
 }

@@ -2,6 +2,7 @@ package com.jrealm.net.client.packet;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableLong;
 
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 @Slf4j
 @Streamable
+@PacketId(packetId = (byte)15)
 public class PlayerDeathPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
 	private long playerId;
@@ -26,10 +28,4 @@ public class PlayerDeathPacket extends Packet {
     public static PlayerDeathPacket from(long playerId) throws Exception {
         return new PlayerDeathPacket(playerId);
     }
-
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte)15;
-	}
 }

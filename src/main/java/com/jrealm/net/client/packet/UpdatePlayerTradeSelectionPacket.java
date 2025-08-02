@@ -5,6 +5,7 @@ import com.jrealm.game.ui.PlayerUI;
 import com.jrealm.game.ui.Slots;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.entity.NetInventorySelection;
 
@@ -16,6 +17,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@PacketId(packetId = (byte)18)
 public class UpdatePlayerTradeSelectionPacket extends Packet {
 	@SerializableField(order = 0, type = NetInventorySelection.class)
 	private NetInventorySelection selection;
@@ -34,11 +36,5 @@ public class UpdatePlayerTradeSelectionPacket extends Packet {
 		final NetInventorySelection updatedSelection = NetInventorySelection.builder().playerId(player.getId())
 				.selection(selected).build();
 		return new UpdatePlayerTradeSelectionPacket(updatedSelection);
-	}
-
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte) 18;
 	}
 }

@@ -2,6 +2,7 @@ package com.jrealm.net.server.packet;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableString;
 
@@ -17,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Streamable
 @AllArgsConstructor
 @NoArgsConstructor
+@PacketId(packetId = (byte)4)
 public class TextPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableString.class)
     private String from;
@@ -50,10 +52,4 @@ public class TextPacket extends Packet {
             return null;
         }
     }
-
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte) 4;
-	}
 }

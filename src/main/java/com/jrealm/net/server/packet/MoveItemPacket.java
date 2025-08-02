@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableBoolean;
 import com.jrealm.net.core.nettypes.SerializableByte;
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Streamable
 @NoArgsConstructor
 @AllArgsConstructor
+@PacketId(packetId = (byte)12)
 public class MoveItemPacket extends Packet {
 	private static final List<Integer> EQUIPMENT_IDX = Arrays.asList(0, 1, 2, 3);
 	private static final List<Integer> INV_IDX1 = Arrays.asList(4, 5, 6, 7, 8, 9, 10, 11);
@@ -56,11 +58,5 @@ public class MoveItemPacket extends Packet {
 
 	public static boolean isGroundLoot(int index) {
 		return GROUND_LOOT_IDX.contains(index);
-	}
-
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte) 12;
 	}
 }

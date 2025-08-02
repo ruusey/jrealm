@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableLong;
 
@@ -23,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@PacketId(packetId = (byte)10)
 public class UnloadPacket extends Packet {
 	
 	@SerializableField(order = 0, type = SerializableLong.class, isCollection=true)
@@ -96,10 +98,4 @@ public class UnloadPacket extends Packet {
         return UnloadPacket.from(players.toArray(new Long[0]), loot.toArray(new Long[0]), bullets.toArray(new Long[0]),
                 enemies.toArray(new Long[0]), portals.toArray(new Long[0]));
     }
-
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte) 10;
-	}
 }

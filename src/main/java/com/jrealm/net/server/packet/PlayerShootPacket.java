@@ -4,6 +4,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableFloat;
 import com.jrealm.net.core.nettypes.SerializableInt;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Streamable
 @NoArgsConstructor
 @AllArgsConstructor
+@PacketId(packetId = (byte)6)
 public class PlayerShootPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long projectileId;
@@ -54,10 +56,4 @@ public class PlayerShootPacket extends Packet {
     	data.srcY = p.getPos().y;
     	return data;
     }
-
-	@Override
-	public byte getPacketId() {
-		// TODO Auto-generated method stub
-		return (byte) 6;
-	}
 }

@@ -2,6 +2,7 @@ package com.jrealm.net.server.packet;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableByte;
 import com.jrealm.net.core.nettypes.SerializableLong;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Streamable
 @AllArgsConstructor
 @NoArgsConstructor
+@PacketId(packetId = (byte)13)
 public class UsePortalPacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)	
     private long portalId;
@@ -27,11 +29,6 @@ public class UsePortalPacket extends Packet {
     private byte toVault;
 	@SerializableField(order = 4, type = SerializableByte.class)
     private byte toNexus;
-    
-    @Override
-	public byte getPacketId() {
-		return (byte) 13;
-	}
 
     public static UsePortalPacket from(long portalId, long fromRealmId, long playerId) throws Exception {
     	final UsePortalPacket packet = new UsePortalPacket(portalId, fromRealmId, playerId, (byte)-1, (byte)-1);
