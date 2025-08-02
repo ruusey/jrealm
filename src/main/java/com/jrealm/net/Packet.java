@@ -30,6 +30,17 @@ public abstract class Packet implements GameMessage {
         this.data = data;
         this.srcIp = srcIp;
     }
+    
+    @Override
+    public int serializeWrite(DataOutputStream stream) throws Exception {
+		return IOService.writePacket(this, stream).length;
+    }
+
+    @Override
+    public void readData(byte[] data) throws Exception {
+    	final Packet read = IOService.readPacket(getClass(), data);
+    	this.assignData(this, read);
+    }
 
     public byte getId() {
         return this.id;
@@ -50,17 +61,6 @@ public abstract class Packet implements GameMessage {
     public void setId(byte id) {
 		this.id = id;
 	}
-    
-    @Override
-    public int serializeWrite(DataOutputStream stream) throws Exception {
-		return IOService.writePacket(this, stream).length;
-    }
-
-    @Override
-    public void readData(byte[] data) throws Exception {
-    	final Packet read = IOService.readPacket(getClass(), data);
-    	this.assignData(this, read);
-    }
 
 	public void addHeader(DataOutputStream stream) throws Exception {
         stream.writeByte(this.id);
