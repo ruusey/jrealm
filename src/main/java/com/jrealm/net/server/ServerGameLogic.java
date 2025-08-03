@@ -271,6 +271,8 @@ public class ServerGameLogic {
 			double dex = (int) ((6.5 * (player.getComputedStats().getDex() + 17.3)) / 75);
 			if (player.hasEffect(EffectType.SPEEDY)) {
 				dex = dex * 1.5;
+			}else if(player.hasEffect(EffectType.DAZED)) {
+				dex = 1.0;
 			}
 			canShoot = ((Instant.now().toEpochMilli() - realm.getPlayerLastShotTime().get(player.getId())) > (1000
 					/ dex));

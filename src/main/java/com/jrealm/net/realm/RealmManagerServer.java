@@ -1311,7 +1311,14 @@ public class RealmManagerServer implements Runnable {
 					p.addEffect(EffectType.STUNNED, 2500);
 				}
 			}
+			
+			if (b.hasFlag((short) 11)) {
+				if (!p.hasEffect(EffectType.DAZED)) {
+					p.addEffect(EffectType.DAZED, 5000);
+					this.broadcastTextEffect(EntityType.PLAYER, p, TextEffect.DAMAGE, "DAZED");
 
+				}
+			}
 			if (p.getDeath()) {
 				this.playerDeath(targetRealm, player);
 
@@ -1356,6 +1363,14 @@ public class RealmManagerServer implements Runnable {
 				if (!e.hasEffect(EffectType.STUNNED)) {
 					e.addEffect(EffectType.STUNNED, 5000);
 					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "STUNNED");
+
+				}
+			}
+			
+			if (b.hasFlag((short) 11)) {
+				if (!e.hasEffect(EffectType.DAZED)) {
+					e.addEffect(EffectType.DAZED, 5000);
+					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "DAZED");
 
 				}
 			}
