@@ -86,7 +86,7 @@ public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet)
     }
 }
 ```
-**Example (Register by annotation,  ease  of use, intrroduces some but minimal performance overhead)**
+**Example (Register by annotation,  ease of use, introduces some but minimal performance overhead)**
 ```java
 @PacketHandler(TextPacket.class)
 public static void handleText0(RealmManagerServer mgr, Packet packet) {
@@ -147,7 +147,7 @@ The current script features are:
 ### Enemy Scripts
 EnemyScripts are small classes that currently allow a developer to implement the `attack` method to provide custom attack behavior. EnemyScripts
 will replace the target enemies default attack pattern with the contents of your script. <br />
-EnemyScripts are run concurrently and thus support delays and long running attack patterns. Any class extending `EnemyScriptBase` will be loaded as an EnemyScript at runtime.
+EnemyScripts are run asynchronously and thus support delays and long running attack patterns. Any class extending `EnemyScriptBase` will be loaded as an EnemyScript at runtime.
 
 **Example**
 ```java
@@ -217,7 +217,7 @@ public class Item156Script extends UseableItemScriptBase{
 ```
 
 ### Terrain Decorator Scripts
-TerrainDecorator scripts are small classes that currently developers to implement custom terrain post processing for Realms during their generation process. TerrainDecorators currently
+TerrainDecorator scripts are small classes that currently allow developers to implement custom terrain post processing for Realms during their generation process. TerrainDecorators currently
 allow the developer to implement the `decorate` method to modify world tiles, spawn enemies or generate structures. Any class extending `RealmDecoratorBase` will be loaded as a TerrainDecorator
 script at runtime.
 
