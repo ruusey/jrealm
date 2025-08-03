@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -26,6 +27,7 @@ public class ProcessingThread extends Thread {
 
     private Socket clientSocket;
     private SocketServer server;
+    private String clientKey;
     private boolean shutdownProcessing = false;
     private byte[] remoteBuffer = new byte[ProcessingThread.BUFFER_CAPACITY];
     private int remoteBufferIndex = 0;
@@ -35,9 +37,10 @@ public class ProcessingThread extends Thread {
     private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
     private boolean handshakeComplete = false;
 
-    public ProcessingThread(SocketServer server, Socket clientSocket) {
+    public ProcessingThread(SocketServer server, Socket clientSocket, String clientKey) {
         this.server = server;
         this.clientSocket = clientSocket;
+        this.clientKey = clientKey;
     }
 
     @Override
@@ -66,7 +69,7 @@ public class ProcessingThread extends Thread {
             InputStream stream = this.clientSocket.getInputStream();
             int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
                     this.remoteBuffer.length - this.remoteBufferIndex);
-            this.lastDataTime = System.currentTimeMillis();
+            this.lastDataTime = Instant.now().toEpochMilli();
             if (bytesRead == -1)
                 throw new SocketException("end of stream");
             if (bytesRead > 0) {
@@ -87,7 +90,7 @@ public class ProcessingThread extends Thread {
 					this.remoteBufferIndex -= packetLength;
 					final Class<?> packetClass = PacketType.valueOf(packetId);
 					final Packet nPacket = IOService.readStream(packetClass, packetBytes);
-					nPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+					nPacket.setSrcIp(this.clientKey);
 					this.packetQueue.add(nPacket);
                 }
             }
@@ -102,8 +105,8 @@ public class ProcessingThread extends Thread {
         Runnable monitorLastRecieved = () -> {
             while (!this.shutdownProcessing) {
                 try {
-                    if ((System.currentTimeMillis() - this.lastDataTime) > 5000) {
-                        this.server.getClients().remove(this.clientSocket.getInetAddress().getHostAddress());
+                    if ((Instant.now().toEpochMilli() - this.lastDataTime) > 5000) {
+                        this.server.getClients().remove(this.clientKey);
                         this.shutdownProcessing = true;
                     }
                 } catch (Exception e) {

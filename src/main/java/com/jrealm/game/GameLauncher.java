@@ -114,8 +114,9 @@ public class GameLauncher {
 				
 		}
 		final LoginScreenPanel loginPanel = new LoginScreenPanel(1020, 320);
+		JFrame frame = null;
 		try {
-			final JFrame frame = loginPanel.getLoginFrame();
+			frame = loginPanel.getLoginFrame();
 			frame.setVisible(true);
 			frame.setLocationRelativeTo(null);
 			frame.setResizable(true);
@@ -158,7 +159,7 @@ public class GameLauncher {
 		} catch (IndexOutOfBoundsException e) {
 			log.info("[CLIENT] Automatically logged in as user {}", SocketClient.PLAYER_EMAIL);
 			JOptionPane.showMessageDialog(loginPanel.getFrame(), "Automatic login as "+SocketClient.PLAYER_EMAIL+" successful");
-			//System.exit(-1);
+			frame.dispose();
 		}catch (Exception e) {
 			log.error("[CLIENT] Failed to perform login and account fetch. Reason: {}", e.getMessage());
 			JOptionPane.showMessageDialog(loginPanel.getFrame(), e.getMessage());

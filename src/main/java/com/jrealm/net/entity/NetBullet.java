@@ -1,20 +1,16 @@
 package com.jrealm.net.entity;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.util.Arrays;
 
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
 import com.jrealm.net.core.nettypes.*;
 
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -60,16 +56,6 @@ public class NetBullet extends SerializableFieldType<NetBullet> {
 	private short frequency;
 	@SerializableField(order = 15, type = SerializableLong.class)
 	private long createdTime;
-	
-	@Override
-	public NetBullet read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-
-	@Override
-	public int write(NetBullet value, DataOutputStream stream) throws Exception {
-		return IOService.writeStream(value, stream);
-	}
 	
 	public Bullet asBullet() {
 		final Bullet bullet = new Bullet();

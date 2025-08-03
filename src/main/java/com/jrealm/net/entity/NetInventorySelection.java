@@ -31,16 +31,6 @@ public class NetInventorySelection extends SerializableFieldType<NetInventorySel
 	@SerializableField(order = 2, type = NetGameItemRef.class, isCollection = true)
 	private NetGameItemRef[] itemRefs;
 
-	@Override
-	public NetInventorySelection read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-
-	@Override
-	public int write(NetInventorySelection value, DataOutputStream stream) throws Exception {
-		return IOService.writeStream(value, stream);
-	}
-
 	public static NetInventorySelection fromPlayer(Player player, Boolean[] selectedSlots) {
 		return NetInventorySelection.builder().playerId(player.getId()).selection(selectedSlots).build();
 	}

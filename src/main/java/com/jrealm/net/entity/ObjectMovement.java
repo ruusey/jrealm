@@ -64,16 +64,6 @@ public class ObjectMovement extends SerializableFieldType<ObjectMovement> {
         return type;
     }
 
-    @Override
-    public int write(ObjectMovement value, DataOutputStream stream) throws Exception {
-        return IOService.writeStream(value, stream);
-    }
-
-    @Override
-    public ObjectMovement read(DataInputStream stream) throws Exception {
-       return IOService.readStream(getClass(), stream);
-    }
-
     public boolean equals(ObjectMovement other) {
         return this.entityId == other.getEntityId() && this.entityType == other.getEntityType()
                 && this.posX == other.getPosX() && this.posY == other.getPosY() && this.velX == other.getVelX()

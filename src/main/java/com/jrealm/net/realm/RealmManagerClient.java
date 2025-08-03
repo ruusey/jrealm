@@ -24,18 +24,23 @@ import com.jrealm.game.state.PlayState;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.net.client.SocketClient;
+import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.PlayerDeathPacket;
+import com.jrealm.net.client.packet.RequestTradePacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.server.ServerGameLogic;
+import com.jrealm.net.server.ServerTradeManager;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.util.PacketHandlerClient;
+import com.jrealm.util.PacketHandlerServer;
 import com.jrealm.util.TimedWorkerThread;
 import com.jrealm.util.WorkerThread;
 
@@ -102,14 +107,15 @@ public class RealmManagerClient implements Runnable {
 				Packet created = toProcess;
 				//log.info("[CLIENT] Processing client packet {} ", created);
                 created.setSrcIp(toProcess.getSrcIp());
+                created.setId(toProcess.getId());
                 BiConsumer<RealmManagerClient, Packet> consumer = this.packetCallbacksClient.get(created.getClass());
                 if(consumer!=null) {
                 	consumer.accept(this, created);
                 }
-              
                 final List<MethodHandle> packetHandles = this.userPacketCallbacksClient.get(created.getId());
 				long start = System.nanoTime();
 				if (packetHandles != null) {
+
 					for (MethodHandle handler : packetHandles) {
 						try {
 							handler.invokeExact(this, created);
@@ -137,28 +143,34 @@ public class RealmManagerClient implements Runnable {
         this.registerPacketCallback(UnloadPacket.class, ClientGameLogic::handleUnloadClient);
         this.registerPacketCallback(TextEffectPacket.class, ClientGameLogic::handleTextEffectClient);
         this.registerPacketCallback(PlayerDeathPacket.class, ClientGameLogic::handlePlayerDeathClient);
+//        this.registerPacketCallback(RequestTradePacket.class, ClientGameLogic::handleTradeRequestClient);
+//        this.registerPacketCallback(AcceptTradeRequestPacket.class, ClientGameLogic::handleAcceptTrade);
+
     }
     
     private void registerPacketCallbacksReflection() {
 		log.info("[CLIENT] Registering packet handlers using reflection");
 		final MethodType mt = MethodType.methodType(void.class, RealmManagerClient.class, Packet.class);
+
 		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandlerClient.class);
 		for (final Method method : subclasses) {
 			try {
 				final PacketHandlerClient packetToHandle = method.getDeclaredAnnotation(PacketHandlerClient.class);
-				final MethodHandle handleToHandler = this.publicLookup.findStatic(ClientGameLogic.class,
-						method.getName(), mt);
-				if (handleToHandler != null) {
+				MethodHandle handlerMethod = null;
+				
+					handlerMethod = this.publicLookup.findStatic(ClientGameLogic.class, method.getName(), mt);
+				
+
+				if (handlerMethod != null) {
 					final Entry<Byte, Class<? extends Packet>> targetPacketType = PacketType.valueOf(packetToHandle.value());
 					List<MethodHandle> existing = this.userPacketCallbacksClient.get(targetPacketType.getKey());
 					if (existing == null) {
 						existing = new ArrayList<>();
 					}
-					existing.add(handleToHandler);
-					log.info("[CLIENT] Added new packet handler for packet {}. Handler method: {} in class {}", targetPacketType,
-							method.toString(), method.getDeclaringClass());
+					existing.add(handlerMethod);
+					log.info("[CLIENT] Added new packet handler for packet {}. Handler method: {}", targetPacketType.getKey(),
+							handlerMethod.toString());
 					this.userPacketCallbacksClient.put(targetPacketType.getKey(), existing);
-
 				}
 			} catch (Exception e) {
 				log.error("[CLIENT] Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);

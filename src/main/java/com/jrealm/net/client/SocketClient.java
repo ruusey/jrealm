@@ -113,6 +113,10 @@ public class SocketClient implements Runnable {
                     final Class<? extends Packet> packetClass = PacketType.valueOf(packetId);
                     final Packet newPacket = IOService.readStream(packetClass, packetBytes);
                     newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
+                    newPacket.setId(packetId);
+                    if(packetId==(byte)16) {
+                    	System.out.print(false);
+                    }
                     this.inboundPacketQueue.add(newPacket);
                 }
             }

@@ -24,16 +24,6 @@ public class NetTradeSelection extends SerializableFieldType<NetTradeSelection> 
 	@SerializableField(order = 1, type = NetInventorySelection.class)
 	private NetInventorySelection player1Selection;
 
-	@Override
-	public NetTradeSelection read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-
-	@Override
-	public int write(NetTradeSelection value, DataOutputStream stream) throws Exception {
-		return IOService.writeStream(value, stream);
-	}
-
 	public static NetTradeSelection getTradeSelection(Player p0, Player p1, Boolean[] p0Selection,
 			Boolean[] p1Selection) {
 		final NetInventorySelection p0Inv = NetInventorySelection.fromPlayer(p0, p0Selection);

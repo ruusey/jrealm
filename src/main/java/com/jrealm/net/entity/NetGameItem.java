@@ -49,11 +49,6 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	private byte fameBonus;
 
 	@Override
-	public NetGameItem read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-
-	@Override
 	public int write(NetGameItem value, DataOutputStream stream) throws Exception {
 		if (value == null) {
 			return IOService.writeStream(new NetGameItem(), stream);

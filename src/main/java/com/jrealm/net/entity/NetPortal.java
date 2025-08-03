@@ -33,16 +33,6 @@ public class NetPortal extends SerializableFieldType<NetPortal> {
 	private long expires;
 	@SerializableField(order = 5, type = Vector2f.class)
 	private Vector2f pos;
-
-	@Override
-	public NetPortal read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-
-	@Override
-	public int write(NetPortal value, DataOutputStream stream) throws Exception {
-		return IOService.writeStream(value, stream);
-	}
 	
 	public Portal asPortal() {
 		Portal p = new Portal();

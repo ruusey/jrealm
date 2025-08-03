@@ -1,12 +1,8 @@
 package com.jrealm.net.entity;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
 import com.jrealm.game.contants.EffectType;
 import com.jrealm.game.entity.item.Effect;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
 import com.jrealm.net.core.nettypes.SerializableBoolean;
@@ -37,17 +33,6 @@ public class NetEffect extends SerializableFieldType<NetEffect> {
 		this.duration = -1l;
 		this.cooldownDuration = -1l;
 		this.mpCost = -1;
-	}
-
-	@Override
-	public NetEffect read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-
-	@Override
-	public int write(NetEffect value, DataOutputStream stream) throws Exception {
-		final NetEffect toWrite = value == null ? new NetEffect() : value;
-		return IOService.writeStream(toWrite, stream);
 	}
 
 	public Effect asEffect() {

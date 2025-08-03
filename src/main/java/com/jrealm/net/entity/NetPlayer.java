@@ -1,12 +1,8 @@
 package com.jrealm.net.entity;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
 import lombok.AllArgsConstructor;
@@ -37,16 +33,6 @@ public class NetPlayer extends SerializableFieldType<NetPlayer>{
 	private float dX;
 	@SerializableField(order = 8, type = SerializableFloat.class)
 	private float dY;
-	
-	@Override
-	public NetPlayer read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-	@Override
-	public int write(NetPlayer value, DataOutputStream stream) throws Exception {
-		return IOService.writeStream(value, stream);
-		
-	}
 	
 	public Player toPlayer() {
 		Player p = new Player();

@@ -1,12 +1,8 @@
 package com.jrealm.net.entity;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
 import com.jrealm.net.core.nettypes.SerializableFloat;
@@ -37,16 +33,6 @@ public class NetEnemy extends SerializableFieldType<NetEnemy>{
 	private float dX;
 	@SerializableField(order = 6, type = SerializableFloat.class)
 	private float dY;
-	
-	@Override
-	public NetEnemy read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-
-	@Override
-	public int write(NetEnemy value, DataOutputStream stream) throws Exception {
-		return IOService.writeStream(value, stream);
-	}
 	
 	public Enemy asEnemy() {
 		final Enemy e = new Enemy();

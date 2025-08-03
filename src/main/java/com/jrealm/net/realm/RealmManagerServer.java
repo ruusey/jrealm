@@ -1585,7 +1585,7 @@ public class RealmManagerServer implements Runnable {
 		Player result = null;
 		for (Realm realm : this.getRealms().values()) {
 			for (Player player : realm.getPlayers().values()) {
-				if (player.getName().equals(name)) {
+				if (player.getName().equalsIgnoreCase(name)) {
 					result = player;
 					break;
 				}

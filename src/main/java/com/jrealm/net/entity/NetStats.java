@@ -46,11 +46,6 @@ public class NetStats extends SerializableFieldType<NetStats> {
 	}
 	
 	@Override
-	public NetStats read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-
-	@Override
 	public int write(NetStats value, DataOutputStream stream) throws Exception {
 		final NetStats toWrite = value == null ? new NetStats() : value;
 		return IOService.writeStream(toWrite, stream);

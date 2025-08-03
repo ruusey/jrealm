@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
+import com.jrealm.game.math.Rectangle;
 import com.jrealm.net.client.packet.UpdateTradePacket;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
@@ -17,6 +18,7 @@ import com.jrealm.net.client.packet.UpdatePlayerTradeSelectionPacket;
 import com.jrealm.net.entity.NetInventorySelection;
 import com.jrealm.net.entity.NetTradeSelection;
 import com.jrealm.net.messaging.ServerCommandMessage;
+import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.util.CommandHandler;
@@ -72,9 +74,22 @@ public class ServerTradeManager {
 		if (isTradeReqPending(target.getId())) {
 			throw new Exception("You already have a pending trade request");
 		}
+		
 		final Player playerTarget = mgr.findPlayerByName(message.getArgs().get(0));
+		
+		if(playerTarget==null) {
+			throw new IllegalArgumentException("Unable to find player "+message.getArgs().get(0));
+		}else if(playerTarget.getId()==target.getId()) {
+			throw new IllegalArgumentException("You cannot trade with yourself!");
+		}
+		Realm playerRealm = mgr.findPlayerRealm(target.getId());
+		Rectangle rect = playerRealm.getTileManager().getRenderViewPort(target);
+		if(!rect.inside((int)playerTarget.getPos().x, (int)playerTarget.getPos().y)) {
+			throw new IllegalArgumentException("Player "+message.getArgs().get(0)+" is too far away to trades");
+		}
 		final RequestTradePacket packet = new RequestTradePacket(target.getName());
 		mgr.enqueueServerPacket(playerTarget, packet);
+
 		// Set both parties confirmation to 0
 		ServerTradeManager.playerTradeConfirmation.put(target.getId(), (short) 0);
 		ServerTradeManager.playerTradeConfirmation.put(playerTarget.getId(), (short) 0);
@@ -101,8 +116,8 @@ public class ServerTradeManager {
 					from.getName() + " has accepted your trade request"));
 			mgr.enqueueServerPacket(target,
 					TextPacket.create("SYSTEM", target.getName(), "Now trading with player " + toRespond.getName()));
-			mgr.enqueueServerPacket(target, new AcceptTradeRequestPacket(true));
-			mgr.enqueueServerPacket(toRespond, new AcceptTradeRequestPacket(true));
+			mgr.enqueueServerPacket(target, new AcceptTradeRequestPacket(true, target, from));
+			mgr.enqueueServerPacket(toRespond, new AcceptTradeRequestPacket(true, from, target));
 			ServerTradeManager.playerActiveTrades.put(toRespond.getId(), target.getId());
 			ServerTradeManager.playerActiveTrades.put(target.getId(), toRespond.getId());
 
@@ -237,6 +252,15 @@ public class ServerTradeManager {
 
 	public static boolean isTrading(long playerId0, long playerId1) {
 		return checkKeysBidirectional(playerId0, playerId1);
+	}
+	
+	public static void clearTrade(long p0Id, long p1Id) {
+		ServerTradeManager.playerActiveTrades.remove(p0Id);
+		ServerTradeManager.playerRequestedTrades.remove(p1Id);
+		ServerTradeManager.playerTradeSelections.remove(p0Id);
+		ServerTradeManager.playerTradeSelections.remove(p1Id);
+		ServerTradeManager.playerTradeConfirmation.remove(p0Id);
+		ServerTradeManager.playerTradeConfirmation.remove(p0Id);
 	}
 
 	private static boolean isTradeConfirmed(Player p0, Player p1) {

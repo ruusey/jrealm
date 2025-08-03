@@ -35,16 +35,6 @@ public class NetTile extends SerializableFieldType<NetTile> {
 		this.xIndex = -1;
 		this.yIndex = -1;
 	}
-	
-	@Override
-	public NetTile read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-
-	@Override
-	public int write(NetTile value, DataOutputStream stream) throws Exception {
-		return IOService.writeStream(value, stream);
-	}
 
     public static NetTile from(Tile tile, TileModel model, byte layer, int xIndex, int yIndex) {
         return new NetTile(tile.getTileId(), layer, xIndex, yIndex);

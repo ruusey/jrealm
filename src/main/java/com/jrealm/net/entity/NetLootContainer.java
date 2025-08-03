@@ -45,15 +45,6 @@ public class NetLootContainer extends SerializableFieldType<NetLootContainer>{
 	@SerializableField(order = 7, type = SerializableBoolean.class)
     private boolean contentsChanged;
 	
-	@Override
-	public NetLootContainer read(DataInputStream stream) throws Exception {
-		return IOService.readStream(getClass(), stream);
-	}
-	@Override
-	public int write(NetLootContainer value, DataOutputStream stream) throws Exception {
-		return IOService.writeStream(value, stream);
-	}
-	
 	public LootContainer asLootContainer() {
 		LootContainer container = new LootContainer();
 		container.setLootContainerId(this.lootContainerId);

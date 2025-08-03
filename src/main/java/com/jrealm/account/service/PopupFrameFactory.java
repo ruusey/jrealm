@@ -1,10 +1,6 @@
 package com.jrealm.account.service;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.GridLayout;
-import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,10 +11,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.imageio.ImageIO;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -221,14 +215,14 @@ public class PopupFrameFactory {
 
 	}
 
-	public static JLabel loadingPanel() throws IOException {
-
-		
+	public static JLabel loadingPanel() {
 		JLabel wIcon = new JLabel("JREALM LOGIN");
-
-
 		return wIcon;
-
+	}
+	
+	public static JLabel tradingPanel() {
+		JLabel wIcon = new JLabel("JREALM Player Trade");
+		return wIcon;
 	}
 
 	public static Map<String, Object> getFieldValueMap(Object bean) {

@@ -49,11 +49,13 @@ public class SocketServer implements Runnable {
 					socket.setTcpNoDelay(true);
 					socket.setSoTimeout((int) GlobalConstants.SOCKET_READ_TIMEOUT);
 					final String remoteAddr = socket.getInetAddress().getHostAddress();
-					final ProcessingThread processingThread = new ProcessingThread(this, socket);
-					this.clients.put(remoteAddr, processingThread);
+					final String clientKey = remoteAddr + "/"+ this.getRemoteAddrIndex(remoteAddr);
+					final ProcessingThread processingThread = new ProcessingThread(this, socket, clientKey);
+
+					this.clients.put(clientKey, processingThread);
 					processingThread.start();
-					SocketServer.log.info("[SERVER] Server accepted new connection from Remote Address {}", remoteAddr);
-					this.clientConnectTime.put(remoteAddr, Instant.now().toEpochMilli());
+					SocketServer.log.info("[SERVER] Server accepted new connection from Remote Address {}, clientKey = {}", remoteAddr, clientKey);
+					this.clientConnectTime.put(clientKey, Instant.now().toEpochMilli());
 				} catch (Exception e) {
 					SocketServer.log.error("[SERVER] Failed to accept incoming socket connection, exiting...", e);
 				}
@@ -87,5 +89,15 @@ public class SocketServer implements Runnable {
 			}
 		};
 		WorkerThread.submitAndForkRun(socketAccept, timeoutCheck);
+	}
+	
+	private int getRemoteAddrIndex(String remoteAddr) {
+		int count = 0;
+		for(String addr : this.clients.keySet()) {
+			if(addr.contains(remoteAddr)) {
+				count++;
+			}
+		}
+		return count;
 	}
 }

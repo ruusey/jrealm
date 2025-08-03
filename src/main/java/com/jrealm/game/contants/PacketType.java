@@ -35,6 +35,8 @@ public class PacketType {
     			if(PacketType.map.get(id.packetId())!=null) {
     				log.error("[PacketMapper] **CRITICAL** Duplicate packet mapping for packetId {} -  Classes {} and {}", id.packetId(), PacketType.map.get(id.packetId()), packet.getClass());
     			}else {
+    				log.info("[PacketMapper] Mapped packetId {} to packet class {}", id.packetId(), packet.getClass());
+
         			PacketType.map.put(id.packetId(), packet.getClass());
     			}
     		}
