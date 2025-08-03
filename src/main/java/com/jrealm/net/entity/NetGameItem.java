@@ -1,6 +1,5 @@
 package com.jrealm.net.entity;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.entity.item.Damage;
@@ -50,11 +49,8 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 
 	@Override
 	public int write(NetGameItem value, DataOutputStream stream) throws Exception {
-		if (value == null) {
-			return IOService.writeStream(new NetGameItem(), stream);
-		} else {
-			return IOService.writeStream(value, stream);
-		}
+		final NetGameItem toWrite = (value == null ? new NetGameItem() : value);
+		return IOService.writeStream(toWrite, stream);
 	}
 
 	public GameItem asGameItem() {

@@ -15,7 +15,5 @@ public abstract class SerializableFieldType<T> implements ISerializableField<T> 
 
 	public int write(T value, DataOutputStream stream) throws Exception {
 		return IOService.writeStream(value, stream);
-		
 	}
-	
 }

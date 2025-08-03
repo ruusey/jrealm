@@ -1,6 +1,5 @@
 package com.jrealm.net.entity;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.entity.item.Stats;

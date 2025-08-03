@@ -41,7 +41,7 @@ import com.jrealm.net.entity.NetLootContainer;
 import com.jrealm.net.entity.NetPlayer;
 import com.jrealm.net.entity.NetPortal;
 import com.jrealm.net.entity.NetTradeSelection;
-import com.jrealm.net.entity.ObjectMovement;
+import com.jrealm.net.entity.NetObjectMovement;
 import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.LoginResponseMessage;
 import com.jrealm.net.messaging.PlayerAccountMessage;
@@ -335,7 +335,7 @@ public class ClientGameLogic {
 
 	public static void handleObjectMoveClient(RealmManagerClient cli, Packet packet) {
 		final ObjectMovePacket objectMovePacket = (ObjectMovePacket) packet;
-		for (ObjectMovement movement : objectMovePacket.getMovements()) {
+		for (NetObjectMovement movement : objectMovePacket.getMovements()) {
 			final EntityType type = movement.getTargetEntityType();
 			if (type == null) {
 				continue;

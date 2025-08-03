@@ -5,7 +5,7 @@ import java.awt.Graphics2D;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
-import com.jrealm.net.entity.ObjectMovement;
+import com.jrealm.net.entity.NetObjectMovement;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -77,7 +77,7 @@ public abstract class GameObject {
         this.pos = new Vector2f(lerpX, lerpY);
     }
 
-    public void applyMovementLerp(ObjectMovement packet, float pct) {
+    public void applyMovementLerp(NetObjectMovement packet, float pct) {
         final float lerpX = this.lerp(this.pos.x, packet.getPosX(), pct);
         final float lerpY = this.lerp(this.pos.y, packet.getPosY(), pct);
 
@@ -87,7 +87,7 @@ public abstract class GameObject {
         this.dy = packet.getVelY();
     }
 
-    public void applyMovementLerp(ObjectMovement packet) {
+    public void applyMovementLerp(NetObjectMovement packet) {
         final float lerpX = this.lerp(this.pos.x, packet.getPosX(), 0.65f);
         final float lerpY = this.lerp(this.pos.y, packet.getPosY(), 0.65f);
 
@@ -97,7 +97,7 @@ public abstract class GameObject {
         this.dy = packet.getVelY();
     }
 
-    public void applyMovement(ObjectMovement packet) {
+    public void applyMovement(NetObjectMovement packet) {
         this.pos = new Vector2f(packet.getPosX(), packet.getPosY());
         this.bounds = new Rectangle(this.pos, this.size, this.size);
         this.dx = packet.getVelX();

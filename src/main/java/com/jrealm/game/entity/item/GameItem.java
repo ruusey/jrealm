@@ -1,14 +1,10 @@
 package com.jrealm.game.entity.item;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.util.UUID;
 
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.model.SpriteModel;
-import com.jrealm.net.core.IOService;
-import com.jrealm.net.entity.NetGameItem;
 import com.jrealm.net.entity.NetGameItemRef;
 
 import lombok.AllArgsConstructor;
@@ -62,16 +58,6 @@ public class GameItem extends SpriteModel {
         itemFinal.setSpriteKey(this.getSpriteKey());
 
         return itemFinal;
-    }
-
-    //@Override
-    public GameItem read(DataInputStream stream) throws Exception {
-       return IOService.mapModel(new NetGameItem().read(stream), GameItem.class) ;
-    }
-
-   // @Override
-    public void write(DataOutputStream stream) throws Exception {
-    	new NetGameItem().write(IOService.mapModel(this,NetGameItem.class), stream);
     }
 
     public void applySpriteModel(final SpriteModel model) {

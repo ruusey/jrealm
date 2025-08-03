@@ -1,15 +1,11 @@
 package com.jrealm.net.entity;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
 import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Streamable;
-import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
 import com.jrealm.net.core.nettypes.SerializableByte;
@@ -24,7 +20,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Streamable
-public class ObjectMovement extends SerializableFieldType<ObjectMovement> {
+public class NetObjectMovement extends SerializableFieldType<NetObjectMovement> {
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long entityId;
 	@SerializableField(order = 1, type = SerializableByte.class)
@@ -38,12 +34,12 @@ public class ObjectMovement extends SerializableFieldType<ObjectMovement> {
 	@SerializableField(order = 5, type = SerializableFloat.class)
     private float velY;
 
-    public ObjectMovement(float posX, float posY) {
+    public NetObjectMovement(float posX, float posY) {
         this.posX = posX;
         this.posY = posY;
     }
 
-    public ObjectMovement(GameObject obj) {
+    public NetObjectMovement(GameObject obj) {
         this.entityId = obj.getId();
         if (obj instanceof Enemy) {
             this.entityType = EntityType.ENEMY.getEntityTypeId();
@@ -64,7 +60,7 @@ public class ObjectMovement extends SerializableFieldType<ObjectMovement> {
         return type;
     }
 
-    public boolean equals(ObjectMovement other) {
+    public boolean equals(NetObjectMovement other) {
         return this.entityId == other.getEntityId() && this.entityType == other.getEntityType()
                 && this.posX == other.getPosX() && this.posY == other.getPosY() && this.velX == other.getVelX()
                 && this.getVelY() == other.getVelY();

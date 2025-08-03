@@ -8,7 +8,7 @@ import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
-import com.jrealm.net.entity.ObjectMovement;
+import com.jrealm.net.entity.NetObjectMovement;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,21 +23,21 @@ import lombok.extern.slf4j.Slf4j;
 @PacketId(packetId = (byte)3)
 public class ObjectMovePacket extends Packet {
 
-	@SerializableField(order = 0, type = ObjectMovement.class, isCollection=true)
-    private ObjectMovement[] movements;
+	@SerializableField(order = 0, type = NetObjectMovement.class, isCollection=true)
+    private NetObjectMovement[] movements;
     
     public ObjectMovePacket getMoveDiff(ObjectMovePacket newMove) throws Exception {
-    	final List<ObjectMovement> moveDiff = new ArrayList<>();
-        for (final ObjectMovement movement : newMove.getMovements()) {
+    	final List<NetObjectMovement> moveDiff = new ArrayList<>();
+        for (final NetObjectMovement movement : newMove.getMovements()) {
             if (!this.containsMovement(movement)) {
                 moveDiff.add(movement);
             }
         }
-        return moveDiff.size() == 0 ? null : ObjectMovePacket.from(moveDiff.toArray(new ObjectMovement[0]));
+        return moveDiff.size() == 0 ? null : ObjectMovePacket.from(moveDiff.toArray(new NetObjectMovement[0]));
     }
 
-    public boolean containsMovement(ObjectMovement movement) {
-        for (final ObjectMovement thisMovement : this.getMovements()) {
+    public boolean containsMovement(NetObjectMovement movement) {
+        for (final NetObjectMovement thisMovement : this.getMovements()) {
             if (thisMovement != null && thisMovement.equals(movement)) {
                 return true;
             }
@@ -46,9 +46,9 @@ public class ObjectMovePacket extends Packet {
     }
 
 	public static ObjectMovePacket from(GameObject[] objects) throws Exception {
-		final ObjectMovement[] results = new ObjectMovement[objects.length];
+		final NetObjectMovement[] results = new NetObjectMovement[objects.length];
 		for (int i = 0; i < objects.length; i++) {
-			final ObjectMovement toWrite = new ObjectMovement(objects[i]);
+			final NetObjectMovement toWrite = new NetObjectMovement(objects[i]);
 			results[i] = toWrite;
 		}
 		final ObjectMovePacket packet = new ObjectMovePacket();
@@ -66,7 +66,7 @@ public class ObjectMovePacket extends Packet {
         }else if(this.movements==null && other.getMovements()!=null) {
         	return false;
         }
-        for (final ObjectMovement movement : other.getMovements()) {
+        for (final NetObjectMovement movement : other.getMovements()) {
             if (!this.containsMovement(movement)) {
                 return false;
             }
@@ -74,7 +74,7 @@ public class ObjectMovePacket extends Packet {
         return true;
     }
 
-    public static ObjectMovePacket from(ObjectMovement[] objects) throws Exception {
+    public static ObjectMovePacket from(NetObjectMovement[] objects) throws Exception {
     	final ObjectMovePacket packet = new ObjectMovePacket();
     	packet.setMovements(objects);
     	return packet;

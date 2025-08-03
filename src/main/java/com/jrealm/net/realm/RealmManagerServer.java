@@ -88,7 +88,7 @@ import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.entity.NetTile;
-import com.jrealm.net.entity.ObjectMovement;
+import com.jrealm.net.entity.NetObjectMovement;
 import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.server.ProcessingThread;
 import com.jrealm.net.server.ServerCommandHandler;
@@ -511,7 +511,7 @@ public class RealmManagerServer implements Runnable {
 									realm.getTileManager().getRenderViewPort(player.getValue()));
 							final Set<Long> nearEnemyIds = new HashSet<>();
 							if (movePacket0 != null) {
-								for (ObjectMovement m : movePacket0.getMovements()) {
+								for (NetObjectMovement m : movePacket0.getMovements()) {
 									if (m.getEntityType() == EntityType.ENEMY.getEntityTypeId()) {
 										nearEnemyIds.add(m.getEntityId());
 									}

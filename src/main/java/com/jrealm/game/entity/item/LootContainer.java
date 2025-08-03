@@ -1,16 +1,17 @@
 package com.jrealm.game.entity.item;
 
 import java.awt.Graphics2D;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.net.realm.Realm;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,10 +40,9 @@ public class LootContainer {
         this.uid = UUID.randomUUID().toString();
         this.items = new GameItem[8];
         this.pos = pos;
-        Random r = new Random(System.nanoTime());
-        this.items[0] = GameDataManager.GAME_ITEMS.get(r.nextInt(8));
-        for (int i = 1; i < (r.nextInt(7) + 1); i++) {
-            this.items[i] = GameDataManager.GAME_ITEMS.get(r.nextInt(152) + 1);
+        this.items[0] = GameDataManager.GAME_ITEMS.get(Realm.RANDOM.nextInt(8));
+        for (int i = 1; i < (Realm.RANDOM.nextInt(7) + 1); i++) {
+            this.items[i] = GameDataManager.GAME_ITEMS.get(Realm.RANDOM.nextInt(152) + 1);
         }
         this.spawnedTime = System.currentTimeMillis();
         if (this.hasUntieredItem()) {
@@ -61,7 +61,7 @@ public class LootContainer {
         this.uid = UUID.randomUUID().toString();
         this.items = new GameItem[8];
         this.items[0] = loot;
-        this.spawnedTime = System.currentTimeMillis();
+        this.spawnedTime = Instant.now().toEpochMilli();
         if (this.hasUntieredItem()) {
             this.tier = LootTier.WHITE;
         }
@@ -73,14 +73,14 @@ public class LootContainer {
         this.pos = pos;
         this.uid = UUID.randomUUID().toString();
         this.items = Arrays.copyOf(loot, 8);
-        this.spawnedTime = System.currentTimeMillis();
+        this.spawnedTime = Instant.now().toEpochMilli();
         if (this.hasUntieredItem()) {
             this.tier = LootTier.WHITE;
         }
     }
 
     public boolean isExpired() {
-        return (System.currentTimeMillis() - this.spawnedTime) > 45000;
+        return (Instant.now().toEpochMilli() - this.spawnedTime) > 45000;
     }
 
     public boolean isEmpty() {
@@ -146,7 +146,7 @@ public class LootContainer {
     }
 
     public static GameItem[] getCondensedItems(LootContainer container) {
-        List<GameItem> items = new ArrayList<>();
+        final List<GameItem> items = new ArrayList<>();
         for (GameItem item : container.getItems()) {
             if (item != null) {
                 items.add(item);
@@ -156,11 +156,11 @@ public class LootContainer {
     }
 
     public boolean equals(LootContainer other) {
-        GameItem[] thisLoot = LootContainer.getCondensedItems(this);
-        GameItem[] otherLoot = LootContainer.getCondensedItems(other);
-        boolean basic = (this.lootContainerId == other.getLootContainerId()) && this.pos.equals(other.getPos());
-        boolean loot = thisLoot.length == otherLoot.length;
-        boolean tier = this.getTier().equals(other.getTier());
+    	final GameItem[] thisLoot = LootContainer.getCondensedItems(this);
+    	final GameItem[] otherLoot = LootContainer.getCondensedItems(other);
+    	final boolean basic = (this.lootContainerId == other.getLootContainerId()) && this.pos.equals(other.getPos());
+    	final boolean tier = this.getTier().equals(other.getTier());
+    	boolean loot = (thisLoot.length == otherLoot.length);
         if (loot) {
             for (int i = 0; i < thisLoot.length; i++) {
                 if (!thisLoot[i].equals(otherLoot[i])) {
