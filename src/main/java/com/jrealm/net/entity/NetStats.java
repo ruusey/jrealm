@@ -51,7 +51,8 @@ public class NetStats extends SerializableFieldType<NetStats> {
 	}
 
 	public Stats asStats() {
-		return Stats.builder().hp(hp).mp(mp).def(def).att(att).spd(spd).dex(dex).vit(vit).wis(wis).build();
+		return Stats.builder().hp(this.hp).mp(this.mp).def(this.def).att(this.att).spd(this.spd).dex(this.dex)
+				.vit(this.vit).wis(this.wis).build();
 	}
 
 }

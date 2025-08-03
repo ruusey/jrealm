@@ -64,6 +64,7 @@ import lombok.extern.slf4j.Slf4j;
  * </br>
  * <b>note:</b> collections have an extra 4 byte int32 length value written at the 
  * start of serialization
+ * </br>
  * <b>examples:</b>
  * </p>
  * <pre>
