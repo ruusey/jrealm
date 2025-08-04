@@ -1518,7 +1518,6 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.removePlayer(player);
 				return;
 			}
-
 			this.enqueueServerPacket(player, PlayerDeathPacket.from(player.getId()));
 			if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
 				ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + player.getCharacterUuid(),
@@ -1531,7 +1530,6 @@ public class RealmManagerServer implements Runnable {
 				player.getInventory()[3] = null;
 				this.persistPlayerAsync(player);
 			}
-
 		} catch (Exception e) {
 			RealmManagerServer.log.error("[SERVER] Failed to Remove dead Player {}. Reason: {}", e);
 		}

@@ -161,6 +161,10 @@ public class ServerGameLogic {
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {
 		final HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
 		final Player player = mgr.getPlayerByRemoteAddress(packet.getSrcIp());
+		if(player==null) {
+			log.error("Failed to process heartbeat packet. Player does not exist");
+			return;
+		}
 		mgr.getPlayerLastHeartbeatTime().put(player.getId(), heartbeatPacket.getTimestamp());
 	}
 
