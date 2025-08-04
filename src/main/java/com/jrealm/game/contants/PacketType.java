@@ -1,9 +1,9 @@
 package com.jrealm.game.contants;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.core.IOService;
@@ -20,7 +20,7 @@ public class PacketType {
 
     static {
     	try {
-    		final List<Class<?>> packetsToMap = IOService.getClassesOnClasspath();
+    		final Set<Class<? extends Packet>> packetsToMap = IOService.CLASSPATH_SCANNER.getSubTypesOf(Packet.class);
     		for (Class<?> clazz : packetsToMap) {
     			// If not streamable at all dont bother
     			if (!IOService.isStreamableClass(clazz) || !clazz.getSuperclass().equals(Packet.class))

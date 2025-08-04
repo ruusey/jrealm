@@ -18,7 +18,8 @@ import lombok.NoArgsConstructor;
 @Streamable
 @AllArgsConstructor
 @NoArgsConstructor
-public class NetEnemy extends SerializableFieldType<NetEnemy>{
+public class NetEnemy extends SerializableFieldType<NetEnemy> {
+	
 	@SerializableField(order = 0, type = SerializableLong.class)
 	private long id;
 	@SerializableField(order = 1, type = SerializableInt.class)

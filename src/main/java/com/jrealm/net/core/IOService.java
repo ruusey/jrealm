@@ -17,13 +17,17 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.modelmapper.AbstractConverter;
 import org.modelmapper.ModelMapper;
+import org.reflections.Reflections;
+import org.reflections.scanners.Scanners;
 
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.NetConstants;
@@ -34,8 +38,6 @@ import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.core.converters.*;
 import com.jrealm.net.core.nettypes.SerializableLong;
 import com.jrealm.net.entity.NetTile;
-import com.jrealm.util.ClasspathInspector;
-
 import lombok.extern.slf4j.Slf4j;
 /** 
  * @author Robert Usey
@@ -110,7 +112,8 @@ public class IOService {
 	private static final ModelMapper MAPPER = new ModelMapper();
 	private static final Lookup METHOD_LOOKUP = MethodHandles.lookup();
 	private static final Map<Class<?>, List<PacketMappingInformation>> MAPPING_DATA = new HashMap<>();
-	
+	public static final Reflections CLASSPATH_SCANNER = new Reflections("com.jrealm", Scanners.SubTypes);
+
 	static {
 		try {
 			registerModelConverter(new ShortToEffectTypeConverter());
@@ -319,9 +322,13 @@ public class IOService {
 	// for runtime serialization/deserialization from byte streams
 	public static void mapSerializableData() throws Exception {
 		log.info("[IOService::INIT] Loading classes to map packet data");
-		final List<Class<?>> packetsToMap = IOService.getClassesOnClasspath();
+		final Set<Class<? extends Packet>> packetsToMap = CLASSPATH_SCANNER.getSubTypesOf(Packet.class);
+		final Set<Class<? extends SerializableFieldType>> netEntitiesToMap = CLASSPATH_SCANNER.getSubTypesOf(SerializableFieldType.class);
+		final Set<Class> allClasses = new HashSet<>();
+		allClasses.addAll(packetsToMap);
+		allClasses.addAll(netEntitiesToMap);
 
-		for (Class<?> clazz : packetsToMap) {
+		for (Class<?> clazz : allClasses) {
 			// If not streamable at all dont bother
 			if (!isStreamableClass(clazz))
 				continue;
@@ -387,16 +394,5 @@ public class IOService {
 			}
 		}
 		return result;
-	}
-	
-	// Load all @Streamable types into a list
-	public static List<Class<?>> getClassesOnClasspath() throws Exception {
-		final List<Class<?>> classes = new ArrayList<>();
-		for (Class<?> clazz : ClasspathInspector.getAllKnownClasses()) {
-			if(IOService.isStreamableClass(clazz)) {
-				classes.add(clazz);
-			}
-		}
-		return classes;
 	}
 }
