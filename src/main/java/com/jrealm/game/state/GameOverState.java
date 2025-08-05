@@ -8,6 +8,7 @@ import java.awt.image.BufferedImage;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.ui.Button;
+import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.util.KeyHandler;
 import com.jrealm.util.MouseHandler;
 
@@ -37,6 +38,7 @@ public class GameOverState extends GameState {
                 this.btnQuit.getHeight(), 32, 20));
 
         this.btnReset.onMouseUp(e -> {
+        	ClientGameLogic.GAME_OVER = false;
             gsm.pop(GameStateManager.GAMEOVER);
             gsm.add(GameStateManager.PLAY);
         });

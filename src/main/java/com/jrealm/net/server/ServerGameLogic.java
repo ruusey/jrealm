@@ -367,16 +367,17 @@ public class ServerGameLogic {
 	
 	@PacketHandlerServer(DeathAckPacket.class)
 	public static void handleDeathAckServer(RealmManagerServer mgr, Packet packet) {
-		final Player real = mgr.getPlayerByRemoteAddress(packet.getSrcIp());
 		final DeathAckPacket deathPacket = (DeathAckPacket) packet;
-		
+		final Player real = mgr.getPlayerByRemoteAddress(packet.getSrcIp());
 		if (!validateCallingPlayer(mgr, packet, deathPacket.getPlayerId())) {
 			log.error("**DEATH ACK PLAYER ID DID NOT MATCH, REAL={}, attempted={}, BAN THEM**", real, deathPacket.getPlayerId());
 			return;
 		}
+		final Player player = mgr.getPlayerById(deathPacket.getPlayerId());
 
+		log.info("Handling death ack for player {}", player.getName());
 		//final Realm playerRealm = mgr.findPlayerRealm(deathPacket.getPlayerId());
-		mgr.disconnectPlayer(real);
+		mgr.disconnectPlayer(player);
 
 	}
 

@@ -58,7 +58,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ClientGameLogic {
 	public static JrealmClientDataService DATA_SERVICE = null;
-
+	public static boolean GAME_OVER = false;
+	
 	@PacketHandlerClient(RequestTradePacket.class)
 	public static void handleTradeRequestClient(RealmManagerClient cli, Packet packet) {
 		final RequestTradePacket tradeRequest = (RequestTradePacket) packet;
@@ -122,15 +123,18 @@ public class ClientGameLogic {
 		}
 
 	}
-
+	
 	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
 		@SuppressWarnings("unused")
 		final PlayerDeathPacket playerDeath = (PlayerDeathPacket) packet;
+		if(GAME_OVER) {
+			log.info("Already recieved death packet. Ignoring {}", playerDeath);
+			return;
+		}
+		GAME_OVER=true;
+		
 		try {
 			cli.getClient().sendRemote(new DeathAckPacket(cli.getState().getPlayer().getId()));
-			// Give the client time to send the death acknowledgement... this is just a courtesy to the server
-			// ??Better way to do this??
-			Thread.sleep(100);
 			 
 			cli.getState().getRealmManager().getClient().setShutdown(true);
 			cli.getState().getRealmManager().getWorkerThread().setShutdown(true);
