@@ -15,7 +15,7 @@ import com.jrealm.account.dto.SessionTokenDto;
 import com.jrealm.account.service.JrealmServerDataService;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
-import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
@@ -179,7 +179,7 @@ public class ServerGameLogic {
 			return;
 		}
 		final Player toMove = realm.getPlayer(playerMovePacket.getEntityId());
-		if (toMove.hasEffect(EffectType.PARALYZED))
+		if (toMove.hasEffect(ProjectileEffectType.PARALYZED))
 			return;
 		boolean doMove = playerMovePacket.isMove();
 		float spd = (float) ((5.6 * (toMove.getComputedStats().getSpd() + 53.5)) / 75.0f);
@@ -273,14 +273,14 @@ public class ServerGameLogic {
 		boolean canShoot = false;
 		if (realm.getPlayerLastShotTime().get(player.getId()) != null) {
 			double dex = (int) ((6.5 * (player.getComputedStats().getDex() + 17.3)) / 75);
-			if (player.hasEffect(EffectType.SPEEDY)) {
+			if (player.hasEffect(ProjectileEffectType.SPEEDY)) {
 				dex = dex * 1.5;
-			}else if(player.hasEffect(EffectType.DAZED)) {
+			}else if(player.hasEffect(ProjectileEffectType.DAZED)) {
 				dex = 1.0;
 			}
 			canShoot = ((Instant.now().toEpochMilli() - realm.getPlayerLastShotTime().get(player.getId())) > (1000
 					/ dex));
-			if (canShoot && !player.hasEffect(EffectType.STUNNED)) {
+			if (canShoot && !player.hasEffect(ProjectileEffectType.STUNNED)) {
 				realm.getPlayerLastShotTime().put(player.getId(), Instant.now().toEpochMilli());
 			} else {
 				canShoot = false;
@@ -446,7 +446,7 @@ public class ServerGameLogic {
 			player.applyStats(targetCharacter.getStats());
 			player.setName(accountName);
 			player.setHeadless(false);
-			player.addEffect(EffectType.INVINCIBLE, 3000);
+			player.addEffect(ProjectileEffectType.INVINCIBLE, 3000);
 			player.setPos(targetRealm.getTileManager().getSafePosition());
 			targetRealm.addPlayer(player);
 			// Begin processing.

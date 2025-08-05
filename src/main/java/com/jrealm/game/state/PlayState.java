@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GamePanel;
 import com.jrealm.game.contants.CharacterClass;
-import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -213,7 +213,7 @@ public class PlayState extends GameState {
     }
 
     private void movePlayer(Player p) {
-        if (p.hasEffect(EffectType.PARALYZED)) {
+        if (p.hasEffect(ProjectileEffectType.PARALYZED)) {
             p.setDx(0);
             p.setDy(0);
         }
@@ -308,7 +308,7 @@ public class PlayState extends GameState {
         this.cam.input(mouse, key);
 
         if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
-            if ((this.cam.getTarget() == player) && !player.hasEffect(EffectType.PARALYZED)) {
+            if ((this.cam.getTarget() == player) && !player.hasEffect(ProjectileEffectType.PARALYZED)) {
                 final Map<Cardinality, Boolean> lastDirectionTempMap = new HashMap<>();
                 player.input(mouse, key);
                 Cardinality c = null;
@@ -539,7 +539,7 @@ public class PlayState extends GameState {
         }
 
         double dex = (int) ((6.5 * (this.getPlayer().getComputedStats().getDex() + 17.3)) / 75);
-		if (player.hasEffect(EffectType.SPEEDY)) {
+		if (player.hasEffect(ProjectileEffectType.SPEEDY)) {
 			dex = dex * 1.5;
 		}
         boolean canShoot = (System.currentTimeMillis() - this.lastShotTick) > (1000 / dex + 10);

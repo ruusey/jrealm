@@ -35,7 +35,7 @@ import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.contants.CharacterClass;
-import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
@@ -1012,7 +1012,7 @@ public class RealmManagerServer implements Runnable {
 
 	private void movePlayer(final long realmId, final Player p) {
 		// If the player is paralyzed, stop them and return.
-        if (p.hasEffect(EffectType.PARALYZED)) {
+        if (p.hasEffect(ProjectileEffectType.PARALYZED)) {
             p.setUp(false);
             p.setDown(false);
             p.setRight(false);
@@ -1025,7 +1025,7 @@ public class RealmManagerServer implements Runnable {
 		float dyToUse = p.getDy();
 		
 		// if the player has the 'speedy' status effect (1.5x dex, spd)
-		if (p.hasEffect(EffectType.SPEEDY)) {
+		if (p.hasEffect(ProjectileEffectType.SPEEDY)) {
 			dxToUse = dxToUse * 1.5f;
 			dyToUse = dyToUse * 1.5f;
 		}
@@ -1132,7 +1132,7 @@ public class RealmManagerServer implements Runnable {
 			// If the ability is non damaging (rogue cloak, priest tome)
 		} else if (abilityItem.getEffect() != null) {
 			// Special case for teleporting
-			if (abilityItem.getEffect().getEffectId().equals(EffectType.TELEPORT) && !targetRealm.getTileManager().isCollisionTile(pos)) {
+			if (abilityItem.getEffect().getEffectId().equals(ProjectileEffectType.TELEPORT) && !targetRealm.getTileManager().isCollisionTile(pos)) {
 				player.setPos(pos);
 			} else {
 				player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
@@ -1202,7 +1202,7 @@ public class RealmManagerServer implements Runnable {
 				.getGameObjectsInBounds(targetRealm.getTileManager().getRenderViewPort(p));
 		final Player player = targetRealm.getPlayer(p.getId());
 
-		if (!player.hasEffect(EffectType.INVINCIBLE)) {
+		if (!player.hasEffect(ProjectileEffectType.INVINCIBLE)) {
 			for (final Bullet b : results) {
 				this.processPlayerHit(realmId, b, player);
 			}
@@ -1296,27 +1296,26 @@ public class RealmManagerServer implements Runnable {
 			player.setHealth(player.getHealth() - dmgToInflict);
 			targetRealm.getExpiredBullets().add(b.getId());
 			targetRealm.removeBullet(b);
-			if (b.hasFlag((short) 2)) {
-				if (!p.hasEffect(EffectType.PARALYZED)) {
+			if (b.hasFlag(ProjectileEffectType.PARALYZED)) {
+				if (!p.hasEffect(ProjectileEffectType.PARALYZED)) {
 					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "PARALYZED");
 					p.setDx(0);
 					p.setDy(0);
-					p.addEffect(EffectType.PARALYZED, 1500);
+					p.addEffect(ProjectileEffectType.PARALYZED, 1500);
 				}
 			}
 
-			if (b.hasFlag((short) 3)) {
-				if (!p.hasEffect(EffectType.STUNNED)) {
+			if (b.hasFlag(ProjectileEffectType.STUNNED)) {
+				if (!p.hasEffect(ProjectileEffectType.STUNNED)) {
 					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "STUNNED");
-					p.addEffect(EffectType.STUNNED, 2500);
+					p.addEffect(ProjectileEffectType.STUNNED, 2500);
 				}
 			}
 			
-			if (b.hasFlag((short) 11)) {
-				if (!p.hasEffect(EffectType.DAZED)) {
-					p.addEffect(EffectType.DAZED, 5000);
+			if (b.hasFlag(ProjectileEffectType.DAZED)) {
+				if (!p.hasEffect(ProjectileEffectType.DAZED)) {
 					this.broadcastTextEffect(EntityType.PLAYER, p, TextEffect.DAMAGE, "DAZED");
-
+					p.addEffect(ProjectileEffectType.DAZED, 5000);
 				}
 			}
 			if (p.getDeath()) {
@@ -1341,7 +1340,7 @@ public class RealmManagerServer implements Runnable {
 			e.setHealth(e.getHealth() - dmgToInflict);
 			e.getStats().setHp((short) e.getHealth());
 			e.setHealthpercent((float) e.getHealth() / (float) model.getHealth());
-			if (b.hasFlag((short) 10) && !b.isEnemyHit()) {
+			if (b.hasFlag(ProjectileEffectType.PLAYER_PROJECTILE) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {
 				targetRealm.getExpiredBullets().add(b.getId());
@@ -1350,30 +1349,28 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.getExpiredBullets().add(b.getId());
 				targetRealm.removeBullet(b);
 			}
-
-			if (b.hasFlag((short) 2)) {
-				if (!e.hasEffect(EffectType.PARALYZED)) {
-					e.addEffect(EffectType.PARALYZED, 5000);
+			// Handle Projectile Effects
+			if (b.hasFlag(ProjectileEffectType.PARALYZED)) {
+				if (!e.hasEffect(ProjectileEffectType.PARALYZED)) {
+					e.addEffect(ProjectileEffectType.PARALYZED, 5000);
 					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "PARALYZED");
-
 				}
 			}
 
-			if (b.hasFlag((short) 3)) {
-				if (!e.hasEffect(EffectType.STUNNED)) {
-					e.addEffect(EffectType.STUNNED, 5000);
+			if (b.hasFlag(ProjectileEffectType.STUNNED)) {
+				if (!e.hasEffect(ProjectileEffectType.STUNNED)) {
+					e.addEffect(ProjectileEffectType.STUNNED, 5000);
 					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "STUNNED");
-
 				}
 			}
 			
-			if (b.hasFlag((short) 11)) {
-				if (!e.hasEffect(EffectType.DAZED)) {
-					e.addEffect(EffectType.DAZED, 5000);
+			if (b.hasFlag(ProjectileEffectType.DAZED)) {
+				if (!e.hasEffect(ProjectileEffectType.DAZED)) {
+					e.addEffect(ProjectileEffectType.DAZED, 5000);
 					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "DAZED");
-
 				}
 			}
+			
 			this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "-" + dmgToInflict);
 			if (e.getDeath()) {
 				targetRealm.getExpiredBullets().add(b.getId());

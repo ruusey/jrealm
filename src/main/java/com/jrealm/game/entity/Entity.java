@@ -3,7 +3,7 @@ package com.jrealm.game.entity;
 import java.awt.Graphics2D;
 import java.time.Instant;
 
-import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 
@@ -64,7 +64,7 @@ public abstract class Entity extends GameObject {
         }
     }
 
-    public boolean hasEffect(EffectType effect) {
+    public boolean hasEffect(ProjectileEffectType effect) {
         if (this.effectIds == null)
             return false;
         for (int i = 0; i < this.effectIds.length; i++) {
@@ -87,7 +87,7 @@ public abstract class Entity extends GameObject {
         this.effectTimes = new Long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
     }
 
-    public void addEffect(EffectType effect, long duration) {
+    public void addEffect(ProjectileEffectType effect, long duration) {
         for (int i = 0; i < this.effectIds.length; i++) {
             if (this.effectIds[i] == -1) {
                 this.effectIds[i] = effect.effectId;

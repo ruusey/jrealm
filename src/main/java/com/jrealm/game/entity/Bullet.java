@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ProjectileGroup;
@@ -115,6 +116,10 @@ public class Bullet extends GameObject  {
     public boolean hasFlag(short flag) {
         return (this.flags != null) && (this.flags.contains(flag));
     }
+    
+    public boolean hasFlag(ProjectileEffectType flag) {
+        return (this.flags != null) && (this.flags.contains(flag.effectId));
+    }
 
     public boolean isEnemy() {
         return this.isEnemy;
@@ -142,7 +147,7 @@ public class Bullet extends GameObject  {
     // Update for regular non Parametric bullets
     public void update() {
         // if is flagged to be rendered as a parametric projectile
-        if (this.hasFlag((short) 12)) {
+        if (this.hasFlag(ProjectileEffectType.PARAMETRIC_PROJECTILE)) {
             this.updateParametric();
         } else {
             // Regular straight line projectile
@@ -165,7 +170,7 @@ public class Bullet extends GameObject  {
         final double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
         this.range -= dist;
         // 'invert'
-        if (this.hasFlag((short) 13)) {
+        if (this.hasFlag(ProjectileEffectType.INVERTED_PARAMETRIC_PROJECTILE)) {
             double shift = -this.amplitude * Math.sin(Math.toRadians(this.timeStep));
             double shift2 = this.amplitude * Math.cos(Math.toRadians(this.timeStep));
             float velX = (float) (vel.x + shift2);

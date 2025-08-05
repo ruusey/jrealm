@@ -2,15 +2,14 @@ package com.jrealm.net.server.packet;
 
 import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
+import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableLong;
-import com.jrealm.net.core.PacketId;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Data
 @Streamable
 @AllArgsConstructor

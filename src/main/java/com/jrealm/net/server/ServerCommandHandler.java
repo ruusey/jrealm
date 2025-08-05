@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 import com.jrealm.account.dto.AccountDto;
 import com.jrealm.game.GameLauncher;
-import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
@@ -248,7 +248,7 @@ public class ServerCommandHandler {
         log.info("Player {} set effect {}", target.getName(), message);
         switch (message.getArgs().get(0)) {
         case "add":
-            target.addEffect(EffectType.valueOf(Short.valueOf(message.getArgs().get(1))),
+            target.addEffect(ProjectileEffectType.valueOf(Short.valueOf(message.getArgs().get(1))),
                     1000 * Long.parseLong(message.getArgs().get(2)));
             break;
         case "clear":

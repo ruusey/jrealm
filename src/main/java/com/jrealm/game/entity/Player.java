@@ -13,7 +13,7 @@ import java.util.Set;
 import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.game.contants.CharacterClass;
-import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
@@ -187,7 +187,7 @@ public class Player extends Entity {
 		if (((Instant.now().toEpochMilli() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
 			float mult = 1.0f;
-			if (this.hasEffect(EffectType.BUFFED)) {
+			if (this.hasEffect(ProjectileEffectType.BUFFED)) {
 				mult = 1.5f;
 			}
 			final int vit = (int) ((0.24f * (stats.getVit() + 4.2f)) * mult);
@@ -259,19 +259,19 @@ public class Player extends Entity {
 		if (this.getName() != null) {
 			g.drawString(this.getName(), (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 64);
 		}
-		if (this.hasEffect(EffectType.INVISIBLE)) {
+		if (this.hasEffect(ProjectileEffectType.INVISIBLE)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.SEPIA)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.SEPIA);
 			}
 		}
 
-		if (this.hasEffect(EffectType.BUFFED)) {
+		if (this.hasEffect(ProjectileEffectType.BUFFED)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.REDISH)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.REDISH);
 			}
 		}
 
-		if (this.hasEffect(EffectType.SPEEDY)) {
+		if (this.hasEffect(ProjectileEffectType.SPEEDY)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.DECAY);
 			}

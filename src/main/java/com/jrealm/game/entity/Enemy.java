@@ -2,7 +2,7 @@ package com.jrealm.game.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import com.jrealm.game.contants.EffectType;
+import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.Stats;
@@ -89,7 +89,7 @@ public class Enemy extends Entity {
     
     public void chase(Player player) {
 
-        if ((player == null) || player.hasEffect(EffectType.INVISIBLE)) {
+        if ((player == null) || player.hasEffect(ProjectileEffectType.INVISIBLE)) {
             this.up = false;
             this.dy = 0;
             this.dx = 0;
@@ -143,7 +143,7 @@ public class Enemy extends Entity {
         this.healthpercent = currentHealthPercent;
         this.chase(player);
 
-        if (this.hasEffect(EffectType.PARALYZED)) {
+        if (this.hasEffect(ProjectileEffectType.PARALYZED)) {
             this.up = false;
             this.down = false;
             this.right = false;
@@ -170,8 +170,8 @@ public class Enemy extends Entity {
         this.setManapercent(currentManaPercent);
         this.healthpercent = currentHealthPercent;
         this.chase(player);
-        final boolean notInvisible = !player.hasEffect(EffectType.INVISIBLE);
-        if ((this.getPos().distanceTo(player.getPos()) < this.attackRange && !this.hasEffect(EffectType.STUNNED))
+        final boolean notInvisible = !player.hasEffect(ProjectileEffectType.INVISIBLE);
+        if ((this.getPos().distanceTo(player.getPos()) < this.attackRange && !this.hasEffect(ProjectileEffectType.STUNNED))
                 && notInvisible) {
             this.attack = true;
 
@@ -216,7 +216,7 @@ public class Enemy extends Entity {
         } else {
             this.attack = false;
         }
-        if (this.hasEffect(EffectType.PARALYZED)) {
+        if (this.hasEffect(ProjectileEffectType.PARALYZED)) {
             this.up = false;
             this.down = false;
             this.right = false;
@@ -271,13 +271,13 @@ public class Enemy extends Entity {
                     (int) (this.pos.getWorldVar().y), this.size, this.size, null);
         }
 
-        if (this.hasEffect(EffectType.PARALYZED)) {
+        if (this.hasEffect(ProjectileEffectType.PARALYZED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.GRAYSCALE)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.GRAYSCALE);
             }
         }
 
-        if (this.hasEffect(EffectType.STUNNED)) {
+        if (this.hasEffect(ProjectileEffectType.STUNNED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.DECAY);
             }
