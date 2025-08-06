@@ -9,7 +9,7 @@ public enum ProjectileEffectType {
     INVISIBLE((short) 0), BUFFED((short) 1), PARALYZED((short) 2), STUNNED((short) 3), SPEEDY((short) 4),
     HEAL((short) 5), INVINCIBLE((short) 6), NONE((short) 8), TELEPORT((short) 9), 
     PLAYER_PROJECTILE((short) 10), DAZED((short) 11), PARAMETRIC_PROJECTILE((short) 12), 
-    INVERTED_PARAMETRIC_PROJECTILE((short) 12);
+    INVERTED_PARAMETRIC_PROJECTILE((short) 13);
 
     public static Map<Short, ProjectileEffectType> map = new HashMap<>();
     static {
