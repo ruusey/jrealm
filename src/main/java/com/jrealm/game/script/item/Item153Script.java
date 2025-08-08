@@ -1,5 +1,6 @@
 package com.jrealm.game.script.item;
 
+import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.net.realm.Realm;
@@ -20,6 +21,7 @@ public class Item153Script extends UseableItemScriptBase {
         for (final Player other : targetRealm
                 .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 5))) {
             other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
+            other.addEffect(ProjectileEffectType.DAMAGING, abilityItem.getEffect().getDuration()*2);
         }
     }
 

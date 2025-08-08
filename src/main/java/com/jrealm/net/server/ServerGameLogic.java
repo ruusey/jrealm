@@ -302,7 +302,7 @@ public class ServerGameLogic {
 				mgr.addProjectile(realm.getRealmId(), Realm.RANDOM.nextLong(), player.getId(), proj.getProjectileId(),
 						player.getWeaponId(), source.clone(-offset, -offset), shootAngle, proj.getSize(),
 						proj.getMagnitude(), proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
-						proj.getFrequency());
+						proj.getFrequency(), player.getId());
 			}
 		}
 	}

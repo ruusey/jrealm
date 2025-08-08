@@ -17,6 +17,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class Bullet extends GameObject  {
+	private long srcEntityId;
     private int projectileId;
     private float angle;
     private float magnitude;

@@ -14,6 +14,7 @@ import java.util.List;
 
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -45,6 +46,8 @@ public class TradePanel extends JPanel implements ActionListener {
 
 	private JFrame frame;
 
+	private JList<ImageIcon> myItems;
+	
 	public TradePanel(int width, int height, NetPlayer player0, NetPlayer player1, NetGameItem[] p0Inv, NetGameItem[] p1Inv) {
 		this.setPreferredSize(new Dimension(width, height));
 		this.setSize(new Dimension(width, height));
@@ -57,8 +60,9 @@ public class TradePanel extends JPanel implements ActionListener {
 		this.panel.add(getPlayerNameLabel(player0.getName(), false));
 		this.panel.add(getPlayerNameLabel(player1.getName(), true));
 
-		this.panel.add(getInventoryIcons(p0Inv));
-		this.panel.add(getInventoryIcons(p1Inv));
+		this.myItems = getInventoryIcons(p0Inv, true);
+		this.panel.add(this.myItems);
+		this.panel.add(getInventoryIcons(p1Inv, false));
 
 		this.add(this.panel);
 		this.setVisible(true);
@@ -72,10 +76,12 @@ public class TradePanel extends JPanel implements ActionListener {
 		return label;
 	}
 	
-	public JList<ImageIcon> getInventoryIcons(NetGameItem[] inv) {
+	public JList<ImageIcon> getInventoryIcons(NetGameItem[] inv, boolean bindEvents) {
 		final NetGameItem[] inventoryArr = Arrays.copyOfRange(inv, 4, 12);
 		final List<ImageIcon> icons = new ArrayList<>();
-		for (NetGameItem item : inventoryArr) {
+		for(int i = 0; i<inventoryArr.length; i++) {
+			final int idx = i;
+			NetGameItem item = inventoryArr[idx];
 			if(item==null) continue;
 			final BufferedImage itemImage = GameSpriteManager.ITEM_SPRITES.get(item.getItemId());
 
@@ -86,7 +92,17 @@ public class TradePanel extends JPanel implements ActionListener {
 
 
 			final ImageIcon icon =  new ImageIcon(newImage);
+			final JButton imageButton = new JButton(icon);
 			
+			if(bindEvents) {
+				imageButton.addActionListener(new ActionListener() {
+			        @Override
+			        public void actionPerformed(ActionEvent e) {
+			            // Your code to execute on button click
+			            log.info("Inventory item index {} clicked. Item = {}", idx, item.getName());
+			        }
+			    });
+			}
 			icons.add(icon);
 		}
 		final JList<ImageIcon> imageListComponent = new JList<>(new DefaultListModel<ImageIcon>());

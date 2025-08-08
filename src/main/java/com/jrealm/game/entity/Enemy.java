@@ -194,12 +194,12 @@ public class Enemy extends Entity {
                             mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
                                     p.getProjectileId(), source.clone(), angle + Float.parseFloat(p.getAngle()),
                                     p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
-                                    p.getAmplitude(), p.getFrequency());
+                                    p.getAmplitude(), p.getFrequency(), this.getId());
                         } else if (p.getPositionMode().equals(ProjectilePositionMode.ABSOLUTE)) {
                             mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), this.getWeaponId(),
                                     p.getProjectileId(), source.clone(), Float.parseFloat(p.getAngle()), p.getSize(),
                                     p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(), p.getAmplitude(),
-                                    p.getFrequency());
+                                    p.getFrequency(), this.getId());
                         }
                     }
                 } else {

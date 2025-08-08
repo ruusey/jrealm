@@ -1111,7 +1111,7 @@ public class RealmManagerServer implements Runnable {
 				this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
 						p.getProjectileId(), source.clone(-offset, -offset), angle + Float.parseFloat(p.getAngle()),
 						p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(),
-						p.getAmplitude(), p.getFrequency());
+						p.getAmplitude(), p.getFrequency(), player.getId());
 			}
 		
 		} else if ((abilityItem.getDamage() != null)) {
@@ -1126,7 +1126,7 @@ public class RealmManagerServer implements Runnable {
 				this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
 						p.getProjectileId(), dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
 						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
-						p.getFrequency());
+						p.getFrequency(), player.getId());
 			}
 
 			// If the ability is non damaging (rogue cloak, priest tome)
@@ -1291,6 +1291,8 @@ public class RealmManagerServer implements Runnable {
 			if (dmgToInflict < minDmg) {
 				dmgToInflict = minDmg;
 			}
+			
+
 			this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "-" + dmgToInflict);
 
 			player.setHealth(player.getHealth() - dmgToInflict);
@@ -1336,6 +1338,14 @@ public class RealmManagerServer implements Runnable {
 			if (dmgToInflict < minDmg) {
 				dmgToInflict = minDmg;
 			}
+			
+			if(b.getSrcEntityId() != 0l) {
+				final Player fromPlayer = this.getPlayerById(b.getSrcEntityId());
+				if(fromPlayer!=null &&  fromPlayer.hasEffect(ProjectileEffectType.DAMAGING)) {
+					dmgToInflict = (short)(dmgToInflict * 1.5);
+				}
+			}
+
 			targetRealm.hitEnemy(b.getId(), e.getId());
 			e.setHealth(e.getHealth() - dmgToInflict);
 			e.getStats().setHp((short) e.getHealth());
@@ -1381,7 +1391,7 @@ public class RealmManagerServer implements Runnable {
 
 	public void addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
 			final int projectileGroupId, final Vector2f src, final Vector2f dest, final short size,
-			final float magnitude, final float range, short damage, final boolean isEnemy, final List<Short> flags) {
+			final float magnitude, final float range, short damage, final boolean isEnemy, final List<Short> flags, long srcEntityId) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Player player = targetRealm.getPlayer(targetPlayerId);
 		if (player == null)
@@ -1394,6 +1404,7 @@ public class RealmManagerServer implements Runnable {
 
 		final long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
 		final Bullet b = new Bullet(id, projectileId, src, dest, size, magnitude, range, damage, isEnemy);
+		b.setSrcEntityId(srcEntityId);
 		b.setFlags(flags);
 		targetRealm.addBullet(b);
 	}
@@ -1401,7 +1412,7 @@ public class RealmManagerServer implements Runnable {
 	public void addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
 			final int projectileGroupId, final Vector2f src, final float angle, final short size, final float magnitude,
 			final float range, short damage, final boolean isEnemy, final List<Short> flags, final short amplitude,
-			final short frequency) {
+			final short frequency, long srcEntityId) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Player player = targetRealm.getPlayer(targetPlayerId);
 		if (player == null)
@@ -1413,7 +1424,7 @@ public class RealmManagerServer implements Runnable {
 
 		final long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
 		final Bullet b = new Bullet(idToUse, projectileId, src, angle, size, magnitude, range, damage, isEnemy);
-
+		b.setSrcEntityId(srcEntityId);
 		b.setAmplitude(amplitude);
 		b.setFrequency(frequency);
 		b.setFlags(flags);

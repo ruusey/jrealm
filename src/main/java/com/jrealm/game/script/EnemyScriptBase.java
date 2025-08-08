@@ -23,6 +23,6 @@ public abstract class EnemyScriptBase implements EnemyScript {
             final Vector2f pos, final float angle, final ProjectileGroup group) {
         this.mgr.addProjectile(targetRealmId, 0l, targetPlayerId, group.getProjectileGroupId(), p.getProjectileId(),
                 pos, angle, p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
-                p.getAmplitude(), p.getFrequency());
+                p.getAmplitude(), p.getFrequency(), 0l);
     }
 }
