@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
@@ -98,6 +99,10 @@ public class Realm {
 
     public List<Long> getExpiredPlayers() {
         return this.expiredPlayers;
+    }
+    
+    public Set<Player> getPlayersExcept(long playerId){
+    	return this.players.values().stream().filter(p->p.getId()!=playerId).collect(Collectors.toSet());
     }
 
     public void setupChests(final Player player) {
@@ -585,9 +590,10 @@ public class Realm {
                                     i * this.tileManager.getMapLayers().get(0).getTileSize()),
                             toSpawn.getSize(), toSpawn.getAttackId());
                     enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
-                    int healthMult = ((this.getDepth() == 0  || this.getDepth()==999)? 1 : this.getDepth() + 1);
+                    int healthMult = ((this.getDepth() == 0  || this.getDepth()==999) ? 1 : this.getDepth() + 1);
                     enemy.setHealth(enemy.getHealth() * healthMult);
-                    enemy.getStats().setHp((short) (enemy.getStats().getHp()*healthMult));
+                    enemy.setHealthMultiplier(healthMult);
+                    enemy.getStats().setHp((short) (enemy.getStats().getHp() * healthMult));
                     enemy.setPos(spawnPos);
                     this.addEnemy(enemy);
                 }

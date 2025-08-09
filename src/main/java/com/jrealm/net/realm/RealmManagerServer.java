@@ -448,6 +448,32 @@ public class RealmManagerServer implements Runnable {
 								}
 							}
 						}
+						// Experimental transmit other player data
+						// Get the other players that arent the currrent player
+						final  Set<Player> otherPlayers = realm.getPlayersExcept(player.getValue().getId());
+						if(otherPlayers.size()>0) {
+							// Make sure the player is in the viewport, to save bandwidth
+							final Rectangle viewPort = realm.getTileManager().getRenderViewPort(player.getValue());
+							for(Player other : otherPlayers) {
+								if(viewPort.inside((int)other.getPos().x, (int)other.getPos().y)) {
+									final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
+									// Check if player state has diffs and send it to the player 
+									// if any player data has changed
+									if (this.playerUpdateState.get(player.getKey()) == null) {
+										this.playerUpdateState.put(player.getKey(), updatePacket);
+										this.enqueueServerPacket(player.getValue(), updatePacket);
+									} else {
+										final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
+										if (!oldUpdate.equals(updatePacket, false)) {
+											this.playerUpdateState.put(player.getKey(), updatePacket);
+											this.enqueueServerPacket(player.getValue(), updatePacket);
+										}
+									}
+								}
+							}
+						}
+						
+						
 
 						//if (this.transmitLoadPacket || this.disablePartialTransmission) {
 							// Get LoadPacket for this player

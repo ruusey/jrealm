@@ -34,6 +34,8 @@ public class NetEnemy extends SerializableFieldType<NetEnemy> {
 	private float dX;
 	@SerializableField(order = 6, type = SerializableFloat.class)
 	private float dY;
+	@SerializableField(order = 7, type = SerializableInt.class)
+	private int healthMultiplier;
 	
 	public Enemy asEnemy() {
 		final Enemy e = new Enemy();
@@ -44,6 +46,7 @@ public class NetEnemy extends SerializableFieldType<NetEnemy> {
 		e.setPos(this.getPos());
 		e.setDx(this.getDX());
 		e.setDy(this.getDY());
+		e.setHealthMultiplier(this.getHealthMultiplier());
 		return e;
 	}
 }

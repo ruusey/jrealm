@@ -39,6 +39,7 @@ public class Enemy extends Entity {
     private int enemyId;
     private int weaponId = -1;
     private int idleTime = 0;
+    private int healthMultiplier = 1;
     private Stats stats;
 
     public Enemy() {
@@ -289,7 +290,7 @@ public class Enemy extends Entity {
             }
         }
         final EnemyModel model = GameDataManager.ENEMIES.get(this.getEnemyId());
-
+        final float lengthRatio = ((float)this.health/(float)model.getHealth()) / (float) this.getHealthMultiplier();
         // Health Bar UI
         g.setColor(Color.red);
         g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
@@ -297,7 +298,7 @@ public class Enemy extends Entity {
 
         g.setColor(Color.green);
         g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
-                (int) ((16*(this.getSize()/16)) * ((float)this.health/(float)model.getHealth())), 5);
+                (int) ((16*(this.getSize()/16)) * (lengthRatio)), 5);
 
     }
 
