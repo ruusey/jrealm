@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -450,30 +451,27 @@ public class RealmManagerServer implements Runnable {
 						}
 						// Experimental transmit other player data
 						// Get the other players that arent the currrent player
-						final  Set<Player> otherPlayers = realm.getPlayersExcept(player.getValue().getId());
-						if(otherPlayers.size()>0) {
-							// Make sure the player is in the viewport, to save bandwidth
-							final Rectangle viewPort = realm.getTileManager().getRenderViewPort(player.getValue());
-							for(Player other : otherPlayers) {
-								if(viewPort.inside((int)other.getPos().x, (int)other.getPos().y)) {
-									final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
-									// Check if player state has diffs and send it to the player 
-									// if any player data has changed
-									if (this.playerUpdateState.get(player.getKey()) == null) {
-										this.playerUpdateState.put(player.getKey(), updatePacket);
-										this.enqueueServerPacket(player.getValue(), updatePacket);
-									} else {
-										final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
-										if (!oldUpdate.equals(updatePacket, false)) {
-											this.playerUpdateState.put(player.getKey(), updatePacket);
-											this.enqueueServerPacket(player.getValue(), updatePacket);
-										}
-									}
-								}
-							}
-						}
-						
-						
+//						final Player[] otherPlayers = realm
+//								.getPlayersInBounds(realm.getTileManager().getRenderViewPort(player.getValue()));
+//						if (otherPlayers.length > 0) {
+//							// Make sure the player is in the viewport, to save bandwidth
+//							for (Player other : otherPlayers) {
+//								final UpdatePacket updatePacket = realm.getPlayerAsPacket(other.getId());
+//								// Check if player state has diffs and send it to the player
+//								// if any player data has changed
+//								if (this.playerUpdateState.get(other.getId()) == null) {
+//									this.playerUpdateState.put(other.getId(), updatePacket);
+//									this.enqueueServerPacket(player.getValue(), updatePacket);
+//								} else {
+//									final UpdatePacket oldUpdate = this.playerUpdateState.get(other.getId());
+//									if (!oldUpdate.equals(updatePacket, false)) {
+//										this.playerUpdateState.put(other.getId(), updatePacket);
+//										this.enqueueServerPacket(player.getValue(), updatePacket);
+//									}
+//								}
+//
+//							}
+//						}
 
 						//if (this.transmitLoadPacket || this.disablePartialTransmission) {
 							// Get LoadPacket for this player
