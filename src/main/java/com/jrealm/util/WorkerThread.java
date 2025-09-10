@@ -29,7 +29,7 @@ public class WorkerThread {
     			log.error("Failed to execute runnable in the future. Reason: {}", e.getMessage());
     		}
     	};
-    	submitAndRun(wrappedTask);		
+    	submitAndForkRun(wrappedTask);		
     }
 
     public static CompletableFuture<Void> doAsync(Runnable task) {

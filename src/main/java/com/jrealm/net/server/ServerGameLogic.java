@@ -44,6 +44,7 @@ import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
 import com.jrealm.util.Cardinality;
 import com.jrealm.util.PacketHandlerServer;
+import com.jrealm.util.WorkerThread;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -458,9 +459,12 @@ public class ServerGameLogic {
 			mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
 
 			commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
-
-			ServerGameLogic.onPlayerJoin(mgr, targetRealm, player);
-			log.info("Player {} logged in successfully", player);
+			final Player toWelcome = player;
+			Runnable welcomePlayer = () ->{
+				ServerGameLogic.onPlayerJoin(mgr, targetRealm, toWelcome);
+			};
+			WorkerThread.runLater(welcomePlayer, 2000);
+			log.info("[SERVER] Player {} logged in successfully", player);
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
 			commandResponse = CommandPacket.createError(assignedId, 503,
