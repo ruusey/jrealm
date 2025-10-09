@@ -25,6 +25,8 @@ import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.entity.NetTile;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.util.Camera;
+import com.jrealm.util.Partition;
+import com.jrealm.util.WorkerThread;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -461,19 +463,17 @@ public class TileManager {
                 }
             }
         }
-        for(Tile tile : toRender) {
-        	tile.render(g);
-        }
+        List<List<Tile>> tileRenderWork =  Partition.ofSize(toRender, 32);
+        tileRenderWork.forEach(tile->{
+            Runnable r = () ->{
+                for(Tile t : tile) {
+                    t.render(g);
+                }
+            };
+            WorkerThread.submitAndRun(r);
+        });
         this.releaseMapLock();
-//       List<List<Tile>> i =  Partition.ofSize(toRender, 64);
-//        i.forEach(tile->{
-//            Runnable r = () ->{
-//                for(Tile t : tile) {
-//                    t.render(g);
-//                }
-//            };
-//            WorkerThread.submitAndRun(r);
-//        });
+
     }
     
     public void releaseMapLock() {

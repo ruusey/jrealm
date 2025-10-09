@@ -14,6 +14,7 @@ import com.jrealm.game.graphics.ImageUtils;
 import com.jrealm.game.state.GameStateManager;
 import com.jrealm.util.KeyHandler;
 import com.jrealm.util.MouseHandler;
+import com.jrealm.util.TimedWorkerThread;
 import com.jrealm.util.WorkerThread;
 
 import lombok.Data;
@@ -80,36 +81,23 @@ public class GamePanel extends JPanel implements Runnable {
 	public void run() {
 		this.init();
 
-		long lastTime = System.nanoTime();
-		double amountOfTicks = 180.0;
-		double ns = 1000000000 / amountOfTicks;
-		double delta = 0;
-		long timer = System.currentTimeMillis();
-		int frames = 0;
-		
-		while (this.running) {
-			long now = System.nanoTime();
-			delta += (now - lastTime) / ns;
-			lastTime = now;
-			while (delta >= 1) {
-				Runnable input = () -> {
-					this.input(this.mouse, this.key);
-				};
-
-				Runnable renderAndDraw = () -> {
-					this.render();
-					this.draw();
-				};
-				WorkerThread.submitAndRun(input, renderAndDraw);
-				delta--;
+		final Runnable input = () -> {
+			while (this.running) {
+				this.input(this.mouse, this.key);
 			}
-			frames++;
+		};
 
-			if (System.currentTimeMillis() - timer > 1000) {
-				timer += 1000;
-				frames = 0;
+		final Runnable renderAndDraw = () -> {
+			while (this.running) {
+				this.render();
+				this.draw();
 			}
-		}
+		};
+
+		final TimedWorkerThread timedThread0 = new TimedWorkerThread(input, 64.0);
+		final TimedWorkerThread timedThread1 = new TimedWorkerThread(renderAndDraw, 128.0);
+		WorkerThread.submitAndForkRun(timedThread0, timedThread1);
+
 	}
 
 	public void update(double time) {

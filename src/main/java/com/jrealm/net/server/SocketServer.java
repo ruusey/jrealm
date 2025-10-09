@@ -88,7 +88,7 @@ public class SocketServer implements Runnable {
 				}
 			}
 		};
-		WorkerThread.submitAndForkRun(socketAccept, timeoutCheck);
+		WorkerThread.submitAndForkRun(socketAccept);
 	}
 	
 	private int getRemoteAddrIndex(String remoteAddr) {

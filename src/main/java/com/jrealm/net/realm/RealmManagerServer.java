@@ -354,10 +354,15 @@ public class RealmManagerServer implements Runnable {
 				}
 
 				for (final Packet packet : playerPackets) {
-					this.bytesWritten += packet.serializeWrite(dosToClient);
+					int bytesWritten = packet.serializeWrite(dosToClient);
+					Entry<Byte, Class<? extends Packet>> targetPacket = PacketType.valueOf(packet.getClass());
+					this.bytesWritten += bytesWritten;
+					log.info("Writing Packet {} to client", targetPacket.getKey());
+					log.info("Writing {} bytes to client", bytesWritten);
+
 				}
 			} catch (Exception e) {
-				RealmManagerServer.log.error("[SERVER] Failed to get OutputStream to Client. Reason: {}", e);
+				//RealmManagerServer.log.error("[SERVER] Failed to get OutputStream to Client. Reason: {}", e);
 			}
 		}
 		

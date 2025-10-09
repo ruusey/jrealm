@@ -39,7 +39,7 @@ public class LoadMapPacket extends Packet {
     }
 
     public static LoadMapPacket from(long realmId, short mapId, short mapWidth, short mapHeight, List<NetTile> tiles) throws Exception {
-    	return new LoadMapPacket(realmId, mapId, mapWidth, mapHeight, tiles.toArray(new NetTile[0]));
+    	return from(realmId, mapId, mapWidth, mapHeight, tiles.toArray(new NetTile[0]));
     }
 
     public static LoadMapPacket from(long realmId, short mapId, short mapWidth, short mapHeight,  NetTile[] tiles) throws Exception {

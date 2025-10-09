@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.google.common.io.LittleEndianDataInputStream;
 import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.Packet;
 import com.jrealm.net.core.IOService;
@@ -90,13 +91,14 @@ public class ProcessingThread extends Thread {
 					this.remoteBufferIndex -= packetLength;
 					final Class<?> packetClass = PacketType.valueOf(packetId);
 					final Packet nPacket = IOService.readStream(packetClass, packetBytes);
+					nPacket.setId(packetId);
 					nPacket.setSrcIp(this.clientKey);
 					this.packetQueue.add(nPacket);
                 }
             }
         } catch (Exception e) {
-            this.shutdownProcessing = true;
-            ProcessingThread.log.error("Failed to parse client input {}", e.getMessage());
+            //this.shutdownProcessing = true;
+            //ProcessingThread.log.error("Failed to parse client input {}", e.getMessage());
         }
     }
 

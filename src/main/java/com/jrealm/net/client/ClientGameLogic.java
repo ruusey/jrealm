@@ -23,6 +23,7 @@ import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.EffectText;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
+import com.jrealm.net.client.packet.CreateEffectPacket;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
@@ -59,6 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ClientGameLogic {
 	public static JrealmClientDataService DATA_SERVICE = null;
 	public static boolean GAME_OVER = false;
+	
 	
 	@PacketHandlerClient(RequestTradePacket.class)
 	public static void handleTradeRequestClient(RealmManagerClient cli, Packet packet) {
