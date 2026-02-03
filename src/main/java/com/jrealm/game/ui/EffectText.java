@@ -1,9 +1,8 @@
 package com.jrealm.game.ui;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
-
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.math.Vector2f;
 
@@ -34,36 +33,34 @@ public class EffectText {
         }
     }
 
-    public void render(Graphics2D g) {
+    public void render(SpriteBatch batch, BitmapFont font) {
+        Color color;
         switch (this.effect) {
         case DAMAGE:
-            g.setColor(Color.RED);
+            color = Color.RED;
             break;
         case HEAL:
-            g.setColor(Color.GREEN);
+            color = Color.GREEN;
             break;
         case ARMOR_BREAK:
-            g.setColor(Color.BLUE);
+            color = Color.BLUE;
             break;
         case ENVIRONMENT:
-            g.setColor(Color.BLUE);
+            color = Color.BLUE;
             break;
         case PLAYER_INFO:
-            g.setColor(Color.ORANGE);
+            color = Color.ORANGE;
             break;
         default:
+            color = Color.WHITE;
             break;
-
         }
 
-        final Font originalFont = g.getFont();
-        final Font newFont = originalFont.deriveFont(originalFont.getSize() * 0.75F);
-        g.setFont(newFont);
-        g.drawString(this.damage, this.sourcePos.x - (Vector2f.worldX),
-                this.sourcePos.y - (Vector2f.worldY) - (64 - this.animationDistance));
-
-        g.setFont(originalFont);
-
+        Color oldColor = font.getColor();
+        font.setColor(color);
+        font.draw(batch, this.damage, this.sourcePos.x - Vector2f.worldX,
+                this.sourcePos.y - Vector2f.worldY - (64 - this.animationDistance));
+        font.setColor(oldColor);
     }
 
     public boolean getRemove() {

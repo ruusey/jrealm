@@ -1,6 +1,7 @@
 package com.jrealm.game.tile;
 
-import java.awt.Graphics2D;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
@@ -44,8 +45,10 @@ public class Tile {
 		return this.tileId == 0;
 	}
 
-	public void render(Graphics2D g) {
-		g.drawImage(GameSpriteManager.TILE_SPRITES.get((int) this.tileId), (int) this.pos.getWorldVar().x,
-				(int) this.pos.getWorldVar().y, this.size, this.size, null);
+	public void render(SpriteBatch batch) {
+		TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) this.tileId);
+		if (region != null) {
+			batch.draw(region, this.pos.getWorldVar().x, this.pos.getWorldVar().y, this.size, this.size);
+		}
 	}
 }

@@ -1,7 +1,7 @@
 package com.jrealm.game.entity;
 
-import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -193,22 +193,27 @@ public class Bullet extends GameObject  {
     }
 
     @Override
-    public void render(Graphics2D g) {
-        final AffineTransform original = g.getTransform();
-        final AffineTransform rotationTransform = new AffineTransform();
+    public void render(SpriteBatch batch) {
+        if (this.getSpriteSheet() == null) return;
+        TextureRegion frame = this.getSpriteSheet().getCurrentFrame();
+        if (frame == null) return;
+
         final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(this.getProjectileId());
         final float angleOffset = Float.parseFloat(group.getAngleOffset());
+
+        // Convert angle to degrees for LibGDX (counter-clockwise positive)
+        float rotationDeg;
         if (angleOffset > 0.0f) {
-            rotationTransform.rotate(-this.getAngle() + (this.tfAngle + angleOffset), this.pos.getWorldVar().x + (this.size / 2),
-                    this.pos.getWorldVar().y + (this.size / 2));
+            rotationDeg = (float) Math.toDegrees(-this.getAngle() + (this.tfAngle + angleOffset));
         } else {
-            rotationTransform.rotate(-this.getAngle() + this.tfAngle, this.pos.getWorldVar().x + (this.size / 2),
-                    this.pos.getWorldVar().y + (this.size / 2));
+            rotationDeg = (float) Math.toDegrees(-this.getAngle() + this.tfAngle);
         }
 
-        g.setTransform(rotationTransform);
-        g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x),
-                (int) (this.pos.getWorldVar().y), this.size, this.size, null);
-        g.setTransform(original);
+        float wx = this.pos.getWorldVar().x;
+        float wy = this.pos.getWorldVar().y;
+        float halfSize = this.size / 2f;
+
+        // draw with rotation around center
+        batch.draw(frame, wx, wy, halfSize, halfSize, this.size, this.size, 1f, 1f, rotationDeg);
     }
 }

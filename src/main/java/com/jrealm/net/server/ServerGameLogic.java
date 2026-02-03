@@ -13,7 +13,7 @@ import com.jrealm.account.dto.LoginRequestDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.account.dto.SessionTokenDto;
 import com.jrealm.account.service.JrealmServerDataService;
-import com.jrealm.game.GamePanel;
+import com.jrealm.game.JRealmGame;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.contants.GlobalConstants;
@@ -436,8 +436,8 @@ public class ServerGameLogic {
 
 			assignedId = Realm.RANDOM.nextLong();
 			final CharacterClass cls = CharacterClass.valueOf(targetCharacter.getCharacterClass());
-			final Vector2f playerPos = new Vector2f((0 + (GamePanel.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-					(0 + (GamePanel.height / 2)) - GlobalConstants.PLAYER_SIZE);
+			final Vector2f playerPos = new Vector2f((0 + (JRealmGame.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+					(0 + (JRealmGame.height / 2)) - GlobalConstants.PLAYER_SIZE);
 			player = new Player(assignedId, playerPos, GlobalConstants.PLAYER_SIZE, cls);
 			final Realm targetRealm = mgr.getTopRealm();
 			final ProcessingThread userThread = mgr.getServer().getClients().get(command.getSrcIp());

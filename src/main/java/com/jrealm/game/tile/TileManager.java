@@ -1,6 +1,6 @@
 package com.jrealm.game.tile;
 
-import java.awt.Graphics2D;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -424,56 +424,35 @@ public class TileManager {
         this.releaseMapLock();
     }
 
-    public void render(Player player, Graphics2D g) {
-    	// Acquire the map lock to prevent the render thread from displaying out of 
-    	// date tile information
-    	this.acquireMapLock();
+    public void render(Player player, SpriteBatch batch) {
+        this.acquireMapLock();
         final int playerSize = player.getSize() / 2;
         final Vector2f pos = player.getPos().clone(playerSize, playerSize);
         final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
                 pos.y / GlobalConstants.BASE_TILE_SIZE);
         this.normalizeToBounds(posNormalized);
-        List<Tile> toRender = new ArrayList<>();
         for (int x = (int) (posNormalized.x - VIEWPORT_TILE_MIN); x < (posNormalized.x + VIEWPORT_TILE_MIN); x++) {
             for (int y = (int) (posNormalized.y - VIEWPORT_TILE_MIN); y < (int) (posNormalized.y + VIEWPORT_TILE_MIN); y++) {
-                // Temp fix. Aint nobody got time for array math.
                 if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
                         || (y < 0)) {
                     continue;
                 }
                 try {
-                    Tile collisionTile = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
                     Tile normalTile = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
-                    if(collisionTile!=null && normalTile!=null) {
-                        
-                    }
+                    Tile collisionTile = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
 
                     if (normalTile != null) {
-                        toRender.add(normalTile);
-                        //normalTile.render(g);
+                        normalTile.render(batch);
                     }
-                    
                     if (collisionTile != null && !collisionTile.isVoid()) {
-                        //collisionTile.render(g);
-                        toRender.add(collisionTile);
-
+                        collisionTile.render(batch);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
-        List<List<Tile>> tileRenderWork =  Partition.ofSize(toRender, 32);
-        tileRenderWork.forEach(tile->{
-            Runnable r = () ->{
-                for(Tile t : tile) {
-                    t.render(g);
-                }
-            };
-            WorkerThread.submitAndRun(r);
-        });
         this.releaseMapLock();
-
     }
     
     public void releaseMapLock() {

@@ -1,7 +1,7 @@
 package com.jrealm.game.entity;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import java.io.DataOutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -248,49 +248,46 @@ public class Player extends Entity {
 	}
 
 	@Override
-	public void render(Graphics2D g) {
-		Color c = new Color(0f, 0f, 0f, 0.35f);
-		g.setColor(c);
-		java.awt.Font currentFont = g.getFont();
-		java.awt.Font newFont = currentFont.deriveFont(currentFont.getSize() * 0.50F);
-		g.setFont(newFont);
-		g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 24, this.size, this.size / 2);
-		g.setColor(Color.BLACK);
-		if (this.getName() != null) {
-			g.drawString(this.getName(), (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + 64);
-		}
+	public void render(SpriteBatch batch) {
+		if (this.getSpriteSheet() == null) return;
+
+		// Update effect tag on sprite sheet
 		if (this.hasEffect(ProjectileEffectType.INVISIBLE)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.SEPIA)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.SEPIA);
 			}
-		}
-
-		if (this.hasEffect(ProjectileEffectType.HEALING)) {
+		} else if (this.hasEffect(ProjectileEffectType.HEALING)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.REDISH)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.REDISH);
 			}
-		}
-
-		if (this.hasEffect(ProjectileEffectType.SPEEDY)) {
+		} else if (this.hasEffect(ProjectileEffectType.SPEEDY)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.DECAY);
 			}
-		}
-
-		if (this.hasNoEffects()) {
+		} else if (this.hasNoEffects()) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.NORMAL)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
 			}
 		}
 
-		if (this.left) {
-			g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x) + this.size,
-					(int) (this.pos.getWorldVar().y), -this.size, this.size, null);
-		} else {
-			g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x),
-					(int) (this.pos.getWorldVar().y), this.size, this.size, null);
+		// Apply shader effect
+		Sprite.EffectEnum currentEffect = this.getSpriteSheet().getCurrentEffect();
+		com.jrealm.game.graphics.ShaderManager.applyEffect(batch, currentEffect);
+
+		TextureRegion frame = this.getSpriteSheet().getCurrentFrame();
+		if (frame != null) {
+			float wx = this.pos.getWorldVar().x;
+			float wy = this.pos.getWorldVar().y;
+			if (this.left) {
+				// Flip horizontally by drawing with negative width
+				batch.draw(frame, wx + this.size, wy, -this.size, this.size);
+			} else {
+				batch.draw(frame, wx, wy, this.size, this.size);
+			}
 		}
-		g.setFont(currentFont);
+
+		// Clear shader
+		com.jrealm.game.graphics.ShaderManager.clearEffect(batch);
 	}
 
 	public void input(MouseHandler mouse, KeyHandler key) {

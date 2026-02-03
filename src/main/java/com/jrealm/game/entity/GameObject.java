@@ -1,7 +1,7 @@
 package com.jrealm.game.entity;
 
-import java.awt.Graphics2D;
-
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
@@ -108,8 +108,6 @@ public abstract class GameObject {
         return (start + ((end - start) * pct));
     }
 
-    // Returns the players position adjusted to the center of its
-    // on-screen sprite image
     public Vector2f getCenteredPosition() {
         return this.pos.clone((this.getSize() / 2), this.getSize() / 2);
     }
@@ -120,18 +118,19 @@ public abstract class GameObject {
         return newVector;
     }
 
-    public void render(Graphics2D g) {
+    public void render(SpriteBatch batch) {
         if (this.spriteSheet == null) {
             GameObject.log.warn("GameObject {} does not have a sprite sheet!");
             return;
         }
-        g.drawImage(this.spriteSheet.getCurrentFrame(), (int) (this.pos.getWorldVar().x),
-                (int) (this.pos.getWorldVar().y), this.size, this.size, null);
+        TextureRegion frame = this.spriteSheet.getCurrentFrame();
+        if (frame != null) {
+            batch.draw(frame, this.pos.getWorldVar().x, this.pos.getWorldVar().y, this.size, this.size);
+        }
     }
 
     @Override
     public String toString() {
         return "$" + this.name;
     }
-
 }

@@ -1,7 +1,7 @@
 package com.jrealm.game.entity;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.data.GameDataManager;
@@ -258,48 +258,41 @@ public class Enemy extends Entity {
     }
 
     @Override
-    public void render(Graphics2D g) {
+    public void render(SpriteBatch batch) {
+        if (this.getSpriteSheet() == null) return;
 
-        Color c = new Color(0f, 0f, 0f, .35f);
-        g.setColor(c);
-        g.fillOval((int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y) + (int) (this.size / 1.5),
-                this.size, this.size / 2);
-        if (this.left) {
-            g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x) + this.size,
-                    (int) (this.pos.getWorldVar().y), -this.size, this.size, null);
-        } else {
-            g.drawImage(this.getSpriteSheet().getCurrentFrame(), (int) (this.pos.getWorldVar().x),
-                    (int) (this.pos.getWorldVar().y), this.size, this.size, null);
-        }
-
+        // Update effect tags
         if (this.hasEffect(ProjectileEffectType.PARALYZED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.GRAYSCALE)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.GRAYSCALE);
             }
-        }
-
-        if (this.hasEffect(ProjectileEffectType.STUNNED)) {
+        } else if (this.hasEffect(ProjectileEffectType.STUNNED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.DECAY);
             }
-        }
-
-        if (this.hasNoEffects()) {
+        } else if (this.hasNoEffects()) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.NORMAL)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
             }
         }
-        final EnemyModel model = GameDataManager.ENEMIES.get(this.getEnemyId());
-        final float lengthRatio = ((float)this.health/(float)model.getHealth()) / (float) this.getHealthMultiplier();
-        // Health Bar UI
-        g.setColor(Color.red);
-        g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
-                16*(this.getSize()/16), 5);
 
-        g.setColor(Color.green);
-        g.fillRect((int) (this.pos.getWorldVar().x + this.bounds.getXOffset()), (int) (this.pos.getWorldVar().y - 5),
-                (int) ((16*(this.getSize()/16)) * (lengthRatio)), 5);
+        // Apply shader effect
+        Sprite.EffectEnum currentEffect = this.getSpriteSheet().getCurrentEffect();
+        com.jrealm.game.graphics.ShaderManager.applyEffect(batch, currentEffect);
 
+        TextureRegion frame = this.getSpriteSheet().getCurrentFrame();
+        if (frame != null) {
+            float wx = this.pos.getWorldVar().x;
+            float wy = this.pos.getWorldVar().y;
+            if (this.left) {
+                batch.draw(frame, wx + this.size, wy, -this.size, this.size);
+            } else {
+                batch.draw(frame, wx, wy, this.size, this.size);
+            }
+        }
+
+        // Clear shader
+        com.jrealm.game.graphics.ShaderManager.clearEffect(batch);
     }
 
 }

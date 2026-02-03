@@ -1,8 +1,8 @@
 package com.jrealm.game.state;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.event.MouseEvent;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,7 +13,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.account.dto.PlayerAccountDto;
-import com.jrealm.game.GamePanel;
+import com.jrealm.game.JRealmGame;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.data.GameDataManager;
@@ -131,8 +131,8 @@ public class PlayState extends GameState {
 
         if (player == null)
             return;
-        PlayState.map.x = player.getPos().x - (GamePanel.width / 2);
-        PlayState.map.y = player.getPos().y - (GamePanel.height / 2);
+        PlayState.map.x = player.getPos().x - (JRealmGame.width / 2);
+        PlayState.map.y = player.getPos().y - (JRealmGame.height / 2);
 
         Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
         if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
@@ -544,14 +544,14 @@ public class PlayState extends GameState {
 		}
         boolean canShoot = (System.currentTimeMillis() - this.lastShotTick) > (1000 / dex + 10);
         boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
-        if ((mouse.isPressed(MouseEvent.BUTTON1)) && canShoot) {
+        if ((mouse.isPressed(1)) && canShoot) {
             this.lastShotTick = System.currentTimeMillis();
             Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
             dest.addX(PlayState.map.x);
             dest.addY(PlayState.map.y);
             this.shotDestQueue.add(dest);
         }
-        if ((mouse.isPressed(MouseEvent.BUTTON3)) && canUseAbility && !this.pui.isHoveringInventory(mouse.getX())) {
+        if ((mouse.isPressed(3)) && canUseAbility && !this.pui.isHoveringInventory(mouse.getX())) {
             try {
                 Vector2f pos = new Vector2f(mouse.getX(), mouse.getY());
                 pos.addX(PlayState.map.x);
@@ -630,15 +630,14 @@ public class PlayState extends GameState {
     }
 
     @Override
-    public void render(Graphics2D g) {
+    public void render(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
         Player player = this.realmManager.getRealm().getPlayer(this.playerId);
-        // TODO: Translate everything to screen coordinates to keep it centered
         if (player == null)
             return;
-        this.realmManager.getRealm().getTileManager().render(player, g);
+        this.realmManager.getRealm().getTileManager().render(player, batch);
 
         for (Player p : this.realmManager.getRealm().getPlayers().values()) {
-            p.render(g);
+            p.render(batch);
             p.updateAnimation();
         }
 
@@ -648,58 +647,50 @@ public class PlayState extends GameState {
         for (int i = 0; i < gameObject.length; i++) {
             GameObject toRender = gameObject[i];
             if (toRender != null) {
-                toRender.render(g);
+                toRender.render(batch);
             }
         }
 
         Collection<Portal> portals = this.realmManager.getRealm().getPortals().values();
         for (Portal portal : portals) {
-            portal.render(g);
+            portal.render(batch);
         }
 
         if (this.pui == null)
             return;
-        this.pui.render(g);
+        this.pui.render(batch, shapes, font);
 
-        this.renderCloseLoot(g);
+        this.renderCloseLoot(batch);
 
         for (EffectText text : this.getDamageText()) {
-            text.render(g);
+            text.render(batch, font);
         }
 
-        // this.renderCollisionBoxes(g);
-
-        g.setColor(Color.white);
-
+        font.setColor(com.badlogic.gdx.graphics.Color.WHITE);
         String fps = this.lastFrames + " FPS";
-        g.drawString(fps, 0 + (6 * 32), 32);
-//
-//        String tps = GamePanel.oldTickCount + " TPS";
-//        g.drawString(tps, 0 + (6 * 32), 64);
-
-        // this.cam.render(g);
+        font.draw(batch, fps, 6 * 32, 32);
     }
 
-    public void renderCloseLoot(Graphics2D g) {
+    public void renderCloseLoot(SpriteBatch batch) {
         Player player = this.realmManager.getRealm().getPlayer(this.playerId);
         if (player == null)
             return;
         final LootContainer closeLoot = this.getClosestLootContainer(player.getPos(), player.getSize() / 2);
 
         for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
-            lc.render(g);
+            lc.render(batch);
         }
         if ((closeLoot != null && this.getPui().isGroundLootEmpty()) || (closeLoot != null && closeLoot.getContentsChanged())) {
-            this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot), g);
+            this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot));
 
         } else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
-            this.getPui().setGroundLoot(new GameItem[8], g);
+            this.getPui().setGroundLoot(new GameItem[8]);
         }
 
         if (closeLoot != null && !this.getPui().isGroundLootEmpty()) {
             final boolean contentsChanged = this.getPui().getNonEmptySlotCount() != closeLoot.getNonEmptySlotCount();
             if (contentsChanged) {
-                this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot), g);
+                this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot));
             }
         }
     }
@@ -708,43 +699,5 @@ public class PlayState extends GameState {
         return this.realmManager.getRealm().getPlayer(this.playerId);
     }
 
-    @SuppressWarnings("unused")
-    private void renderCollisionBoxes(Graphics2D g) {
-
-        GameObject[] gameObject = this.realmManager.getRealm().getGameObjectsInBounds(this.cam.getBounds());
-        Rectangle[] colBoxes = this.realmManager.getRealm().getCollisionBoxesInBounds(this.cam.getBounds());
-        for (GameObject go : gameObject) {
-            Rectangle node = go.getBounds();
-
-            g.setColor(Color.BLUE);
-            Vector2f pos = node.getPos().getWorldVar();
-            pos.addX(node.getXOffset());
-            pos.addY(node.getYOffset());
-
-            g.drawLine((int) pos.x, (int) pos.y, (int) pos.x + (int) node.getWidth(), (int) pos.y);
-            // Top Right-> Bottom Right
-            g.drawLine((int) pos.x + (int) node.getWidth(), (int) pos.y, (int) pos.x + (int) node.getWidth(), (int) pos.y + (int) node.getHeight());
-            // Bottom Left -> Bottom Right
-            g.drawLine((int) pos.x, (int) pos.y + (int) node.getHeight(), (int) pos.x + (int) node.getWidth(), (int) pos.y + (int) node.getHeight());
-
-            g.drawLine((int) pos.x, (int) pos.y, (int) pos.x, (int) pos.y + (int) node.getHeight());
-        }
-
-        for (Rectangle node : colBoxes) {
-
-            g.setColor(Color.BLUE);
-            Vector2f pos = node.getPos().getWorldVar();
-            pos.addX(node.getXOffset());
-            pos.addY(node.getYOffset());
-
-            g.drawLine((int) pos.x, (int) pos.y, (int) pos.x + (int) node.getWidth(), (int) pos.y);
-            // Top Right-> Bottom Right
-            g.drawLine((int) pos.x + (int) node.getWidth(), (int) pos.y, (int) pos.x + (int) node.getWidth(), (int) pos.y + (int) node.getHeight());
-            // Bottom Left -> Bottom Right
-            g.drawLine((int) pos.x, (int) pos.y + (int) node.getHeight(), (int) pos.x + (int) node.getWidth(), (int) pos.y + (int) node.getHeight());
-
-            g.drawLine((int) pos.x, (int) pos.y, (int) pos.x, (int) pos.y + (int) node.getHeight());
-        }
-    }
 
 }

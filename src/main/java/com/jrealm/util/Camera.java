@@ -1,7 +1,5 @@
 package com.jrealm.util;
 
-import java.awt.Graphics;
-
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
@@ -172,19 +170,7 @@ public class Camera {
         }
     }
 
-    public void render(Graphics g) {
-        /*
-         * g.setColor(Color.blue); g.drawRect((int)
-         * collisionCam.getPos().getWorldVar().x, (int)
-         * collisionCam.getPos().getWorldVar().y, (int) collisionCam.getWidth(), (int)
-         * collisionCam.getHeight());
-         */
-
-        /*
-         * g.setColor(Color.magenta); g.drawLine(GamePanel.width / 2, 0, GamePanel.width
-         * / 2, GamePanel.height); g.drawLine(0, GamePanel.height / 2,
-         * GamePanel.width,GamePanel.height / 2);
-         */
-
+    public void render() {
+        // Debug rendering removed - camera position handled by OrthographicCamera
     }
 }

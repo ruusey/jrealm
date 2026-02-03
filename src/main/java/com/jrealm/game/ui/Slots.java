@@ -1,9 +1,9 @@
 package com.jrealm.game.ui;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.entity.item.GameItem;
@@ -49,28 +49,31 @@ public class Slots {
         }
     }
 
-    public void render(Graphics2D g, Vector2f pos) {
+    public void render(SpriteBatch batch, ShapeRenderer shapes, Vector2f pos) {
         if (this.getItem() == null)
             return;
         if (this.getItem().getSpriteKey() == null) {
             GameDataManager.loadSpriteModel(this.getItem());
         }
-        if(this.isSelected()) {
-            g.setColor(Color.yellow);
-            g.fillRect((int) pos.x, (int) pos.y, 64, 64);
-        }else {
-        	 g.setColor(Color.gray);
-             g.fillRect((int) pos.x, (int) pos.y, 64, 64);
-        }
 
-        BufferedImage itemImage = GameSpriteManager.ITEM_SPRITES.get(this.item.getItemId());
-        if (itemImage == null)
+        // Draw slot background via ShapeRenderer
+        batch.end();
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        if (this.isSelected()) {
+            shapes.setColor(Color.YELLOW);
+        } else {
+            shapes.setColor(Color.GRAY);
+        }
+        shapes.rect(pos.x, pos.y, 64, 64);
+        shapes.end();
+        batch.begin();
+
+        TextureRegion itemRegion = GameSpriteManager.ITEM_SPRITES.get(this.item.getItemId());
+        if (itemRegion == null)
             return;
         if (this.button != null) {
-            this.button.render(g);
-        } else {
-            g.drawImage(itemImage, (int) pos.x, (int) pos.y, 64, 64, null);
+            this.button.render(batch);
         }
-        g.drawImage(itemImage, (int) pos.x, (int) pos.y, 64, 64, null);
+        batch.draw(itemRegion, pos.x, pos.y, 64, 64);
     }
 }

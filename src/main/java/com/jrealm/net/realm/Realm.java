@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import com.jrealm.account.dto.ChestDto;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.account.dto.PlayerAccountDto;
-import com.jrealm.game.GamePanel;
+import com.jrealm.game.JRealmGame;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
@@ -106,7 +106,7 @@ public class Realm {
     }
 
     public void setupChests(final Player player) {
-        final Vector2f chestLoc = new Vector2f((0 + (GamePanel.width / 2)) - 450, (0 + (GamePanel.height / 2)) - 200);
+        final Vector2f chestLoc = new Vector2f((0 + (JRealmGame.width / 2)) - 450, (0 + (JRealmGame.height / 2)) - 200);
         try {
             final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
                     .executeGet("/data/account/" + player.getAccountUuid(), null, PlayerAccountDto.class);

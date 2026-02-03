@@ -1,8 +1,9 @@
 package com.jrealm.game.ui;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.data.GameSpriteManager;
 import com.jrealm.game.entity.Player;
@@ -44,7 +45,6 @@ public class Minimap {
         Minimap.MINIMAP_SIZE = 3 * mapModel.getWidth();
         this.currentBaseTiles = new NetTile[mapModel.getHeight()][mapModel.getWidth()];
         this.currentCollisionTiles = new NetTile[mapModel.getHeight()][mapModel.getWidth()];
-
     }
 
     public void update() {
@@ -64,55 +64,56 @@ public class Minimap {
         }
     }
 
-    public void render(Graphics2D g) {
-        g.setColor(Color.GRAY);
-        g.fillRect(0, 0, Minimap.MINIMAP_SIZE, Minimap.MINIMAP_SIZE);
+    public void render(SpriteBatch batch, ShapeRenderer shapes) {
+        // Background
+        batch.end();
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(Color.GRAY);
+        shapes.rect(0, 0, Minimap.MINIMAP_SIZE, Minimap.MINIMAP_SIZE);
+        shapes.end();
+        batch.begin();
+
         final int tileSize = Minimap.MINIMAP_SIZE / this.getMapWidth();
 
         for (NetTile[] row : this.currentBaseTiles) {
-            if (row == null) {
-                continue;
-            }
+            if (row == null) continue;
             for (NetTile col : row) {
-                if (col == null) {
-                    continue;
+                if (col == null) continue;
+                TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) col.getTileId());
+                if (region != null) {
+                    batch.draw(region, Minimap.X_PADDING + (col.getYIndex() * tileSize),
+                            Minimap.Y_PADDING + (col.getXIndex() * tileSize), tileSize, tileSize);
                 }
-                g.drawImage(GameSpriteManager.TILE_SPRITES.get((int) col.getTileId()),
-                        Minimap.X_PADDING + (col.getYIndex() * tileSize),
-                        Minimap.Y_PADDING + (col.getXIndex() * tileSize), tileSize, tileSize, null);
             }
         }
 
         for (NetTile[] row : this.currentCollisionTiles) {
-            if (row == null) {
-                continue;
-            }
+            if (row == null) continue;
             for (NetTile col : row) {
-                if ((col == null) || (col.getTileId() == (short) 0)) {
-                    continue;
+                if ((col == null) || (col.getTileId() == (short) 0)) continue;
+                TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) col.getTileId());
+                if (region != null) {
+                    batch.draw(region, Minimap.X_PADDING + (col.getYIndex() * tileSize),
+                            Minimap.Y_PADDING + (col.getXIndex() * tileSize), tileSize, tileSize);
                 }
-                g.drawImage(GameSpriteManager.TILE_SPRITES.get((int) col.getTileId()),
-                        Minimap.X_PADDING + (col.getYIndex() * tileSize),
-                        Minimap.Y_PADDING + (col.getXIndex() * tileSize), tileSize, tileSize, null);
             }
         }
+
+        // Player dot
         final Vector2f playerPos = this.playState.getPlayer().getPos().clone();
         final TileManager tm = this.playState.getRealmManager().getRealm().getTileManager();
-        int mapWidth = tm.getBaseLayer().getWidth() * tm.getBaseLayer().getTileSize();
-        int mapHeight = tm.getBaseLayer().getHeight() * tm.getBaseLayer().getTileSize();
+        int mw = tm.getBaseLayer().getWidth() * tm.getBaseLayer().getTileSize();
+        int mh = tm.getBaseLayer().getHeight() * tm.getBaseLayer().getTileSize();
 
-        float xRatio = playerPos.x / (float) mapWidth;
-        float yRatio = playerPos.y / (float) mapHeight;
+        float xRatio = playerPos.x / (float) mw;
+        float yRatio = playerPos.y / (float) mh;
 
-        Vector2f projectedPos = new Vector2f(xRatio * (+Minimap.MINIMAP_SIZE), yRatio * (Minimap.MINIMAP_SIZE));
-
-        g.setColor(Color.RED);
-
-        g.fillOval((int) (Minimap.X_PADDING + projectedPos.x), (int) (Minimap.Y_PADDING + projectedPos.y), tileSize,
-                tileSize);
-
-        // g.drawString(playerPos.toString(), Minimap.MINIMAP_SIZE - 42,
-        // Minimap.MINIMAP_SIZE - 32);
-
+        batch.end();
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(Color.RED);
+        shapes.circle(Minimap.X_PADDING + xRatio * Minimap.MINIMAP_SIZE,
+                Minimap.Y_PADDING + yRatio * Minimap.MINIMAP_SIZE, tileSize / 2f);
+        shapes.end();
+        batch.begin();
     }
 }

@@ -1,69 +1,34 @@
 package com.jrealm.game.state;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-
-import com.jrealm.game.GamePanel;
-import com.jrealm.game.math.Vector2f;
-import com.jrealm.game.ui.Button;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.jrealm.game.JRealmGame;
 import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.util.KeyHandler;
 import com.jrealm.util.MouseHandler;
 
 public class GameOverState extends GameState {
 
-    private BufferedImage imgButton;
-    private BufferedImage imgHover;
-    private Button btnReset;
-    private Button btnQuit;
-    private Font font;
-
     public GameOverState(GameStateManager gsm) {
         super(gsm);
-
-        this.imgButton = GameStateManager.button.cropImage(0, 0, 121, 26);
-        this.imgHover = GameStateManager.button.cropImage(0, 29, 122, 28);
-
-        this.font = new Font("MeatMadness", Font.PLAIN, 48);
-        this.btnReset = new Button("RESTART", this.imgButton, this.font,
-                new Vector2f(GamePanel.width / 2, (GamePanel.height / 2) - 48), 32, 16);
-        this.btnQuit = new Button("QUIT", this.imgButton, this.font,
-                new Vector2f(GamePanel.width / 2, (GamePanel.height / 2) + 48), 32, 16);
-
-        this.btnReset.addHoverImage(this.btnReset.createButton("RESTART", this.imgHover, this.font,
-                this.btnReset.getWidth(), this.btnReset.getHeight(), 32, 20));
-        this.btnQuit.addHoverImage(this.btnQuit.createButton("QUIT", this.imgHover, this.font, this.btnQuit.getWidth(),
-                this.btnQuit.getHeight(), 32, 20));
-
-        this.btnReset.onMouseUp(e -> {
-        	ClientGameLogic.GAME_OVER = false;
-            gsm.pop(GameStateManager.GAMEOVER);
-            gsm.add(GameStateManager.PLAY);
-        });
-        
-//        this.btnReset.onHoverIn(e -> {
-//            gsm.pop(GameStateManager.GAMEOVER);
-//            gsm.add(GameStateManager.PLAY);
-//        });
-
-        this.btnQuit.onMouseUp(e -> {
-            System.exit(0);
-        });
     }
 
     @Override
     public void update(double time) {
-
     }
 
     @Override
     public void input(MouseHandler mouse, KeyHandler key) {
         key.escape.tick();
+        key.enter.tick();
 
-        this.btnReset.input(mouse, key);
-        this.btnQuit.input(mouse, key);
+        if (key.enter.clicked) {
+            ClientGameLogic.GAME_OVER = false;
+            this.gsm.pop(GameStateManager.GAMEOVER);
+            this.gsm.add(GameStateManager.PLAY);
+        }
 
         if (key.escape.clicked) {
             System.exit(0);
@@ -71,12 +36,18 @@ public class GameOverState extends GameState {
     }
 
     @Override
-    public void render(Graphics2D g) {
-    	g.setColor(Color.black);
-    	g.fillRect(0, 0, GamePanel.width, GamePanel.height);
-        // SpriteSheet.drawArray(g, gameover, new Vector2f(GamePanel.width / 2 -
-        // gameover.length() * (32 / 2), GamePanel.height / 2 - 32 / 2), 32, 32, 32);
-        this.btnReset.render(g);
-        this.btnQuit.render(g);
+    public void render(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
+        // Black background
+        batch.end();
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(Color.BLACK);
+        shapes.rect(0, 0, JRealmGame.width, JRealmGame.height);
+        shapes.end();
+        batch.begin();
+
+        font.setColor(Color.RED);
+        font.draw(batch, "GAME OVER", JRealmGame.width / 2f - 60, JRealmGame.height / 2f - 32);
+        font.setColor(Color.WHITE);
+        font.draw(batch, "Press ENTER to restart or ESC to quit", JRealmGame.width / 2f - 180, JRealmGame.height / 2f + 16);
     }
 }

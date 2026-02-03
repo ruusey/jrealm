@@ -1,6 +1,6 @@
 package com.jrealm.game.entity.item;
 
-import java.awt.Graphics2D;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import java.util.UUID;
 
 import com.jrealm.game.contants.LootTier;
@@ -56,8 +56,8 @@ public class Chest extends LootContainer {
     }
 
     @Override
-    public void render(Graphics2D g) {
-        super.render(g);
+    public void render(SpriteBatch batch) {
+        super.render(batch);
     }
 
     @Override

@@ -1,16 +1,15 @@
 package com.jrealm.util;
 
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jrealm.game.GamePanel;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 
 import lombok.Data;
 
 @Data
-public class KeyHandler implements KeyListener {
+public class KeyHandler {
     public boolean captureMode = false;
     public String content = "";
     public static List<Key> keys = new ArrayList<Key>();
@@ -67,8 +66,8 @@ public class KeyHandler implements KeyListener {
     public Key q = new Key();
     public Key t = new Key();
 
-    public KeyHandler(GamePanel game) {
-        game.addKeyListener(this);
+    public KeyHandler() {
+        // No listener registration needed - we poll Gdx.input
     }
 
     public void releaseAll() {
@@ -83,76 +82,42 @@ public class KeyHandler implements KeyListener {
         }
     }
 
-    public void toggle(KeyEvent e, boolean pressed) {
-        if (e.getKeyCode() == KeyEvent.VK_W) {
-            this.up.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_S) {
-            this.down.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_A) {
-            this.left.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_D) {
-            this.right.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-            this.attack.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_E) {
-            this.menu.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-            this.enter.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-            this.escape.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_F1) {
-            this.f1.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_F2) {
-            this.f2.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_SHIFT) {
-            this.shift.toggle(pressed);
+    public void update() {
+        if (this.captureMode) {
+            // In capture mode, handle text input differently
+            // Check for backspace
+            if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) && this.content.length() > 0) {
+                this.content = this.content.substring(0, this.content.length() - 1);
+            }
+            // Enter key still toggles for the game logic
+            this.enter.toggle(Gdx.input.isKeyPressed(Input.Keys.ENTER));
+            return;
         }
 
-        if (e.getKeyCode() == KeyEvent.VK_1) {
-            this.one.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_2) {
-            this.two.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_3) {
-            this.three.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_4) {
-            this.four.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_5) {
-            this.five.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_6) {
-            this.six.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_7) {
-            this.seven.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_8) {
-            this.eight.toggle(pressed);
-        }
-        if (e.getKeyCode() == KeyEvent.VK_0) {
-            this.zero.toggle(pressed);
-        }
+        this.up.toggle(Gdx.input.isKeyPressed(Input.Keys.W));
+        this.down.toggle(Gdx.input.isKeyPressed(Input.Keys.S));
+        this.left.toggle(Gdx.input.isKeyPressed(Input.Keys.A));
+        this.right.toggle(Gdx.input.isKeyPressed(Input.Keys.D));
+        this.attack.toggle(Gdx.input.isKeyPressed(Input.Keys.SPACE));
+        this.menu.toggle(Gdx.input.isKeyPressed(Input.Keys.E));
+        this.enter.toggle(Gdx.input.isKeyPressed(Input.Keys.ENTER));
+        this.escape.toggle(Gdx.input.isKeyPressed(Input.Keys.ESCAPE));
+        this.f1.toggle(Gdx.input.isKeyPressed(Input.Keys.F1));
+        this.f2.toggle(Gdx.input.isKeyPressed(Input.Keys.F2));
+        this.shift.toggle(Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT));
 
-        if (e.getKeyCode() == KeyEvent.VK_Q) {
-            this.q.toggle(pressed);
-        }
+        this.one.toggle(Gdx.input.isKeyPressed(Input.Keys.NUM_1));
+        this.two.toggle(Gdx.input.isKeyPressed(Input.Keys.NUM_2));
+        this.three.toggle(Gdx.input.isKeyPressed(Input.Keys.NUM_3));
+        this.four.toggle(Gdx.input.isKeyPressed(Input.Keys.NUM_4));
+        this.five.toggle(Gdx.input.isKeyPressed(Input.Keys.NUM_5));
+        this.six.toggle(Gdx.input.isKeyPressed(Input.Keys.NUM_6));
+        this.seven.toggle(Gdx.input.isKeyPressed(Input.Keys.NUM_7));
+        this.eight.toggle(Gdx.input.isKeyPressed(Input.Keys.NUM_8));
+        this.zero.toggle(Gdx.input.isKeyPressed(Input.Keys.NUM_0));
 
-        if (e.getKeyCode() == KeyEvent.VK_T) {
-            this.t.toggle(pressed);
-        }
+        this.q.toggle(Gdx.input.isKeyPressed(Input.Keys.Q));
+        this.t.toggle(Gdx.input.isKeyPressed(Input.Keys.T));
     }
 
     public void captureInput() {
@@ -166,38 +131,12 @@ public class KeyHandler implements KeyListener {
         return content;
     }
 
-    @Override
-    public void keyTyped(KeyEvent e) {
-        // if(this.captureMode) {
-        // if(e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
-        // this.content = this.content.substring(0, this.content.length()-2);
-        // }else if (e.getKeyCode() != KeyEvent.VK_ENTER) {
-        // this.content += e.getKeyChar();
-        // }
-        // }
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        try {
-            if (this.captureMode && (e.getKeyCode() != KeyEvent.VK_ENTER)) {
-                if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
-                    this.content = this.content.substring(0, this.content.length() - 1);
-                } else if (e.getKeyCode() != KeyEvent.VK_ENTER) {
-                    this.content += e.getKeyChar();
-                }
-            } else {
-                this.toggle(e, true);
-            }
-        } catch (Exception ex) {
-
+    /**
+     * Called by LibGDX TextInputListener when in capture mode.
+     */
+    public void appendChar(char c) {
+        if (this.captureMode && c != '\n' && c != '\r') {
+            this.content += c;
         }
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-        // if (this.captureMode && (e.getKeyCode() != KeyEvent.VK_ENTER))
-        // return;
-        this.toggle(e, false);
     }
 }

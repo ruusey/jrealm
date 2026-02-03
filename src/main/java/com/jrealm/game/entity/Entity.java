@@ -1,8 +1,8 @@
 package com.jrealm.game.entity;
 
-import java.awt.Graphics2D;
 import java.time.Instant;
 
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
@@ -22,8 +22,8 @@ public abstract class Entity extends GameObject {
     public boolean xCol = false;
     public boolean yCol = false;
 
-    protected int attackSpeed = 1050; // in milliseconds
-    protected int attackDuration = 650; // in milliseconds
+    protected int attackSpeed = 1050;
+    protected int attackDuration = 650;
     protected double attacktime;
     protected boolean canAttack = true;
     protected boolean attacking = false;
@@ -47,8 +47,8 @@ public abstract class Entity extends GameObject {
     public void removeEffect(short effectId) {
         for (int i = 0; i < this.effectIds.length; i++) {
             if (this.effectIds[i] == effectId) {
-                this.effectIds[i] = (short)-1;
-                this.effectTimes[i] = (long)-1;
+                this.effectIds[i] = (short) -1;
+                this.effectTimes[i] = (long) -1;
             }
         }
     }
@@ -107,7 +107,6 @@ public abstract class Entity extends GameObject {
         return -1;
     }
 
-
     public void update(double time) {
         if (this.getSpriteSheet() != null) {
             this.getSpriteSheet().animate();
@@ -135,5 +134,5 @@ public abstract class Entity extends GameObject {
     }
 
     @Override
-    public abstract void render(Graphics2D g);
+    public abstract void render(SpriteBatch batch);
 }

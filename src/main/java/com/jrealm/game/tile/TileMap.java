@@ -1,6 +1,6 @@
 package com.jrealm.game.tile;
 
-import java.awt.Graphics2D;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -98,9 +98,9 @@ public class TileMap {
     	return x > -1 && x<this.getWidth() && y>-1 && y<this.getHeight();
     }
 
-    public void render(Graphics2D g, Rectangle cam) {
+    public void render(SpriteBatch batch, Rectangle cam) {
         for (Tile t : this.getBlocksInBounds(cam)) {
-            t.render(g);
+            t.render(batch);
         }
     }
     

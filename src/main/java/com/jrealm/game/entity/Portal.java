@@ -1,6 +1,6 @@
 package com.jrealm.game.entity;
 
-import java.awt.Graphics2D;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import java.time.Instant;
 
 import com.jrealm.game.data.GameDataManager;
@@ -89,9 +89,9 @@ public class Portal {
                 && this.getPos().equals(other.getPos()) && (this.expires == other.getExpires());
     }
 
-    public void render(Graphics2D g) {
-        g.drawImage(this.sprite.image, (int) (this.pos.getWorldVar().x), (int) (this.pos.getWorldVar().y), 32, 32,
-                null);
-
+    public void render(SpriteBatch batch) {
+        if (this.sprite != null && this.sprite.getRegion() != null) {
+            batch.draw(this.sprite.getRegion(), this.pos.getWorldVar().x, this.pos.getWorldVar().y, 32, 32);
+        }
     }
 }

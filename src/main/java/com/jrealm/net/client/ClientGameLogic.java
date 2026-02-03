@@ -1,13 +1,7 @@
 package com.jrealm.net.client;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
-import javax.swing.JFrame;
-
 import com.jrealm.account.service.JrealmClientDataService;
 import com.jrealm.game.GameLauncher;
-import com.jrealm.game.TradePanel;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.contants.GlobalConstants;
@@ -75,31 +69,8 @@ public class ClientGameLogic {
 	public static void handleAcceptTrade(RealmManagerClient cli, Packet packet) {
 		final AcceptTradeRequestPacket tradeRequest = (AcceptTradeRequestPacket) packet;
 		log.info("[CLIENT] Recieved new trade accepted packet. Accepted = {}", tradeRequest.isAccepted());
-		final TradePanel loginPanel = new TradePanel(840, 840, tradeRequest.getPlayer0(), tradeRequest.getPlayer1(),
-				tradeRequest.getPlayer0Inv(), tradeRequest.getPlayer1Inv());
-		try {
-			final JFrame frame = loginPanel.getTradePane();
-			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			frame.addWindowListener(new WindowAdapter() {
-				@Override
-				public void windowClosed(WindowEvent windowEvent) {
-					final TextPacket close = TextPacket.create(tradeRequest.getPlayer0().getName(), "SYSTEM", "/decline");
-					try {
-						cli.getClient().sendRemote(close);
-						log.info("[CLIENT] Terminating trade with player {}", tradeRequest.getPlayer1().getName());
-
-					} catch (Exception e) {
-						log.error("[CLIENT] Failed to close trade interface and decline trade. Reason: {}", e.getMessage());
-					}
-				}
-			});
-			frame.setVisible(true);
-			frame.setLocationRelativeTo(null);
-			frame.setResizable(true);
-		} catch (Exception e) {
-			log.error("[CLIENT] Failed to create TradePanel. Reason {}", e.getMessage());
-
-		}
+		// TODO: Replace with LibGDX trade UI (Phase 6)
+		log.info("[CLIENT] Trade accepted between {} and {}", tradeRequest.getPlayer0().getName(), tradeRequest.getPlayer1().getName());
 		cli.getState().getPui().setTrading(tradeRequest.isAccepted());
 	}
 

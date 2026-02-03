@@ -322,10 +322,8 @@ public class GameDataManager {
 			GameDataManager.loadCharacterClasses(loadRemote);
 			GameDataManager.loadLootTables(loadRemote);
 			GameDataManager.loadLootGroups(loadRemote);
-			GameSpriteManager.loadSpriteImages(loadRemote);
-			GameSpriteManager.loadTileSprites();
-			GameSpriteManager.loadItemSprites();
-			
+			// Sprite loading deferred to JRealmGame.create() -- requires GL context
+
 			IOService.mapSerializableData();
 
 		} catch (Exception e) {

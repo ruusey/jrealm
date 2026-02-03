@@ -1,12 +1,14 @@
 package com.jrealm.game.ui;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
 import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.jrealm.game.GamePanel;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.jrealm.game.JRealmGame;
 import com.jrealm.game.state.PlayState;
 import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.messaging.CommandType;
@@ -71,7 +73,7 @@ public class PlayerChat {
                     String messageToSend = key.getCapturedInput();
                     messageToSend = messageToSend.replace("\n", "").replace("\r", "");
                     if (messageToSend.startsWith("/")) {
-                        if(messageToSend.equalsIgnoreCase("/clear")) {
+                        if (messageToSend.equalsIgnoreCase("/clear")) {
                             this.playerChat = new LinkedHashMap<String, TextPacket>() {
                                 private static final long serialVersionUID = 4568387673008726309L;
 
@@ -80,19 +82,17 @@ public class PlayerChat {
                                     return this.size() > PlayerChat.CHAT_SIZE;
                                 }
                             };
-                        }else {
+                        } else {
                             ServerCommandMessage serverCommand = ServerCommandMessage.parseFromInput(messageToSend);
                             CommandPacket packet = CommandPacket.create(this.state.getPlayer(), CommandType.SERVER_COMMAND,
                                     serverCommand);
                             client.sendRemote(packet);
                         }
-
                     } else {
                         TextPacket packet = TextPacket.create(this.state.getPlayer().getName(), "SYSTEM",
                                 messageToSend);
                         client.sendRemote(packet);
                     }
-
                 } catch (Exception e) {
                     PlayerChat.log.error("Failed to send PlayerChat to server. Reason: {}", e);
                 }
@@ -105,27 +105,20 @@ public class PlayerChat {
         }
     }
 
-    public void render(Graphics2D g) {
-        g.setColor(Color.WHITE);
-        java.awt.Font currentFont = g.getFont();
-        float newSize = currentFont.getSize() * 0.50F;
-        java.awt.Font newFont = currentFont.deriveFont(newSize);
-        g.setFont(newFont);
+    public void render(SpriteBatch batch, BitmapFont font) {
+        float lineHeight = 14f;
+        font.setColor(Color.WHITE);
 
         int index = PlayerChat.CHAT_SIZE;
         for (Map.Entry<String, TextPacket> packet : this.playerChat.entrySet()) {
-            int y = (int) ((GamePanel.height - (index * newSize)) - 100);
-            g.drawString(packet.getKey(), 8, y);
+            float y = JRealmGame.height - (index * lineHeight) - 100;
+            font.draw(batch, packet.getKey(), 8, y);
             index--;
         }
 
         if (this.chatOpen) {
-            g.setColor(Color.WHITE);
-            g.drawString(this.currentMessage, 8, (int) (GamePanel.height - (newSize)));
-            g.setColor(Color.GRAY);
-            g.drawRect(8, (int) (GamePanel.height - (newSize * 2)), 600, (int) newSize);
+            font.setColor(Color.WHITE);
+            font.draw(batch, this.currentMessage, 8, JRealmGame.height - lineHeight);
         }
-        g.setFont(currentFont);
-
     }
 }
