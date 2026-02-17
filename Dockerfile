@@ -1,11 +1,10 @@
-FROM maven:3.8.6-openjdk-11-slim as BUILD
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
-COPY cacerts $JAVA_HOME/lib/security
 COPY . .
-RUN mvn clean install
+RUN mvn -B clean package -DskipTests
 
-FROM openjdk:11-jre-slim-bullseye
-
-COPY --from=BUILD /app/target/jrealm-0.3.3-jar-with-dependencies.jar /jrealm-0.3.3.jar
+FROM eclipse-temurin:17-jre
+COPY --from=build /app/target/jrealm.jar /jrealm.jar
 EXPOSE 2222
-ENTRYPOINT [ "java", "-jar", "jrealm-0.3.3.jar", "-server", "host.docker.internal" ]
+ENV DATA_SERVER_ADDR=host.docker.internal:8085
+ENTRYPOINT ["sh", "-c", "java -jar /jrealm.jar -server $DATA_SERVER_ADDR"]
