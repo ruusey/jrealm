@@ -53,11 +53,7 @@ public class TileManager {
         // Three types of maps. Fixed data, generated terrain and generated dungeon
         if (model.getData() != null) {
             this.mapLayers = this.getLayersFromData(model);
-        } else if(model.getTerrainId()>-1){
-            final TerrainGenerationParameters params = GameDataManager.TERRAINS.get(model.getTerrainId());
-            this.mapLayers = this.getLayersFromTerrain(model.getWidth(), model.getHeight(), model.getTileSize(),
-                    params);
-        }else if (model.getDungeonId()>-1){
+        } else if (model.getDungeonId()>-1){
         	final DungeonGenerationParams params = model.getDungeonParams();
 			final DungeonGenerator dungeonGenerator = new DungeonGenerator(model.getWidth(), model.getHeight(),
 					model.getTileSize(), params.getMinRooms(), params.getMaxRooms(), params.getMinRoomWidth(),
@@ -65,6 +61,10 @@ public class TileManager {
 					params.getShapeTemplates(), params.getFloorTileIds(), params.getWallTileId(),
 					params.getHallwayStyles(), params.getBossEnemyId());
             this.mapLayers = dungeonGenerator.generateDungeon();
+        } else if(model.getTerrainId()>-1){
+            final TerrainGenerationParameters params = GameDataManager.TERRAINS.get(model.getTerrainId());
+            this.mapLayers = this.getLayersFromTerrain(model.getWidth(), model.getHeight(), model.getTileSize(),
+                    params);
         }
     }
 

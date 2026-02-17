@@ -576,6 +576,11 @@ public class PlayerUI {
         this.xp.render(batch, shapes, font);
         this.renderStats(batch, font);
         this.playerChat.render(batch, shapes, font);
+
+        if (this.minimap.isInitialized()) {
+            this.minimap.update();
+            this.minimap.render(batch, shapes);
+        }
     }
 
     private void renderTradeUI(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font, int startX, int panelWidth) {

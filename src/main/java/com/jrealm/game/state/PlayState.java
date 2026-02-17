@@ -64,6 +64,10 @@ public class PlayState extends GameState {
     public static Vector2f map;
     public long lastShotTick = 0;
     public long lastAbilityTick = 0;
+    private long lastQuickUseTick = 0;
+    private long lastPortalTick = 0;
+    private static final long QUICK_USE_COOLDOWN_MS = 250;
+    private static final long PORTAL_COOLDOWN_MS = 1000;
     public long playerId = -1l;
     
     private long lastSampleTime;
@@ -300,6 +304,9 @@ public class PlayState extends GameState {
         key.six.tick();
         key.seven.tick();
         key.eight.tick();
+        key.m.tick();
+        key.plus.tick();
+        key.minus.tick();
 
         Player player = this.realmManager.getRealm().getPlayer(this.playerId);
         if (player == null)
@@ -390,7 +397,8 @@ public class PlayState extends GameState {
                     this.lastDirectionMap = lastDirectionTempMap;
                 }
             }
-            if (key.f2.clicked) {
+            boolean canUsePortal = (System.currentTimeMillis() - this.lastPortalTick) > PORTAL_COOLDOWN_MS;
+            if (key.f2.clicked && canUsePortal) {
                 try {
                     Portal closestPortal = this.realmManager.getState().getClosestPortal(this.getPlayerPos(), 32);
                     if (closestPortal != null) {
@@ -399,18 +407,20 @@ public class PlayState extends GameState {
                                 this.getPlayerId());
                         this.realmManager.getClient().sendRemote(usePortal);
                         this.realmManager.getRealm().loadMap(portalModel.getMapId());
+                        this.lastPortalTick = System.currentTimeMillis();
                     }
                 } catch (Exception e) {
                     PlayState.log.error("Failed to send test UsePortalPacket", e.getMessage());
                 }
 
             }
-            if (key.f1.clicked) {
+            if (key.f1.clicked && canUsePortal) {
                 try {
                     if (this.realmManager.getRealm().getMapId() != 1) {
                         UsePortalPacket usePortal = UsePortalPacket.toVault(this.realmManager.getRealm().getRealmId(), this.getPlayerId());
                         this.realmManager.getClient().sendRemote(usePortal);
                         this.realmManager.getRealm().loadMap(1);
+                        this.lastPortalTick = System.currentTimeMillis();
                     }
                 } catch (Exception e) {
                     PlayState.log.error("Failed to send test UsePortalPacket", e.getMessage());
@@ -420,15 +430,23 @@ public class PlayState extends GameState {
             if (this.pui != null) {
                 this.pui.input(mouse, key);
             }
-            if (key.one.clicked) this.handleQuickUseKey(4);
-            if (key.two.clicked) this.handleQuickUseKey(5);
-            if (key.three.clicked) this.handleQuickUseKey(6);
-            if (key.four.clicked) this.handleQuickUseKey(7);
-            if (key.five.clicked) this.handleQuickUseKey(8);
-            if (key.six.clicked) this.handleQuickUseKey(9);
-            if (key.seven.clicked) this.handleQuickUseKey(10);
-            if (key.eight.clicked) this.handleQuickUseKey(11);
+            boolean canQuickUse = (System.currentTimeMillis() - this.lastQuickUseTick) > QUICK_USE_COOLDOWN_MS;
+            if (canQuickUse) {
+                boolean used = false;
+                if (key.one.clicked) { this.handleQuickUseKey(4); used = true; }
+                else if (key.two.clicked) { this.handleQuickUseKey(5); used = true; }
+                else if (key.three.clicked) { this.handleQuickUseKey(6); used = true; }
+                else if (key.four.clicked) { this.handleQuickUseKey(7); used = true; }
+                else if (key.five.clicked) { this.handleQuickUseKey(8); used = true; }
+                else if (key.six.clicked) { this.handleQuickUseKey(9); used = true; }
+                else if (key.seven.clicked) { this.handleQuickUseKey(10); used = true; }
+                else if (key.eight.clicked) { this.handleQuickUseKey(11); used = true; }
+                if (used) this.lastQuickUseTick = System.currentTimeMillis();
+            }
 
+            if (key.m.clicked) this.pui.getMinimap().toggle();
+            if (key.plus.down) this.pui.getMinimap().zoomIn();
+            if (key.minus.down) this.pui.getMinimap().zoomOut();
         }
 
         if (key.escape.clicked) {

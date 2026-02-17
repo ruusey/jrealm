@@ -1527,11 +1527,18 @@ public class RealmManagerServer implements Runnable {
 			}
 
 			// Dungeon spawn chance
-			if (Realm.RANDOM.nextInt(10) < 3) {
-				final Portal toDungeonPortal = new Portal(Realm.RANDOM.nextLong(), (short) 6,
-						enemy.getPos().withNoise(64, 64));
-				toDungeonPortal.linkPortal(targetRealm, null);
-				targetRealm.addPortal(toDungeonPortal);
+			if (Realm.RANDOM.nextInt(10) < 10) {
+				final List<PortalModel> dungeonPortals = GameDataManager.PORTALS.values().stream()
+						.filter(p -> p.getTargetRealmDepth() >= 999).collect(Collectors.toList());
+				log.info("Available dungeons: {}", dungeonPortals);
+				if (!dungeonPortals.isEmpty()) {
+					final PortalModel dungeonPortalModel = dungeonPortals
+							.get(Realm.RANDOM.nextInt(dungeonPortals.size()));
+					final Portal toDungeonPortal = new Portal(Realm.RANDOM.nextLong(),
+							(short) dungeonPortalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
+					toDungeonPortal.linkPortal(targetRealm, null);
+					targetRealm.addPortal(toDungeonPortal);
+				}
 			}
 
 			// Try to get the loot model mapped by this enemyId

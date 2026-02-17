@@ -66,6 +66,9 @@ public class KeyHandler implements InputProcessor {
 
     public Key q = new Key();
     public Key t = new Key();
+    public Key m = new Key();
+    public Key plus = new Key();
+    public Key minus = new Key();
 
     public KeyHandler() {
         // No listener registration needed - we poll Gdx.input
@@ -125,6 +128,9 @@ public class KeyHandler implements InputProcessor {
 
         this.q.toggle(Gdx.input.isKeyPressed(Input.Keys.Q));
         this.t.toggle(Gdx.input.isKeyPressed(Input.Keys.T));
+        this.m.toggle(Gdx.input.isKeyPressed(Input.Keys.M));
+        this.plus.toggle(Gdx.input.isKeyPressed(Input.Keys.PLUS) || Gdx.input.isKeyPressed(Input.Keys.EQUALS));
+        this.minus.toggle(Gdx.input.isKeyPressed(Input.Keys.MINUS));
     }
 
     public void captureInput() {
