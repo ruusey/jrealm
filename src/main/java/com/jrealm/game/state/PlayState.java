@@ -455,7 +455,9 @@ public class PlayState extends GameState {
 		}
         boolean canShoot = (System.currentTimeMillis() - this.lastShotTick) > (1000 / dex + 10);
         boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
-        if ((mouse.isPressed(1)) && canShoot) {
+        boolean clickingWorld = mouse.isPressed(1) && !this.pui.isHoveringInventory(mouse.getX());
+        player.setAttacking(clickingWorld);
+        if (clickingWorld && canShoot) {
             this.lastShotTick = System.currentTimeMillis();
             Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
             dest.addX(PlayState.map.x);

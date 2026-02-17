@@ -18,6 +18,7 @@ public abstract class Entity extends GameObject {
     protected boolean right = false;
     protected boolean left = false;
     protected boolean attack = false;
+    protected String lastAnimSet = "idle_side";
 
     public boolean xCol = false;
     public boolean yCol = false;
@@ -130,6 +131,27 @@ public abstract class Entity extends GameObject {
         } else {
             this.down = false;
             this.up = false;
+        }
+
+        // Select animation set based on movement state
+        if (this.getSpriteSheet() != null && this.getSpriteSheet().hasAnimSets()) {
+            String targetAnim;
+            if (this.attacking) {
+                targetAnim = (this.up || this.down) ? "attack_front" : "attack_side";
+            } else if (this.left || this.right) {
+                targetAnim = "walk_side";
+            } else if (this.up || this.down) {
+                targetAnim = "walk_front";
+            } else {
+                // Idle: keep facing the same direction as last movement
+                if (this.lastAnimSet != null && this.lastAnimSet.contains("front")) {
+                    targetAnim = "idle_front";
+                } else {
+                    targetAnim = "idle_side";
+                }
+            }
+            this.lastAnimSet = targetAnim;
+            this.getSpriteSheet().setAnimSet(targetAnim);
         }
     }
 

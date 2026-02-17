@@ -3,6 +3,7 @@ package com.jrealm.game.data;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -172,8 +173,55 @@ public class GameSpriteManager {
 
     public static SpriteSheet loadClassSprites(CharacterClass cls) {
         Texture classTexture = GameSpriteManager.TEXTURE_CACHE.get("rotmg-classes.png");
+        int baseRow = 4 * cls.classId;
         final SpriteSheet classSprites = new SpriteSheet(classTexture, GlobalConstants.BASE_SPRITE_SIZE,
-                GlobalConstants.BASE_SPRITE_SIZE, 0, 4 * cls.classId);
+                GlobalConstants.BASE_SPRITE_SIZE, 0, baseRow);
+
+        // Set up animation sets from the 4-row-per-class layout:
+        // Row 0 (baseRow+0): Side walk frames (cols: 0=stand, 1=step1, 2=step2)
+        // Row 1 (baseRow+1): Side attack frames (cols: 0=atk1, 1=atk2)
+        // Row 2 (baseRow+2): Front walk frames (cols: 0=stand, 1=step1, 2=step2)
+        // Row 3 (baseRow+3): Front attack frames (cols: 0=atk1, 1=atk2)
+        int walkDur = 8;
+        int atkDur = 5;
+
+        // idle: single frame, long duration
+        classSprites.addAnimSet("idle_side",
+            Arrays.asList(classSprites.getSubSprite(0, baseRow)),
+            Arrays.asList(999));
+        classSprites.addAnimSet("idle_front",
+            Arrays.asList(classSprites.getSubSprite(0, baseRow + 2)),
+            Arrays.asList(999));
+
+        // walk: stand -> step1 -> stand -> step2 (4-frame cycle)
+        classSprites.addAnimSet("walk_side",
+            Arrays.asList(
+                classSprites.getSubSprite(0, baseRow),
+                classSprites.getSubSprite(1, baseRow),
+                classSprites.getSubSprite(0, baseRow),
+                classSprites.getSubSprite(2, baseRow)),
+            Arrays.asList(walkDur, walkDur, walkDur, walkDur));
+        classSprites.addAnimSet("walk_front",
+            Arrays.asList(
+                classSprites.getSubSprite(0, baseRow + 2),
+                classSprites.getSubSprite(1, baseRow + 2),
+                classSprites.getSubSprite(0, baseRow + 2),
+                classSprites.getSubSprite(2, baseRow + 2)),
+            Arrays.asList(walkDur, walkDur, walkDur, walkDur));
+
+        // attack: 2-frame cycle
+        classSprites.addAnimSet("attack_side",
+            Arrays.asList(
+                classSprites.getSubSprite(0, baseRow + 1),
+                classSprites.getSubSprite(1, baseRow + 1)),
+            Arrays.asList(atkDur, atkDur));
+        classSprites.addAnimSet("attack_front",
+            Arrays.asList(
+                classSprites.getSubSprite(0, baseRow + 3),
+                classSprites.getSubSprite(1, baseRow + 3)),
+            Arrays.asList(atkDur, atkDur));
+
+        classSprites.setAnimSet("idle_side");
         return classSprites;
     }
 

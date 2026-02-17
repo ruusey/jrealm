@@ -1,7 +1,9 @@
 package com.jrealm.game.graphics;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -29,6 +31,11 @@ public class SpriteSheet {
 
     // Current effect applied to all sprites in this sheet (used as a tag for shader selection)
     private EffectEnum currentEffect = EffectEnum.NORMAL;
+
+    // Named animation sets for walk/idle/attack cycles
+    private Map<String, List<Sprite>> animSets = new HashMap<>();
+    private Map<String, List<Integer>> animSetDurations = new HashMap<>();
+    private String currentAnimSetName;
 
     public SpriteSheet(Texture texture, int spriteWidth, int spriteHeight, int col, int row) {
         this.spriteImageWidth = spriteWidth;
@@ -115,6 +122,7 @@ public class SpriteSheet {
         if ((this.animationFrames != null) && (this.animationFrames.size() > 0)) {
             int currentAnimationFrames = this.animationFrames.get(this.animationFrame);
             if (this.elapsedFrames >= currentAnimationFrames) {
+                this.elapsedFrames = 0;
                 if (this.animationFrame == (this.animationFrames.size() - 1)) {
                     this.animationFrame = 0;
                 } else {
@@ -141,6 +149,30 @@ public class SpriteSheet {
         for (Sprite sprite : this.sprites) {
             sprite.setEffect(EffectEnum.NORMAL);
         }
+    }
+
+    public void addAnimSet(String name, List<Sprite> frames, List<Integer> durations) {
+        this.animSets.put(name, frames);
+        this.animSetDurations.put(name, durations);
+    }
+
+    public void setAnimSet(String name) {
+        if (name == null || name.equals(this.currentAnimSetName)) return;
+        List<Sprite> frames = this.animSets.get(name);
+        List<Integer> durations = this.animSetDurations.get(name);
+        if (frames == null || durations == null) return;
+        this.currentAnimSetName = name;
+        this.sprites = frames;
+        this.animationFrames = durations;
+        this.animationFrame = 0;
+        this.elapsedFrames = 0;
+        for (Sprite sprite : this.sprites) {
+            sprite.setEffect(this.currentEffect);
+        }
+    }
+
+    public boolean hasAnimSets() {
+        return !this.animSets.isEmpty();
     }
 
     public TextureRegion getCurrentFrame() {
