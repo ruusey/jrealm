@@ -1,16 +1,23 @@
 package com.jrealm.game.ui;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.jrealm.game.JRealmGame;
+import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.data.GameSpriteManager;
+import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.math.Vector2f;
@@ -51,6 +58,12 @@ public class PlayerUI {
     private String tradePartnerName = null;
     private Button confirmTradeButton = null;
     private Button cancelTradeButton = null;
+
+    private Map<Integer, TextureRegion> classIconCache = new HashMap<>();
+    private List<Button> nearbyPlayerButtons = new ArrayList<>();
+    private List<Player> nearbyPlayerList = new ArrayList<>();
+    private Player hoveredPlayer = null;
+    private long lastNearbyRefresh = 0;
 
     public PlayerUI(PlayState p) {
         Vector2f posHp = new Vector2f(JRealmGame.width - 356, 128);
@@ -359,6 +372,11 @@ public class PlayerUI {
                 this.cancelTradeButton.update(time);
             }
         }
+
+        // Update nearby player buttons
+        for (Button btn : this.nearbyPlayerButtons) {
+            btn.update(time);
+        }
     }
 
     public void input(MouseHandler mouse, KeyHandler key) {
@@ -384,6 +402,11 @@ public class PlayerUI {
             if (this.cancelTradeButton != null) {
                 this.cancelTradeButton.input(mouse, key);
             }
+        }
+
+        // Handle nearby player button input
+        for (Button btn : this.nearbyPlayerButtons) {
+            btn.input(mouse, key);
         }
 
         try {
@@ -521,9 +544,15 @@ public class PlayerUI {
             }
         }
 
+        // Render nearby players list
+        this.renderNearbyPlayers(batch, shapes, font, startX, panelWidth);
+
         for (ItemTooltip tip : this.tooltips.values()) {
             tip.render(batch, shapes, font);
         }
+
+        // Render hovered player tooltip on top of everything
+        this.renderPlayerTooltip(batch, shapes, font);
 
         this.hp.render(batch, shapes);
         this.mp.render(batch, shapes);
@@ -603,6 +632,176 @@ public class PlayerUI {
         batch.begin();
         font.setColor(Color.WHITE);
         font.draw(batch, "CANCEL", this.cancelTradeButton.getPos().x + 12, this.cancelTradeButton.getPos().y + 22);
+    }
+
+    private TextureRegion getClassIcon(int classId) {
+        TextureRegion cached = this.classIconCache.get(classId);
+        if (cached != null) return cached;
+        CharacterClass cls = CharacterClass.valueOf(classId);
+        if (cls == null) return null;
+        try {
+            TextureRegion icon = GameSpriteManager.loadClassSprites(cls).getSubSprite(0, 0).getRegion();
+            this.classIconCache.put(classId, icon);
+            return icon;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void refreshNearbyPlayerButtons(int startX, int panelWidth) {
+        long now = Instant.now().toEpochMilli();
+        if ((now - this.lastNearbyRefresh) < 500 && !this.nearbyPlayerButtons.isEmpty()) return;
+        this.lastNearbyRefresh = now;
+
+        Set<Player> nearby = null;
+        try {
+            nearby = this.playState.getRealmManager().getRealm().getPlayersExcept(this.playState.getPlayerId());
+        } catch (Exception e) {
+            return;
+        }
+        if (nearby == null || nearby.isEmpty()) {
+            this.nearbyPlayerButtons.clear();
+            this.nearbyPlayerList.clear();
+            this.hoveredPlayer = null;
+            return;
+        }
+
+        int headerY = this.isTrading ? 840 : 830;
+        int iconSize = 20;
+        int entryHeight = 26;
+        int colWidth = (panelWidth - 12) / 2;
+        int startY = headerY + 16;
+
+        List<Player> playerList = new ArrayList<>(nearby);
+        List<Button> newButtons = new ArrayList<>();
+
+        for (int i = 0; i < playerList.size() && i < 16; i++) {
+            Player p = playerList.get(i);
+            int col = i % 2;
+            int row = i / 2;
+
+            int x = startX + 4 + (col * (colWidth + 4));
+            int y = startY + (row * entryHeight);
+
+            Button btn = new Button(new Vector2f(x, y), iconSize);
+            btn.getBounds().setWidth(colWidth);
+            btn.getBounds().setHeight(entryHeight);
+            final Player hoverTarget = p;
+            btn.onHoverIn(event -> {
+                this.hoveredPlayer = hoverTarget;
+            });
+            btn.onHoverOut(event -> {
+                if (this.hoveredPlayer == hoverTarget) {
+                    this.hoveredPlayer = null;
+                }
+            });
+            newButtons.add(btn);
+        }
+
+        this.nearbyPlayerList = playerList;
+        this.nearbyPlayerButtons = newButtons;
+    }
+
+    private void renderNearbyPlayers(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font, int startX, int panelWidth) {
+        this.refreshNearbyPlayerButtons(startX, panelWidth);
+
+        if (this.nearbyPlayerList.isEmpty()) return;
+
+        int headerY = this.isTrading ? 840 : 830;
+        font.setColor(Color.WHITE);
+        font.draw(batch, "Nearby Players", startX + 4, headerY);
+
+        int iconSize = 20;
+        int entryHeight = 26;
+        int colWidth = (panelWidth - 12) / 2;
+        int startY = headerY + 16;
+        int maxNameChars = 10;
+
+        for (int i = 0; i < this.nearbyPlayerList.size() && i < 16; i++) {
+            Player p = this.nearbyPlayerList.get(i);
+            int col = i % 2;
+            int row = i / 2;
+
+            int x = startX + 4 + (col * (colWidth + 4));
+            int y = startY + (row * entryHeight);
+
+            // Draw class icon
+            TextureRegion icon = this.getClassIcon(p.getClassId());
+            if (icon != null) {
+                batch.draw(icon, x, y, iconSize, iconSize);
+            }
+
+            // Draw clipped player name
+            String displayName = p.getName();
+            if (displayName.length() > maxNameChars) {
+                displayName = displayName.substring(0, maxNameChars) + "..";
+            }
+
+            // Highlight hovered player
+            if (this.hoveredPlayer == p) {
+                font.setColor(Color.YELLOW);
+            } else {
+                font.setColor(Color.WHITE);
+            }
+            font.draw(batch, displayName, x + iconSize + 4, y + 14);
+        }
+    }
+
+    private void renderPlayerTooltip(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
+        if (this.hoveredPlayer == null) return;
+
+        Player p = this.hoveredPlayer;
+        int tooltipX = (JRealmGame.width / 2) + 75;
+        int tooltipY = 100;
+        int tooltipWidth = JRealmGame.width / 5;
+        int tooltipHeight = 120;
+        int spacing = 16;
+
+        // Background
+        batch.end();
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(new Color(0.2f, 0.2f, 0.2f, 0.9f));
+        shapes.rect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+        shapes.end();
+        batch.begin();
+
+        // Player name and class
+        CharacterClass cls = CharacterClass.valueOf(p.getClassId());
+        String className = cls != null ? cls.name() : "Unknown";
+        font.setColor(Color.YELLOW);
+        font.draw(batch, p.getName() + " (" + className + ")", tooltipX + 4, tooltipY + spacing);
+
+        // HP and MP
+        font.setColor(Color.RED);
+        font.draw(batch, "HP: " + p.getHealth(), tooltipX + 4, tooltipY + (2 * spacing));
+        font.setColor(Color.BLUE);
+        font.draw(batch, "MP: " + p.getMana(), tooltipX + 100, tooltipY + (2 * spacing));
+
+        // Equipped items label
+        font.setColor(Color.WHITE);
+        font.draw(batch, "Equipment:", tooltipX + 4, tooltipY + (3 * spacing));
+
+        // Draw equipped item sprites (slots 0-3)
+        GameItem[] equips = p.getSlots(0, 4);
+        int itemX = tooltipX + 4;
+        int itemY = tooltipY + (3 * spacing) + 4;
+        int itemSize = 32;
+        for (int i = 0; i < equips.length; i++) {
+            if (equips[i] != null && equips[i].getItemId() != -1) {
+                TextureRegion itemRegion = GameSpriteManager.ITEM_SPRITES.get(equips[i].getItemId());
+                if (itemRegion != null) {
+                    batch.draw(itemRegion, itemX + (i * (itemSize + 4)), itemY, itemSize, itemSize);
+                }
+            } else {
+                // Draw empty slot placeholder
+                batch.end();
+                shapes.begin(ShapeRenderer.ShapeType.Line);
+                shapes.setColor(Color.DARK_GRAY);
+                shapes.rect(itemX + (i * (itemSize + 4)), itemY, itemSize, itemSize);
+                shapes.end();
+                batch.begin();
+            }
+        }
     }
 
     private void renderStats(SpriteBatch batch, BitmapFont font) {
