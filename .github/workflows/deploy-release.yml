@@ -1,54 +1,49 @@
-# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
-# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
-
-name: Build Jrealm
+name: Build & Release JRealm
 
 on:
-  pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
 jobs:
-  build:
-    if: contains(github.event.pull_request.labels.*.name, 'release')
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        server-id: github
-        settings-path: ${{ github.workspace }} # location for the settings.xml file
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ join(github.event.pull_request.labels.*.name, '-') }}
-        release_name: JRealm-${{ join(github.event.pull_request.labels.*.name, '-') }}
-        draft: false
-        prerelease: false
-        body: |
-          JRealm 
-          ${{ join(github.event.pull_request.labels.*.name, '-') }}
-    - name: Upload Release Asset
-      id: upload_release_asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./target/jrealm.jar
-        asset_name: ${{ join(github.event.pull_request.labels.*.name, '-') }}.jar
-        asset_content_type: application/java-archive
-    
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Extract version from pom.xml
+        id: version
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Detected version: $VERSION"
+
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: JRealm v${{ steps.version.outputs.version }}
+          body: |
+            ## JRealm v${{ steps.version.outputs.version }}
+
+            Built from commit ${{ github.sha }}.
+          draft: false
+          prerelease: false
+          files: target/jrealm.jar
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
