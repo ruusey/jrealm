@@ -1,7 +1,5 @@
 package com.jrealm.game.tile;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import java.time.Instant;
@@ -474,24 +472,21 @@ public class TileManager {
 
         // Pass 2: Draw shadows and contour outlines for collision tiles
         if (!collisionTiles.isEmpty()) {
-            // Shadow pass using ShapeRenderer
-            batch.end();
-            Gdx.gl.glEnable(GL20.GL_BLEND);
-            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-            shapes.begin(ShapeRenderer.ShapeType.Filled);
-            shapes.setColor(0, 0, 0, 0.35f);
+            // Shadow pass: draw sprite silhouette offset so shadow contours the sprite shape
+            ShaderManager.applyEffect(batch, Sprite.EffectEnum.SILHOUETTE);
+            batch.setColor(1, 1, 1, 0.35f);
             for (Tile t : collisionTiles) {
+                TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) t.getTileId());
+                if (region == null) continue;
                 float wx = t.getPos().getWorldVar().x;
                 float wy = t.getPos().getWorldVar().y;
-                shapes.rect(wx + 3, wy + 3, t.getWidth(), t.getHeight());
+                int sz = t.getWidth();
+                batch.draw(region, wx + 3, wy + 3, sz, sz);
             }
-            shapes.end();
-            Gdx.gl.glDisable(GL20.GL_BLEND);
-            batch.begin();
+            batch.setColor(1, 1, 1, 1);
 
             // Contour outline pass: 4 offset silhouette copies of each tile sprite
             float ox = 2.0f;
-            ShaderManager.applyEffect(batch, Sprite.EffectEnum.SILHOUETTE);
             for (Tile t : collisionTiles) {
                 TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) t.getTileId());
                 if (region == null) continue;
