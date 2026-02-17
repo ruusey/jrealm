@@ -62,7 +62,8 @@ public class TileManager {
 			final DungeonGenerator dungeonGenerator = new DungeonGenerator(model.getWidth(), model.getHeight(),
 					model.getTileSize(), params.getMinRooms(), params.getMaxRooms(), params.getMinRoomWidth(),
 					params.getMaxRoomWidth(), params.getMinRoomHeight(), params.getMaxRoomHeight(),
-					params.getShapeTemplates());
+					params.getShapeTemplates(), params.getFloorTileIds(), params.getWallTileId(),
+					params.getHallwayStyles(), params.getBossEnemyId());
             this.mapLayers = dungeonGenerator.generateDungeon();
         }
     }

@@ -25,10 +25,15 @@ public class DungeonGenerator {
 	private int minRoomHeight;
 	private int maxRoomHeight;
 	private List<RoomShapeTemplate> shapeTemplates;
+	private List<Integer> floorTileIds;
+	private int wallTileId;
+	private List<String> hallwayStyles;
+	private int bossEnemyId;
 	private Graph<TileMap> dungeon;
 
 	public DungeonGenerator(int width, int height, int tileSize, int minRooms, int maxRooms, int minRoomWidth,
-			int maxRoomWidth, int minRoomHeight, int maxRoomHeight, List<RoomShapeTemplate> shapeTemplates) {
+			int maxRoomWidth, int minRoomHeight, int maxRoomHeight, List<RoomShapeTemplate> shapeTemplates,
+			List<Integer> floorTileIds, int wallTileId, List<String> hallwayStyles, int bossEnemyId) {
 		this.width = width;
 		this.height = height;
 		this.tileSize = tileSize;
@@ -39,7 +44,28 @@ public class DungeonGenerator {
 		this.minRoomHeight = minRoomHeight;
 		this.maxRoomHeight = maxRoomHeight;
 		this.shapeTemplates = shapeTemplates;
+		this.floorTileIds = floorTileIds;
+		this.wallTileId = wallTileId;
+		this.hallwayStyles = hallwayStyles;
+		this.bossEnemyId = bossEnemyId;
 		this.dungeon = new Graph<>();
+	}
+
+	private TileModel getRandomFloorTile() {
+		if (this.floorTileIds != null && !this.floorTileIds.isEmpty()) {
+			int id = this.floorTileIds.get(Realm.RANDOM.nextInt(this.floorTileIds.size()));
+			TileModel tile = GameDataManager.TILES.get(id);
+			if (tile != null) return tile;
+		}
+		return GameDataManager.TILES.get(29);
+	}
+
+	private TileModel getWallTile() {
+		if (this.wallTileId > 0) {
+			TileModel tile = GameDataManager.TILES.get(this.wallTileId);
+			if (tile != null) return tile;
+		}
+		return null;
 	}
 
 	public List<TileMap> generateDungeon() {
@@ -56,11 +82,23 @@ public class DungeonGenerator {
 		log.info("[DungeonGen] Generating new procedural dungeon realm with room count {}. Params: {}", numRooms, this);
 
 		for (int i = 0; i < numRooms; i++) {
+			final boolean isBossRoom = (i == numRooms - 1);
+			int roomMinW = this.minRoomWidth;
+			int roomMaxW = this.maxRoomWidth;
+			int roomMinH = this.minRoomHeight;
+			int roomMaxH = this.maxRoomHeight;
 
-			final TileMap room = this.getRoom(this.tileSize, this.minRoomWidth, this.maxRoomWidth, this.minRoomHeight,
-					this.maxRoomHeight, this.shapeTemplates);
-			// Try to group the rooms within 10+(roomWidth*2) tiles of the previous room
-			// WIP
+			// Boss room is 1.5x larger
+			if (isBossRoom) {
+				roomMinW = (int) (this.maxRoomWidth * 1.2);
+				roomMaxW = (int) (this.maxRoomWidth * 1.5);
+				roomMinH = (int) (this.maxRoomHeight * 1.2);
+				roomMaxH = (int) (this.maxRoomHeight * 1.5);
+			}
+
+			final TileMap room = this.getRoom(this.tileSize, roomMinW, roomMaxW, roomMinH, roomMaxH,
+					this.shapeTemplates, isBossRoom);
+
 			final int xModifier = Realm.RANDOM.nextInt(2) == 0 ? -2 : 2;
 			final int yModifier = Realm.RANDOM.nextInt(2) == 0 ? -2 : 2;
 
@@ -85,12 +123,18 @@ public class DungeonGenerator {
 			if (offsetY > this.height - room.getHeight()) {
 				offsetY = this.height - room.getHeight();
 			}
-			// Place the room anywhere in the dungeon
-//            final int offsetX = Realm.RANDOM.nextInt(this.width-room.getWidth());
-//            final int offsetY = Realm.RANDOM.nextInt(this.height-room.getHeight());
 
 			baseLayer.append(room, offsetX, offsetY);
-			log.info("[DungeonGen] Dungeon room added at coordinates {}, {}", offsetX, offsetY);
+
+			// Place wall tile border on collision layer for boss room
+			if (isBossRoom) {
+				TileModel wallTile = this.getWallTile();
+				if (wallTile != null) {
+					this.placeBossRoomWalls(collisionLayer, room, offsetX, offsetY, wallTile);
+				}
+			}
+
+			log.info("[DungeonGen] Dungeon room added at coordinates {}, {} (boss={})", offsetX, offsetY, isBossRoom);
 			if (previousRoom != null) {
 				final int previousRoomCenterX = previousRoomOffsetX + (previousRoom.getWidth() / 2);
 				final int previousRoomCenterY = previousRoomOffsetY + (previousRoom.getHeight() / 2);
@@ -99,11 +143,12 @@ public class DungeonGenerator {
 				final int roomCenterY = offsetY + (room.getHeight() / 2);
 
 				this.connectPoints(baseLayer, previousRoomCenterX, previousRoomCenterY, roomCenterX, roomCenterY);
-				if (i == numRooms - 1) {
-					final Enemy enemy = GameObjectUtils.getEnemyFromId(13,
+
+				if (isBossRoom) {
+					int bossId = this.bossEnemyId > 0 ? this.bossEnemyId : 13;
+					final Enemy enemy = GameObjectUtils.getEnemyFromId(bossId,
 							new Vector2f(roomCenterX * tileSize, roomCenterY * tileSize));
 					enemy.setHealth(enemy.getHealth() * 4);
-					// enemy.setPos(spawnPos.clone(200, 0));
 				}
 				this.dungeon.addVertex(previousRoom);
 				this.dungeon.addVertex(room);
@@ -114,107 +159,293 @@ public class DungeonGenerator {
 			previousRoom = room;
 		}
 		return Arrays.asList(baseLayer, collisionLayer);
+	}
 
+	private void placeBossRoomWalls(TileMap collisionLayer, TileMap room, int offsetX, int offsetY, TileModel wallTile) {
+		for (int row = 0; row < room.getHeight(); row++) {
+			for (int col = 0; col < room.getWidth(); col++) {
+				Tile tile = room.getBlocks()[row][col];
+				if (tile == null || tile.isVoid()) continue;
+				// Check if this tile is on the edge of the room shape
+				boolean isEdge = false;
+				if (row == 0 || col == 0 || row == room.getHeight() - 1 || col == room.getWidth() - 1) {
+					isEdge = true;
+				} else {
+					// Check if any neighbor is void/null
+					if (room.getBlocks()[row - 1][col] == null || room.getBlocks()[row - 1][col].isVoid()
+							|| room.getBlocks()[row + 1][col] == null || room.getBlocks()[row + 1][col].isVoid()
+							|| room.getBlocks()[row][col - 1] == null || room.getBlocks()[row][col - 1].isVoid()
+							|| room.getBlocks()[row][col + 1] == null || room.getBlocks()[row][col + 1].isVoid()) {
+						isEdge = true;
+					}
+				}
+				if (isEdge) {
+					int targetRow = row + offsetY;
+					int targetCol = col + offsetX;
+					if (targetRow >= 0 && targetRow < collisionLayer.getHeight()
+							&& targetCol >= 0 && targetCol < collisionLayer.getWidth()) {
+						collisionLayer.setTileAt(targetRow, targetCol, wallTile);
+					}
+				}
+			}
+		}
+	}
+
+	private String pickHallwayStyle() {
+		if (this.hallwayStyles != null && !this.hallwayStyles.isEmpty()) {
+			return this.hallwayStyles.get(Realm.RANDOM.nextInt(this.hallwayStyles.size()));
+		}
+		return "L_SHAPED";
 	}
 
 	public void connectPoints(TileMap targetLayer, int srcX, int srcY, int destX, int destY) {
-		final int xDiff = destX - srcX;
-		final int yDiff = destY - srcY;
-		final TileModel model = GameDataManager.TILES.get(29);
-		final TileModel model0 = GameDataManager.TILES.get(29);
+		String style = this.pickHallwayStyle();
+		log.info("[DungeonGen] Connecting rooms SRC {}, {}. TARGET {}, {} with style {}", srcX, srcY, destX, destY, style);
 
-		log.info("[DungeonGen] Connecting rooms SRC {}, {}. TARGET {}, {}", srcX, srcY, destX, destY);
-
-		if (xDiff > 0) {
-			for (int i = srcX; i < srcX + xDiff; i++) {
-				//log.info("Filling X walkway tile at {}, {}", i, srcY);
-				targetLayer.setTileAt(srcY, i, model);
-				try {
-					targetLayer.setTileAt(srcY - 1, i, model0);
-					targetLayer.setTileAt(srcY + 1, i, model0);
-				} catch (Exception e) {
-					log.debug("[DungeonGen] Failed to fill inter-room walkway. Reason: {}", e.getMessage());
-				}
-			}
-		} else {
-			for (int i = srcX; i > (srcX + xDiff); i--) {
-				//log.info("Filling X walkway tile at {}, {}", i, srcY);
-				targetLayer.setTileAt(srcY, i, model);
-				try {
-					targetLayer.setTileAt(srcY - 1, i, model0);
-					targetLayer.setTileAt(srcY + 1, i, model0);
-				} catch (Exception e) {
-					log.debug("[DungeonGen] Failed to fill inter-room walkway. Reason: {}", e.getMessage());
-				}
-			}
+		switch (style) {
+			case "ZIGZAG":
+				this.connectZigzag(targetLayer, srcX, srcY, destX, destY);
+				break;
+			case "WIDE":
+				this.connectWide(targetLayer, srcX, srcY, destX, destY);
+				break;
+			case "WINDING":
+				this.connectWinding(targetLayer, srcX, srcY, destX, destY);
+				break;
+			case "L_SHAPED":
+			default:
+				this.connectLShaped(targetLayer, srcX, srcY, destX, destY);
+				break;
 		}
+	}
 
-		if (yDiff > 0) {
-			for (int i = srcY; i < srcY + yDiff; i++) {
-				//log.info("Filling Y walkway tile at {}, {}", srcX, i);
-				targetLayer.setTileAt(i, destX, model);
-				try {
-					targetLayer.setTileAt(i, destX - 1, model0);
-					targetLayer.setTileAt(i, destX + 1, model0);
-				} catch (Exception e) {
-					log.debug("[DungeonGen] Failed to fill inter-room walkway. Reason: {}", e.getMessage());
-				}
-
-			}
-		} else {
-			for (int i = srcY; i > (srcY + yDiff); i--) {
-				//log.info("Filling Y walkway tile at {}, {}", srcX, i);
-				targetLayer.setTileAt(i, destX, model);
-				try {
-					targetLayer.setTileAt(i, destX - 1, model0);
-					targetLayer.setTileAt(i, destX + 1, model0);
-				} catch (Exception e) {
-					log.debug("[DungeonGen] Failed to fill inter-room walkway. Reason: {}", e.getMessage());
-
-				}
+	private void fillHorizontal(TileMap targetLayer, int row, int startCol, int endCol, int halfWidth) {
+		int minCol = Math.min(startCol, endCol);
+		int maxCol = Math.max(startCol, endCol);
+		for (int col = minCol; col <= maxCol; col++) {
+			for (int r = row - halfWidth; r <= row + halfWidth; r++) {
+				this.safeSetFloorTile(targetLayer, r, col);
 			}
 		}
 	}
-	// TODO: Implement different kinds of bridging
+
+	private void fillVertical(TileMap targetLayer, int col, int startRow, int endRow, int halfWidth) {
+		int minRow = Math.min(startRow, endRow);
+		int maxRow = Math.max(startRow, endRow);
+		for (int row = minRow; row <= maxRow; row++) {
+			for (int c = col - halfWidth; c <= col + halfWidth; c++) {
+				this.safeSetFloorTile(targetLayer, row, c);
+			}
+		}
+	}
+
+	private void safeSetFloorTile(TileMap targetLayer, int row, int col) {
+		try {
+			if (row >= 0 && row < targetLayer.getHeight() && col >= 0 && col < targetLayer.getWidth()) {
+				targetLayer.setTileAt(row, col, this.getRandomFloorTile());
+			}
+		} catch (Exception e) {
+			log.debug("[DungeonGen] Failed to fill walkway tile at {}, {}. Reason: {}", row, col, e.getMessage());
+		}
+	}
+
+	// L-shaped: horizontal then vertical, 3 tiles wide (existing behavior)
+	private void connectLShaped(TileMap targetLayer, int srcX, int srcY, int destX, int destY) {
+		this.fillHorizontal(targetLayer, srcY, srcX, destX, 1);
+		this.fillVertical(targetLayer, destX, srcY, destY, 1);
+	}
+
+	// Zigzag: break path into segments with random offsets
+	private void connectZigzag(TileMap targetLayer, int srcX, int srcY, int destX, int destY) {
+		int midX1 = (srcX + destX) / 3 + (Realm.RANDOM.nextInt(5) - 2);
+		int midX2 = (srcX + destX) * 2 / 3 + (Realm.RANDOM.nextInt(5) - 2);
+		int midY = (srcY + destY) / 2 + (Realm.RANDOM.nextInt(7) - 3);
+
+		// Clamp midpoints to map bounds
+		midX1 = Math.max(1, Math.min(midX1, this.width - 2));
+		midX2 = Math.max(1, Math.min(midX2, this.width - 2));
+		midY = Math.max(1, Math.min(midY, this.height - 2));
+
+		// Segment 1: src -> (midX1, midY)
+		this.fillHorizontal(targetLayer, srcY, srcX, midX1, 1);
+		this.fillVertical(targetLayer, midX1, srcY, midY, 1);
+
+		// Segment 2: (midX1, midY) -> (midX2, midY)
+		this.fillHorizontal(targetLayer, midY, midX1, midX2, 1);
+
+		// Segment 3: (midX2, midY) -> dest
+		this.fillVertical(targetLayer, midX2, midY, destY, 1);
+		this.fillHorizontal(targetLayer, destY, midX2, destX, 1);
+	}
+
+	// Wide: same L-shaped but 5 tiles wide instead of 3
+	private void connectWide(TileMap targetLayer, int srcX, int srcY, int destX, int destY) {
+		this.fillHorizontal(targetLayer, srcY, srcX, destX, 2);
+		this.fillVertical(targetLayer, destX, srcY, destY, 2);
+	}
+
+	// Winding: walk toward dest with random perpendicular drift
+	private void connectWinding(TileMap targetLayer, int srcX, int srcY, int destX, int destY) {
+		int curX = srcX;
+		int curY = srcY;
+		int maxSteps = Math.abs(destX - srcX) + Math.abs(destY - srcY) + 20;
+		int steps = 0;
+
+		while ((curX != destX || curY != destY) && steps < maxSteps) {
+			// Place floor tiles at current position (2 wide)
+			for (int dr = -1; dr <= 1; dr++) {
+				for (int dc = -1; dc <= 1; dc++) {
+					this.safeSetFloorTile(targetLayer, curY + dr, curX + dc);
+				}
+			}
+
+			// Move toward destination with random drift
+			int dx = Integer.compare(destX, curX);
+			int dy = Integer.compare(destY, curY);
+
+			// 70% chance to move toward target, 30% to drift
+			if (Realm.RANDOM.nextFloat() < 0.7f) {
+				// Move toward destination - prefer the axis with greater distance
+				if (Math.abs(destX - curX) > Math.abs(destY - curY)) {
+					curX += dx;
+				} else if (dy != 0) {
+					curY += dy;
+				} else {
+					curX += dx;
+				}
+			} else {
+				// Random perpendicular drift
+				if (Realm.RANDOM.nextBoolean()) {
+					curX += (Realm.RANDOM.nextInt(3) - 1);
+				} else {
+					curY += (Realm.RANDOM.nextInt(3) - 1);
+				}
+			}
+
+			// Clamp to map bounds
+			curX = Math.max(1, Math.min(curX, this.width - 2));
+			curY = Math.max(1, Math.min(curY, this.height - 2));
+			steps++;
+		}
+
+		// Ensure the destination is also floored
+		for (int dr = -1; dr <= 1; dr++) {
+			for (int dc = -1; dc <= 1; dc++) {
+				this.safeSetFloorTile(targetLayer, destY + dr, destX + dc);
+			}
+		}
+	}
+
 	public List<Integer> getRoomLinkParams(TileMap room0, TileMap room1) {
 		return null;
 	}
 
 	public TileMap getRoom(int tileSize, int minRoomWidth, int maxRoomWidth, int minRoomHeight, int maxRoomHeight,
-			List<RoomShapeTemplate> shapeTemplates) {
-		// TODO: Implement room shapes
+			List<RoomShapeTemplate> shapeTemplates, boolean isBossRoom) {
 		final RoomShapeTemplate shape = shapeTemplates.get(Realm.RANDOM.nextInt(shapeTemplates.size()));
 		final int roomWidth = minRoomWidth + Realm.RANDOM.nextInt((maxRoomWidth - minRoomWidth) + 1);
 		final int roomHeight = minRoomHeight + Realm.RANDOM.nextInt((maxRoomHeight - minRoomHeight) + 1);
 		final TileMap baseLayer = new TileMap(tileSize, roomWidth, roomHeight);
 		log.info("[DungeonGen] Generating room with params tileSize={}, roomWidth={}, roomHeight={}, shape={}", tileSize, roomWidth, roomHeight, shape);
-		// Currently only supports rectangular and oval 
-		// sub-rooms because i'm terrible at programming
-		if (shape.equals(RoomShapeTemplate.RECTANGLE)) {
-			for (int i = 0; i < roomHeight; i++) {
-				for (int j = 0; j < roomWidth; j++) {
-					TileModel model = GameDataManager.TILES.get(29);
+
+		switch (shape) {
+			case RECTANGLE:
+				this.generateRectangleRoom(baseLayer, roomWidth, roomHeight);
+				break;
+			case OVAL:
+				this.generateOvalRoom(baseLayer, roomWidth, roomHeight);
+				break;
+			case DIAMOND:
+				this.generateDiamondRoom(baseLayer, roomWidth, roomHeight);
+				break;
+			case CROSS:
+				this.generateCrossRoom(baseLayer, roomWidth, roomHeight);
+				break;
+			case L_SHAPE:
+				this.generateLShapeRoom(baseLayer, roomWidth, roomHeight);
+				break;
+			default:
+				this.generateRectangleRoom(baseLayer, roomWidth, roomHeight);
+				break;
+		}
+
+		return baseLayer;
+	}
+
+	private void generateRectangleRoom(TileMap baseLayer, int roomWidth, int roomHeight) {
+		for (int i = 0; i < roomHeight; i++) {
+			for (int j = 0; j < roomWidth; j++) {
+				TileModel model = this.getRandomFloorTile();
+				baseLayer.setTileAt(i, j, (short) model.getTileId(), model.getData());
+			}
+		}
+	}
+
+	private void generateOvalRoom(TileMap baseLayer, int roomWidth, int roomHeight) {
+		final int centerX = roomWidth / 2;
+		final int centerY = roomHeight / 2;
+		final Vector2f pos = new Vector2f(centerX, centerY);
+		for (int i = 0; i < roomHeight; i++) {
+			for (int j = 0; j < roomWidth; j++) {
+				if (pos.distanceTo(new Vector2f(i, j)) < (roomWidth / 2)) {
+					final TileModel model = this.getRandomFloorTile();
 					baseLayer.setTileAt(i, j, (short) model.getTileId(), model.getData());
 				}
 			}
 		}
+	}
 
-		if (shape.equals(RoomShapeTemplate.OVAL)) {
-			final int centerX = roomWidth / 2;
-			final int centerY = roomHeight / 2;
-			//int radius = centerX;
-			final Vector2f pos = new Vector2f(centerX, centerY);
-			for (int i = 0; i < roomHeight; i++) {
-				for (int j = 0; j < roomWidth; j++) {
-					if (pos.distanceTo(new Vector2f(i, j)) < (roomWidth / 2)) {
-						final TileModel model = GameDataManager.TILES.get(29);
-						baseLayer.setTileAt(i, j, (short) model.getTileId(), model.getData());
-					}
+	private void generateDiamondRoom(TileMap baseLayer, int roomWidth, int roomHeight) {
+		final int centerX = roomWidth / 2;
+		final int centerY = roomHeight / 2;
+		final int radius = Math.min(centerX, centerY);
+		for (int i = 0; i < roomHeight; i++) {
+			for (int j = 0; j < roomWidth; j++) {
+				int dx = Math.abs(j - centerX);
+				int dy = Math.abs(i - centerY);
+				if (dx + dy <= radius) {
+					final TileModel model = this.getRandomFloorTile();
+					baseLayer.setTileAt(i, j, (short) model.getTileId(), model.getData());
 				}
 			}
 		}
-		
-		// TODO: More room shapes!
-		return baseLayer;
+	}
+
+	private void generateCrossRoom(TileMap baseLayer, int roomWidth, int roomHeight) {
+		final int centerX = roomWidth / 2;
+		final int centerY = roomHeight / 2;
+		final int armWidth = Math.max(2, roomWidth / 3);
+		final int armHeight = Math.max(2, roomHeight / 3);
+		for (int i = 0; i < roomHeight; i++) {
+			for (int j = 0; j < roomWidth; j++) {
+				boolean inVerticalArm = (j >= centerX - armWidth / 2 && j < centerX + armWidth / 2);
+				boolean inHorizontalArm = (i >= centerY - armHeight / 2 && i < centerY + armHeight / 2);
+				if (inVerticalArm || inHorizontalArm) {
+					final TileModel model = this.getRandomFloorTile();
+					baseLayer.setTileAt(i, j, (short) model.getTileId(), model.getData());
+				}
+			}
+		}
+	}
+
+	private void generateLShapeRoom(TileMap baseLayer, int roomWidth, int roomHeight) {
+		int splitX = roomWidth / 2 + Realm.RANDOM.nextInt(Math.max(1, roomWidth / 4));
+		int splitY = roomHeight / 2 + Realm.RANDOM.nextInt(Math.max(1, roomHeight / 4));
+		boolean mirrored = Realm.RANDOM.nextBoolean();
+
+		for (int i = 0; i < roomHeight; i++) {
+			for (int j = 0; j < roomWidth; j++) {
+				boolean inShape;
+				if (mirrored) {
+					inShape = (i >= splitY || j >= (roomWidth - splitX));
+				} else {
+					inShape = (i >= splitY || j < splitX);
+				}
+				if (inShape) {
+					final TileModel model = this.getRandomFloorTile();
+					baseLayer.setTileAt(i, j, (short) model.getTileId(), model.getData());
+				}
+			}
+		}
 	}
 }

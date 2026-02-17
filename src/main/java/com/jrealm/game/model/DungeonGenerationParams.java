@@ -22,4 +22,8 @@ public class DungeonGenerationParams {
 	private int minRoomHeight;
 	private int maxRoomHeight;
 	List<RoomShapeTemplate> shapeTemplates;
+	private List<Integer> floorTileIds;
+	private int wallTileId;
+	private List<String> hallwayStyles;
+	private int bossEnemyId;
 }
