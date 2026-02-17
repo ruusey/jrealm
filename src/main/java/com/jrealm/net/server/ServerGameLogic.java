@@ -114,8 +114,14 @@ public class ServerGameLogic {
 				final Realm generatedRealm = new Realm(true, portalUsed.getMapId(), portalUsed.getTargetRealmDepth());
 				targetRealm = generatedRealm;
 
-				generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
-				user.setPos(generatedRealm.getTileManager().getSafePosition());
+				// Boss_0 map: skip random enemies, spawn player at ring center
+				if (generatedRealm.getMapId() == 5) {
+					user.setPos(new Vector2f(GlobalConstants.BASE_TILE_SIZE * 16,
+							GlobalConstants.BASE_TILE_SIZE * 12));
+				} else {
+					generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
+					user.setPos(generatedRealm.getTileManager().getSafePosition());
+				}
 
 				// Place exit portal and boss enemy in the boss room if one was generated
 				final Vector2f bossSpawnPos = generatedRealm.getTileManager().getBossSpawnPos();
