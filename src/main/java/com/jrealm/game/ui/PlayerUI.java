@@ -13,19 +13,24 @@ import com.jrealm.game.JRealmGame;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
-import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ItemTooltip;
 import com.jrealm.game.state.PlayState;
 import com.jrealm.net.client.packet.UpdatePlayerTradeSelectionPacket;
+import com.jrealm.net.entity.NetInventorySelection;
 import com.jrealm.net.entity.NetTradeSelection;
+import com.jrealm.net.messaging.CommandType;
+import com.jrealm.net.messaging.ServerCommandMessage;
+import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.util.KeyHandler;
 import com.jrealm.util.MouseHandler;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public class PlayerUI {
     private boolean isTrading;
     private FillBars hp;
@@ -43,6 +48,9 @@ public class PlayerUI {
     private Button menuButton = null;
 
     private NetTradeSelection currentTradeSelection = null;
+    private String tradePartnerName = null;
+    private Button confirmTradeButton = null;
+    private Button cancelTradeButton = null;
 
     public PlayerUI(PlayState p) {
         Vector2f posHp = new Vector2f(JRealmGame.width - 356, 128);
@@ -98,7 +106,7 @@ public class PlayerUI {
 
     public void setGroundLoot(GameItem[] loot) {
         if (this.isTrading && this.currentTradeSelection != null) {
-            loot = this.currentTradeSelection.getPlayer1Selection().getGameItems();
+            loot = this.getOtherPlayerSelectedItems();
         }
         this.groundLoot = new Slots[8];
         for (int i = 0; i < loot.length; i++) {
@@ -106,6 +114,54 @@ public class PlayerUI {
             if (item == null || item.getItemId() == -1) continue;
             this.buildGroundLootSlotButton(i, item);
         }
+    }
+
+    /**
+     * Get the items that the OTHER player has selected for trade.
+     * Determines which selection is "other" based on local player ID.
+     */
+    private GameItem[] getOtherPlayerSelectedItems() {
+        if (this.currentTradeSelection == null) return new GameItem[8];
+
+        long myId = this.playState.getPlayerId();
+        NetInventorySelection otherSelection;
+        if (this.currentTradeSelection.getPlayer0Selection() != null
+                && this.currentTradeSelection.getPlayer0Selection().getPlayerId() == myId) {
+            otherSelection = this.currentTradeSelection.getPlayer1Selection();
+        } else {
+            otherSelection = this.currentTradeSelection.getPlayer0Selection();
+        }
+
+        if (otherSelection == null || otherSelection.getItemRefs() == null) {
+            return new GameItem[8];
+        }
+
+        // Build array of only the items the other player has selected
+        GameItem[] allItems = otherSelection.getGameItems();
+        Boolean[] selection = otherSelection.getSelection();
+        if (selection == null) return new GameItem[8];
+
+        GameItem[] selectedItems = new GameItem[8];
+        int idx = 0;
+        for (int i = 0; i < selection.length && i < allItems.length; i++) {
+            if (selection[i] != null && selection[i] && allItems[i] != null) {
+                if (idx < 8) {
+                    selectedItems[idx++] = allItems[i];
+                }
+            }
+        }
+        return selectedItems;
+    }
+
+    public void clearTradeSelections() {
+        Slots[] invSlots = this.getSlots(4, 12);
+        for (Slots slot : invSlots) {
+            if (slot != null) {
+                slot.setSelected(false);
+            }
+        }
+        this.confirmTradeButton = null;
+        this.cancelTradeButton = null;
     }
 
     public int getNonEmptySlotCount() {
@@ -142,6 +198,8 @@ public class PlayerUI {
             });
 
             b.onMouseUp(event -> {
+                // Don't allow picking up items from ground loot area during trade
+                if (this.isTrading) return;
                 this.tooltips.clear();
                 if (this.canSwap()) {
                     this.setActionTime();
@@ -189,6 +247,8 @@ public class PlayerUI {
             });
 
             b.onRightClick(event -> {
+                // Don't allow equipment swaps during trade
+                if (this.isTrading) return;
                 Slots dropped = this.getOverlapping(event);
                 if ((dropped != null) && this.canSwap()) {
                     this.setActionTime();
@@ -289,6 +349,16 @@ public class PlayerUI {
                 curr.update(time);
             }
         }
+
+        // Update trade buttons
+        if (this.isTrading) {
+            if (this.confirmTradeButton != null) {
+                this.confirmTradeButton.update(time);
+            }
+            if (this.cancelTradeButton != null) {
+                this.cancelTradeButton.update(time);
+            }
+        }
     }
 
     public void input(MouseHandler mouse, KeyHandler key) {
@@ -305,6 +375,17 @@ public class PlayerUI {
                 curr.input(mouse, key);
             }
         }
+
+        // Handle trade button input
+        if (this.isTrading) {
+            if (this.confirmTradeButton != null) {
+                this.confirmTradeButton.input(mouse, key);
+            }
+            if (this.cancelTradeButton != null) {
+                this.cancelTradeButton.input(mouse, key);
+            }
+        }
+
         try {
             this.playerChat.input(mouse, key, this.playState.getRealmManager().getClient());
         } catch (Exception e) {
@@ -343,6 +424,36 @@ public class PlayerUI {
         int panelWidth = (JRealmGame.width / 5);
         int startX = JRealmGame.width - panelWidth;
         return posX >= startX;
+    }
+
+    private void sendTradeCommand(String command) {
+        try {
+            ServerCommandMessage serverCommand = ServerCommandMessage.parseFromInput("/" + command);
+            CommandPacket packet = CommandPacket.create(this.playState.getPlayer(), CommandType.SERVER_COMMAND,
+                    serverCommand);
+            this.playState.getRealmManager().getClient().sendRemote(packet);
+        } catch (Exception e) {
+            log.error("Failed to send trade command. Reason: {}", e);
+        }
+    }
+
+    private void ensureTradeButtons() {
+        if (this.confirmTradeButton != null && this.cancelTradeButton != null) return;
+
+        int panelWidth = (JRealmGame.width / 5);
+        int startX = JRealmGame.width - panelWidth;
+        int buttonWidth = (panelWidth / 2) - 8;
+        int buttonY = 790;
+
+        this.confirmTradeButton = new Button("CONFIRM", new Vector2f(startX + 4, buttonY), buttonWidth, 32);
+        this.confirmTradeButton.onMouseUp(event -> {
+            this.sendTradeCommand("confirm true");
+        });
+
+        this.cancelTradeButton = new Button("CANCEL", new Vector2f(startX + buttonWidth + 12, buttonY), buttonWidth, 32);
+        this.cancelTradeButton.onMouseUp(event -> {
+            this.sendTradeCommand("decline");
+        });
     }
 
     public void render(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
@@ -385,6 +496,68 @@ public class PlayerUI {
             }
         }
 
+        // Trade UI overlay
+        if (this.isTrading) {
+            this.renderTradeUI(batch, shapes, font, startX, panelWidth);
+        } else {
+            // Normal ground loot rendering
+            Slots[] gl1 = Arrays.copyOfRange(this.groundLoot, 0, 4);
+            Slots[] gl2 = Arrays.copyOfRange(this.groundLoot, 4, 8);
+
+            for (int i = 0; i < gl1.length; i++) {
+                Slots curr = gl1[i];
+                if (curr != null) {
+                    Vector2f pos = (curr.getDragPos() == null) ? new Vector2f(startX + (i * 64), 650) : curr.getDragPos();
+                    curr.render(batch, shapes, pos);
+                }
+            }
+
+            for (int i = 0; i < gl2.length; i++) {
+                Slots curr = gl2[i];
+                if (curr != null) {
+                    Vector2f pos = (curr.getDragPos() == null) ? new Vector2f(startX + (i * 64), 714) : curr.getDragPos();
+                    curr.render(batch, shapes, pos);
+                }
+            }
+        }
+
+        for (ItemTooltip tip : this.tooltips.values()) {
+            tip.render(batch, shapes, font);
+        }
+
+        this.hp.render(batch, shapes);
+        this.mp.render(batch, shapes);
+        this.xp.render(batch, shapes);
+        this.renderStats(batch, font);
+        this.playerChat.render(batch, font);
+    }
+
+    private void renderTradeUI(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font, int startX, int panelWidth) {
+        this.ensureTradeButtons();
+
+        // Update the trade ground loot with other player's selected items
+        if (this.currentTradeSelection != null) {
+            GameItem[] otherItems = this.getOtherPlayerSelectedItems();
+            this.groundLoot = new Slots[8];
+            for (int i = 0; i < otherItems.length; i++) {
+                GameItem item = otherItems[i];
+                if (item == null || item.getItemId() == -1) continue;
+                this.buildGroundLootSlotButton(i, item);
+            }
+        }
+
+        // Draw "YOUR OFFER" label
+        font.setColor(Color.YELLOW);
+        font.draw(batch, "YOUR OFFER (right-click to select)", startX + 4, 440);
+
+        // Draw "THEIR OFFER" label
+        String theirLabel = this.tradePartnerName != null
+                ? this.tradePartnerName + "'s OFFER"
+                : "THEIR OFFER";
+        font.setColor(Color.CYAN);
+        font.draw(batch, theirLabel, startX + 4, 640);
+
+        // Render the other player's offered items in the ground loot area
         Slots[] gl1 = Arrays.copyOfRange(this.groundLoot, 0, 4);
         Slots[] gl2 = Arrays.copyOfRange(this.groundLoot, 4, 8);
 
@@ -404,15 +577,32 @@ public class PlayerUI {
             }
         }
 
-        for (ItemTooltip tip : this.tooltips.values()) {
-            tip.render(batch, shapes, font);
-        }
+        // Draw trade header
+        String header = "Trading with " + (this.tradePartnerName != null ? this.tradePartnerName : "...");
+        font.setColor(Color.GREEN);
+        font.draw(batch, header, startX + 4, 230);
 
-        this.hp.render(batch, shapes);
-        this.mp.render(batch, shapes);
-        this.xp.render(batch, shapes);
-        this.renderStats(batch, font);
-        this.playerChat.render(batch, font);
+        // Draw Confirm button
+        batch.end();
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(Color.FOREST);
+        shapes.rect(this.confirmTradeButton.getPos().x, this.confirmTradeButton.getPos().y,
+                this.confirmTradeButton.getWidth(), this.confirmTradeButton.getHeight());
+        shapes.end();
+        batch.begin();
+        font.setColor(Color.WHITE);
+        font.draw(batch, "CONFIRM", this.confirmTradeButton.getPos().x + 8, this.confirmTradeButton.getPos().y + 22);
+
+        // Draw Cancel button
+        batch.end();
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(Color.FIREBRICK);
+        shapes.rect(this.cancelTradeButton.getPos().x, this.cancelTradeButton.getPos().y,
+                this.cancelTradeButton.getWidth(), this.cancelTradeButton.getHeight());
+        shapes.end();
+        batch.begin();
+        font.setColor(Color.WHITE);
+        font.draw(batch, "CANCEL", this.cancelTradeButton.getPos().x + 12, this.cancelTradeButton.getPos().y + 22);
     }
 
     private void renderStats(SpriteBatch batch, BitmapFont font) {

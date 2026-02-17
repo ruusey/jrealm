@@ -509,22 +509,23 @@ public class Player extends Entity {
 	public void addItems(GameItem[] items) {
 		for(GameItem item : items) {
 			if(item == null) continue;
-			this.inventory[this.firstEmptyInvSlot()] = item;
+			int slot = this.firstEmptyInvSlot();
+			if(slot == -1) break;
+			this.inventory[slot] = item;
 		}
 	}
 	
 	public void removeItems(GameItem[] items) {
-		//List<Integer> idxToRemove = new ArrayList<>();
 		final GameItem[] inv = this.getSlots(4, 12);
 
 		for(int i = 0 ; i<inv.length;i++) {
 			GameItem invItem = inv[i];
 			if(invItem==null) continue;
 			for(GameItem toRemove: items) {
-				if(invItem !=null && invItem.getUid()!=null && invItem.getUid().equals(toRemove.getUid())) {
-					invItem=null;
+				if(invItem.getUid()!=null && invItem.getUid().equals(toRemove.getUid())) {
+					this.inventory[i + 4] = null;
+					break;
 				}
-
 			}
 		}
 	}

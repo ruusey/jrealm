@@ -675,11 +675,18 @@ public class PlayState extends GameState {
         Player player = this.realmManager.getRealm().getPlayer(this.playerId);
         if (player == null)
             return;
-        final LootContainer closeLoot = this.getClosestLootContainer(player.getPos(), player.getSize() / 2);
 
         for (LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
             lc.render(batch);
         }
+
+        // Skip normal loot container logic while trading - trade UI manages ground loot area
+        if (this.getPui().isTrading()) {
+            return;
+        }
+
+        final LootContainer closeLoot = this.getClosestLootContainer(player.getPos(), player.getSize() / 2);
+
         if ((closeLoot != null && this.getPui().isGroundLootEmpty()) || (closeLoot != null && closeLoot.getContentsChanged())) {
             this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot));
 

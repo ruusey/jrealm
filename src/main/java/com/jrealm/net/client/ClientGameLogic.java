@@ -68,10 +68,19 @@ public class ClientGameLogic {
 	@PacketHandlerClient(AcceptTradeRequestPacket.class)
 	public static void handleAcceptTrade(RealmManagerClient cli, Packet packet) {
 		final AcceptTradeRequestPacket tradeRequest = (AcceptTradeRequestPacket) packet;
-		log.info("[CLIENT] Recieved new trade accepted packet. Accepted = {}", tradeRequest.isAccepted());
-		// TODO: Replace with LibGDX trade UI (Phase 6)
-		log.info("[CLIENT] Trade accepted between {} and {}", tradeRequest.getPlayer0().getName(), tradeRequest.getPlayer1().getName());
-		cli.getState().getPui().setTrading(tradeRequest.isAccepted());
+		log.info("[CLIENT] Recieved trade packet. Accepted = {}", tradeRequest.isAccepted());
+
+		if (tradeRequest.isAccepted()) {
+			log.info("[CLIENT] Trade accepted between {} and {}", tradeRequest.getPlayer0().getName(), tradeRequest.getPlayer1().getName());
+			cli.getState().getPui().setTrading(true);
+			cli.getState().getPui().setTradePartnerName(tradeRequest.getPlayer1().getName());
+		} else {
+			log.info("[CLIENT] Trade closed");
+			cli.getState().getPui().setTrading(false);
+			cli.getState().getPui().setCurrentTradeSelection(null);
+			cli.getState().getPui().setTradePartnerName(null);
+			cli.getState().getPui().clearTradeSelections();
+		}
 	}
 
 	@PacketHandlerClient(UpdatePlayerTradeSelectionPacket.class)
@@ -79,7 +88,10 @@ public class ClientGameLogic {
 		final UpdatePlayerTradeSelectionPacket updateTrade = (UpdatePlayerTradeSelectionPacket) packet;
 		final NetInventorySelection selection = updateTrade.getSelection();
 
-		mgr.getState().getPui().getCurrentTradeSelection().applyUpdate(selection);
+		NetTradeSelection currSelection = mgr.getState().getPui().getCurrentTradeSelection();
+		if (currSelection != null) {
+			currSelection.applyUpdate(selection);
+		}
 	}
 
 	@PacketHandlerClient(UpdateTradePacket.class)
