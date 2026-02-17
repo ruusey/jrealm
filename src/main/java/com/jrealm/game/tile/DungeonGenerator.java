@@ -87,6 +87,11 @@ public class DungeonGenerator {
 		TileMap previousRoom = null;
 		int previousRoomOffsetX = 0;
 		int previousRoomOffsetY = 0;
+
+		// Save boss room info for post-processing
+		int bossRoomOffsetX = -1, bossRoomOffsetY = -1;
+		int bossRoomWidth = -1, bossRoomHeight = -1;
+
 		log.info("[DungeonGen] Generating new procedural dungeon realm with room count {}. Params: {}", numRooms, this);
 
 		for (int i = 0; i < numRooms; i++) {
@@ -134,14 +139,6 @@ public class DungeonGenerator {
 
 			baseLayer.append(room, offsetX, offsetY);
 
-			// Place wall tile border on collision layer for boss room
-			if (isBossRoom) {
-				TileModel wallTile = this.getWallTile();
-				if (wallTile != null) {
-					this.placeBossRoomWalls(collisionLayer, room, offsetX, offsetY, wallTile);
-				}
-			}
-
 			log.info("[DungeonGen] Dungeon room added at coordinates {}, {} (boss={})", offsetX, offsetY, isBossRoom);
 			if (previousRoom != null) {
 				final int previousRoomCenterX = previousRoomOffsetX + (previousRoom.getWidth() / 2);
@@ -155,8 +152,10 @@ public class DungeonGenerator {
 				if (isBossRoom) {
 					this.bossRoomCenterX = roomCenterX;
 					this.bossRoomCenterY = roomCenterY;
-					this.carveBossRoomEntrance(baseLayer, collisionLayer, offsetX, offsetY,
-							room.getWidth(), room.getHeight());
+					bossRoomOffsetX = offsetX;
+					bossRoomOffsetY = offsetY;
+					bossRoomWidth = room.getWidth();
+					bossRoomHeight = room.getHeight();
 				}
 				this.dungeon.addVertex(previousRoom);
 				this.dungeon.addVertex(room);
@@ -166,34 +165,51 @@ public class DungeonGenerator {
 			previousRoomOffsetY = offsetY;
 			previousRoom = room;
 		}
+
+		// Post-processing: line all walkable areas with wall tiles
+		this.lineWithWalls(baseLayer, collisionLayer);
+
+		// Carve boss room entrance AFTER wall lining so the opening isn't blocked
+		if (bossRoomOffsetX >= 0) {
+			this.carveBossRoomEntrance(baseLayer, collisionLayer,
+					bossRoomOffsetX, bossRoomOffsetY, bossRoomWidth, bossRoomHeight);
+		}
+
 		return Arrays.asList(baseLayer, collisionLayer);
 	}
 
-	private void placeBossRoomWalls(TileMap collisionLayer, TileMap room, int offsetX, int offsetY, TileModel wallTile) {
-		for (int row = 0; row < room.getHeight(); row++) {
-			for (int col = 0; col < room.getWidth(); col++) {
-				Tile tile = room.getBlocks()[row][col];
-				if (tile == null || tile.isVoid()) continue;
-				// Check if this tile is on the edge of the room shape
-				boolean isEdge = false;
-				if (row == 0 || col == 0 || row == room.getHeight() - 1 || col == room.getWidth() - 1) {
-					isEdge = true;
-				} else {
-					// Check if any neighbor is void/null
-					if (room.getBlocks()[row - 1][col] == null || room.getBlocks()[row - 1][col].isVoid()
-							|| room.getBlocks()[row + 1][col] == null || room.getBlocks()[row + 1][col].isVoid()
-							|| room.getBlocks()[row][col - 1] == null || room.getBlocks()[row][col - 1].isVoid()
-							|| room.getBlocks()[row][col + 1] == null || room.getBlocks()[row][col + 1].isVoid()) {
-						isEdge = true;
+	private void lineWithWalls(TileMap baseLayer, TileMap collisionLayer) {
+		TileModel wallTile = this.getWallTile();
+		if (wallTile == null) return;
+
+		Tile[][] baseTiles = baseLayer.getBlocks();
+		Tile[][] collTiles = collisionLayer.getBlocks();
+
+		for (int row = 0; row < this.height; row++) {
+			for (int col = 0; col < this.width; col++) {
+				// Only place walls on void positions
+				Tile baseTile = baseTiles[row][col];
+				if (baseTile != null && !baseTile.isVoid()) continue;
+				if (collTiles[row][col] != null && !collTiles[row][col].isVoid()) continue;
+
+				// Check if any of the 8 neighbors is a floor tile
+				boolean adjacentToFloor = false;
+				for (int dr = -1; dr <= 1 && !adjacentToFloor; dr++) {
+					for (int dc = -1; dc <= 1 && !adjacentToFloor; dc++) {
+						if (dr == 0 && dc == 0) continue;
+						int nr = row + dr;
+						int nc = col + dc;
+						if (nr >= 0 && nr < this.height && nc >= 0 && nc < this.width) {
+							Tile neighbor = baseTiles[nr][nc];
+							if (neighbor != null && !neighbor.isVoid()) {
+								adjacentToFloor = true;
+							}
+						}
 					}
 				}
-				if (isEdge) {
-					int targetRow = row + offsetY;
-					int targetCol = col + offsetX;
-					if (targetRow >= 0 && targetRow < collisionLayer.getHeight()
-							&& targetCol >= 0 && targetCol < collisionLayer.getWidth()) {
-						collisionLayer.setTileAt(targetRow, targetCol, wallTile);
-					}
+
+				if (adjacentToFloor) {
+					collisionLayer.setTileAt(row, col, wallTile);
 				}
 			}
 		}
