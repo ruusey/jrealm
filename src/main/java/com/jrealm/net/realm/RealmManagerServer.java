@@ -322,8 +322,23 @@ public class RealmManagerServer implements Runnable {
 		staleProcessingThreads.forEach(thread -> {
 			try {
 				thread.getValue().setShutdownProcessing(true);
+				// Remove the player from the realm before removing the client thread
+				final Long dcPlayerId = this.remoteAddresses.get(thread.getKey());
+				if (dcPlayerId != null) {
+					final Realm playerRealm = this.findPlayerRealm(dcPlayerId);
+					if (playerRealm != null) {
+						final Player dcPlayer = playerRealm.getPlayer(dcPlayerId);
+						if (dcPlayer != null) {
+							this.persistPlayerAsync(dcPlayer);
+							playerRealm.getExpiredPlayers().add(dcPlayerId);
+							playerRealm.removePlayer(dcPlayer);
+							log.info("[SERVER] Removed disconnected player {} from realm", dcPlayer.getName());
+						}
+					}
+					this.clearPlayerState(dcPlayerId);
+					this.remoteAddresses.remove(thread.getKey());
+				}
 				this.server.getClients().remove(thread.getKey());
-				this.server.getClients().remove(thread.getKey(), thread.getValue());
 			} catch (Exception e) {
 				log.error("[SERVER] Failed to remove stale processing threads. Reason:  {}", e);
 			}
@@ -451,29 +466,20 @@ public class RealmManagerServer implements Runnable {
 								}
 							}
 						}
-						// Experimental transmit other player data
-						// Get the other players that arent the currrent player
-//						final Player[] otherPlayers = realm
-//								.getPlayersInBounds(realm.getTileManager().getRenderViewPort(player.getValue()));
-//						if (otherPlayers.length > 0) {
-//							// Make sure the player is in the viewport, to save bandwidth
-//							for (Player other : otherPlayers) {
-//								final UpdatePacket updatePacket = realm.getPlayerAsPacket(other.getId());
-//								// Check if player state has diffs and send it to the player
-//								// if any player data has changed
-//								if (this.playerUpdateState.get(other.getId()) == null) {
-//									this.playerUpdateState.put(other.getId(), updatePacket);
-//									this.enqueueServerPacket(player.getValue(), updatePacket);
-//								} else {
-//									final UpdatePacket oldUpdate = this.playerUpdateState.get(other.getId());
-//									if (!oldUpdate.equals(updatePacket, false)) {
-//										this.playerUpdateState.put(other.getId(), updatePacket);
-//										this.enqueueServerPacket(player.getValue(), updatePacket);
-//									}
-//								}
-//
-//							}
-//						}
+						// Transmit nearby other players' UpdatePackets (equipment, stats, effects)
+						final Player[] otherPlayers = realm
+								.getPlayersInBounds(realm.getTileManager().getRenderViewPort(player.getValue()));
+						for (Player other : otherPlayers) {
+							if (other.getId() == player.getKey()) continue;
+							try {
+								final UpdatePacket otherUpdate = realm.getPlayerAsPacket(other.getId());
+								if (otherUpdate != null) {
+									this.enqueueServerPacket(player.getValue(), otherUpdate);
+								}
+							} catch (Exception ex) {
+								log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
+							}
+						}
 
 						//if (this.transmitLoadPacket || this.disablePartialTransmission) {
 							// Get LoadPacket for this player
@@ -709,14 +715,20 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void disconnectPlayer(Player player) {
-		final ProcessingThread playerThread = this.getPlayerProcessingThread(player);
-		final String playerRemoteAddr = this.getPlayerRemoteAddress(player);
 		try {
 			log.info("[SERVER] Disconnecting Player {}", player.getName());
 			final Realm playerRealm = this.findPlayerRealm(player.getId());
-			playerRealm.removePlayer(player);
-			playerThread.setShutdownProcessing(true);
-			this.server.getClients().remove(playerRemoteAddr);
+			if (playerRealm != null) {
+				playerRealm.getExpiredPlayers().add(player.getId());
+				playerRealm.removePlayer(player);
+			}
+			this.clearPlayerState(player.getId());
+			final Map.Entry<String, ProcessingThread> threadEntry = this.getPlayerProcessingThreadEntry(player);
+			if (threadEntry != null) {
+				threadEntry.getValue().setShutdownProcessing(true);
+				this.server.getClients().remove(threadEntry.getKey());
+				this.remoteAddresses.remove(threadEntry.getKey());
+			}
 		} catch (Exception e) {
 			log.error("[SERVER] Failed to disconnect player. Reason:  {}", e);
 		}

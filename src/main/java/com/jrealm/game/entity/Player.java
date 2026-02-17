@@ -157,6 +157,7 @@ public class Player extends Entity {
 		int size = end - start;
 		int idx = 0;
 		GameItem[] items = new GameItem[size];
+		if (this.inventory == null) return items;
 		for (int i = start; i < end; i++) {
 			items[idx++] = this.inventory[i];
 		}
@@ -385,9 +386,11 @@ public class Player extends Entity {
 		this.name = packet.getPlayerName();
 		this.stats = packet.getStats().asStats();
 		this.inventory = packet.getInventory()==null? null:IOService.mapModel(packet.getInventory(), GameItem[].class);
-		for (GameItem item : this.inventory) {
-			if (item != null) {
-				GameDataManager.loadSpriteModel(item);
+		if (this.inventory != null) {
+			for (GameItem item : this.inventory) {
+				if (item != null) {
+					GameDataManager.loadSpriteModel(item);
+				}
 			}
 		}
 		this.health = packet.getHealth();
