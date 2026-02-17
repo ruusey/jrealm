@@ -19,12 +19,15 @@ import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
+import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.DungeonGenerationParams;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
+import com.jrealm.util.GameObjectUtils;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.net.Packet;
@@ -110,20 +113,36 @@ public class ServerGameLogic {
 			if (realmAtDepth.isEmpty()) {
 				final Realm generatedRealm = new Realm(true, portalUsed.getMapId(), portalUsed.getTargetRealmDepth());
 				targetRealm = generatedRealm;
-				if (portalUsed.getMapId() == 5) {
-					user.setPos(generatedRealm.getTileManager().getSafePosition());
+
+				generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
+				user.setPos(generatedRealm.getTileManager().getSafePosition());
+
+				// Place exit portal and boss enemy in the boss room if one was generated
+				final Vector2f bossSpawnPos = generatedRealm.getTileManager().getBossSpawnPos();
+				final MapModel mapModel = GameDataManager.MAPS.get(portalUsed.getMapId());
+				if (bossSpawnPos != null && mapModel.getDungeonParams() != null) {
+					final DungeonGenerationParams dungeonParams = mapModel.getDungeonParams();
+					final int bossEnemyId = dungeonParams.getBossEnemyId();
+					if (bossEnemyId > 0) {
+						final Enemy boss = GameObjectUtils.getEnemyFromId(bossEnemyId, bossSpawnPos.clone());
+						boss.setHealth(boss.getHealth() * 4);
+						boss.getStats().setHp((short) (boss.getStats().getHp() * 4));
+						generatedRealm.addEnemy(boss);
+					}
+
+					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3,
+							bossSpawnPos.clone(250, 0));
+					exitPortal.linkPortal(generatedRealm, currentRealm);
+					exitPortal.setNeverExpires();
+					generatedRealm.addPortal(exitPortal);
 				} else {
 					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3,
 							generatedRealm.getTileManager().getSafePosition());
-
-					user.setPos(generatedRealm.getTileManager().getSafePosition());
-
 					exitPortal.linkPortal(generatedRealm, currentRealm);
 					exitPortal.setNeverExpires();
-
-					generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
 					generatedRealm.addPortal(exitPortal);
 				}
+
 				mgr.addRealm(generatedRealm);
 			} else {
 				realmAtDepth.get().addPlayer(user);

@@ -155,9 +155,8 @@ public class DungeonGenerator {
 				if (isBossRoom) {
 					this.bossRoomCenterX = roomCenterX;
 					this.bossRoomCenterY = roomCenterY;
-					this.carveBossRoomEntrance(collisionLayer, offsetX, offsetY,
-							room.getWidth(), room.getHeight(),
-							previousRoomCenterX, previousRoomCenterY, roomCenterX, roomCenterY);
+					this.carveBossRoomEntrance(baseLayer, collisionLayer, offsetX, offsetY,
+							room.getWidth(), room.getHeight());
 				}
 				this.dungeon.addVertex(previousRoom);
 				this.dungeon.addVertex(room);
@@ -200,35 +199,68 @@ public class DungeonGenerator {
 		}
 	}
 
-	private void carveBossRoomEntrance(TileMap collisionLayer, int roomOffsetX, int roomOffsetY,
-			int roomWidth, int roomHeight, int prevCenterX, int prevCenterY, int roomCenterX, int roomCenterY) {
-		int dx = prevCenterX - roomCenterX;
-		int dy = prevCenterY - roomCenterY;
-		int halfOpening = 2;
-		int depth = 2;
+	private void carveBossRoomEntrance(TileMap baseLayer, TileMap collisionLayer,
+			int roomOffsetX, int roomOffsetY, int roomWidth, int roomHeight) {
+		// Scan 1 tile outside each edge of the boss room. Where the hallway has placed
+		// floor tiles adjacent to the room, carve through the wall to create an opening.
+		int halfOpening = 1;
 
-		if (Math.abs(dx) >= Math.abs(dy)) {
-			// Entry from the left or right side
-			int edgeCol = dx > 0 ? roomOffsetX : roomOffsetX + roomWidth - 1;
-			int centerRow = roomOffsetY + roomHeight / 2;
-			for (int r = centerRow - halfOpening; r <= centerRow + halfOpening; r++) {
-				for (int d = 0; d < depth; d++) {
-					int col = dx > 0 ? edgeCol + d : edgeCol - d;
-					if (r >= 0 && r < collisionLayer.getHeight() && col >= 0 && col < collisionLayer.getWidth()) {
-						collisionLayer.getBlocks()[r][col] = null;
-					}
+		// Check top edge (row just above room)
+		int topRow = roomOffsetY - 1;
+		if (topRow >= 0) {
+			for (int col = roomOffsetX; col < roomOffsetX + roomWidth; col++) {
+				if (col < 0 || col >= baseLayer.getWidth()) continue;
+				Tile outside = baseLayer.getBlocks()[topRow][col];
+				if (outside != null && !outside.isVoid()) {
+					this.carveWallAt(collisionLayer, roomOffsetY, col, halfOpening);
 				}
 			}
-		} else {
-			// Entry from the top or bottom
-			int edgeRow = dy > 0 ? roomOffsetY : roomOffsetY + roomHeight - 1;
-			int centerCol = roomOffsetX + roomWidth / 2;
-			for (int c = centerCol - halfOpening; c <= centerCol + halfOpening; c++) {
-				for (int d = 0; d < depth; d++) {
-					int row = dy > 0 ? edgeRow + d : edgeRow - d;
-					if (row >= 0 && row < collisionLayer.getHeight() && c >= 0 && c < collisionLayer.getWidth()) {
-						collisionLayer.getBlocks()[row][c] = null;
-					}
+		}
+
+		// Check bottom edge (row just below room)
+		int bottomRow = roomOffsetY + roomHeight;
+		if (bottomRow < baseLayer.getHeight()) {
+			for (int col = roomOffsetX; col < roomOffsetX + roomWidth; col++) {
+				if (col < 0 || col >= baseLayer.getWidth()) continue;
+				Tile outside = baseLayer.getBlocks()[bottomRow][col];
+				if (outside != null && !outside.isVoid()) {
+					this.carveWallAt(collisionLayer, roomOffsetY + roomHeight - 1, col, halfOpening);
+				}
+			}
+		}
+
+		// Check left edge (col just left of room)
+		int leftCol = roomOffsetX - 1;
+		if (leftCol >= 0) {
+			for (int row = roomOffsetY; row < roomOffsetY + roomHeight; row++) {
+				if (row < 0 || row >= baseLayer.getHeight()) continue;
+				Tile outside = baseLayer.getBlocks()[row][leftCol];
+				if (outside != null && !outside.isVoid()) {
+					this.carveWallAt(collisionLayer, row, roomOffsetX, halfOpening);
+				}
+			}
+		}
+
+		// Check right edge (col just right of room)
+		int rightCol = roomOffsetX + roomWidth;
+		if (rightCol < baseLayer.getWidth()) {
+			for (int row = roomOffsetY; row < roomOffsetY + roomHeight; row++) {
+				if (row < 0 || row >= baseLayer.getHeight()) continue;
+				Tile outside = baseLayer.getBlocks()[row][rightCol];
+				if (outside != null && !outside.isVoid()) {
+					this.carveWallAt(collisionLayer, row, roomOffsetX + roomWidth - 1, halfOpening);
+				}
+			}
+		}
+	}
+
+	private void carveWallAt(TileMap collisionLayer, int row, int col, int halfOpening) {
+		for (int dr = -halfOpening; dr <= halfOpening; dr++) {
+			for (int dc = -halfOpening; dc <= halfOpening; dc++) {
+				int nr = row + dr;
+				int nc = col + dc;
+				if (nr >= 0 && nr < collisionLayer.getHeight() && nc >= 0 && nc < collisionLayer.getWidth()) {
+					collisionLayer.getBlocks()[nr][nc] = null;
 				}
 			}
 		}
