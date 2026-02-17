@@ -6,7 +6,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
-import java.nio.ByteBuffer;
+
 import java.time.Instant;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -96,8 +96,10 @@ public class SocketClient implements Runnable {
                 this.remoteBufferIndex += bytesRead;
 
                 while (this.remoteBufferIndex >= 5) {
-                    int packetLength = (ByteBuffer.allocate(4).put(this.remoteBuffer[1]).put(this.remoteBuffer[2])
-                            .put(this.remoteBuffer[3]).put(this.remoteBuffer[4]).rewind()).getInt();
+                    int packetLength = ((this.remoteBuffer[1] & 0xFF) << 24)
+                                     | ((this.remoteBuffer[2] & 0xFF) << 16)
+                                     | ((this.remoteBuffer[3] & 0xFF) << 8)
+                                     |  (this.remoteBuffer[4] & 0xFF);
                     if (this.remoteBufferIndex < (packetLength)) {
                         break;
                     }

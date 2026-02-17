@@ -21,7 +21,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+
 import java.util.Set;
 
 import org.modelmapper.AbstractConverter;
@@ -146,23 +146,31 @@ public class IOService {
 	}
 
 	public static byte[] writePacket(Packet packet, DataOutputStream stream) throws Exception {
-		// Write the data bytes to a separate output stream so we know what 
-		// length to include in the header. Look into preserving the original packet data
-		// underlying byte array to use its length instead of calculating it at write time
-		final ByteArrayOutputStream tempByteStream = new ByteArrayOutputStream();
-		final DataOutputStream tempOutStream = new DataOutputStream(tempByteStream);
-		writeStream(packet, tempOutStream);
+		// Write payload to temp stream to determine length
+		final ByteArrayOutputStream payloadStream = new ByteArrayOutputStream();
+		final DataOutputStream payloadOut = new DataOutputStream(payloadStream);
+		writeStream(packet, payloadOut);
+		final byte[] payload = payloadStream.toByteArray();
 
-		final ByteArrayOutputStream byteStreamFinal = new ByteArrayOutputStream();
-		final DataOutputStream streamfinal = new DataOutputStream(byteStreamFinal);
-		// Write header
-		addHeader(packet, tempByteStream.toByteArray().length, streamfinal);
-		// Write data
-		streamfinal.write(tempByteStream.toByteArray());
-		// Write result to output stream
-		stream.write(byteStreamFinal.toByteArray());
-		// return written bytes length
-		return byteStreamFinal.toByteArray();
+		// Look up packet ID via O(1) reverse map
+		final Byte packetId = PacketType.getPacketId(packet.getClass());
+		if (packetId == null) {
+			log.error("[IOService] NO PACKET MAPPING FOR PACKET {}", packet);
+			return new byte[0];
+		}
+
+		// Build complete frame: header (1 byte id + 4 byte length) + payload
+		final int frameSize = NetConstants.PACKET_HEADER_SIZE + payload.length;
+		final ByteArrayOutputStream frameStream = new ByteArrayOutputStream(frameSize);
+		final DataOutputStream frameOut = new DataOutputStream(frameStream);
+		frameOut.writeByte(packetId);
+		frameOut.writeInt(payload.length + NetConstants.PACKET_HEADER_SIZE);
+		frameOut.write(payload);
+		final byte[] frame = frameStream.toByteArray();
+
+		// Write to target stream
+		stream.write(frame);
+		return frame;
 	}
 
 	public static int writeStream(Object model, DataOutputStream stream0) throws Exception {
@@ -253,12 +261,12 @@ public class IOService {
 	}
 
 	public static void addHeader(Packet packet, int dataSize, DataOutputStream stream) throws Exception {
-		Entry<Byte, Class<? extends Packet>> targetPacket = PacketType.valueOf(packet.getClass());
-		if(targetPacket==null) {
+		final Byte packetId = PacketType.getPacketId(packet.getClass());
+		if(packetId==null) {
 			log.error("[IOService] NO PACKET MAPPING FOR PACKET {}", packet);
 			return;
 		}
-		stream.writeByte(targetPacket.getKey());
+		stream.writeByte(packetId);
 		stream.writeInt(dataSize + NetConstants.PACKET_HEADER_SIZE);
 	}
 

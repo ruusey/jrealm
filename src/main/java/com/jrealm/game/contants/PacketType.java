@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PacketType {
     private static Map<Byte, Class<? extends Packet>> map = new HashMap<>();
+    private static Map<Class<? extends Packet>, Byte> reverseMap = new HashMap<>();
 
     private byte packetId;
     private Class<? extends Packet> packetClass;
@@ -25,7 +26,7 @@ public class PacketType {
     			// If not streamable at all dont bother
     			if (!IOService.isStreamableClass(clazz) || !clazz.getSuperclass().equals(Packet.class))
     				continue;
-    			
+
     			Packet packet = (Packet)clazz.getDeclaredConstructor().newInstance();
     			PacketId id = packet.getClass().getAnnotation(PacketId.class);
     			if(id == null) {
@@ -38,13 +39,14 @@ public class PacketType {
     				log.info("[PacketMapper] Mapped packetId {} to packet class {}", id.packetId(), packet.getClass());
 
         			PacketType.map.put(id.packetId(), packet.getClass());
+        			PacketType.reverseMap.put(packet.getClass(), id.packetId());
     			}
     		}
     	}catch(Exception e) {
     		log.error("[PacketMapper] **CRITICAL** Failed to load packet types from classpath. Reason: {}", e);
     		System.exit(-1);
     	}
-    	
+
     }
 
     private PacketType(byte entityTypeId, Class<? extends Packet> packetClass) {
@@ -68,7 +70,13 @@ public class PacketType {
         return PacketType.map.get(Byte.valueOf((byte) value));
     }
     
+    public static Byte getPacketId(Class<?> packetClass) {
+        return PacketType.reverseMap.get(packetClass);
+    }
+
     public static Entry<Byte, Class<? extends Packet>> valueOf(Class<?> packetClass) {
-        return PacketType.map.entrySet().stream().filter(packet->packet.getValue().equals(packetClass)).findAny().orElse(null);
+        final Byte id = PacketType.reverseMap.get(packetClass);
+        if (id == null) return null;
+        return Map.entry(id, PacketType.map.get(id));
     }
 }

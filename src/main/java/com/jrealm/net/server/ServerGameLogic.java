@@ -440,7 +440,7 @@ public class ServerGameLogic {
 					(0 + (JRealmGame.height / 2)) - GlobalConstants.PLAYER_SIZE);
 			player = new Player(assignedId, playerPos, GlobalConstants.PLAYER_SIZE, cls);
 			final Realm targetRealm = mgr.getTopRealm();
-			final ProcessingThread userThread = mgr.getServer().getClients().get(command.getSrcIp());
+			final ClientSession userSession = mgr.getServer().getClients().get(command.getSrcIp());
 			player.setAccountUuid(accountUuid);
 			player.setCharacterUuid(targetCharacter.getCharacterUuid());
 			player.equipSlots(loadedEquipment);
@@ -451,7 +451,7 @@ public class ServerGameLogic {
 			player.setPos(targetRealm.getTileManager().getSafePosition());
 			targetRealm.addPlayer(player);
 			// Begin processing.
-			userThread.setHandshakeComplete(true);
+			userSession.setHandshakeComplete(true);
 
 			final LoginResponseMessage message = LoginResponseMessage.builder()
 					.classId(targetCharacter.getCharacterClass()).spawnX(player.getPos().x).spawnY(player.getPos().y)

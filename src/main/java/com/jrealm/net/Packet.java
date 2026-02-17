@@ -1,5 +1,6 @@
 package com.jrealm.net;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.contants.PacketType;
@@ -34,6 +35,13 @@ public abstract class Packet implements GameMessage {
     @Override
     public int serializeWrite(DataOutputStream stream) throws Exception {
 		return IOService.writePacket(this, stream).length;
+    }
+
+    public byte[] serializeToBytes() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        IOService.writePacket(this, dos);
+        return baos.toByteArray();
     }
 
     @Override

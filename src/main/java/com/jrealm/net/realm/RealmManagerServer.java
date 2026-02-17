@@ -1,7 +1,5 @@
 package com.jrealm.net.realm;
 
-import java.io.DataOutputStream;
-import java.io.OutputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -87,15 +85,15 @@ import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
-import com.jrealm.net.core.IOService;
+
 import com.jrealm.net.entity.NetTile;
 import com.jrealm.net.entity.NetObjectMovement;
 import com.jrealm.net.messaging.ServerCommandMessage;
-import com.jrealm.net.server.ProcessingThread;
+import com.jrealm.net.server.ClientSession;
+import com.jrealm.net.server.NioServer;
 import com.jrealm.net.server.ServerCommandHandler;
 import com.jrealm.net.server.ServerGameLogic;
 import com.jrealm.net.server.ServerTradeManager;
-import com.jrealm.net.server.SocketServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
@@ -120,7 +118,7 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings("unused")
 public class RealmManagerServer implements Runnable {
 	
-	private SocketServer server;
+	private NioServer server;
 	private boolean shutdown = false;
 	private Reflections classPathScanner = new Reflections("com.jrealm", Scanners.SubTypes, Scanners.MethodsAnnotated);
 	private MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
@@ -193,7 +191,7 @@ public class RealmManagerServer implements Runnable {
 			return;
 		}
 		// Start listening for connections
-		this.server = new SocketServer(2222);
+		this.server = new NioServer(2222);
 		this.registerRealmDecorators();
 		this.registerEnemyScripts();
 		this.registerPacketCallbacks();
@@ -313,17 +311,19 @@ public class RealmManagerServer implements Runnable {
 		while (!this.outboundPacketQueue.isEmpty()) {
 			packetsToBroadcast.add(this.outboundPacketQueue.remove());
 		}
-		final List<Map.Entry<String, ProcessingThread>> staleProcessingThreads = new ArrayList<>();
-		for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
-			if (client.getValue().getClientSocket().isClosed() || !client.getValue().getClientSocket().isConnected()) {
-				staleProcessingThreads.add(client);
+
+		// Detect stale sessions
+		final List<Map.Entry<String, ClientSession>> staleSessions = new ArrayList<>();
+		for (final Map.Entry<String, ClientSession> client : this.server.getClients().entrySet()) {
+			if (!client.getValue().isConnected() || client.getValue().isShutdownProcessing()) {
+				staleSessions.add(client);
 			}
 		}
-		staleProcessingThreads.forEach(thread -> {
+		staleSessions.forEach(entry -> {
 			try {
-				thread.getValue().setShutdownProcessing(true);
-				// Remove the player from the realm before removing the client thread
-				final Long dcPlayerId = this.remoteAddresses.get(thread.getKey());
+				entry.getValue().setShutdownProcessing(true);
+				// Remove the player from the realm before removing the client session
+				final Long dcPlayerId = this.remoteAddresses.get(entry.getKey());
 				if (dcPlayerId != null) {
 					final Realm playerRealm = this.findPlayerRealm(dcPlayerId);
 					if (playerRealm != null) {
@@ -336,62 +336,69 @@ public class RealmManagerServer implements Runnable {
 						}
 					}
 					this.clearPlayerState(dcPlayerId);
-					this.remoteAddresses.remove(thread.getKey());
+					this.remoteAddresses.remove(entry.getKey());
 				}
-				this.server.getClients().remove(thread.getKey());
+				entry.getValue().close();
+				this.server.getClients().remove(entry.getKey());
 			} catch (Exception e) {
-				log.error("[SERVER] Failed to remove stale processing threads. Reason:  {}", e);
+				log.error("[SERVER] Failed to remove stale session. Reason:  {}", e);
 			}
 		});
-		for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
+
+		// Pre-serialize broadcast packets once
+		final List<byte[]> broadcastFrames = new ArrayList<>();
+		for (final Packet packet : packetsToBroadcast) {
 			try {
+				final byte[] frame = packet.serializeToBytes();
+				broadcastFrames.add(frame);
+				this.bytesWritten += frame.length;
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to serialize broadcast packet. Reason: {}", e);
+			}
+		}
+
+		for (final Map.Entry<String, ClientSession> client : this.server.getClients().entrySet()) {
+			try {
+				final ClientSession session = client.getValue();
 				final Player player = this.getPlayerByRemoteAddress(client.getKey());
 				if (player == null) {
 					log.error("[SERVER] Player {} has not yet completed login, skipping broadcast", client.getKey());
 					continue;
 				}
 
+				// Enqueue broadcast frames (already serialized)
+				for (final byte[] frame : broadcastFrames) {
+					session.enqueueWrite(frame);
+				}
+
 				// Dequeue and send any player specific packets
-				final List<Packet> playerPackets = new ArrayList<>();
 				final ConcurrentLinkedQueue<Packet> playerPacketsToSend = this.playerOutboundPacketQueue
 						.get(player.getId());
 
 				while ((playerPacketsToSend != null) && !playerPacketsToSend.isEmpty()) {
-					playerPackets.add(playerPacketsToSend.remove());
-				}
-
-				final OutputStream toClientStream = client.getValue().getClientSocket().getOutputStream();
-				final DataOutputStream dosToClient = new DataOutputStream(toClientStream);
-
-				// Globally sent packets
-				for (final Packet packet : packetsToBroadcast) {
-					this.bytesWritten += packet.serializeWrite(dosToClient);
-				}
-
-				for (final Packet packet : playerPackets) {
-					int bytesWritten = packet.serializeWrite(dosToClient);
-					Entry<Byte, Class<? extends Packet>> targetPacket = PacketType.valueOf(packet.getClass());
-					this.bytesWritten += bytesWritten;
+					final Packet packet = playerPacketsToSend.remove();
+					try {
+						final byte[] frame = packet.serializeToBytes();
+						session.enqueueWrite(frame);
+						this.bytesWritten += frame.length;
+					} catch (Exception e) {
+						log.error("[SERVER] Failed to serialize player packet. Reason: {}", e);
+					}
 				}
 			} catch (Exception e) {
-				//RealmManagerServer.log.error("[SERVER] Failed to get OutputStream to Client. Reason: {}", e);
+				//RealmManagerServer.log.error("[SERVER] Failed to enqueue data to Client. Reason: {}", e);
 			}
 		}
-		
-//		for(String disconnectedClient : disconnectedClients) {
-//			this.server.getClients().remove(disconnectedClient);
-//		}
+
 		// Print server write rate to all connected clients (kbit/s)
 		if (Instant.now().toEpochMilli() - this.lastWriteSampleTime > 1000) {
 			this.lastWriteSampleTime = Instant.now().toEpochMilli();
 			RealmManagerServer.log.info("[SERVER] current write rate = {} kbit/s",
 					(float) (this.bytesWritten / 1024.0f) * 8.0f);
 			this.bytesWritten = 0;
-
 		}
 		long nanosDiff = System.nanoTime() - startNanos;
 		log.debug("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double) nanosDiff / (double) 1000000l));
-
 	}
 
 	// Enqueues outbound game packets every tick. Manages
@@ -621,11 +628,11 @@ public class RealmManagerServer implements Runnable {
 	// pass the packet and RealmManager context to the handler
 	// script
 	public void processServerPackets() {
-		for (final Map.Entry<String, ProcessingThread> thread : this.getServer().getClients().entrySet()) {
-			if (!thread.getValue().isShutdownProcessing()) {
-				// Read all packets from the ProcessingThread (client's) queue
-				while (!thread.getValue().getPacketQueue().isEmpty()) {
-					final Packet packet = thread.getValue().getPacketQueue().remove();
+		for (final Map.Entry<String, ClientSession> entry : this.getServer().getClients().entrySet()) {
+			if (!entry.getValue().isShutdownProcessing()) {
+				// Read all packets from the ClientSession queue
+				while (!entry.getValue().getPacketQueue().isEmpty()) {
+					final Packet packet = entry.getValue().getPacketQueue().remove();
 					try {
 						Packet created = packet;
 						created.setSrcIp(packet.getSrcIp());
@@ -665,14 +672,14 @@ public class RealmManagerServer implements Runnable {
 								PacketType.valueOf(created.getId()), (System.nanoTime() - start));
 					} catch (Exception e) {
 						RealmManagerServer.log.error("Failed to process server packets {}", e);
-						thread.getValue().setShutdownProcessing(true);
+						entry.getValue().setShutdownProcessing(true);
 					}
 				}
 			} else {
 				// Player Disconnect routine
-				final Long dcPlayerId = this.getRemoteAddresses().get(thread.getKey());
+				final Long dcPlayerId = this.getRemoteAddresses().get(entry.getKey());
 				if (dcPlayerId == null) {
-					thread.getValue().setShutdownProcessing(true);
+					entry.getValue().setShutdownProcessing(true);
 					return;
 				}
 				final Realm playerLocation = this.findPlayerRealm(dcPlayerId);
@@ -682,14 +689,15 @@ public class RealmManagerServer implements Runnable {
 					playerLocation.getExpiredPlayers().add(dcPlayerId);
 					playerLocation.getPlayers().remove(dcPlayerId);
 				}
-				this.server.getClients().remove(thread.getKey());
+				entry.getValue().close();
+				this.server.getClients().remove(entry.getKey());
 			}
 		}
 	}
 
-	public Map.Entry<String, ProcessingThread> getPlayerProcessingThreadEntry(Player player) {
-		Map.Entry<String, ProcessingThread> result = null;
-		for (final Map.Entry<String, ProcessingThread> client : this.server.getClients().entrySet()) {
+	public Map.Entry<String, ClientSession> getPlayerSessionEntry(Player player) {
+		Map.Entry<String, ClientSession> result = null;
+		for (final Map.Entry<String, ClientSession> client : this.server.getClients().entrySet()) {
 			if (this.remoteAddresses.get(client.getKey()) == player.getId()) {
 				result = client;
 			}
@@ -706,12 +714,12 @@ public class RealmManagerServer implements Runnable {
 		return found;
 	}
 
-	public ProcessingThread getPlayerProcessingThread(Player player) {
-		return getPlayerProcessingThreadEntry(player).getValue();
+	public ClientSession getPlayerSession(Player player) {
+		return getPlayerSessionEntry(player).getValue();
 	}
 
 	public String getPlayerRemoteAddress(Player player) {
-		return getPlayerProcessingThreadEntry(player).getKey();
+		return getPlayerSessionEntry(player).getKey();
 	}
 
 	public void disconnectPlayer(Player player) {
@@ -723,11 +731,12 @@ public class RealmManagerServer implements Runnable {
 				playerRealm.removePlayer(player);
 			}
 			this.clearPlayerState(player.getId());
-			final Map.Entry<String, ProcessingThread> threadEntry = this.getPlayerProcessingThreadEntry(player);
-			if (threadEntry != null) {
-				threadEntry.getValue().setShutdownProcessing(true);
-				this.server.getClients().remove(threadEntry.getKey());
-				this.remoteAddresses.remove(threadEntry.getKey());
+			final Map.Entry<String, ClientSession> sessionEntry = this.getPlayerSessionEntry(player);
+			if (sessionEntry != null) {
+				sessionEntry.getValue().setShutdownProcessing(true);
+				sessionEntry.getValue().close();
+				this.server.getClients().remove(sessionEntry.getKey());
+				this.remoteAddresses.remove(sessionEntry.getKey());
 			}
 		} catch (Exception e) {
 			log.error("[SERVER] Failed to disconnect player. Reason:  {}", e);
