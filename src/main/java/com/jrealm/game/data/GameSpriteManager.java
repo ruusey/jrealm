@@ -178,10 +178,11 @@ public class GameSpriteManager {
                 GlobalConstants.BASE_SPRITE_SIZE, 0, baseRow);
 
         // Set up animation sets from the 4-row-per-class layout:
-        // Row 0 (baseRow+0): Side walk frames (cols: 0=stand, 1=step1, 2=step2)
+        // Row 0 (baseRow+0): Side walk frames (cols: 0=frameA, 1=frameB)
         // Row 1 (baseRow+1): Side attack frames (cols: 0=atk1, 1=atk2)
-        // Row 2 (baseRow+2): Front walk frames (cols: 0=stand, 1=step1, 2=step2)
+        // Row 2 (baseRow+2): Front walk frames (cols: 0=frameA, 1=frameB)
         // Row 3 (baseRow+3): Front attack frames (cols: 0=atk1, 1=atk2)
+        // Note: only cols 0-1 have valid sprites per row; col 2+ are empty
         int walkDur = 8;
         int atkDur = 5;
 
@@ -193,21 +194,17 @@ public class GameSpriteManager {
             Arrays.asList(classSprites.getSubSprite(0, baseRow + 2)),
             Arrays.asList(999));
 
-        // walk: stand -> step1 -> stand -> step2 (4-frame cycle)
+        // walk: 2-frame alternation (cols 0 and 1 only)
         classSprites.addAnimSet("walk_side",
             Arrays.asList(
                 classSprites.getSubSprite(0, baseRow),
-                classSprites.getSubSprite(1, baseRow),
-                classSprites.getSubSprite(0, baseRow),
-                classSprites.getSubSprite(2, baseRow)),
-            Arrays.asList(walkDur, walkDur, walkDur, walkDur));
+                classSprites.getSubSprite(1, baseRow)),
+            Arrays.asList(walkDur, walkDur));
         classSprites.addAnimSet("walk_front",
             Arrays.asList(
                 classSprites.getSubSprite(0, baseRow + 2),
-                classSprites.getSubSprite(1, baseRow + 2),
-                classSprites.getSubSprite(0, baseRow + 2),
-                classSprites.getSubSprite(2, baseRow + 2)),
-            Arrays.asList(walkDur, walkDur, walkDur, walkDur));
+                classSprites.getSubSprite(1, baseRow + 2)),
+            Arrays.asList(walkDur, walkDur));
 
         // attack: 2-frame cycle
         classSprites.addAnimSet("attack_side",
