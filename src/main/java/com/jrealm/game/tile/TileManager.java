@@ -45,6 +45,7 @@ public class TileManager {
     private static final Integer VIEWPORT_TILE_MAX = 20;
     private Semaphore mapLock = new Semaphore(1);
     private List<TileMap> mapLayers;
+    private Vector2f bossSpawnPos;
 
     // Server side constructor
     public TileManager(int mapId) {
@@ -61,6 +62,11 @@ public class TileManager {
 					params.getShapeTemplates(), params.getFloorTileIds(), params.getWallTileId(),
 					params.getHallwayStyles(), params.getBossEnemyId());
             this.mapLayers = dungeonGenerator.generateDungeon();
+            if (dungeonGenerator.getBossRoomCenterX() >= 0 && dungeonGenerator.getBossRoomCenterY() >= 0) {
+                this.bossSpawnPos = new Vector2f(
+                        dungeonGenerator.getBossRoomCenterX() * model.getTileSize(),
+                        dungeonGenerator.getBossRoomCenterY() * model.getTileSize());
+            }
         } else if(model.getTerrainId()>-1){
             final TerrainGenerationParameters params = GameDataManager.TERRAINS.get(model.getTerrainId());
             this.mapLayers = this.getLayersFromTerrain(model.getWidth(), model.getHeight(), model.getTileSize(),

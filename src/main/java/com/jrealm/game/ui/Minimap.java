@@ -120,10 +120,14 @@ public class Minimap {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
-        // Draw dark background
+        float mapCenterX = MARGIN + MINIMAP_PX / 2f;
+        float mapCenterY = MARGIN + MINIMAP_PX / 2f;
+        float mapRadius = MINIMAP_PX / 2f;
+
+        // Draw circular dark background
         shapes.begin(ShapeRenderer.ShapeType.Filled);
         shapes.setColor(BG_COLOR);
-        shapes.rect(MARGIN, MARGIN, MINIMAP_PX, MINIMAP_PX);
+        shapes.circle(mapCenterX, mapCenterY, mapRadius);
 
         // Draw tiles
         final Tile[][] baseTiles = baseLayer.getBlocks();
@@ -132,6 +136,14 @@ public class Minimap {
         for (int y = viewStartY; y < viewEndY; y++) {
             for (int x = viewStartX; x < viewEndX; x++) {
                 if (!this.discovered[y][x]) continue;
+
+                float screenX = MARGIN + (x - viewStartX) * pixelsPerTileX;
+                float screenY = MARGIN + (y - viewStartY) * pixelsPerTileY;
+                float tileCenterX = screenX + pixelsPerTileX / 2f;
+                float tileCenterY = screenY + pixelsPerTileY / 2f;
+                float dx = tileCenterX - mapCenterX;
+                float dy = tileCenterY - mapCenterY;
+                if (dx * dx + dy * dy > mapRadius * mapRadius) continue;
 
                 Tile collTile = (y < collTiles.length && x < collTiles[y].length) ? collTiles[y][x] : null;
                 Tile baseTile = (y < baseTiles.length && x < baseTiles[y].length) ? baseTiles[y][x] : null;
@@ -147,8 +159,6 @@ public class Minimap {
                     continue;
                 }
 
-                float screenX = MARGIN + (x - viewStartX) * pixelsPerTileX;
-                float screenY = MARGIN + (y - viewStartY) * pixelsPerTileY;
                 shapes.rect(screenX, screenY, pixelsPerTileX, pixelsPerTileY);
             }
         }
@@ -161,10 +171,10 @@ public class Minimap {
 
         shapes.end();
 
-        // Draw border
+        // Draw circular border
         shapes.begin(ShapeRenderer.ShapeType.Line);
         shapes.setColor(BORDER_COLOR);
-        shapes.rect(MARGIN, MARGIN, MINIMAP_PX, MINIMAP_PX);
+        shapes.circle(mapCenterX, mapCenterY, mapRadius);
         shapes.end();
 
         Gdx.gl.glDisable(GL20.GL_BLEND);

@@ -1,6 +1,7 @@
 package com.jrealm.game.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,6 +22,7 @@ import lombok.NoArgsConstructor;
 public class LootTableModel {
     private Integer enemyId;
     private Map<String, Float> drops;
+    private Map<String, Float> portalDrops;
 
     public List<GameItem> getLootDrop() {
         final List<GameItem> itemsToDrop = new ArrayList<>();
@@ -38,6 +40,17 @@ public class LootTableModel {
             }
         }
         return itemsToDrop;
+    }
+
+    public List<Integer> getPortalDrop() {
+        if (this.portalDrops == null || this.portalDrops.isEmpty()) return Collections.emptyList();
+        List<Integer> result = new ArrayList<>();
+        for (final Map.Entry<String, Float> entry : this.portalDrops.entrySet()) {
+            if (Realm.RANDOM.nextFloat() < entry.getValue()) {
+                result.add(Integer.parseInt(entry.getKey()));
+            }
+        }
+        return result;
     }
 
     public List<GameItem> getLootGroup(String groupKey) throws Exception {

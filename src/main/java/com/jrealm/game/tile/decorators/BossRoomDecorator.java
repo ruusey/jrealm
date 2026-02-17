@@ -17,8 +17,11 @@ public class BossRoomDecorator extends RealmDecoratorBase{
 
     @Override
     public void decorate(Realm input) {
-        final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
-                GlobalConstants.BASE_TILE_SIZE * 13);
+        Vector2f spawnPos = input.getTileManager().getBossSpawnPos();
+        if (spawnPos == null) {
+            spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
+                    GlobalConstants.BASE_TILE_SIZE * 13);
+        }
 
         final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, spawnPos.clone(250, 0));
         exitPortal.linkPortal(input, mgr.getTopRealm());
@@ -31,7 +34,7 @@ public class BossRoomDecorator extends RealmDecoratorBase{
         enemy.setPos(spawnPos.clone(200, 0));
 
         input.addEnemy(enemy);
-        input.addPortal(exitPortal);        
+        input.addPortal(exitPortal);
     }
 
     @Override

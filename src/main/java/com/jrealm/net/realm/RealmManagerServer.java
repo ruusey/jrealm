@@ -1515,53 +1515,47 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.spawnRandomEnemy();
 			}
 			targetRealm.removeEnemy(enemy);
-			// TODO: Possibly rewrite portal drops to come from loot table
-			if (targetRealm.getMapId() < 5 && Realm.RANDOM.nextInt(10) < 7) {
-
-				final PortalModel portalModel = this.getPortalToDepth(targetRealm.getDepth() + 1);
-				final Portal toNewRealmPortal = new Portal(Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(),
-						enemy.getPos().withNoise(64, 64));
-
-				final Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth() - 1);
-				if (realmAtDepth.isEmpty()) {
-					toNewRealmPortal.linkPortal(targetRealm, null);
-					log.info("[SERVER] New portal created. Will generate realm id {} on use", portalModel.getTargetRealmDepth());
-
-				} else {
-					toNewRealmPortal.linkPortal(targetRealm, realmAtDepth.get());
-					log.info("[SERVER] Linking Portal {} to existing realm {}", toNewRealmPortal,
-							realmAtDepth.get().getRealmId());
-				}
-				targetRealm.addPortal(toNewRealmPortal);
-			}
-
-			// Dungeon spawn chance
-			if (Realm.RANDOM.nextInt(10) < 10) {
-				final List<PortalModel> dungeonPortals = GameDataManager.PORTALS.values().stream()
-						.filter(p -> p.getTargetRealmDepth() >= 999).collect(Collectors.toList());
-				log.info("Available dungeons: {}", dungeonPortals);
-				if (!dungeonPortals.isEmpty()) {
-					final PortalModel dungeonPortalModel = dungeonPortals
-							.get(Realm.RANDOM.nextInt(dungeonPortals.size()));
-					final Portal toDungeonPortal = new Portal(Realm.RANDOM.nextLong(),
-							(short) dungeonPortalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
-					toDungeonPortal.linkPortal(targetRealm, null);
-					targetRealm.addPortal(toDungeonPortal);
-				}
-			}
 
 			// Try to get the loot model mapped by this enemyId
 			final LootTableModel lootTable = GameDataManager.LOOT_TABLES.get(enemy.getEnemyId());
 			if (lootTable == null) {
 				log.warn("[SERVER] No loot table registered for enemy {}", enemy.getEnemyId());
-				throw new IllegalStateException("No loot table registered for enemy " + enemy.getEnemyId());
+				return;
 			}
+
 			// Get a random loot bag drop based on this enemies loot table
-			final List<GameItem> lootToDrop = GameDataManager.LOOT_TABLES.get(enemy.getEnemyId()).getLootDrop();
+			final List<GameItem> lootToDrop = lootTable.getLootDrop();
 			if (lootToDrop.size() > 0) {
 				final LootContainer dropsBag = new LootContainer(LootTier.BLUE, enemy.getPos().withNoise(64, 64),
 						lootToDrop.toArray(new GameItem[0]));
 				targetRealm.addLootContainer(dropsBag);
+			}
+
+			// Portal drops from loot table
+			if (lootTable.getPortalDrops() != null) {
+				for (int portalId : lootTable.getPortalDrop()) {
+					PortalModel portalModel = GameDataManager.PORTALS.get(portalId);
+					if (portalModel == null) continue;
+
+					if (portalModel.getTargetRealmDepth() >= 999) {
+						// Dungeon portal
+						Portal toDungeonPortal = new Portal(Realm.RANDOM.nextLong(),
+								(short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
+						toDungeonPortal.linkPortal(targetRealm, null);
+						targetRealm.addPortal(toDungeonPortal);
+					} else {
+						// Realm depth portal
+						Portal toRealmPortal = new Portal(Realm.RANDOM.nextLong(),
+								(short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
+						Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth() - 1);
+						if (realmAtDepth.isEmpty()) {
+							toRealmPortal.linkPortal(targetRealm, null);
+						} else {
+							toRealmPortal.linkPortal(targetRealm, realmAtDepth.get());
+						}
+						targetRealm.addPortal(toRealmPortal);
+					}
+				}
 			}
 		} catch (Exception e) {
 			RealmManagerServer.log.error("[SERVER] Failed to handle dead Enemy {}. Reason: {}", enemy.getId(), e);

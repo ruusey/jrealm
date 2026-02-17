@@ -111,9 +111,7 @@ public class ServerGameLogic {
 				final Realm generatedRealm = new Realm(true, portalUsed.getMapId(), portalUsed.getTargetRealmDepth());
 				targetRealm = generatedRealm;
 				if (portalUsed.getMapId() == 5) {
-					final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
-							GlobalConstants.BASE_TILE_SIZE * 13);
-					user.setPos(spawnPos);
+					user.setPos(generatedRealm.getTileManager().getSafePosition());
 				} else {
 					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3,
 							generatedRealm.getTileManager().getSafePosition());

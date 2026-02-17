@@ -1,5 +1,7 @@
 package com.jrealm.game.state;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -612,6 +614,8 @@ public class PlayState extends GameState {
             portal.render(batch);
         }
 
+        this.renderViewportMask(batch, shapes);
+
         if (this.pui == null)
             return;
         this.pui.render(batch, shapes, font);
@@ -625,6 +629,40 @@ public class PlayState extends GameState {
         font.setColor(com.badlogic.gdx.graphics.Color.WHITE);
         String fps = this.lastFrames + " FPS";
         font.draw(batch, fps, 6 * 32, 32);
+    }
+
+    private void renderViewportMask(SpriteBatch batch, ShapeRenderer shapes) {
+        batch.end();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        int panelWidth = JRealmGame.width / 5;
+        float cx = (JRealmGame.width - panelWidth) / 2f;
+        float cy = JRealmGame.height / 2f;
+        float radius = Math.min(cx, cy) - 10f;
+        float outerRadius = Math.max(JRealmGame.width, JRealmGame.height);
+        int segments = 64;
+
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(0f, 0f, 0f, 1f);
+
+        for (int i = 0; i < segments; i++) {
+            float a1 = (float) (i * 2 * Math.PI / segments);
+            float a2 = (float) ((i + 1) * 2 * Math.PI / segments);
+            float cos1 = (float) Math.cos(a1), sin1 = (float) Math.sin(a1);
+            float cos2 = (float) Math.cos(a2), sin2 = (float) Math.sin(a2);
+
+            float ix1 = cx + radius * cos1, iy1 = cy + radius * sin1;
+            float ix2 = cx + radius * cos2, iy2 = cy + radius * sin2;
+            float ox1 = cx + outerRadius * cos1, oy1 = cy + outerRadius * sin1;
+            float ox2 = cx + outerRadius * cos2, oy2 = cy + outerRadius * sin2;
+
+            shapes.triangle(ix1, iy1, ox1, oy1, ix2, iy2);
+            shapes.triangle(ix2, iy2, ox1, oy1, ox2, oy2);
+        }
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+        batch.begin();
     }
 
     public void renderCloseLoot(SpriteBatch batch) {
