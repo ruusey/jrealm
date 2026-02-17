@@ -52,6 +52,7 @@ public class JRealmGame implements ApplicationListener {
 
         // Set up input handlers
         this.keyHandler = new KeyHandler();
+        Gdx.input.setInputProcessor(this.keyHandler);
         this.mouseHandler = new MouseHandler();
 
         // Initialize the game state manager and enter PlayState

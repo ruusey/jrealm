@@ -420,103 +420,14 @@ public class PlayState extends GameState {
             if (this.pui != null) {
                 this.pui.input(mouse, key);
             }
-            if (key.one.clicked) {
-                try {
-                    GameItem from = this.getPlayer().getInventory()[4];
-
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 4, false, false);
-                    if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 4, false, true);
-                    }
-                    this.realmManager.getClient().sendRemote(moveItem);
-                } catch (Exception e) {
-                    PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
-                }
-            }
-            if (key.two.clicked) {
-                try {
-                    GameItem from = this.getPlayer().getInventory()[5];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 5, false, false);
-                    if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 5, false, true);
-                    }
-                    this.realmManager.getClient().sendRemote(moveItem);
-                } catch (Exception e) {
-                    PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
-                }
-            }
-            if (key.three.clicked) {
-                try {
-                    GameItem from = this.getPlayer().getInventory()[6];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 6, false, false);
-                    if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 6, false, true);
-                    }
-                    this.realmManager.getClient().sendRemote(moveItem);
-                } catch (Exception e) {
-                    PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
-                }
-            }
-            if (key.four.clicked) {
-                try {
-                    GameItem from = this.getPlayer().getInventory()[7];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 7, false, false);
-                    if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 7, false, true);
-                    }
-                    this.realmManager.getClient().sendRemote(moveItem);
-                } catch (Exception e) {
-                    PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
-                }
-            }
-            if (key.five.clicked) {
-                try {
-                    GameItem from = this.getPlayer().getInventory()[8];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 8, false, false);
-                    if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 8, false, true);
-                    }
-                    this.realmManager.getClient().sendRemote(moveItem);
-                } catch (Exception e) {
-                    PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
-                }
-            }
-            if (key.six.clicked) {
-                try {
-                    GameItem from = this.getPlayer().getInventory()[9];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 9, false, false);
-                    if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 9, false, true);
-                    }
-                    this.realmManager.getClient().sendRemote(moveItem);
-                } catch (Exception e) {
-                    PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
-                }
-            }
-            if (key.seven.clicked) {
-                try {
-                    GameItem from = this.getPlayer().getInventory()[10];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 10, false, false);
-                    if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 10, false, true);
-                    }
-                    this.realmManager.getClient().sendRemote(moveItem);
-                } catch (Exception e) {
-                    PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
-                }
-            }
-            if (key.eight.clicked) {
-                try {
-                    GameItem from = this.getPlayer().getInventory()[11];
-                    MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 11, false, false);
-                    if (from.isConsumable()) {
-                        moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) 11, false, true);
-                    }
-                    this.realmManager.getClient().sendRemote(moveItem);
-                } catch (Exception e) {
-                    PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
-                }
-            }
+            if (key.one.clicked) this.handleQuickUseKey(4);
+            if (key.two.clicked) this.handleQuickUseKey(5);
+            if (key.three.clicked) this.handleQuickUseKey(6);
+            if (key.four.clicked) this.handleQuickUseKey(7);
+            if (key.five.clicked) this.handleQuickUseKey(8);
+            if (key.six.clicked) this.handleQuickUseKey(9);
+            if (key.seven.clicked) this.handleQuickUseKey(10);
+            if (key.eight.clicked) this.handleQuickUseKey(11);
 
         }
 
@@ -699,6 +610,18 @@ public class PlayState extends GameState {
             if (contentsChanged) {
                 this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot));
             }
+        }
+    }
+
+    private void handleQuickUseKey(int slotIndex) {
+        try {
+            GameItem from = this.getPlayer().getInventory()[slotIndex];
+            if (from == null) return;
+            boolean consume = from.isConsumable();
+            MoveItemPacket moveItem = MoveItemPacket.from(this.getPlayer().getId(), from.getTargetSlot(), (byte) slotIndex, false, consume);
+            this.realmManager.getClient().sendRemote(moveItem);
+        } catch (Exception e) {
+            PlayState.log.error("Failed to send move item packet: {}", "No Item in slot");
         }
     }
 

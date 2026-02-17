@@ -105,7 +105,7 @@ public class PlayerChat {
         }
     }
 
-    public void render(SpriteBatch batch, BitmapFont font) {
+    public void render(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
         float lineHeight = 14f;
         font.setColor(Color.WHITE);
 
@@ -117,8 +117,19 @@ public class PlayerChat {
         }
 
         if (this.chatOpen) {
+            // Draw dark semi-transparent background behind chat input
+            float inputY = JRealmGame.height - lineHeight - 4;
+            float inputHeight = lineHeight + 8;
+            float inputWidth = JRealmGame.width / 2f;
+            batch.end();
+            shapes.begin(ShapeRenderer.ShapeType.Filled);
+            shapes.setColor(new Color(0f, 0f, 0f, 0.6f));
+            shapes.rect(4, inputY, inputWidth, inputHeight);
+            shapes.end();
+            batch.begin();
+
             font.setColor(Color.WHITE);
-            font.draw(batch, this.currentMessage, 8, JRealmGame.height - lineHeight);
+            font.draw(batch, "> " + this.currentMessage + "_", 8, JRealmGame.height - lineHeight);
         }
     }
 }

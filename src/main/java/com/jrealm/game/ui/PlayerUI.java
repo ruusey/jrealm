@@ -65,6 +65,11 @@ public class PlayerUI {
     private Player hoveredPlayer = null;
     private long lastNearbyRefresh = 0;
 
+    private int dragSourceIndex = -1;
+    private boolean isDragging = false;
+    private Vector2f dragStartPos = null;
+    private static final float DRAG_THRESHOLD = 8.0f;
+
     public PlayerUI(PlayState p) {
         Vector2f posHp = new Vector2f(JRealmGame.width - 356, 128);
         Vector2f posMp = posHp.clone(0, 32);
@@ -213,6 +218,7 @@ public class PlayerUI {
             b.onMouseUp(event -> {
                 // Don't allow picking up items from ground loot area during trade
                 if (this.isTrading) return;
+                if (this.isDragging) return;
                 this.tooltips.clear();
                 if (this.canSwap()) {
                     this.setActionTime();
@@ -380,6 +386,8 @@ public class PlayerUI {
     }
 
     public void input(MouseHandler mouse, KeyHandler key) {
+        this.handleDragAndDrop(mouse);
+
         for (int i = 0; i < this.inventory.length; i++) {
             Slots curr = this.inventory[i];
             if (curr != null) {
@@ -558,7 +566,7 @@ public class PlayerUI {
         this.mp.render(batch, shapes);
         this.xp.render(batch, shapes);
         this.renderStats(batch, font);
-        this.playerChat.render(batch, font);
+        this.playerChat.render(batch, shapes, font);
     }
 
     private void renderTradeUI(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font, int startX, int panelWidth) {
@@ -801,6 +809,115 @@ public class PlayerUI {
                 shapes.end();
                 batch.begin();
             }
+        }
+    }
+
+    public void handleDragAndDrop(MouseHandler mouse) {
+        if (this.isTrading) return;
+
+        int mouseX = (int) mouse.getX();
+        int mouseY = (int) mouse.getY();
+
+        if (mouse.isPressed(1) && !this.isDragging && this.dragSourceIndex == -1) {
+            // Detect drag start: find slot with non-null dragPos
+            for (int i = 0; i < this.inventory.length; i++) {
+                Slots slot = this.inventory[i];
+                if (slot != null && slot.getDragPos() != null && slot.getItem() != null) {
+                    this.dragSourceIndex = i;
+                    this.dragStartPos = new Vector2f(mouseX, mouseY);
+                    break;
+                }
+            }
+            if (this.dragSourceIndex == -1) {
+                for (int i = 0; i < this.groundLoot.length; i++) {
+                    Slots slot = this.groundLoot[i];
+                    if (slot != null && slot.getDragPos() != null && slot.getItem() != null) {
+                        this.dragSourceIndex = i + 20;
+                        this.dragStartPos = new Vector2f(mouseX, mouseY);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Only set isDragging after mouse moves past threshold
+        if (this.dragSourceIndex != -1 && !this.isDragging && this.dragStartPos != null) {
+            float dist = new Vector2f(mouseX, mouseY).distanceTo(this.dragStartPos);
+            if (dist > DRAG_THRESHOLD) {
+                this.isDragging = true;
+            }
+        }
+
+        // On mouse release while dragging
+        if (!mouse.isPressed(1) && this.isDragging) {
+            int targetIndex = this.findSlotAtPositionByLayout(mouseX, mouseY);
+            this.executeDrop(this.dragSourceIndex, targetIndex);
+            this.isDragging = false;
+            this.dragSourceIndex = -1;
+            this.dragStartPos = null;
+        } else if (!mouse.isPressed(1)) {
+            // Reset if released without dragging
+            this.dragSourceIndex = -1;
+            this.dragStartPos = null;
+        }
+    }
+
+    private int findSlotAtPositionByLayout(int mouseX, int mouseY) {
+        int panelWidth = (JRealmGame.width / 5);
+        int startX = JRealmGame.width - panelWidth;
+
+        // Must be within the panel
+        if (mouseX < startX || mouseX > JRealmGame.width) return -1;
+
+        int col = (mouseX - startX) / 64;
+        if (col < 0 || col > 3) return -1;
+
+        // Equipment row: Y=256, height=64
+        if (mouseY >= 256 && mouseY < 320) {
+            return col; // 0-3
+        }
+        // Inventory row 1: Y=450, height=64
+        if (mouseY >= 450 && mouseY < 514) {
+            return 4 + col; // 4-7
+        }
+        // Inventory row 2: Y=516, height=64
+        if (mouseY >= 516 && mouseY < 580) {
+            return 8 + col; // 8-11
+        }
+        // Ground loot row 1: Y=650, height=64
+        if (mouseY >= 650 && mouseY < 714) {
+            return 20 + col; // 20-23
+        }
+        // Ground loot row 2: Y=714, height=64
+        if (mouseY >= 714 && mouseY < 778) {
+            return 24 + col; // 24-27
+        }
+        return -1;
+    }
+
+    private void executeDrop(int fromIndex, int targetIndex) {
+        if (!this.canSwap()) return;
+        if (fromIndex == targetIndex) return;
+
+        this.setActionTime();
+
+        boolean fromIsGround = fromIndex >= 20 && fromIndex <= 27;
+        boolean targetIsGround = targetIndex >= 20 && targetIndex <= 27;
+        boolean fromIsEquip = fromIndex >= 0 && fromIndex <= 3;
+        boolean targetIsEquip = targetIndex >= 0 && targetIndex <= 3;
+
+        if (targetIndex == -1) {
+            // Dropped outside any slot: drop item
+            this.playState.getRealmManager().moveItem(-1, fromIndex, true, false);
+        } else if (fromIsGround && !targetIsGround) {
+            // Ground -> inventory/equip: pickup
+            this.playState.getRealmManager().moveItem(targetIndex, fromIndex, false, false);
+        } else if (!fromIsGround && targetIsGround) {
+            // Inventory/equip -> ground area: drop
+            this.playState.getRealmManager().moveItem(-1, fromIndex, true, false);
+        } else {
+            // inv->equip, equip->inv, inv->inv: swap/equip/unequip
+            this.playState.getRealmManager().moveItem(targetIndex, fromIndex, false, false);
         }
     }
 

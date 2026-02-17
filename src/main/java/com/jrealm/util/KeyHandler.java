@@ -5,11 +5,12 @@ import java.util.List;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputProcessor;
 
 import lombok.Data;
 
 @Data
-public class KeyHandler {
+public class KeyHandler implements InputProcessor {
     public boolean captureMode = false;
     public String content = "";
     public static List<Key> keys = new ArrayList<Key>();
@@ -89,6 +90,12 @@ public class KeyHandler {
             if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) && this.content.length() > 0) {
                 this.content = this.content.substring(0, this.content.length() - 1);
             }
+            // Release all movement keys to prevent stuck movement when chat opens
+            this.up.toggle(false);
+            this.down.toggle(false);
+            this.left.toggle(false);
+            this.right.toggle(false);
+            this.attack.toggle(false);
             // Enter key still toggles for the game logic
             this.enter.toggle(Gdx.input.isKeyPressed(Input.Keys.ENTER));
             return;
@@ -132,11 +139,57 @@ public class KeyHandler {
     }
 
     /**
-     * Called by LibGDX TextInputListener when in capture mode.
+     * Called by LibGDX InputProcessor when in capture mode.
      */
     public void appendChar(char c) {
         if (this.captureMode && c != '\n' && c != '\r') {
             this.content += c;
         }
+    }
+
+    @Override
+    public boolean keyTyped(char character) {
+        this.appendChar(character);
+        return this.captureMode;
+    }
+
+    @Override
+    public boolean keyDown(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyUp(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        return false;
+    }
+
+    @Override
+    public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        return false;
+    }
+
+    @Override
+    public boolean scrolled(float amountX, float amountY) {
+        return false;
     }
 }
