@@ -53,6 +53,14 @@ public class ShaderManager {
         0, 0, 0, 0
     };
 
+    // Zero out RGB coefficients, use 4th column (constant) for dark grey
+    private static final float[] SILHOUETTE = {
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0.2f, 0.2f, 0.2f, 0
+    };
+
     private static final String VERT_SHADER =
         "attribute vec4 a_position;\n" +
         "attribute vec4 a_color;\n" +
@@ -107,6 +115,7 @@ public class ShaderManager {
             case GRAYSCALE: matrix = GRAYSCALE; break;
             case DECAY: matrix = DECAY; break;
             case NEGATIVE: matrix = NEGATIVE; break;
+            case SILHOUETTE: matrix = SILHOUETTE; break;
             default: matrix = IDENTITY; break;
         }
         effectShader.setUniformMatrix("u_colorMatrix", new com.badlogic.gdx.math.Matrix4(matrix));

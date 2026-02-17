@@ -276,23 +276,39 @@ public class Enemy extends Entity {
             }
         }
 
-        // Apply shader effect
-        Sprite.EffectEnum currentEffect = this.getSpriteSheet().getCurrentEffect();
-        com.jrealm.game.graphics.ShaderManager.applyEffect(batch, currentEffect);
-
+        // Draw outline: 4 offset black silhouettes
         TextureRegion frame = this.getSpriteSheet().getCurrentFrame();
         if (frame != null) {
             float wx = this.pos.getWorldVar().x;
             float wy = this.pos.getWorldVar().y;
+            float ox = 2.5f;
+            com.jrealm.game.graphics.ShaderManager.applyEffect(batch, Sprite.EffectEnum.SILHOUETTE);
+            if (this.left) {
+                batch.draw(frame, wx + this.size + ox, wy, -this.size, this.size);
+                batch.draw(frame, wx + this.size - ox, wy, -this.size, this.size);
+                batch.draw(frame, wx + this.size, wy + ox, -this.size, this.size);
+                batch.draw(frame, wx + this.size, wy - ox, -this.size, this.size);
+            } else {
+                batch.draw(frame, wx + ox, wy, this.size, this.size);
+                batch.draw(frame, wx - ox, wy, this.size, this.size);
+                batch.draw(frame, wx, wy + ox, this.size, this.size);
+                batch.draw(frame, wx, wy - ox, this.size, this.size);
+            }
+            com.jrealm.game.graphics.ShaderManager.clearEffect(batch);
+
+            // Apply shader effect
+            Sprite.EffectEnum currentEffect = this.getSpriteSheet().getCurrentEffect();
+            com.jrealm.game.graphics.ShaderManager.applyEffect(batch, currentEffect);
+
             if (this.left) {
                 batch.draw(frame, wx + this.size, wy, -this.size, this.size);
             } else {
                 batch.draw(frame, wx, wy, this.size, this.size);
             }
-        }
 
-        // Clear shader
-        com.jrealm.game.graphics.ShaderManager.clearEffect(batch);
+            // Clear shader
+            com.jrealm.game.graphics.ShaderManager.clearEffect(batch);
+        }
     }
 
 }

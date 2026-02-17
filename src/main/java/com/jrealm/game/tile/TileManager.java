@@ -1,6 +1,9 @@
 package com.jrealm.game.tile;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,8 +13,12 @@ import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.data.GameSpriteManager;
+import com.jrealm.game.graphics.ShaderManager;
+import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.math.Rectangle;
@@ -424,13 +431,18 @@ public class TileManager {
         this.releaseMapLock();
     }
 
-    public void render(Player player, SpriteBatch batch) {
+    public void render(Player player, SpriteBatch batch, ShapeRenderer shapes) {
         this.acquireMapLock();
         final int playerSize = player.getSize() / 2;
         final Vector2f pos = player.getPos().clone(playerSize, playerSize);
         final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
                 pos.y / GlobalConstants.BASE_TILE_SIZE);
         this.normalizeToBounds(posNormalized);
+
+        // Collect collision tiles for shadow pass
+        final List<Tile> collisionTiles = new ArrayList<>();
+
+        // Pass 1: Draw all base tiles
         for (int x = (int) (posNormalized.x - VIEWPORT_TILE_MIN); x < (posNormalized.x + VIEWPORT_TILE_MIN); x++) {
             for (int y = (int) (posNormalized.y - VIEWPORT_TILE_MIN); y < (int) (posNormalized.y + VIEWPORT_TILE_MIN); y++) {
                 if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
@@ -445,13 +457,53 @@ public class TileManager {
                         normalTile.render(batch);
                     }
                     if (collisionTile != null && !collisionTile.isVoid()) {
-                        collisionTile.render(batch);
+                        collisionTiles.add(collisionTile);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
+
+        // Pass 2: Draw shadows and contour outlines for collision tiles
+        if (!collisionTiles.isEmpty()) {
+            // Shadow pass using ShapeRenderer
+            batch.end();
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapes.begin(ShapeRenderer.ShapeType.Filled);
+            shapes.setColor(0, 0, 0, 0.35f);
+            for (Tile t : collisionTiles) {
+                float wx = t.getPos().getWorldVar().x;
+                float wy = t.getPos().getWorldVar().y;
+                shapes.rect(wx + 3, wy + 3, t.getWidth(), t.getHeight());
+            }
+            shapes.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+            batch.begin();
+
+            // Contour outline pass: 4 offset silhouette copies of each tile sprite
+            float ox = 2.0f;
+            ShaderManager.applyEffect(batch, Sprite.EffectEnum.SILHOUETTE);
+            for (Tile t : collisionTiles) {
+                TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) t.getTileId());
+                if (region == null) continue;
+                float wx = t.getPos().getWorldVar().x;
+                float wy = t.getPos().getWorldVar().y;
+                int sz = t.getWidth();
+                batch.draw(region, wx + ox, wy, sz, sz);
+                batch.draw(region, wx - ox, wy, sz, sz);
+                batch.draw(region, wx, wy + ox, sz, sz);
+                batch.draw(region, wx, wy - ox, sz, sz);
+            }
+            ShaderManager.clearEffect(batch);
+
+            // Pass 3: Draw collision tiles on top
+            for (Tile t : collisionTiles) {
+                t.render(batch);
+            }
+        }
+
         this.releaseMapLock();
     }
     

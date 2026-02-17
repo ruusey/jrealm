@@ -545,7 +545,7 @@ public class PlayState extends GameState {
         Player player = this.realmManager.getRealm().getPlayer(this.playerId);
         if (player == null)
             return;
-        this.realmManager.getRealm().getTileManager().render(player, batch);
+        this.realmManager.getRealm().getTileManager().render(player, batch, shapes);
 
         for (Player p : this.realmManager.getRealm().getPlayers().values()) {
             p.render(batch);
@@ -561,6 +561,31 @@ public class PlayState extends GameState {
                 toRender.render(batch);
             }
         }
+
+        // Render enemy health bars
+        batch.end();
+        com.badlogic.gdx.Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        com.badlogic.gdx.Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        for (int i = 0; i < gameObject.length; i++) {
+            if (gameObject[i] instanceof Enemy) {
+                Enemy enemy = (Enemy) gameObject[i];
+                float wx = enemy.getPos().getWorldVar().x;
+                float wy = enemy.getPos().getWorldVar().y;
+                int barWidth = enemy.getSize();
+                int barHeight = 4;
+                float barY = wy - 6;
+                // Dark background
+                shapes.setColor(0.2f, 0.2f, 0.2f, 0.8f);
+                shapes.rect(wx, barY, barWidth, barHeight);
+                // Red fill
+                shapes.setColor(1f, 0f, 0f, 0.9f);
+                shapes.rect(wx, barY, barWidth * enemy.getHealthpercent(), barHeight);
+            }
+        }
+        shapes.end();
+        com.badlogic.gdx.Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        batch.begin();
 
         Collection<Portal> portals = this.realmManager.getRealm().getPortals().values();
         for (Portal portal : portals) {

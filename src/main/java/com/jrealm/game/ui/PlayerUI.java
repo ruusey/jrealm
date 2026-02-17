@@ -71,14 +71,19 @@ public class PlayerUI {
     private static final float DRAG_THRESHOLD = 8.0f;
 
     public PlayerUI(PlayState p) {
-        Vector2f posHp = new Vector2f(JRealmGame.width - 356, 128);
-        Vector2f posMp = posHp.clone(0, 32);
-        Vector2f posXp = posHp.clone(0, -32);
+        int panelWidth = JRealmGame.width / 5;
+        int startX = JRealmGame.width - panelWidth;
+        int barHeight = 24;
+        int barY = 32;
+
         this.isTrading = false;
         this.playState = p;
-        this.hp = new FillBars(p.getPlayer(), posHp, 16, 16, "getHealthPercent", Color.DARK_GRAY, Color.RED);
-        this.mp = new FillBars(p.getPlayer(), posMp, 16, 16, "getManaPercent", Color.DARK_GRAY, Color.BLUE);
-        this.xp = new FillBars(p.getPlayer(), posXp, 16, 16, "getExperiencePercent", Color.DARK_GRAY, Color.GREEN);
+        this.hp = new FillBars(p.getPlayer(), new Vector2f(startX, barY),
+                panelWidth, barHeight, "getHealthPercent", Color.DARK_GRAY, Color.RED);
+        this.mp = new FillBars(p.getPlayer(), new Vector2f(startX, barY + barHeight),
+                panelWidth, barHeight, "getManaPercent", Color.DARK_GRAY, Color.BLUE);
+        this.xp = new FillBars(p.getPlayer(), new Vector2f(startX, barY + barHeight * 2),
+                panelWidth, barHeight, "getExperiencePercent", Color.DARK_GRAY, new Color(1.0f, 0.5f, 0.0f, 1.0f));
         this.groundLoot = new Slots[8];
         this.inventory = new Slots[20];
         this.tooltips = new HashMap<>();
@@ -562,9 +567,9 @@ public class PlayerUI {
         // Render hovered player tooltip on top of everything
         this.renderPlayerTooltip(batch, shapes, font);
 
-        this.hp.render(batch, shapes);
-        this.mp.render(batch, shapes);
-        this.xp.render(batch, shapes);
+        this.hp.render(batch, shapes, font);
+        this.mp.render(batch, shapes, font);
+        this.xp.render(batch, shapes, font);
         this.renderStats(batch, font);
         this.playerChat.render(batch, shapes, font);
     }
@@ -930,30 +935,20 @@ public class PlayerUI {
             int startY = 350;
 
             Stats stats = this.playState.getPlayer().getComputedStats();
-            Vector2f posHp = new Vector2f(JRealmGame.width - 64, 128 + 32);
-            Vector2f posMp = posHp.clone(0, 32);
-            Vector2f posXp = posHp.clone(-128, -32);
-            Vector2f nameLvlPos = posHp.clone(-256, -128);
+            int nameLvlX = (JRealmGame.width - panelWidth) + 8;
+            int nameLvlY = 20;
 
             font.setColor(Color.WHITE);
-
             long fame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(this.playState.getPlayer().getExperience());
             if (fame == 0l) {
-                font.draw(batch, this.playState.getPlayer().getExperience() + "/"
-                        + this.playState.getPlayer().getUpperExperienceBound(), posXp.x, posXp.y);
                 font.draw(batch,
                         this.playState.getPlayer().getName() + "   Lv. "
                                 + GameDataManager.EXPERIENCE_LVLS.getLevel(this.playState.getPlayer().getExperience()),
-                        nameLvlPos.x, nameLvlPos.y);
+                        nameLvlX, nameLvlY);
             } else {
-                font.draw(batch, "Fame: " + fame, posXp.x, posXp.y);
-                font.draw(batch, this.playState.getPlayer().getName() + "   Lv. 20", nameLvlPos.x, nameLvlPos.y);
+                font.draw(batch, this.playState.getPlayer().getName() + "   Lv. 20", nameLvlX, nameLvlY);
             }
 
-            font.setColor(this.playState.getPlayer().isStatMaxed(0) ? Color.YELLOW : Color.WHITE);
-            font.draw(batch, "" + this.playState.getPlayer().getHealth(), posHp.x, posHp.y);
-            font.setColor(this.playState.getPlayer().isStatMaxed(1) ? Color.YELLOW : Color.WHITE);
-            font.draw(batch, "" + this.playState.getPlayer().getMana(), posMp.x, posMp.y);
             font.setColor(this.playState.getPlayer().isStatMaxed(3) ? Color.YELLOW : Color.WHITE);
             font.draw(batch, "att :" + stats.getAtt(), startX, startY);
             font.setColor(this.playState.getPlayer().isStatMaxed(4) ? Color.YELLOW : Color.WHITE);
