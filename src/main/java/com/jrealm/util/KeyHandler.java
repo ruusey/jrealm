@@ -142,7 +142,7 @@ public class KeyHandler implements InputProcessor {
      * Called by LibGDX InputProcessor when in capture mode.
      */
     public void appendChar(char c) {
-        if (this.captureMode && c != '\n' && c != '\r') {
+        if (this.captureMode && c != '\n' && c != '\r' && c != '\b') {
             this.content += c;
         }
     }

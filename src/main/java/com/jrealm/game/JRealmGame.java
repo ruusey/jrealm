@@ -40,7 +40,7 @@ public class JRealmGame implements ApplicationListener {
         this.camera.setToOrtho(true, width, height);
 
         this.defaultFont = new BitmapFont(true); // flipped for Y-down
-        this.defaultFont.getData().setScale(1.0f);
+        this.defaultFont.getData().setScale(1.8f);
 
         // Load sprite sheets as LibGDX Textures
         GameSpriteManager.loadSpriteImages(true);
