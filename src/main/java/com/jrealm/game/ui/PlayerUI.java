@@ -140,26 +140,30 @@ public class PlayerUI {
     }
 
     /**
+     * Get the other player's NetInventorySelection (not filtered).
+     */
+    private NetInventorySelection getOtherPlayerSelection() {
+        if (this.currentTradeSelection == null) return null;
+
+        long myId = this.playState.getPlayerId();
+        if (this.currentTradeSelection.getPlayer0Selection() != null
+                && this.currentTradeSelection.getPlayer0Selection().getPlayerId() == myId) {
+            return this.currentTradeSelection.getPlayer1Selection();
+        } else {
+            return this.currentTradeSelection.getPlayer0Selection();
+        }
+    }
+
+    /**
      * Get the items that the OTHER player has selected for trade.
      * Determines which selection is "other" based on local player ID.
      */
     private GameItem[] getOtherPlayerSelectedItems() {
-        if (this.currentTradeSelection == null) return new GameItem[8];
-
-        long myId = this.playState.getPlayerId();
-        NetInventorySelection otherSelection;
-        if (this.currentTradeSelection.getPlayer0Selection() != null
-                && this.currentTradeSelection.getPlayer0Selection().getPlayerId() == myId) {
-            otherSelection = this.currentTradeSelection.getPlayer1Selection();
-        } else {
-            otherSelection = this.currentTradeSelection.getPlayer0Selection();
-        }
-
+        NetInventorySelection otherSelection = this.getOtherPlayerSelection();
         if (otherSelection == null || otherSelection.getItemRefs() == null) {
             return new GameItem[8];
         }
 
-        // Build array of only the items the other player has selected
         GameItem[] allItems = otherSelection.getGameItems();
         Boolean[] selection = otherSelection.getSelection();
         if (selection == null) return new GameItem[8];
@@ -577,45 +581,23 @@ public class PlayerUI {
     private void renderTradeUI(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font, int startX, int panelWidth) {
         this.ensureTradeButtons();
 
-        // Update the trade ground loot with other player's selected items
+        // Update ground loot with ALL of other player's items, marking selected ones
         if (this.currentTradeSelection != null) {
-            GameItem[] otherItems = this.getOtherPlayerSelectedItems();
+            NetInventorySelection otherSelection = this.getOtherPlayerSelection();
             this.groundLoot = new Slots[8];
-            for (int i = 0; i < otherItems.length; i++) {
-                GameItem item = otherItems[i];
-                if (item == null || item.getItemId() == -1) continue;
-                this.buildGroundLootSlotButton(i, item);
-            }
-        }
-
-        // Draw "YOUR OFFER" label
-        font.setColor(Color.YELLOW);
-        font.draw(batch, "YOUR OFFER (right-click to select)", startX + 4, 440);
-
-        // Draw "THEIR OFFER" label
-        String theirLabel = this.tradePartnerName != null
-                ? this.tradePartnerName + "'s OFFER"
-                : "THEIR OFFER";
-        font.setColor(Color.CYAN);
-        font.draw(batch, theirLabel, startX + 4, 640);
-
-        // Render the other player's offered items in the ground loot area
-        Slots[] gl1 = Arrays.copyOfRange(this.groundLoot, 0, 4);
-        Slots[] gl2 = Arrays.copyOfRange(this.groundLoot, 4, 8);
-
-        for (int i = 0; i < gl1.length; i++) {
-            Slots curr = gl1[i];
-            if (curr != null) {
-                Vector2f pos = (curr.getDragPos() == null) ? new Vector2f(startX + (i * 64), 650) : curr.getDragPos();
-                curr.render(batch, shapes, pos);
-            }
-        }
-
-        for (int i = 0; i < gl2.length; i++) {
-            Slots curr = gl2[i];
-            if (curr != null) {
-                Vector2f pos = (curr.getDragPos() == null) ? new Vector2f(startX + (i * 64), 714) : curr.getDragPos();
-                curr.render(batch, shapes, pos);
+            if (otherSelection != null && otherSelection.getItemRefs() != null) {
+                GameItem[] allItems = otherSelection.getGameItems();
+                Boolean[] selection = otherSelection.getSelection();
+                for (int i = 0; i < allItems.length && i < 8; i++) {
+                    GameItem item = allItems[i];
+                    if (item == null || item.getItemId() == -1) continue;
+                    this.buildGroundLootSlotButton(i, item);
+                    // Mark selected items so they render with yellow highlight
+                    if (this.groundLoot[i] != null && selection != null && i < selection.length
+                            && selection[i] != null && selection[i]) {
+                        this.groundLoot[i].setSelected(true);
+                    }
+                }
             }
         }
 
@@ -624,26 +606,48 @@ public class PlayerUI {
         font.setColor(Color.GREEN);
         font.draw(batch, header, startX + 4, 230);
 
-        // Draw Confirm button
+        // Draw "YOUR OFFER" label
+        font.setColor(Color.YELLOW);
+        font.draw(batch, "YOUR OFFER (right-click to select)", startX + 4, 440);
+
+        // Draw "THEIR OFFER" label - show partner's full inventory
+        String theirLabel = this.tradePartnerName != null
+                ? this.tradePartnerName + "'s ITEMS (selected = offered)"
+                : "THEIR ITEMS";
+        font.setColor(Color.CYAN);
+        font.draw(batch, theirLabel, startX + 4, 640);
+
+        // Render the other player's items in the ground loot area
+        Slots[] gl1 = Arrays.copyOfRange(this.groundLoot, 0, 4);
+        Slots[] gl2 = Arrays.copyOfRange(this.groundLoot, 4, 8);
+
+        for (int i = 0; i < gl1.length; i++) {
+            Slots curr = gl1[i];
+            if (curr != null) {
+                curr.render(batch, shapes, new Vector2f(startX + (i * 64), 650));
+            }
+        }
+
+        for (int i = 0; i < gl2.length; i++) {
+            Slots curr = gl2[i];
+            if (curr != null) {
+                curr.render(batch, shapes, new Vector2f(startX + (i * 64), 714));
+            }
+        }
+
+        // Draw Confirm and Cancel buttons
         batch.end();
         shapes.begin(ShapeRenderer.ShapeType.Filled);
         shapes.setColor(Color.FOREST);
         shapes.rect(this.confirmTradeButton.getPos().x, this.confirmTradeButton.getPos().y,
                 this.confirmTradeButton.getWidth(), this.confirmTradeButton.getHeight());
-        shapes.end();
-        batch.begin();
-        font.setColor(Color.WHITE);
-        font.draw(batch, "CONFIRM", this.confirmTradeButton.getPos().x + 8, this.confirmTradeButton.getPos().y + 22);
-
-        // Draw Cancel button
-        batch.end();
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
         shapes.setColor(Color.FIREBRICK);
         shapes.rect(this.cancelTradeButton.getPos().x, this.cancelTradeButton.getPos().y,
                 this.cancelTradeButton.getWidth(), this.cancelTradeButton.getHeight());
         shapes.end();
         batch.begin();
         font.setColor(Color.WHITE);
+        font.draw(batch, "CONFIRM", this.confirmTradeButton.getPos().x + 8, this.confirmTradeButton.getPos().y + 22);
         font.draw(batch, "CANCEL", this.cancelTradeButton.getPos().x + 12, this.cancelTradeButton.getPos().y + 22);
     }
 
@@ -818,7 +822,18 @@ public class PlayerUI {
     }
 
     public void handleDragAndDrop(MouseHandler mouse) {
-        if (this.isTrading) return;
+        if (this.isTrading) {
+            for (Slots slot : this.inventory) {
+                if (slot != null) slot.setDragPos(null);
+            }
+            for (Slots slot : this.groundLoot) {
+                if (slot != null) slot.setDragPos(null);
+            }
+            this.isDragging = false;
+            this.dragSourceIndex = -1;
+            this.dragStartPos = null;
+            return;
+        }
 
         int mouseX = (int) mouse.getX();
         int mouseY = (int) mouse.getY();

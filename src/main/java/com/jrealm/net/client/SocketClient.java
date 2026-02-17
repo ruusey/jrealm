@@ -194,6 +194,23 @@ public class SocketClient implements Runnable {
         WorkerThread.submitAndForkRun(run);
     }
 
+    public void close() {
+        this.shutdown = true;
+        if (this.sendPacketThread != null) {
+            this.sendPacketThread.setShutdown(true);
+        }
+        if (this.readPacketThread != null) {
+            this.readPacketThread.setShutdown(true);
+        }
+        try {
+            if (this.clientSocket != null && !this.clientSocket.isClosed()) {
+                this.clientSocket.close();
+            }
+        } catch (Exception e) {
+            SocketClient.log.error("Failed to close client socket. Reason: {}", e.getMessage());
+        }
+    }
+
     public static String getLocalAddr() throws Exception {
         final String[] split = InetAddress.getLocalHost().toString().split("/");
         String addr = null;

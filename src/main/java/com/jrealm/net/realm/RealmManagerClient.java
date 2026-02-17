@@ -204,6 +204,17 @@ public class RealmManagerClient implements Runnable {
         WorkerThread.submitAndForkRun(sendHeartbeat);
     }
 
+    public void shutdownClient() {
+        this.shutdown = true;
+        if (this.workerThread != null) {
+            this.workerThread.setShutdown(true);
+        }
+        if (this.client != null) {
+            this.client.close();
+        }
+        RealmManagerClient.log.info("[CLIENT] Client shutdown complete.");
+    }
+
     public void moveItem(int toSlotIndex, int fromSlotIndex, boolean drop, boolean consume) {
         try {
             MoveItemPacket moveItem = MoveItemPacket.from(this.state.getPlayer().getId(), (byte) toSlotIndex,

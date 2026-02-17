@@ -58,6 +58,12 @@ public class JRealmGame implements ApplicationListener {
         // Initialize the game state manager and enter PlayState
         this.gsm = new GameStateManager(this.batch, this.shapes, this.defaultFont, this.camera);
 
+        // Register JVM shutdown hook for clean disconnect on crash/kill
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            JRealmGame.log.info("JVM shutdown hook triggered, cleaning up...");
+            this.shutdownNetwork();
+        }));
+
         JRealmGame.log.info("LibGDX client initialized.");
     }
 
@@ -104,8 +110,19 @@ public class JRealmGame implements ApplicationListener {
     public void resume() {
     }
 
+    private void shutdownNetwork() {
+        try {
+            if (this.gsm != null && this.gsm.getPlayState() != null) {
+                this.gsm.getPlayState().getRealmManager().shutdownClient();
+            }
+        } catch (Exception e) {
+            JRealmGame.log.error("Failed to shutdown network. Reason: {}", e.getMessage());
+        }
+    }
+
     @Override
     public void dispose() {
+        this.shutdownNetwork();
         if (this.batch != null) this.batch.dispose();
         if (this.shapes != null) this.shapes.dispose();
         if (this.defaultFont != null) this.defaultFont.dispose();

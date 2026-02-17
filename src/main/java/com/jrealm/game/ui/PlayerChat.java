@@ -106,6 +106,10 @@ public class PlayerChat {
     }
 
     public void render(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
+        // Use unscaled font for chat text
+        float originalScale = font.getData().scaleX;
+        font.getData().setScale(1.0f);
+
         float lineHeight = 14f;
         font.setColor(Color.WHITE);
 
@@ -131,5 +135,8 @@ public class PlayerChat {
             font.setColor(Color.WHITE);
             font.draw(batch, "> " + this.currentMessage + "_", 8, JRealmGame.height - lineHeight);
         }
+
+        // Restore original scale
+        font.getData().setScale(originalScale);
     }
 }

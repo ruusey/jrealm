@@ -120,9 +120,7 @@ public class ClientGameLogic {
 		
 		try {
 			cli.getClient().sendRemote(new DeathAckPacket(cli.getState().getPlayer().getId()));
-			 
-			cli.getState().getRealmManager().getClient().setShutdown(true);
-			cli.getState().getRealmManager().getWorkerThread().setShutdown(true);
+			cli.getState().getRealmManager().shutdownClient();
 			cli.getState().gsm.add(GameStateManager.GAMEOVER);
 			cli.getState().gsm.pop(GameStateManager.PLAY);
 		} catch (Exception e) {
