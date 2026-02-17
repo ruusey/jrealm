@@ -376,13 +376,16 @@ public class TileManager {
         final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
                 pos.y / GlobalConstants.BASE_TILE_SIZE);
         this.normalizeToBounds(posNormalized);
+        final float radiusSq = VIEWPORT_TILE_MIN * VIEWPORT_TILE_MIN;
         for (int x = (int) (posNormalized.x - VIEWPORT_TILE_MIN); x < (posNormalized.x + VIEWPORT_TILE_MIN); x++) {
             for (int y = (int) (posNormalized.y - VIEWPORT_TILE_MIN); y < (int) (posNormalized.y + VIEWPORT_TILE_MIN); y++) {
-                // Temp fix. Aint nobody got time for array math.
                 if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
                         || (y < 0)) {
                     continue;
                 }
+                float dx = x - posNormalized.x;
+                float dy = y - posNormalized.y;
+                if (dx * dx + dy * dy > radiusSq) continue;
                 try {
                     Tile collisionTile = (Tile) this.mapLayers.get(1).getBlocks()[y][x];
                     Tile normalTile = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
@@ -447,13 +450,17 @@ public class TileManager {
         // Collect collision tiles for shadow pass
         final List<Tile> collisionTiles = new ArrayList<>();
 
-        // Pass 1: Draw all base tiles
+        // Pass 1: Draw all base tiles (circular viewport)
+        final float radiusSq = VIEWPORT_TILE_MIN * VIEWPORT_TILE_MIN;
         for (int x = (int) (posNormalized.x - VIEWPORT_TILE_MIN); x < (posNormalized.x + VIEWPORT_TILE_MIN); x++) {
             for (int y = (int) (posNormalized.y - VIEWPORT_TILE_MIN); y < (int) (posNormalized.y + VIEWPORT_TILE_MIN); y++) {
                 if ((x >= this.getBaseLayer().getWidth()) || (y >= this.getBaseLayer().getHeight()) || (x < 0)
                         || (y < 0)) {
                     continue;
                 }
+                float dx = x - posNormalized.x;
+                float dy = y - posNormalized.y;
+                if (dx * dx + dy * dy > radiusSq) continue;
                 try {
                     Tile normalTile = (Tile) this.mapLayers.get(0).getBlocks()[y][x];
                     Tile collisionTile = (Tile) this.mapLayers.get(1).getBlocks()[y][x];

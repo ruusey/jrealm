@@ -171,12 +171,6 @@ public class Minimap {
 
         shapes.end();
 
-        // Draw circular border
-        shapes.begin(ShapeRenderer.ShapeType.Line);
-        shapes.setColor(BORDER_COLOR);
-        shapes.circle(mapCenterX, mapCenterY, mapRadius);
-        shapes.end();
-
         Gdx.gl.glDisable(GL20.GL_BLEND);
         batch.begin();
     }
