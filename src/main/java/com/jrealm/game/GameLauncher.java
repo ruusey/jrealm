@@ -103,9 +103,9 @@ public class GameLauncher {
     }
 
     private static void startClient(String[] args) {
+        SocketClient.SERVER_ADDR = args[1];
         boolean skipLogin = false;
         if (args.length > 2) {
-            SocketClient.SERVER_ADDR = args[1];
             SocketClient.PLAYER_EMAIL = args[2];
             SocketClient.PLAYER_PASSWORD = args[3];
             SocketClient.CHARACTER_UUID = args[4];

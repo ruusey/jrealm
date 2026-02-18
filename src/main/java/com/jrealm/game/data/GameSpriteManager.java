@@ -37,6 +37,7 @@ public class GameSpriteManager {
     public static Map<Integer, TextureRegion> ITEM_SPRITES;
 
     public static void loadItemSprites() {
+        if (GameSpriteManager.TEXTURE_CACHE == null) return;
         GameSpriteManager.ITEM_SPRITES = new HashMap<>();
         for (Integer gameItemId : GameDataManager.GAME_ITEMS.keySet()) {
             final GameItem model = GameDataManager.GAME_ITEMS.get(gameItemId);
@@ -55,6 +56,7 @@ public class GameSpriteManager {
     }
 
     public static void loadTileSprites() {
+        if (GameSpriteManager.TEXTURE_CACHE == null) return;
         GameSpriteManager.TILE_SPRITES = new HashMap<>();
         for (Integer tileId : GameDataManager.TILES.keySet()) {
             final TileModel model = GameDataManager.TILES.get(tileId);
@@ -99,6 +101,9 @@ public class GameSpriteManager {
     }
 
     public static Sprite loadSprite(SpriteModel model) {
+        if (GameSpriteManager.TEXTURE_CACHE == null) {
+            return null;
+        }
         if (model.getSpriteSize() == 0) {
             model.setSpriteSize(GlobalConstants.BASE_SPRITE_SIZE);
         }
@@ -178,6 +183,7 @@ public class GameSpriteManager {
     }
 
     public static SpriteSheet loadClassSprites(CharacterClass cls) {
+        if (GameSpriteManager.TEXTURE_CACHE == null) return null;
         Texture classTexture = GameSpriteManager.TEXTURE_CACHE.get("rotmg-classes.png");
         int baseRow = 4 * cls.classId;
         final SpriteSheet classSprites = new SpriteSheet(classTexture, GlobalConstants.BASE_SPRITE_SIZE,
