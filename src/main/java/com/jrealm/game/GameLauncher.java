@@ -29,7 +29,7 @@ public class GameLauncher {
         GameLauncher.log.info("Starting JRealm...");
         if (args.length == 0) {
             log.info("NO ARGS PROVIDED. Running as local embedded server. Assuming local data service is running at 127.0.0.1");
-            args = new String[] { "-embedded", "127.0.0.1:8085" };
+            args = new String[] { "-embedded", "127.0.0.1" };
         }
 
         if (args.length < 2) {
@@ -37,7 +37,7 @@ public class GameLauncher {
             System.exit(-1);
         }
 
-        final String dataServiceUrl = "http://" + args[1] + "/";
+        final String dataServiceUrl = "http://" + args[1] + ":8085/";
 
         if (GameLauncher.argsContains(args, "-server")) {
             ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(),

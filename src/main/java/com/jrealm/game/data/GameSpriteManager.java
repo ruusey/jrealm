@@ -74,6 +74,9 @@ public class GameSpriteManager {
     }
 
     public static SpriteSheet getSpriteSheet(SpriteModel spriteModel) {
+        if (GameSpriteManager.TEXTURE_CACHE == null) {
+            return null;
+        }
         SpriteSheet result = null;
         try {
             final Texture spriteTexture = GameSpriteManager.TEXTURE_CACHE.get(spriteModel.getSpriteKey());
@@ -86,6 +89,9 @@ public class GameSpriteManager {
     }
 
     public static Sprite loadSprite(int x, int y, String file, int spriteSize) {
+        if (GameSpriteManager.TEXTURE_CACHE == null) {
+            return null;
+        }
         final Texture texture = GameSpriteManager.TEXTURE_CACHE.get(file);
         final TextureRegion subRegion = new TextureRegion(texture, x * spriteSize, y * spriteSize, spriteSize, spriteSize);
         subRegion.flip(false, true);
