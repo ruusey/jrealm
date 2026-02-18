@@ -225,8 +225,20 @@ public class Enemy extends Entity {
             return;
         }
         this.idle(false);
-        this.pos.x += this.dx;
-        this.pos.y += this.dy;
+        // X-axis: collision tile + map boundary + void tile
+        if (!targetRealm.getTileManager().collisionTile(this, this.dx, 0)
+                && !targetRealm.getTileManager().collidesXLimit(this, this.dx)
+                && !targetRealm.getTileManager().isVoidTile(
+                        this.pos.clone(this.getSize() / 2, this.getSize() / 2), this.dx, 0)) {
+            this.pos.x += this.dx;
+        }
+        // Y-axis: collision tile + map boundary + void tile
+        if (!targetRealm.getTileManager().collisionTile(this, 0, this.dy)
+                && !targetRealm.getTileManager().collidesYLimit(this, this.dy)
+                && !targetRealm.getTileManager().isVoidTile(
+                        this.pos.clone(this.getSize() / 2, this.getSize() / 2), 0, this.dy)) {
+            this.pos.y += this.dy;
+        }
     }
     
     public void idle(boolean applyMovement) {

@@ -583,6 +583,9 @@ public class Realm {
                 if ((doSpawn > this.tileManager.getMapLayers().get(0).getWidth()-2) && (i > 0) && (j > 0)) {
                     final Vector2f spawnPos = new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
                             i * this.tileManager.getMapLayers().get(0).getTileSize());
+                    if (this.tileManager.isCollisionTile(spawnPos) || this.tileManager.isVoidTile(spawnPos, 0, 0)) {
+                        continue;
+                    }
                     final EnemyModel toSpawn = enemyToSpawn.get(Realm.RANDOM.nextInt(enemyToSpawn.size()));
                     
                     final Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
@@ -602,11 +605,7 @@ public class Realm {
     }
 
     public void spawnRandomEnemy() {
-        final Vector2f spawnPos = new Vector2f(
-                this.tileManager.getMapLayers().get(0).getTileSize()
-                        * Realm.RANDOM.nextInt(this.tileManager.getMapLayers().get(0).getWidth()* this.tileManager.getBaseLayer().getTileSize()),
-                this.tileManager.getMapLayers().get(0).getTileSize()
-                        * Realm.RANDOM.nextInt(this.tileManager.getMapLayers().get(0).getHeight()));
+        final Vector2f spawnPos = this.tileManager.getSafePosition();
 
         final List<EnemyModel> enemyToSpawn = new ArrayList<>();
         GameDataManager.ENEMIES.values().forEach(enemy -> {
