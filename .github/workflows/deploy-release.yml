@@ -54,7 +54,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t substrate/jrealm:${{ steps.version.outputs.version }} \
-                       -t substrate/jrealm:latest .
+          docker build -t substratecore/jrealm:${{ steps.version.outputs.version }} \
+                       -t substratecore/jrealm:latest .
           docker push substratecore/jrealm:${{ steps.version.outputs.version }}
           docker push substratecore/jrealm:latest
