@@ -74,7 +74,7 @@ jobs:
               }
             }')
           echo "Deploy response: $RESPONSE"
-          STATUS=$(echo "$RESPONSE" | jq -r '.data.status')
+          STATUS=$(echo "$RESPONSE" | jq -r '.status')
           if [ "$STATUS" != "DEPLOYED" ]; then
             echo "Deployment failed with status: $STATUS"
             exit 1
