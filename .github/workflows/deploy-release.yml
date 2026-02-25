@@ -61,3 +61,22 @@ jobs:
                        -t substratecore/jrealm:latest .
           docker push substratecore/jrealm:${{ steps.version.outputs.version }}
           docker push substratecore/jrealm:latest
+
+      - name: Deploy to GCN
+        run: |
+          RESPONSE=$(curl -sf -X POST https://api.substratecore.com/api/k8s/deploy/configs/cdc-2d4e4ce2-e3f/deploy \
+            -H "Authorization: Bearer ${{ secrets.GCN_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "clusterIdentifier": "bd809b28-0f3c-42fc-9323-3c9f8411791e",
+              "overrides": {
+                "IMAGE": "substratecore/jrealm:${{ steps.version.outputs.version }}"
+              }
+            }')
+          echo "Deploy response: $RESPONSE"
+          STATUS=$(echo "$RESPONSE" | jq -r '.data.status')
+          if [ "$STATUS" != "DEPLOYED" ]; then
+            echo "Deployment failed with status: $STATUS"
+            exit 1
+          fi
+          echo "Successfully deployed substratecore/jrealm:${{ steps.version.outputs.version }}"
