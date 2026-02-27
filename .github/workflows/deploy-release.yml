@@ -68,7 +68,7 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.GCN_API_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d '{
-              "clusterIdentifier": "bd809b28-0f3c-42fc-9323-3c9f8411791e",
+              "clusterIdentifier": "ce2be0c1-06d7-43b2-90ae-a0a6b8ddcaaa",
               "overrides": {
                 "IMAGE": "substratecore/jrealm:${{ steps.version.outputs.version }}"
               }
