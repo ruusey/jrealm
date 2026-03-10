@@ -148,7 +148,8 @@ public class Bullet extends GameObject  {
     // Update for regular non Parametric bullets
     public void update() {
         // if is flagged to be rendered as a parametric projectile
-        if (this.hasFlag(ProjectileEffectType.PARAMETRIC_PROJECTILE)) {
+        if (this.hasFlag(ProjectileEffectType.PARAMETRIC_PROJECTILE)
+                || this.hasFlag(ProjectileEffectType.INVERTED_PARAMETRIC_PROJECTILE)) {
             this.updateParametric();
         } else {
             // Regular straight line projectile
@@ -163,33 +164,44 @@ public class Bullet extends GameObject  {
         }
     }
 
+    /**
+     * Parametric projectile update - applies sinusoidal oscillation perpendicular
+     * to the direction of travel, creating wavy projectile patterns (e.g. RotMG staff shots).
+     *
+     * The oscillation is computed as a position offset along the perpendicular axis,
+     * so each tick we apply the CHANGE in offset (delta) rather than a raw velocity.
+     * Negative amplitude naturally inverts the wave (no special flag needed).
+     *
+     * Perpendicular axis to forward (sin(a), cos(a)) is (cos(a), -sin(a)).
+     */
     public void updateParametric() {
+        // Compute perpendicular offset BEFORE advancing timeStep
+        float prevOffset = (float) (this.amplitude * Math.sin(Math.toRadians(this.timeStep)));
+
         this.timeStep = (this.timeStep + this.frequency) % 360;
 
-        final Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
-                (float) (Math.cos(this.angle) * this.magnitude));
-        final double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
-        this.range -= dist;
-        // 'invert'
-        if (this.hasFlag(ProjectileEffectType.INVERTED_PARAMETRIC_PROJECTILE)) {
-            double shift = -this.amplitude * Math.sin(Math.toRadians(this.timeStep));
-            double shift2 = this.amplitude * Math.cos(Math.toRadians(this.timeStep));
-            float velX = (float) (vel.x + shift2);
-            float velY = (float) (vel.y + shift);
-            this.pos.addX(velX);
-            this.pos.addY(velY);
-            this.dx = velX;
-            this.dy = velY;
-        } else {
-            double shift = this.amplitude * Math.sin(Math.toRadians(this.timeStep));
-            double shift2 = this.amplitude * Math.cos(Math.toRadians(this.timeStep));
-            float velX = (float) (vel.x + shift2);
-            float velY = (float) (vel.y + shift);
-            this.pos.addX(velX);
-            this.pos.addY(velY);
-            this.dx = velX;
-            this.dy = velY;
-        }
+        float currOffset = (float) (this.amplitude * Math.sin(Math.toRadians(this.timeStep)));
+        float perpDelta = currOffset - prevOffset;
+
+        // Forward velocity along the travel direction
+        float forwardX = (float) (Math.sin(this.angle) * this.magnitude);
+        float forwardY = (float) (Math.cos(this.angle) * this.magnitude);
+
+        // Perpendicular direction (90 degrees from forward)
+        float perpX = (float) Math.cos(this.angle);
+        float perpY = (float) -Math.sin(this.angle);
+
+        // Combine forward motion + perpendicular oscillation
+        float velX = forwardX + perpX * perpDelta;
+        float velY = forwardY + perpY * perpDelta;
+
+        // Decrease range by forward distance only (not oscillation)
+        this.range -= this.magnitude;
+
+        this.pos.addX(velX);
+        this.pos.addY(velY);
+        this.dx = velX;
+        this.dy = velY;
     }
 
     @Override
