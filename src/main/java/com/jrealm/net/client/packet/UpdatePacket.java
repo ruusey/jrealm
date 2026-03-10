@@ -1,9 +1,5 @@
 package com.jrealm.net.client.packet;
 
-import java.util.Arrays;
-import java.util.List;
-
-import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Packet;
@@ -50,22 +46,22 @@ public class UpdatePacket extends Packet {
 	@SerializableField(order = 8, type = SerializableLong.class, isCollection = true)
 	private Long[] effectTimes;
 	
+	private static final NetGameItem[] EMPTY_INVENTORY = new NetGameItem[0];
+
 	public static UpdatePacket from(Enemy enemy) throws Exception {
 		if (enemy == null)
 			return null;
-		final List<NetGameItem> lootToDrop = Arrays
-				.asList(IOService.mapModel(GameDataManager.GAME_ITEMS.get(48), NetGameItem.class));
 
 		final UpdatePacket updatePacket = new UpdatePacket();
 		updatePacket.setPlayerId(enemy.getId());
 		updatePacket.setHealth(enemy.getHealth());
 		updatePacket.setMana(enemy.getMana());
 		updatePacket.setPlayerName("enemy[" + enemy.getId() + "]");
-		updatePacket.setStats(IOService.mapModel(enemy.getStats(), NetStats.class));
-		updatePacket.setInventory(lootToDrop.toArray(new NetGameItem[0]));
+		updatePacket.setStats(NetStats.fromStats(enemy.getStats()));
+		updatePacket.setInventory(EMPTY_INVENTORY);
 		updatePacket.setEffectTimes(enemy.getEffectTimes().clone());
 		updatePacket.setEffectIds(enemy.getEffectIds().clone());
-		updatePacket.setExperience(1l);
+		updatePacket.setExperience(0l);
 		return updatePacket;
 	}
 

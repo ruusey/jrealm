@@ -154,9 +154,9 @@ public class RealmManagerServer implements Runnable {
 
 	// Disables the sending of LoadPacket and ObjectMovePacket every other tick
 	private boolean disablePartialTransmission = true;
-	private boolean transmitMovement = false;
+	private boolean transmitMovement = true;
 	private boolean transmitLoadPacket = false;
-	private boolean transmitLoadMapPacket = false;
+	private boolean transmitLoadMapPacket = true;
 	private boolean transmitPlayerUpdatePacket = false;
 
 	private boolean  isSetup = false;
@@ -504,7 +504,7 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						//if (this.transmitLoadPacket || this.disablePartialTransmission) {
+						if (this.transmitLoadPacket || this.disablePartialTransmission) {
 							// Get LoadPacket for this player
 							// Contains newly spawned bullets, entities, players
 							final LoadPacket loadPacket = realm
@@ -523,7 +523,9 @@ public class RealmManagerServer implements Runnable {
 									// Get the LoadPacket delta
 									final LoadPacket toSend = oldLoad.combine(loadPacket);
 									this.playerLoadState.put(player.getKey(), loadPacket);
-									this.enqueueServerPacket(player.getValue(), toSend);
+									if (!toSend.isEmpty()) {
+										this.enqueueServerPacket(player.getValue(), toSend);
+									}
 									// Unload the delta objects that were in the old LoadPacket
 									// but are NOT in the new LoadPacket
 									final UnloadPacket unloadDelta = oldLoad.difference(loadPacket);
@@ -535,7 +537,7 @@ public class RealmManagerServer implements Runnable {
 									}
 								}
 							}
-						//}
+						}
 
 						// Recently added tick skipping for game entity movements.
 						// This greatly reduced bytes going down the wire but some

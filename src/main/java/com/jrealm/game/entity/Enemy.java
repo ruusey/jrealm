@@ -78,6 +78,10 @@ public class Enemy extends Entity {
     public int getMana() {
         return this.mana;
     }
+
+    public int getMaxHealth() {
+        return (this.stats != null) ? this.stats.getHp() : this.health;
+    }
     
     public void applyUpdate(UpdatePacket packet, PlayState state) {
         this.name = packet.getPlayerName();
@@ -86,6 +90,9 @@ public class Enemy extends Entity {
         this.mana = packet.getMana();
         this.setEffectIds(packet.getEffectIds());
         this.setEffectTimes(packet.getEffectTimes());
+        if (this.stats != null && this.stats.getHp() > 0) {
+            this.healthpercent = (float) this.health / (float) this.stats.getHp();
+        }
     }
     
     public void chase(Player player) {
@@ -132,28 +139,16 @@ public class Enemy extends Entity {
     }
 
     public void update(RealmManagerClient mgr, double time) {
-        Player player = mgr.getClosestPlayer(this.getPos(), this.chaseRange);
         super.update(time);
-        if (player == null)
-            return;
-        
-        float currentHealthPercent = (float) this.getHealth() / (float) this.getStats().getHp();
-        float currentManaPercent = (float) this.getMana() / (float) this.getStats().getMp();
-        this.setHealthpercent(currentHealthPercent);
-        this.setManapercent(currentManaPercent);
-        this.healthpercent = currentHealthPercent;
-        this.chase(player);
-
-        if (this.hasEffect(ProjectileEffectType.PARALYZED)) {
-            this.up = false;
-            this.down = false;
-            this.right = false;
-            this.left = false;
-            return;
+        // Health/mana percent for health bars (stats come from UpdatePacket)
+        if (this.stats != null && this.stats.getHp() > 0) {
+            this.healthpercent = (float) this.getHealth() / (float) this.stats.getHp();
         }
-        this.pos.x += this.dx;
-        this.pos.y += this.dy;
-
+        if (this.stats != null && this.stats.getMp() > 0) {
+            this.manapercent = (float) this.getMana() / (float) this.stats.getMp();
+        }
+        // Position and movement are server-authoritative via ObjectMovePacket.
+        // Do NOT run chase/movement logic on the client.
     }
 
     public void update(long realmId, RealmManagerServer mgr, double time) {
@@ -270,10 +265,8 @@ public class Enemy extends Entity {
     }
 
     @Override
-    public void render(SpriteBatch batch) {
+    public void updateEffectState() {
         if (this.getSpriteSheet() == null) return;
-
-        // Update effect tags
         if (this.hasEffect(ProjectileEffectType.PARALYZED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.GRAYSCALE)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.GRAYSCALE);
@@ -287,6 +280,13 @@ public class Enemy extends Entity {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
             }
         }
+    }
+
+    @Override
+    public void render(SpriteBatch batch) {
+        if (this.getSpriteSheet() == null) return;
+
+        this.updateEffectState();
 
         // Draw outline: 4 offset black silhouettes
         TextureRegion frame = this.getSpriteSheet().getCurrentFrame();

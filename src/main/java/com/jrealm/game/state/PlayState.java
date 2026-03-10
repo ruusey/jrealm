@@ -21,6 +21,7 @@ import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
+import com.jrealm.game.entity.Entity;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
@@ -137,8 +138,11 @@ public class PlayState extends GameState {
 
         if (player == null)
             return;
-        PlayState.map.x = player.getPos().x - (JRealmGame.width / 2);
-        PlayState.map.y = player.getPos().y - (JRealmGame.height / 2);
+        float targetMapX = player.getPos().x - (JRealmGame.width / 2);
+        float targetMapY = player.getPos().y - (JRealmGame.height / 2);
+        float lerpFactor = 0.35f;
+        PlayState.map.x += (targetMapX - PlayState.map.x) * lerpFactor;
+        PlayState.map.y += (targetMapY - PlayState.map.y) * lerpFactor;
 
         Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
         if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
@@ -569,41 +573,76 @@ public class PlayState extends GameState {
             return;
         this.realmManager.getRealm().getTileManager().render(player, batch, shapes);
 
-        for (Player p : this.realmManager.getRealm().getPlayers().values()) {
-            p.render(batch);
-            p.updateAnimation();
-        }
-
         GameObject[] gameObject = this.realmManager.getRealm()
                 .getGameObjectsInBounds(this.realmManager.getRealm().getTileManager().getRenderViewPort(player));
 
-        for (int i = 0; i < gameObject.length; i++) {
-            GameObject toRender = gameObject[i];
-            if (toRender != null) {
-                toRender.render(batch);
-            }
+        // Collect visible entities by type for batched rendering
+        final List<Entity> visibleEntities = new ArrayList<>();
+        final List<Bullet> visibleBullets = new ArrayList<>();
+        final List<Enemy> visibleEnemies = new ArrayList<>();
+
+        for (Player p : this.realmManager.getRealm().getPlayers().values()) {
+            visibleEntities.add(p);
+            p.updateAnimation();
         }
 
-        // Render enemy health bars
+        for (int i = 0; i < gameObject.length; i++) {
+            if (gameObject[i] instanceof Enemy) {
+                Enemy e = (Enemy) gameObject[i];
+                visibleEntities.add(e);
+                visibleEnemies.add(e);
+            } else if (gameObject[i] instanceof Bullet) {
+                visibleBullets.add((Bullet) gameObject[i]);
+            }
+            // Players already added above, skip to avoid double-render
+        }
+
+        // Update visual effect state for all entities before rendering
+        for (int i = 0; i < visibleEntities.size(); i++) {
+            visibleEntities.get(i).updateEffectState();
+        }
+
+        // Pass 1: All silhouette outlines (1 shader switch for ALL entities)
+        com.jrealm.game.graphics.ShaderManager.applyEffect(batch, com.jrealm.game.graphics.Sprite.EffectEnum.SILHOUETTE);
+        for (int i = 0; i < visibleEntities.size(); i++) {
+            visibleEntities.get(i).renderOutline(batch);
+        }
+        com.jrealm.game.graphics.ShaderManager.clearEffect(batch);
+
+        // Pass 2: All entity bodies grouped by effect (minimize shader switches)
+        com.jrealm.game.graphics.Sprite.EffectEnum currentEffect = null;
+        for (int i = 0; i < visibleEntities.size(); i++) {
+            Entity e = visibleEntities.get(i);
+            com.jrealm.game.graphics.Sprite.EffectEnum effect = e.getCurrentEffect();
+            if (effect != currentEffect) {
+                com.jrealm.game.graphics.ShaderManager.applyEffect(batch, effect);
+                currentEffect = effect;
+            }
+            e.renderBody(batch);
+        }
+        com.jrealm.game.graphics.ShaderManager.clearEffect(batch);
+
+        // Pass 3: All bullets (no shader needed)
+        for (int i = 0; i < visibleBullets.size(); i++) {
+            visibleBullets.get(i).render(batch);
+        }
+
+        // Pass 4: Enemy health bars
         batch.end();
         com.badlogic.gdx.Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
         com.badlogic.gdx.Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        for (int i = 0; i < gameObject.length; i++) {
-            if (gameObject[i] instanceof Enemy) {
-                Enemy enemy = (Enemy) gameObject[i];
-                float wx = enemy.getPos().getWorldVar().x;
-                float wy = enemy.getPos().getWorldVar().y;
-                int barWidth = enemy.getSize();
-                int barHeight = 4;
-                float barY = wy - 6;
-                // Dark background
-                shapes.setColor(0.2f, 0.2f, 0.2f, 0.8f);
-                shapes.rect(wx, barY, barWidth, barHeight);
-                // Red fill
-                shapes.setColor(1f, 0f, 0f, 0.9f);
-                shapes.rect(wx, barY, barWidth * enemy.getHealthpercent(), barHeight);
-            }
+        for (int i = 0; i < visibleEnemies.size(); i++) {
+            Enemy enemy = visibleEnemies.get(i);
+            float wx = enemy.getPos().getWorldVar().x;
+            float wy = enemy.getPos().getWorldVar().y;
+            int barWidth = enemy.getSize();
+            int barHeight = 4;
+            float barY = wy - 6;
+            shapes.setColor(0.2f, 0.2f, 0.2f, 0.8f);
+            shapes.rect(wx, barY, barWidth, barHeight);
+            shapes.setColor(1f, 0f, 0f, 0.9f);
+            shapes.rect(wx, barY, barWidth * enemy.getHealthpercent(), barHeight);
         }
         shapes.end();
         com.badlogic.gdx.Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);

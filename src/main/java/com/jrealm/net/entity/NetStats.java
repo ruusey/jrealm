@@ -50,6 +50,16 @@ public class NetStats extends SerializableFieldType<NetStats> {
 		return IOService.writeStream(toWrite, stream);
 	}
 
+	public static NetStats fromStats(Stats stats) {
+		if (stats == null) return new NetStats();
+		return new NetStats(
+			(short) stats.getHp(), (short) stats.getMp(),
+			(short) stats.getDef(), (short) stats.getAtt(),
+			(short) stats.getSpd(), (short) stats.getDex(),
+			(short) stats.getVit(), (short) stats.getWis()
+		);
+	}
+
 	public Stats asStats() {
 		return Stats.builder().hp(this.hp).mp(this.mp).def(this.def).att(this.att).spd(this.spd).dex(this.dex)
 				.vit(this.vit).wis(this.wis).build();

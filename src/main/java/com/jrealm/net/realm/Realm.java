@@ -306,9 +306,16 @@ public class Realm {
         final Enemy existing = this.enemies.get(enemy.getId());
         if (existing == null) {
             final EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
-            enemy.setSpriteSheet(SpriteSheet.fromSpriteModel(model));
+            if (model != null) {
+                enemy.setSpriteSheet(SpriteSheet.fromSpriteModel(model));
+                enemy.setModel(model);
+                if (enemy.getStats() == null) {
+                    enemy.setStats(model.getStats().clone());
+                }
+                enemy.setChaseRange((int) model.getChaseRange());
+                enemy.setAttackRange((int) model.getAttackRange());
+            }
             this.enemies.put(enemy.getId(), enemy);
-
         }
         return enemy.getId();
     }
@@ -428,6 +435,24 @@ public class Realm {
 
         for (final Bullet b : this.bullets.values()) {
             objs.add(b);
+        }
+
+        for (final Enemy e : this.enemies.values()) {
+            objs.add(e);
+        }
+
+        return objs.toArray(new GameObject[0]);
+    }
+
+    /**
+     * Returns only players and enemies for ObjectMovePacket.
+     * Bullets are excluded because they follow deterministic trajectories
+     * and the client simulates them locally from the initial LoadPacket data.
+     */
+    public GameObject[] getMovableGameObjects() {
+        final List<GameObject> objs = new ArrayList<>();
+        for (final Player p : this.players.values()) {
+            objs.add(p);
         }
 
         for (final Enemy e : this.enemies.values()) {

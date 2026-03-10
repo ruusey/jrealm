@@ -249,10 +249,8 @@ public class Player extends Entity {
 	}
 
 	@Override
-	public void render(SpriteBatch batch) {
+	public void updateEffectState() {
 		if (this.getSpriteSheet() == null) return;
-
-		// Update effect tag on sprite sheet
 		if (this.hasEffect(ProjectileEffectType.INVISIBLE)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.SEPIA)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.SEPIA);
@@ -270,6 +268,13 @@ public class Player extends Entity {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);
 			}
 		}
+	}
+
+	@Override
+	public void render(SpriteBatch batch) {
+		if (this.getSpriteSheet() == null) return;
+
+		this.updateEffectState();
 
 		// Draw outline: 4 offset black silhouettes
 		TextureRegion frame = this.getSpriteSheet().getCurrentFrame();

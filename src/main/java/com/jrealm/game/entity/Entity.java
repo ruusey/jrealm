@@ -3,7 +3,9 @@ package com.jrealm.game.entity;
 import java.time.Instant;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 
@@ -153,6 +155,63 @@ public abstract class Entity extends GameObject {
             this.lastAnimSet = targetAnim;
             this.getSpriteSheet().setAnimSet(targetAnim);
         }
+    }
+
+    /**
+     * Update the sprite sheet's visual effect based on active status effects.
+     * Override in subclasses for class-specific effect mappings.
+     */
+    public void updateEffectState() {
+        // Default: no effect mapping. Subclasses override.
+    }
+
+    /**
+     * Draw only the silhouette outline (4 offset copies).
+     * Called during the batched silhouette pass (shader already set).
+     */
+    public void renderOutline(SpriteBatch batch) {
+        if (this.getSpriteSheet() == null) return;
+        TextureRegion frame = this.getSpriteSheet().getCurrentFrame();
+        if (frame == null) return;
+        float wx = this.pos.getWorldVar().x;
+        float wy = this.pos.getWorldVar().y;
+        float ox = 2.5f;
+        if (this.left) {
+            batch.draw(frame, wx + this.size + ox, wy, -this.size, this.size);
+            batch.draw(frame, wx + this.size - ox, wy, -this.size, this.size);
+            batch.draw(frame, wx + this.size, wy + ox, -this.size, this.size);
+            batch.draw(frame, wx + this.size, wy - ox, -this.size, this.size);
+        } else {
+            batch.draw(frame, wx + ox, wy, this.size, this.size);
+            batch.draw(frame, wx - ox, wy, this.size, this.size);
+            batch.draw(frame, wx, wy + ox, this.size, this.size);
+            batch.draw(frame, wx, wy - ox, this.size, this.size);
+        }
+    }
+
+    /**
+     * Draw only the main sprite body with its current effect.
+     * Called during the batched body pass (caller manages shader).
+     */
+    public void renderBody(SpriteBatch batch) {
+        if (this.getSpriteSheet() == null) return;
+        TextureRegion frame = this.getSpriteSheet().getCurrentFrame();
+        if (frame == null) return;
+        float wx = this.pos.getWorldVar().x;
+        float wy = this.pos.getWorldVar().y;
+        if (this.left) {
+            batch.draw(frame, wx + this.size, wy, -this.size, this.size);
+        } else {
+            batch.draw(frame, wx, wy, this.size, this.size);
+        }
+    }
+
+    /**
+     * Returns the current visual effect for this entity's sprite.
+     */
+    public Sprite.EffectEnum getCurrentEffect() {
+        if (this.getSpriteSheet() == null) return Sprite.EffectEnum.NORMAL;
+        return this.getSpriteSheet().getCurrentEffect();
     }
 
     @Override

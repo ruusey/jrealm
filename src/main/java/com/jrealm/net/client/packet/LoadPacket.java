@@ -264,4 +264,12 @@ public class LoadPacket extends Packet {
         }
         return false;
     }
+
+    public boolean isEmpty() {
+        return (this.players == null || this.players.length == 0)
+                && (this.enemies == null || this.enemies.length == 0)
+                && (this.bullets == null || this.bullets.length == 0)
+                && (this.containers == null || this.containers.length == 0)
+                && (this.portals == null || this.portals.length == 0);
+    }
 }

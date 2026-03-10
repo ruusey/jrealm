@@ -152,6 +152,7 @@ public class GameSpriteManager {
             byte[] bytes = readAllBytes(is);
             Pixmap pixmap = new Pixmap(bytes, 0, bytes.length);
             texture = new Texture(pixmap);
+            texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
             pixmap.dispose();
         } catch (Exception e) {
             GameSpriteManager.log.error("ERROR: could not load file: {}", file);
@@ -171,6 +172,7 @@ public class GameSpriteManager {
             is.close();
             Pixmap pixmap = new Pixmap(bytes, 0, bytes.length);
             texture = new Texture(pixmap);
+            texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
             pixmap.dispose();
         } catch (Exception e) {
             GameSpriteManager.log.error("ERROR: could not load remote file: {}. Reason: {}", file, e.getMessage());

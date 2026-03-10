@@ -61,6 +61,15 @@ public class ShaderManager {
         0.2f, 0.2f, 0.2f, 0
     };
 
+    // Pre-cached Matrix4 objects to avoid per-call allocations
+    private static com.badlogic.gdx.math.Matrix4 MAT_IDENTITY;
+    private static com.badlogic.gdx.math.Matrix4 MAT_SEPIA;
+    private static com.badlogic.gdx.math.Matrix4 MAT_REDISH;
+    private static com.badlogic.gdx.math.Matrix4 MAT_GRAYSCALE;
+    private static com.badlogic.gdx.math.Matrix4 MAT_DECAY;
+    private static com.badlogic.gdx.math.Matrix4 MAT_NEGATIVE;
+    private static com.badlogic.gdx.math.Matrix4 MAT_SILHOUETTE;
+
     private static final String VERT_SHADER =
         "attribute vec4 a_position;\n" +
         "attribute vec4 a_color;\n" +
@@ -93,41 +102,138 @@ public class ShaderManager {
         "  }\n" +
         "}\n";
 
+    // Vibrance shader: subtle saturation boost + contrast for crisp pixel art
+    private static ShaderProgram vibranceShader;
+
+    private static final String VIBRANCE_FRAG =
+        "#ifdef GL_ES\n" +
+        "precision mediump float;\n" +
+        "#endif\n" +
+        "varying vec4 v_color;\n" +
+        "varying vec2 v_texCoords;\n" +
+        "uniform sampler2D u_texture;\n" +
+        "uniform float u_saturation;\n" +
+        "uniform float u_contrast;\n" +
+        "void main() {\n" +
+        "  vec4 texColor = texture2D(u_texture, v_texCoords) * v_color;\n" +
+        "  if (texColor.a > 0.01) {\n" +
+        "    float luma = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));\n" +
+        "    vec3 saturated = mix(vec3(luma), texColor.rgb, u_saturation);\n" +
+        "    vec3 contrasted = (saturated - 0.5) * u_contrast + 0.5;\n" +
+        "    gl_FragColor = vec4(clamp(contrasted, 0.0, 1.0), texColor.a);\n" +
+        "  } else {\n" +
+        "    gl_FragColor = texColor;\n" +
+        "  }\n" +
+        "}\n";
+
     public static void init() {
         ShaderProgram.pedantic = false;
         effectShader = new ShaderProgram(VERT_SHADER, FRAG_SHADER);
         if (!effectShader.isCompiled()) {
             log.error("Effect shader failed to compile: {}", effectShader.getLog());
         }
+
+        // Compile vibrance shader
+        vibranceShader = new ShaderProgram(VERT_SHADER, VIBRANCE_FRAG);
+        if (!vibranceShader.isCompiled()) {
+            log.error("Vibrance shader failed to compile: {}", vibranceShader.getLog());
+        }
+
+        // Pre-cache Matrix4 objects
+        MAT_IDENTITY = new com.badlogic.gdx.math.Matrix4(IDENTITY);
+        MAT_SEPIA = new com.badlogic.gdx.math.Matrix4(SEPIA);
+        MAT_REDISH = new com.badlogic.gdx.math.Matrix4(REDISH);
+        MAT_GRAYSCALE = new com.badlogic.gdx.math.Matrix4(GRAYSCALE);
+        MAT_DECAY = new com.badlogic.gdx.math.Matrix4(DECAY);
+        MAT_NEGATIVE = new com.badlogic.gdx.math.Matrix4(NEGATIVE);
+        MAT_SILHOUETTE = new com.badlogic.gdx.math.Matrix4(SILHOUETTE);
     }
+
+    private static Sprite.EffectEnum lastAppliedEffect = null;
 
     public static void applyEffect(SpriteBatch batch, Sprite.EffectEnum effect) {
         if (effect == null || effect == Sprite.EffectEnum.NORMAL) {
-            batch.setShader(null);
+            if (lastAppliedEffect != null && lastAppliedEffect != Sprite.EffectEnum.NORMAL) {
+                if (vibranceActive) {
+                    batch.setShader(vibranceShader);
+                    vibranceShader.setUniformf("u_saturation", vibSaturation);
+                    vibranceShader.setUniformf("u_contrast", vibContrast);
+                } else {
+                    batch.setShader(null);
+                }
+                lastAppliedEffect = Sprite.EffectEnum.NORMAL;
+            }
             return;
         }
 
+        // Skip redundant shader switches
+        if (effect == lastAppliedEffect) return;
+
         batch.setShader(effectShader);
-        float[] matrix;
+        com.badlogic.gdx.math.Matrix4 matrix;
         switch (effect) {
-            case SEPIA: matrix = SEPIA; break;
-            case REDISH: matrix = REDISH; break;
-            case GRAYSCALE: matrix = GRAYSCALE; break;
-            case DECAY: matrix = DECAY; break;
-            case NEGATIVE: matrix = NEGATIVE; break;
-            case SILHOUETTE: matrix = SILHOUETTE; break;
-            default: matrix = IDENTITY; break;
+            case SEPIA: matrix = MAT_SEPIA; break;
+            case REDISH: matrix = MAT_REDISH; break;
+            case GRAYSCALE: matrix = MAT_GRAYSCALE; break;
+            case DECAY: matrix = MAT_DECAY; break;
+            case NEGATIVE: matrix = MAT_NEGATIVE; break;
+            case SILHOUETTE: matrix = MAT_SILHOUETTE; break;
+            default: matrix = MAT_IDENTITY; break;
         }
-        effectShader.setUniformMatrix("u_colorMatrix", new com.badlogic.gdx.math.Matrix4(matrix));
+        effectShader.setUniformMatrix("u_colorMatrix", matrix);
+        lastAppliedEffect = effect;
     }
 
+    private static boolean vibranceActive = false;
+    private static float vibSaturation = 1.0f;
+    private static float vibContrast = 1.0f;
+
     public static void clearEffect(SpriteBatch batch) {
-        batch.setShader(null);
+        if (lastAppliedEffect != null && lastAppliedEffect != Sprite.EffectEnum.NORMAL) {
+            if (vibranceActive) {
+                batch.setShader(vibranceShader);
+                vibranceShader.setUniformf("u_saturation", vibSaturation);
+                vibranceShader.setUniformf("u_contrast", vibContrast);
+            } else {
+                batch.setShader(null);
+            }
+            lastAppliedEffect = Sprite.EffectEnum.NORMAL;
+        }
+    }
+
+    /**
+     * Apply the vibrance shader as the default batch shader.
+     * Call once at the start of each frame before drawing.
+     * @param saturation 1.0 = normal, 1.3 = boosted, 0.0 = grayscale
+     * @param contrast 1.0 = normal, 1.15 = slightly punchy
+     */
+    public static void applyVibrance(SpriteBatch batch, float saturation, float contrast) {
+        batch.setShader(vibranceShader);
+        vibranceShader.setUniformf("u_saturation", saturation);
+        vibranceShader.setUniformf("u_contrast", contrast);
+        vibranceActive = true;
+        vibSaturation = saturation;
+        vibContrast = contrast;
+        lastAppliedEffect = null;
+    }
+
+    /**
+     * Restore the vibrance shader after an effect shader was used.
+     * Use this instead of clearEffect() when vibrance is active.
+     */
+    public static void restoreVibrance(SpriteBatch batch, float saturation, float contrast) {
+        batch.setShader(vibranceShader);
+        vibranceShader.setUniformf("u_saturation", saturation);
+        vibranceShader.setUniformf("u_contrast", contrast);
+        lastAppliedEffect = null;
     }
 
     public static void dispose() {
         if (effectShader != null) {
             effectShader.dispose();
+        }
+        if (vibranceShader != null) {
+            vibranceShader.dispose();
         }
     }
 }

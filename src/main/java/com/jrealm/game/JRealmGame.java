@@ -91,6 +91,7 @@ public class JRealmGame implements ApplicationListener {
         this.shapes.setProjectionMatrix(this.camera.combined);
 
         this.batch.begin();
+        ShaderManager.applyVibrance(this.batch, 1.3f, 1.1f);
         this.gsm.render(this.batch, this.shapes, this.defaultFont);
         this.batch.end();
     }

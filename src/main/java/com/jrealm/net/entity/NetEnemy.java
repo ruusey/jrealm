@@ -36,7 +36,11 @@ public class NetEnemy extends SerializableFieldType<NetEnemy> {
 	private float dY;
 	@SerializableField(order = 7, type = SerializableInt.class)
 	private int healthMultiplier;
-	
+	@SerializableField(order = 8, type = SerializableInt.class)
+	private int health;
+	@SerializableField(order = 9, type = SerializableInt.class)
+	private int maxHealth;
+
 	public Enemy asEnemy() {
 		final Enemy e = new Enemy();
 		e.setId(this.getId());
@@ -47,6 +51,10 @@ public class NetEnemy extends SerializableFieldType<NetEnemy> {
 		e.setDx(this.getDX());
 		e.setDy(this.getDY());
 		e.setHealthMultiplier(this.getHealthMultiplier());
+		e.setHealth(this.getHealth());
+		if (this.maxHealth > 0) {
+			e.setHealthpercent((float) this.health / (float) this.maxHealth);
+		}
 		return e;
 	}
 }

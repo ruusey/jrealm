@@ -225,7 +225,7 @@ public class ClientGameLogic {
 			}
 
 			for (final NetEnemy enemy : loadPacket.getEnemies()) {
-				final Enemy e = IOService.mapModel(enemy, Enemy.class);
+				final Enemy e = enemy.asEnemy();
 				cli.getRealm().addEnemyIfNotExists(e);
 			}
 

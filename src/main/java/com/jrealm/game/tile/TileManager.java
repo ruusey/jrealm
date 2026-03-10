@@ -507,7 +507,20 @@ public class TileManager {
             }
             ShaderManager.clearEffect(batch);
 
-            // Pass 3: Draw collision tiles on top
+            // Pass 3: Draw wall side faces (3D depth effect)
+            for (Tile t : collisionTiles) {
+                TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) t.getTileId());
+                if (region == null) continue;
+                float wx = t.getPos().getWorldVar().x;
+                float wy = t.getPos().getWorldVar().y;
+                int sz = t.getWidth();
+                int sideHeight = sz / 3;
+                batch.setColor(0.25f, 0.25f, 0.3f, 1f);
+                batch.draw(region, wx, wy + sz, sz, sideHeight);
+                batch.setColor(1, 1, 1, 1);
+            }
+
+            // Pass 4: Draw collision tiles on top
             for (Tile t : collisionTiles) {
                 t.render(batch);
             }
