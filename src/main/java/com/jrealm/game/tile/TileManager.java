@@ -447,8 +447,9 @@ public class TileManager {
                 pos.y / GlobalConstants.BASE_TILE_SIZE);
         this.normalizeToBounds(posNormalized);
 
-        // Collect collision tiles for shadow pass
+        // Collect collision tiles and water tiles for rendering passes
         final List<Tile> collisionTiles = new ArrayList<>();
+        final List<Tile> waterTiles = new ArrayList<>();
 
         // Pass 1: Draw all base tiles (circular viewport)
         final float radiusSq = VIEWPORT_TILE_MIN * VIEWPORT_TILE_MIN;
@@ -467,6 +468,11 @@ public class TileManager {
 
                     if (normalTile != null) {
                         normalTile.render(batch);
+                        // Track water tiles so we can redraw them after collision effects
+                        if (normalTile.getData() != null && normalTile.getData().slows()
+                                && !normalTile.getData().hasCollision()) {
+                            waterTiles.add(normalTile);
+                        }
                     }
                     if (collisionTile != null && !collisionTile.isVoid()
                             && collisionTile.getData() != null && collisionTile.getData().hasCollision()) {
@@ -525,6 +531,11 @@ public class TileManager {
             for (Tile t : collisionTiles) {
                 t.render(batch);
             }
+        }
+
+        // Pass 5: Redraw water tiles on top so collision shadows don't cover them
+        for (Tile t : waterTiles) {
+            t.render(batch);
         }
 
         this.releaseMapLock();
