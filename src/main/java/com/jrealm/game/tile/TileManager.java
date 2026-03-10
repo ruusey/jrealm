@@ -469,13 +469,18 @@ public class TileManager {
                     if (normalTile != null) {
                         normalTile.render(batch);
                         // Track water tiles so we can redraw them after collision effects
-                        if (normalTile.getData() != null && normalTile.getData().slows()
-                                && !normalTile.getData().hasCollision()) {
+                        boolean isWaterTile = normalTile.getData() != null && normalTile.getData().slows()
+                                && !normalTile.getData().hasCollision();
+                        if (isWaterTile) {
                             waterTiles.add(normalTile);
                         }
                     }
+                    // Skip collision effects at positions where the base layer has water
+                    boolean baseIsWater = normalTile != null && normalTile.getData() != null
+                            && normalTile.getData().slows() && !normalTile.getData().hasCollision();
                     if (collisionTile != null && !collisionTile.isVoid()
-                            && collisionTile.getData() != null && collisionTile.getData().hasCollision()) {
+                            && collisionTile.getData() != null && collisionTile.getData().hasCollision()
+                            && !baseIsWater) {
                         collisionTiles.add(collisionTile);
                     }
                 } catch (Exception e) {
