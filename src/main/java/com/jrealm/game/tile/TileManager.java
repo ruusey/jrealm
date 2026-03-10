@@ -468,7 +468,8 @@ public class TileManager {
                     if (normalTile != null) {
                         normalTile.render(batch);
                     }
-                    if (collisionTile != null && !collisionTile.isVoid()) {
+                    if (collisionTile != null && !collisionTile.isVoid()
+                            && collisionTile.getData() != null && collisionTile.getData().hasCollision()) {
                         collisionTiles.add(collisionTile);
                     }
                 } catch (Exception e) {

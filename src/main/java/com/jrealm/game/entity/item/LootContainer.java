@@ -1,6 +1,5 @@
 package com.jrealm.game.entity.item;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -131,30 +130,9 @@ public class LootContainer {
         return idx;
     }
 
-    private static final Color BROWN_TINT  = new Color(0.76f, 0.60f, 0.42f, 1f);
-    private static final Color PURPLE_TINT = new Color(0.60f, 0.30f, 0.85f, 1f);
-    private static final Color CYAN_TINT   = new Color(0.30f, 0.85f, 0.90f, 1f);
-    private static final Color BLUE_TINT   = new Color(0.30f, 0.50f, 0.95f, 1f);
-    private static final Color WHITE_TINT  = new Color(0.95f, 0.95f, 0.95f, 1f);
-
-    private Color getTierColor() {
-        if (this.tier == null) return Color.WHITE;
-        switch (this.tier) {
-            case BROWN: return BROWN_TINT;
-            case PURPLE: return PURPLE_TINT;
-            case CYAN: return CYAN_TINT;
-            case BLUE: return BLUE_TINT;
-            case WHITE: return WHITE_TINT;
-            default: return Color.WHITE;
-        }
-    }
-
     public void render(SpriteBatch batch) {
         if (this.sprite != null && this.sprite.getRegion() != null) {
-            Color prev = batch.getColor().cpy();
-            batch.setColor(this.getTierColor());
             batch.draw(this.sprite.getRegion(), this.pos.getWorldVar().x, this.pos.getWorldVar().y, 32, 32);
-            batch.setColor(prev);
         }
     }
 
