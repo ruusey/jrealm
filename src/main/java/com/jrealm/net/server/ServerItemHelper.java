@@ -93,10 +93,11 @@ public class ServerItemHelper {
 
             GameItem to = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
             if (to == null) {
-                player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from;
+                player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();
+                player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
             } else {
                 GameItem fromClone = from.clone();
-                player.getInventory()[moveItemPacket.getFromSlotIndex()] = to;
+                player.getInventory()[moveItemPacket.getFromSlotIndex()] = to.clone();
                 player.getInventory()[moveItemPacket.getTargetSlotIndex()] = fromClone;
             }
             // If the player is attempting to pick up ground loot into their inventory
