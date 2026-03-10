@@ -273,15 +273,15 @@ public class GameDataManager {
 
 	// TODO: Add loot tier in LootContainer
 	public static Sprite getLootSprite(int tier) {
-		return GameSpriteManager.loadSprite(tier, 9, "rotmg-misc.png", GlobalConstants.BASE_SPRITE_SIZE);
+		return GameSpriteManager.loadSprite(tier, 0, "lofi_dungeon_features.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Sprite getGraveSprite() {
-		return GameSpriteManager.loadSprite(5, 5, "rotmg-bosses.png", GlobalConstants.MEDIUM_ART_SIZE);
+		return GameSpriteManager.loadSprite(3, 0, "lofi_dungeon_features.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Sprite getChestSprite() {
-		return GameSpriteManager.loadSprite(2, 0, "rotmg-projectiles.png", GlobalConstants.BASE_SPRITE_SIZE);
+		return GameSpriteManager.loadSprite(0, 0, "lofi_dungeon_features.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Map<Integer, GameItem> getStartingEquipment(final CharacterClass characterClass) {

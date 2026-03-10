@@ -25,12 +25,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GameSpriteManager {
 
-    private static final String[] SPRITE_NAMES = { "rotmg-classes.png", "rotmg-projectiles.png", "rotmg-bosses-1.png",
+    private static final String[] SPRITE_NAMES = { "lofi_classes.png", "rotmg-projectiles.png", "rotmg-bosses-1.png",
             "rotmg-bosses.png", "rotmg-items.png", "rotmg-tiles.png", "rotmg-tiles-1.png", "rotmg-tiles-2.png",
             "rotmg-tiles-all.png", "rotmg-items-1.png", "rotmg-abilities.png", "rotmg-misc.png", "buttons.png",
             "fillbars.png", "icons.png", "slots.png", "ui.png", "rotmg-tiles-1_0.png", "rotmg-tiles-1_.png",
             "rotmg-bosses-1_.png", "rotmg-classes-0.png", "rotmg-classes-1.png", "rotmg-classes-2.png",
-            "rotmg-classes-3.png" };
+            "rotmg-classes-3.png",
+            "lofi_char.png", "lofi_environment.png", "lofi_halls.png", "lofi_obj.png",
+            "lofi_obj_packA.png", "lofi_obj_packB.png", "lofi_dungeon_features.png" };
 
     public static Map<String, Texture> TEXTURE_CACHE;
     public static Map<Integer, TextureRegion> TILE_SPRITES;
@@ -192,7 +194,7 @@ public class GameSpriteManager {
 
     public static SpriteSheet loadClassSprites(CharacterClass cls) {
         if (GameSpriteManager.TEXTURE_CACHE == null) return null;
-        Texture classTexture = GameSpriteManager.TEXTURE_CACHE.get("rotmg-classes.png");
+        Texture classTexture = GameSpriteManager.TEXTURE_CACHE.get("lofi_classes.png");
         if (classTexture == null) return null;
         int baseRow = 4 * cls.classId;
         final SpriteSheet classSprites = new SpriteSheet(classTexture, GlobalConstants.BASE_SPRITE_SIZE,
