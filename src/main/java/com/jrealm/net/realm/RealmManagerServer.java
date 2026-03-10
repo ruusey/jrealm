@@ -163,6 +163,7 @@ public class RealmManagerServer implements Runnable {
 	
 	private long lastWriteSampleTime = Instant.now().toEpochMilli();
 	private long bytesWritten = 0;
+	private Map<String, Long> bytesWrittenByPacketType = new HashMap<>();
 	
 	public RealmManagerServer() {
 		// Probably dont want to auto start the server so migrating
@@ -381,6 +382,7 @@ public class RealmManagerServer implements Runnable {
 						final byte[] frame = packet.serializeToBytes();
 						session.enqueueWrite(frame);
 						this.bytesWritten += frame.length;
+						this.bytesWrittenByPacketType.merge(packet.getClass().getSimpleName(), (long) frame.length, Long::sum);
 					} catch (Exception e) {
 						log.error("[SERVER] Failed to serialize player packet. Reason: {}", e);
 					}
@@ -395,6 +397,15 @@ public class RealmManagerServer implements Runnable {
 			this.lastWriteSampleTime = Instant.now().toEpochMilli();
 			RealmManagerServer.log.info("[SERVER] current write rate = {} kbit/s",
 					(float) (this.bytesWritten / 1024.0f) * 8.0f);
+			// Log per-packet-type bandwidth breakdown
+			final StringBuilder sb = new StringBuilder("[SERVER] Bandwidth by packet type: ");
+			for (Map.Entry<String, Long> entry : this.bytesWrittenByPacketType.entrySet()) {
+				sb.append(entry.getKey()).append("=")
+				  .append(String.format("%.1f", (entry.getValue() / 1024.0f) * 8.0f))
+				  .append("kbit/s ");
+			}
+			RealmManagerServer.log.info(sb.toString());
+			this.bytesWrittenByPacketType.clear();
 			this.bytesWritten = 0;
 		}
 		long nanosDiff = System.nanoTime() - startNanos;
@@ -474,6 +485,7 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 						// Transmit nearby other players' UpdatePackets (equipment, stats, effects)
+						// Only send when the other player's state has actually changed (delta check)
 						final Player[] otherPlayers = realm
 								.getPlayersInBounds(realm.getTileManager().getRenderViewPort(player.getValue()));
 						for (Player other : otherPlayers) {
@@ -481,7 +493,11 @@ public class RealmManagerServer implements Runnable {
 							try {
 								final UpdatePacket otherUpdate = realm.getPlayerAsPacket(other.getId());
 								if (otherUpdate != null) {
-									this.enqueueServerPacket(player.getValue(), otherUpdate);
+									final UpdatePacket cachedOther = this.playerUpdateState.get(other.getId());
+									if (cachedOther == null || !cachedOther.equals(otherUpdate, false)) {
+										this.playerUpdateState.put(other.getId(), otherUpdate);
+										this.enqueueServerPacket(player.getValue(), otherUpdate);
+									}
 								}
 							} catch (Exception ex) {
 								log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
@@ -534,23 +550,20 @@ public class RealmManagerServer implements Runnable {
 								this.enqueueServerPacket(player.getValue(), movePacket);
 							} else if (movePacket != null) {
 								final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
-								if (oldMove != null && !oldMove.equals(movePacket)) {
-									this.playerObjectMoveState.put(player.getKey(), movePacket);
-									this.enqueueServerPacket(player.getValue(), movePacket);
-								} else {
+								if (oldMove != null) {
+									// Compute the diff and only send changed movements
 									final ObjectMovePacket moveDiff = oldMove.getMoveDiff(movePacket);
 									if (moveDiff != null) {
 										this.playerObjectMoveState.put(player.getKey(), movePacket);
-										this.enqueueServerPacket(player.getValue(), movePacket);
+										this.enqueueServerPacket(player.getValue(), moveDiff);
 									}
 								}
 							}
 
-							final ObjectMovePacket movePacket0 = realm.getGameObjectsAsPackets(
-									realm.getTileManager().getRenderViewPort(player.getValue()));
+							// Reuse movePacket for enemy ID extraction instead of querying viewport again
 							final Set<Long> nearEnemyIds = new HashSet<>();
-							if (movePacket0 != null) {
-								for (NetObjectMovement m : movePacket0.getMovements()) {
+							if (movePacket != null) {
+								for (NetObjectMovement m : movePacket.getMovements()) {
 									if (m.getEntityType() == EntityType.ENEMY.getEntityTypeId()) {
 										nearEnemyIds.add(m.getEntityId());
 									}

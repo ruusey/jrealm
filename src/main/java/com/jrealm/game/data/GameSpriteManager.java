@@ -95,6 +95,9 @@ public class GameSpriteManager {
             return null;
         }
         final Texture texture = GameSpriteManager.TEXTURE_CACHE.get(file);
+        if (texture == null) {
+            return null;
+        }
         final TextureRegion subRegion = new TextureRegion(texture, x * spriteSize, y * spriteSize, spriteSize, spriteSize);
         subRegion.flip(false, true);
         return new Sprite(subRegion);
@@ -108,6 +111,9 @@ public class GameSpriteManager {
             model.setSpriteSize(GlobalConstants.BASE_SPRITE_SIZE);
         }
         final Texture texture = GameSpriteManager.TEXTURE_CACHE.get(model.getSpriteKey());
+        if (texture == null) {
+            return null;
+        }
         final TextureRegion subRegion = new TextureRegion(texture,
                 model.getCol() * model.getSpriteSize(),
                 model.getRow() * model.getSpriteSize(),
@@ -185,6 +191,7 @@ public class GameSpriteManager {
     public static SpriteSheet loadClassSprites(CharacterClass cls) {
         if (GameSpriteManager.TEXTURE_CACHE == null) return null;
         Texture classTexture = GameSpriteManager.TEXTURE_CACHE.get("rotmg-classes.png");
+        if (classTexture == null) return null;
         int baseRow = 4 * cls.classId;
         final SpriteSheet classSprites = new SpriteSheet(classTexture, GlobalConstants.BASE_SPRITE_SIZE,
                 GlobalConstants.BASE_SPRITE_SIZE, 0, baseRow);

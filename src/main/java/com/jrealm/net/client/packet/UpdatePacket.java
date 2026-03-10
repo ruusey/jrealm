@@ -112,9 +112,12 @@ public class UpdatePacket extends Packet {
 		if (thinMatch)
 			inv = true;
 
+		// Only compare which effects are active, not their remaining durations.
+		// Effect durations tick down every frame, which would cause this check to
+		// fail every tick and flood the wire with redundant UpdatePackets.
 		boolean effects = true;
 		for (int i = 0; i < this.effectIds.length; i++) {
-			if ((this.effectIds[i] != other.getEffectIds()[i]) || (this.effectTimes[i] != other.getEffectTimes()[i])) {
+			if (this.effectIds[i] != other.getEffectIds()[i]) {
 				effects = false;
 				break;
 			}
@@ -122,7 +125,7 @@ public class UpdatePacket extends Packet {
 		if (thinMatch) {
 			inv = true;
 		}
-		
+
 		boolean expEqual = this.experience == other.getExperience();
 		boolean result = basic && stats && inv && effects && expEqual;
 
@@ -134,9 +137,6 @@ public class UpdatePacket extends Packet {
 				&& (this.health == other.getHealth()) && (this.mana == other.getMana());
 
 		boolean stats = this.stats.equals(other.getStats());
-		if (inventory.length == 1) {
-			// System.out.println("");
-		}
 		boolean inv = true;
 		for (int i = 0; i < this.inventory.length; i++) {
 			if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {
@@ -153,9 +153,10 @@ public class UpdatePacket extends Packet {
 			break;
 		}
 
+		// Only compare which effects are active, not durations (see thinMatch overload)
 		boolean effects = true;
 		for (int i = 0; i < this.effectIds.length; i++) {
-			if ((this.effectIds[i] != other.getEffectIds()[i]) || (this.effectTimes[i] != other.getEffectTimes()[i])) {
+			if (this.effectIds[i] != other.getEffectIds()[i]) {
 				effects = false;
 				break;
 			}
