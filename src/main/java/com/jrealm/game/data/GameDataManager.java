@@ -13,6 +13,7 @@ import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.model.CharacterClassModel;
+import com.jrealm.game.model.DungeonGraphNode;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.ExperienceModel;
 import com.jrealm.game.model.LootGroupModel;
@@ -43,6 +44,7 @@ public class GameDataManager {
 	public static Map<Integer, LootTableModel>                LOOT_TABLES = null;
 	public static Map<Integer, LootGroupModel>                LOOT_GROUPS = null;
 	public static ExperienceModel                             EXPERIENCE_LVLS = null;
+	public static Map<String, DungeonGraphNode>               DUNGEON_GRAPH = null;
 
 	private static void loadLootGroups(final boolean remote) throws Exception {
 		GameDataManager.log.info("Loading Loot Groups...");
@@ -130,6 +132,23 @@ public class GameDataManager {
 			GameDataManager.PORTALS.put(map.getPortalId(), map);
 		}
 		GameDataManager.log.info("Loading Portals... DONE");
+	}
+
+	private static void loadDungeonGraph(final boolean remote) throws Exception {
+		GameDataManager.log.info("Loading Dungeon Graph...");
+		GameDataManager.DUNGEON_GRAPH = new HashMap<>();
+		String text = null;
+		if (remote) {
+			text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/dungeon-graph.json", null);
+		} else {
+			InputStream inputStream = GameDataManager.class.getClassLoader().getResourceAsStream("data/dungeon-graph.json");
+			text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		}
+		DungeonGraphNode[] nodes = GameDataManager.JSON_MAPPER.readValue(text, DungeonGraphNode[].class);
+		for (DungeonGraphNode node : nodes) {
+			GameDataManager.DUNGEON_GRAPH.put(node.getNodeId(), node);
+		}
+		GameDataManager.log.info("Loading Dungeon Graph... DONE ({} nodes)", GameDataManager.DUNGEON_GRAPH.size());
 	}
 
 	private static void loadTerrains(final boolean remote) throws Exception {
@@ -303,6 +322,24 @@ public class GameDataManager {
 		}
 	}
 
+	public static DungeonGraphNode getEntryNode() {
+		for (DungeonGraphNode node : DUNGEON_GRAPH.values()) {
+			if (node.isEntryPoint()) return node;
+		}
+		return null;
+	}
+
+	public static DungeonGraphNode getNodeForPortal(String parentNodeId, int portalId) {
+		DungeonGraphNode parent = DUNGEON_GRAPH.get(parentNodeId);
+		if (parent == null) return null;
+		for (Map.Entry<String, Integer> entry : parent.getPortalDropNodeMap().entrySet()) {
+			if (entry.getValue() == portalId) {
+				return DUNGEON_GRAPH.get(entry.getKey());
+			}
+		}
+		return null;
+	}
+
 	public static String replaceGen(String source, String variable, String value) {
 		final String text = source.replace("{{" + variable + "}}", value);
 		return text;
@@ -318,6 +355,7 @@ public class GameDataManager {
 			GameDataManager.loadMaps(loadRemote);
 			GameDataManager.loadTerrains(loadRemote);
 			GameDataManager.loadPortals(loadRemote);
+			GameDataManager.loadDungeonGraph(loadRemote);
 			GameDataManager.loadExperienceModel(loadRemote);
 			GameDataManager.loadCharacterClasses(loadRemote);
 			GameDataManager.loadLootTables(loadRemote);

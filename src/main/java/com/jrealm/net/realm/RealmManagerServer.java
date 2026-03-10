@@ -201,7 +201,15 @@ public class RealmManagerServer implements Runnable {
 		this.registerCommandHandlersReflection();
 		this.beginPlayerSync();
 		
-		final Realm realm = new Realm(true, 2);
+		final com.jrealm.game.model.DungeonGraphNode entryNode = GameDataManager.getEntryNode();
+		final Realm realm;
+		if (entryNode != null) {
+			realm = new Realm(true, entryNode.getMapId(), 0, entryNode.getNodeId());
+			RealmManagerServer.log.info("[SERVER] Starting realm at graph node: {} ({})", entryNode.getNodeId(), entryNode.getDisplayName());
+		} else {
+			realm = new Realm(true, 2);
+			RealmManagerServer.log.warn("[SERVER] No dungeon graph entry node found, falling back to mapId=2");
+		}
 		realm.spawnRandomEnemies(realm.getMapId());
 		this.addRealm(realm);
 		
@@ -1546,29 +1554,64 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.addLootContainer(dropsBag);
 			}
 
-			// Portal drops from loot table
-			if (lootTable.getPortalDrops() != null) {
-				for (int portalId : lootTable.getPortalDrop()) {
-					PortalModel portalModel = GameDataManager.PORTALS.get(portalId);
-					if (portalModel == null) continue;
+			// Portal drops: use dungeon graph if this realm has a nodeId
+			final String currentNodeId = targetRealm.getNodeId();
+			final com.jrealm.game.model.DungeonGraphNode currentNode = (currentNodeId != null)
+					? GameDataManager.DUNGEON_GRAPH.get(currentNodeId) : null;
 
-					if (portalModel.getTargetRealmDepth() >= 999) {
-						// Dungeon portal
-						Portal toDungeonPortal = new Portal(Realm.RANDOM.nextLong(),
-								(short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
-						toDungeonPortal.linkPortal(targetRealm, null);
-						targetRealm.addPortal(toDungeonPortal);
-					} else {
-						// Realm depth portal
-						Portal toRealmPortal = new Portal(Realm.RANDOM.nextLong(),
-								(short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
-						Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth() - 1);
-						if (realmAtDepth.isEmpty()) {
-							toRealmPortal.linkPortal(targetRealm, null);
-						} else {
-							toRealmPortal.linkPortal(targetRealm, realmAtDepth.get());
+			if (currentNode != null && currentNode.getPortalDropNodeMap() != null
+					&& !currentNode.getPortalDropNodeMap().isEmpty()) {
+				// Graph-based portal drops: drop portals to child nodes
+				if (lootTable.getPortalDrops() != null) {
+					for (int portalId : lootTable.getPortalDrop()) {
+						// Find which child node this portalId leads to from the current node
+						String targetNodeId = null;
+						for (Map.Entry<String, Integer> entry : currentNode.getPortalDropNodeMap().entrySet()) {
+							if (entry.getValue() == portalId) {
+								targetNodeId = entry.getKey();
+								break;
+							}
 						}
-						targetRealm.addPortal(toRealmPortal);
+						if (targetNodeId == null) continue;
+
+						PortalModel portalModel = GameDataManager.PORTALS.get(portalId);
+						if (portalModel == null) continue;
+
+						Portal portal = new Portal(Realm.RANDOM.nextLong(),
+								(short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
+
+						// Check if a realm for this node already exists
+						Optional<Realm> existingRealm = this.findRealmForNode(targetNodeId);
+						if (existingRealm.isPresent()) {
+							portal.linkPortal(targetRealm, existingRealm.get());
+						} else {
+							portal.linkPortal(targetRealm, null);
+						}
+						// Store target node info on the portal for lazy realm creation
+						portal.setTargetNodeId(targetNodeId);
+						targetRealm.addPortal(portal);
+					}
+				}
+			} else {
+				// Legacy depth-based portal drops (fallback for realms without graph nodes)
+				if (lootTable.getPortalDrops() != null) {
+					for (int portalId : lootTable.getPortalDrop()) {
+						PortalModel portalModel = GameDataManager.PORTALS.get(portalId);
+						if (portalModel == null) continue;
+
+						Portal portal = new Portal(Realm.RANDOM.nextLong(),
+								(short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
+						if (portalModel.getTargetRealmDepth() >= 999) {
+							portal.linkPortal(targetRealm, null);
+						} else {
+							Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth() - 1);
+							if (realmAtDepth.isEmpty()) {
+								portal.linkPortal(targetRealm, null);
+							} else {
+								portal.linkPortal(targetRealm, realmAtDepth.get());
+							}
+						}
+						targetRealm.addPortal(portal);
 					}
 				}
 			}
@@ -1651,6 +1694,13 @@ public class RealmManagerServer implements Runnable {
 
 	public Optional<Realm> findRealmAtDepth(int depth) {
 		return this.getRealms().values().stream().filter(realm -> realm.getDepth() == (depth + 1)).findAny();
+	}
+
+	public Optional<Realm> findRealmForNode(String nodeId) {
+		if (nodeId == null) return Optional.empty();
+		return this.getRealms().values().stream()
+				.filter(realm -> nodeId.equals(realm.getNodeId()))
+				.findAny();
 	}
 
 	public void enqueChunkedText(Player target, List<String> textLines) {

@@ -1,0 +1,19 @@
+package com.jrealm.game.model;
+
+import java.util.List;
+import java.util.Map;
+
+import lombok.Data;
+
+@Data
+public class DungeonGraphNode {
+    private String nodeId;
+    private String displayName;
+    private int mapId;
+    private int difficulty;
+    private boolean entryPoint;
+    private boolean bossNode;
+    private List<String> childNodes;
+    // Maps child nodeId -> portalId used to reach it
+    private Map<String, Integer> portalDropNodeMap;
+}

@@ -10,5 +10,7 @@ public class PortalModel extends SpriteModel {
     private int targetRealmDepth;
     private String portalName;
     private int mapId;
+    // Graph-based dungeon system: the target node this portal leads to
+    private String targetNodeId;
 
 }

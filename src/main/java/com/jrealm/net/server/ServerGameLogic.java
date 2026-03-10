@@ -60,9 +60,17 @@ public class ServerGameLogic {
 	public static JrealmServerDataService DATA_SERVICE = null;
 
 	public static void onPlayerJoin(RealmManagerServer mgr, Realm realm, Player player) {
-		TextPacket text = TextPacket.create("SYSTEM", player.getName(), "Realm " + realm.getRealmId());
+		// Show dungeon graph node name if available, otherwise fallback to realm ID
+		String zoneName;
+		if (realm.getNodeId() != null && GameDataManager.DUNGEON_GRAPH != null) {
+			com.jrealm.game.model.DungeonGraphNode node = GameDataManager.DUNGEON_GRAPH.get(realm.getNodeId());
+			zoneName = (node != null) ? node.getDisplayName() : realm.getNodeId();
+		} else {
+			zoneName = "Realm " + realm.getRealmId();
+		}
+		TextPacket text = TextPacket.create("SYSTEM", player.getName(), zoneName);
 		mgr.enqueueServerPacket(player, text);
-		text = TextPacket.create("SYSTEM", player.getName(), "Depth: " + realm.getDepth());
+		text = TextPacket.create("SYSTEM", player.getName(), "Difficulty: " + realm.getDifficultyMultiplier());
 		mgr.enqueueServerPacket(player, text);
 		text = TextPacket.create("SYSTEM", player.getName(), "Enemies: " + realm.getEnemies().size());
 		mgr.enqueueServerPacket(player, text);
@@ -106,16 +114,32 @@ public class ServerGameLogic {
 		final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 		currentRealm.removePlayer(user);
 
-		// Generate target, remove player from current, add to target.
+		// Resolve target node from dungeon graph
+		final String targetNodeId = used.getTargetNodeId();
+		final com.jrealm.game.model.DungeonGraphNode targetNode = (targetNodeId != null)
+				? GameDataManager.DUNGEON_GRAPH.get(targetNodeId) : null;
+
 		if (targetRealm == null) {
-			// Try to find the realm at the correct depth
-			Optional<Realm> realmAtDepth = mgr.findRealmAtDepth(portalUsed.getTargetRealmDepth());
-			if (realmAtDepth.isEmpty()) {
-				final Realm generatedRealm = new Realm(true, portalUsed.getMapId(), portalUsed.getTargetRealmDepth());
+			// Try graph-based lookup first, then fallback to legacy depth
+			Optional<Realm> existingRealm;
+			if (targetNodeId != null) {
+				existingRealm = mgr.findRealmForNode(targetNodeId);
+			} else {
+				existingRealm = mgr.findRealmAtDepth(portalUsed.getTargetRealmDepth());
+			}
+
+			if (existingRealm.isEmpty()) {
+				// Create new realm from graph node or legacy portal model
+				final int mapId = (targetNode != null) ? targetNode.getMapId() : portalUsed.getMapId();
+				final int depth = (targetNode != null) ? targetNode.getDifficulty() : portalUsed.getTargetRealmDepth();
+				final Realm generatedRealm = new Realm(true, mapId, depth, targetNodeId);
+
 				targetRealm = generatedRealm;
 
-				// Boss_0 map: skip random enemies, spawn player at ring center
-				if (generatedRealm.getMapId() == 5) {
+				final boolean isBossNode = (targetNode != null && targetNode.isBossNode());
+
+				// Boss node or Boss_0 map: skip random enemies, spawn player at ring center
+				if (isBossNode || generatedRealm.getMapId() == 5) {
 					user.setPos(new Vector2f(GlobalConstants.BASE_TILE_SIZE * 16,
 							GlobalConstants.BASE_TILE_SIZE * 12));
 				} else {
@@ -123,16 +147,17 @@ public class ServerGameLogic {
 					user.setPos(generatedRealm.getTileManager().getSafePosition());
 				}
 
-				// Place exit portal and boss enemy in the boss room if one was generated
+				// Place exit portal and boss enemy if applicable
 				final Vector2f bossSpawnPos = generatedRealm.getTileManager().getBossSpawnPos();
-				final MapModel mapModel = GameDataManager.MAPS.get(portalUsed.getMapId());
+				final MapModel mapModel = GameDataManager.MAPS.get(mapId);
 				if (bossSpawnPos != null && mapModel.getDungeonParams() != null) {
 					final DungeonGenerationParams dungeonParams = mapModel.getDungeonParams();
 					final int bossEnemyId = dungeonParams.getBossEnemyId();
 					if (bossEnemyId > 0) {
 						final Enemy boss = GameObjectUtils.getEnemyFromId(bossEnemyId, bossSpawnPos.clone());
-						boss.setHealth(boss.getHealth() * 4);
-						boss.getStats().setHp((short) (boss.getStats().getHp() * 4));
+						final int bossMult = (targetNode != null) ? targetNode.getDifficulty() : 4;
+						boss.setHealth(boss.getHealth() * bossMult);
+						boss.getStats().setHp((short) (boss.getStats().getHp() * bossMult));
 						generatedRealm.addEnemy(boss);
 					}
 
@@ -149,17 +174,19 @@ public class ServerGameLogic {
 					generatedRealm.addPortal(exitPortal);
 				}
 
+				if (targetNode != null) {
+					ServerGameLogic.log.info("[SERVER] Created realm for graph node: {} ({})",
+							targetNode.getNodeId(), targetNode.getDisplayName());
+				}
 				mgr.addRealm(generatedRealm);
 			} else {
-				realmAtDepth.get().addPlayer(user);
+				targetRealm = existingRealm.get();
 			}
-		}
-		// Remove player from current, add to target ( realm already exists)
-		else {
+		} else {
+			// Target realm already exists
 			user.setPos(targetRealm.getTileManager().getSafePosition());
 
-			// If we are coming from the vault, save the data and destroy the realm
-			// instance.
+			// Vault cleanup
 			if (currentRealm.getMapId() == 1) {
 				List<ChestDto> chestsToSave = currentRealm.serializeChests();
 				try {
@@ -171,9 +198,16 @@ public class ServerGameLogic {
 							user.getAccountUuid(), e);
 				}
 				mgr.getRealms().remove(currentRealm.getRealmId());
-			} else if ((currentRealm.getMapId() == 5) && (currentRealm.getEnemies().size() == 0)
-					&& (currentRealm.getPlayers().size() == 0)) {
-				mgr.getRealms().remove(currentRealm.getRealmId());
+			}
+			// Boss realm cleanup when empty
+			else if (currentRealm.getPlayers().size() == 0) {
+				final com.jrealm.game.model.DungeonGraphNode currentNode = (currentRealm.getNodeId() != null)
+						? GameDataManager.DUNGEON_GRAPH.get(currentRealm.getNodeId()) : null;
+				boolean isBoss = (currentNode != null && currentNode.isBossNode())
+						|| (currentRealm.getMapId() == 5);
+				if (isBoss && currentRealm.getEnemies().size() == 0) {
+					mgr.getRealms().remove(currentRealm.getRealmId());
+				}
 			}
 		}
 		targetRealm.addPlayer(user);

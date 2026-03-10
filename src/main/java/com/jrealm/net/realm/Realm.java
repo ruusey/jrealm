@@ -32,6 +32,7 @@ import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.model.DungeonGraphNode;
 import com.jrealm.game.model.EnemyModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.ProjectileGroup;
@@ -56,6 +57,7 @@ public class Realm {
     private long realmId;
     private int mapId;
     private int depth;
+    private String nodeId;
     private Map<Long, Player> players;
     private Map<Long, Bullet> bullets;
     private Map<Long, List<Long>> bulletHits;
@@ -91,6 +93,12 @@ public class Realm {
     public Realm(boolean isServer, int mapId, int depth) {
         this(isServer, mapId);
         this.depth = depth;
+    }
+
+    public Realm(boolean isServer, int mapId, int depth, String nodeId) {
+        this(isServer, mapId);
+        this.depth = depth;
+        this.nodeId = nodeId;
     }
 
     public int getDepth() {
@@ -618,7 +626,7 @@ public class Realm {
                                     i * this.tileManager.getMapLayers().get(0).getTileSize()),
                             toSpawn.getSize(), toSpawn.getAttackId());
                     enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
-                    int healthMult = ((this.getDepth() == 0  || this.getDepth()==999) ? 1 : this.getDepth() + 1);
+                    int healthMult = this.getDifficultyMultiplier();
                     enemy.setHealth(enemy.getHealth() * healthMult);
                     enemy.setHealthMultiplier(healthMult);
                     enemy.getStats().setHp((short) (enemy.getStats().getHp() * healthMult));
@@ -642,17 +650,27 @@ public class Realm {
                 toSpawn.getAttackId());
         enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
 
-        final int healthMult = (this.getDepth() == 0 ? 1 : this.getDepth() + 1);
+        final int healthMult = this.getDifficultyMultiplier();
         enemy.setHealth(enemy.getHealth() * healthMult);
         enemy.setPos(spawnPos);
         this.addEnemy(enemy);
+    }
+
+    public int getDifficultyMultiplier() {
+        if (this.nodeId != null && GameDataManager.DUNGEON_GRAPH != null) {
+            DungeonGraphNode node = GameDataManager.DUNGEON_GRAPH.get(this.nodeId);
+            if (node != null) return Math.max(1, node.getDifficulty());
+        }
+        // Fallback to legacy depth-based scaling
+        return ((this.getDepth() == 0 || this.getDepth() == 999) ? 1 : this.getDepth() + 1);
     }
 
     private Runnable getStatsThread() {
         final Runnable statsThread = () -> {
             while (!this.shutdown) {
                 final double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
-                Realm.log.info("--- Realm: {} | MapId: {} | Depth: {} ---", this.getRealmId(), this.getMapId(), this.getDepth());
+                final String nodeName = (this.nodeId != null) ? this.nodeId : "legacy";
+                Realm.log.info("--- Realm: {} | Node: {} | MapId: {} | Difficulty: {} ---", this.getRealmId(), nodeName, this.getMapId(), this.getDifficultyMultiplier());
                 Realm.log.info("Enemies: {}", this.enemies.size());
                 Realm.log.info("Players: {}", this.players.size());
                 Realm.log.info("Loot: {}", this.loot.size());
