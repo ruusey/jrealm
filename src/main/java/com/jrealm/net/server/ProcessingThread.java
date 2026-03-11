@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.google.common.io.LittleEndianDataInputStream;
 import com.jrealm.game.contants.PacketType;
+import com.jrealm.net.NetConstants;
 import com.jrealm.net.Packet;
 import com.jrealm.net.core.IOService;
 import com.jrealm.util.WorkerThread;
@@ -84,8 +85,9 @@ public class ProcessingThread extends Thread {
                         break;
                     }
                     byte packetId = this.remoteBuffer[0];
-                    byte[] packetBytes = new byte[packetLength];
-                    System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
+                    int dataLength = packetLength - NetConstants.PACKET_HEADER_SIZE;
+                    byte[] packetBytes = new byte[dataLength];
+                    System.arraycopy(this.remoteBuffer, NetConstants.PACKET_HEADER_SIZE, packetBytes, 0, dataLength);
                     if (this.remoteBufferIndex > packetLength) {
                         System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
                                 this.remoteBufferIndex - packetLength);

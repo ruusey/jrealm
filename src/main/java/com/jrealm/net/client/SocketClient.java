@@ -12,6 +12,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.game.contants.PacketType;
+import com.jrealm.net.NetConstants;
 import com.jrealm.net.Packet;
 import com.jrealm.net.core.IOService;
 import com.jrealm.util.TimedWorkerThread;
@@ -104,8 +105,9 @@ public class SocketClient implements Runnable {
                         break;
                     }
                     final byte packetId = this.remoteBuffer[0];
-                    final byte[] packetBytes = new byte[packetLength];
-                    System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
+                    final int dataLength = packetLength - NetConstants.PACKET_HEADER_SIZE;
+                    final byte[] packetBytes = new byte[dataLength];
+                    System.arraycopy(this.remoteBuffer, NetConstants.PACKET_HEADER_SIZE, packetBytes, 0, dataLength);
                     if (this.remoteBufferIndex > packetLength) {
                         System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
                                 this.remoteBufferIndex - packetLength);
