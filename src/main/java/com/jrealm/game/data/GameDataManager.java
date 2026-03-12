@@ -271,17 +271,15 @@ public class GameDataManager {
 		GameDataManager.log.info("Loading Game Items... DONE");
 	}
 
-	// Loot bag sprites from rotmg-misc-OLD-8px.png row 8
-	// Col mapping: 0=white, 1=brown, 4=blue, 5=purple, 6=red, 15=cyan
-	private static final int[] LOOT_BAG_COLS = { 1, 5, 15, 4, 0 };
-
+	// Loot bag sprites from rotmg-misc-OLD-8px.png row 9
+	// Col mapping: 0=brown, 1=purple, 2=cyan, 3=blue, 4=white
 	public static Sprite getLootSprite(int tier) {
-		int col = (tier >= 0 && tier < LOOT_BAG_COLS.length) ? LOOT_BAG_COLS[tier] : 1;
-		return GameSpriteManager.loadSprite(col, 8, "rotmg-misc-OLD-8px.png", GlobalConstants.BASE_SPRITE_SIZE);
+		int col = (tier >= 0 && tier < 5) ? tier : 0;
+		return GameSpriteManager.loadSprite(col, 9, "rotmg-misc-OLD-8px.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Sprite getGraveSprite() {
-		return GameSpriteManager.loadSprite(6, 8, "rotmg-misc-OLD-8px.png", GlobalConstants.BASE_SPRITE_SIZE);
+		return GameSpriteManager.loadSprite(3, 0, "lofi_dungeon_features.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Sprite getChestSprite() {

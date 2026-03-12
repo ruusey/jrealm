@@ -15,6 +15,7 @@ import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
+import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.SpriteModel;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.net.client.ClientGameLogic;
@@ -193,54 +194,92 @@ public class GameSpriteManager {
         return baos.toByteArray();
     }
 
+    private static final String[] CLASS_SHEET_NAMES = {
+        "rotmg-classes-0.png", "rotmg-classes-1.png", "rotmg-classes-2.png", "rotmg-classes-3.png"
+    };
+
+    private static String getClassSheetName(int classId) {
+        int sheetIndex = classId / 3;
+        if (sheetIndex >= 0 && sheetIndex < CLASS_SHEET_NAMES.length) {
+            return CLASS_SHEET_NAMES[sheetIndex];
+        }
+        return CLASS_SHEET_NAMES[0];
+    }
+
     public static SpriteSheet loadClassSprites(CharacterClass cls) {
         if (GameSpriteManager.TEXTURE_CACHE == null) return null;
-        Texture classTexture = GameSpriteManager.TEXTURE_CACHE.get("lofi_classes.png");
-        if (classTexture == null) return null;
-        int baseRow = 4 * cls.classId;
-        final SpriteSheet classSprites = new SpriteSheet(classTexture, GlobalConstants.BASE_SPRITE_SIZE,
-                GlobalConstants.BASE_SPRITE_SIZE, 0, baseRow);
 
-        // Set up animation sets from the 4-row-per-class layout:
-        // Row 0 (baseRow+0): Side walk frames (cols: 0=frameA, 1=frameB)
-        // Row 1 (baseRow+1): Side attack frames (cols: 0=atk1, 1=atk2)
-        // Row 2 (baseRow+2): Front walk frames (cols: 0=frameA, 1=frameB)
-        // Row 3 (baseRow+3): Front attack frames (cols: 0=atk1, 1=atk2)
-        // Note: only cols 0-1 have valid sprites per row; col 2+ are empty
+        CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(cls.classId);
+        if (classModel == null) return null;
+        String sheetName = getClassSheetName(cls.classId);
+        Texture classTexture = GameSpriteManager.TEXTURE_CACHE.get(sheetName);
+        if (classTexture == null) return null;
+
+        // Each sheet has 3 classes. spriteOffset is the global row; compute local row within the sheet.
+        // Sheet 0: global rows 0-11, Sheet 1: 12-23, Sheet 2: 24-33, Sheet 3: 34-42
+        int sheetIndex = cls.classId / 3;
+        int[] sheetBaseOffsets = {0, 12, 24, 34};
+        int localRow = classModel.getSpriteOffset() - sheetBaseOffsets[sheetIndex];
+
+        final SpriteSheet classSprites = new SpriteSheet(classTexture, GlobalConstants.BASE_SPRITE_SIZE,
+                GlobalConstants.BASE_SPRITE_SIZE, 0, localRow);
+
+        // Sprite layout: 2 rows per direction, cols 0-2 contain main animation frames.
+        // Row 0: Side/primary walk (cols 0-1 = walk frame 1, walk frame 2)
+        // Row 1: Side/primary attack (cols 0-2 = 3 attack frames)
+        // Row 2: Back direction (no face visible)
+        // Row 3: Front direction (4-row classes only; classId <= 6)
+        // For 3-row classes (classId >= 7): front reuses side (rows 0-1).
         int walkDur = 8;
         int atkDur = 5;
+        boolean hasFrontRow = (cls.classId <= 6);
+        int frontRow = hasFrontRow ? localRow + 3 : localRow;
 
-        // idle: single frame, long duration
+        // Side idle + walk: Row 0, cols 0-1
         classSprites.addAnimSet("idle_side",
-            Arrays.asList(classSprites.getSubSprite(0, baseRow)),
+            Arrays.asList(classSprites.getSubSprite(0, localRow)),
             Arrays.asList(999));
-        classSprites.addAnimSet("idle_front",
-            Arrays.asList(classSprites.getSubSprite(0, baseRow + 2)),
-            Arrays.asList(999));
-
-        // walk: 2-frame alternation (cols 0 and 1 only)
         classSprites.addAnimSet("walk_side",
             Arrays.asList(
-                classSprites.getSubSprite(0, baseRow),
-                classSprites.getSubSprite(1, baseRow)),
-            Arrays.asList(walkDur, walkDur));
-        classSprites.addAnimSet("walk_front",
-            Arrays.asList(
-                classSprites.getSubSprite(0, baseRow + 2),
-                classSprites.getSubSprite(1, baseRow + 2)),
+                classSprites.getSubSprite(0, localRow),
+                classSprites.getSubSprite(1, localRow)),
             Arrays.asList(walkDur, walkDur));
 
-        // attack: 2-frame cycle
+        // Side attack: Row 1, cols 0-2 (3-frame attack)
         classSprites.addAnimSet("attack_side",
             Arrays.asList(
-                classSprites.getSubSprite(0, baseRow + 1),
-                classSprites.getSubSprite(1, baseRow + 1)),
-            Arrays.asList(atkDur, atkDur));
-        classSprites.addAnimSet("attack_front",
+                classSprites.getSubSprite(0, localRow + 1),
+                classSprites.getSubSprite(1, localRow + 1),
+                classSprites.getSubSprite(2, localRow + 1)),
+            Arrays.asList(atkDur, atkDur, atkDur));
+
+        // Front idle + walk: Row 3 for 4-row classes, or reuse Row 0 for 3-row classes
+        classSprites.addAnimSet("idle_front",
+            Arrays.asList(classSprites.getSubSprite(0, frontRow)),
+            Arrays.asList(999));
+        classSprites.addAnimSet("walk_front",
             Arrays.asList(
-                classSprites.getSubSprite(0, baseRow + 3),
-                classSprites.getSubSprite(1, baseRow + 3)),
-            Arrays.asList(atkDur, atkDur));
+                classSprites.getSubSprite(0, frontRow),
+                classSprites.getSubSprite(1, frontRow)),
+            Arrays.asList(walkDur, walkDur));
+
+        // Front attack: Row 3 cols 0, 4, 5 for 4-row classes (3 distinct frames),
+        // or reuse side attack (Row 1, cols 0-2) for 3-row classes
+        if (hasFrontRow) {
+            classSprites.addAnimSet("attack_front",
+                Arrays.asList(
+                    classSprites.getSubSprite(0, frontRow),
+                    classSprites.getSubSprite(4, frontRow),
+                    classSprites.getSubSprite(5, frontRow)),
+                Arrays.asList(atkDur, atkDur, atkDur));
+        } else {
+            classSprites.addAnimSet("attack_front",
+                Arrays.asList(
+                    classSprites.getSubSprite(0, localRow + 1),
+                    classSprites.getSubSprite(1, localRow + 1),
+                    classSprites.getSubSprite(2, localRow + 1)),
+                Arrays.asList(atkDur, atkDur, atkDur));
+        }
 
         classSprites.setAnimSet("idle_side");
         return classSprites;
