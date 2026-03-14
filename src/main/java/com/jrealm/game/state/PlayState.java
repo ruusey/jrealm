@@ -359,23 +359,27 @@ public class PlayState extends GameState {
                     lastDirectionTempMap.put(Cardinality.EAST, false);
                 }
                 if (player.getIsUp() && player.getIsRight()) {
-                    player.setDy(-spd);
-                    player.setDx(spd);
+                    float diagSpd = (float) ((spd * Math.sqrt(2)) / 2.0f);
+                    player.setDy(-diagSpd);
+                    player.setDx(diagSpd);
                 }
 
                 if (player.getIsUp() && player.getIsLeft()) {
-                    player.setDy(-spd);
-                    player.setDx(-spd);
+                    float diagSpd = (float) ((spd * Math.sqrt(2)) / 2.0f);
+                    player.setDy(-diagSpd);
+                    player.setDx(-diagSpd);
                 }
 
                 if (player.getIsDown() && player.getIsRight()) {
-                    player.setDy(spd);
-                    player.setDx(spd);
+                    float diagSpd = (float) ((spd * Math.sqrt(2)) / 2.0f);
+                    player.setDy(diagSpd);
+                    player.setDx(diagSpd);
                 }
 
                 if (player.getIsDown() && player.getIsLeft()) {
-                    player.setDy(spd);
-                    player.setDx(-spd);
+                    float diagSpd = (float) ((spd * Math.sqrt(2)) / 2.0f);
+                    player.setDy(diagSpd);
+                    player.setDx(-diagSpd);
                 }
 
                 if (c == null) {

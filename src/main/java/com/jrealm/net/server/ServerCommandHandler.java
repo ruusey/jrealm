@@ -20,6 +20,7 @@ import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.CharacterClassModel;
+import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.tile.Tile;
 import com.jrealm.net.messaging.CommandType;
@@ -296,6 +297,72 @@ public class ServerCommandHandler {
         }
         final LootContainer lootDrop = new LootContainer(LootTier.BROWN, target.getPos().clone(), itemToSpawn);
         targetRealm.addLootContainer(lootDrop);
+    }
+
+    @CommandHandler(value="portal", description="Spawn a portal to a map by name. Usage: /portal {MAP_NAME}")
+	@AdminRestrictedCommand
+    public static void invokeSpawnPortal(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (message.getArgs() == null || message.getArgs().size() < 1)
+            throw new IllegalArgumentException("Usage: /portal {MAP_NAME}");
+
+        final String mapName = String.join(" ", message.getArgs());
+        log.info("Player {} spawning portal to map '{}'", target.getName(), mapName);
+
+        // Find map by name (case-insensitive, supports partial match)
+        MapModel targetMap = null;
+        for (MapModel m : GameDataManager.MAPS.values()) {
+            if (m.getMapName().equalsIgnoreCase(mapName)) {
+                targetMap = m;
+                break;
+            }
+        }
+        // Fallback: partial match
+        if (targetMap == null) {
+            for (MapModel m : GameDataManager.MAPS.values()) {
+                if (m.getMapName().toLowerCase().contains(mapName.toLowerCase())) {
+                    targetMap = m;
+                    break;
+                }
+            }
+        }
+        if (targetMap == null) {
+            // List available maps in error message
+            final String available = GameDataManager.MAPS.values().stream()
+                    .map(m -> m.getMapName() + " (" + m.getMapId() + ")")
+                    .collect(Collectors.joining(", "));
+            throw new IllegalArgumentException("Map '" + mapName + "' not found. Available: " + available);
+        }
+
+        // Find a portal model that targets this map, or fall back to a generic portal
+        PortalModel portalModel = null;
+        for (PortalModel pm : GameDataManager.PORTALS.values()) {
+            if (pm.getMapId() == targetMap.getMapId()) {
+                portalModel = pm;
+                break;
+            }
+        }
+        // Fall back to dungeon portal (portalId 6) if no matching portal model
+        if (portalModel == null) {
+            portalModel = GameDataManager.PORTALS.get(6);
+        }
+
+        // Create the destination realm
+        final Realm currentRealm = mgr.findPlayerRealm(target.getId());
+        final Realm destinationRealm = new Realm(true, targetMap.getMapId(), portalModel.getTargetRealmDepth());
+        destinationRealm.spawnRandomEnemies(targetMap.getMapId());
+        mgr.addRealm(destinationRealm);
+
+        // Create and link portal at player position
+        final com.jrealm.game.entity.Portal portal = new com.jrealm.game.entity.Portal(
+                Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(), target.getPos().clone());
+        portal.linkPortal(currentRealm, destinationRealm);
+        portal.setNeverExpires();
+        currentRealm.addPortal(portal);
+
+        final String msg = "Portal to " + targetMap.getMapName() + " spawned!";
+        mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), msg));
+        log.info("Player {} spawned portal to {} (mapId={})", target.getName(), targetMap.getMapName(), targetMap.getMapId());
     }
 
     @CommandHandler(value="realm", description="Move the player to the boss realm or the top realm")

@@ -21,6 +21,8 @@ public abstract class Entity extends GameObject {
     protected boolean left = false;
     protected boolean attack = false;
     protected String lastAnimSet = "idle_side";
+    protected String lastMovementDirection = "side"; // "side" or "front" - used for hysteresis
+    private static final float DIRECTION_SWITCH_THRESHOLD = 0.15f;
 
     public boolean xCol = false;
     public boolean yCol = false;
@@ -135,18 +137,37 @@ public abstract class Entity extends GameObject {
             this.up = false;
         }
 
-        // Select animation set based on movement state
+        // Select animation set based on movement state with direction hysteresis
         if (this.getSpriteSheet() != null && this.getSpriteSheet().hasAnimSets()) {
             String targetAnim;
             if (this.attacking) {
                 targetAnim = (this.up || this.down) ? "attack_front" : "attack_side";
+            } else if ((this.left || this.right) && (this.up || this.down)) {
+                // Diagonal movement: use hysteresis to prevent rapid animation switching.
+                // Only switch direction if the dominant axis clearly changes.
+                float absDx = Math.abs(this.dx);
+                float absDy = Math.abs(this.dy);
+                if ("front".equals(this.lastMovementDirection)) {
+                    // Currently showing front - only switch to side if horizontal clearly dominates
+                    if (absDx > absDy * (1.0f + DIRECTION_SWITCH_THRESHOLD)) {
+                        this.lastMovementDirection = "side";
+                    }
+                } else {
+                    // Currently showing side - only switch to front if vertical clearly dominates
+                    if (absDy > absDx * (1.0f + DIRECTION_SWITCH_THRESHOLD)) {
+                        this.lastMovementDirection = "front";
+                    }
+                }
+                targetAnim = "side".equals(this.lastMovementDirection) ? "walk_side" : "walk_front";
             } else if (this.left || this.right) {
+                this.lastMovementDirection = "side";
                 targetAnim = "walk_side";
             } else if (this.up || this.down) {
+                this.lastMovementDirection = "front";
                 targetAnim = "walk_front";
             } else {
                 // Idle: keep facing the same direction as last movement
-                if (this.lastAnimSet != null && this.lastAnimSet.contains("front")) {
+                if ("front".equals(this.lastMovementDirection)) {
                     targetAnim = "idle_front";
                 } else {
                     targetAnim = "idle_side";
