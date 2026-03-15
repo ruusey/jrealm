@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.math.Vector2f;
@@ -36,6 +37,16 @@ public class ItemTooltip {
 
     private Stats stats;
 
+    private static final int PADDING = 6;
+    private static final int LINE_HEIGHT = 18;
+    private static final Color BG_COLOR = new Color(0.12f, 0.12f, 0.15f, 0.95f);
+    private static final Color BORDER_COLOR = new Color(0.4f, 0.4f, 0.5f, 1f);
+    private static final Color TITLE_COLOR = new Color(1f, 0.85f, 0.2f, 1f);
+    private static final Color DESC_COLOR = new Color(0.75f, 0.75f, 0.75f, 1f);
+    private static final Color STAT_POS_COLOR = new Color(0.3f, 1f, 0.3f, 1f);
+    private static final Color STAT_NEG_COLOR = new Color(1f, 0.3f, 0.3f, 1f);
+    private static final Color INFO_COLOR = new Color(0.6f, 0.8f, 1f, 1f);
+
     public ItemTooltip(GameItem item, Vector2f pos, int width, int height) {
         this.pos = pos;
         this.width = width;
@@ -53,41 +64,138 @@ public class ItemTooltip {
         this.stats = item.getStats();
     }
 
-    public void render(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
-        int spacing = 16;
+    private String getClassName() {
+        CharacterClass cls = CharacterClass.valueOf((int) this.targetClass);
+        if (cls == null) return "Unknown";
+        return cls.name();
+    }
 
-        // Background
+    private List<TooltipLine> buildLines() {
+        List<TooltipLine> lines = new ArrayList<>();
+
+        // Title
+        if (this.title != null && !this.title.isEmpty()) {
+            lines.add(new TooltipLine(this.title, TITLE_COLOR));
+        }
+
+        // Description - wrap long text to fit tooltip width
+        if (this.description != null && !this.description.isEmpty()) {
+            // Approximate char width for BitmapFont (typically ~7px per glyph at default scale)
+            int charWidth = 7;
+            int maxCharsPerLine = Math.max(8, (this.width - PADDING * 2) / charWidth);
+            String[] words = this.description.split(" ");
+            StringBuilder currentLine = new StringBuilder();
+            for (String word : words) {
+                if (currentLine.length() == 0) {
+                    currentLine.append(word);
+                } else if (currentLine.length() + 1 + word.length() <= maxCharsPerLine) {
+                    currentLine.append(" ").append(word);
+                } else {
+                    lines.add(new TooltipLine(currentLine.toString(), DESC_COLOR));
+                    currentLine = new StringBuilder(word);
+                }
+            }
+            if (currentLine.length() > 0) {
+                lines.add(new TooltipLine(currentLine.toString(), DESC_COLOR));
+            }
+        }
+
+        // Separator
+        lines.add(new TooltipLine("", null));
+
+        // Damage
+        if (this.maxDamage > 0) {
+            lines.add(new TooltipLine("Damage: " + this.minDamage + " - " + this.maxDamage, INFO_COLOR));
+        }
+
+        // Class
+        lines.add(new TooltipLine("Class: " + this.getClassName(), INFO_COLOR));
+
+        // Tier
+        lines.add(new TooltipLine("Tier: " + this.tier, INFO_COLOR));
+
+        // Stats
+        if (this.stats != null) {
+            List<String> statParts = new ArrayList<>();
+            this.addStat(statParts, "HP", this.stats.getHp());
+            this.addStat(statParts, "MP", this.stats.getMp());
+            this.addStat(statParts, "ATT", this.stats.getAtt());
+            this.addStat(statParts, "DEF", this.stats.getDef());
+            this.addStat(statParts, "SPD", this.stats.getSpd());
+            this.addStat(statParts, "DEX", this.stats.getDex());
+            this.addStat(statParts, "VIT", this.stats.getVit());
+            this.addStat(statParts, "WIS", this.stats.getWis());
+
+            if (!statParts.isEmpty()) {
+                lines.add(new TooltipLine("", null));
+                for (String part : statParts) {
+                    boolean positive = part.contains("+");
+                    lines.add(new TooltipLine(part, positive ? STAT_POS_COLOR : STAT_NEG_COLOR));
+                }
+            }
+        }
+
+        return lines;
+    }
+
+    private void addStat(List<String> parts, String name, short value) {
+        if (value != 0) {
+            String sign = value > 0 ? "+" : "";
+            parts.add(name + " " + sign + value);
+        }
+    }
+
+    public void render(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
+        List<TooltipLine> lines = this.buildLines();
+
+        // Calculate actual height based on content
+        int contentHeight = PADDING * 2 + (lines.size() * LINE_HEIGHT);
+        int tooltipWidth = this.width;
+        int tooltipHeight = Math.max(contentHeight, LINE_HEIGHT * 3);
+
+        // Clamp position so tooltip stays on screen
+        float drawX = this.pos.x;
+        float drawY = this.pos.y;
+
+        // Draw background with border
         batch.end();
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        shapes.setColor(Color.GRAY);
-        shapes.rect(this.pos.x, this.pos.y, this.width, this.height);
+        // Border
+        shapes.setColor(BORDER_COLOR);
+        shapes.rect(drawX - 1, drawY - 1, tooltipWidth + 2, tooltipHeight + 2);
+        // Background
+        shapes.setColor(BG_COLOR);
+        shapes.rect(drawX, drawY, tooltipWidth, tooltipHeight);
         shapes.end();
         batch.begin();
 
-        font.setColor(Color.WHITE);
-        font.draw(batch, this.title, this.pos.x, this.pos.y + (1 * spacing));
-        font.draw(batch, this.description, this.pos.x, this.pos.y + (2 * spacing));
+        // Draw lines
+        float textX = drawX + PADDING;
+        float textY = drawY + PADDING + LINE_HEIGHT;
 
-        if (this.maxDamage > 0) {
-            font.draw(batch, "Damage: " + this.minDamage + " - " + this.maxDamage, this.pos.x, this.pos.y + (3 * spacing));
+        for (int i = 0; i < lines.size(); i++) {
+            TooltipLine line = lines.get(i);
+            if (line.color == null || line.text.isEmpty()) {
+                // Empty line / separator - just advance Y
+                textY += LINE_HEIGHT / 2;
+                continue;
+            }
+            font.setColor(line.color);
+            font.draw(batch, line.text, textX, textY);
+            textY += LINE_HEIGHT;
         }
 
-        font.draw(batch, "Class: " + this.targetClass, this.pos.x, this.pos.y + (4 * spacing));
-        font.draw(batch, "Tier: " + this.tier, this.pos.x, this.pos.y + (5 * spacing));
+        // Reset font color
+        font.setColor(Color.WHITE);
+    }
 
-        if (this.stats != null) {
-            List<String> statsToDraw = new ArrayList<>();
-            if (this.stats.getHp() > 0) statsToDraw.add("HP +" + this.stats.getHp());
-            if (this.stats.getMp() > 0) statsToDraw.add("MP +" + this.stats.getMp());
-            if (this.stats.getAtt() > 0) statsToDraw.add("ATT +" + this.stats.getAtt());
-            if (this.stats.getDef() > 0) statsToDraw.add("DEF +" + this.stats.getDef());
-            if (this.stats.getSpd() > 0) statsToDraw.add("SPD +" + this.stats.getSpd());
-            if (this.stats.getDex() > 0) statsToDraw.add("DEX +" + this.stats.getDex());
-            if (this.stats.getVit() > 0) statsToDraw.add("VIT +" + this.stats.getVit());
-            if (this.stats.getWis() > 0) statsToDraw.add("WIS +" + this.stats.getWis());
-            for (int i = 0; i < statsToDraw.size(); i++) {
-                font.draw(batch, statsToDraw.get(i), this.pos.x, this.pos.y + ((6 + i) * spacing));
-            }
+    private static class TooltipLine {
+        String text;
+        Color color;
+
+        TooltipLine(String text, Color color) {
+            this.text = text;
+            this.color = color;
         }
     }
 }

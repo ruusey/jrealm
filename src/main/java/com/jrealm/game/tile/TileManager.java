@@ -1,6 +1,7 @@
 package com.jrealm.game.tile;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -11,7 +12,6 @@ import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.data.GameSpriteManager;
@@ -447,11 +447,13 @@ public class TileManager {
                 pos.y / GlobalConstants.BASE_TILE_SIZE);
         this.normalizeToBounds(posNormalized);
 
-        // Collect collision tiles and water tiles for rendering passes
-        final List<Tile> collisionTiles = new ArrayList<>();
+        // Separate collision layer tiles into walls, objects, and decorations
+        final List<Tile> wallTiles = new ArrayList<>();
+        final List<Tile> objectTiles = new ArrayList<>();
+        final List<Tile> decorationTiles = new ArrayList<>();
         final List<Tile> waterTiles = new ArrayList<>();
 
-        // Pass 1: Draw all base tiles (circular viewport)
+        // Pass 1: Draw all base tiles (circular viewport) and classify collision layer tiles
         final float radiusSq = VIEWPORT_TILE_MIN * VIEWPORT_TILE_MIN;
         for (int x = (int) (posNormalized.x - VIEWPORT_TILE_MIN); x < (posNormalized.x + VIEWPORT_TILE_MIN); x++) {
             for (int y = (int) (posNormalized.y - VIEWPORT_TILE_MIN); y < (int) (posNormalized.y + VIEWPORT_TILE_MIN); y++) {
@@ -468,20 +470,31 @@ public class TileManager {
 
                     if (normalTile != null) {
                         normalTile.render(batch);
-                        // Track water tiles so we can redraw them after collision effects
                         boolean isWaterTile = normalTile.getData() != null && normalTile.getData().slows()
                                 && !normalTile.getData().hasCollision();
                         if (isWaterTile) {
                             waterTiles.add(normalTile);
                         }
                     }
-                    // Skip collision effects at positions where the base layer has water
-                    boolean baseIsWater = normalTile != null && normalTile.getData() != null
-                            && normalTile.getData().slows() && !normalTile.getData().hasCollision();
-                    if (collisionTile != null && !collisionTile.isVoid()
-                            && collisionTile.getData() != null && collisionTile.getData().hasCollision()
-                            && !baseIsWater) {
-                        collisionTiles.add(collisionTile);
+
+                    // Classify collision layer tiles
+                    if (collisionTile != null && !collisionTile.isVoid()) {
+                        boolean baseIsWater = normalTile != null && normalTile.getData() != null
+                                && normalTile.getData().slows() && !normalTile.getData().hasCollision();
+                        if (baseIsWater) {
+                            // Skip collision effects over water
+                        } else if (collisionTile.getData() != null && collisionTile.getData().hasCollision()) {
+                            // Wall = collision tile over void base; Object = collision tile over floor
+                            boolean baseIsVoid = (normalTile == null || normalTile.isVoid());
+                            if (baseIsVoid) {
+                                wallTiles.add(collisionTile);
+                            } else {
+                                objectTiles.add(collisionTile);
+                            }
+                        } else {
+                            // Non-collision decorative tile on collision layer
+                            decorationTiles.add(collisionTile);
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -489,12 +502,11 @@ public class TileManager {
             }
         }
 
-        // Pass 2: Draw shadows and contour outlines for collision tiles
-        if (!collisionTiles.isEmpty()) {
-            // Shadow pass: draw sprite silhouette offset so shadow contours the sprite shape
+        // Pass 2: Render wall tiles with 3D effect (shadow, contour, side face)
+        if (!wallTiles.isEmpty()) {
             ShaderManager.applyEffect(batch, Sprite.EffectEnum.SILHOUETTE);
             batch.setColor(1, 1, 1, 0.35f);
-            for (Tile t : collisionTiles) {
+            for (Tile t : wallTiles) {
                 TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) t.getTileId());
                 if (region == null) continue;
                 float wx = t.getPos().getWorldVar().x;
@@ -504,9 +516,8 @@ public class TileManager {
             }
             batch.setColor(1, 1, 1, 1);
 
-            // Contour outline pass: 4 offset silhouette copies of each tile sprite
             float ox = 2.0f;
-            for (Tile t : collisionTiles) {
+            for (Tile t : wallTiles) {
                 TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) t.getTileId());
                 if (region == null) continue;
                 float wx = t.getPos().getWorldVar().x;
@@ -519,8 +530,7 @@ public class TileManager {
             }
             ShaderManager.clearEffect(batch);
 
-            // Pass 3: Draw wall side faces (3D depth effect)
-            for (Tile t : collisionTiles) {
+            for (Tile t : wallTiles) {
                 TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) t.getTileId());
                 if (region == null) continue;
                 float wx = t.getPos().getWorldVar().x;
@@ -532,13 +542,42 @@ public class TileManager {
                 batch.setColor(1, 1, 1, 1);
             }
 
-            // Pass 4: Draw collision tiles on top
-            for (Tile t : collisionTiles) {
+            for (Tile t : wallTiles) {
                 t.render(batch);
             }
         }
 
-        // Pass 5: Redraw water tiles on top so collision shadows don't cover them
+        // Pass 3: Render object tiles (trees, rocks, etc.) with circular shadow
+        if (!objectTiles.isEmpty()) {
+            batch.end();
+            com.badlogic.gdx.Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+            com.badlogic.gdx.Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA,
+                    com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapes.begin(ShapeRenderer.ShapeType.Filled);
+            shapes.setColor(0f, 0f, 0f, 0.3f);
+            for (Tile t : objectTiles) {
+                float wx = t.getPos().getWorldVar().x;
+                float wy = t.getPos().getWorldVar().y;
+                int sz = t.getWidth();
+                float cx = wx + sz / 2f;
+                float cy = wy + sz * 0.75f;
+                shapes.ellipse(cx - sz * 0.4f, cy - sz * 0.12f, sz * 0.8f, sz * 0.25f);
+            }
+            shapes.end();
+            com.badlogic.gdx.Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+            batch.begin();
+
+            for (Tile t : objectTiles) {
+                t.render(batch);
+            }
+        }
+
+        // Pass 4: Draw decorative (non-collision) tiles from collision layer
+        for (Tile t : decorationTiles) {
+            t.render(batch);
+        }
+
+        // Pass 5: Redraw water tiles on top so shadows don't cover them
         for (Tile t : waterTiles) {
             t.render(batch);
         }

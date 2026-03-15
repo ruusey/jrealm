@@ -50,7 +50,6 @@ public class PlayerUI {
     private PlayState playState;
     private PlayerChat playerChat;
     private Minimap minimap;
-    private Map<String, ItemTooltip> tooltips;
     private long lastAction = Instant.now().toEpochMilli();
     private Button menuButton = null;
 
@@ -69,6 +68,7 @@ public class PlayerUI {
     private boolean isDragging = false;
     private Vector2f dragStartPos = null;
     private static final float DRAG_THRESHOLD = 8.0f;
+    private ItemTooltip activeTooltip = null;
 
     public PlayerUI(PlayState p) {
         int panelWidth = JRealmGame.width / 5;
@@ -86,7 +86,6 @@ public class PlayerUI {
                 panelWidth, barHeight, "getExperiencePercent", Color.DARK_GRAY, new Color(1.0f, 0.5f, 0.0f, 1.0f));
         this.groundLoot = new Slots[8];
         this.inventory = new Slots[20];
-        this.tooltips = new HashMap<>();
         this.playerChat = new PlayerChat(p);
         this.minimap = new Minimap(p);
     }
@@ -215,20 +214,11 @@ public class PlayerUI {
                 b = new Button(new Vector2f(startX + (actualIdx * 64), 650 + yOffset), 64);
             }
 
-            b.onHoverIn(event -> {
-                this.tooltips.put(item.getUid(),
-                        new ItemTooltip(item, new Vector2f((JRealmGame.width / 2) + 75, 100), panelWidth, 400));
-            });
-
-            b.onHoverOut(event -> {
-                this.tooltips.clear();
-            });
-
             b.onMouseUp(event -> {
                 // Don't allow picking up items from ground loot area during trade
                 if (this.isTrading) return;
                 if (this.isDragging) return;
-                this.tooltips.clear();
+                this.activeTooltip = null;
                 if (this.canSwap()) {
                     this.setActionTime();
                     GameItem[] currentInv = this.playState.getPlayer().getSlots(4, 12);
@@ -265,14 +255,6 @@ public class PlayerUI {
                 actualIdx = idx;
             }
             Button b = new Button(new Vector2f(startX + (actualIdx * 64), 256), 64);
-            b.onHoverIn(event -> {
-                this.tooltips.put(item.getUid(),
-                        new ItemTooltip(item, new Vector2f((JRealmGame.width / 2) + 75, 100), panelWidth, 400));
-            });
-
-            b.onHoverOut(event -> {
-                this.tooltips.clear();
-            });
 
             b.onRightClick(event -> {
                 // Don't allow equipment swaps during trade
@@ -310,15 +292,6 @@ public class PlayerUI {
             } else {
                 b = new Button(new Vector2f(startX + (index * 64), 450), 64);
             }
-
-            b.onHoverIn(event -> {
-                this.tooltips.put(item.getUid(),
-                        new ItemTooltip(item, new Vector2f((JRealmGame.width / 2) + 75, 100), panelWidth, 400));
-            });
-
-            b.onHoverOut(event -> {
-                this.tooltips.clear();
-            });
 
             b.onRightClick(event -> {
                 if (this.isTrading) {
@@ -411,6 +384,9 @@ public class PlayerUI {
             }
         }
 
+        // Poll-based tooltip: check mouse position against all slots each frame
+        this.updateTooltip(mouse);
+
         // Handle trade button input
         if (this.isTrading) {
             if (this.confirmTradeButton != null) {
@@ -430,6 +406,41 @@ public class PlayerUI {
             this.playerChat.input(mouse, key, this.playState.getRealmManager().getClient());
         } catch (Exception e) {
         }
+    }
+
+    private void updateTooltip(MouseHandler mouse) {
+        int mx = mouse.getX();
+        int my = mouse.getY();
+        int panelWidth = (JRealmGame.width / 5);
+        int startX = JRealmGame.width - panelWidth;
+        int tooltipX = startX - panelWidth - 8;
+
+        // Check inventory slots (equipment + backpack)
+        for (int i = 0; i < this.inventory.length; i++) {
+            Slots s = this.inventory[i];
+            if (s != null && s.getButton() != null && s.getItem() != null) {
+                if (s.getButton().getBounds().inside(mx, my)) {
+                    this.activeTooltip = new ItemTooltip(s.getItem(),
+                            new Vector2f(tooltipX, 100), panelWidth, 0);
+                    return;
+                }
+            }
+        }
+
+        // Check ground loot slots
+        for (int i = 0; i < this.groundLoot.length; i++) {
+            Slots s = this.groundLoot[i];
+            if (s != null && s.getButton() != null && s.getItem() != null) {
+                if (s.getButton().getBounds().inside(mx, my)) {
+                    this.activeTooltip = new ItemTooltip(s.getItem(),
+                            new Vector2f(tooltipX, 100), panelWidth, 0);
+                    return;
+                }
+            }
+        }
+
+        // Mouse not over any item slot
+        this.activeTooltip = null;
     }
 
     public boolean canSwap() {
@@ -564,8 +575,8 @@ public class PlayerUI {
         // Render nearby players list
         this.renderNearbyPlayers(batch, shapes, font, startX, panelWidth);
 
-        for (ItemTooltip tip : this.tooltips.values()) {
-            tip.render(batch, shapes, font);
+        if (this.activeTooltip != null) {
+            this.activeTooltip.render(batch, shapes, font);
         }
 
         // Render hovered player tooltip on top of everything

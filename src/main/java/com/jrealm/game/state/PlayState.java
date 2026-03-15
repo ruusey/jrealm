@@ -16,8 +16,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.JRealmGame;
+import com.badlogic.gdx.graphics.Color;
 import com.jrealm.game.contants.CharacterClass;
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.model.TileModel;
+import com.jrealm.game.tile.Tile;
+import com.jrealm.game.tile.TileData;
+import com.jrealm.game.tile.TileMap;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -79,6 +85,7 @@ public class PlayState extends GameState {
 
     private Map<Cardinality, Boolean> lastDirectionMap;
     private boolean sentChat = false;
+    private boolean debugMode = false;
 
     public PlayState(GameStateManager gsm, Camera cam) {
         super(gsm);
@@ -667,9 +674,138 @@ public class PlayState extends GameState {
             text.render(batch, font);
         }
 
-        font.setColor(com.badlogic.gdx.graphics.Color.WHITE);
+        if (this.debugMode) {
+            this.renderDebugTileOverlay(batch, shapes, font, player);
+        }
+
+        font.setColor(Color.WHITE);
         String fps = this.lastFrames + " FPS";
         font.draw(batch, fps, 6 * 32, 32);
+    }
+
+    private void renderDebugTileOverlay(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font, Player player) {
+        int mx = Gdx.input.getX();
+        int my = Gdx.input.getY();
+
+        // Convert screen coords to world coords
+        float worldX = mx + PlayState.map.x;
+        float worldY = my + PlayState.map.y;
+
+        int tileSize = GlobalConstants.BASE_TILE_SIZE;
+        int tileCol = (int) (worldX / tileSize);
+        int tileRow = (int) (worldY / tileSize);
+
+        TileMap baseLayer = this.realmManager.getRealm().getTileManager().getBaseLayer();
+        TileMap collisionLayer = this.realmManager.getRealm().getTileManager().getCollisionLayer();
+
+        if (tileCol < 0 || tileCol >= baseLayer.getWidth() || tileRow < 0 || tileRow >= baseLayer.getHeight()) {
+            return;
+        }
+
+        // Get tiles at hovered position
+        Tile baseTile = baseLayer.getBlocks()[tileRow][tileCol];
+        Tile collTile = collisionLayer.getBlocks()[tileRow][tileCol];
+
+        // Draw green outline around hovered tile in world space
+        float drawX = (tileCol * tileSize) - PlayState.map.x;
+        float drawY = (tileRow * tileSize) - PlayState.map.y;
+
+        batch.end();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        // Filled green tint
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(0f, 1f, 0f, 0.15f);
+        shapes.rect(drawX, drawY, tileSize, tileSize);
+        shapes.end();
+
+        // Green border
+        shapes.begin(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(0f, 1f, 0f, 1f);
+        shapes.rect(drawX, drawY, tileSize, tileSize);
+        shapes.end();
+
+        // Build tooltip text
+        int tooltipX = mx + 16;
+        int tooltipY = my + 16;
+        int lineHeight = 16;
+        int padding = 6;
+
+        List<String> lines = new ArrayList<>();
+        lines.add("Tile [" + tileCol + ", " + tileRow + "]");
+
+        if (baseTile != null && !baseTile.isVoid()) {
+            String baseName = "ID " + baseTile.getTileId();
+            TileModel baseModel = GameDataManager.TILES.get((int) baseTile.getTileId());
+            if (baseModel != null && baseModel.getName() != null) {
+                baseName = baseModel.getName() + " (" + baseTile.getTileId() + ")";
+            }
+            lines.add("Base: " + baseName);
+        } else {
+            lines.add("Base: void");
+        }
+
+        if (collTile != null && !collTile.isVoid()) {
+            String collName = "ID " + collTile.getTileId();
+            TileModel collModel = GameDataManager.TILES.get((int) collTile.getTileId());
+            if (collModel != null && collModel.getName() != null) {
+                collName = collModel.getName() + " (" + collTile.getTileId() + ")";
+            }
+            lines.add("Collision: " + collName);
+        }
+
+        // Show tile data flags
+        TileData data = null;
+        if (collTile != null && collTile.getData() != null && collTile.getData().hasCollision()) {
+            data = collTile.getData();
+        } else if (baseTile != null && baseTile.getData() != null) {
+            data = baseTile.getData();
+        }
+
+        if (data != null) {
+            List<String> flags = new ArrayList<>();
+            if (data.hasCollision()) flags.add("COLLISION");
+            if (data.slows()) flags.add("SLOWS");
+            if (data.damaging()) flags.add("DAMAGING");
+            if (!flags.isEmpty()) {
+                lines.add("Flags: " + String.join(", ", flags));
+            }
+        }
+
+        int tooltipWidth = 0;
+        for (String line : lines) {
+            tooltipWidth = Math.max(tooltipWidth, line.length() * 7 + padding * 2);
+        }
+        int tooltipHeight = padding * 2 + lines.size() * lineHeight;
+
+        // Clamp tooltip to screen
+        if (tooltipX + tooltipWidth > JRealmGame.width) {
+            tooltipX = mx - tooltipWidth - 8;
+        }
+        if (tooltipY + tooltipHeight > JRealmGame.height) {
+            tooltipY = my - tooltipHeight - 8;
+        }
+
+        // Draw tooltip background
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(0.1f, 0.1f, 0.12f, 0.92f);
+        shapes.rect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+        shapes.end();
+        shapes.begin(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(0f, 0.8f, 0f, 1f);
+        shapes.rect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+        shapes.end();
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+        batch.begin();
+
+        // Draw tooltip text
+        font.setColor(Color.GREEN);
+        for (int i = 0; i < lines.size(); i++) {
+            font.draw(batch, lines.get(i), tooltipX + padding, tooltipY + padding + lineHeight + (i * lineHeight));
+        }
+        font.setColor(Color.WHITE);
     }
 
     public void renderCloseLoot(SpriteBatch batch) {

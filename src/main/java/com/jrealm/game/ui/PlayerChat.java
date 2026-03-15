@@ -71,9 +71,14 @@ public class PlayerChat {
             if (!this.chatOpen && !key.getContent().isBlank()) {
                 try {
                     String messageToSend = key.getCapturedInput();
-                    messageToSend = messageToSend.replace("\n", "").replace("\r", "");
+                    messageToSend = messageToSend.replace("\n", "").replace("\r", "").trim();
                     if (messageToSend.startsWith("/")) {
-                        if (messageToSend.equalsIgnoreCase("/clear")) {
+                        if (messageToSend.equalsIgnoreCase("/debug")) {
+                            this.state.setDebugMode(!this.state.isDebugMode());
+                            String status = this.state.isDebugMode() ? "ON" : "OFF";
+                            TextPacket debugMsg = TextPacket.create("SYSTEM", "SYSTEM", "Debug mode: " + status);
+                            this.addChatMessage(debugMsg);
+                        } else if (messageToSend.equalsIgnoreCase("/clear")) {
                             this.playerChat = new LinkedHashMap<String, TextPacket>() {
                                 private static final long serialVersionUID = 4568387673008726309L;
 
