@@ -48,10 +48,12 @@ public class TileMap {
     }
     
     public void fill(int tileId) {
+        final TileModel model = GameDataManager.TILES.get(tileId);
+        final short tid = (short) model.getTileId();
+        final TileData data = model.getData();
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                TileModel tileIdToCreate = GameDataManager.TILES.get(tileId);
-                this.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+                this.tiles[i][j] = new Tile(tid, (short) i, (short) j, data, (short) GlobalConstants.BASE_TILE_SIZE);
             }
         }
     }

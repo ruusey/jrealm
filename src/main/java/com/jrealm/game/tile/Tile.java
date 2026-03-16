@@ -12,38 +12,51 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Tile {
 	private short tileId;
-	private boolean discovered = false;
-	private short size;
-	// Row and column in the tile grid — position computed as (col*size, row*size)
-	// Eliminates per-tile Vector2f allocation (saves ~8MB on 512x512 maps)
 	private short row;
 	private short col;
-	private TileData data;
+	// Pack collision/slows/damaging into a single byte to eliminate TileData object per tile.
+	// Bit 0 = collision, bit 1 = slows, bit 2 = damaging
+	private byte flags;
 
-	// Shared no-collision TileData instance to avoid per-tile allocation
-	private static final TileData SHARED_NO_COLLISION = TileData.withoutCollision();
-	private static final TileData SHARED_COLLISION = TileData.withCollision();
+	// Shared TileData instances — only 8 possible flag combinations
+	private static final TileData[] SHARED_DATA = new TileData[8];
+	static {
+		for (int i = 0; i < 8; i++) {
+			SHARED_DATA[i] = new TileData((byte)(i & 1), (byte)((i >> 1) & 1), (byte)((i >> 2) & 1));
+		}
+	}
 
 	public Tile(short tileId, Vector2f pos, TileData data, short size, boolean discovered) {
 		this.tileId = tileId;
-		this.size = size;
-		this.data = data;
-		this.discovered = discovered;
-		// Derive row/col from position
 		this.col = (short) (pos.x / size);
 		this.row = (short) (pos.y / size);
+		this.flags = dataToFlags(data);
 	}
 
 	public Tile(short tileId, short row, short col, TileData data, short size) {
 		this.tileId = tileId;
 		this.row = row;
 		this.col = col;
-		this.size = size;
-		this.data = data;
+		this.flags = dataToFlags(data);
 	}
 
-	public static TileData sharedData(boolean collision) {
-		return collision ? SHARED_COLLISION : SHARED_NO_COLLISION;
+	private static byte dataToFlags(TileData data) {
+		if (data == null) return 0;
+		return (byte) ((data.hasCollision() ? 1 : 0)
+				| (data.slows() ? 2 : 0)
+				| (data.damaging() ? 4 : 0));
+	}
+
+	public TileData getData() {
+		return SHARED_DATA[this.flags & 0x7];
+	}
+
+	public void setData(TileData data) {
+		this.flags = dataToFlags(data);
+	}
+
+	public int getSize() {
+		return com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
 	}
 
 	public boolean update(Rectangle bounds) {
@@ -51,36 +64,41 @@ public class Tile {
 	}
 
 	public int getWidth() {
-		return this.size;
+		return com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
 	}
 
 	public int getHeight() {
-		return this.size;
+		return com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
 	}
 
-	/** Returns a computed position. Use sparingly — prefer getWorldX()/getWorldY() for rendering. */
 	public Vector2f getPos() {
-		return new Vector2f(this.col * this.size, this.row * this.size);
+		final int size = com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+		return new Vector2f(this.col * size, this.row * size);
 	}
 
 	public float getWorldX() {
-		return this.col * this.size;
+		return this.col * com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
 	}
 
 	public float getWorldY() {
-		return this.row * this.size;
+		return this.row * com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
 	}
 
 	public boolean isVoid() {
 		return this.tileId == 0;
 	}
 
+	public boolean isDiscovered() {
+		return false;
+	}
+
 	public void render(SpriteBatch batch) {
 		TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) this.tileId);
 		if (region != null) {
-			float wx = (this.col * this.size) - Vector2f.worldX;
-			float wy = (this.row * this.size) - Vector2f.worldY;
-			batch.draw(region, wx, wy, this.size, this.size);
+			final int size = com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+			float wx = (this.col * size) - Vector2f.worldX;
+			float wy = (this.row * size) - Vector2f.worldY;
+			batch.draw(region, wx, wy, size, size);
 		}
 	}
 }
