@@ -18,6 +18,7 @@ import com.jrealm.net.core.IOService;
 import com.jrealm.net.messaging.CommandType;
 import com.jrealm.net.messaging.LoginRequestMessage;
 import com.jrealm.net.messaging.LoginResponseMessage;
+import com.jrealm.net.messaging.ServerCommandMessage;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
@@ -65,6 +66,8 @@ public class StressTestClient implements Runnable {
 
     private volatile long assignedPlayerId = -1;
     private volatile boolean loggedIn = false;
+    private volatile float spawnX = -1;
+    private volatile float spawnY = -1;
 
     private volatile Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
     private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
@@ -163,6 +166,22 @@ public class StressTestClient implements Runnable {
                             this.assignedPlayerId = resp.getPlayerId();
                             this.loggedIn = true;
                             log.info("[Client-{}] Logged in! PlayerId={}", this.clientIndex, this.assignedPlayerId);
+
+                            // Teleport to spawn position if set
+                            if (this.spawnX >= 0 && this.spawnY >= 0) {
+                                try {
+                                    float offsetX = this.spawnX + (RANDOM.nextFloat() * 60 - 30);
+                                    float offsetY = this.spawnY + (RANDOM.nextFloat() * 60 - 30);
+                                    ServerCommandMessage tpCmd = ServerCommandMessage.parseFromInput(
+                                            "/tp " + offsetX + " " + offsetY);
+                                    CommandPacket tpPacket = CommandPacket.from(CommandType.SERVER_COMMAND, tpCmd);
+                                    tpPacket.setPlayerId(this.assignedPlayerId);
+                                    this.outboundPacketQueue.add(tpPacket);
+                                    log.info("[Client-{}] Teleporting to ({}, {})", this.clientIndex, offsetX, offsetY);
+                                } catch (Exception ex) {
+                                    log.error("[Client-{}] Failed to send tp command: {}", this.clientIndex, ex.getMessage());
+                                }
+                            }
                         } else {
                             log.error("[Client-{}] Login failed", this.clientIndex);
                         }
@@ -170,6 +189,13 @@ public class StressTestClient implements Runnable {
                         log.error("[Client-{}] Failed to parse login response: {}", this.clientIndex, e.getMessage());
                     }
                 }
+            }
+            // Handle death - shutdown this bot
+            if (packet.getId() == com.jrealm.game.contants.PacketType.getPacketId(
+                    com.jrealm.net.client.packet.PlayerDeathPacket.class)) {
+                log.info("[Client-{}] Bot died, shutting down", this.clientIndex);
+                this.shutdown();
+                return;
             }
             // All other packets are just consumed (counted in bandwidth stats)
         }
@@ -181,11 +207,21 @@ public class StressTestClient implements Runnable {
      * UpdatePackets, LoadPackets, and LoadMapPackets — all high-bandwidth.
      * Shooting creates projectiles which further amplify server broadcasts.
      */
+    private int moveTick = 0;
+    private int movePhase = 0;
+
     private void simulateGameplay() {
         try {
-            // Send movement packet in a random direction
-            Cardinality[] dirs = { Cardinality.NORTH, Cardinality.SOUTH, Cardinality.EAST, Cardinality.WEST };
-            Cardinality dir = dirs[RANDOM.nextInt(dirs.length)];
+            // Each bot gets a unique movement pattern offset by clientIndex
+            // Bots cycle through directions every ~40 ticks (2 sec at 20 ticks/sec)
+            this.moveTick++;
+            if (this.moveTick % 40 == 0) {
+                this.movePhase = (this.movePhase + 1) % 4;
+            }
+            // Offset by clientIndex so each bot goes a different direction
+            int dirIdx = (this.movePhase + this.clientIndex) % 4;
+            Cardinality[] dirs = { Cardinality.NORTH, Cardinality.EAST, Cardinality.SOUTH, Cardinality.WEST };
+            Cardinality dir = dirs[dirIdx];
             PlayerMovePacket movePacket = new PlayerMovePacket(this.assignedPlayerId, dir.cardinalityId, true);
             this.outboundPacketQueue.add(movePacket);
 
@@ -286,6 +322,11 @@ public class StressTestClient implements Runnable {
         } catch (Exception e) {
             // ignore
         }
+    }
+
+    public void setSpawnNear(float x, float y) {
+        this.spawnX = x;
+        this.spawnY = y;
     }
 
     public boolean isLoggedIn() {

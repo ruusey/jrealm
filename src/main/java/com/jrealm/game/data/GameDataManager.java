@@ -275,15 +275,15 @@ public class GameDataManager {
 	// Col mapping: 0=brown, 1=purple, 2=cyan, 3=blue, 4=white
 	public static Sprite getLootSprite(int tier) {
 		int col = (tier >= 0 && tier < 5) ? tier : 0;
-		return GameSpriteManager.loadSprite(col, 9, "rotmg-misc-OLD-8px.png", GlobalConstants.BASE_SPRITE_SIZE);
+		return GameSpriteManager.loadSprite(col, 9, "rotmg-misc.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Sprite getGraveSprite() {
-		return GameSpriteManager.loadSprite(3, 0, "lofi_dungeon_features.png", GlobalConstants.BASE_SPRITE_SIZE);
+		return GameSpriteManager.loadSprite(3, 1, "rotmg-projectiles.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Sprite getChestSprite() {
-		return GameSpriteManager.loadSprite(0, 0, "lofi_dungeon_features.png", GlobalConstants.BASE_SPRITE_SIZE);
+		return GameSpriteManager.loadSprite(0, 2, "rotmg-projectiles.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Map<Integer, GameItem> getStartingEquipment(final CharacterClass characterClass) {

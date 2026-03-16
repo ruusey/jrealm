@@ -488,17 +488,21 @@ public class ServerGameLogic {
 				throw e;
 			}
 			final CharacterDto targetCharacter = characterClass.get();
-			final Player existing = mgr.searchRealmsForPlayer(account.getAccountName());
-
-			if (existing != null) {
-				player = existing;
-				final Realm currentRealm = mgr.findPlayerRealm(existing.getId());
-				currentRealm.removePlayer(existing);
-				if (currentRealm.getMapId() == 1) {
-					mgr.safeRemoveRealm(currentRealm.getRealmId());
+			// Re-login check: if this account name already has an active player, remove it
+			// Skip for bot accounts to avoid accidentally removing real players
+			final boolean isBotAccount = request.getEmail() != null && request.getEmail().endsWith("@jrealm-bot.local");
+			if (!isBotAccount) {
+				final Player existing = mgr.searchRealmsForPlayer(account.getAccountName());
+				if (existing != null) {
+					player = existing;
+					final Realm currentRealm = mgr.findPlayerRealm(existing.getId());
+					currentRealm.removePlayer(existing);
+					if (currentRealm.getMapId() == 1) {
+						mgr.safeRemoveRealm(currentRealm.getRealmId());
+					}
+					log.info("Player {} re-logged in with new Character ID {}", accountName,
+							targetCharacter.getCharacterUuid());
 				}
-				log.info("Player {} re-logged in with new Character ID {}", accountName,
-						targetCharacter.getCharacterUuid());
 			}
 			// TODO: Character death currently disabled
 //            if (targetCharacter.isDeleted())
@@ -509,7 +513,17 @@ public class ServerGameLogic {
 			}
 
 			assignedId = Realm.RANDOM.nextLong();
-			final CharacterClass cls = CharacterClass.valueOf(targetCharacter.getCharacterClass());
+			// Resolve character class - prefer characterClass field, fall back to stats.classId
+			Integer resolvedClassId = targetCharacter.getCharacterClass();
+			if ((resolvedClassId == null || resolvedClassId == 0) && targetCharacter.getStats() != null
+					&& targetCharacter.getStats().getClassId() != null && targetCharacter.getStats().getClassId() > 0) {
+				resolvedClassId = targetCharacter.getStats().getClassId();
+			}
+			log.info("[SERVER] Resolved classId={} for character {} (dto.characterClass={}, stats.classId={})",
+					resolvedClassId, targetCharacter.getCharacterUuid(),
+					targetCharacter.getCharacterClass(),
+					targetCharacter.getStats() != null ? targetCharacter.getStats().getClassId() : "null");
+			final CharacterClass cls = CharacterClass.valueOf(resolvedClassId != null ? resolvedClassId : 0);
 			final Vector2f playerPos = new Vector2f((0 + (JRealmGame.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
 					(0 + (JRealmGame.height / 2)) - GlobalConstants.PLAYER_SIZE);
 			player = new Player(assignedId, playerPos, GlobalConstants.PLAYER_SIZE, cls);
@@ -521,8 +535,14 @@ public class ServerGameLogic {
 			player.applyStats(targetCharacter.getStats());
 			player.setName(accountName);
 			player.setHeadless(false);
+			// Mark bot accounts so they skip persistence and get cleaned up on death
+			if (request.getEmail() != null && request.getEmail().endsWith("@jrealm-bot.local")) {
+				player.setBot(true);
+			}
 			player.addEffect(ProjectileEffectType.INVINCIBLE, 3000);
 			player.setPos(targetRealm.getTileManager().getSafePosition());
+			log.info("[SERVER] Adding player {} to realm. bot={}, headless={}, accountUuid={}",
+					player.getName(), player.isBot(), player.isHeadless(), player.getAccountUuid());
 			targetRealm.addPlayer(player);
 			// Begin processing.
 			userSession.setHandshakeComplete(true);

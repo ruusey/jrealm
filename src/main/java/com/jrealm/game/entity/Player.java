@@ -29,6 +29,7 @@ import com.jrealm.util.KeyHandler;
 import com.jrealm.util.MouseHandler;
 import com.jrealm.util.Tuple;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -46,13 +47,15 @@ public class Player extends Entity {
 	private long experience;
 	private Stats stats;
 	private boolean headless;
+	@Builder.Default
+	private boolean bot =false;
 
     public Player() {
         super(0, null, 0);
     }
 	
 	public Player(GameItem[] inventory, long lastStatsTime, LootContainer currentLootContainer, int classId,
-			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless) {
+			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless, boolean bot) {
 		super(0, null, 0);
 		this.inventory = inventory;
 		this.lastStatsTime = lastStatsTime;
@@ -63,6 +66,7 @@ public class Player extends Entity {
 		this.experience = experience;
 		this.stats = stats;
 		this.headless = headless;
+		this.bot = bot;
 	}
 
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
@@ -81,7 +85,7 @@ public class Player extends Entity {
 		this.health = classModel.getBaseStats().getHp();
 		this.mana = classModel.getBaseStats().getMp();
 
-		this.stats = classModel.getBaseStats();
+		this.stats = classModel.getBaseStats().clone();
 	}
 
 	public void applyStats(CharacterStatsDto stats) {
@@ -558,4 +562,10 @@ public class Player extends Entity {
 		return this.getId() + " , Pos: " + this.pos.toString() + ", Class: " + this.getClassId() + ", Headless: "
 				+ this.isHeadless();
 	}
+
+
+
+
+
+
 }

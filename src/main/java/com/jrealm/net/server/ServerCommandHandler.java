@@ -1,6 +1,7 @@
 package com.jrealm.net.server;
 
 import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,8 +10,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import java.util.UUID;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import com.jrealm.account.dto.AccountDto;
+import com.jrealm.account.dto.CharacterDto;
+import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GameLauncher;
+import com.jrealm.net.test.StressTestClient;
 import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
@@ -19,6 +26,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.Vector2f;
+import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
@@ -32,6 +40,7 @@ import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.util.AdminRestrictedCommand;
 import com.jrealm.util.CommandHandler;
 import com.jrealm.util.GameObjectUtils;
+import com.jrealm.util.WorkerThread;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,6 +50,8 @@ public class ServerCommandHandler {
     public static final Map<String, CommandHandler> COMMAND_DESCRIPTIONS = new HashMap<>();
     public static final Set<String> ADMIN_RESTRICTED_COMMANDS = new HashSet<>();
     public static final Set<Long> ADMIN_USER_CACHE = new HashSet<>();
+    private static final List<StressTestClient> ACTIVE_BOTS = new ArrayList<>();
+    private static final List<String> BOT_ACCOUNT_GUIDS = new ArrayList<>();
     
     // Handler methods are passed a reference to the current RealmManager, the
     // invoking Player object
@@ -377,6 +388,153 @@ public class ServerCommandHandler {
             mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), "God mode ON"));
         }
         log.info("Player {} toggled god mode", target.getName());
+    }
+
+    @CommandHandler(value="spawnbots", description="Spawn N bot players with real accounts. Usage: /spawnbots {COUNT}")
+    @AdminRestrictedCommand
+    public static void invokeSpawnBots(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (message.getArgs() == null || message.getArgs().size() < 1)
+            throw new IllegalArgumentException("Usage: /spawnbots {COUNT}");
+
+        final int count = Integer.parseInt(message.getArgs().get(0));
+        if (count < 1 || count > 50)
+            throw new IllegalArgumentException("Count must be between 1 and 50");
+
+        mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(),
+                "Spawning " + count + " bot players..."));
+
+        final String serverHost = "127.0.0.1";
+        final int serverPort = 2222;
+        final float spawnX = target.getPos().x;
+        final float spawnY = target.getPos().y;
+
+        WorkerThread.doAsync(() -> {
+            // Phase 1: Pre-create ALL accounts and characters (slow HTTP, no game impact)
+            final List<String[]> botCredentials = new ArrayList<>(); // [email, password, characterUuid, accountGuid]
+            log.info("[BOTS] Phase 1: Creating {} accounts...", count);
+            for (int i = 0; i < count; i++) {
+                try {
+                    final String botId = "bot-" + System.currentTimeMillis() + "-" + i;
+                    final String email = botId + "@jrealm-bot.local";
+                    final String password = "botpass-" + UUID.randomUUID().toString();
+                    final String botName = "Bot_" + i;
+
+                    final AccountDto registerReq = AccountDto.builder()
+                            .email(email).password(password).accountName(botName)
+                            .accountProvisions(new ArrayList<>())
+                            .accountSubscriptions(new ArrayList<>())
+                            .build();
+                    final JsonNode registered = ServerGameLogic.DATA_SERVICE.executePost(
+                            "/admin/account/register", registerReq, JsonNode.class);
+                    final String accountGuid = registered.get("accountGuid").asText();
+
+                    final List<CharacterClass> classes = CharacterClass.getCharacterClasses();
+                    final int classId = classes.get(Realm.RANDOM.nextInt(classes.size())).classId;
+                    final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executePost(
+                            "/data/account/" + accountGuid + "/character?classId=" + classId,
+                            null, PlayerAccountDto.class);
+
+                    String characterUuid = null;
+                    if (account.getCharacters() != null && !account.getCharacters().isEmpty()) {
+                        characterUuid = account.getCharacters().get(0).getCharacterUuid();
+                    }
+                    if (characterUuid == null) {
+                        log.error("[BOTS] Failed to get character UUID for {}", botName);
+                        continue;
+                    }
+                    log.info("[BOTS] Pre-created {} (class={}, uuid={})", botName, classId, characterUuid);
+                    botCredentials.add(new String[]{email, password, characterUuid, accountGuid});
+
+                    synchronized (BOT_ACCOUNT_GUIDS) {
+                        BOT_ACCOUNT_GUIDS.add(accountGuid);
+                    }
+                } catch (Exception e) {
+                    log.error("[BOTS] Failed to create bot account {}: {}", i, e.getMessage());
+                }
+            }
+
+            // Phase 2: Connect bots one at a time with stagger (fast, just TCP + login)
+            log.info("[BOTS] Phase 2: Connecting {} bots...", botCredentials.size());
+            int success = 0;
+            for (int i = 0; i < botCredentials.size(); i++) {
+                try {
+                    final String[] creds = botCredentials.get(i);
+                    final StressTestClient bot = new StressTestClient(i, serverHost, serverPort,
+                            creds[0], creds[1], creds[2]);
+                    bot.setSpawnNear(spawnX, spawnY);
+                    synchronized (ACTIVE_BOTS) {
+                        ACTIVE_BOTS.add(bot);
+                    }
+                    WorkerThread.submitAndForkRun(bot);
+                    success++;
+
+                    // Stagger connections so each bot fully logs in before the next connects
+                    Thread.sleep(1500);
+                } catch (Exception e) {
+                    log.error("[BOTS] Failed to connect bot {}: {}", i, e.getMessage());
+                }
+            }
+            log.info("[BOTS] Spawned {}/{} bot players", success, count);
+            try {
+                mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(),
+                        "Spawned " + success + "/" + count + " bot players"));
+            } catch (Exception e) {
+                // ignore
+            }
+        });
+    }
+
+    @CommandHandler(value="killbots", description="Disconnect all bot players and delete their accounts")
+    @AdminRestrictedCommand
+    public static void invokeKillBots(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        WorkerThread.doAsync(() -> {
+            int disconnected = 0;
+            int deleted = 0;
+
+            // Shutdown all bot clients
+            synchronized (ACTIVE_BOTS) {
+                for (StressTestClient bot : ACTIVE_BOTS) {
+                    try {
+                        bot.shutdown();
+                        disconnected++;
+                    } catch (Exception e) {
+                        log.error("[BOTS] Failed to shutdown bot: {}", e.getMessage());
+                    }
+                }
+                ACTIVE_BOTS.clear();
+            }
+
+            // Delete bot accounts from database
+            synchronized (BOT_ACCOUNT_GUIDS) {
+                for (String accountGuid : BOT_ACCOUNT_GUIDS) {
+                    try {
+                        // Get account to find characters
+                        PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executeGet(
+                                "/data/account/" + accountGuid, null, PlayerAccountDto.class);
+                        if (account != null && account.getCharacters() != null) {
+                            for (CharacterDto c : account.getCharacters()) {
+                                ServerGameLogic.DATA_SERVICE.executeDelete(
+                                        "/data/account/character/" + c.getCharacterUuid(), Object.class);
+                            }
+                        }
+                        deleted++;
+                    } catch (Exception e) {
+                        log.error("[BOTS] Failed to delete bot account {}: {}", accountGuid, e.getMessage());
+                    }
+                }
+                BOT_ACCOUNT_GUIDS.clear();
+            }
+
+            log.info("[BOTS] Killed {} bots, deleted {} accounts", disconnected, deleted);
+            try {
+                mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(),
+                        "Killed " + disconnected + " bots, deleted " + deleted + " accounts"));
+            } catch (Exception e) {
+                // ignore
+            }
+        });
     }
 
     @CommandHandler(value="realm", description="Move the player to the boss realm or the top realm")

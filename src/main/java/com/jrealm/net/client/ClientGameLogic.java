@@ -334,9 +334,9 @@ public class ClientGameLogic {
 					break;
 				}
 				if (cli.getCurrentPlayerId() == movement.getEntityId()) {
-					playerToUpdate.applyMovementLerp(movement, 0.7f);
+					playerToUpdate.applyMovementLerp(movement, 0.35f);
 				} else {
-					playerToUpdate.applyMovementLerp(movement, 0.55f);
+					playerToUpdate.applyMovementLerp(movement, 0.45f);
 				}
 				break;
 			case ENEMY:
@@ -344,7 +344,9 @@ public class ClientGameLogic {
 				if (enemyToUpdate == null) {
 					break;
 				}
-				enemyToUpdate.applyMovementLerp(movement);
+				// Snap enemies directly to server position - they change direction too
+				// frequently for lerp smoothing to work without overshooting
+				enemyToUpdate.applyMovement(movement);
 				break;
 			case BULLET:
 				final Bullet bulletToUpdate = cli.getRealm().getBullet(movement.getEntityId());

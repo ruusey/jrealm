@@ -395,6 +395,19 @@ public class Realm {
         return objs.toArray(new Player[0]);
     }
 
+    public Player[] getPlayersInRadius(Vector2f center, float radius) {
+        final float radiusSq = radius * radius;
+        final List<Player> objs = new ArrayList<>();
+        for (final Player p : this.players.values()) {
+            float dx = p.getPos().x - center.x;
+            float dy = p.getPos().y - center.y;
+            if (dx * dx + dy * dy <= radiusSq) {
+                objs.add(p);
+            }
+        }
+        return objs.toArray(new Player[0]);
+    }
+
     public GameObject[] getGameObjectsInBounds(Rectangle cam) {
         final List<GameObject> objs = new ArrayList<>();
         for (final Player p : this.players.values()) {
@@ -416,6 +429,50 @@ public class Realm {
         }
 
         return objs.toArray(new GameObject[0]);
+    }
+
+    public GameObject[] getGameObjectsInRadius(Vector2f center, float radius) {
+        final float radiusSq = radius * radius;
+        final List<GameObject> objs = new ArrayList<>();
+        for (final Player p : this.players.values()) {
+            float dx = p.getPos().x - center.x;
+            float dy = p.getPos().y - center.y;
+            if (dx * dx + dy * dy <= radiusSq) objs.add(p);
+        }
+        for (final Bullet b : this.bullets.values()) {
+            float dx = b.getPos().x - center.x;
+            float dy = b.getPos().y - center.y;
+            if (dx * dx + dy * dy <= radiusSq) objs.add(b);
+        }
+        for (final Enemy e : this.enemies.values()) {
+            float dx = e.getPos().x - center.x;
+            float dy = e.getPos().y - center.y;
+            if (dx * dx + dy * dy <= radiusSq) objs.add(e);
+        }
+        return objs.toArray(new GameObject[0]);
+    }
+
+    public ObjectMovePacket getGameObjectsAsPacketsCircular(Vector2f center, float radius) throws Exception {
+        final float radiusSq = radius * radius;
+        final GameObject[] gameObjects = this.getAllGameObjects();
+        final List<GameObject> validObjects = new ArrayList<>();
+        for (GameObject obj : gameObjects) {
+            try {
+                float dx = obj.getPos().x - center.x;
+                float dy = obj.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) {
+                    validObjects.add(obj);
+                }
+                if (obj.getTeleported()) {
+                    obj.setTeleported(false);
+                }
+            } catch (Exception e) {
+                Realm.log.error("Failed to create ObjectMove Packet. Reason: {}", e.getMessage());
+            }
+        }
+        if (validObjects.size() > 0)
+            return ObjectMovePacket.from(validObjects.toArray(new GameObject[0]));
+        return null;
     }
 
     public GameObject[] getGameObjectss() {
@@ -554,6 +611,49 @@ public class Realm {
                     enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]));
         } catch (Exception e) {
             Realm.log.error("Failed to get load Packet. Reason: {}");
+        }
+        return load;
+    }
+
+    public LoadPacket getLoadPacketCircular(Vector2f center, float radius) {
+        final float radiusSq = radius * radius;
+        LoadPacket load = null;
+        try {
+            final List<Player> playersToLoadList = new ArrayList<>();
+            for (Player p : this.players.values()) {
+                float dx = p.getPos().x - center.x;
+                float dy = p.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) playersToLoadList.add(p);
+            }
+            final List<LootContainer> containersToLoad = new ArrayList<>();
+            for (LootContainer c : this.loot.values()) {
+                float dx = c.getPos().x - center.x;
+                float dy = c.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) containersToLoad.add(c);
+            }
+            final List<Bullet> bulletsToLoad = new ArrayList<>();
+            for (Bullet b : this.bullets.values()) {
+                float dx = b.getPos().x - center.x;
+                float dy = b.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) bulletsToLoad.add(b);
+            }
+            final List<Enemy> enemiesToLoad = new ArrayList<>();
+            for (Enemy e : this.enemies.values()) {
+                float dx = e.getPos().x - center.x;
+                float dy = e.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) enemiesToLoad.add(e);
+            }
+            final List<Portal> portalsToLoad = new ArrayList<>();
+            for (Portal p : this.portals.values()) {
+                float dx = p.getPos().x - center.x;
+                float dy = p.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) portalsToLoad.add(p);
+            }
+            load = LoadPacket.from(playersToLoadList.toArray(new Player[0]),
+                    containersToLoad.toArray(new LootContainer[0]), bulletsToLoad.toArray(new Bullet[0]),
+                    enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]));
+        } catch (Exception e) {
+            Realm.log.error("Failed to get circular load Packet. Reason: {}", e.getMessage());
         }
         return load;
     }

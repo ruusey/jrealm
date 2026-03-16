@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -126,25 +127,25 @@ public class RealmManagerServer implements Runnable {
 	private final Map<Byte, List<MethodHandle>> userPacketCallbacksServer = new HashMap<>();
 
 	private List<Vector2f> shotDestQueue = new ArrayList<>();
-	private Map<Long, Realm> realms = new HashMap<>();
-	private Map<String, Long> remoteAddresses = new HashMap<>();
+	private Map<Long, Realm> realms = new ConcurrentHashMap<>();
+	private Map<String, Long> remoteAddresses = new ConcurrentHashMap<>();
 	
-	private Map<Long, Long> playerAbilityState = new HashMap<>();
-	private Map<Long, LoadPacket> playerLoadState = new HashMap<>();
-	private Map<Long, UpdatePacket> playerUpdateState = new HashMap<>();
-	private Map<Long, UpdatePacket> enemyUpdateState = new HashMap<>();
-	private Map<Long, UnloadPacket> playerUnloadState = new HashMap<>();
-	private Map<Long, LoadMapPacket> playerLoadMapState = new HashMap<>();
-	private Map<Long, ObjectMovePacket> playerObjectMoveState = new HashMap<>();
-	private Map<Long, Long> playerGroundDamageState = new HashMap<>();
-	private Map<Long, Long> playerLastHeartbeatTime = new HashMap<>();
+	private Map<Long, Long> playerAbilityState = new ConcurrentHashMap<>();
+	private Map<Long, LoadPacket> playerLoadState = new ConcurrentHashMap<>();
+	private Map<Long, UpdatePacket> playerUpdateState = new ConcurrentHashMap<>();
+	private Map<Long, UpdatePacket> enemyUpdateState = new ConcurrentHashMap<>();
+	private Map<Long, UnloadPacket> playerUnloadState = new ConcurrentHashMap<>();
+	private Map<Long, LoadMapPacket> playerLoadMapState = new ConcurrentHashMap<>();
+	private Map<Long, ObjectMovePacket> playerObjectMoveState = new ConcurrentHashMap<>();
+	private Map<Long, Long> playerGroundDamageState = new ConcurrentHashMap<>();
+	private Map<Long, Long> playerLastHeartbeatTime = new ConcurrentHashMap<>();
 	
 	private UnloadPacket lastUnload;
 	// Potentially accessed by many threads many times a second.
 	// marked volatile to make sure each time this queue is accessed
 	// we are not looking at a cached version. Make a PR if my assumption is wrong :)
 	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
-	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new HashMap<Long, ConcurrentLinkedQueue<Packet>>();
+	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new ConcurrentHashMap<Long, ConcurrentLinkedQueue<Packet>>();
 	private List<RealmDecoratorBase> realmDecorators = new ArrayList<>();
 	private List<EnemyScriptBase> enemyScripts = new ArrayList<>();
 	private List<UseableItemScriptBase> itemScripts = new ArrayList<>();
@@ -494,8 +495,10 @@ public class RealmManagerServer implements Runnable {
 						}
 						// Transmit nearby other players' UpdatePackets (equipment, stats, effects)
 						// Only send when the other player's state has actually changed (delta check)
+						final float viewportRadius = 10 * com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+						final Vector2f playerCenter = player.getValue().getPos();
 						final Player[] otherPlayers = realm
-								.getPlayersInBounds(realm.getTileManager().getRenderViewPort(player.getValue()));
+								.getPlayersInRadius(playerCenter, viewportRadius);
 						for (Player other : otherPlayers) {
 							if (other.getId() == player.getKey()) continue;
 							try {
@@ -513,10 +516,10 @@ public class RealmManagerServer implements Runnable {
 						}
 
 						if (this.transmitLoadPacket || this.disablePartialTransmission) {
-							// Get LoadPacket for this player
+							// Get LoadPacket for this player (circular viewport matching tile render)
 							// Contains newly spawned bullets, entities, players
 							final LoadPacket loadPacket = realm
-									.getLoadPacket(realm.getTileManager().getRenderViewPort(player.getValue()));
+									.getLoadPacketCircular(playerCenter, viewportRadius);
 
 							// Only transmit the LoadPacket if its state is changed (it can potentially be
 							// large).
@@ -551,9 +554,9 @@ public class RealmManagerServer implements Runnable {
 						// This greatly reduced bytes going down the wire but some
 						// fidelity is lost
 						if (this.transmitMovement || this.disablePartialTransmission) {
-							// Get the posX, posY, dX, dY of all Entities in this players viewport
-							final ObjectMovePacket movePacket = realm.getGameObjectsAsPackets(
-									realm.getTileManager().getRenderViewPort(player.getValue()));
+							// Get the posX, posY, dX, dY of all Entities in this players viewport (circular)
+							final ObjectMovePacket movePacket = realm.getGameObjectsAsPacketsCircular(
+									playerCenter, viewportRadius);
 							// If the ObjectMove packet isnt empty
 							if (this.playerObjectMoveState.get(player.getKey()) == null && movePacket != null) {
 								this.playerObjectMoveState.put(player.getKey(), movePacket);
@@ -1628,8 +1631,19 @@ public class RealmManagerServer implements Runnable {
 					player.getSlots(0, 12));
 			targetRealm.addLootContainer(graveLoot);
 			targetRealm.getExpiredPlayers().add(player.getId());
-			if (player.isHeadless()) {
+			if (player.isHeadless() || player.isBot()) {
 				targetRealm.removePlayer(player);
+				this.clearPlayerState(player.getId());
+				// Close the bot's session so NIO server stops iterating it
+				if (remoteAddrDeath != null) {
+					this.remoteAddresses.remove(remoteAddrDeath);
+					final ClientSession botSession = this.server.getClients().get(remoteAddrDeath);
+					if (botSession != null) {
+						botSession.setShutdownProcessing(true);
+						botSession.close();
+						this.server.getClients().remove(remoteAddrDeath);
+					}
+				}
 				return;
 			}
 			this.enqueueServerPacket(player, PlayerDeathPacket.from(player.getId()));
@@ -1821,7 +1835,10 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	private boolean persistPlayer(final Player player) {
-		if (player.isHeadless())
+		if (player.isHeadless() || player.isBot())
+			return false;
+		// Extra safety: never persist bot accounts even if flag wasn't set
+		if (player.getAccountUuid() == null || player.getName() == null || player.getName().startsWith("Bot_"))
 			return false;
 		try {
 			final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
