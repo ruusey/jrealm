@@ -467,10 +467,19 @@ public class ServerCommandHandler {
                         ACTIVE_BOTS.add(bot);
                     }
                     WorkerThread.submitAndForkRun(bot);
-                    success++;
 
-                    // Stagger connections so each bot fully logs in before the next connects
-                    Thread.sleep(1500);
+                    // Wait for this bot to fully log in before connecting the next one
+                    long waitStart = System.currentTimeMillis();
+                    while (!bot.isLoggedIn() && !bot.isShutdown()
+                            && (System.currentTimeMillis() - waitStart) < 5000) {
+                        Thread.sleep(100);
+                    }
+                    if (bot.isLoggedIn()) {
+                        success++;
+                        log.info("[BOTS] Bot {} logged in successfully, connecting next...", i);
+                    } else {
+                        log.warn("[BOTS] Bot {} failed to log in within 5s, continuing...", i);
+                    }
                 } catch (Exception e) {
                     log.error("[BOTS] Failed to connect bot {}: {}", i, e.getMessage());
                 }

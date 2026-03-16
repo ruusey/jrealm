@@ -107,10 +107,10 @@ public class StressTestClient implements Runnable {
         this.readPacketThread = new TimedWorkerThread(readPackets, 64);
         WorkerThread.submitAndForkRun(this.readPacketThread, this.sendPacketThread);
 
-        // Send login after a short delay
+        // Send login immediately - the 1750ms handshake timeout is tight
         WorkerThread.runLater(() -> {
             this.sendLogin();
-        }, 500);
+        }, 100);
 
         // Start gameplay simulation once logged in
         final Runnable simulateGameplay = () -> {

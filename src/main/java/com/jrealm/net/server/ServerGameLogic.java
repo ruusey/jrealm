@@ -39,6 +39,7 @@ import com.jrealm.net.realm.RealmManagerServer;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.DeathAckPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
+import com.jrealm.net.server.packet.LoginAckPacket;
 import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
@@ -46,7 +47,9 @@ import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
 import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.entity.NetTile;
+import com.jrealm.game.entity.GameObject;
 import com.jrealm.util.Cardinality;
 import com.jrealm.util.PacketHandlerServer;
 import com.jrealm.util.WorkerThread;
@@ -69,6 +72,10 @@ public class ServerGameLogic {
 					realm.getTileManager().getMapHeight(), tiles);
 			mgr.getPlayerLoadMapState().put(player.getId(), loadMap);
 			mgr.enqueueServerPacket(player, loadMap);
+
+			// Send player's position so the client knows where they are in the new realm
+			final ObjectMovePacket posPacket = ObjectMovePacket.from(new GameObject[]{ player });
+			mgr.enqueueServerPacket(player, posPacket);
 		} catch (Exception e) {
 			log.error("[SERVER] Failed to send immediate LoadMap on realm transition. Reason: {}", e.getMessage());
 		}
@@ -160,7 +167,13 @@ public class ServerGameLogic {
 							GlobalConstants.BASE_TILE_SIZE * 12));
 				} else {
 					generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
-					user.setPos(generatedRealm.getTileManager().getSafePosition());
+					// Spawn player at the first room (far from boss room)
+					final Vector2f spawnPos = generatedRealm.getTileManager().getPlayerSpawnPos();
+					if (spawnPos != null) {
+						user.setPos(spawnPos);
+					} else {
+						user.setPos(generatedRealm.getTileManager().getSafePosition());
+					}
 				}
 
 				// Place exit portal and boss enemy if applicable
@@ -237,10 +250,25 @@ public class ServerGameLogic {
 		final HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
 		final Player player = mgr.getPlayerByRemoteAddress(packet.getSrcIp());
 		if(player==null) {
-			log.error("Failed to process heartbeat packet. Player does not exist");
+			log.debug("Failed to process heartbeat packet. Player does not exist");
 			return;
 		}
 		mgr.getPlayerLastHeartbeatTime().put(player.getId(), heartbeatPacket.getTimestamp());
+	}
+
+	@PacketHandlerServer(LoginAckPacket.class)
+	public static void handleLoginAckServer(RealmManagerServer mgr, Packet packet) {
+		final LoginAckPacket ackPacket = (LoginAckPacket) packet;
+		final Player player = mgr.getPlayerByRemoteAddress(packet.getSrcIp());
+		if (player == null) {
+			log.debug("Failed to process LoginAck. Player does not exist for {}", packet.getSrcIp());
+			return;
+		}
+		final Realm playerRealm = mgr.findPlayerRealm(player.getId());
+		if (playerRealm != null) {
+			sendImmediateLoadMap(mgr, playerRealm, player);
+			log.info("[SERVER] Sent initial LoadMap to {} on LoginAck", player.getName());
+		}
 	}
 
 	public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
@@ -462,111 +490,99 @@ public class ServerGameLogic {
 //	}
 
 	private static void doLogin(RealmManagerServer mgr, LoginRequestMessage request, CommandPacket command) {
-		CommandPacket commandResponse = null;
-		long assignedId = -1l;
-		PlayerAccountDto account = null;
 		log.info("[SERVER] Recieved login command {}", request);
-		Player player = null;
-		try {
-			SessionTokenDto loginToken = null;
-			String accountName = request.getEmail();
-			String accountUuid = null;
-			Optional<CharacterDto> characterClass = null;
+		// Run the slow HTTP authentication on a worker thread so the tick loop isn't blocked
+		WorkerThread.doAsync(() -> {
+			CommandPacket commandResponse = null;
+			long assignedId = -1l;
+			Player player = null;
 			try {
-				loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
-				account = ServerGameLogic.DATA_SERVICE.executeGet("/data/account/" + loginToken.getAccountGuid(), null,
-						PlayerAccountDto.class);
-				accountName = account.getAccountName();
-				accountUuid = account.getAccountUuid();
-				characterClass = account.getCharacters().stream()
+				SessionTokenDto loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
+				PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executeGet(
+						"/data/account/" + loginToken.getAccountGuid(), null, PlayerAccountDto.class);
+				String accountName = account.getAccountName();
+				String accountUuid = account.getAccountUuid();
+				Optional<CharacterDto> characterClass = account.getCharacters().stream()
 						.filter(character -> character.getCharacterUuid().equals(request.getCharacterUuid())).findAny();
 				if (characterClass.isEmpty()) {
 					throw new Exception("Player character with UUID " + request.getCharacterUuid() + " does not exist");
 				}
-			} catch (Exception e) {
-				ServerGameLogic.log.error("Failed to perform remote login. Reason: {}", e);
-				throw e;
-			}
-			final CharacterDto targetCharacter = characterClass.get();
-			// Re-login check: if this account name already has an active player, remove it
-			// Skip for bot accounts to avoid accidentally removing real players
-			final boolean isBotAccount = request.getEmail() != null && request.getEmail().endsWith("@jrealm-bot.local");
-			if (!isBotAccount) {
-				final Player existing = mgr.searchRealmsForPlayer(account.getAccountName());
-				if (existing != null) {
-					player = existing;
-					final Realm currentRealm = mgr.findPlayerRealm(existing.getId());
-					currentRealm.removePlayer(existing);
-					if (currentRealm.getMapId() == 1) {
-						mgr.safeRemoveRealm(currentRealm.getRealmId());
+
+				final CharacterDto targetCharacter = characterClass.get();
+				final boolean isBotAccount = request.getEmail() != null && request.getEmail().endsWith("@jrealm-bot.local");
+				if (!isBotAccount) {
+					final Player existing = mgr.searchRealmsForPlayer(account.getAccountName());
+					if (existing != null) {
+						final Realm currentRealm = mgr.findPlayerRealm(existing.getId());
+						if (currentRealm != null) {
+							currentRealm.removePlayer(existing);
+							if (currentRealm.getMapId() == 1) {
+								mgr.safeRemoveRealm(currentRealm.getRealmId());
+							}
+						}
+						log.info("Player {} re-logged in with new Character ID {}", accountName,
+								targetCharacter.getCharacterUuid());
 					}
-					log.info("Player {} re-logged in with new Character ID {}", accountName,
-							targetCharacter.getCharacterUuid());
+				}
+
+				final Map<Integer, GameItem> loadedEquipment = new HashMap<>();
+				for (final GameItemRefDto item : targetCharacter.getItems()) {
+					loadedEquipment.put(item.getSlotIdx(), GameItem.fromGameItemRef(item));
+				}
+
+				assignedId = Realm.RANDOM.nextLong();
+				Integer resolvedClassId = targetCharacter.getCharacterClass();
+				if ((resolvedClassId == null || resolvedClassId == 0) && targetCharacter.getStats() != null
+						&& targetCharacter.getStats().getClassId() != null && targetCharacter.getStats().getClassId() > 0) {
+					resolvedClassId = targetCharacter.getStats().getClassId();
+				}
+				final CharacterClass cls = CharacterClass.valueOf(resolvedClassId != null ? resolvedClassId : 0);
+				final Vector2f playerPos = new Vector2f((0 + (JRealmGame.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
+						(0 + (JRealmGame.height / 2)) - GlobalConstants.PLAYER_SIZE);
+				player = new Player(assignedId, playerPos, GlobalConstants.PLAYER_SIZE, cls);
+				final Realm targetRealm = mgr.getTopRealm();
+				final ClientSession userSession = mgr.getServer().getClients().get(command.getSrcIp());
+				if (userSession == null) {
+					throw new Exception("Client session not found for " + command.getSrcIp());
+				}
+				player.setAccountUuid(accountUuid);
+				player.setCharacterUuid(targetCharacter.getCharacterUuid());
+				player.equipSlots(loadedEquipment);
+				player.applyStats(targetCharacter.getStats());
+				player.setName(accountName);
+				player.setHeadless(false);
+				if (isBotAccount) {
+					player.setBot(true);
+				}
+				player.addEffect(ProjectileEffectType.INVINCIBLE, 3000);
+				player.setPos(targetRealm.getTileManager().getSafePosition());
+				log.info("[SERVER] Adding player {} to realm. bot={}, headless={}, accountUuid={}",
+						player.getName(), player.isBot(), player.isHeadless(), player.getAccountUuid());
+				targetRealm.addPlayer(player);
+				userSession.setHandshakeComplete(true);
+
+				final LoginResponseMessage message = LoginResponseMessage.builder()
+						.classId(resolvedClassId != null ? resolvedClassId : 0)
+						.spawnX(player.getPos().x).spawnY(player.getPos().y)
+						.playerId(player.getId()).success(true).account(account).token(loginToken.getToken()).build();
+				mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
+
+				commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
+				final Player toWelcome = player;
+				final Realm welcomeRealm = targetRealm;
+				// Tiles are sent when the client's first heartbeat arrives (proves client is ready)
+				WorkerThread.runLater(() -> ServerGameLogic.onPlayerJoin(mgr, welcomeRealm, toWelcome), 2000);
+				log.info("[SERVER] Player {} logged in successfully", player);
+			} catch (Exception e) {
+				ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
+				commandResponse = CommandPacket.createError(assignedId, 503,
+						"Failed to perform Client Login. Reason: " + e.getMessage());
+			} finally {
+				if (player != null && commandResponse != null) {
+					mgr.enqueueServerPacket(player, commandResponse);
 				}
 			}
-			// TODO: Character death currently disabled
-//            if (targetCharacter.isDeleted())
-//                throw new Exception("Character " + targetCharacter.getCharacterUuid() + " is dead!");
-			final Map<Integer, GameItem> loadedEquipment = new HashMap<>();
-			for (final GameItemRefDto item : targetCharacter.getItems()) {
-				loadedEquipment.put(item.getSlotIdx(), GameItem.fromGameItemRef(item));
-			}
-
-			assignedId = Realm.RANDOM.nextLong();
-			// Resolve character class - prefer characterClass field, fall back to stats.classId
-			Integer resolvedClassId = targetCharacter.getCharacterClass();
-			if ((resolvedClassId == null || resolvedClassId == 0) && targetCharacter.getStats() != null
-					&& targetCharacter.getStats().getClassId() != null && targetCharacter.getStats().getClassId() > 0) {
-				resolvedClassId = targetCharacter.getStats().getClassId();
-			}
-			log.info("[SERVER] Resolved classId={} for character {} (dto.characterClass={}, stats.classId={})",
-					resolvedClassId, targetCharacter.getCharacterUuid(),
-					targetCharacter.getCharacterClass(),
-					targetCharacter.getStats() != null ? targetCharacter.getStats().getClassId() : "null");
-			final CharacterClass cls = CharacterClass.valueOf(resolvedClassId != null ? resolvedClassId : 0);
-			final Vector2f playerPos = new Vector2f((0 + (JRealmGame.width / 2)) - GlobalConstants.PLAYER_SIZE - 350,
-					(0 + (JRealmGame.height / 2)) - GlobalConstants.PLAYER_SIZE);
-			player = new Player(assignedId, playerPos, GlobalConstants.PLAYER_SIZE, cls);
-			final Realm targetRealm = mgr.getTopRealm();
-			final ClientSession userSession = mgr.getServer().getClients().get(command.getSrcIp());
-			player.setAccountUuid(accountUuid);
-			player.setCharacterUuid(targetCharacter.getCharacterUuid());
-			player.equipSlots(loadedEquipment);
-			player.applyStats(targetCharacter.getStats());
-			player.setName(accountName);
-			player.setHeadless(false);
-			// Mark bot accounts so they skip persistence and get cleaned up on death
-			if (request.getEmail() != null && request.getEmail().endsWith("@jrealm-bot.local")) {
-				player.setBot(true);
-			}
-			player.addEffect(ProjectileEffectType.INVINCIBLE, 3000);
-			player.setPos(targetRealm.getTileManager().getSafePosition());
-			log.info("[SERVER] Adding player {} to realm. bot={}, headless={}, accountUuid={}",
-					player.getName(), player.isBot(), player.isHeadless(), player.getAccountUuid());
-			targetRealm.addPlayer(player);
-			// Begin processing.
-			userSession.setHandshakeComplete(true);
-
-			final LoginResponseMessage message = LoginResponseMessage.builder()
-					.classId(targetCharacter.getCharacterClass()).spawnX(player.getPos().x).spawnY(player.getPos().y)
-					.playerId(player.getId()).success(true).account(account).token(loginToken.getToken()).build();
-			mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
-
-			commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
-			final Player toWelcome = player;
-			Runnable welcomePlayer = () ->{
-				ServerGameLogic.onPlayerJoin(mgr, targetRealm, toWelcome);
-			};
-			WorkerThread.runLater(welcomePlayer, 2000);
-			log.info("[SERVER] Player {} logged in successfully", player);
-		} catch (Exception e) {
-			ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
-			commandResponse = CommandPacket.createError(assignedId, 503,
-					"Failed to perform Client Login. Reason: " + e.getMessage());
-		} finally {
-			// Enqueue the response packet
-			mgr.enqueueServerPacket(player, commandResponse);
-		}
+		});
 	}
 
 	private static SessionTokenDto doLoginRemote(final String userName, final String password) throws Exception {

@@ -245,12 +245,28 @@ public class GameSpriteManager {
                 classSprites.getSubSprite(1, localRow)),
             Arrays.asList(walkDur, walkDur));
 
-        // Side attack: Row 1, cols 0-2 (3-frame attack)
+        // Side attack (shoot left/right): Row 0, cols 4-5
         classSprites.addAnimSet("attack_side",
             Arrays.asList(
+                classSprites.getSubSprite(0, localRow),
+                classSprites.getSubSprite(4, localRow),
+                classSprites.getSubSprite(5, localRow)),
+            Arrays.asList(atkDur, atkDur, atkDur));
+
+        // Down attack (shoot downward, mouse below player): Row 1, cols 4-5
+        classSprites.addAnimSet("attack_down",
+            Arrays.asList(
                 classSprites.getSubSprite(0, localRow + 1),
-                classSprites.getSubSprite(1, localRow + 1),
-                classSprites.getSubSprite(2, localRow + 1)),
+                classSprites.getSubSprite(4, localRow + 1),
+                classSprites.getSubSprite(5, localRow + 1)),
+            Arrays.asList(atkDur, atkDur, atkDur));
+
+        // Up attack (shoot upward, mouse above player): Row 2, cols 4-5
+        classSprites.addAnimSet("attack_up",
+            Arrays.asList(
+                classSprites.getSubSprite(0, localRow + 2),
+                classSprites.getSubSprite(4, localRow + 2),
+                classSprites.getSubSprite(5, localRow + 2)),
             Arrays.asList(atkDur, atkDur, atkDur));
 
         // Front idle + walk: Row 3 for 4-row classes, or reuse Row 0 for 3-row classes
@@ -263,23 +279,13 @@ public class GameSpriteManager {
                 classSprites.getSubSprite(1, frontRow)),
             Arrays.asList(walkDur, walkDur));
 
-        // Front attack: Row 3 cols 0, 4, 5 for 4-row classes (3 distinct frames),
-        // or reuse side attack (Row 1, cols 0-2) for 3-row classes
-        if (hasFrontRow) {
-            classSprites.addAnimSet("attack_front",
-                Arrays.asList(
-                    classSprites.getSubSprite(0, frontRow),
-                    classSprites.getSubSprite(4, frontRow),
-                    classSprites.getSubSprite(5, frontRow)),
-                Arrays.asList(atkDur, atkDur, atkDur));
-        } else {
-            classSprites.addAnimSet("attack_front",
-                Arrays.asList(
-                    classSprites.getSubSprite(0, localRow + 1),
-                    classSprites.getSubSprite(1, localRow + 1),
-                    classSprites.getSubSprite(2, localRow + 1)),
-                Arrays.asList(atkDur, atkDur, atkDur));
-        }
+        // Keep attack_front as alias for attack_down (backwards compat)
+        classSprites.addAnimSet("attack_front",
+            Arrays.asList(
+                classSprites.getSubSprite(0, localRow + 1),
+                classSprites.getSubSprite(4, localRow + 1),
+                classSprites.getSubSprite(5, localRow + 1)),
+            Arrays.asList(atkDur, atkDur, atkDur));
 
         classSprites.setAnimSet("idle_side");
         return classSprites;

@@ -103,11 +103,15 @@ public class Minimap {
         final int centerTileX = (int) (player.getPos().x + player.getSize() / 2f) / tileSize;
         final int centerTileY = (int) (player.getPos().y + player.getSize() / 2f) / tileSize;
 
-        // Calculate view bounds clamped to map
+        // Calculate view bounds clamped to map and discovered array bounds
+        final int discoveredH = this.discovered.length;
+        final int discoveredW = (discoveredH > 0) ? this.discovered[0].length : 0;
+        final int safeWidth = Math.min(this.mapWidth, discoveredW);
+        final int safeHeight = Math.min(this.mapHeight, discoveredH);
         int viewStartX = Math.max(0, centerTileX - this.zoomLevel);
-        int viewEndX = Math.min(this.mapWidth, centerTileX + this.zoomLevel);
+        int viewEndX = Math.min(safeWidth, centerTileX + this.zoomLevel);
         int viewStartY = Math.max(0, centerTileY - this.zoomLevel);
-        int viewEndY = Math.min(this.mapHeight, centerTileY + this.zoomLevel);
+        int viewEndY = Math.min(safeHeight, centerTileY + this.zoomLevel);
 
         int viewWidth = viewEndX - viewStartX;
         int viewHeight = viewEndY - viewStartY;

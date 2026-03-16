@@ -372,7 +372,7 @@ public class RealmManagerServer implements Runnable {
 				final ClientSession session = client.getValue();
 				final Player player = this.getPlayerByRemoteAddress(client.getKey());
 				if (player == null) {
-					log.error("[SERVER] Player {} has not yet completed login, skipping broadcast", client.getKey());
+					log.debug("[SERVER] Player {} has not yet completed login, skipping broadcast", client.getKey());
 					continue;
 				}
 

@@ -32,6 +32,8 @@ public abstract class Entity extends GameObject {
     protected double attacktime;
     protected boolean canAttack = true;
     protected boolean attacking = false;
+    protected float aimX = 0;
+    protected float aimY = 0;
 
     public int health = 100;
     public int mana = 100;
@@ -141,7 +143,27 @@ public abstract class Entity extends GameObject {
         if (this.getSpriteSheet() != null && this.getSpriteSheet().hasAnimSets()) {
             String targetAnim;
             if (this.attacking) {
-                targetAnim = (this.up || this.down) ? "attack_front" : "attack_side";
+                // Attack animation based on mouse/aim direction, not movement
+                float screenCenterX = this.pos.getWorldVar().x + this.size / 2f;
+                float screenCenterY = this.pos.getWorldVar().y + this.size / 2f;
+                float relX = this.aimX - screenCenterX;
+                float relY = this.aimY - screenCenterY;
+                // Determine if aim is more horizontal or vertical
+                if (Math.abs(relX) > Math.abs(relY)) {
+                    targetAnim = "attack_side";
+                } else if (relY > 0) {
+                    targetAnim = "attack_down";
+                } else {
+                    targetAnim = "attack_up";
+                }
+                // Flip sprite based on horizontal aim direction
+                if (relX < 0) {
+                    this.left = true;
+                    this.right = false;
+                } else {
+                    this.right = true;
+                    this.left = false;
+                }
             } else if ((this.left || this.right) && (this.up || this.down)) {
                 // Diagonal movement: use hysteresis to prevent rapid animation switching.
                 // Only switch direction if the dominant axis clearly changes.

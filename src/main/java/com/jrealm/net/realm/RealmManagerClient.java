@@ -62,6 +62,7 @@ public class RealmManagerClient implements Runnable {
     private boolean shutdown = false;
     private final Map<Class<? extends Packet>, BiConsumer<RealmManagerClient, Packet>> packetCallbacksClient = new HashMap<>();
     private long currentPlayerId;
+    private volatile boolean awaitingRealmTransition = false;
     private TimedWorkerThread workerThread;
 
     public RealmManagerClient(PlayState state, Realm realm) {

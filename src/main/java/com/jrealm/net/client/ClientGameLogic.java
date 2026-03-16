@@ -45,6 +45,7 @@ import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerClient;
 import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.DeathAckPacket;
+import com.jrealm.net.server.packet.LoginAckPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.util.PacketHandlerClient;
 
@@ -182,6 +183,11 @@ public class ClientGameLogic {
 	public static void handleLoadMapClient(RealmManagerClient cli, Packet packet) {
 		final LoadMapPacket loadPacket = (LoadMapPacket) packet;
 		try {
+			// Skip if client hasn't finished login setup yet (UI not ready)
+			if (cli.getState() == null || cli.getState().getPui() == null) {
+				log.debug("[CLIENT] LoadMap received before login complete, skipping");
+				return;
+			}
 			cli.getState().getPui().getMinimap().initializeMap((int) loadPacket.getMapId());
 			cli.getRealm().setRealmId(loadPacket.getRealmId());
 			cli.getRealm().setMapId(loadPacket.getMapId());
@@ -334,7 +340,13 @@ public class ClientGameLogic {
 					break;
 				}
 				if (cli.getCurrentPlayerId() == movement.getEntityId()) {
-					playerToUpdate.applyMovementLerp(movement, 0.35f);
+					if (cli.isAwaitingRealmTransition()) {
+						// Snap to server position after portal transition
+						playerToUpdate.applyMovement(movement);
+						cli.setAwaitingRealmTransition(false);
+					} else {
+						playerToUpdate.applyMovementLerp(movement, 0.35f);
+					}
 				} else {
 					playerToUpdate.applyMovementLerp(movement, 0.45f);
 				}
@@ -395,6 +407,12 @@ public class ClientGameLogic {
 				cli.setCurrentPlayerId(player.getId());
 				cli.getState().setPlayerId(player.getId());
 				cli.startHeartbeatThread();
+				// Tell the server we're ready to receive tiles
+				try {
+					cli.getClient().sendRemote(LoginAckPacket.from(player.getId()));
+				} catch (Exception ex) {
+					log.error("[CLIENT] Failed to send LoginAck. Reason: {}", ex.getMessage());
+				}
 				final TextPacket packet = TextPacket.create("SYSTEM", "Player",
 						"Welcome to JRealm " + GameLauncher.GAME_VERSION + "!");
 				cli.getState().getPui().enqueueChat(packet);

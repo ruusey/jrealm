@@ -30,6 +30,8 @@ public class DungeonGenerator {
 	private Graph<TileMap> dungeon;
 	private int bossRoomCenterX = -1;
 	private int bossRoomCenterY = -1;
+	private int spawnRoomCenterX = -1;
+	private int spawnRoomCenterY = -1;
 
 	public DungeonGenerator(int width, int height, int tileSize, int minRooms, int maxRooms, int minRoomWidth,
 			int maxRoomWidth, int minRoomHeight, int maxRoomHeight, List<RoomShapeTemplate> shapeTemplates,
@@ -57,6 +59,14 @@ public class DungeonGenerator {
 
 	public int getBossRoomCenterY() {
 		return this.bossRoomCenterY;
+	}
+
+	public int getSpawnRoomCenterX() {
+		return this.spawnRoomCenterX;
+	}
+
+	public int getSpawnRoomCenterY() {
+		return this.spawnRoomCenterY;
 	}
 
 	private TileModel getRandomFloorTile() {
@@ -94,6 +104,7 @@ public class DungeonGenerator {
 
 		log.info("[DungeonGen] Generating new procedural dungeon realm with room count {}. Params: {}", numRooms, this);
 
+		// Place rooms in a chain, each offset from the previous with guaranteed spacing
 		for (int i = 0; i < numRooms; i++) {
 			final boolean isBossRoom = (i == numRooms - 1);
 			int roomMinW = this.minRoomWidth;
@@ -101,7 +112,6 @@ public class DungeonGenerator {
 			int roomMinH = this.minRoomHeight;
 			int roomMaxH = this.maxRoomHeight;
 
-			// Boss room is 1.5x larger
 			if (isBossRoom) {
 				roomMinW = (int) (this.maxRoomWidth * 1.2);
 				roomMaxW = (int) (this.maxRoomWidth * 1.5);
@@ -112,32 +122,38 @@ public class DungeonGenerator {
 			final TileMap room = this.getRoom(this.tileSize, roomMinW, roomMaxW, roomMinH, roomMaxH,
 					this.shapeTemplates, isBossRoom);
 
-			final int xModifier = Realm.RANDOM.nextInt(2) == 0 ? -2 : 2;
-			final int yModifier = Realm.RANDOM.nextInt(2) == 0 ? -2 : 2;
-
-			final int rangeX = (previousRoomOffsetX + (room.getWidth() * xModifier)) <= 0 ? 1
-					: previousRoomOffsetX + (room.getWidth() * xModifier);
-			final int rangeY = (previousRoomOffsetY + (room.getHeight() * yModifier)) <= 0 ? 1
-					: previousRoomOffsetY + (room.getHeight() * yModifier);
-
-			int offsetX = 15 + Realm.RANDOM.nextInt(rangeX);
-			int offsetY = 15 + Realm.RANDOM.nextInt(rangeY);
-
-			if (offsetX < 0) {
-				offsetX = 0;
+			int offsetX, offsetY;
+			if (i == 0) {
+				// First room: place near top-left area
+				offsetX = 5 + Realm.RANDOM.nextInt(Math.max(1, this.width / 4));
+				offsetY = 5 + Realm.RANDOM.nextInt(Math.max(1, this.height / 4));
+			} else {
+				// Each subsequent room: offset from previous with guaranteed minimum gap
+				int minGap = Math.max(this.minRoomWidth, this.minRoomHeight) + 3;
+				int dirX = Realm.RANDOM.nextBoolean() ? 1 : -1;
+				int dirY = Realm.RANDOM.nextBoolean() ? 1 : -1;
+				int gapX = minGap + Realm.RANDOM.nextInt(Math.max(1, this.maxRoomWidth));
+				int gapY = minGap + Realm.RANDOM.nextInt(Math.max(1, this.maxRoomHeight));
+				// Alternate emphasis between horizontal and vertical spread
+				if (Realm.RANDOM.nextBoolean()) {
+					offsetX = previousRoomOffsetX + (dirX * gapX);
+					offsetY = previousRoomOffsetY + (dirY * (minGap / 2 + Realm.RANDOM.nextInt(Math.max(1, gapY / 2))));
+				} else {
+					offsetX = previousRoomOffsetX + (dirX * (minGap / 2 + Realm.RANDOM.nextInt(Math.max(1, gapX / 2))));
+					offsetY = previousRoomOffsetY + (dirY * gapY);
+				}
 			}
-			if (offsetX > this.width - room.getWidth()) {
-				offsetX = this.width - room.getWidth();
-			}
 
-			if (offsetY < 0) {
-				offsetY = 0;
-			}
-			if (offsetY > this.height - room.getHeight()) {
-				offsetY = this.height - room.getHeight();
-			}
+			// Clamp to map bounds
+			offsetX = Math.max(1, Math.min(offsetX, this.width - room.getWidth() - 1));
+			offsetY = Math.max(1, Math.min(offsetY, this.height - room.getHeight() - 1));
 
 			baseLayer.append(room, offsetX, offsetY);
+
+			if (i == 0) {
+				this.spawnRoomCenterX = offsetX + (room.getWidth() / 2);
+				this.spawnRoomCenterY = offsetY + (room.getHeight() / 2);
+			}
 
 			log.info("[DungeonGen] Dungeon room added at coordinates {}, {} (boss={})", offsetX, offsetY, isBossRoom);
 			if (previousRoom != null) {

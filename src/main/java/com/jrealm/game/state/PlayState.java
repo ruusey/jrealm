@@ -49,6 +49,7 @@ import com.jrealm.net.server.packet.MoveItemPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
+import com.jrealm.net.server.packet.LoginAckPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
 import com.jrealm.util.Camera;
 import com.jrealm.util.Cardinality;
@@ -211,7 +212,9 @@ public class PlayState extends GameState {
                 // player.removeExpiredEffects();
                 player.update(time);
                 this.movePlayer(player);
-                this.pui.update(time);
+                if (this.pui != null) {
+                    this.pui.update(time);
+                }
             };
             WorkerThread.submitAndRun(processGameObjects, playerShootDequeue, updatePlayerAndUi, monitorDamageText);
 
@@ -424,6 +427,10 @@ public class PlayState extends GameState {
                                 this.getPlayerId());
                         this.realmManager.getClient().sendRemote(usePortal);
                         this.realmManager.getRealm().loadMap(portalModel.getMapId());
+                        // Flag that we're transitioning realms - next ObjectMovePacket should snap position
+                        this.realmManager.setAwaitingRealmTransition(true);
+                        // Tell server we're ready for tiles after map rebuild
+                        this.realmManager.getClient().sendRemote(LoginAckPacket.from(this.getPlayerId()));
                         this.lastPortalTick = System.currentTimeMillis();
                     }
                 } catch (Exception e) {
@@ -437,6 +444,8 @@ public class PlayState extends GameState {
                         UsePortalPacket usePortal = UsePortalPacket.toVault(this.realmManager.getRealm().getRealmId(), this.getPlayerId());
                         this.realmManager.getClient().sendRemote(usePortal);
                         this.realmManager.getRealm().loadMap(1);
+                        this.realmManager.setAwaitingRealmTransition(true);
+                        this.realmManager.getClient().sendRemote(LoginAckPacket.from(this.getPlayerId()));
                         this.lastPortalTick = System.currentTimeMillis();
                     }
                 } catch (Exception e) {
@@ -461,9 +470,11 @@ public class PlayState extends GameState {
                 if (used) this.lastQuickUseTick = System.currentTimeMillis();
             }
 
-            if (key.m.clicked) this.pui.getMinimap().toggle();
-            if (key.plus.down) this.pui.getMinimap().zoomIn();
-            if (key.minus.down) this.pui.getMinimap().zoomOut();
+            if (this.pui != null) {
+                if (key.m.clicked) this.pui.getMinimap().toggle();
+                if (key.plus.down) this.pui.getMinimap().zoomIn();
+                if (key.minus.down) this.pui.getMinimap().zoomOut();
+            }
         }
 
         if (key.escape.clicked) {
@@ -490,8 +501,11 @@ public class PlayState extends GameState {
 		}
         boolean canShoot = (System.currentTimeMillis() - this.lastShotTick) > (1000 / dex + 10);
         boolean canUseAbility = (System.currentTimeMillis() - this.lastAbilityTick) > 1000;
-        boolean clickingWorld = mouse.isPressed(1) && !this.pui.isHoveringInventory(mouse.getX());
+        boolean clickingWorld = mouse.isPressed(1) && (this.pui == null || !this.pui.isHoveringInventory(mouse.getX()));
         player.setAttacking(clickingWorld);
+        // Pass mouse screen position for aim-based attack animation direction
+        player.setAimX(mouse.getX());
+        player.setAimY(mouse.getY());
         if (clickingWorld && canShoot) {
             this.lastShotTick = System.currentTimeMillis();
             Vector2f dest = new Vector2f(mouse.getX(), mouse.getY());
@@ -499,7 +513,7 @@ public class PlayState extends GameState {
             dest.addY(PlayState.map.y);
             this.shotDestQueue.add(dest);
         }
-        if ((mouse.isPressed(3)) && canUseAbility && !this.pui.isHoveringInventory(mouse.getX())) {
+        if ((mouse.isPressed(3)) && canUseAbility && (this.pui == null || !this.pui.isHoveringInventory(mouse.getX()))) {
             try {
                 Vector2f pos = new Vector2f(mouse.getX(), mouse.getY());
                 pos.addX(PlayState.map.x);

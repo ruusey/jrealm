@@ -37,8 +37,8 @@ public class ItemTooltip {
 
     private Stats stats;
 
-    private static final int PADDING = 6;
-    private static final int LINE_HEIGHT = 18;
+    private static final int PADDING = 8;
+    private static final int LINE_HEIGHT = 22;
     private static final Color BG_COLOR = new Color(0.12f, 0.12f, 0.15f, 0.95f);
     private static final Color BORDER_COLOR = new Color(0.4f, 0.4f, 0.5f, 1f);
     private static final Color TITLE_COLOR = new Color(1f, 0.85f, 0.2f, 1f);
