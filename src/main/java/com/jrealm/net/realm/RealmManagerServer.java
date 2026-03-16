@@ -153,12 +153,20 @@ public class RealmManagerServer implements Runnable {
 	private int currentTickCount = 0;
 	private long tickSampleTime = 0;
 
-	// Disables the sending of LoadPacket and ObjectMovePacket every other tick
-	private boolean disablePartialTransmission = true;
-	private boolean transmitMovement = true;
-	private boolean transmitLoadPacket = false;
-	private boolean transmitLoadMapPacket = true;
-	private boolean transmitPlayerUpdatePacket = false;
+	// Tiered update rate tick counter (increments every tick, wraps at 64)
+	private int tickCounter = 0;
+
+	// Tick rate divisors for tiered packet transmission (at 64 ticks/sec):
+	// Movement: every tick (64 Hz) - needs to feel responsive
+	// LoadPacket: every 2 ticks (32 Hz) - entity spawns/despawns
+	// UpdatePacket: every 4 ticks (16 Hz) - stats/inventory/effects change slowly
+	// LoadMapPacket: every 16 ticks (4 Hz) - terrain barely changes
+	// EnemyUpdatePacket: every 4 ticks (16 Hz) - enemy health bars
+	private static final int MOVE_TICK_DIVISOR = 1;
+	private static final int LOAD_TICK_DIVISOR = 2;
+	private static final int UPDATE_TICK_DIVISOR = 4;
+	private static final int LOADMAP_TICK_DIVISOR = 16;
+	private static final int ENEMY_UPDATE_TICK_DIVISOR = 4;
 
 	private boolean  isSetup = false;
 	
@@ -284,22 +292,10 @@ public class RealmManagerServer implements Runnable {
 
 	private void tick() {
 		try {
+			this.processServerPackets();
+			this.enqueueGameData();
+			this.sendGameData();
 
-			final Runnable enqueueGameData = () -> {
-				this.enqueueGameData();
-			};
-
-			final Runnable processServerPackets = () -> {
-				this.processServerPackets();
-			};
-			
-			final Runnable sendGameData = () -> {
-				this.sendGameData();
-			};
-			// We dont necessarily care what order these three tasks take place in
-			// rather that all three are completed at least once per tick, so run them
-			// asynchronously
-			WorkerThread.submitAndRun(enqueueGameData, processServerPackets, sendGameData);
 			if (Instant.now().toEpochMilli() - this.tickSampleTime > 1000) {
 				this.tickSampleTime = Instant.now().toEpochMilli();
 				log.info("[SERVER] ticks this second: {}", this.currentTickCount);
@@ -308,7 +304,7 @@ public class RealmManagerServer implements Runnable {
 				this.currentTickCount++;
 			}
 		} catch (Exception e) {
-			RealmManagerServer.log.error("Failed to sleep");
+			RealmManagerServer.log.error("Failed to process server tick. Reason: {}", e);
 		}
 	}
 
@@ -421,67 +417,69 @@ public class RealmManagerServer implements Runnable {
 		log.debug("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double) nanosDiff / (double) 1000000l));
 	}
 
-	// Enqueues outbound game packets every tick. Manages
-	// when/if packets should be broadcast and to who
+	// Enqueues outbound game packets every tick using:
+	// - Spatial hash grid for O(1) neighbor lookups
+	// - Tiered update rates (movement=64Hz, load=32Hz, update=16Hz, map=4Hz)
+	// - Per-cell packet sharing (players in same cell share entity queries)
 	public void enqueueGameData() {
 		try {
 			long startNanos = System.nanoTime();
-			final List<String> disconnectedClients = new ArrayList<>();
-			// TODO (inprog): Parallelize work for each realm
-			// we have to do work for
-
-			// Prevent concurrent modification errors by acquiring a semaphore lease
-			// while we are building the game data for this tick
-			// realm ticking is global so each realm should receive a new tick at
-			// roughly the same time regardless of its depth.
 			this.acquireRealmLock();
+			this.tickCounter++;
 
-			final List<Runnable> perRealmWork = new ArrayList<>();
+			final boolean doMovement = (this.tickCounter % MOVE_TICK_DIVISOR) == 0;
+			final boolean doLoad = (this.tickCounter % LOAD_TICK_DIVISOR) == 0;
+			final boolean doUpdate = (this.tickCounter % UPDATE_TICK_DIVISOR) == 0;
+			final boolean doLoadMap = (this.tickCounter % LOADMAP_TICK_DIVISOR) == 0;
+			final boolean doEnemyUpdate = (this.tickCounter % ENEMY_UPDATE_TICK_DIVISOR) == 0;
+
 			for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
 				Realm realm = realmEntry.getValue();
-				// Runnable representing processing work to performed on this Realm (TODO)
-				// final Runnable realmWork = () -> {
+
+				// Update spatial grid positions once per tick for this realm
+				realm.updateSpatialGrid();
+
+				// Per-cell cache: share expensive LoadPacket/ObjectMovePacket between
+				// players in the same spatial cell (they see ~the same entities)
+				final Map<Long, LoadPacket> cellLoadCache = new HashMap<>();
+				final Map<Long, ObjectMovePacket> cellMoveCache = new HashMap<>();
+
 				final List<Player> toRemove = new ArrayList<>();
+				final float viewportRadius = 10 * com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+
 				for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
-					
 					if (player.getValue().isHeadless()) {
 						continue;
 					}
 					try {
 						realm = this.findPlayerRealm(player.getKey());
+						final Vector2f playerCenter = player.getValue().getPos();
+						final long cellKey = realm.getSpatialCellKey(playerCenter.x, playerCenter.y);
 
-						// Get the background + collision tiles in this players viewport
-						// condensed into a single array
-						final NetTile[] netTilesForPlayer = realm.getTileManager().getLoadMapTiles(player.getValue());
-						// Build those tiles into a load map packet (NetTile[] wrapper)
-						final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(),
-								(short) realm.getMapId(), realm.getTileManager().getMapWidth(),
-								realm.getTileManager().getMapHeight(), netTilesForPlayer);
-						// If we dont have load map state for this player, map it and
-						// then transmit all the tiles
-						if (this.playerLoadMapState.get(player.getKey()) == null) {
-							this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-							this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
-						} else {
-							// Get the previous loadMap packet and check for Delta,
-							// only send the delta to the client
-							final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
-
-							if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
-								final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
+						// --- LoadMapPacket (4 Hz) ---
+						if (doLoadMap) {
+							final NetTile[] netTilesForPlayer = realm.getTileManager().getLoadMapTiles(player.getValue());
+							final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(),
+									(short) realm.getMapId(), realm.getTileManager().getMapWidth(),
+									realm.getTileManager().getMapHeight(), netTilesForPlayer);
+							if (this.playerLoadMapState.get(player.getKey()) == null) {
 								this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
-								if (loadMapDiff != null) {
-									this.enqueueServerPacket(player.getValue(), loadMapDiff);
+								this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
+							} else {
+								final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
+								if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
+									final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
+									this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
+									if (loadMapDiff != null) {
+										this.enqueueServerPacket(player.getValue(), loadMapDiff);
+									}
 								}
 							}
 						}
 
-						if (this.transmitPlayerUpdatePacket || this.disablePartialTransmission) {
-							// Get UpdatePacket for this player and all players in this players viewport
-							// Contains, player stat info, inventory, status effects, health and mana data
+						// --- Self UpdatePacket (16 Hz) ---
+						if (doUpdate) {
 							final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
-							// Only transmit this players update data if it has not been sent
-							// or if it has changed since last tick
 							if (this.playerUpdateState.get(player.getKey()) == null) {
 								this.playerUpdateState.put(player.getKey(), updatePacket);
 								this.enqueueServerPacket(player.getValue(), updatePacket);
@@ -492,53 +490,45 @@ public class RealmManagerServer implements Runnable {
 									this.enqueueServerPacket(player.getValue(), updatePacket);
 								}
 							}
-						}
-						// Transmit nearby other players' UpdatePackets (equipment, stats, effects)
-						// Only send when the other player's state has actually changed (delta check)
-						final float viewportRadius = 10 * com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
-						final Vector2f playerCenter = player.getValue().getPos();
-						final Player[] otherPlayers = realm
-								.getPlayersInRadius(playerCenter, viewportRadius);
-						for (Player other : otherPlayers) {
-							if (other.getId() == player.getKey()) continue;
-							try {
-								final UpdatePacket otherUpdate = realm.getPlayerAsPacket(other.getId());
-								if (otherUpdate != null) {
-									final UpdatePacket cachedOther = this.playerUpdateState.get(other.getId());
-									if (cachedOther == null || !cachedOther.equals(otherUpdate, false)) {
-										this.playerUpdateState.put(other.getId(), otherUpdate);
-										this.enqueueServerPacket(player.getValue(), otherUpdate);
+
+							// Nearby other players' UpdatePackets (uses spatial grid)
+							final Player[] otherPlayers = realm.getPlayersInRadiusFast(playerCenter, viewportRadius);
+							for (Player other : otherPlayers) {
+								if (other.getId() == player.getKey()) continue;
+								try {
+									final UpdatePacket otherUpdate = realm.getPlayerAsPacket(other.getId());
+									if (otherUpdate != null) {
+										final UpdatePacket cachedOther = this.playerUpdateState.get(other.getId());
+										if (cachedOther == null || !cachedOther.equals(otherUpdate, false)) {
+											this.playerUpdateState.put(other.getId(), otherUpdate);
+											this.enqueueServerPacket(player.getValue(), otherUpdate);
+										}
 									}
+								} catch (Exception ex) {
+									log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
 								}
-							} catch (Exception ex) {
-								log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
 							}
 						}
 
-						if (this.transmitLoadPacket || this.disablePartialTransmission) {
-							// Get LoadPacket for this player (circular viewport matching tile render)
-							// Contains newly spawned bullets, entities, players
-							final LoadPacket loadPacket = realm
-									.getLoadPacketCircular(playerCenter, viewportRadius);
-
-							// Only transmit the LoadPacket if its state is changed (it can potentially be
-							// large).
-							// If the state is changed, only transmit the DELTA data
+						// --- LoadPacket (32 Hz) - uses per-cell cache + spatial grid ---
+						if (doLoad) {
+							// Reuse LoadPacket if another player in the same cell already built it
+							LoadPacket loadPacket = cellLoadCache.get(cellKey);
+							if (loadPacket == null) {
+								loadPacket = realm.getLoadPacketCircularFast(playerCenter, viewportRadius);
+								cellLoadCache.put(cellKey, loadPacket);
+							}
 							if (this.playerLoadState.get(player.getKey()) == null) {
 								this.playerLoadState.put(player.getKey(), loadPacket);
 								this.enqueueServerPacket(player.getValue(), loadPacket);
-
 							} else {
 								final LoadPacket oldLoad = this.playerLoadState.get(player.getKey());
 								if (!oldLoad.equals(loadPacket)) {
-									// Get the LoadPacket delta
 									final LoadPacket toSend = oldLoad.combine(loadPacket);
 									this.playerLoadState.put(player.getKey(), loadPacket);
 									if (!toSend.isEmpty()) {
 										this.enqueueServerPacket(player.getValue(), toSend);
 									}
-									// Unload the delta objects that were in the old LoadPacket
-									// but are NOT in the new LoadPacket
 									final UnloadPacket unloadDelta = oldLoad.difference(loadPacket);
 									if (unloadDelta.isNotEmpty()) {
 										this.enqueueServerPacket(player.getValue(), unloadDelta);
@@ -550,21 +540,20 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						// Recently added tick skipping for game entity movements.
-						// This greatly reduced bytes going down the wire but some
-						// fidelity is lost
-						if (this.transmitMovement || this.disablePartialTransmission) {
-							// Get the posX, posY, dX, dY of all Entities in this players viewport (circular)
-							final ObjectMovePacket movePacket = realm.getGameObjectsAsPacketsCircular(
-									playerCenter, viewportRadius);
-							// If the ObjectMove packet isnt empty
+						// --- ObjectMovePacket (64 Hz) - uses per-cell cache + spatial grid ---
+						if (doMovement) {
+							// Reuse move packet if another player in same cell already built it
+							ObjectMovePacket movePacket = cellMoveCache.get(cellKey);
+							if (movePacket == null) {
+								movePacket = realm.getGameObjectsAsPacketsCircularFast(playerCenter, viewportRadius);
+								cellMoveCache.put(cellKey, movePacket);
+							}
 							if (this.playerObjectMoveState.get(player.getKey()) == null && movePacket != null) {
 								this.playerObjectMoveState.put(player.getKey(), movePacket);
 								this.enqueueServerPacket(player.getValue(), movePacket);
 							} else if (movePacket != null) {
 								final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
 								if (oldMove != null) {
-									// Compute the diff and only send changed movements
 									final ObjectMovePacket moveDiff = oldMove.getMoveDiff(movePacket);
 									if (moveDiff != null) {
 										this.playerObjectMoveState.put(player.getKey(), movePacket);
@@ -573,25 +562,19 @@ public class RealmManagerServer implements Runnable {
 								}
 							}
 
-							// Reuse movePacket for enemy ID extraction instead of querying viewport again
-							final Set<Long> nearEnemyIds = new HashSet<>();
-							if (movePacket != null) {
+							// Enemy UpdatePackets (16 Hz) - extract enemy IDs from move packet
+							if (doEnemyUpdate && movePacket != null) {
+								final Set<Long> nearEnemyIds = new HashSet<>();
 								for (NetObjectMovement m : movePacket.getMovements()) {
 									if (m.getEntityType() == EntityType.ENEMY.getEntityTypeId()) {
 										nearEnemyIds.add(m.getEntityId());
 									}
 								}
-							}
-
-							if (nearEnemyIds.size() > 0) {
-								final Map<Long, UpdatePacket> enemyUpdatePackets = new HashMap<>();
 								for (Long enemyId : nearEnemyIds) {
 									final UpdatePacket updatePacket0 = realm.getEnemyAsPacket(enemyId);
-									// Only transmit this players update data if it has not been sent
-									// or if it has changed since last tick
 									final UpdatePacket oldState = this.enemyUpdateState.get(enemyId);
 									boolean doSend = false;
-									if (this.enemyUpdateState.get(enemyId) == null) {
+									if (oldState == null) {
 										this.enemyUpdateState.put(enemyId, updatePacket0);
 										doSend = true;
 									} else if (!oldState.equals(updatePacket0, true)) {
@@ -605,15 +588,13 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
+						// Heartbeat timeout check (every tick)
 						final Long playerLastHeartbeatTime = this.playerLastHeartbeatTime.get(player.getKey());
 						if (playerLastHeartbeatTime != null
 								&& ((Instant.now().toEpochMilli() - playerLastHeartbeatTime) > 5000)) {
 							toRemove.add(player.getValue());
 						}
 
-						// Used to dynamically re-render changed loot containers (chests) on the client
-						// if their contents change in a server tick (receive MoveItem packet from
-						// client this tick)
 						for (LootContainer lc : realm.getLoot().values()) {
 							lc.setContentsChanged(false);
 						}
@@ -623,26 +604,14 @@ public class RealmManagerServer implements Runnable {
 								player.getKey(), e);
 					}
 				}
-				if (!this.disablePartialTransmission) {
-					this.transmitLoadPacket = !this.transmitLoadPacket;
-					this.transmitMovement = !this.transmitMovement;
-					this.transmitLoadMapPacket = !this.transmitLoadMapPacket;
-					this.transmitPlayerUpdatePacket = !this.transmitPlayerUpdatePacket;
-				}
 
 				for (Player player : toRemove) {
 					this.disconnectPlayer(player);
 				}
-				// };
-				// perRealmWork.add(realmWork);
-				// WorkerThread.submitAndRun(realmWork);
-
 			}
-			final long processingStart = Instant.now().toEpochMilli();
-			log.debug("[SERVER] Parellelizing game data enqueue for {} realms");
 
 			long nanosDiff = System.nanoTime() - startNanos;
-			log.debug("[SERVER] Game data for {} realms enqueued in {} nanos ({}ms}", perRealmWork.size(), nanosDiff,
+			log.debug("[SERVER] Game data enqueued in {} nanos ({}ms)", nanosDiff,
 					((double) nanosDiff / (double) 1000000l));
 			this.releaseRealmLock();
 		} catch (Exception e) {
@@ -1034,53 +1003,37 @@ public class RealmManagerServer implements Runnable {
 		// For each world on the server
 		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
 			final Realm realm = realmEntry.getValue();
-			// Update player specific game objects (bullets, the players themselves)
+			// Update player specific game objects — run inline, these are fast per-player ops
 			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
 				final Player p = realm.getPlayer(player.getValue().getId());
 				if (p == null) {
 					continue;
 				}
-
-				final Runnable processGameObjects = () -> {
-					this.processBulletHit(realm.getRealmId(), p);
-				};
-				// Rewrite this asap
-				final Runnable updatePlayer = () -> {
-					p.update(time);
-					p.removeExpiredEffects();
-					this.movePlayer(realm.getRealmId(), p);
-				};
-				// Run the player update tasks Asynchronously
-				WorkerThread.submitAndRun(processGameObjects, updatePlayer);
+				this.processBulletHit(realm.getRealmId(), p);
+				p.update(time);
+				p.removeExpiredEffects();
+				this.movePlayer(realm.getRealmId(), p);
 			}
-			// Once per tick update all non player game objects
-			// (bullets, enemies)
-			final Runnable processGameObjects = () -> {
-				final GameObject[] gameObject = realm.getAllGameObjects();
-				for (int i = 0; i < gameObject.length; i++) {
-					if (gameObject[i] instanceof Enemy || gameObject[i] instanceof Monster) {
-						final Enemy enemy = ((Enemy) gameObject[i]);
-						enemy.update(realm.getRealmId(), this, time);
-						enemy.removeExpiredEffects();
-					}
-
-					if (gameObject[i] instanceof Bullet) {
-						final Bullet bullet = ((Bullet) gameObject[i]);
-						if (bullet != null) {
-							bullet.update();
-						}
+			// Once per tick update all non player game objects (bullets, enemies)
+			final GameObject[] gameObject = realm.getAllGameObjects();
+			for (int i = 0; i < gameObject.length; i++) {
+				if (gameObject[i] instanceof Enemy || gameObject[i] instanceof Monster) {
+					final Enemy enemy = ((Enemy) gameObject[i]);
+					enemy.update(realm.getRealmId(), this, time);
+					enemy.removeExpiredEffects();
+				}
+				if (gameObject[i] instanceof Bullet) {
+					final Bullet bullet = ((Bullet) gameObject[i]);
+					if (bullet != null) {
+						bullet.update();
 					}
 				}
-			};
-			WorkerThread.submitAndRun(processGameObjects);
+			}
 		}
 
-		final Runnable removeExpiredObjects = () -> {
-			this.removeExpiredBullets();
-			this.removeExpiredLootContainers();
-			this.removeExpiredPortals();
-		};
-		WorkerThread.submitAndRun(removeExpiredObjects);
+		this.removeExpiredBullets();
+		this.removeExpiredLootContainers();
+		this.removeExpiredPortals();
 	}
 
 	private void movePlayer(final long realmId, final Player p) {
@@ -1559,14 +1512,20 @@ public class RealmManagerServer implements Runnable {
 
 			// Portal drops: use dungeon graph if this realm has a nodeId
 			final String currentNodeId = targetRealm.getNodeId();
-			final com.jrealm.game.model.DungeonGraphNode currentNode = (currentNodeId != null)
+			final com.jrealm.game.model.DungeonGraphNode currentNode = (currentNodeId != null && GameDataManager.DUNGEON_GRAPH != null)
 					? GameDataManager.DUNGEON_GRAPH.get(currentNodeId) : null;
+
+			log.info("[SERVER] enemyDeath: enemy={} nodeId={} currentNode={} portalDrops={}",
+					enemy.getEnemyId(), currentNodeId, currentNode != null ? currentNode.getDisplayName() : "null",
+					lootTable.getPortalDrops());
 
 			if (currentNode != null && currentNode.getPortalDropNodeMap() != null
 					&& !currentNode.getPortalDropNodeMap().isEmpty()) {
 				// Graph-based portal drops: drop portals to child nodes
 				if (lootTable.getPortalDrops() != null) {
-					for (int portalId : lootTable.getPortalDrop()) {
+					final List<Integer> rolledPortals = lootTable.getPortalDrop();
+					log.info("[SERVER] enemyDeath: rolled portals={} from drops={}", rolledPortals, lootTable.getPortalDrops());
+					for (int portalId : rolledPortals) {
 						// Find which child node this portalId leads to from the current node
 						String targetNodeId = null;
 						for (Map.Entry<String, Integer> entry : currentNode.getPortalDropNodeMap().entrySet()) {
@@ -1575,7 +1534,11 @@ public class RealmManagerServer implements Runnable {
 								break;
 							}
 						}
-						if (targetNodeId == null) continue;
+						if (targetNodeId == null) {
+							log.info("[SERVER] enemyDeath: portalId {} not in node's portalDropNodeMap {}, skipping",
+									portalId, currentNode.getPortalDropNodeMap());
+							continue;
+						}
 
 						PortalModel portalModel = GameDataManager.PORTALS.get(portalId);
 						if (portalModel == null) continue;
@@ -1593,6 +1556,8 @@ public class RealmManagerServer implements Runnable {
 						// Store target node info on the portal for lazy realm creation
 						portal.setTargetNodeId(targetNodeId);
 						targetRealm.addPortal(portal);
+						log.info("[SERVER] enemyDeath: SPAWNED portal {} -> node {} at ({}, {})",
+								portalId, targetNodeId, portal.getPos().x, portal.getPos().y);
 					}
 				}
 			} else {

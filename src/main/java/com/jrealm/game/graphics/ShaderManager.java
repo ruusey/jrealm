@@ -61,6 +61,40 @@ public class ShaderManager {
         0.2f, 0.2f, 0.2f, 0
     };
 
+    // Single-pass outline shader: samples 4 neighboring texels and draws
+    // a solid color if any neighbor has alpha > 0 but the center doesn't.
+    // Renders the outline in one draw call instead of four.
+    private static ShaderProgram outlineShader;
+
+    private static final String OUTLINE_FRAG =
+        "#ifdef GL_ES\n" +
+        "precision mediump float;\n" +
+        "#endif\n" +
+        "varying vec4 v_color;\n" +
+        "varying vec2 v_texCoords;\n" +
+        "uniform sampler2D u_texture;\n" +
+        "uniform vec2 u_texelSize;\n" +
+        "uniform float u_outlineSize;\n" +
+        "uniform vec4 u_outlineColor;\n" +
+        "void main() {\n" +
+        "  vec4 center = texture2D(u_texture, v_texCoords);\n" +
+        "  if (center.a > 0.01) {\n" +
+        "    gl_FragColor = center * v_color;\n" +
+        "    return;\n" +
+        "  }\n" +
+        "  float offset = u_outlineSize;\n" +
+        "  float a = 0.0;\n" +
+        "  a += texture2D(u_texture, v_texCoords + vec2( offset, 0.0) * u_texelSize).a;\n" +
+        "  a += texture2D(u_texture, v_texCoords + vec2(-offset, 0.0) * u_texelSize).a;\n" +
+        "  a += texture2D(u_texture, v_texCoords + vec2(0.0,  offset) * u_texelSize).a;\n" +
+        "  a += texture2D(u_texture, v_texCoords + vec2(0.0, -offset) * u_texelSize).a;\n" +
+        "  if (a > 0.0) {\n" +
+        "    gl_FragColor = u_outlineColor;\n" +
+        "  } else {\n" +
+        "    gl_FragColor = vec4(0.0);\n" +
+        "  }\n" +
+        "}\n";
+
     // Pre-cached Matrix4 objects to avoid per-call allocations
     private static com.badlogic.gdx.math.Matrix4 MAT_IDENTITY;
     private static com.badlogic.gdx.math.Matrix4 MAT_SEPIA;
@@ -137,6 +171,12 @@ public class ShaderManager {
         vibranceShader = new ShaderProgram(VERT_SHADER, VIBRANCE_FRAG);
         if (!vibranceShader.isCompiled()) {
             log.error("Vibrance shader failed to compile: {}", vibranceShader.getLog());
+        }
+
+        // Compile outline shader
+        outlineShader = new ShaderProgram(VERT_SHADER, OUTLINE_FRAG);
+        if (!outlineShader.isCompiled()) {
+            log.error("Outline shader failed to compile: {}", outlineShader.getLog());
         }
 
         // Pre-cache Matrix4 objects
@@ -228,12 +268,40 @@ public class ShaderManager {
         lastAppliedEffect = null;
     }
 
+    /**
+     * Apply the single-pass outline shader. Renders outline + body in one draw call per entity.
+     * @param batch the sprite batch
+     * @param texWidth texture width in pixels (for texel size calculation)
+     * @param texHeight texture height in pixels
+     */
+    public static void applyOutlineShader(SpriteBatch batch, float texWidth, float texHeight) {
+        batch.setShader(outlineShader);
+        outlineShader.setUniformf("u_texelSize", 1.0f / texWidth, 1.0f / texHeight);
+        outlineShader.setUniformf("u_outlineSize", 2.5f);
+        outlineShader.setUniformf("u_outlineColor", 0.2f, 0.2f, 0.2f, 1.0f);
+        lastAppliedEffect = null; // force re-apply on next effect
+    }
+
+    public static void clearOutlineShader(SpriteBatch batch) {
+        if (vibranceActive) {
+            batch.setShader(vibranceShader);
+            vibranceShader.setUniformf("u_saturation", vibSaturation);
+            vibranceShader.setUniformf("u_contrast", vibContrast);
+        } else {
+            batch.setShader(null);
+        }
+        lastAppliedEffect = Sprite.EffectEnum.NORMAL;
+    }
+
     public static void dispose() {
         if (effectShader != null) {
             effectShader.dispose();
         }
         if (vibranceShader != null) {
             vibranceShader.dispose();
+        }
+        if (outlineShader != null) {
+            outlineShader.dispose();
         }
     }
 }

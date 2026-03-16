@@ -496,22 +496,38 @@ public class TileManager {
     }
 
     public Rectangle getRenderViewPort(Camera cam) {
-        return new Rectangle(
-                cam.getTarget().getPos().clone(-(VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE),
-                        -(VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE)),
-                (VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE), (VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE));
+        final Vector2f tmpPos = VIEWPORT_POS.get();
+        tmpPos.x = cam.getTarget().getPos().x - (VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE);
+        tmpPos.y = cam.getTarget().getPos().y - (VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE);
+        final Rectangle rect = VIEWPORT_RECT.get();
+        rect.setBox(tmpPos, VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE,
+                VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE);
+        return rect;
     }
 
+    // Reusable viewport rectangles to avoid allocation every frame/tick
+    private static final ThreadLocal<Rectangle> VIEWPORT_RECT = ThreadLocal.withInitial(
+            () -> new Rectangle(new Vector2f(), 0, 0));
+    private static final ThreadLocal<Vector2f> VIEWPORT_POS = ThreadLocal.withInitial(Vector2f::new);
+
     public Rectangle getRenderViewPort(Entity p) {
-        return new Rectangle(
-                p.getPos().clone(-(VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE), -(VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE)),
-                (VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE), (VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE));
+        final Vector2f tmpPos = VIEWPORT_POS.get();
+        tmpPos.x = p.getPos().x - (VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE);
+        tmpPos.y = p.getPos().y - (VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE);
+        final Rectangle rect = VIEWPORT_RECT.get();
+        rect.setBox(tmpPos, VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE,
+                VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE);
+        return rect;
     }
-    
+
     public Rectangle getRenderViewPort(Entity p, Integer tiles) {
-        return new Rectangle(
-                p.getPos().clone(-(tiles * GlobalConstants.BASE_TILE_SIZE), -(tiles * GlobalConstants.BASE_TILE_SIZE)),
-                (tiles * GlobalConstants.BASE_TILE_SIZE), (tiles * GlobalConstants.BASE_TILE_SIZE));
+        final Vector2f tmpPos = VIEWPORT_POS.get();
+        tmpPos.x = p.getPos().x - (tiles * GlobalConstants.BASE_TILE_SIZE);
+        tmpPos.y = p.getPos().y - (tiles * GlobalConstants.BASE_TILE_SIZE);
+        final Rectangle rect = VIEWPORT_RECT.get();
+        rect.setBox(tmpPos, tiles * GlobalConstants.BASE_TILE_SIZE,
+                tiles * GlobalConstants.BASE_TILE_SIZE);
+        return rect;
     }
 
     public NetTile[] getLoadMapTiles(Player player) {

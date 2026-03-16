@@ -77,11 +77,21 @@ public abstract class GameObject {
         this.pos = new Vector2f(lerpX, lerpY);
     }
 
-    public void applyMovementLerp(NetObjectMovement packet, float pct) {
-        final float lerpX = this.lerp(this.pos.x, packet.getPosX(), pct);
-        final float lerpY = this.lerp(this.pos.y, packet.getPosY(), pct);
+    // Snap threshold: if server position is more than 3 tiles away, snap instead of lerp.
+    // This handles teleports (planewalker cloak, portals) where lerp would cause a slow slide.
+    private static final float SNAP_DISTANCE_SQ = (3 * 32) * (3 * 32);
 
-        this.pos = new Vector2f(lerpX, lerpY);
+    public void applyMovementLerp(NetObjectMovement packet, float pct) {
+        float dx = packet.getPosX() - this.pos.x;
+        float dy = packet.getPosY() - this.pos.y;
+        if (dx * dx + dy * dy > SNAP_DISTANCE_SQ) {
+            // Large jump — snap directly (teleport, portal, etc.)
+            this.pos.x = packet.getPosX();
+            this.pos.y = packet.getPosY();
+        } else {
+            this.pos.x = this.lerp(this.pos.x, packet.getPosX(), pct);
+            this.pos.y = this.lerp(this.pos.y, packet.getPosY(), pct);
+        }
         this.bounds = new Rectangle(this.pos, this.size, this.size);
         this.dx = packet.getVelX();
         this.dy = packet.getVelY();

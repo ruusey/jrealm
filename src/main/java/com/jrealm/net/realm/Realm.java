@@ -16,6 +16,7 @@ import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.JRealmGame;
 import com.jrealm.game.contants.CharacterClass;
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.data.GameSpriteManager;
@@ -74,6 +75,9 @@ public class Realm {
     private TileManager tileManager;
     private Semaphore playerLock = new Semaphore(1);
 
+    // Spatial hash grid for O(1) neighbor lookups (cell size = viewport radius)
+    private transient SpatialHashGrid spatialGrid;
+
     private boolean isServer;
     private boolean shutdown = false;
 
@@ -86,6 +90,7 @@ public class Realm {
         this.expiredPlayers = new ArrayList<>();
         this.expiredBullets = new ArrayList<>();
         this.playerLastShotTime = new HashMap<>();
+        this.spatialGrid = new SpatialHashGrid(10 * GlobalConstants.BASE_TILE_SIZE);
         this.loadMap(mapId);
         if (this.isServer) {
             WorkerThread.submitAndForkRun(this.getStatsThread());
@@ -180,11 +185,17 @@ public class Realm {
         this.expiredEnemies = new ArrayList<>();
         this.expiredPlayers = new ArrayList<>();
         this.playerLastShotTime = new ConcurrentHashMap<>();
+        if (this.spatialGrid != null) {
+            this.spatialGrid.clear();
+        }
     }
 
     public long addPlayer(Player player) {
         this.acquirePlayerLock();
         this.players.put(player.getId(), player);
+        if (this.spatialGrid != null) {
+            this.spatialGrid.insert(player.getId(), player.getPos().x, player.getPos().y);
+        }
         this.releasePlayerLock();
         return player.getId();
     }
@@ -195,6 +206,9 @@ public class Realm {
             final SpriteSheet sheet = GameSpriteManager.loadClassSprites(CharacterClass.valueOf(player.getClassId()));
             player.setSpriteSheet(sheet);
             this.players.put(player.getId(), player);
+            if (this.spatialGrid != null) {
+                this.spatialGrid.insert(player.getId(), player.getPos().x, player.getPos().y);
+            }
             this.releasePlayerLock();
         }
         return player.getId();
@@ -204,6 +218,9 @@ public class Realm {
         this.acquirePlayerLock();
         this.playerLastShotTime.remove(player.getId());
         final Player p = this.players.remove(player.getId());
+        if (this.spatialGrid != null) {
+            this.spatialGrid.remove(player.getId());
+        }
         this.releasePlayerLock();
         return p != null;
     }
@@ -231,6 +248,9 @@ public class Realm {
     public boolean removePlayer(long playerId) {
         this.acquirePlayerLock();
         final Player p = this.players.remove(playerId);
+        if (this.spatialGrid != null) {
+            this.spatialGrid.remove(playerId);
+        }
         this.releasePlayerLock();
         return p != null;
     }
@@ -248,6 +268,9 @@ public class Realm {
 
     public long addBullet(Bullet b) {
         this.bullets.put(b.getId(), b);
+        if (this.spatialGrid != null) {
+            this.spatialGrid.insert(b.getId(), b.getPos().x, b.getPos().y);
+        }
         return b.getId();
     }
 
@@ -263,6 +286,9 @@ public class Realm {
             }
             b.setSpriteSheet(bulletSprite);
             this.bullets.put(b.getId(), b);
+            if (this.spatialGrid != null) {
+                this.spatialGrid.insert(b.getId(), b.getPos().x, b.getPos().y);
+            }
         }
         return b.getId();
     }
@@ -270,6 +296,9 @@ public class Realm {
     public boolean removeBullet(Bullet b) {
         final Bullet bullet = this.bullets.remove(b.getId());
         this.bulletHits.remove(b.getId());
+        if (this.spatialGrid != null) {
+            this.spatialGrid.remove(b.getId());
+        }
         return bullet != null;
     }
 
@@ -277,22 +306,34 @@ public class Realm {
         for (Long l : b) {
             this.bullets.remove(l);
             this.bulletHits.remove(l);
+            if (this.spatialGrid != null) {
+                this.spatialGrid.remove(l);
+            }
         }
         return true;
     }
 
     public long addPortal(Portal portal) {
         this.portals.put(portal.getId(), portal);
+        if (this.spatialGrid != null) {
+            this.spatialGrid.insert(portal.getId(), portal.getPos().x, portal.getPos().y);
+        }
         return portal.getId();
     }
 
     public boolean removePortal(long portalId) {
         final Portal removed = this.portals.remove(portalId);
+        if (this.spatialGrid != null) {
+            this.spatialGrid.remove(portalId);
+        }
         return removed != null;
     }
 
     public boolean removePortal(Portal portal) {
         final Portal removed = this.portals.remove(portal.getId());
+        if (this.spatialGrid != null) {
+            this.spatialGrid.remove(portal.getId());
+        }
         return removed != null;
     }
 
@@ -303,12 +344,18 @@ public class Realm {
             final Sprite portalSprite = GameSpriteManager.loadSprite(portalModel);
             portal.setSprite(portalSprite);
             this.portals.put(portal.getId(), portal);
+            if (this.spatialGrid != null) {
+                this.spatialGrid.insert(portal.getId(), portal.getPos().x, portal.getPos().y);
+            }
         }
         return portal.getId();
     }
 
     public long addEnemy(Enemy enemy) {
         this.enemies.put(enemy.getId(), enemy);
+        if (this.spatialGrid != null) {
+            this.spatialGrid.insert(enemy.getId(), enemy.getPos().x, enemy.getPos().y);
+        }
         return enemy.getId();
     }
 
@@ -326,6 +373,9 @@ public class Realm {
                 enemy.setAttackRange((int) model.getAttackRange());
             }
             this.enemies.put(enemy.getId(), enemy);
+            if (this.spatialGrid != null) {
+                this.spatialGrid.insert(enemy.getId(), enemy.getPos().x, enemy.getPos().y);
+            }
         }
         return enemy.getId();
     }
@@ -336,6 +386,9 @@ public class Realm {
 
     public boolean removeEnemy(Enemy enemy) {
         final Enemy e = this.enemies.remove(enemy.getId());
+        if (this.spatialGrid != null) {
+            this.spatialGrid.remove(enemy.getId());
+        }
         return e != null;
     }
 
@@ -343,6 +396,9 @@ public class Realm {
         long randomId = Realm.RANDOM.nextLong();
         lc.setLootContainerId(randomId);
         this.loot.put(randomId, lc);
+        if (this.spatialGrid != null) {
+            this.spatialGrid.insert(randomId, lc.getPos().x, lc.getPos().y);
+        }
         return randomId;
     }
 
@@ -356,12 +412,18 @@ public class Realm {
                 }
             }
             this.loot.put(lc.getLootContainerId(), lc);
+            if (this.spatialGrid != null) {
+                this.spatialGrid.insert(lc.getLootContainerId(), lc.getPos().x, lc.getPos().y);
+            }
         }
         return lc.getLootContainerId();
     }
 
     public boolean removeLootContainer(LootContainer lc) {
         final LootContainer lootContainer = this.loot.remove(lc.getLootContainerId());
+        if (this.spatialGrid != null) {
+            this.spatialGrid.remove(lc.getLootContainerId());
+        }
         return lootContainer != null;
     }
 
@@ -375,6 +437,162 @@ public class Realm {
             }
         }
         return objs;
+    }
+
+    /**
+     * Updates the spatial grid positions for all moving entities.
+     * Call once per tick from the server update loop.
+     */
+    public void updateSpatialGrid() {
+        if (this.spatialGrid == null) return;
+        for (final Player p : this.players.values()) {
+            this.spatialGrid.update(p.getId(), p.getPos().x, p.getPos().y);
+        }
+        for (final Enemy e : this.enemies.values()) {
+            this.spatialGrid.update(e.getId(), e.getPos().x, e.getPos().y);
+        }
+        for (final Bullet b : this.bullets.values()) {
+            this.spatialGrid.update(b.getId(), b.getPos().x, b.getPos().y);
+        }
+    }
+
+    /**
+     * Returns players near a point using the spatial hash grid.
+     * Falls back to brute-force if grid is unavailable.
+     */
+    public Player[] getPlayersInRadiusFast(Vector2f center, float radius) {
+        if (this.spatialGrid == null) {
+            return getPlayersInRadius(center, radius);
+        }
+        final float radiusSq = radius * radius;
+        final List<Long> candidates = this.spatialGrid.queryRadius(center.x, center.y, radius);
+        final List<Player> objs = new ArrayList<>();
+        for (int i = 0; i < candidates.size(); i++) {
+            final Player p = this.players.get(candidates.get(i));
+            if (p != null) {
+                float dx = p.getPos().x - center.x;
+                float dy = p.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) {
+                    objs.add(p);
+                }
+            }
+        }
+        return objs.toArray(new Player[0]);
+    }
+
+    /**
+     * Grid-accelerated circular LoadPacket construction.
+     */
+    public LoadPacket getLoadPacketCircularFast(Vector2f center, float radius) {
+        if (this.spatialGrid == null) {
+            return getLoadPacketCircular(center, radius);
+        }
+        final float radiusSq = radius * radius;
+        LoadPacket load = null;
+        try {
+            final List<Long> candidates = this.spatialGrid.queryRadius(center.x, center.y, radius);
+            final List<Player> playersToLoadList = new ArrayList<>();
+            final List<LootContainer> containersToLoad = new ArrayList<>();
+            final List<Bullet> bulletsToLoad = new ArrayList<>();
+            final List<Enemy> enemiesToLoad = new ArrayList<>();
+            final List<Portal> portalsToLoad = new ArrayList<>();
+
+            for (int i = 0; i < candidates.size(); i++) {
+                final long id = candidates.get(i);
+                // Check each entity map for this ID
+                Player p = this.players.get(id);
+                if (p != null) {
+                    float dx = p.getPos().x - center.x;
+                    float dy = p.getPos().y - center.y;
+                    if (dx * dx + dy * dy <= radiusSq) playersToLoadList.add(p);
+                    continue;
+                }
+                Enemy e = this.enemies.get(id);
+                if (e != null) {
+                    float dx = e.getPos().x - center.x;
+                    float dy = e.getPos().y - center.y;
+                    if (dx * dx + dy * dy <= radiusSq) enemiesToLoad.add(e);
+                    continue;
+                }
+                Bullet b = this.bullets.get(id);
+                if (b != null) {
+                    float dx = b.getPos().x - center.x;
+                    float dy = b.getPos().y - center.y;
+                    if (dx * dx + dy * dy <= radiusSq) bulletsToLoad.add(b);
+                    continue;
+                }
+                Portal portal = this.portals.get(id);
+                if (portal != null) {
+                    float dx = portal.getPos().x - center.x;
+                    float dy = portal.getPos().y - center.y;
+                    if (dx * dx + dy * dy <= radiusSq) portalsToLoad.add(portal);
+                    continue;
+                }
+                LootContainer lc = this.loot.get(id);
+                if (lc != null) {
+                    float dx = lc.getPos().x - center.x;
+                    float dy = lc.getPos().y - center.y;
+                    if (dx * dx + dy * dy <= radiusSq) containersToLoad.add(lc);
+                }
+            }
+            load = LoadPacket.from(playersToLoadList.toArray(new Player[0]),
+                    containersToLoad.toArray(new LootContainer[0]), bulletsToLoad.toArray(new Bullet[0]),
+                    enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]));
+        } catch (Exception e) {
+            Realm.log.error("Failed to get fast circular load Packet. Reason: {}", e.getMessage());
+        }
+        return load;
+    }
+
+    /**
+     * Grid-accelerated ObjectMovePacket construction (players + enemies only).
+     */
+    public ObjectMovePacket getGameObjectsAsPacketsCircularFast(Vector2f center, float radius) throws Exception {
+        if (this.spatialGrid == null) {
+            return getGameObjectsAsPacketsCircular(center, radius);
+        }
+        final float radiusSq = radius * radius;
+        final List<Long> candidates = this.spatialGrid.queryRadius(center.x, center.y, radius);
+        final List<GameObject> validObjects = new ArrayList<>();
+        for (int i = 0; i < candidates.size(); i++) {
+            final long id = candidates.get(i);
+            Player p = this.players.get(id);
+            if (p != null) {
+                float dx = p.getPos().x - center.x;
+                float dy = p.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) validObjects.add(p);
+                if (p.getTeleported()) p.setTeleported(false);
+                continue;
+            }
+            Enemy e = this.enemies.get(id);
+            if (e != null) {
+                float dx = e.getPos().x - center.x;
+                float dy = e.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) validObjects.add(e);
+                if (e.getTeleported()) e.setTeleported(false);
+                continue;
+            }
+            // Include bullets in move packet for completeness
+            Bullet b = this.bullets.get(id);
+            if (b != null) {
+                float dx = b.getPos().x - center.x;
+                float dy = b.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) validObjects.add(b);
+                if (b.getTeleported()) b.setTeleported(false);
+            }
+        }
+        if (validObjects.size() > 0)
+            return ObjectMovePacket.from(validObjects.toArray(new GameObject[0]));
+        return null;
+    }
+
+    /**
+     * Returns the spatial grid cell key for a world position.
+     * Players in the same cell see approximately the same entities.
+     */
+    public long getSpatialCellKey(float x, float y) {
+        if (this.spatialGrid == null) return 0;
+        return this.spatialGrid.getCellKey(x, y);
     }
 
     public Rectangle[] getCollisionBoxesInBounds(Rectangle cam) {

@@ -1,5 +1,6 @@
 package com.jrealm.net.entity;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import com.jrealm.game.entity.item.Stats;
@@ -44,10 +45,30 @@ public class NetStats extends SerializableFieldType<NetStats> {
 		this.wis = 0;
 	}
 	
+	/** Hand-coded write: 16 bytes (8 shorts), bypasses reflection */
 	@Override
 	public int write(NetStats value, DataOutputStream stream) throws Exception {
-		final NetStats toWrite = value == null ? new NetStats() : value;
-		return IOService.writeStream(toWrite, stream);
+		final NetStats v = value == null ? new NetStats() : value;
+		stream.writeShort(v.hp);
+		stream.writeShort(v.mp);
+		stream.writeShort(v.def);
+		stream.writeShort(v.att);
+		stream.writeShort(v.spd);
+		stream.writeShort(v.dex);
+		stream.writeShort(v.vit);
+		stream.writeShort(v.wis);
+		return 16;
+	}
+
+	/** Hand-coded read: 16 bytes, bypasses reflection */
+	@Override
+	public NetStats read(DataInputStream stream) throws Exception {
+		return new NetStats(
+			stream.readShort(), stream.readShort(),
+			stream.readShort(), stream.readShort(),
+			stream.readShort(), stream.readShort(),
+			stream.readShort(), stream.readShort()
+		);
 	}
 
 	public static NetStats fromStats(Stats stats) {

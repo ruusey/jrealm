@@ -79,7 +79,7 @@ public class RealmManagerClient implements Runnable {
         RealmManagerClient.log.info("[CLIENT] Starting JRealm Client");
 
         final Runnable tick = () -> {
-            this.tick();
+            this.processClientPackets();
             this.update(0);
         };
 
@@ -87,18 +87,6 @@ public class RealmManagerClient implements Runnable {
         WorkerThread.submitAndForkRun(this.workerThread);
 
         RealmManagerClient.log.info("[CLIENT] RealmManagerClient exiting run().");
-    }
-
-    private void tick() {
-        try {
-            final Runnable processClientPackets = () -> {
-                this.processClientPackets();
-            };
-
-            WorkerThread.submitAndRun(processClientPackets);
-        } catch (Exception e) {
-            RealmManagerClient.log.error("[CLIENT] Failed to sleep");
-        }
     }
 
     public void processClientPackets() {

@@ -10,9 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class WorkerThread {
-    private static final int THREAD_POOL_COUNT = 128;
+    // Fixed pool: cores * 2 for mixed IO/CPU workload, capped to avoid thread explosion
+    private static final int THREAD_POOL_COUNT = Math.min(Runtime.getRuntime().availableProcessors() * 2, 16);
     private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
-            .newCachedThreadPool(Executors.privilegedThreadFactory());
+            .newFixedThreadPool(THREAD_POOL_COUNT, Executors.privilegedThreadFactory());
 
     public static CompletableFuture<?> submit(Runnable runnable) {
         if (runnable == null)
@@ -74,20 +75,33 @@ public class WorkerThread {
     public static void submitAndRun(Runnable... runnables) {
         if (runnables == null)
             return;
-        CompletableFuture<?>[] futures = new CompletableFuture[runnables.length];
-        for (int i = 0; i < runnables.length; i++) {
+        // Single task: run inline, no pool overhead
+        if (runnables.length == 1) {
+            runnables[0].run();
+            return;
+        }
+        // Multiple tasks: fan out N-1 to pool, run last one on current thread
+        CompletableFuture<?>[] futures = new CompletableFuture[runnables.length - 1];
+        for (int i = 0; i < runnables.length - 1; i++) {
             futures[i] = WorkerThread.submit(runnables[i]);
         }
+        // Run the last task on the calling thread while others execute in parallel
+        runnables[runnables.length - 1].run();
         WorkerThread.allOf(futures);
     }
-    
+
     public static void submitAndRun(List<Runnable> runnables) {
         if (runnables == null)
             return;
-        CompletableFuture<?>[] futures = new CompletableFuture[runnables.size()];
-        for (int i = 0; i < runnables.size(); i++) {
+        if (runnables.size() == 1) {
+            runnables.get(0).run();
+            return;
+        }
+        CompletableFuture<?>[] futures = new CompletableFuture[runnables.size() - 1];
+        for (int i = 0; i < runnables.size() - 1; i++) {
             futures[i] = WorkerThread.submit(runnables.get(i));
         }
+        runnables.get(runnables.size() - 1).run();
         WorkerThread.allOf(futures);
     }
 

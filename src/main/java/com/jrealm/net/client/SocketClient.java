@@ -15,7 +15,7 @@ import com.jrealm.game.contants.PacketType;
 import com.jrealm.net.NetConstants;
 import com.jrealm.net.Packet;
 import com.jrealm.net.core.IOService;
-import com.jrealm.util.TimedWorkerThread;
+import com.jrealm.net.core.PacketCompression;
 import com.jrealm.util.WorkerThread;
 
 import lombok.Data;
@@ -44,13 +44,14 @@ public class SocketClient implements Runnable {
     private long currentBytesRecieved = 0;
     private volatile Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
     private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
-    private TimedWorkerThread sendPacketThread = null;
-    private TimedWorkerThread readPacketThread = null;
 
     public SocketClient(String targetHost, int port) {
         try {
             this.clientSocket = new Socket(targetHost, port);
             this.clientSocket.setTcpNoDelay(true);
+            // 100ms read timeout so the read loop can check the shutdown flag
+            // and the profiler doesn't report it as 100% CPU
+            this.clientSocket.setSoTimeout(100);
         } catch (Exception e) {
             SocketClient.log.error("Failed to create ClientSocket, Reason: {}", e.getMessage());
         }
@@ -59,37 +60,47 @@ public class SocketClient implements Runnable {
     @Override
     public void run() {
         this.startBandwidthMonitor();
-        // this.monitorLastReceived();
 
-        final Runnable readPackets = () -> {
-        	try {
-        		if(!this.readPacketThread.isShutdown()) {
-        			this.readPackets();
-        		}
-        	}catch(Exception e) {
-        		this.readPacketThread.setShutdown(true);
-        	}
+        // Read thread: blocks naturally on stream.read(), no polling needed
+        final Runnable readLoop = () -> {
+            while (!this.shutdown) {
+                try {
+                    this.readPackets();
+                } catch (Exception e) {
+                    this.shutdown = true;
+                }
+            }
         };
-        final Runnable sendPackets = () -> {
-        	try {
-        		if(!this.sendPacketThread.isShutdown()) {
-                    this.sendPackets();
-        		}
-        	}catch(Exception e) {
-        		this.sendPacketThread.setShutdown(true);
-        	}
+
+        // Send thread: drains outbound queue, sleeps briefly when empty
+        final Runnable sendLoop = () -> {
+            while (!this.shutdown) {
+                try {
+                    if (!this.outboundPacketQueue.isEmpty()) {
+                        this.sendPackets();
+                    } else {
+                        Thread.sleep(1);
+                    }
+                } catch (Exception e) {
+                    this.shutdown = true;
+                }
+            }
         };
-        this.sendPacketThread= new TimedWorkerThread(sendPackets, 64);
-        this.readPacketThread= new TimedWorkerThread(readPackets, 64);
-        WorkerThread.submitAndForkRun(this.readPacketThread, this.sendPacketThread);
+
+        WorkerThread.submitAndForkRun(readLoop, sendLoop);
     }
 
     private void readPackets() {
         try {
             final InputStream stream = this.clientSocket.getInputStream();
 
-            final int bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
-                    this.remoteBuffer.length - this.remoteBufferIndex);
+            final int bytesRead;
+            try {
+                bytesRead = stream.read(this.remoteBuffer, this.remoteBufferIndex,
+                        this.remoteBuffer.length - this.remoteBufferIndex);
+            } catch (java.net.SocketTimeoutException e) {
+                return; // No data within timeout — normal, just retry
+            }
             this.lastDataTime = Instant.now().toEpochMilli();
             if (bytesRead == -1)
                 throw new SocketException("end of stream");
@@ -104,9 +115,9 @@ public class SocketClient implements Runnable {
                     if (this.remoteBufferIndex < (packetLength)) {
                         break;
                     }
-                    final byte packetId = this.remoteBuffer[0];
+                    byte packetId = this.remoteBuffer[0];
                     final int dataLength = packetLength - NetConstants.PACKET_HEADER_SIZE;
-                    final byte[] packetBytes = new byte[dataLength];
+                    byte[] packetBytes = new byte[dataLength];
                     System.arraycopy(this.remoteBuffer, NetConstants.PACKET_HEADER_SIZE, packetBytes, 0, dataLength);
                     if (this.remoteBufferIndex > packetLength) {
                         System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
@@ -114,20 +125,20 @@ public class SocketClient implements Runnable {
                     }
                     this.currentBytesRecieved += packetLength;
                     this.remoteBufferIndex -= packetLength;
+                    // Decompress if compression flag is set
+                    if (PacketCompression.isCompressed(packetId)) {
+                        packetId = PacketCompression.getRealPacketId(packetId);
+                        packetBytes = PacketCompression.decompressPayload(packetBytes);
+                    }
                     final Class<? extends Packet> packetClass = PacketType.valueOf(packetId);
                     final Packet newPacket = IOService.readStream(packetClass, packetBytes);
                     newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
                     newPacket.setId(packetId);
-                    if(packetId==(byte)16) {
-                    	System.out.print(false);
-                    }
                     this.inboundPacketQueue.add(newPacket);
                 }
             }
         } catch (Exception e) {
-            this.shutdown=true;
-            this.sendPacketThread.setShutdown(true);
-            this.readPacketThread.setShutdown(true);
+            this.shutdown = true;
             SocketClient.log.error("Failed to parse client input. Reason {}", e.getMessage());
         }
     }
@@ -186,7 +197,7 @@ public class SocketClient implements Runnable {
             while (!this.shutdown) {
                 try {
                     final long bytesRead = this.currentBytesRecieved;
-                    SocketClient.log.info("[CLIENT] current read rate = {} kbit/s",
+                    SocketClient.log.debug("[CLIENT] current read rate = {} kbit/s",
                             (float) (bytesRead / 1024.0f) * 8.0f);
                     this.currentBytesRecieved = 0;
                     Thread.sleep(1000);
@@ -200,12 +211,6 @@ public class SocketClient implements Runnable {
 
     public void close() {
         this.shutdown = true;
-        if (this.sendPacketThread != null) {
-            this.sendPacketThread.setShutdown(true);
-        }
-        if (this.readPacketThread != null) {
-            this.readPacketThread.setShutdown(true);
-        }
         try {
             if (this.clientSocket != null && !this.clientSocket.isClosed()) {
                 this.clientSocket.close();

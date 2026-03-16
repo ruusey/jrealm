@@ -507,69 +507,120 @@ public class PlayerUI {
         });
     }
 
+    // Reusable position vectors for slot rendering to avoid per-frame allocations
+    private final Vector2f[] slotPositions = new Vector2f[20];
+    private final Vector2f[] groundLootPositions = new Vector2f[8];
+    {
+        for (int i = 0; i < 20; i++) slotPositions[i] = new Vector2f();
+        for (int i = 0; i < 8; i++) groundLootPositions[i] = new Vector2f();
+    }
+
     public void render(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
         int panelWidth = (JRealmGame.width / 5);
         int startX = JRealmGame.width - panelWidth;
-
-        // Draw panel background
-        batch.end();
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
-        shapes.setColor(Color.GRAY);
-        shapes.rect(startX, 0, panelWidth, JRealmGame.height);
-        shapes.end();
-        batch.begin();
 
         Slots[] equips = this.getSlots(0, 4);
         Slots[] inv1 = this.getSlots(4, 8);
         Slots[] inv2 = this.getSlots(8, 12);
 
+        // ====== SHAPES PASS: all backgrounds in one ShapeRenderer batch ======
+        batch.end();
+        com.badlogic.gdx.Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        com.badlogic.gdx.Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA,
+                com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+        // Panel background
+        shapes.setColor(Color.GRAY);
+        shapes.rect(startX, 0, panelWidth, JRealmGame.height);
+
+        // Equipment slot backgrounds
         for (int i = 0; i < equips.length; i++) {
             Slots curr = equips[i];
             if (curr != null) {
-                Vector2f pos = (curr.getDragPos() == null) ? new Vector2f(startX + (i * 64), 256) : curr.getDragPos();
-                curr.render(batch, shapes, pos);
+                Vector2f pos = slotPositions[i];
+                if (curr.getDragPos() != null) { pos.x = curr.getDragPos().x; pos.y = curr.getDragPos().y; }
+                else { pos.x = startX + (i * 64); pos.y = 256; }
+                curr.renderBackground(shapes, pos);
             }
         }
 
+        // Inventory row 1 backgrounds
         for (int i = 0; i < inv1.length; i++) {
             Slots curr = inv1[i];
             if (curr != null) {
-                Vector2f pos = (curr.getDragPos() == null) ? new Vector2f(startX + (i * 64), 450) : curr.getDragPos();
-                curr.render(batch, shapes, pos);
+                Vector2f pos = slotPositions[4 + i];
+                if (curr.getDragPos() != null) { pos.x = curr.getDragPos().x; pos.y = curr.getDragPos().y; }
+                else { pos.x = startX + (i * 64); pos.y = 450; }
+                curr.renderBackground(shapes, pos);
             }
         }
 
+        // Inventory row 2 backgrounds
         for (int i = 0; i < inv2.length; i++) {
             Slots curr = inv2[i];
             if (curr != null) {
-                Vector2f pos = (curr.getDragPos() == null) ? new Vector2f(startX + (i * 64), 516) : curr.getDragPos();
-                curr.render(batch, shapes, pos);
+                Vector2f pos = slotPositions[8 + i];
+                if (curr.getDragPos() != null) { pos.x = curr.getDragPos().x; pos.y = curr.getDragPos().y; }
+                else { pos.x = startX + (i * 64); pos.y = 516; }
+                curr.renderBackground(shapes, pos);
             }
         }
 
-        // Trade UI overlay
+        // Ground loot slot backgrounds
+        if (!this.isTrading) {
+            for (int i = 0; i < this.groundLoot.length; i++) {
+                Slots curr = this.groundLoot[i];
+                if (curr != null) {
+                    Vector2f pos = groundLootPositions[i];
+                    int row = i > 3 ? 1 : 0;
+                    int col = i > 3 ? i - 4 : i;
+                    if (curr.getDragPos() != null) { pos.x = curr.getDragPos().x; pos.y = curr.getDragPos().y; }
+                    else { pos.x = startX + (col * 64); pos.y = 650 + (row * 64); }
+                    curr.renderBackground(shapes, pos);
+                }
+            }
+        }
+
+        // HP/MP/XP bar shapes
+        this.hp.renderShapes(shapes);
+        this.mp.renderShapes(shapes);
+        this.xp.renderShapes(shapes);
+
+        shapes.end();
+        com.badlogic.gdx.Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+
+        // ====== SPRITE PASS: all item sprites + text in one SpriteBatch ======
+        batch.begin();
+
+        // Equipment items
+        for (int i = 0; i < equips.length; i++) {
+            if (equips[i] != null) equips[i].renderItem(batch, slotPositions[i]);
+        }
+
+        // Inventory items
+        for (int i = 0; i < inv1.length; i++) {
+            if (inv1[i] != null) inv1[i].renderItem(batch, slotPositions[4 + i]);
+        }
+        for (int i = 0; i < inv2.length; i++) {
+            if (inv2[i] != null) inv2[i].renderItem(batch, slotPositions[8 + i]);
+        }
+
+        // Ground loot items
+        if (!this.isTrading) {
+            for (int i = 0; i < this.groundLoot.length; i++) {
+                if (this.groundLoot[i] != null) this.groundLoot[i].renderItem(batch, groundLootPositions[i]);
+            }
+        }
+
+        // HP/MP/XP bar text
+        this.hp.renderText(batch, font);
+        this.mp.renderText(batch, font);
+        this.xp.renderText(batch, font);
+
+        // Trade UI (still uses old rendering for now - it's conditional/rare)
         if (this.isTrading) {
             this.renderTradeUI(batch, shapes, font, startX, panelWidth);
-        } else {
-            // Normal ground loot rendering
-            Slots[] gl1 = Arrays.copyOfRange(this.groundLoot, 0, 4);
-            Slots[] gl2 = Arrays.copyOfRange(this.groundLoot, 4, 8);
-
-            for (int i = 0; i < gl1.length; i++) {
-                Slots curr = gl1[i];
-                if (curr != null) {
-                    Vector2f pos = (curr.getDragPos() == null) ? new Vector2f(startX + (i * 64), 650) : curr.getDragPos();
-                    curr.render(batch, shapes, pos);
-                }
-            }
-
-            for (int i = 0; i < gl2.length; i++) {
-                Slots curr = gl2[i];
-                if (curr != null) {
-                    Vector2f pos = (curr.getDragPos() == null) ? new Vector2f(startX + (i * 64), 714) : curr.getDragPos();
-                    curr.render(batch, shapes, pos);
-                }
-            }
         }
 
         // Render nearby players list
@@ -579,12 +630,7 @@ public class PlayerUI {
             this.activeTooltip.render(batch, shapes, font);
         }
 
-        // Render hovered player tooltip on top of everything
         this.renderPlayerTooltip(batch, shapes, font);
-
-        this.hp.render(batch, shapes, font);
-        this.mp.render(batch, shapes, font);
-        this.xp.render(batch, shapes, font);
         this.renderStats(batch, font);
         this.playerChat.render(batch, shapes, font);
 

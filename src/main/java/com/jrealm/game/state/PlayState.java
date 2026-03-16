@@ -154,69 +154,50 @@ public class PlayState extends GameState {
 
         Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
         if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
-            final Runnable monitorDamageText = () -> {
-                final List<EffectText> toRemove = new ArrayList<>();
-                for (EffectText text : this.getDamageText()) {
-                    text.update();
-                    if (text.getRemove()) {
-                        toRemove.add(text);
-                    }
+            // Process all client-side updates inline — these are fast and
+            // pool dispatch overhead exceeds the work itself
+            final Realm clientRealm = this.realmManager.getRealm();
+            final GameObject[] gameObject = clientRealm.getAllGameObjects();
+            for (int i = 0; i < gameObject.length; i++) {
+                if (gameObject[i] instanceof Enemy) {
+                    ((Enemy) gameObject[i]).update(this.getRealmManager(), time);
+                } else if (gameObject[i] instanceof Bullet) {
+                    ((Bullet) gameObject[i]).update();
+                } else if (gameObject[i] instanceof Player && gameObject[i].getId() != player.getId()) {
+                    final Player playerOther = (Player) gameObject[i];
+                    playerOther.update(time);
+                    this.movePlayer(playerOther);
                 }
-                this.damageText.removeAll(toRemove);
-            };
+            }
 
-            final Runnable playerShootDequeue = () -> {
-                for (int i = 0; i < this.shotDestQueue.size(); i++) {
-                    final Vector2f dest = this.shotDestQueue.remove(i);
-                    final Vector2f source = this.getPlayer().getCenteredPosition();
-                    if (this.realmManager.getRealm().getTileManager().isCollisionTile(source)) {
-                        PlayState.log.error("Failed to invoke player shoot. Projectile is out of bounds.");
-                        continue;
-                    }
-                    try {
-                        PlayerShootPacket packet = PlayerShootPacket.from(Realm.RANDOM.nextLong(), player, dest);
-                        this.realmManager.getClient().sendRemote(packet);
-                    } catch (Exception e) {
-                        PlayState.log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
-                    }
+            for (int i = 0; i < this.shotDestQueue.size(); i++) {
+                final Vector2f dest = this.shotDestQueue.remove(i);
+                final Vector2f source = this.getPlayer().getCenteredPosition();
+                if (this.realmManager.getRealm().getTileManager().isCollisionTile(source)) {
+                    continue;
                 }
-            };
-            // Testing out optimistic update of enemies/bullets
-            final Runnable processGameObjects = () -> {
-                final Realm clientRealm = this.realmManager.getRealm();
-                final GameObject[] gameObject = clientRealm.getAllGameObjects();
-                for (int i = 0; i < gameObject.length; i++) {
-                    if (gameObject[i] instanceof Enemy) {
-                        final Enemy enemy = ((Enemy) gameObject[i]);
-                        enemy.update(this.getRealmManager(), time);
-                    }
-
-                    if (gameObject[i] instanceof Bullet) {
-                        final Bullet bullet = ((Bullet) gameObject[i]);
-                        if (bullet != null) {
-                            bullet.update();
-                        }
-                    }
-
-                    if (gameObject[i] instanceof Player && gameObject[i].getId() != player.getId()) {
-                        final Player playerOther = ((Player) gameObject[i]);
-                        if (playerOther != null) {
-                            playerOther.update(time);
-                            this.movePlayer(playerOther);
-                        }
-                    }
+                try {
+                    PlayerShootPacket packet = PlayerShootPacket.from(Realm.RANDOM.nextLong(), player, dest);
+                    this.realmManager.getClient().sendRemote(packet);
+                } catch (Exception e) {
+                    PlayState.log.error("Failed to build player shoot packet. Reason: {}", e.getMessage());
                 }
-            };
+            }
 
-            final Runnable updatePlayerAndUi = () -> {
-                // player.removeExpiredEffects();
-                player.update(time);
-                this.movePlayer(player);
-                if (this.pui != null) {
-                    this.pui.update(time);
+            player.update(time);
+            this.movePlayer(player);
+            if (this.pui != null) {
+                this.pui.update(time);
+            }
+
+            final List<EffectText> toRemove = new ArrayList<>();
+            for (EffectText text : this.getDamageText()) {
+                text.update();
+                if (text.getRemove()) {
+                    toRemove.add(text);
                 }
-            };
-            WorkerThread.submitAndRun(processGameObjects, playerShootDequeue, updatePlayerAndUi, monitorDamageText);
+            }
+            this.damageText.removeAll(toRemove);
 
             this.cam.target(player);
             this.cam.update();
@@ -627,7 +608,7 @@ public class PlayState extends GameState {
             visibleEntities.get(i).updateEffectState();
         }
 
-        // Pass 1: All silhouette outlines (1 shader switch for ALL entities)
+        // Pass 1: All silhouette outlines (1 shader switch, 2 draws per entity)
         com.jrealm.game.graphics.ShaderManager.applyEffect(batch, com.jrealm.game.graphics.Sprite.EffectEnum.SILHOUETTE);
         for (int i = 0; i < visibleEntities.size(); i++) {
             visibleEntities.get(i).renderOutline(batch);

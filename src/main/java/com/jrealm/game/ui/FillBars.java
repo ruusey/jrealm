@@ -34,52 +34,72 @@ public class FillBars {
         this.fgColor = fgColor;
     }
 
-    public void render(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
-        float energy = 0.0f;
-        String valueText = "";
+    private float cachedEnergy = 0f;
+    private String cachedValueText = "";
+
+    private void updateValues() {
         try {
             Player player = (Player) this.e;
             switch (this.field) {
             case "getHealthPercent":
-                energy = player.getHealthpercent();
-                valueText = player.getHealth() + " (" + player.getComputedStats().getHp() + ")";
+                this.cachedEnergy = player.getHealthpercent();
+                this.cachedValueText = player.getHealth() + " (" + player.getComputedStats().getHp() + ")";
                 break;
             case "getManaPercent":
-                energy = player.getManapercent();
-                valueText = player.getMana() + " (" + player.getComputedStats().getMp() + ")";
+                this.cachedEnergy = player.getManapercent();
+                this.cachedValueText = player.getMana() + " (" + player.getComputedStats().getMp() + ")";
                 break;
             case "getExperiencePercent":
-                energy = player.getExperiencePercent();
+                this.cachedEnergy = player.getExperiencePercent();
                 long fame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(player.getExperience());
                 if (fame > 0) {
-                    valueText = "Fame: " + fame;
+                    this.cachedValueText = "Fame: " + fame;
                 } else {
-                    valueText = player.getExperience() + " (" + player.getUpperExperienceBound() + ")";
+                    this.cachedValueText = player.getExperience() + " (" + player.getUpperExperienceBound() + ")";
                 }
                 break;
             }
         } catch (Exception e1) {
-            // Ignore
         }
+    }
 
-        batch.end();
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
-        // Background bar
+    /** Render bar shapes. Call while ShapeRenderer is active. */
+    public void renderShapes(ShapeRenderer shapes) {
+        this.updateValues();
         shapes.setColor(this.bgColor);
         shapes.rect(this.pos.x, this.pos.y, this.barWidth, this.barHeight);
-        // Energy fill bar
         shapes.setColor(this.fgColor);
-        shapes.rect(this.pos.x, this.pos.y, this.barWidth * energy, this.barHeight);
+        shapes.rect(this.pos.x, this.pos.y, this.barWidth * this.cachedEnergy, this.barHeight);
+    }
+
+    /** Render bar text. Call while SpriteBatch is active. */
+    public void renderText(SpriteBatch batch, BitmapFont font) {
+        if (!this.cachedValueText.isEmpty()) {
+            font.setColor(Color.WHITE);
+            GlyphLayout layout = new GlyphLayout(font, this.cachedValueText);
+            float textX = this.pos.x + (this.barWidth - layout.width) / 2f;
+            float textY = this.pos.y + (this.barHeight - layout.height) / 2f;
+            font.draw(batch, this.cachedValueText, textX, textY);
+        }
+    }
+
+    public void render(SpriteBatch batch, ShapeRenderer shapes, BitmapFont font) {
+        this.updateValues();
+        batch.end();
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(this.bgColor);
+        shapes.rect(this.pos.x, this.pos.y, this.barWidth, this.barHeight);
+        shapes.setColor(this.fgColor);
+        shapes.rect(this.pos.x, this.pos.y, this.barWidth * this.cachedEnergy, this.barHeight);
         shapes.end();
         batch.begin();
 
-        // Draw centered value text inside bar
-        if (!valueText.isEmpty()) {
+        if (!this.cachedValueText.isEmpty()) {
             font.setColor(Color.WHITE);
-            GlyphLayout layout = new GlyphLayout(font, valueText);
+            GlyphLayout layout = new GlyphLayout(font, this.cachedValueText);
             float textX = this.pos.x + (this.barWidth - layout.width) / 2f;
             float textY = this.pos.y + (this.barHeight - layout.height) / 2f;
-            font.draw(batch, valueText, textX, textY);
+            font.draw(batch, this.cachedValueText, textX, textY);
         }
     }
 }

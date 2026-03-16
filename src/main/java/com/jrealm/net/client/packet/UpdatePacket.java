@@ -161,4 +161,5 @@ public class UpdatePacket extends Packet {
 		boolean result = basic && stats && inv && effects && expEqual;
 		return result;
 	}
+
 }

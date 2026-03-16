@@ -1,6 +1,8 @@
 package com.jrealm.net.entity;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.nio.charset.StandardCharsets;
 
 import com.jrealm.game.entity.item.Damage;
 import com.jrealm.game.entity.item.Effect;
@@ -47,10 +49,63 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	@SerializableField(order = 11, type = SerializableByte.class)
 	private byte fameBonus;
 
+	private static final NetStats STATS_SERIALIZER = new NetStats();
+	private static final NetDamage DAMAGE_SERIALIZER = new NetDamage();
+	private static final NetEffect EFFECT_SERIALIZER = new NetEffect();
+
+	private static int writeString(String s, DataOutputStream stream) throws Exception {
+		if (s == null) s = "";
+		final byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+		stream.writeInt(bytes.length);
+		stream.write(bytes);
+		return 4 + bytes.length;
+	}
+
+	private static String readString(DataInputStream stream) throws Exception {
+		final int len = stream.readInt();
+		if (len <= 0) return "";
+		final byte[] bytes = new byte[len];
+		stream.readFully(bytes);
+		return new String(bytes, StandardCharsets.UTF_8);
+	}
+
+	/** Hand-coded write bypassing IOService reflection */
 	@Override
 	public int write(NetGameItem value, DataOutputStream stream) throws Exception {
-		final NetGameItem toWrite = (value == null ? new NetGameItem() : value);
-		return IOService.writeStream(toWrite, stream);
+		final NetGameItem v = (value == null ? new NetGameItem() : value);
+		int written = 0;
+		stream.writeInt(v.itemId); written += 4;
+		written += writeString(v.uid, stream);
+		written += writeString(v.name, stream);
+		written += writeString(v.description, stream);
+		written += STATS_SERIALIZER.write(v.stats, stream);
+		written += DAMAGE_SERIALIZER.write(v.damage, stream);
+		written += EFFECT_SERIALIZER.write(v.effect, stream);
+		stream.writeBoolean(v.consumable); written += 1;
+		stream.writeByte(v.tier); written += 1;
+		stream.writeByte(v.targetSlot); written += 1;
+		stream.writeByte(v.targetClass); written += 1;
+		stream.writeByte(v.fameBonus); written += 1;
+		return written;
+	}
+
+	/** Hand-coded read bypassing IOService reflection */
+	@Override
+	public NetGameItem read(DataInputStream stream) throws Exception {
+		final NetGameItem item = new NetGameItem();
+		item.itemId = stream.readInt();
+		item.uid = readString(stream);
+		item.name = readString(stream);
+		item.description = readString(stream);
+		item.stats = STATS_SERIALIZER.read(stream);
+		item.damage = DAMAGE_SERIALIZER.read(stream);
+		item.effect = EFFECT_SERIALIZER.read(stream);
+		item.consumable = stream.readBoolean();
+		item.tier = stream.readByte();
+		item.targetSlot = stream.readByte();
+		item.targetClass = stream.readByte();
+		item.fameBonus = stream.readByte();
+		return item;
 	}
 
 	public GameItem asGameItem() {

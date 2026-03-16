@@ -1,5 +1,8 @@
 package com.jrealm.net.entity;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+
 import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.entity.Enemy;
@@ -64,5 +67,31 @@ public class NetObjectMovement extends SerializableFieldType<NetObjectMovement> 
         return this.entityId == other.getEntityId() && this.entityType == other.getEntityType()
                 && this.posX == other.getPosX() && this.posY == other.getPosY() && this.velX == other.getVelX()
                 && this.getVelY() == other.getVelY();
+    }
+
+    /** Hand-coded write: 25 bytes (8+1+4+4+4+4), bypasses reflection */
+    @Override
+    public int write(NetObjectMovement value, DataOutputStream stream) throws Exception {
+        final NetObjectMovement v = (value == null) ? new NetObjectMovement() : value;
+        stream.writeLong(v.entityId);
+        stream.writeByte(v.entityType);
+        stream.writeFloat(v.posX);
+        stream.writeFloat(v.posY);
+        stream.writeFloat(v.velX);
+        stream.writeFloat(v.velY);
+        return 25;
+    }
+
+    /** Hand-coded read: 25 bytes, bypasses reflection */
+    @Override
+    public NetObjectMovement read(DataInputStream stream) throws Exception {
+        final NetObjectMovement m = new NetObjectMovement();
+        m.entityId = stream.readLong();
+        m.entityType = stream.readByte();
+        m.posX = stream.readFloat();
+        m.posY = stream.readFloat();
+        m.velX = stream.readFloat();
+        m.velY = stream.readFloat();
+        return m;
     }
 }

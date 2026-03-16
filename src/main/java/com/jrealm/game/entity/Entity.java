@@ -209,26 +209,23 @@ public abstract class Entity extends GameObject {
     }
 
     /**
-     * Draw only the silhouette outline (4 offset copies).
-     * Called during the batched silhouette pass (shader already set).
+     * Draw the silhouette outline using 2 diagonal offset copies (down from 4).
+     * Called during the batched silhouette pass (shader already set by caller).
      */
     public void renderOutline(SpriteBatch batch) {
         if (this.getSpriteSheet() == null) return;
         TextureRegion frame = this.getSpriteSheet().getCurrentFrame();
         if (frame == null) return;
-        float wx = this.pos.getWorldVar().x;
-        float wy = this.pos.getWorldVar().y;
+        Vector2f wv = this.pos.getWorldVar();
+        float wx = wv.x;
+        float wy = wv.y;
         float ox = 2.5f;
         if (this.left) {
-            batch.draw(frame, wx + this.size + ox, wy, -this.size, this.size);
-            batch.draw(frame, wx + this.size - ox, wy, -this.size, this.size);
-            batch.draw(frame, wx + this.size, wy + ox, -this.size, this.size);
-            batch.draw(frame, wx + this.size, wy - ox, -this.size, this.size);
+            batch.draw(frame, wx + this.size + ox, wy + ox, -this.size, this.size);
+            batch.draw(frame, wx + this.size - ox, wy - ox, -this.size, this.size);
         } else {
-            batch.draw(frame, wx + ox, wy, this.size, this.size);
-            batch.draw(frame, wx - ox, wy, this.size, this.size);
-            batch.draw(frame, wx, wy + ox, this.size, this.size);
-            batch.draw(frame, wx, wy - ox, this.size, this.size);
+            batch.draw(frame, wx + ox, wy + ox, this.size, this.size);
+            batch.draw(frame, wx - ox, wy - ox, this.size, this.size);
         }
     }
 

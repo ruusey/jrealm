@@ -111,7 +111,8 @@ import lombok.extern.slf4j.Slf4j;
 public class IOService {
 	private static final ModelMapper MAPPER = new ModelMapper();
 	private static final Lookup METHOD_LOOKUP = MethodHandles.lookup();
-	private static final Map<Class<?>, List<PacketMappingInformation>> MAPPING_DATA = new HashMap<>();
+	// Array-backed for zero-allocation iteration on the hot path
+	private static final Map<Class<?>, PacketMappingInformation[]> MAPPING_DATA = new HashMap<>();
 	public static final Reflections CLASSPATH_SCANNER = new Reflections("com.jrealm", Scanners.SubTypes);
 
 	static {
@@ -174,7 +175,7 @@ public class IOService {
 	}
 
 	public static int writeStream(Object model, DataOutputStream stream0) throws Exception {
-		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(model.getClass());
+		final PacketMappingInformation[] mappingInfo = MAPPING_DATA.get(model.getClass());
 		if (log.isDebugEnabled())
 			log.info("[IOService::WRITE] class {} begin. data = {}", model.getClass(), model);
 		if (mappingInfo == null) {
@@ -182,10 +183,9 @@ public class IOService {
 			return 0;
 		}
 		int bytesWritten = 0;
-		for (PacketMappingInformation info : mappingInfo) {
-			if (log.isDebugEnabled())
-				log.info("[IOService::WRITE] Begin write mapping for MODEL {} field {}", model.getClass(),
-						info.getPropertyHandle().varType());
+		// Array iteration: no iterator allocation, branch-friendly for JIT
+		for (int idx = 0; idx < mappingInfo.length; idx++) {
+			final PacketMappingInformation info = mappingInfo[idx];
 			final SerializableFieldType serializer = info.getSerializer();
 			if (info.isCollection()) {
 				final Object[] collection = (Object[]) info.getPropertyHandle().get(model);
@@ -209,7 +209,7 @@ public class IOService {
 
 	// Nominate me for a nobel peace prize or somethin
 	public static <T> T readStream(Class<?> clazz, DataInputStream stream, Object result) throws Exception {
-		final List<PacketMappingInformation> mappingInfo = MAPPING_DATA.get(clazz);
+		final PacketMappingInformation[] mappingInfo = MAPPING_DATA.get(clazz);
 		if(mappingInfo==null) {
 			log.error("[IOService::READ] **CRITICAL** No mapping for class {}", clazz);
 			throw new Exception("No mapping for class "+clazz.getSimpleName());
@@ -221,30 +221,20 @@ public class IOService {
 			result = packet;
 		}
 
-		// For each network serializable field in the class
-		for (PacketMappingInformation info : mappingInfo) {
-			if (log.isDebugEnabled())
-				log.info("[IOService::READ] Begin read mapping for MODEL {} field {}", clazz, info.getPropertyHandle().varType());
-
+		// Array iteration: no iterator allocation, branch-friendly for JIT
+		for (int idx = 0; idx < mappingInfo.length; idx++) {
+			final PacketMappingInformation info = mappingInfo[idx];
 			final SerializableFieldType<?> serializer = info.getSerializer();
-			// Basic collection handling (write collection length followed by each entity)
 			if (info.isCollection()) {
-				if (log.isDebugEnabled())
-					log.info("[IOService::READ] Field {} is a collection. Target class = {}[]", info.getPropertyHandle().varType(),
-							info.getPropertyHandle().varType());
-				// Read collection length. Always int32
 				final int collectionLength = stream.readInt();
 				final Object[] collection = (Object[]) Array
 						.newInstance(info.getPropertyHandle().varType().getComponentType(), collectionLength);
-				// Read each collection element
 				for (int i = 0; i < collectionLength; i++) {
-					final Object obj = serializer.read(stream);
-					collection[i] = obj;
+					collection[i] = serializer.read(stream);
 				}
 				info.getPropertyHandle().set(result, collection);
 			} else {
-				final Object obj = serializer.read(stream);
-				info.getPropertyHandle().set(result, obj);
+				info.getPropertyHandle().set(result, serializer.read(stream));
 			}
 		}
 		return (T) result;
@@ -377,7 +367,7 @@ public class IOService {
 			
 			if (mappingForClass.size() > 0) {
 				// Sort the properties to be mapped using the order provided in the annotation
-				// handles cases where the implementor wants to write class fields out 
+				// handles cases where the implementor wants to write class fields out
 				// of sequential order
 				Collections.sort(mappingForClass, new Comparator<PacketMappingInformation>() {
 					@Override
@@ -385,7 +375,8 @@ public class IOService {
 						return info0.getOrder() - info1.getOrder();
 					}
 				});
-				MAPPING_DATA.put(clazz, mappingForClass);
+				// Store as array for zero-allocation iteration on the hot path
+				MAPPING_DATA.put(clazz, mappingForClass.toArray(new PacketMappingInformation[0]));
 			}
 		}
 		log.info("[IOService::INIT] Mapping completed");

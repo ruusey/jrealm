@@ -49,6 +49,36 @@ public class Slots {
         }
     }
 
+    /**
+     * Render slot background (shapes pass). Call while ShapeRenderer is active.
+     */
+    public void renderBackground(ShapeRenderer shapes, Vector2f pos) {
+        if (this.getItem() == null) return;
+        if (this.isSelected()) {
+            shapes.setColor(Color.YELLOW);
+        } else {
+            shapes.setColor(Color.GRAY);
+        }
+        shapes.rect(pos.x, pos.y, 64, 64);
+    }
+
+    /**
+     * Render slot item sprite (batch pass). Call while SpriteBatch is active.
+     */
+    public void renderItem(SpriteBatch batch, Vector2f pos) {
+        if (this.getItem() == null) return;
+        if (this.getItem().getSpriteKey() == null) {
+            GameDataManager.loadSpriteModel(this.getItem());
+        }
+        TextureRegion itemRegion = GameSpriteManager.ITEM_SPRITES.get(this.item.getItemId());
+        if (itemRegion == null) return;
+        if (this.button != null) {
+            this.button.render(batch);
+        }
+        batch.draw(itemRegion, pos.x, pos.y, 64, 64);
+    }
+
+    /** @deprecated Use renderBackground() + renderItem() for batched rendering */
     public void render(SpriteBatch batch, ShapeRenderer shapes, Vector2f pos) {
         if (this.getItem() == null)
             return;

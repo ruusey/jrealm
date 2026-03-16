@@ -76,6 +76,11 @@ public class ClientSession {
             }
             this.remoteBufferIndex -= packetLength;
             try {
+                // Decompress if compression flag is set
+                if (com.jrealm.net.core.PacketCompression.isCompressed(packetId)) {
+                    packetId = com.jrealm.net.core.PacketCompression.getRealPacketId(packetId);
+                    packetBytes = com.jrealm.net.core.PacketCompression.decompressPayload(packetBytes);
+                }
                 final Class<?> packetClass = PacketType.valueOf(packetId);
                 final Packet nPacket = IOService.readStream(packetClass, packetBytes);
                 nPacket.setId(packetId);
@@ -88,7 +93,7 @@ public class ClientSession {
     }
 
     public void enqueueWrite(byte[] frame) {
-        this.writeQueue.add(frame);
+        this.writeQueue.add(com.jrealm.net.core.PacketCompression.compressFrame(frame));
     }
 
     public boolean flushWrites() {

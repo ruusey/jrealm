@@ -35,32 +35,30 @@ public class TimedWorkerThread implements Runnable {
     public void run() {
         log.info("TimedThread processing start...");
 
-        double rate = targetFps;
+        final long nsPerTick = (long) (1_000_000_000.0 / this.targetFps);
+        long nextTickTime = System.nanoTime();
 
-        long lastTime = System.nanoTime();
-        double amountOfTicks = rate;
-        double ns = 1000000000 / amountOfTicks;
-        double delta = 0;
-        long timer = Instant.now().toEpochMilli();
-        int frames = 0;
         while (!this.shutdown) {
-        	try {
-        		long now = System.nanoTime();
-                delta += (now - lastTime) / ns;
-                lastTime = now;
-                while (delta >= 1) {
-                    WorkerThread.submitAndRun(this.runnable);
-                    delta--;
+            try {
+                final long now = System.nanoTime();
+                if (now >= nextTickTime) {
+                    // Run the tick directly on this thread — no pool dispatch overhead
+                    this.runnable.run();
+                    nextTickTime += nsPerTick;
+                    // If we fell behind, catch up but don't spiral
+                    if (now - nextTickTime > nsPerTick * 3) {
+                        nextTickTime = now + nsPerTick;
+                    }
+                } else {
+                    // Sleep until next tick — 1ms granularity is fine for 64 Hz
+                    long sleepMs = (nextTickTime - now) / 1_000_000;
+                    if (sleepMs > 0) {
+                        Thread.sleep(sleepMs);
+                    }
                 }
-                frames++;
-
-                if (System.currentTimeMillis() - timer > 1000) {
-                    timer += 1000;
-                    frames = 0;
-                }
-        	}catch(Exception e) {
-        		this.shutdown=true;
-        	}
+            } catch (Exception e) {
+                this.shutdown = true;
+            }
         }
         log.info("Timed worker thread SHUTDOWN. Runnable = {}", this.runnable);
     }

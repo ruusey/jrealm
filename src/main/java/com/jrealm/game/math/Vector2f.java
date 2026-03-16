@@ -90,7 +90,16 @@ public class Vector2f extends SerializableFieldType<Vector2f>{
     }
 
     public float distanceTo(Vector2f other) {
-        return (float) Math.hypot(this.x - other.x, this.y - other.y);
+        float dx = this.x - other.x;
+        float dy = this.y - other.y;
+        return (float) Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /** Squared distance — avoids sqrt, use for distance comparisons */
+    public float distanceToSq(Vector2f other) {
+        float dx = this.x - other.x;
+        float dy = this.y - other.y;
+        return dx * dx + dy * dy;
     }
 
     public Vector2f withNoise(int xVariance, int yVariance) {
@@ -117,8 +126,14 @@ public class Vector2f extends SerializableFieldType<Vector2f>{
         return new Vector2f(this.x + xOffset, this.y + yOffset);
     }
 
+    // Thread-local temp vector for getWorldVar() to avoid allocation in render loops
+    private static final ThreadLocal<Vector2f> WORLD_VAR_TEMP = ThreadLocal.withInitial(Vector2f::new);
+
     public Vector2f getWorldVar() {
-        return new Vector2f(this.x - Vector2f.worldX, this.y - Vector2f.worldY);
+        final Vector2f tmp = WORLD_VAR_TEMP.get();
+        tmp.x = this.x - Vector2f.worldX;
+        tmp.y = this.y - Vector2f.worldY;
+        return tmp;
     }
 
     @Override

@@ -57,13 +57,11 @@ public class TileMap {
     }
 
     public void setTileAt(int row, int col, short tileId, TileData data) {
-        Vector2f tilePos = new Vector2f(col * this.tileSize, row * this.tileSize);
-        this.tiles[row][col] = new Tile(tileId, tilePos, data, (short) GlobalConstants.BASE_TILE_SIZE, false);
+        this.tiles[row][col] = new Tile(tileId, (short) row, (short) col, data, (short) GlobalConstants.BASE_TILE_SIZE);
     }
-    
+
     public void setTileAt(int row, int col, TileModel model) {
-        Vector2f tilePos = new Vector2f(col * this.tileSize, row * this.tileSize);
-        this.tiles[row][col] = new Tile((short)model.getTileId(), tilePos, model.getData(), (short) GlobalConstants.BASE_TILE_SIZE, false);
+        this.tiles[row][col] = new Tile((short) model.getTileId(), (short) row, (short) col, model.getData(), (short) GlobalConstants.BASE_TILE_SIZE);
     }
     
     public TileMap append(TileMap other, int offsetX, int offsetY) {
