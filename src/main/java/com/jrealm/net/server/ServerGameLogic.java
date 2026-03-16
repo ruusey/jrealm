@@ -45,6 +45,8 @@ import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
+import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.entity.NetTile;
 import com.jrealm.util.Cardinality;
 import com.jrealm.util.PacketHandlerServer;
 import com.jrealm.util.WorkerThread;
@@ -58,6 +60,19 @@ public class ServerGameLogic {
 	 * functionality
 	 */
 	public static JrealmServerDataService DATA_SERVICE = null;
+
+	private static void sendImmediateLoadMap(RealmManagerServer mgr, Realm realm, Player player) {
+		try {
+			final NetTile[] tiles = realm.getTileManager().getLoadMapTiles(player);
+			final LoadMapPacket loadMap = LoadMapPacket.from(realm.getRealmId(),
+					(short) realm.getMapId(), realm.getTileManager().getMapWidth(),
+					realm.getTileManager().getMapHeight(), tiles);
+			mgr.getPlayerLoadMapState().put(player.getId(), loadMap);
+			mgr.enqueueServerPacket(player, loadMap);
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to send immediate LoadMap on realm transition. Reason: {}", e.getMessage());
+		}
+	}
 
 	public static void onPlayerJoin(RealmManagerServer mgr, Realm realm, Player player) {
 		// Show dungeon graph node name if available, otherwise fallback to realm ID
@@ -102,6 +117,7 @@ public class ServerGameLogic {
 			mgr.addRealm(generatedRealm);
 			generatedRealm.addPlayer(user);
 			mgr.clearPlayerState(user.getId());
+			sendImmediateLoadMap(mgr, generatedRealm, user);
 			onPlayerJoin(mgr, generatedRealm, user);
 			mgr.releaseRealmLock();
 			return;
@@ -212,6 +228,7 @@ public class ServerGameLogic {
 		}
 		targetRealm.addPlayer(user);
 		mgr.clearPlayerState(user.getId());
+		sendImmediateLoadMap(mgr, targetRealm, user);
 		onPlayerJoin(mgr, targetRealm, user);
 		mgr.releaseRealmLock();
 	}

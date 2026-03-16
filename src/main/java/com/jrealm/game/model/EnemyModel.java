@@ -1,5 +1,7 @@
 package com.jrealm.game.model;
 
+import java.util.List;
+
 import com.jrealm.game.entity.item.Stats;
 
 import lombok.AllArgsConstructor;
@@ -24,5 +26,5 @@ public class EnemyModel extends SpriteModel {
     private float maxSpeed;
     private float chaseRange;
     private float attackRange;
-
+    private List<EnemyPhase> phases;
 }

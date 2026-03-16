@@ -365,6 +365,20 @@ public class ServerCommandHandler {
         log.info("Player {} spawned portal to {} (mapId={})", target.getName(), targetMap.getMapName(), targetMap.getMapId());
     }
 
+    @CommandHandler(value="godmode", description="Toggle invincibility")
+	@AdminRestrictedCommand
+    public static void invokeGodMode(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (target.hasEffect(ProjectileEffectType.INVINCIBLE)) {
+            target.resetEffects();
+            mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), "God mode OFF"));
+        } else {
+            target.addEffect(ProjectileEffectType.INVINCIBLE, 1000 * 60 * 60 * 24);
+            mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), "God mode ON"));
+        }
+        log.info("Player {} toggled god mode", target.getName());
+    }
+
     @CommandHandler(value="realm", description="Move the player to the boss realm or the top realm")
     public static void invokeRealmMove(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
