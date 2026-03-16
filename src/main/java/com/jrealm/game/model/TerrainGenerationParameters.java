@@ -17,5 +17,6 @@ public class TerrainGenerationParameters {
     private int tileSize;
     private List<TileGroup> tileGroups;
     private List<EnemyGroup> enemyGroups;
+    private List<OverworldZone> zones;
 
 }

@@ -33,7 +33,9 @@ import com.jrealm.game.graphics.SpriteSheet;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.DungeonGraphNode;
+import com.jrealm.game.model.EnemyGroup;
 import com.jrealm.game.model.EnemyModel;
+import com.jrealm.game.model.OverworldZone;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.ProjectileGroup;
 import com.jrealm.game.model.TerrainGenerationParameters;
@@ -696,43 +698,67 @@ public class Realm {
             this.enemies = new ConcurrentHashMap<>();
         }
 
-        final List<EnemyModel> enemyToSpawn = new ArrayList<>();
-
         TerrainGenerationParameters params = GameDataManager.TERRAINS
                 .get(GameDataManager.MAPS.get(mapId).getTerrainId());
-        if(params==null) {
+        if (params == null) {
             log.warn("No Terrain generation params found for MapId {}, using default values", mapId);
-            params = GameDataManager.TERRAINS
-                    .get(GameDataManager.MAPS.get(4).getTerrainId());
-            //return;
+            params = GameDataManager.TERRAINS.get(GameDataManager.MAPS.get(4).getTerrainId());
         }
-        for (final int enemyId : params.getEnemyGroups().get(0).getEnemyIds()) {
-            enemyToSpawn.add(GameDataManager.ENEMIES.get(enemyId));
+
+        final boolean hasZones = params.getZones() != null && !params.getZones().isEmpty();
+
+        // Pre-build enemy lists per zone (or single global list for legacy)
+        final Map<Integer, List<EnemyModel>> enemiesByGroup = new HashMap<>();
+        for (EnemyGroup group : params.getEnemyGroups()) {
+            List<EnemyModel> models = new ArrayList<>();
+            for (int enemyId : group.getEnemyIds()) {
+                EnemyModel m = GameDataManager.ENEMIES.get(enemyId);
+                if (m != null) models.add(m);
+            }
+            enemiesByGroup.put(group.getOrdinal(), models);
         }
-        
-        for (int i = 0; i < this.tileManager.getMapLayers().get(0).getHeight(); i++) {
-            for (int j = 0; j < this.tileManager.getMapLayers().get(0).getWidth(); j++) {
-                final int doSpawn = Realm.RANDOM.nextInt(this.tileManager.getMapLayers().get(0).getWidth());
-                if ((doSpawn > this.tileManager.getMapLayers().get(0).getWidth()-2) && (i > 0) && (j > 0)) {
-                    final Vector2f spawnPos = new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
-                            i * this.tileManager.getMapLayers().get(0).getTileSize());
-                    if (this.tileManager.isCollisionTile(spawnPos) || this.tileManager.isVoidTile(spawnPos, 0, 0)) {
-                        continue;
-                    }
-                    final EnemyModel toSpawn = enemyToSpawn.get(Realm.RANDOM.nextInt(enemyToSpawn.size()));
-                    
-                    final Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
-                            new Vector2f(j * this.tileManager.getMapLayers().get(0).getTileSize(),
-                                    i * this.tileManager.getMapLayers().get(0).getTileSize()),
-                            toSpawn.getSize(), toSpawn.getAttackId());
-                    enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
-                    int healthMult = this.getDifficultyMultiplier();
-                    enemy.setHealth(enemy.getHealth() * healthMult);
-                    enemy.setHealthMultiplier(healthMult);
-                    enemy.getStats().setHp((short) (enemy.getStats().getHp() * healthMult));
-                    enemy.setPos(spawnPos);
-                    this.addEnemy(enemy);
+
+        // Legacy fallback: all enemies from group 0
+        final List<EnemyModel> defaultEnemies = enemiesByGroup.getOrDefault(0,
+                new ArrayList<>(enemiesByGroup.values().iterator().next()));
+
+        final int tileSize = this.tileManager.getMapLayers().get(0).getTileSize();
+        final int mapHeight = this.tileManager.getMapLayers().get(0).getHeight();
+        final int mapWidth = this.tileManager.getMapLayers().get(0).getWidth();
+
+        for (int i = 1; i < mapHeight; i++) {
+            for (int j = 1; j < mapWidth; j++) {
+                final int doSpawn = Realm.RANDOM.nextInt(mapWidth);
+                if (doSpawn <= mapWidth - 2) continue;
+
+                final Vector2f spawnPos = new Vector2f(j * tileSize, i * tileSize);
+                if (this.tileManager.isCollisionTile(spawnPos) || this.tileManager.isVoidTile(spawnPos, 0, 0)) {
+                    continue;
                 }
+
+                // Select enemy list based on zone
+                List<EnemyModel> spawnList = defaultEnemies;
+                int healthMult = this.getDifficultyMultiplier();
+
+                if (hasZones) {
+                    OverworldZone zone = this.tileManager.getZoneForPosition(spawnPos.x, spawnPos.y);
+                    if (zone != null) {
+                        spawnList = enemiesByGroup.getOrDefault(zone.getEnemyGroupOrdinal(), defaultEnemies);
+                        healthMult = Math.max(1, zone.getDifficulty());
+                    }
+                }
+
+                if (spawnList.isEmpty()) continue;
+                final EnemyModel toSpawn = spawnList.get(Realm.RANDOM.nextInt(spawnList.size()));
+
+                final Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
+                        spawnPos.clone(), toSpawn.getSize(), toSpawn.getAttackId());
+                enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
+                enemy.setHealth(enemy.getHealth() * healthMult);
+                enemy.setHealthMultiplier(healthMult);
+                enemy.getStats().setHp((short) (enemy.getStats().getHp() * healthMult));
+                enemy.setPos(spawnPos);
+                this.addEnemy(enemy);
             }
         }
     }

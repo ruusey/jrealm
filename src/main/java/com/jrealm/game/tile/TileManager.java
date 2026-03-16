@@ -23,6 +23,7 @@ import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.DungeonGenerationParams;
 import com.jrealm.game.model.MapModel;
+import com.jrealm.game.model.OverworldZone;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileGroup;
 import com.jrealm.game.model.TileModel;
@@ -45,6 +46,7 @@ public class TileManager {
     private List<TileMap> mapLayers;
     private Vector2f bossSpawnPos;
     private Vector2f playerSpawnPos;
+    private TerrainGenerationParameters terrainParams;
 
     // Server side constructor
     public TileManager(int mapId) {
@@ -73,6 +75,7 @@ public class TileManager {
             }
         } else if(model.getTerrainId()>-1){
             final TerrainGenerationParameters params = GameDataManager.TERRAINS.get(model.getTerrainId());
+            this.terrainParams = params;
             this.mapLayers = this.getLayersFromTerrain(model.getWidth(), model.getHeight(), model.getTileSize(),
                     params);
         }
@@ -93,48 +96,146 @@ public class TileManager {
         this.mapLayers.add(collisionLayer);
     }
 
+    // Get the zone for a world position (returns null if no zones defined)
+    public OverworldZone getZoneForPosition(float worldX, float worldY) {
+        if (this.terrainParams == null || this.terrainParams.getZones() == null
+                || this.terrainParams.getZones().isEmpty()) {
+            return null;
+        }
+        final int width = this.getBaseLayer().getWidth();
+        final int height = this.getBaseLayer().getHeight();
+        final float centerX = width * GlobalConstants.BASE_TILE_SIZE / 2f;
+        final float centerY = height * GlobalConstants.BASE_TILE_SIZE / 2f;
+        final float maxDist = (float) Math.sqrt(centerX * centerX + centerY * centerY);
+        final float dx = worldX - centerX;
+        final float dy = worldY - centerY;
+        final float dist = (float) Math.sqrt(dx * dx + dy * dy);
+        final float normalizedDist = dist / maxDist;
+
+        for (OverworldZone zone : this.terrainParams.getZones()) {
+            if (normalizedDist >= zone.getMinRadius() && normalizedDist < zone.getMaxRadius()) {
+                return zone;
+            }
+        }
+        // Fallback: return outermost zone
+        return this.terrainParams.getZones().get(this.terrainParams.getZones().size() - 1);
+    }
+
     // Generates a random terrain of size with the given parameters
     private List<TileMap> getLayersFromTerrain(int width, int height, int tileSize,
             TerrainGenerationParameters params) {
         final Random random = new Random(Instant.now().toEpochMilli());
-        // Build empty base and collision layers with given size
         TileMap baseLayer = new TileMap(tileSize, width, height);
         TileMap collisionLayer = new TileMap(tileSize, width, height);
 
-        // For each group to attempt to populate in the given area (WIP, only expects
-        // one group right now)
-        for (TileGroup group : params.getTileGroups()) {
-            // Separate tiles having collision from background tiles
-            List<TileModel> tileIdsCollision = group.getTileIds().stream().map(id -> GameDataManager.TILES.get(id))
-                    .filter(tm -> tm.getData().hasCollision()).collect(Collectors.toList());
-            List<TileModel> tileIdsNormal = group.getTileIds().stream().map(id -> GameDataManager.TILES.get(id))
-                    .filter(tm -> !tm.getData().hasCollision()).collect(Collectors.toList());
+        final boolean hasZones = params.getZones() != null && !params.getZones().isEmpty();
 
-            // Iterate over every potential tile space and build the background layer
-            // using the tiles defined in this TileGroup that do NOT have collision data
-            for (int i = 0; i < height; i++) {
-                for (int j = 0; j < width; j++) {
-                    TileModel tileIdToCreate = tileIdsNormal.get(random.nextInt(tileIdsNormal.size()));
-                    float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
-                    if ((rarity > 0.0) && (random.nextFloat() <= rarity)) {
-                        baseLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
-                    } else {
-                        tileIdToCreate = tileIdsNormal.get(0);
-                        baseLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+        if (hasZones) {
+            // Zone-based terrain: each tile gets its TileGroup from its zone
+            final float centerX = width / 2f;
+            final float centerY = height / 2f;
+            final float maxDist = (float) Math.sqrt(centerX * centerX + centerY * centerY);
+
+            // Pre-separate tiles per group into collision/normal lists
+            final Map<Integer, List<TileModel>> normalByGroup = new java.util.HashMap<>();
+            final Map<Integer, List<TileModel>> collisionByGroup = new java.util.HashMap<>();
+            for (TileGroup group : params.getTileGroups()) {
+                List<TileModel> normal = group.getTileIds().stream()
+                        .map(id -> GameDataManager.TILES.get(id))
+                        .filter(tm -> tm != null && !tm.getData().hasCollision())
+                        .collect(Collectors.toList());
+                List<TileModel> collision = group.getTileIds().stream()
+                        .map(id -> GameDataManager.TILES.get(id))
+                        .filter(tm -> tm != null && tm.getData().hasCollision())
+                        .collect(Collectors.toList());
+                normalByGroup.put(group.getOrdinal(), normal);
+                collisionByGroup.put(group.getOrdinal(), collision);
+            }
+
+            for (int row = 0; row < height; row++) {
+                for (int col = 0; col < width; col++) {
+                    float dx = col - centerX;
+                    float dy = row - centerY;
+                    float dist = (float) Math.sqrt(dx * dx + dy * dy);
+                    float normalizedDist = dist / maxDist;
+
+                    // Find zone for this tile
+                    OverworldZone zone = null;
+                    for (OverworldZone z : params.getZones()) {
+                        if (normalizedDist >= z.getMinRadius() && normalizedDist < z.getMaxRadius()) {
+                            zone = z;
+                            break;
+                        }
+                    }
+                    if (zone == null) {
+                        zone = params.getZones().get(params.getZones().size() - 1);
                     }
 
+                    int groupOrd = zone.getTileGroupOrdinal();
+                    TileGroup group = params.getTileGroups().stream()
+                            .filter(g -> g.getOrdinal() == groupOrd).findFirst()
+                            .orElse(params.getTileGroups().get(0));
+
+                    // Base layer tile
+                    List<TileModel> normalTiles = normalByGroup.getOrDefault(groupOrd,
+                            normalByGroup.values().iterator().next());
+                    if (!normalTiles.isEmpty()) {
+                        TileModel tile = normalTiles.get(random.nextInt(normalTiles.size()));
+                        float rarity = group.getRarities().getOrDefault(tile.getTileId() + "", 1.0f);
+                        if (rarity > 0 && random.nextFloat() <= rarity) {
+                            baseLayer.setTileAt(row, col, (short) tile.getTileId(), tile.getData());
+                        } else {
+                            tile = normalTiles.get(0);
+                            baseLayer.setTileAt(row, col, (short) tile.getTileId(), tile.getData());
+                        }
+                    }
+
+                    // Collision layer tile
+                    List<TileModel> collTiles = collisionByGroup.getOrDefault(groupOrd,
+                            collisionByGroup.values().iterator().next());
+                    if (!collTiles.isEmpty()) {
+                        TileModel tile = collTiles.get(random.nextInt(collTiles.size()));
+                        float rarity = group.getRarities().getOrDefault(tile.getTileId() + "", 0.0f);
+                        if (rarity > 0 && random.nextFloat() <= rarity) {
+                            collisionLayer.setTileAt(row, col, (short) tile.getTileId(), tile.getData());
+                        } else {
+                            collisionLayer.setTileAt(row, col, (short) 0, tile.getData());
+                        }
+                    }
                 }
             }
-            // Iterate over every potential tile space and build the collision layer
-            // using the tiles defined in this TileGroup that have collision data
-            for (int i = 0; i < height; i++) {
-                for (int j = 0; j < width; j++) {
-                    TileModel tileIdToCreate = tileIdsCollision.get(random.nextInt(tileIdsCollision.size()));
-                    float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
-                    if ((rarity > 0.0) && (random.nextFloat() <= rarity)) {
-                        collisionLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
-                    } else {
-                        collisionLayer.setTileAt(i, j, (short) 0, tileIdToCreate.getData());
+        } else {
+            // Legacy single-group terrain generation
+            for (TileGroup group : params.getTileGroups()) {
+                List<TileModel> tileIdsCollision = group.getTileIds().stream()
+                        .map(id -> GameDataManager.TILES.get(id))
+                        .filter(tm -> tm.getData().hasCollision()).collect(Collectors.toList());
+                List<TileModel> tileIdsNormal = group.getTileIds().stream()
+                        .map(id -> GameDataManager.TILES.get(id))
+                        .filter(tm -> !tm.getData().hasCollision()).collect(Collectors.toList());
+
+                for (int i = 0; i < height; i++) {
+                    for (int j = 0; j < width; j++) {
+                        TileModel tileIdToCreate = tileIdsNormal.get(random.nextInt(tileIdsNormal.size()));
+                        float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
+                        if ((rarity > 0.0) && (random.nextFloat() <= rarity)) {
+                            baseLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+                        } else {
+                            tileIdToCreate = tileIdsNormal.get(0);
+                            baseLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
+                        }
+                    }
+                }
+                for (int i = 0; i < height; i++) {
+                    for (int j = 0; j < width; j++) {
+                        TileModel tileIdToCreate = tileIdsCollision.get(random.nextInt(tileIdsCollision.size()));
+                        float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
+                        if ((rarity > 0.0) && (random.nextFloat() <= rarity)) {
+                            collisionLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(),
+                                    tileIdToCreate.getData());
+                        } else {
+                            collisionLayer.setTileAt(i, j, (short) 0, tileIdToCreate.getData());
+                        }
                     }
                 }
             }
@@ -244,8 +345,46 @@ public class TileManager {
     }
 
     public Vector2f getSafePosition() {
+        // If zones are defined, spawn in the outermost zone (beach/shore)
+        if (this.terrainParams != null && this.terrainParams.getZones() != null
+                && !this.terrainParams.getZones().isEmpty()) {
+            // Find the zone with the highest maxRadius (outermost)
+            OverworldZone outerZone = this.terrainParams.getZones().stream()
+                    .max((a, b) -> Float.compare(a.getMaxRadius(), b.getMaxRadius()))
+                    .orElse(null);
+            if (outerZone != null) {
+                return this.getSafePositionInZone(outerZone);
+            }
+        }
         Vector2f pos = this.randomPos();
-        while (this.isCollisionTile(pos) || this.isVoidTile(pos, 0,0)) {
+        while (this.isCollisionTile(pos) || this.isVoidTile(pos, 0, 0)) {
+            pos = this.randomPos();
+        }
+        return pos;
+    }
+
+    public Vector2f getSafePositionInZone(OverworldZone zone) {
+        final int width = this.getBaseLayer().getWidth();
+        final int height = this.getBaseLayer().getHeight();
+        final float centerX = width * GlobalConstants.BASE_TILE_SIZE / 2f;
+        final float centerY = height * GlobalConstants.BASE_TILE_SIZE / 2f;
+        final float maxDist = (float) Math.sqrt(centerX * centerX + centerY * centerY);
+        final float minDist = zone.getMinRadius() * maxDist;
+        final float maxDistZone = zone.getMaxRadius() * maxDist;
+
+        for (int attempts = 0; attempts < 500; attempts++) {
+            Vector2f pos = this.randomPos();
+            if (this.isCollisionTile(pos) || this.isVoidTile(pos, 0, 0)) continue;
+            float dx = pos.x - centerX;
+            float dy = pos.y - centerY;
+            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+            if (dist >= minDist && dist < maxDistZone) {
+                return pos;
+            }
+        }
+        // Fallback if zone is too small or all positions blocked
+        Vector2f pos = this.randomPos();
+        while (this.isCollisionTile(pos) || this.isVoidTile(pos, 0, 0)) {
             pos = this.randomPos();
         }
         return pos;
