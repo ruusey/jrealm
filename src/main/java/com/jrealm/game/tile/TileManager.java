@@ -727,8 +727,8 @@ public class TileManager {
                 float wy = t.getPos().getWorldVar().y;
                 int sz = t.getWidth();
                 float cx = wx + sz / 2f;
-                float cy = wy + sz * 0.75f;
-                shapes.ellipse(cx - sz * 0.4f, cy - sz * 0.12f, sz * 0.8f, sz * 0.25f);
+                float cy = wy + sz - sz * 0.1f;
+                shapes.ellipse(cx - sz * 0.35f, cy - sz * 0.08f, sz * 0.7f, sz * 0.16f);
             }
             shapes.end();
             com.badlogic.gdx.Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
