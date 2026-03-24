@@ -271,7 +271,7 @@ public class GameDataManager {
 		GameDataManager.log.info("Loading Game Items... DONE");
 	}
 
-	// Loot bag sprites from rotmg-misc-OLD-8px.png row 9
+	// Loot bag sprites from rotmg-misc.png row 9
 	// Col mapping: 0=brown, 1=purple, 2=cyan, 3=blue, 4=white
 	public static Sprite getLootSprite(int tier) {
 		int col = (tier >= 0 && tier < 5) ? tier : 0;

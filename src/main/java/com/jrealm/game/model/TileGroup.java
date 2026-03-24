@@ -1,5 +1,6 @@
 package com.jrealm.game.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -14,5 +15,6 @@ public class TileGroup {
     private String name;
     private Integer ordinal;
     private List<Integer> tileIds;
+    private List<Integer> decorationTileIds = new ArrayList<>();
     private Map<String, Float> rarities;
 }

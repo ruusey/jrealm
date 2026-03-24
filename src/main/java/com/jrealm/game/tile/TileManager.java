@@ -136,20 +136,22 @@ public class TileManager {
             final float centerY = height / 2f;
             final float maxDist = (float) Math.sqrt(centerX * centerX + centerY * centerY);
 
-            // Pre-separate tiles per group into collision/normal lists
-            final Map<Integer, List<TileModel>> normalByGroup = new java.util.HashMap<>();
-            final Map<Integer, List<TileModel>> collisionByGroup = new java.util.HashMap<>();
+            // Pre-resolve tile models per group: base terrain (layer 0) and decorations (layer 1)
+            final Map<Integer, List<TileModel>> baseByGroup = new java.util.HashMap<>();
+            final Map<Integer, List<TileModel>> decorationByGroup = new java.util.HashMap<>();
             for (TileGroup group : params.getTileGroups()) {
-                List<TileModel> normal = group.getTileIds().stream()
+                List<TileModel> baseTiles = group.getTileIds().stream()
                         .map(id -> GameDataManager.TILES.get(id))
-                        .filter(tm -> tm != null && !tm.getData().hasCollision())
+                        .filter(tm -> tm != null)
                         .collect(Collectors.toList());
-                List<TileModel> collision = group.getTileIds().stream()
+                baseByGroup.put(group.getOrdinal(), baseTiles);
+
+                List<Integer> decoIds = group.getDecorationTileIds();
+                List<TileModel> decoTiles = (decoIds != null) ? decoIds.stream()
                         .map(id -> GameDataManager.TILES.get(id))
-                        .filter(tm -> tm != null && tm.getData().hasCollision())
-                        .collect(Collectors.toList());
-                normalByGroup.put(group.getOrdinal(), normal);
-                collisionByGroup.put(group.getOrdinal(), collision);
+                        .filter(tm -> tm != null)
+                        .collect(Collectors.toList()) : new java.util.ArrayList<>();
+                decorationByGroup.put(group.getOrdinal(), decoTiles);
             }
 
             for (int row = 0; row < height; row++) {
@@ -176,30 +178,28 @@ public class TileManager {
                             .filter(g -> g.getOrdinal() == groupOrd).findFirst()
                             .orElse(params.getTileGroups().get(0));
 
-                    // Base layer tile
-                    List<TileModel> normalTiles = normalByGroup.getOrDefault(groupOrd,
-                            normalByGroup.values().iterator().next());
-                    if (!normalTiles.isEmpty()) {
-                        TileModel tile = normalTiles.get(random.nextInt(normalTiles.size()));
+                    // Base layer tile (always placed — opaque ground)
+                    List<TileModel> baseTiles = baseByGroup.getOrDefault(groupOrd,
+                            baseByGroup.values().iterator().next());
+                    if (!baseTiles.isEmpty()) {
+                        TileModel tile = baseTiles.get(random.nextInt(baseTiles.size()));
                         float rarity = group.getRarities().getOrDefault(tile.getTileId() + "", 1.0f);
                         if (rarity > 0 && random.nextFloat() <= rarity) {
                             baseLayer.setTileAt(row, col, (short) tile.getTileId(), tile.getData());
                         } else {
-                            tile = normalTiles.get(0);
+                            tile = baseTiles.get(0);
                             baseLayer.setTileAt(row, col, (short) tile.getTileId(), tile.getData());
                         }
                     }
 
-                    // Collision layer tile
-                    List<TileModel> collTiles = collisionByGroup.getOrDefault(groupOrd,
-                            collisionByGroup.values().iterator().next());
-                    if (!collTiles.isEmpty()) {
-                        TileModel tile = collTiles.get(random.nextInt(collTiles.size()));
+                    // Decoration/collision layer tile (placed on layer 1 over the base)
+                    List<TileModel> decoTiles = decorationByGroup.getOrDefault(groupOrd,
+                            java.util.Collections.emptyList());
+                    if (!decoTiles.isEmpty()) {
+                        TileModel tile = decoTiles.get(random.nextInt(decoTiles.size()));
                         float rarity = group.getRarities().getOrDefault(tile.getTileId() + "", 0.0f);
                         if (rarity > 0 && random.nextFloat() <= rarity) {
                             collisionLayer.setTileAt(row, col, (short) tile.getTileId(), tile.getData());
-                        } else {
-                            collisionLayer.setTileAt(row, col, (short) 0, tile.getData());
                         }
                     }
                 }
@@ -207,34 +207,40 @@ public class TileManager {
         } else {
             // Legacy single-group terrain generation
             for (TileGroup group : params.getTileGroups()) {
-                List<TileModel> tileIdsCollision = group.getTileIds().stream()
+                List<TileModel> baseTiles = group.getTileIds().stream()
                         .map(id -> GameDataManager.TILES.get(id))
-                        .filter(tm -> tm.getData().hasCollision()).collect(Collectors.toList());
-                List<TileModel> tileIdsNormal = group.getTileIds().stream()
-                        .map(id -> GameDataManager.TILES.get(id))
-                        .filter(tm -> !tm.getData().hasCollision()).collect(Collectors.toList());
+                        .filter(tm -> tm != null)
+                        .collect(Collectors.toList());
 
+                List<Integer> decoIds = group.getDecorationTileIds();
+                List<TileModel> decoTiles = (decoIds != null) ? decoIds.stream()
+                        .map(id -> GameDataManager.TILES.get(id))
+                        .filter(tm -> tm != null)
+                        .collect(Collectors.toList()) : new java.util.ArrayList<>();
+
+                // Fill base layer with terrain tiles
                 for (int i = 0; i < height; i++) {
                     for (int j = 0; j < width; j++) {
-                        TileModel tileIdToCreate = tileIdsNormal.get(random.nextInt(tileIdsNormal.size()));
-                        float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
+                        TileModel tileIdToCreate = baseTiles.get(random.nextInt(baseTiles.size()));
+                        float rarity = group.getRarities().getOrDefault(tileIdToCreate.getTileId() + "", 1.0f);
                         if ((rarity > 0.0) && (random.nextFloat() <= rarity)) {
                             baseLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
                         } else {
-                            tileIdToCreate = tileIdsNormal.get(0);
+                            tileIdToCreate = baseTiles.get(0);
                             baseLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(), tileIdToCreate.getData());
                         }
                     }
                 }
-                for (int i = 0; i < height; i++) {
-                    for (int j = 0; j < width; j++) {
-                        TileModel tileIdToCreate = tileIdsCollision.get(random.nextInt(tileIdsCollision.size()));
-                        float rarity = group.getRarities().get(tileIdToCreate.getTileId() + "");
-                        if ((rarity > 0.0) && (random.nextFloat() <= rarity)) {
-                            collisionLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(),
-                                    tileIdToCreate.getData());
-                        } else {
-                            collisionLayer.setTileAt(i, j, (short) 0, tileIdToCreate.getData());
+                // Fill decoration/collision layer from decorationTileIds
+                if (!decoTiles.isEmpty()) {
+                    for (int i = 0; i < height; i++) {
+                        for (int j = 0; j < width; j++) {
+                            TileModel tileIdToCreate = decoTiles.get(random.nextInt(decoTiles.size()));
+                            float rarity = group.getRarities().getOrDefault(tileIdToCreate.getTileId() + "", 0.0f);
+                            if ((rarity > 0.0) && (random.nextFloat() <= rarity)) {
+                                collisionLayer.setTileAt(i, j, (short) tileIdToCreate.getTileId(),
+                                        tileIdToCreate.getData());
+                            }
                         }
                     }
                 }

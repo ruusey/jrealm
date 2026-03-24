@@ -33,8 +33,7 @@ public class GameSpriteManager {
             "rotmg-bosses-1_.png", "rotmg-classes-0.png", "rotmg-classes-1.png", "rotmg-classes-2.png",
             "rotmg-classes-3.png",
             "lofi_char.png", "lofi_environment.png", "lofi_halls.png", "lofi_obj.png",
-            "lofi_obj_packA.png", "lofi_obj_packB.png", "lofi_dungeon_features.png",
-            "rotmg-misc-OLD-8px.png" };
+            "lofi_obj_packA.png", "lofi_obj_packB.png", "lofi_dungeon_features.png" };
 
     public static Map<String, Texture> TEXTURE_CACHE;
     public static Map<Integer, TextureRegion> TILE_SPRITES;
