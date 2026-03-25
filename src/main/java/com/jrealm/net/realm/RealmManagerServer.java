@@ -163,8 +163,8 @@ public class RealmManagerServer implements Runnable {
 	// UpdatePacket: 16Hz - stats/inventory/effects change slowly
 	// LoadMapPacket: 4Hz - terrain barely changes
 	// EnemyUpdatePacket: 16Hz - enemy health bars
-	private static final int MOVE_TICK_DIVISOR = 2;      // Inner zone movement at 32Hz
-	private static final int MOVE_FULL_TICK_DIVISOR = 4;  // Full viewport movement at 16Hz
+	private static final int MOVE_TICK_DIVISOR = 1;      // Inner zone movement at 64Hz (matches Java client)
+	private static final int MOVE_FULL_TICK_DIVISOR = 2;  // Full viewport movement at 32Hz
 	private static final int LOAD_TICK_DIVISOR = 4;       // Entity spawn/despawn at 16Hz
 	private static final int UPDATE_TICK_DIVISOR = 4;
 	private static final int LOADMAP_TICK_DIVISOR = 16;
@@ -612,10 +612,6 @@ public class RealmManagerServer implements Runnable {
 							toRemove.add(player.getValue());
 						}
 
-						for (LootContainer lc : realm.getLoot().values()) {
-							lc.setContentsChanged(false);
-						}
-
 					} catch (Exception e) {
 						RealmManagerServer.log.error("[SERVER] Failed to build game data for Player {}. Reason: {}",
 								player.getKey(), e);
@@ -624,6 +620,12 @@ public class RealmManagerServer implements Runnable {
 
 				for (Player player : toRemove) {
 					this.disconnectPlayer(player);
+				}
+
+				// Reset contentsChanged AFTER all players processed
+				// (was inside player loop before — caused Player B to miss updates)
+				for (LootContainer lc : realm.getLoot().values()) {
+					lc.setContentsChanged(false);
 				}
 			}
 
@@ -1119,6 +1121,8 @@ public class RealmManagerServer implements Runnable {
 		final Realm targetRealm = this.realms.get(realmId);
 
 		final Player player = targetRealm.getPlayer(playerId);
+		if (player == null || player.getAbility() == null)
+			return;
 		final GameItem abilityItem = GameDataManager.GAME_ITEMS.get(player.getAbility().getItemId());
 		if ((abilityItem == null))
 			return;
