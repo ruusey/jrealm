@@ -157,13 +157,15 @@ public class RealmManagerServer implements Runnable {
 	private int tickCounter = 0;
 
 	// Tick rate divisors for tiered packet transmission (at 64 ticks/sec):
-	// Movement: every tick (64 Hz) - needs to feel responsive
-	// LoadPacket: every 2 ticks (32 Hz) - entity spawns/despawns
-	// UpdatePacket: every 4 ticks (16 Hz) - stats/inventory/effects change slowly
-	// LoadMapPacket: every 16 ticks (4 Hz) - terrain barely changes
-	// EnemyUpdatePacket: every 4 ticks (16 Hz) - enemy health bars
-	private static final int MOVE_TICK_DIVISOR = 2; // Send ObjectMovePacket at 32Hz instead of 64Hz
-	private static final int LOAD_TICK_DIVISOR = 2;
+	// Two-tier movement: inner zone (50% radius) at 32Hz, full viewport at 16Hz.
+	// This halves entity count on most ticks since screen edges are less important.
+	// LoadPacket: 16Hz - entity spawns/despawns aren't time-critical
+	// UpdatePacket: 16Hz - stats/inventory/effects change slowly
+	// LoadMapPacket: 4Hz - terrain barely changes
+	// EnemyUpdatePacket: 16Hz - enemy health bars
+	private static final int MOVE_TICK_DIVISOR = 2;      // Inner zone movement at 32Hz
+	private static final int MOVE_FULL_TICK_DIVISOR = 4;  // Full viewport movement at 16Hz
+	private static final int LOAD_TICK_DIVISOR = 4;       // Entity spawn/despawn at 16Hz
 	private static final int UPDATE_TICK_DIVISOR = 4;
 	private static final int LOADMAP_TICK_DIVISOR = 16;
 	private static final int ENEMY_UPDATE_TICK_DIVISOR = 4;
@@ -439,6 +441,7 @@ public class RealmManagerServer implements Runnable {
 			this.tickCounter++;
 
 			final boolean doMovement = (this.tickCounter % MOVE_TICK_DIVISOR) == 0;
+			final boolean doFullMovement = (this.tickCounter % MOVE_FULL_TICK_DIVISOR) == 0;
 			final boolean doLoad = (this.tickCounter % LOAD_TICK_DIVISOR) == 0;
 			final boolean doUpdate = (this.tickCounter % UPDATE_TICK_DIVISOR) == 0;
 			final boolean doLoadMap = (this.tickCounter % LOADMAP_TICK_DIVISOR) == 0;
@@ -551,13 +554,16 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						// --- ObjectMovePacket (64 Hz) - uses per-cell cache + spatial grid ---
+						// --- ObjectMovePacket: inner zone at 32Hz, full viewport at 16Hz ---
 						if (doMovement) {
-							// Reuse move packet if another player in same cell already built it
-							ObjectMovePacket movePacket = cellMoveCache.get(cellKey);
+							// Two-tier: use 50% radius on inner-only ticks, full radius on full ticks
+							final float moveRadius = doFullMovement ? viewportRadius : viewportRadius * 0.5f;
+							// Cache key includes radius tier to avoid mixing
+							final long moveCacheKey = doFullMovement ? cellKey : (cellKey ^ 0xDEADBEEFL);
+							ObjectMovePacket movePacket = cellMoveCache.get(moveCacheKey);
 							if (movePacket == null) {
-								movePacket = realm.getGameObjectsAsPacketsCircularFast(playerCenter, viewportRadius);
-								cellMoveCache.put(cellKey, movePacket);
+								movePacket = realm.getGameObjectsAsPacketsCircularFast(playerCenter, moveRadius);
+								cellMoveCache.put(moveCacheKey, movePacket);
 							}
 							if (this.playerObjectMoveState.get(player.getKey()) == null && movePacket != null) {
 								this.playerObjectMoveState.put(player.getKey(), movePacket);

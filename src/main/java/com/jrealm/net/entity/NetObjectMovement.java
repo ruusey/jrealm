@@ -51,11 +51,13 @@ public class NetObjectMovement extends SerializableFieldType<NetObjectMovement> 
         } else if (obj instanceof Bullet) {
             this.entityType = EntityType.BULLET.getEntityTypeId();
         }
-        this.posX = obj.getPos().x;
-        this.posY = obj.getPos().y;
+        // Quantize positions to 0.5px precision — reduces diff churn for sub-pixel movement
+        // and improves compression ratio. Invisible in a pixel art game.
+        this.posX = Math.round(obj.getPos().x * 2f) / 2f;
+        this.posY = Math.round(obj.getPos().y * 2f) / 2f;
 
-        this.velX = obj.getDx();
-        this.velY = obj.getDy();
+        this.velX = Math.round(obj.getDx() * 4f) / 4f;  // 0.25px/tick velocity precision
+        this.velY = Math.round(obj.getDy() * 4f) / 4f;
     }
 
     public EntityType getTargetEntityType() {
