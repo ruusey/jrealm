@@ -57,7 +57,22 @@ public class ClientSession {
         }
     }
 
-    private void parsePackets() {
+    /**
+     * Inject raw bytes into the receive buffer and trigger packet parsing.
+     * Used by WebSocket bridge to feed data into the standard packet pipeline.
+     */
+    public void injectData(byte[] data, int offset, int length) {
+        if (this.remoteBufferIndex + length > this.remoteBuffer.length) {
+            log.warn("[NIO] Buffer overflow for client {} during data injection, discarding", this.clientKey);
+            this.remoteBufferIndex = 0;
+            return;
+        }
+        System.arraycopy(data, offset, this.remoteBuffer, this.remoteBufferIndex, length);
+        this.remoteBufferIndex += length;
+        this.parsePackets();
+    }
+
+    protected void parsePackets() {
         while (this.remoteBufferIndex >= 5) {
             int packetLength = ((this.remoteBuffer[1] & 0xFF) << 24)
                              | ((this.remoteBuffer[2] & 0xFF) << 16)

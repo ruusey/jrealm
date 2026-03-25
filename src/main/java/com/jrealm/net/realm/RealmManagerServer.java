@@ -202,6 +202,17 @@ public class RealmManagerServer implements Runnable {
 		}
 		// Start listening for connections
 		this.server = new NioServer(2222);
+
+		// Start WebSocket server for browser-based clients
+		try {
+			final com.jrealm.net.server.WebSocketGameServer wsServer =
+				new com.jrealm.net.server.WebSocketGameServer(2223, this.server);
+			wsServer.start();
+			log.info("[SERVER] WebSocket server started on port 2223");
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to start WebSocket server: {}", e.getMessage());
+		}
+
 		this.registerRealmDecorators();
 		this.registerEnemyScripts();
 		this.registerPacketCallbacks();

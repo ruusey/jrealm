@@ -714,7 +714,7 @@ public class TileManager {
             }
         }
 
-        // Pass 3: Render object tiles (trees, rocks, etc.) with circular shadow
+        // Pass 3: Render object tiles (collision decorations) with circular shadow
         if (!objectTiles.isEmpty()) {
             batch.end();
             com.badlogic.gdx.Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
