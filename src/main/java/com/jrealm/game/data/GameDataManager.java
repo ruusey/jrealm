@@ -283,7 +283,7 @@ public class GameDataManager {
 	}
 
 	public static Sprite getChestSprite() {
-		return GameSpriteManager.loadSprite(2, 0, "rotmg-projectiles.png", GlobalConstants.BASE_SPRITE_SIZE);
+		return GameSpriteManager.loadSprite(2, 0, "rotmg-projectiles-1.png", GlobalConstants.BASE_SPRITE_SIZE);
 	}
 
 	public static Map<Integer, GameItem> getStartingEquipment(final CharacterClass characterClass) {
