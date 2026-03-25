@@ -162,7 +162,7 @@ public class RealmManagerServer implements Runnable {
 	// UpdatePacket: every 4 ticks (16 Hz) - stats/inventory/effects change slowly
 	// LoadMapPacket: every 16 ticks (4 Hz) - terrain barely changes
 	// EnemyUpdatePacket: every 4 ticks (16 Hz) - enemy health bars
-	private static final int MOVE_TICK_DIVISOR = 1;
+	private static final int MOVE_TICK_DIVISOR = 2; // Send ObjectMovePacket at 32Hz instead of 64Hz
 	private static final int LOAD_TICK_DIVISOR = 2;
 	private static final int UPDATE_TICK_DIVISOR = 4;
 	private static final int LOADMAP_TICK_DIVISOR = 16;

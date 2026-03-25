@@ -16,28 +16,26 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ServerItemHelper {
-    // I like spaghetti, what about you?
     public static void handleMoveItemPacket(RealmManagerServer mgr, Packet packet) throws Exception {
         final MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
         ServerItemHelper.log.info("[ItemMoveHelper] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
 
         final Realm realm = mgr.findPlayerRealm(moveItemPacket.getPlayerId());
-
         final Player player = realm.getPlayer(moveItemPacket.getPlayerId());
-        
-        // Check for consumeable item scripts
-        if(moveItemPacket.isConsume()) {
-        	GameItem targetItem = player.getInventory()[moveItemPacket.getFromSlotIndex()];
-    		final UseableItemScriptBase script = mgr.getItemScript(targetItem.getItemId());
-    		if (script != null) {
-    			log.info("[ItemMoveHelper]  Invoking usable item script for game item {}, player {}", targetItem, player );
-    			script.invokeUseItem(realm, player, player.getInventory()[moveItemPacket.getFromSlotIndex()]);
-    			// TODO, no further processing if there is a script defined for this item?
-    			return;
-    		}
+
+        // Check for consumable item scripts
+        if (moveItemPacket.isConsume()) {
+            GameItem targetItem = player.getInventory()[moveItemPacket.getFromSlotIndex()];
+            if (targetItem == null) return;
+            final UseableItemScriptBase script = mgr.getItemScript(targetItem.getItemId());
+            if (script != null) {
+                log.info("[ItemMoveHelper] Invoking usable item script for game item {}, player {}", targetItem, player);
+                script.invokeUseItem(realm, player, player.getInventory()[moveItemPacket.getFromSlotIndex()]);
+                return;
+            }
         }
 
-        // if moving item from inventory
+        // Resolve source item
         final GameItem currentEquip = moveItemPacket.getTargetSlotIndex() == -1 ? null
                 : player.getInventory()[moveItemPacket.getTargetSlotIndex()];
         GameItem from = null;
@@ -46,9 +44,15 @@ public class ServerItemHelper {
             from = player.getInventory()[moveItemPacket.getFromSlotIndex()];
         } else if (MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
             LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(), 32);
-            from = nearLoot.getItems()[moveItemPacket.getFromSlotIndex() - 20];
+            if (nearLoot != null) {
+                int lootIdx = moveItemPacket.getFromSlotIndex() - 20;
+                if (lootIdx >= 0 && lootIdx < nearLoot.getItems().length) {
+                    from = nearLoot.getItems()[lootIdx];
+                }
+            }
         }
-        // If the player requested to drop an item from their inventory
+
+        // Drop item from inventory to ground
         if ((from != null) && moveItemPacket.isDrop()) {
             final LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(), 32);
             if (nearLoot == null) {
@@ -58,21 +62,20 @@ public class ServerItemHelper {
                 nearLoot.setItem(nearLoot.getFirstNullIdx(), from.clone());
                 player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
             }
-            // If the Item isnt ground loot and is consumable
+
+        // Consume item (potions, food)
         } else if ((from != null) && from.isConsumable() && moveItemPacket.isConsume() && player.canConsume(from)
                 && !MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
-
             final Stats newStats = player.getStats().concat(from.getStats());
             player.setStats(newStats);
-
             if (from.getStats().getHp() > 0) {
                 player.drinkHp();
             } else if (from.getStats().getMp() > 0) {
                 player.drinkMp();
             }
             player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
-            // If an item is being moved from the inventory slots 4-12 to the players
-            // equipment slots
+
+        // Equip: inventory (4-11) → equipment (0-3)
         } else if (MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())
                 && MoveItemPacket.isEquipment(moveItemPacket.getTargetSlotIndex()) && (from != null)) {
             if (!CharacterClass.isValidUser(player, from.getTargetClass())) {
@@ -86,11 +89,10 @@ public class ServerItemHelper {
                 player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
             }
             player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();
-            // If the player is swapping items in their inventory (not impl cuz my client is
-            // garabage)
+
+        // Swap within inventory (4-11)
         } else if (MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())
                 && MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
-
             GameItem to = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
             if (to == null) {
                 player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();
@@ -100,28 +102,38 @@ public class ServerItemHelper {
                 player.getInventory()[moveItemPacket.getFromSlotIndex()] = to.clone();
                 player.getInventory()[moveItemPacket.getTargetSlotIndex()] = fromClone;
             }
-            // If the player is attempting to pick up ground loot into their inventory
-        } else if (MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())
-                && MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex())) {
 
+        // Unequip: equipment (0-3) → inventory (4-11)
+        } else if (MoveItemPacket.isEquipment(moveItemPacket.getFromSlotIndex())
+                && MoveItemPacket.isInv1(moveItemPacket.getTargetSlotIndex()) && (from != null)) {
+            if (currentEquip != null) {
+                player.getInventory()[moveItemPacket.getFromSlotIndex()] = currentEquip.clone();
+            } else {
+                player.getInventory()[moveItemPacket.getFromSlotIndex()] = null;
+            }
+            player.getInventory()[moveItemPacket.getTargetSlotIndex()] = from.clone();
+
+        // Ground loot pickup (fromSlot 20-27)
+        } else if (MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
             final LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(),
                     player.getSize() / 2);
-            if (nearLoot == null)
-                return;
-            final GameItem lootItem = nearLoot.getItems()[moveItemPacket.getFromSlotIndex() - 20];
-            final GameItem currentInvItem = player.getInventory()[moveItemPacket.getTargetSlotIndex()];
+            if (nearLoot == null) return;
 
-            if ((lootItem != null) && (currentInvItem == null)) {
-                player.getInventory()[player.firstEmptyInvSlot()] = lootItem.clone();
-                nearLoot.setItem(moveItemPacket.getFromSlotIndex() - 20, null);
-                nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
-            } else if ((lootItem != null) & (currentInvItem != null)) {
-                GameItem lootClone = lootItem.clone();
-                // GameItem currentInvItemClone = currentInvItem.clone();
-                player.getInventory()[player.firstEmptyInvSlot()] = lootClone;
-                // nearLoot.setItem(moveItemPacket.getFromSlotIndex()-20, currentInvItemClone);
-                nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
+            int lootIdx = moveItemPacket.getFromSlotIndex() - 20;
+            if (lootIdx < 0 || lootIdx >= nearLoot.getItems().length) return;
+
+            final GameItem lootItem = nearLoot.getItems()[lootIdx];
+            if (lootItem == null) return;
+
+            int emptySlot = player.firstEmptyInvSlot();
+            if (emptySlot < 0) {
+                ServerItemHelper.log.warn("Player {} inventory full, cannot pick up item", player.getId());
+                return;
             }
+
+            player.getInventory()[emptySlot] = lootItem.clone();
+            nearLoot.setItem(lootIdx, null);
+            nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
         }
     }
 }

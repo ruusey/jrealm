@@ -572,14 +572,9 @@ public class Realm {
                 if (e.getTeleported()) e.setTeleported(false);
                 continue;
             }
-            // Include bullets in move packet for completeness
-            Bullet b = this.bullets.get(id);
-            if (b != null) {
-                float dx = b.getPos().x - center.x;
-                float dy = b.getPos().y - center.y;
-                if (dx * dx + dy * dy <= radiusSq) validObjects.add(b);
-                if (b.getTeleported()) b.setTeleported(false);
-            }
+            // Skip bullets in ObjectMovePacket - clients predict bullet positions
+            // locally using initial velocity from LoadPacket (deterministic trajectory).
+            // This dramatically reduces bandwidth under heavy projectile load.
         }
         if (validObjects.size() > 0)
             return ObjectMovePacket.from(validObjects.toArray(new GameObject[0]));
@@ -946,8 +941,9 @@ public class Realm {
 
         for (int i = 1; i < mapHeight; i++) {
             for (int j = 1; j < mapWidth; j++) {
+                // ~3x enemy density: spawn chance ~3/mapWidth per tile
                 final int doSpawn = Realm.RANDOM.nextInt(mapWidth);
-                if (doSpawn <= mapWidth - 2) continue;
+                if (doSpawn <= mapWidth - 4) continue;
 
                 final Vector2f spawnPos = new Vector2f(j * tileSize, i * tileSize);
                 if (this.tileManager.isCollisionTile(spawnPos) || this.tileManager.isVoidTile(spawnPos, 0, 0)) {
