@@ -394,24 +394,21 @@ public class Player extends Entity {
 	public void applyUpdate(UpdatePacket packet, PlayState state) {
 		this.name = packet.getPlayerName();
 		this.stats = packet.getStats().asStats();
-		// Empty inventory = server bandwidth optimization (no inventory change), skip update
-		if (packet.getInventory() != null && packet.getInventory().length > 0) {
-			this.inventory = IOService.mapModel(packet.getInventory(), GameItem[].class);
-			if (this.inventory != null) {
-				for (GameItem item : this.inventory) {
-					if (item != null) {
-						GameDataManager.loadSpriteModel(item);
-					}
+		this.inventory = packet.getInventory()==null? null:IOService.mapModel(packet.getInventory(), GameItem[].class);
+		if (this.inventory != null) {
+			for (GameItem item : this.inventory) {
+				if (item != null) {
+					GameDataManager.loadSpriteModel(item);
 				}
-			}
-			if (packet.getPlayerId() == state.getPlayerId()) {
-				state.getPui().setEquipment(this.inventory);
 			}
 		}
 		this.health = packet.getHealth();
 		this.mana = packet.getMana();
 		this.setEffectIds(packet.getEffectIds());
 		this.setEffectTimes(packet.getEffectTimes());
+		if (packet.getPlayerId() == state.getPlayerId()) {
+			state.getPui().setEquipment(this.inventory);
+		}
 		this.experience = packet.getExperience();
 	}
 

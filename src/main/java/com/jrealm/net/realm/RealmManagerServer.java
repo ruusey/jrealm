@@ -492,22 +492,15 @@ public class RealmManagerServer implements Runnable {
 						}
 
 						// --- Self UpdatePacket (16 Hz) ---
-						// Only includes inventory when it actually changed.
-						// HP/MP/effect-only updates send empty inventory (~100 bytes vs ~4KB).
 						if (doUpdate) {
 							final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
-							if (this.playerUpdateState.get(player.getKey()) == null) {
+							final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
+							if (oldUpdate == null) {
 								this.playerUpdateState.put(player.getKey(), updatePacket);
 								this.enqueueServerPacket(player.getValue(), updatePacket);
-							} else {
-								final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
-								if (!oldUpdate.equals(updatePacket, false)) {
-									// Check if inventory changed — if not, send lightweight packet
-									final boolean invChanged = updatePacket.inventoryChanged(oldUpdate);
-									this.playerUpdateState.put(player.getKey(), updatePacket);
-									this.enqueueServerPacket(player.getValue(),
-										invChanged ? updatePacket : updatePacket.withoutInventory());
-								}
+							} else if (!oldUpdate.equals(updatePacket, false)) {
+								this.playerUpdateState.put(player.getKey(), updatePacket);
+								this.enqueueServerPacket(player.getValue(), updatePacket);
 							}
 
 							// Nearby other players' UpdatePackets (uses spatial grid)
