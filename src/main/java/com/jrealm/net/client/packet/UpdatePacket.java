@@ -46,7 +46,41 @@ public class UpdatePacket extends Packet {
 	@SerializableField(order = 8, type = SerializableLong.class, isCollection = true)
 	private Long[] effectTimes;
 	
-	private static final NetGameItem[] EMPTY_INVENTORY = new NetGameItem[0];
+	public static final NetGameItem[] EMPTY_INVENTORY = new NetGameItem[0];
+
+	/**
+	 * Returns true if inventory differs between this and other packet.
+	 */
+	public boolean inventoryChanged(UpdatePacket other) {
+		if (other == null) return true;
+		if (this.inventory.length != other.getInventory().length) return true;
+		for (int i = 0; i < this.inventory.length; i++) {
+			if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {
+				if (!this.inventory[i].equals(other.getInventory()[i])) return true;
+			} else if (!((this.inventory[i] == null) && (other.getInventory()[i] == null))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Returns a lightweight copy with empty inventory.
+	 * Used when only HP/MP/effects changed — saves ~4KB per packet.
+	 */
+	public UpdatePacket withoutInventory() {
+		final UpdatePacket light = new UpdatePacket();
+		light.setPlayerId(this.playerId);
+		light.setPlayerName(this.playerName);
+		light.setStats(this.stats);
+		light.setHealth(this.health);
+		light.setMana(this.mana);
+		light.setExperience(this.experience);
+		light.setInventory(EMPTY_INVENTORY);
+		light.setEffectIds(this.effectIds);
+		light.setEffectTimes(this.effectTimes);
+		return light;
+	}
 
 	public static UpdatePacket from(Enemy enemy) throws Exception {
 		if (enemy == null)
