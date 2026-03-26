@@ -939,11 +939,13 @@ public class Realm {
         final int mapHeight = this.tileManager.getMapLayers().get(0).getHeight();
         final int mapWidth = this.tileManager.getMapLayers().get(0).getWidth();
 
+        // Higher density for overworld (has zones), normal for dungeons
+        final int spawnThreshold = hasZones ? 4 : 2;
+
         for (int i = 1; i < mapHeight; i++) {
             for (int j = 1; j < mapWidth; j++) {
-                // ~3x enemy density: spawn chance ~3/mapWidth per tile
                 final int doSpawn = Realm.RANDOM.nextInt(mapWidth);
-                if (doSpawn <= mapWidth - 4) continue;
+                if (doSpawn <= mapWidth - spawnThreshold) continue;
 
                 final Vector2f spawnPos = new Vector2f(j * tileSize, i * tileSize);
                 if (this.tileManager.isCollisionTile(spawnPos) || this.tileManager.isVoidTile(spawnPos, 0, 0)) {

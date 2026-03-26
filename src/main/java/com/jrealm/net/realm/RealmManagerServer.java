@@ -165,7 +165,7 @@ public class RealmManagerServer implements Runnable {
 	// EnemyUpdatePacket: 16Hz - enemy health bars
 	private static final int MOVE_TICK_DIVISOR = 1;      // Inner zone movement at 64Hz (matches Java client)
 	private static final int MOVE_FULL_TICK_DIVISOR = 2;  // Full viewport movement at 32Hz
-	private static final int LOAD_TICK_DIVISOR = 4;       // Entity spawn/despawn at 16Hz
+	private static final int LOAD_TICK_DIVISOR = 2;       // Entity spawn/despawn at 32Hz (loot needs fast sync)
 	private static final int UPDATE_TICK_DIVISOR = 4;
 	private static final int LOADMAP_TICK_DIVISOR = 16;
 	private static final int ENEMY_UPDATE_TICK_DIVISOR = 4;
@@ -1160,7 +1160,11 @@ public class RealmManagerServer implements Runnable {
 						p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(),
 						p.getAmplitude(), p.getFrequency(), player.getId());
 			}
-		
+			// Apply self-effect if present (e.g., warrior helmet SPEEDY buff)
+			if (effect.isSelf()) {
+				player.addEffect(effect.getEffectId(), effect.getDuration());
+			}
+
 		} else if ((abilityItem.getDamage() != null)) {
 			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
 					.get(abilityItem.getDamage().getProjectileGroupId());
@@ -1244,23 +1248,56 @@ public class RealmManagerServer implements Runnable {
 
 	public void processBulletHit(final long realmId, final Player p) {
 		final Realm targetRealm = this.realms.get(realmId);
-		final List<Bullet> results = this.getBullets(realmId, p);
-		final GameObject[] gameObject = targetRealm
-				.getGameObjectsInBounds(targetRealm.getTileManager().getRenderViewPort(p));
 		final Player player = targetRealm.getPlayer(p.getId());
+		if (player == null) return;
 
+		// Use spatial grid for O(cells) instead of O(all_entities) brute-force
+		final float collisionRadius = 10 * com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+		final Vector2f center = player.getPos();
+
+		// Collect bullets and enemies near this player using spatial grid
+		final List<Bullet> nearbyBullets = new ArrayList<>();
+		final List<Enemy> nearbyEnemies = new ArrayList<>();
+
+		if (targetRealm.getSpatialGrid() != null) {
+			final float radiusSq = collisionRadius * collisionRadius;
+			final List<Long> candidates = targetRealm.getSpatialGrid().queryRadius(center.x, center.y, collisionRadius);
+			for (int i = 0; i < candidates.size(); i++) {
+				final long id = candidates.get(i);
+				final Bullet b = targetRealm.getBullets().get(id);
+				if (b != null) {
+					float dx = b.getPos().x - center.x, dy = b.getPos().y - center.y;
+					if (dx * dx + dy * dy <= radiusSq) nearbyBullets.add(b);
+					continue;
+				}
+				final Enemy e = targetRealm.getEnemies().get(id);
+				if (e != null) {
+					float dx = e.getPos().x - center.x, dy = e.getPos().y - center.y;
+					if (dx * dx + dy * dy <= radiusSq) nearbyEnemies.add(e);
+				}
+			}
+		} else {
+			// Fallback: brute-force (only when no spatial grid)
+			final com.jrealm.game.math.Rectangle viewport = targetRealm.getTileManager().getRenderViewPort(player);
+			for (final Bullet b : targetRealm.getBullets().values()) {
+				if (b.getBounds().intersect(viewport)) nearbyBullets.add(b);
+			}
+			for (final Enemy e : targetRealm.getEnemies().values()) {
+				if (e.getBounds().intersect(viewport)) nearbyEnemies.add(e);
+			}
+		}
+
+		// Player-bullet collision (enemy bullets hitting player)
 		if (!player.hasEffect(ProjectileEffectType.INVINCIBLE)) {
-			for (final Bullet b : results) {
+			for (final Bullet b : nearbyBullets) {
 				this.processPlayerHit(realmId, b, player);
 			}
 		}
 
-		for (int i = 0; i < gameObject.length; i++) {
-			if (gameObject[i] instanceof Enemy) {
-				final Enemy enemy = ((Enemy) gameObject[i]);
-				for (final Bullet b : results) {
-					this.proccessEnemyHit(realmId, b, enemy);
-				}
+		// Bullet-enemy collision (player bullets hitting enemies)
+		for (final Enemy enemy : nearbyEnemies) {
+			for (final Bullet b : nearbyBullets) {
+				this.proccessEnemyHit(realmId, b, enemy);
 			}
 		}
 		this.proccessTerrainHit(realmId, p);
