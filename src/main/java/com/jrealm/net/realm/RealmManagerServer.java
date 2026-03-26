@@ -1768,11 +1768,15 @@ public class RealmManagerServer implements Runnable {
 
 	public Player searchRealmsForPlayer(String playerName) {
 		Player found = null;
-		for (Player player : this.getPlayers()) {
+		final List<Player> allPlayers = this.getPlayers();
+		for (Player player : allPlayers) {
 			if (player.getName() != null && player.getName().equalsIgnoreCase(playerName)) {
 				found = player;
 			}
-
+		}
+		if (found == null) {
+			log.info("[SERVER] searchRealmsForPlayer('{}') not found. Online players: {}",
+				playerName, allPlayers.stream().map(p -> p.getName()).collect(java.util.stream.Collectors.toList()));
 		}
 		return found;
 	}
