@@ -650,14 +650,12 @@ public class TileManager {
                                 && normalTile.getData().slows() && !normalTile.getData().hasCollision();
                         if (baseIsWater) {
                             // Skip collision effects over water
+                        } else if (collisionTile.getData() != null && collisionTile.getData().isWall()) {
+                            // Wall tiles get 3D effect (shadow + contour + side face)
+                            wallTiles.add(collisionTile);
                         } else if (collisionTile.getData() != null && collisionTile.getData().hasCollision()) {
-                            // Wall = collision tile over void base; Object = collision tile over floor
-                            boolean baseIsVoid = (normalTile == null || normalTile.isVoid());
-                            if (baseIsVoid) {
-                                wallTiles.add(collisionTile);
-                            } else {
-                                objectTiles.add(collisionTile);
-                            }
+                            // Non-wall collision tiles get elliptical shadow
+                            objectTiles.add(collisionTile);
                         } else {
                             // Non-collision decorative tile on collision layer
                             decorationTiles.add(collisionTile);

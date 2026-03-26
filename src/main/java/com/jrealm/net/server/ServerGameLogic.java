@@ -64,7 +64,7 @@ public class ServerGameLogic {
 	 */
 	public static JrealmServerDataService DATA_SERVICE = null;
 
-	private static void sendImmediateLoadMap(RealmManagerServer mgr, Realm realm, Player player) {
+	public static void sendImmediateLoadMap(RealmManagerServer mgr, Realm realm, Player player) {
 		try {
 			final NetTile[] tiles = realm.getTileManager().getLoadMapTiles(player);
 			final LoadMapPacket loadMap = LoadMapPacket.from(realm.getRealmId(),
@@ -143,15 +143,10 @@ public class ServerGameLogic {
 				? GameDataManager.DUNGEON_GRAPH.get(targetNodeId) : null;
 
 		if (targetRealm == null) {
-			// Try graph-based lookup first, then fallback to legacy depth
-			Optional<Realm> existingRealm;
-			if (targetNodeId != null) {
-				existingRealm = mgr.findRealmForNode(targetNodeId);
-			} else {
-				existingRealm = mgr.findRealmAtDepth(portalUsed.getTargetRealmDepth());
-			}
-
-			if (existingRealm.isEmpty()) {
+			// Each portal creates its own dungeon instance (1:1 portal-to-dungeon).
+			// The portal's toRealmId is set after creation so subsequent uses of the
+			// SAME portal route to the SAME instance.
+			{
 				// Create new realm from graph node or legacy portal model
 				final int mapId = (targetNode != null) ? targetNode.getMapId() : portalUsed.getMapId();
 				final int depth = (targetNode != null) ? targetNode.getDifficulty() : portalUsed.getTargetRealmDepth();
@@ -208,14 +203,14 @@ public class ServerGameLogic {
 							targetNode.getNodeId(), targetNode.getDisplayName());
 				}
 				mgr.addRealm(generatedRealm);
-			} else {
-				targetRealm = existingRealm.get();
+				// Link this portal to the new dungeon so subsequent uses route here
+				used.setToRealmId(generatedRealm.getRealmId());
 			}
 		} else {
 			// Target realm already exists
 			user.setPos(targetRealm.getTileManager().getSafePosition());
 
-			// Vault cleanup
+			// Vault cleanup: save chests then remove
 			if (currentRealm.getMapId() == 1) {
 				List<ChestDto> chestsToSave = currentRealm.serializeChests();
 				try {
@@ -228,13 +223,14 @@ public class ServerGameLogic {
 				}
 				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
-			// Boss realm cleanup when empty
-			else if (currentRealm.getPlayers().size() == 0) {
-				final com.jrealm.game.model.DungeonGraphNode currentNode = (currentRealm.getNodeId() != null)
-						? GameDataManager.DUNGEON_GRAPH.get(currentRealm.getNodeId()) : null;
-				boolean isBoss = (currentNode != null && currentNode.isBossNode())
-						|| (currentRealm.getMapId() == 5);
-				if (isBoss && currentRealm.getEnemies().size() == 0) {
+			// Dungeon cleanup: remove any non-overworld dungeon when last player leaves
+			else if (currentRealm.getPlayers().size() == 0 && currentRealm.getNodeId() != null) {
+				final com.jrealm.game.model.DungeonGraphNode currentNode =
+						GameDataManager.DUNGEON_GRAPH.get(currentRealm.getNodeId());
+				// Don't remove the entry-point realm (overworld)
+				if (currentNode != null && !currentNode.isEntryPoint()) {
+					ServerGameLogic.log.info("[SERVER] Removing empty dungeon realm: {} ({})",
+							currentRealm.getNodeId(), currentNode.getDisplayName());
 					mgr.getRealms().remove(currentRealm.getRealmId());
 				}
 			}

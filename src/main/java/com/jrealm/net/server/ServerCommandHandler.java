@@ -546,15 +546,48 @@ public class ServerCommandHandler {
         });
     }
 
-    @CommandHandler(value="realm", description="Move the player to the boss realm or the top realm")
+    @CommandHandler(value="realm", description="Move the player to the top realm (/realm up) or boss realm (/realm down, admin only)")
     public static void invokeRealmMove(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
             throw new IllegalArgumentException("Usage: /realm {up | down}");
 
+        final String direction = message.getArgs().get(0).toLowerCase();
         final Realm currentRealm = mgr.findPlayerRealm(target.getId());
-        currentRealm.getPlayers().remove(target.getId());
-        if (message.getArgs().get(0).equalsIgnoreCase("down")) {
+
+        if (direction.equals("up")) {
+            // Anyone can go up to the overworld
+            currentRealm.getPlayers().remove(target.getId());
+            currentRealm.removePlayer(target);
+            final Realm topRealm = mgr.getTopRealm();
+            target.setPos(topRealm.getTileManager().getSafePosition());
+            topRealm.addPlayer(target);
+            mgr.clearPlayerState(target.getId());
+            ServerGameLogic.sendImmediateLoadMap(mgr, topRealm, target);
+            ServerGameLogic.onPlayerJoin(mgr, topRealm, target);
+
+            // Clean up empty dungeon when last player leaves
+            if (currentRealm.getPlayers().size() == 0 && currentRealm.getNodeId() != null) {
+                final com.jrealm.game.model.DungeonGraphNode node =
+                        GameDataManager.DUNGEON_GRAPH.get(currentRealm.getNodeId());
+                if (node != null && !node.isEntryPoint()) {
+                    mgr.getRealms().remove(currentRealm.getRealmId());
+                }
+            }
+        } else if (direction.equals("down")) {
+            // Admin only — check inline
+            boolean isAdmin = false;
+            try {
+                final AccountDto account = ServerGameLogic.DATA_SERVICE.executeGet(
+                        "/admin/account/" + target.getAccountUuid(), null, AccountDto.class);
+                isAdmin = account != null && account.isAdmin();
+            } catch (Exception e) {
+                // Failed to check — deny
+            }
+            if (!isAdmin) {
+                throw new IllegalStateException("Only administrators can use /realm down");
+            }
+            currentRealm.getPlayers().remove(target.getId());
             final PortalModel bossPortal = GameDataManager.PORTALS.get(5);
             final Realm generatedRealm = new Realm(true, bossPortal.getMapId(), bossPortal.getTargetRealmDepth());
             final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
@@ -562,13 +595,11 @@ public class ServerCommandHandler {
             target.setPos(spawnPos);
             generatedRealm.addPlayer(target);
             mgr.addRealm(generatedRealm);
-            ServerGameLogic.onPlayerJoin(mgr,  generatedRealm, target);
-        }  else if(message.getArgs().get(0).equalsIgnoreCase("up")) {
-            currentRealm.removePlayer(target);
-            mgr.getTopRealm().addPlayer(target);
-            ServerGameLogic.onPlayerJoin(mgr,  mgr.getTopRealm(), target);
-        }else {
-            throw new IllegalArgumentException("Usage: /realm down");
+            mgr.clearPlayerState(target.getId());
+            ServerGameLogic.sendImmediateLoadMap(mgr, generatedRealm, target);
+            ServerGameLogic.onPlayerJoin(mgr, generatedRealm, target);
+        } else {
+            throw new IllegalArgumentException("Usage: /realm {up | down}");
         }
     }
 }

@@ -11,6 +11,11 @@ public class TileData {
     private byte hasCollision;
     private byte slows;
     private byte damaging;
+    private byte isWall;
+
+    public TileData(byte hasCollision, byte slows, byte damaging) {
+        this(hasCollision, slows, damaging, (byte) 0);
+    }
 
     public boolean hasCollision() {
         return this.hasCollision != 0;
@@ -23,7 +28,11 @@ public class TileData {
     public boolean damaging() {
         return this.damaging != 0;
     }
-    
+
+    public boolean isWall() {
+        return this.isWall != 0;
+    }
+
     public static TileData withCollision() {
         return new TileData((byte) 1, (byte) 0, (byte) 0);
     }
