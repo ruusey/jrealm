@@ -263,9 +263,10 @@ public class StressTestClient implements Runnable {
                             | (this.remoteBuffer[4] & 0xFF);
                     if (this.remoteBufferIndex < packetLength) break;
 
-                    final byte packetId = this.remoteBuffer[0];
-                    final byte[] packetBytes = new byte[packetLength];
-                    System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, packetLength);
+                    byte packetId = this.remoteBuffer[0];
+                    int dataLength = packetLength - 5;
+                    byte[] packetBytes = new byte[dataLength];
+                    System.arraycopy(this.remoteBuffer, 5, packetBytes, 0, dataLength);
                     if (this.remoteBufferIndex > packetLength) {
                         System.arraycopy(this.remoteBuffer, packetLength, this.remoteBuffer, 0,
                                 this.remoteBufferIndex - packetLength);
@@ -274,7 +275,13 @@ public class StressTestClient implements Runnable {
                     this.totalPacketsReceived++;
 
                     try {
+                        // Handle compressed packets (high bit set on packetId)
+                        if (com.jrealm.net.core.PacketCompression.isCompressed(packetId)) {
+                            packetId = com.jrealm.net.core.PacketCompression.getRealPacketId(packetId);
+                            packetBytes = com.jrealm.net.core.PacketCompression.decompressPayload(packetBytes);
+                        }
                         final Class<? extends Packet> packetClass = PacketType.valueOf(packetId);
+                        if (packetClass == null) continue;
                         final Packet newPacket = IOService.readStream(packetClass, packetBytes);
                         newPacket.setSrcIp(this.clientSocket.getInetAddress().getHostAddress());
                         newPacket.setId(packetId);
