@@ -182,11 +182,21 @@ public class Enemy extends Entity {
     private void moveChase(Player player, float speed) {
         float dist = this.pos.distanceTo(player.pos);
         if (dist < this.chaseRange && dist >= this.attackRange) {
-            setDirectionToward(player.pos, speed);
+            // Add slight zigzag — offset angle by a wobble so enemies don't beeline
+            float angle = (float) Math.atan2(player.pos.y - this.pos.y, player.pos.x - this.pos.x);
+            float wobble = (float) Math.sin(this.orbitAngle * 3) * 0.4f;
+            this.orbitAngle += 0.05f;
+            angle += wobble;
+            this.dx = (float) Math.cos(angle) * speed;
+            this.dy = (float) Math.sin(angle) * speed;
+            updateDirectionFlags();
         } else if (dist < this.attackRange) {
-            // In attack range - stop moving
-            this.dx = 0;
-            this.dy = 0;
+            // In attack range — circle slowly instead of standing still
+            float angle = (float) Math.atan2(this.pos.y - player.pos.y, this.pos.x - player.pos.x);
+            float tangent = angle + (float) (Math.PI / 2);
+            this.dx = (float) Math.cos(tangent) * speed * 0.3f;
+            this.dy = (float) Math.sin(tangent) * speed * 0.3f;
+            updateDirectionFlags();
         }
     }
 
@@ -220,14 +230,17 @@ public class Enemy extends Entity {
         float dist = this.pos.distanceTo(player.pos);
 
         // Maintain preferred range
-        if (dist > preferredRange + 15) {
-            setDirectionToward(player.pos, speed * 0.5f);
-        } else if (dist < preferredRange - 15) {
-            setDirectionAway(player.pos, speed * 0.5f);
+        if (dist > preferredRange + 20) {
+            setDirectionToward(player.pos, speed * 0.6f);
+        } else if (dist < preferredRange - 20) {
+            setDirectionAway(player.pos, speed * 0.6f);
         } else {
-            // At preferred range - strafe perpendicular
+            // At preferred range — strafe with periodic direction reversal
             float angle = (float) Math.atan2(this.pos.y - player.pos.y, this.pos.x - player.pos.x);
-            float strafeAngle = angle + (float) (Math.PI / 2);
+            // Reverse strafe direction every ~3 seconds
+            boolean strafeRight = ((int)(this.orbitAngle / 3.0f) % 2) == 0;
+            float strafeAngle = angle + (strafeRight ? (float)(Math.PI / 2) : (float)(-Math.PI / 2));
+            this.orbitAngle += 0.016f; // ~1 second per unit
             this.dx = (float) Math.cos(strafeAngle) * speed;
             this.dy = (float) Math.sin(strafeAngle) * speed;
             updateDirectionFlags();
@@ -268,7 +281,9 @@ public class Enemy extends Entity {
     }
 
     private void moveWander(float speed) {
-        if (this.idleTime >= IDLE_FRAMES) {
+        // Change direction at random intervals (30-90 ticks) for natural feel
+        int wanderInterval = 30 + (int)(Math.abs(this.getId()) % 60);
+        if (this.idleTime >= wanderInterval) {
             float angle = Realm.RANDOM.nextFloat() * (float) (Math.PI * 2);
             this.dx = (float) Math.cos(angle) * speed;
             this.dy = (float) Math.sin(angle) * speed;
@@ -276,24 +291,38 @@ public class Enemy extends Entity {
             this.idleTime = 0;
         } else {
             this.idleTime++;
+            // Slight curve to current path (not perfectly straight)
+            float curve = (float) Math.sin(this.idleTime * 0.1f) * speed * 0.15f;
+            this.dx += curve * 0.1f;
+            updateDirectionFlags();
         }
     }
 
     private void moveAnchor(Player player, float speed, float anchorRadius) {
         if (this.spawnPos == null) {
-            moveChase(player, speed);
-            return;
+            this.spawnPos = this.pos.clone();
         }
         float distFromSpawn = this.pos.distanceTo(this.spawnPos);
         float distToPlayer = this.pos.distanceTo(player.pos);
 
         if (distFromSpawn > anchorRadius) {
-            // Too far from spawn, return
-            setDirectionToward(this.spawnPos, speed);
+            // Too far from spawn — return home
+            setDirectionToward(this.spawnPos, speed * 1.2f);
+        } else if (distToPlayer < this.attackRange * 1.5f) {
+            // Player is close — orbit around spawn point while attacking
+            float angleFromSpawn = (float) Math.atan2(this.pos.y - this.spawnPos.y, this.pos.x - this.spawnPos.x);
+            this.orbitAngle += speed * 0.015f;
+            float targetX = this.spawnPos.x + (float) Math.cos(angleFromSpawn + 0.05f) * anchorRadius * 0.6f;
+            float targetY = this.spawnPos.y + (float) Math.sin(angleFromSpawn + 0.05f) * anchorRadius * 0.6f;
+            float ddx = targetX - this.pos.x, ddy = targetY - this.pos.y;
+            float len = (float) Math.sqrt(ddx * ddx + ddy * ddy);
+            if (len > 1) { this.dx = (ddx / len) * speed; this.dy = (ddy / len) * speed; }
+            updateDirectionFlags();
         } else if (distToPlayer < this.chaseRange) {
-            moveChase(player, speed);
+            // Player in chase range — approach but not past anchor boundary
+            setDirectionToward(player.pos, speed * 0.7f);
         } else {
-            moveWander(speed * 0.5f);
+            moveWander(speed * 0.4f);
         }
     }
 
