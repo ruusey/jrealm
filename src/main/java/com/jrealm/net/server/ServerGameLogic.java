@@ -510,19 +510,22 @@ public class ServerGameLogic {
 				}
 
 				final CharacterDto targetCharacter = characterClass.get();
+				// Check for duplicate login from same account (not same host)
+				// Only disconnect existing session if it's the SAME account UUID
 				final boolean isBotAccount = request.getEmail() != null && request.getEmail().endsWith("@jrealm-bot.local");
 				if (!isBotAccount) {
-					final Player existing = mgr.searchRealmsForPlayer(account.getAccountName());
-					if (existing != null) {
-						final Realm currentRealm = mgr.findPlayerRealm(existing.getId());
-						if (currentRealm != null) {
-							currentRealm.removePlayer(existing);
-							if (currentRealm.getMapId() == 1) {
-								mgr.safeRemoveRealm(currentRealm.getRealmId());
+					for (Player existing : mgr.getPlayers()) {
+						if (existing.getAccountUuid() != null && existing.getAccountUuid().equals(accountUuid)) {
+							final Realm currentRealm = mgr.findPlayerRealm(existing.getId());
+							if (currentRealm != null) {
+								currentRealm.removePlayer(existing);
+								if (currentRealm.getMapId() == 1) {
+									mgr.safeRemoveRealm(currentRealm.getRealmId());
+								}
 							}
+							log.info("[SERVER] Disconnecting previous session for account {} (re-login)", accountUuid);
+							break;
 						}
-						log.info("Player {} re-logged in with new Character ID {}", accountName,
-								targetCharacter.getCharacterUuid());
 					}
 				}
 
