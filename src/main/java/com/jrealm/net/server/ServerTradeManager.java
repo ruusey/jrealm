@@ -102,11 +102,13 @@ public class ServerTradeManager {
 	@CommandHandler(value = "accept", description = "Accepts trade proposed to user")
 	public static void acceptTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message)
 			throws Exception {
-
+		log.info("[TRADE] Player {} ({}) accepting trade", target.getName(), target.getId());
 		Long otherTraderId = ServerTradeManager.findTradePartner(target.getId());
 		if (otherTraderId == null) {
+			log.warn("[TRADE] No trade partner found for {}. Requested trades: {}", target.getId(), playerRequestedTrades);
 			throw new Exception("No trade requests to accept");
 		}
+		log.info("[TRADE] Found trade partner: {}", otherTraderId);
 
 		final Player toRespond = mgr.getPlayerById(otherTraderId);
 		if (toRespond == null) {
@@ -242,8 +244,12 @@ public class ServerTradeManager {
 	public static void handleUpdateTrade(RealmManagerServer mgr, Packet packet) {
 		final UpdatePlayerTradeSelectionPacket updateTrade = (UpdatePlayerTradeSelectionPacket) packet;
 		final NetInventorySelection selection = updateTrade.getSelection();
+		log.info("[TRADE] Received trade selection update from player {}, selection={}",
+			selection.getPlayerId(), selection.getSelection() != null ? selection.getSelection().length : "null");
 		Long otherTraderId = ServerTradeManager.findTradePartner(selection.getPlayerId());
 		if (otherTraderId == null) {
+			log.warn("[TRADE] No trade partner found for player {} - active trades: {}, requested trades: {}",
+				selection.getPlayerId(), playerActiveTrades, playerRequestedTrades);
 			return;
 		}
 		final Player toRespond = mgr.getPlayerById(otherTraderId);
@@ -314,8 +320,8 @@ public class ServerTradeManager {
 		final Long target1 = ServerTradeManager.playerActiveTrades.get(playerId1);
 		if (target1 == null)
 			return false;
-		return ((target0 == playerId1) && (target1 == playerId0)) || ((target1 == playerId0) && (target0 == playerId1));
-
+		// MUST use .equals() not == for Long comparison
+		return (target0.equals(playerId1) && target1.equals(playerId0));
 	}
 
 	/**
@@ -329,8 +335,9 @@ public class ServerTradeManager {
 			return partner;
 		}
 		// Check if this player is the target of a trade request (inverse lookup)
+		// MUST use .equals() not == for Long comparison (values > 127 have different object identity)
 		for (Entry<Long, Long> entry : ServerTradeManager.playerRequestedTrades.entrySet()) {
-			if (entry.getValue() == playerId) {
+			if (entry.getValue().equals(playerId)) {
 				return entry.getKey();
 			}
 		}

@@ -56,6 +56,7 @@ import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.EnemyModel;
+import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.LootTableModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
@@ -233,6 +234,18 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.warn("[SERVER] No dungeon graph entry node found, falling back to mapId=2");
 		}
 		realm.spawnRandomEnemies(realm.getMapId());
+
+		// Initialize Overseer AI for the main realm (ecosystem management, boss events, taunts)
+		realm.setOverseer(new RealmOverseer(realm, this));
+
+		// Place set piece structures (ruins, graveyards, etc.) after terrain generation
+		final TerrainGenerationParameters terrainParams = GameDataManager.TERRAINS.get(realm.getMapId() >= 0
+			? GameDataManager.MAPS.containsKey(realm.getMapId()) && GameDataManager.MAPS.get(realm.getMapId()).getTerrainId() >= 0
+				? GameDataManager.MAPS.get(realm.getMapId()).getTerrainId() : 0
+			: 0);
+		if (terrainParams != null) {
+			realm.placeSetPieces(terrainParams);
+		}
 		this.addRealm(realm);
 		
 		Runtime.getRuntime().addShutdownHook(this.shutdownHook());
@@ -308,6 +321,13 @@ public class RealmManagerServer implements Runnable {
 			this.processServerPackets();
 			this.enqueueGameData();
 			this.sendGameData();
+
+			// Tick all realm overseers (ecosystem management)
+			for (Realm realm : this.realms.values()) {
+				if (realm.getOverseer() != null) {
+					realm.getOverseer().tick();
+				}
+			}
 
 			if (Instant.now().toEpochMilli() - this.tickSampleTime > 1000) {
 				this.tickSampleTime = Instant.now().toEpochMilli();
@@ -491,7 +511,9 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						// --- Self UpdatePacket (16 Hz) ---
+						// --- Self UpdatePacket ---
+						// Full rate (16Hz) for real changes (inventory, effects, stats, XP).
+						// Throttled (4Hz) for HP/MP-only changes (regen tick noise).
 						if (doUpdate) {
 							final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
 							final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
@@ -499,8 +521,17 @@ public class RealmManagerServer implements Runnable {
 								this.playerUpdateState.put(player.getKey(), updatePacket);
 								this.enqueueServerPacket(player.getValue(), updatePacket);
 							} else if (!oldUpdate.equals(updatePacket, false)) {
-								this.playerUpdateState.put(player.getKey(), updatePacket);
-								this.enqueueServerPacket(player.getValue(), updatePacket);
+								// Check if only stats/hp/mp changed (no inventory, effects, xp)
+								boolean onlyStats = oldUpdate.getExperience() == updatePacket.getExperience()
+									&& !updatePacket.inventoryChanged(oldUpdate)
+									&& java.util.Arrays.equals(oldUpdate.getEffectIds(), updatePacket.getEffectIds());
+								// Stats-only changes: throttle to 4Hz (every 16th tick)
+								if (onlyStats && (this.tickCounter % 16) != 0) {
+									// Skip this tick — will send on next 4Hz boundary
+								} else {
+									this.playerUpdateState.put(player.getKey(), updatePacket);
+									this.enqueueServerPacket(player.getValue(), updatePacket);
+								}
 							}
 
 							// Nearby other players' UpdatePackets (uses spatial grid)
@@ -1420,7 +1451,12 @@ public class RealmManagerServer implements Runnable {
 			if (dmgToInflict < minDmg) {
 				dmgToInflict = minDmg;
 			}
-			
+
+			// Track damage for loot credit
+			if (b.getSrcEntityId() != 0L && targetRealm.getOverseer() != null) {
+				targetRealm.getOverseer().trackDamage(e.getId(), b.getSrcEntityId(), dmgToInflict);
+			}
+
 			if(b.getSrcEntityId() != 0l) {
 				final Player fromPlayer = this.getPlayerById(b.getSrcEntityId());
 				if(fromPlayer!=null &&  fromPlayer.hasEffect(ProjectileEffectType.DAMAGING)) {
@@ -1544,11 +1580,16 @@ public class RealmManagerServer implements Runnable {
 				}
 			}
 
+			// Notify the overseer of the kill (handles taunts, event spawning, damage credit)
+			if (targetRealm.getOverseer() != null) {
+				long killerId = targetRealm.getOverseer().getTopDamageDealer(enemy.getId());
+				targetRealm.getOverseer().onEnemyKilled(enemy, killerId);
+				targetRealm.getOverseer().clearDamageTracking(enemy.getId());
+			}
+
 			targetRealm.getExpiredEnemies().add(enemy.getId());
 			targetRealm.clearHitMap();
-			if ((targetRealm.getMapId() < 5) && (targetRealm.getMapId() != 1)) {
-				targetRealm.spawnRandomEnemy();
-			}
+			// Overseer handles repopulation now — skip legacy spawnRandomEnemy for overworld
 			targetRealm.removeEnemy(enemy);
 
 			// Try to get the loot model mapped by this enemyId

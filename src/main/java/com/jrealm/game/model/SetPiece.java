@@ -9,14 +9,13 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TerrainGenerationParameters {
-    private int terrainId;
+public class SetPiece {
     private String name;
+    private int minCount;
+    private int maxCount;
+    private List<String> allowedZones;
     private int width;
     private int height;
-    private int tileSize;
-    private List<TileGroup> tileGroups;
-    private List<EnemyGroup> enemyGroups;
-    private List<OverworldZone> zones;
-    private List<SetPiece> setPieces;
+    private int baseTileId;
+    private int[][] collisionLayout;
 }

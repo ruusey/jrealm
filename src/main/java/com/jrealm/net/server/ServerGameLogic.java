@@ -96,6 +96,11 @@ public class ServerGameLogic {
 		mgr.enqueueServerPacket(player, text);
 		text = TextPacket.create("SYSTEM", player.getName(), "Enemies: " + realm.getEnemies().size());
 		mgr.enqueueServerPacket(player, text);
+
+		// Overseer welcome message
+		if (realm.getOverseer() != null) {
+			realm.getOverseer().welcomePlayer(player);
+		}
 	}
 
 	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {

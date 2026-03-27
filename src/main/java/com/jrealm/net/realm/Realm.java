@@ -78,6 +78,9 @@ public class Realm {
     // Spatial hash grid for O(1) neighbor lookups (cell size = viewport radius)
     private transient SpatialHashGrid spatialGrid;
 
+    // Overseer AI for ecosystem management (enemy population, events, taunts)
+    private transient RealmOverseer overseer;
+
     private boolean isServer;
     private boolean shutdown = false;
 
@@ -975,6 +978,86 @@ public class Realm {
                 enemy.getStats().setHp((short) (enemy.getStats().getHp() * healthMult));
                 enemy.setPos(spawnPos);
                 this.addEnemy(enemy);
+            }
+        }
+    }
+
+    /**
+     * Place set piece structures on the terrain (ruins, graveyards, watchtowers, etc.)
+     * Each set piece has a base floor tile and a collision layout that stamps tiles onto the map.
+     * Placement uses collision avoidance to prevent overlapping.
+     */
+    public void placeSetPieces(TerrainGenerationParameters params) {
+        if (params.getSetPieces() == null || params.getSetPieces().isEmpty()) return;
+        final boolean hasZones = params.getZones() != null && !params.getZones().isEmpty();
+        final int tileSize = this.tileManager.getMapLayers().get(0).getTileSize();
+        final int mapW = this.tileManager.getMapLayers().get(0).getWidth();
+        final int mapH = this.tileManager.getMapLayers().get(0).getHeight();
+        final java.util.Set<Long> occupied = new java.util.HashSet<>();
+
+        for (com.jrealm.game.model.SetPiece sp : params.getSetPieces()) {
+            int count = sp.getMinCount() + Realm.RANDOM.nextInt(Math.max(1, sp.getMaxCount() - sp.getMinCount() + 1));
+            int placed = 0;
+
+            for (int attempt = 0; attempt < count * 50 && placed < count; attempt++) {
+                int px = 2 + Realm.RANDOM.nextInt(Math.max(1, mapW - sp.getWidth() - 4));
+                int py = 2 + Realm.RANDOM.nextInt(Math.max(1, mapH - sp.getHeight() - 4));
+
+                // Zone check
+                if (hasZones && sp.getAllowedZones() != null) {
+                    Vector2f worldPos = new Vector2f(px * tileSize, py * tileSize);
+                    OverworldZone zone = this.tileManager.getZoneForPosition(worldPos.x, worldPos.y);
+                    if (zone == null || !sp.getAllowedZones().contains(zone.getZoneId())) continue;
+                }
+
+                // Collision check — no overlapping set pieces
+                boolean fits = true;
+                for (int dy = 0; dy < sp.getHeight() && fits; dy++) {
+                    for (int dx = 0; dx < sp.getWidth() && fits; dx++) {
+                        long key = ((long)(py + dy) << 32) | (px + dx);
+                        if (occupied.contains(key)) fits = false;
+                        if (this.tileManager.isCollisionTile(new Vector2f((px+dx)*tileSize, (py+dy)*tileSize)))
+                            fits = false;
+                    }
+                }
+                if (!fits) continue;
+
+                // Place the set piece
+                for (int dy = 0; dy < sp.getHeight(); dy++) {
+                    for (int dx = 0; dx < sp.getWidth(); dx++) {
+                        int tx = px + dx, ty = py + dy;
+                        long key = ((long)ty << 32) | tx;
+                        occupied.add(key);
+
+                        // Set base tile
+                        if (sp.getBaseTileId() > 0) {
+                            try {
+                                com.jrealm.game.tile.TileData data = GameDataManager.TILES.get(sp.getBaseTileId()) != null
+                                    ? GameDataManager.TILES.get(sp.getBaseTileId()).getData() : null;
+                                this.tileManager.getMapLayers().get(0).setTileAt(ty, tx,
+                                    (short) sp.getBaseTileId(), data);
+                            } catch (Exception e) { /* skip */ }
+                        }
+
+                        // Set collision tile from layout
+                        int[][] layout = sp.getCollisionLayout();
+                        if (layout != null && dy < layout.length && dx < layout[dy].length) {
+                            int collTileId = layout[dy][dx];
+                            if (collTileId > 0) {
+                                try {
+                                    com.jrealm.game.tile.TileData data = GameDataManager.TILES.get(collTileId) != null
+                                        ? GameDataManager.TILES.get(collTileId).getData() : null;
+                                    this.tileManager.getMapLayers().get(1).setTileAt(ty, tx,
+                                        (short) collTileId, data);
+                                } catch (Exception e) { /* skip */ }
+                            }
+                        }
+                    }
+                }
+                placed++;
+            }
+            if (placed > 0) {
+                Realm.log.info("[REALM] Placed {} instances of set piece '{}'", placed, sp.getName());
             }
         }
     }
