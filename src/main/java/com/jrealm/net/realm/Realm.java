@@ -995,31 +995,40 @@ public class Realm {
         final int mapH = this.tileManager.getMapLayers().get(0).getHeight();
         final java.util.Set<Long> occupied = new java.util.HashSet<>();
 
+        Realm.log.info("[SET_PIECES] Map {}x{}, tileSize={}, hasZones={}, {} set piece types",
+            mapW, mapH, tileSize, hasZones, params.getSetPieces().size());
+
         for (com.jrealm.game.model.SetPiece sp : params.getSetPieces()) {
             int count = sp.getMinCount() + Realm.RANDOM.nextInt(Math.max(1, sp.getMaxCount() - sp.getMinCount() + 1));
             int placed = 0;
+            int zoneRejects = 0, collRejects = 0;
 
-            for (int attempt = 0; attempt < count * 50 && placed < count; attempt++) {
-                int px = 2 + Realm.RANDOM.nextInt(Math.max(1, mapW - sp.getWidth() - 4));
-                int py = 2 + Realm.RANDOM.nextInt(Math.max(1, mapH - sp.getHeight() - 4));
+            for (int attempt = 0; attempt < count * 100 && placed < count; attempt++) {
+                int px = 4 + Realm.RANDOM.nextInt(Math.max(1, mapW - sp.getWidth() - 8));
+                int py = 4 + Realm.RANDOM.nextInt(Math.max(1, mapH - sp.getHeight() - 8));
 
                 // Zone check
                 if (hasZones && sp.getAllowedZones() != null) {
                     Vector2f worldPos = new Vector2f(px * tileSize, py * tileSize);
                     OverworldZone zone = this.tileManager.getZoneForPosition(worldPos.x, worldPos.y);
-                    if (zone == null || !sp.getAllowedZones().contains(zone.getZoneId())) continue;
+                    if (zone == null || !sp.getAllowedZones().contains(zone.getZoneId())) {
+                        zoneRejects++;
+                        continue;
+                    }
                 }
 
-                // Collision check — no overlapping set pieces
+                // Only check for overlap with other set pieces — don't check terrain collision
+                // (terrain has too many obstacles, would reject almost everything)
                 boolean fits = true;
                 for (int dy = 0; dy < sp.getHeight() && fits; dy++) {
                     for (int dx = 0; dx < sp.getWidth() && fits; dx++) {
                         long key = ((long)(py + dy) << 32) | (px + dx);
-                        if (occupied.contains(key)) fits = false;
-                        if (this.tileManager.isCollisionTile(new Vector2f((px+dx)*tileSize, (py+dy)*tileSize)))
-                            fits = false;
+                        if (occupied.contains(key)) { fits = false; collRejects++; }
                     }
                 }
+                // Also check the tile isn't void
+                Vector2f center = new Vector2f(px * tileSize + tileSize, py * tileSize + tileSize);
+                if (this.tileManager.isVoidTile(center, 0, 0)) { fits = false; collRejects++; }
                 if (!fits) continue;
 
                 // Place the set piece
@@ -1056,9 +1065,8 @@ public class Realm {
                 }
                 placed++;
             }
-            if (placed > 0) {
-                Realm.log.info("[REALM] Placed {} instances of set piece '{}'", placed, sp.getName());
-            }
+            Realm.log.info("[SET_PIECES] '{}': placed {}/{}, zoneRejects={}, collRejects={}",
+                sp.getName(), placed, count, zoneRejects, collRejects);
         }
     }
 

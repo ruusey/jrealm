@@ -239,12 +239,26 @@ public class RealmManagerServer implements Runnable {
 		realm.setOverseer(new RealmOverseer(realm, this));
 
 		// Place set piece structures (ruins, graveyards, etc.) after terrain generation
-		final TerrainGenerationParameters terrainParams = GameDataManager.TERRAINS.get(realm.getMapId() >= 0
-			? GameDataManager.MAPS.containsKey(realm.getMapId()) && GameDataManager.MAPS.get(realm.getMapId()).getTerrainId() >= 0
-				? GameDataManager.MAPS.get(realm.getMapId()).getTerrainId() : 0
-			: 0);
-		if (terrainParams != null) {
+		TerrainGenerationParameters terrainParams = null;
+		if (GameDataManager.TERRAINS != null) {
+			// Try to get terrain params from the map's terrainId
+			final var mapModel = GameDataManager.MAPS.get(realm.getMapId());
+			if (mapModel != null && mapModel.getTerrainId() >= 0) {
+				terrainParams = GameDataManager.TERRAINS.get(mapModel.getTerrainId());
+			}
+			// Fallback to terrain 0 (overworld)
+			if (terrainParams == null) {
+				terrainParams = GameDataManager.TERRAINS.get(0);
+			}
+		}
+		if (terrainParams != null && terrainParams.getSetPieces() != null) {
+			log.info("[SERVER] Placing set pieces for terrain '{}' ({} types defined)",
+				terrainParams.getName(), terrainParams.getSetPieces().size());
 			realm.placeSetPieces(terrainParams);
+		} else {
+			log.info("[SERVER] No set pieces to place (terrainParams={}, setPieces={})",
+				terrainParams != null ? terrainParams.getName() : "null",
+				terrainParams != null && terrainParams.getSetPieces() != null ? terrainParams.getSetPieces().size() : "null");
 		}
 		this.addRealm(realm);
 		
