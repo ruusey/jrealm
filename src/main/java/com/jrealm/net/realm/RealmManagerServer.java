@@ -905,7 +905,7 @@ public class RealmManagerServer implements Runnable {
 	public UseableItemScriptBase getItemScript(int itemId) {
 		UseableItemScriptBase result = null;
 		for (final UseableItemScriptBase itemScript : this.itemScripts) {
-			if (itemScript.getTargetItemId() == itemId) {
+			if (itemScript.handles(itemId)) {
 				result = itemScript;
 			}
 		}
@@ -1459,6 +1459,9 @@ public class RealmManagerServer implements Runnable {
 		final EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
 		if (targetRealm.hasHitEnemy(b.getId(), e.getId()) || targetRealm.getExpiredEnemies().contains(e.getId()))
 			return;
+		// Enemies in STASIS are invulnerable — all damage is nullified
+		if (e.hasEffect(ProjectileEffectType.STASIS))
+			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			final short minDmg = (short) (b.getDamage() * 0.15);
 			short dmgToInflict = (short) (b.getDamage() - model.getStats().getDef());
@@ -1476,6 +1479,10 @@ public class RealmManagerServer implements Runnable {
 				if(fromPlayer!=null &&  fromPlayer.hasEffect(ProjectileEffectType.DAMAGING)) {
 					dmgToInflict = (short)(dmgToInflict * 1.5);
 				}
+			}
+			// CURSED enemies take 25% more damage from all sources
+			if (e.hasEffect(ProjectileEffectType.CURSED)) {
+				dmgToInflict = (short)(dmgToInflict * 1.25);
 			}
 
 			targetRealm.hitEnemy(b.getId(), e.getId());
@@ -1577,8 +1584,9 @@ public class RealmManagerServer implements Runnable {
 		return results;
 	}
 
-	// Invoked upon enemy death.
-	private void enemyDeath(final Realm targetRealm, final Enemy enemy) {
+	// Invoked upon enemy death. Public so item scripts (e.g., Necromancer skull,
+	// Sorcerer scepter) can trigger proper death handling with loot/XP.
+	public void enemyDeath(final Realm targetRealm, final Enemy enemy) {
 		final EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
 		try {
 			// Get players in the viewport of this enemy and increment their experience
@@ -1951,7 +1959,7 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	private void broadcastTextEffect(final EntityType entityType, final GameObject entity, final TextEffect effect,
+	public void broadcastTextEffect(final EntityType entityType, final GameObject entity, final TextEffect effect,
 			final String text) {
 		try {
 			this.enqueueServerPacket(TextEffectPacket.from(entityType, entity.getId(), effect, text));

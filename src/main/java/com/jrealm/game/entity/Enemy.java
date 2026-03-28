@@ -553,8 +553,9 @@ public class Enemy extends Entity {
         // Resolve active phase
         EnemyPhase phase = this.getActivePhase();
 
-        // Movement
-        if (this.hasEffect(ProjectileEffectType.PARALYZED)) {
+        // Movement — STASIS freezes movement AND attacks (like PARALYZED + STUNNED combined)
+        final boolean frozen = this.hasEffect(ProjectileEffectType.PARALYZED) || this.hasEffect(ProjectileEffectType.STASIS);
+        if (frozen) {
             this.up = false;
             this.down = false;
             this.right = false;
@@ -567,16 +568,16 @@ public class Enemy extends Entity {
             this.chase(player);
         }
 
-        // Attacks
+        // Attacks — STASIS also prevents attacking
         final boolean notInvisible = !player.hasEffect(ProjectileEffectType.INVISIBLE);
-        if (notInvisible && !this.hasEffect(ProjectileEffectType.STUNNED)) {
+        if (notInvisible && !this.hasEffect(ProjectileEffectType.STUNNED) && !this.hasEffect(ProjectileEffectType.STASIS)) {
             this.processAttacks(player, phase, mgr, targetRealm);
         } else {
             this.attack = false;
         }
 
         // Apply movement with collision checks
-        if (!this.hasEffect(ProjectileEffectType.PARALYZED)) {
+        if (!frozen) {
             if (!targetRealm.getTileManager().collisionTile(this, this.dx, 0)
                     && !targetRealm.getTileManager().collidesXLimit(this, this.dx)
                     && !targetRealm.getTileManager().isVoidTile(

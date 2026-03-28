@@ -10,4 +10,12 @@ public interface UseableItemScript {
     public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem);
 
     public int getTargetItemId();
+
+    /**
+     * Check if this script handles the given item ID.
+     * Override for scripts that handle a range of item IDs (e.g., tiered abilities).
+     */
+    default boolean handles(int itemId) {
+        return getTargetItemId() == itemId;
+    }
 }

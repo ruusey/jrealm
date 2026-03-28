@@ -396,15 +396,22 @@ public class ServerGameLogic {
 		if (canShoot) {
 			final Vector2f dest = new Vector2f(shootPacket.getDestX(), shootPacket.getDestY());
 			final Vector2f source = player.getCenteredPosition();
-			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(player.getWeaponId());
+			final int weaponPgId = player.getWeaponId();
+			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(weaponPgId);
+			if (group == null) {
+				log.error("No projectile group {} for weapon. Loaded groups: {}",
+					weaponPgId, GameDataManager.PROJECTILE_GROUPS.keySet().stream().sorted()
+					.map(String::valueOf).reduce((a,b)->a+","+b).orElse("none"));
+				return;
+			}
 			float angle = Bullet.getAngle(source, dest);
 			for (Projectile proj : group.getProjectiles()) {
 				short offset = (short) (player.getSize() / (short) 2);
 				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 				float shootAngle = angle + Float.parseFloat(proj.getAngle());
 				rolledDamage += player.getComputedStats().getAtt();
-				mgr.addProjectile(realm.getRealmId(), Realm.RANDOM.nextLong(), player.getId(), proj.getProjectileId(),
-						player.getWeaponId(), source.clone(-offset, -offset), shootAngle, proj.getSize(),
+				mgr.addProjectile(realm.getRealmId(), Realm.RANDOM.nextLong(), player.getId(), player.getWeaponId(),
+						proj.getProjectileId(), source.clone(-offset, -offset), shootAngle, proj.getSize(),
 						proj.getMagnitude(), proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
 						proj.getFrequency(), player.getId());
 			}
