@@ -2,8 +2,6 @@ package com.jrealm.net.entity;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 import com.jrealm.game.contants.LootTier;
@@ -66,31 +64,20 @@ public class NetLootContainer extends SerializableFieldType<NetLootContainer>{
 		return container;
 	}
 	
-    public static NetGameItem[] getCondensedItems(NetLootContainer container) {
-        List<NetGameItem> items = new ArrayList<>();
-        for (NetGameItem item : container.getItems()) {
-            if (item != null) {
-                items.add(item);
-            }
-        }
-        return items.toArray(new NetGameItem[0]);
-    }
-    
     public boolean equals(NetLootContainer other) {
-    	NetGameItem[] thisLoot = NetLootContainer.getCondensedItems(this);
-    	NetGameItem[] otherLoot = NetLootContainer.getCondensedItems(other);
         boolean basic = (this.lootContainerId == other.getLootContainerId()) && this.pos.equals(other.getPos());
-        boolean loot = thisLoot.length == otherLoot.length;
-        boolean tier = this.getTier()==other.getTier();
-        if (loot) {
-            for (int i = 0; i < thisLoot.length; i++) {
-                if (!thisLoot[i].equals(otherLoot[i])) {
-                    loot = false;
-                    break;
-                }
+        boolean tierMatch = this.getTier() == other.getTier();
+        boolean loot = true;
+        for (int i = 0; i < this.items.length && i < other.getItems().length; i++) {
+            NetGameItem a = this.items[i];
+            NetGameItem b = other.getItems()[i];
+            if (a == null && b == null) continue;
+            if (a == null || b == null || !a.equals(b)) {
+                loot = false;
+                break;
             }
         }
-        return basic && loot && tier;
+        return basic && loot && tierMatch;
     }
    
     

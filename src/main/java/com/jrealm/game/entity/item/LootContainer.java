@@ -2,9 +2,6 @@ package com.jrealm.game.entity.item;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
 import com.jrealm.game.contants.LootTier;
@@ -72,7 +69,16 @@ public class LootContainer {
         this.sprite = LootTier.getLootSprite(tier.tierId);
         this.pos = pos;
         this.uid = UUID.randomUUID().toString();
-        this.items = Arrays.copyOf(loot, 8);
+        // Pack items contiguously from slot 0 with no gaps.
+        // Arrays.copyOf(loot, 8) would leave nulls between items if the
+        // source had gaps; instead, filter nulls and pack to the front.
+        this.items = new GameItem[8];
+        int slot = 0;
+        for (GameItem item : loot) {
+            if (item != null && slot < 8) {
+                this.items[slot++] = item;
+            }
+        }
         this.spawnedTime = Instant.now().toEpochMilli();
         if (this.hasUntieredItem()) {
             this.tier = LootTier.WHITE;
@@ -106,11 +112,19 @@ public class LootContainer {
         this.contentsChanged = true;
     }
 
-    public void setItemsUncondensed(GameItem[] items) {
-        this.items = new GameItem[8];
-        for (int i = 0; i < items.length; i++) {
-            this.items[i] = items[i];
+    /**
+     * Re-pack items to fill gaps (nulls) left by removed items.
+     * After this call, all non-null items are contiguous from slot 0.
+     */
+    public void repackItems() {
+        GameItem[] packed = new GameItem[8];
+        int slot = 0;
+        for (GameItem item : this.items) {
+            if (item != null && slot < 8) {
+                packed[slot++] = item;
+            }
         }
+        this.items = packed;
         this.contentsChanged = true;
     }
 
@@ -146,30 +160,19 @@ public class LootContainer {
         return count;
     }
 
-    public static GameItem[] getCondensedItems(LootContainer container) {
-        final List<GameItem> items = new ArrayList<>();
-        for (GameItem item : container.getItems()) {
-            if (item != null) {
-                items.add(item);
-            }
-        }
-        return items.toArray(new GameItem[0]);
-    }
-
     public boolean equals(LootContainer other) {
-    	final GameItem[] thisLoot = LootContainer.getCondensedItems(this);
-    	final GameItem[] otherLoot = LootContainer.getCondensedItems(other);
     	final boolean basic = (this.lootContainerId == other.getLootContainerId()) && this.pos.equals(other.getPos());
-    	final boolean tier = this.getTier().equals(other.getTier());
-    	boolean loot = (thisLoot.length == otherLoot.length);
-        if (loot) {
-            for (int i = 0; i < thisLoot.length; i++) {
-                if (!thisLoot[i].equals(otherLoot[i])) {
-                    loot = false;
-                    break;
-                }
+    	final boolean tierMatch = this.getTier().equals(other.getTier());
+    	boolean loot = true;
+        for (int i = 0; i < 8; i++) {
+            final GameItem a = this.items[i];
+            final GameItem b = other.getItems()[i];
+            if (a == null && b == null) continue;
+            if (a == null || b == null || !a.equals(b)) {
+                loot = false;
+                break;
             }
         }
-        return basic && loot && tier;
+        return basic && loot && tierMatch;
     }
 }

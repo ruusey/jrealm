@@ -820,7 +820,7 @@ public class PlayState extends GameState {
         final LootContainer closeLoot = this.getClosestLootContainer(player.getPos(), player.getSize() / 2);
 
         if ((closeLoot != null && this.getPui().isGroundLootEmpty()) || (closeLoot != null && closeLoot.getContentsChanged())) {
-            this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot));
+            this.getPui().setGroundLoot(closeLoot.getItems());
 
         } else if ((closeLoot == null) && !this.getPui().isGroundLootEmpty()) {
             this.getPui().setGroundLoot(new GameItem[8]);
@@ -829,7 +829,7 @@ public class PlayState extends GameState {
         if (closeLoot != null && !this.getPui().isGroundLootEmpty()) {
             final boolean contentsChanged = this.getPui().getNonEmptySlotCount() != closeLoot.getNonEmptySlotCount();
             if (contentsChanged) {
-                this.getPui().setGroundLoot(LootContainer.getCondensedItems(closeLoot));
+                this.getPui().setGroundLoot(closeLoot.getItems());
             }
         }
     }

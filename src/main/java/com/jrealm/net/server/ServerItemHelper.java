@@ -133,7 +133,8 @@ public class ServerItemHelper {
 
             player.getInventory()[emptySlot] = lootItem.clone();
             nearLoot.setItem(lootIdx, null);
-            nearLoot.setItemsUncondensed(LootContainer.getCondensedItems(nearLoot));
+            // Re-pack items to fill the gap left by the picked-up item
+            nearLoot.repackItems();
         }
     }
 }

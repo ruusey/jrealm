@@ -217,7 +217,7 @@ public class ClientGameLogic {
 						// current = cli.getRealm().getLoot().get(lc.getLootContainerId());
 					} else {
 						current.setContentsChanged(true);
-						current.setItemsUncondensed(LootContainer.getCondensedItems(lc));
+						current.setItems(lc.getItems());
 					}
 
 				} else {
