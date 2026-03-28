@@ -37,7 +37,8 @@ public class Bullet extends GameObject  {
     private short frequency = 25;
 
     private long createdTime;
-    
+    private long lastUpdateNanos = System.nanoTime();
+
     public Bullet() {
     	super(0l,null,0);
     }
@@ -145,22 +146,30 @@ public class Bullet extends GameObject  {
     }
 
     @Override
-    // Update for regular non Parametric bullets
+    // Update for regular non Parametric bullets.
+    // Uses delta-time scaling (dt * 64) to match the web client's frame-rate
+    // independent approach. This ensures consistent bullet speed regardless of
+    // whether the 64Hz tick loop drifts due to OS timer resolution.
     public void update() {
+        final long now = System.nanoTime();
+        final float dt = Math.min((now - this.lastUpdateNanos) / 1_000_000_000.0f, 0.1f);
+        this.lastUpdateNanos = now;
+        final float bulletScale = dt * 64.0f;
+
         // if is flagged to be rendered as a parametric projectile
         if (this.hasFlag(ProjectileEffectType.PARAMETRIC_PROJECTILE)
                 || this.hasFlag(ProjectileEffectType.INVERTED_PARAMETRIC_PROJECTILE)) {
-            this.updateParametric();
+            this.updateParametric(bulletScale);
         } else {
             // Regular straight line projectile
-            final Vector2f vel = new Vector2f((float) (Math.sin(this.angle) * this.magnitude),
-                    (float) (Math.cos(this.angle) * this.magnitude));
-            final double dist = Math.sqrt((vel.x * vel.x) + (vel.y * vel.y));
+            final float velX = (float) (Math.sin(this.angle) * this.magnitude * bulletScale);
+            final float velY = (float) (Math.cos(this.angle) * this.magnitude * bulletScale);
+            final double dist = Math.sqrt((velX * velX) + (velY * velY));
             this.range -= dist;
-            this.pos.addX(vel.x);
-            this.pos.addY(vel.y);
-            this.dx = vel.x;
-            this.dy = vel.y;
+            this.pos.addX(velX);
+            this.pos.addY(velY);
+            this.dx = velX;
+            this.dy = velY;
         }
     }
 
@@ -174,18 +183,18 @@ public class Bullet extends GameObject  {
      *
      * Perpendicular axis to forward (sin(a), cos(a)) is (cos(a), -sin(a)).
      */
-    public void updateParametric() {
+    public void updateParametric(float bulletScale) {
         // Compute perpendicular offset BEFORE advancing timeStep
         float prevOffset = (float) (this.amplitude * Math.sin(Math.toRadians(this.timeStep)));
 
-        this.timeStep = (this.timeStep + this.frequency) % 360;
+        this.timeStep = (long) ((this.timeStep + this.frequency * bulletScale) % 360);
 
         float currOffset = (float) (this.amplitude * Math.sin(Math.toRadians(this.timeStep)));
         float perpDelta = currOffset - prevOffset;
 
         // Forward velocity along the travel direction
-        float forwardX = (float) (Math.sin(this.angle) * this.magnitude);
-        float forwardY = (float) (Math.cos(this.angle) * this.magnitude);
+        float forwardX = (float) (Math.sin(this.angle) * this.magnitude * bulletScale);
+        float forwardY = (float) (Math.cos(this.angle) * this.magnitude * bulletScale);
 
         // Perpendicular direction (90 degrees from forward)
         float perpX = (float) Math.cos(this.angle);
@@ -196,7 +205,7 @@ public class Bullet extends GameObject  {
         float velY = forwardY + perpY * perpDelta;
 
         // Decrease range by forward distance only (not oscillation)
-        this.range -= this.magnitude;
+        this.range -= this.magnitude * bulletScale;
 
         this.pos.addX(velX);
         this.pos.addY(velY);
