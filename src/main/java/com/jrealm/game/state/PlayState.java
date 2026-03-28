@@ -316,7 +316,7 @@ public class PlayState extends GameState {
                 final Map<Cardinality, Boolean> lastDirectionTempMap = new HashMap<>();
                 player.input(mouse, key);
                 Cardinality c = null;
-                float spd = (float) ((5.6 * (player.getComputedStats().getSpd() + 53.5)) / 75.0f);
+                float spd = (float) ((5.0 * (player.getComputedStats().getSpd() + 53.5)) / 75.0f);
                 spd = spd / 1.5f;
                 if (player.getIsUp()) {
                     player.setDy(-spd);

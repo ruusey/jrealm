@@ -286,7 +286,7 @@ public class ServerGameLogic {
 		if (toMove.hasEffect(ProjectileEffectType.PARALYZED))
 			return;
 		boolean doMove = playerMovePacket.isMove();
-		float spd = (float) ((5.6 * (toMove.getComputedStats().getSpd() + 53.5)) / 75.0f);
+		float spd = (float) ((5.0 * (toMove.getComputedStats().getSpd() + 53.5)) / 75.0f);
 		spd = spd / 1.5f;
 		if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
 			toMove.setUp(doMove);

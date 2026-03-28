@@ -116,7 +116,7 @@ public class ServerItemHelper {
         // Ground loot pickup (fromSlot 20-27)
         } else if (MoveItemPacket.isGroundLoot(moveItemPacket.getFromSlotIndex())) {
             final LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(),
-                    player.getSize() / 2);
+                    (int)(player.getSize() * 0.75));
             if (nearLoot == null) return;
 
             int lootIdx = moveItemPacket.getFromSlotIndex() - 20;
