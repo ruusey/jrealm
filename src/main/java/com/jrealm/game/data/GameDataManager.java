@@ -349,26 +349,28 @@ public class GameDataManager {
 
 	public static void loadGameData(final boolean loadRemote) {
 		GameDataManager.log.info("Loading Game Data from remote={}", loadRemote);
+		// Load each data type independently so one failure doesn't prevent loading the rest
+		Runnable[] loaders = {
+			() -> { try { GameDataManager.loadProjectileGroups(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load projectile groups: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadGameItems(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load game items: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadEnemies(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load enemies: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadTiles(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load tiles: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadMaps(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load maps: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadTerrains(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load terrains: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadPortals(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load portals: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadDungeonGraph(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load dungeon graph: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadExperienceModel(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load experience model: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadCharacterClasses(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load character classes: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadLootTables(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load loot tables: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadLootGroups(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load loot groups: {}", e.getMessage()); } },
+		};
+		for (Runnable loader : loaders) {
+			loader.run();
+		}
 		try {
-			GameDataManager.loadProjectileGroups(loadRemote);
-			GameDataManager.loadGameItems(loadRemote);
-			GameDataManager.loadEnemies(loadRemote);
-			GameDataManager.loadTiles(loadRemote);
-			GameDataManager.loadMaps(loadRemote);
-			GameDataManager.loadTerrains(loadRemote);
-			GameDataManager.loadPortals(loadRemote);
-			GameDataManager.loadDungeonGraph(loadRemote);
-			GameDataManager.loadExperienceModel(loadRemote);
-			GameDataManager.loadCharacterClasses(loadRemote);
-			GameDataManager.loadLootTables(loadRemote);
-			GameDataManager.loadLootGroups(loadRemote);
-			// Sprite loading deferred to JRealmGame.create() -- requires GL context
-
 			IOService.mapSerializableData();
-
 		} catch (Exception e) {
-			GameDataManager.log.error("Failed to load game data. Reason: " + e.getMessage());
-			// System.exit(-1);
+			GameDataManager.log.error("Failed to map serializable data: {}", e.getMessage());
 		}
 	}
 }
