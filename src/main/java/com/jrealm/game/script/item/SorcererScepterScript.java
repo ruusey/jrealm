@@ -23,8 +23,8 @@ public class SorcererScepterScript extends UseableItemScriptBase {
 
     private static final int MIN_ID = 270;
     private static final int MAX_ID = 276;
-    private static final float INITIAL_RANGE = 256.0f;   // ~8 tiles to first target
-    private static final float CHAIN_RANGE = 192.0f;     // ~6 tiles between chain targets
+    private static final float INITIAL_RANGE = 384.0f;   // ~12 tiles to first target from cursor
+    private static final float CHAIN_RANGE = 256.0f;     // ~8 tiles between chain targets
     private static final float DAMAGE_DECAY = 0.85f;     // each chain does 85% of previous
     private static final int BASE_TARGETS = 3;            // minimum chain targets
 
@@ -48,6 +48,11 @@ public class SorcererScepterScript extends UseableItemScriptBase {
 
     @Override
     public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem) {
+        invokeItemAbility(targetRealm, player, abilityItem, player.getPos().clone(player.getSize() / 2, player.getSize() / 2));
+    }
+
+    @Override
+    public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem, Vector2f targetPos) {
         // Calculate max chain targets: base + 1 per 10 WIS over 50
         int wisBonus = Math.max(0, (player.getComputedStats().getWis() - 50) / 10);
         int maxTargets = BASE_TARGETS + (abilityItem.getItemId() - MIN_ID) + wisBonus; // scales with tier
@@ -58,10 +63,11 @@ public class SorcererScepterScript extends UseableItemScriptBase {
         baseDamage += player.getComputedStats().getAtt();
 
         final Vector2f playerCenter = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+        // Initial target: nearest enemy to where the user clicked, not the player
+        final Vector2f cursorPos = (targetPos != null) ? targetPos : playerCenter;
 
-        // Find initial target: nearest enemy within range of player
         final List<Long> hitEnemyIds = new ArrayList<>();
-        Enemy currentTarget = findNearestEnemy(targetRealm, playerCenter, INITIAL_RANGE, hitEnemyIds);
+        Enemy currentTarget = findNearestEnemy(targetRealm, cursorPos, INITIAL_RANGE, hitEnemyIds);
 
         float currentDamage = baseDamage;
         Vector2f chainOrigin = playerCenter;

@@ -1,5 +1,6 @@
 package com.jrealm.game.model;
 
+import java.util.List;
 import java.util.Map;
 
 import com.jrealm.game.math.Vector2f;
@@ -26,6 +27,7 @@ public class MapModel {
     private int dungeonId;
     private Map<String, int[][]> data;
     private DungeonGenerationParams dungeonParams;
+    private List<StaticSpawn> staticSpawns;
 
     public Vector2f getCenter() {
         return new Vector2f((this.width / 2) * this.tileSize, ((this.height / 2) * (this.tileSize)));

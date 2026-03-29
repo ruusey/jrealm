@@ -986,6 +986,22 @@ public class Realm {
                 this.addEnemy(enemy);
             }
         }
+
+        // Static spawns: place specific enemies at fixed positions (for boss rooms, etc.)
+        final MapModel mapModel = GameDataManager.MAPS.get(mapId);
+        if (mapModel.getStaticSpawns() != null) {
+            for (final com.jrealm.game.model.StaticSpawn ss : mapModel.getStaticSpawns()) {
+                final EnemyModel model = GameDataManager.ENEMIES.get(ss.getEnemyId());
+                if (model == null) continue;
+                final Vector2f pos = new Vector2f(ss.getX(), ss.getY());
+                final Enemy enemy = GameObjectUtils.getEnemyFromId(ss.getEnemyId(), pos);
+                int healthMult = this.getDifficultyMultiplier();
+                enemy.setHealth(enemy.getHealth() * Math.max(1, healthMult));
+                enemy.setHealthMultiplier(Math.max(1, healthMult));
+                this.addEnemy(enemy);
+                Realm.log.info("Static spawn: {} at ({}, {})", model.getName(), ss.getX(), ss.getY());
+            }
+        }
     }
 
     /**
