@@ -83,7 +83,7 @@ public class NecromancerSkullScript extends UseableItemScriptBase {
 
         // Broadcast vampirism visual effect (inward-sucking particles at player center)
         this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
-            CreateEffectPacket.EFFECT_VAMPIRISM, center.x, center.y, DAMAGE_RADIUS, (short) 800));
+            CreateEffectPacket.EFFECT_VAMPIRISM, center.x, center.y, DAMAGE_RADIUS, (short) 1500));
 
         // Vampirism heal: heal self based on damage dealt
         if (totalDamageDealt > 0) {

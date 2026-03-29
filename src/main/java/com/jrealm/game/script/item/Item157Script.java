@@ -34,7 +34,7 @@ public class Item157Script extends UseableItemScriptBase {
         // Broadcast heal radius visual effect
         final Vector2f center = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
         this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
-            CreateEffectPacket.EFFECT_HEAL_RADIUS, center.x, center.y, 224.0f, (short) 800));
+            CreateEffectPacket.EFFECT_HEAL_RADIUS, center.x, center.y, 224.0f, (short) 1500));
         int healthDiff = player.getComputedStats().getHp() - player.getHealth();
         if (healthDiff > 0) {
             int healthToAdd = healthDiff < 50 ? healthDiff : 50;

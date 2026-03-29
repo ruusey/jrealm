@@ -19,4 +19,7 @@ public class TerrainGenerationParameters {
     private List<EnemyGroup> enemyGroups;
     private List<OverworldZone> zones;
     private List<SetPiece> setPieces;
+    /** Enemy spawn density 0.0-1.0 (fraction of eligible tiles that get an enemy).
+     *  If absent/zero, falls back to legacy threshold logic. */
+    private float enemyDensity;
 }

@@ -17,6 +17,7 @@ import com.jrealm.game.state.GameStateManager;
 import com.jrealm.game.ui.EffectText;
 import com.jrealm.net.Packet;
 import com.jrealm.net.client.packet.AcceptTradeRequestPacket;
+import com.jrealm.game.ui.ActiveVisualEffect;
 import com.jrealm.net.client.packet.CreateEffectPacket;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
@@ -110,6 +111,17 @@ public class ClientGameLogic {
 
 	}
 	
+	@PacketHandlerClient(CreateEffectPacket.class)
+	public static void handleCreateEffectClient(RealmManagerClient cli, Packet packet) {
+		final CreateEffectPacket effectPacket = (CreateEffectPacket) packet;
+		try {
+			if (cli.getState() == null) return;
+			cli.getState().getActiveEffects().add(ActiveVisualEffect.from(effectPacket));
+		} catch (Exception e) {
+			ClientGameLogic.log.error("[CLIENT] Failed to handle CreateEffect Packet. Reason: {}", e);
+		}
+	}
+
 	public static void handlePlayerDeathClient(RealmManagerClient cli, Packet packet) {
 		@SuppressWarnings("unused")
 		final PlayerDeathPacket playerDeath = (PlayerDeathPacket) packet;
@@ -345,7 +357,9 @@ public class ClientGameLogic {
 						playerToUpdate.applyMovement(movement);
 						cli.setAwaitingRealmTransition(false);
 					} else {
-						playerToUpdate.applyMovementLerp(movement, 0.35f);
+						// High lerp factor - local player drives movement,
+						// server corrections are applied quickly to avoid rubber-banding
+						playerToUpdate.applyMovementLerp(movement, 0.8f);
 					}
 				} else {
 					playerToUpdate.applyMovementLerp(movement, 0.45f);

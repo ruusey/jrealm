@@ -942,14 +942,19 @@ public class Realm {
         final int mapHeight = this.tileManager.getMapLayers().get(0).getHeight();
         final int mapWidth = this.tileManager.getMapLayers().get(0).getWidth();
 
-        // Higher density for overworld (has zones), much lower for dungeons.
-        // For a 64x64 dungeon: threshold 14 → ~50/64 chance to skip → ~12 enemies
-        final int spawnThreshold = hasZones ? 4 : 14;
+        // Use per-terrain enemyDensity if set, otherwise fall back to legacy thresholds.
+        // enemyDensity is a 0.0-1.0 probability that each eligible tile spawns an enemy.
+        final float density;
+        if (params.getEnemyDensity() > 0f) {
+            density = params.getEnemyDensity();
+        } else {
+            // Legacy fallback: ~0.6% for large overworld maps, ~2% for small dungeons
+            density = hasZones ? 0.006f : 0.02f;
+        }
 
         for (int i = 1; i < mapHeight; i++) {
             for (int j = 1; j < mapWidth; j++) {
-                final int doSpawn = Realm.RANDOM.nextInt(mapWidth);
-                if (doSpawn <= mapWidth - spawnThreshold) continue;
+                if (Realm.RANDOM.nextFloat() >= density) continue;
 
                 final Vector2f spawnPos = new Vector2f(j * tileSize, i * tileSize);
                 if (this.tileManager.isCollisionTile(spawnPos) || this.tileManager.isVoidTile(spawnPos, 0, 0)) {

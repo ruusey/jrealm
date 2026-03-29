@@ -36,8 +36,10 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.PortalModel;
+import com.jrealm.game.ui.ActiveVisualEffect;
 import com.jrealm.game.ui.EffectText;
 import com.jrealm.game.ui.PlayerUI;
+import com.jrealm.net.client.packet.CreateEffectPacket;
 import com.jrealm.net.client.ClientGameLogic;
 import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.messaging.CommandType;
@@ -67,6 +69,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PlayState extends GameState {
     private RealmManagerClient realmManager;
     private Queue<EffectText> damageText;
+    private Queue<ActiveVisualEffect> activeEffects;
     private List<Vector2f> shotDestQueue;
     private PlayerAccountDto account;
     private Camera cam;
@@ -96,6 +99,7 @@ public class PlayState extends GameState {
         this.realmManager = new RealmManagerClient(this, new Realm(false, 2));
         this.shotDestQueue = new ArrayList<>();
         this.damageText = new ConcurrentLinkedQueue<>();
+        this.activeEffects = new ConcurrentLinkedQueue<>();
         try {
             this.doLogin();
         } catch (Exception e) {
@@ -148,9 +152,9 @@ public class PlayState extends GameState {
             return;
         float targetMapX = player.getPos().x - (JRealmGame.width / 2);
         float targetMapY = player.getPos().y - (JRealmGame.height / 2);
-        float lerpFactor = 0.35f;
-        PlayState.map.x += (targetMapX - PlayState.map.x) * lerpFactor;
-        PlayState.map.y += (targetMapY - PlayState.map.y) * lerpFactor;
+        // Snap camera directly to player - no lerp lag, keeps movement feeling crisp
+        PlayState.map.x = targetMapX;
+        PlayState.map.y = targetMapY;
 
         Vector2f.setWorldVar(PlayState.map.x, PlayState.map.y);
         if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
@@ -199,6 +203,16 @@ public class PlayState extends GameState {
             }
             this.damageText.removeAll(toRemove);
 
+            final float deltaMs = (float) (time * 1000.0);
+            final List<ActiveVisualEffect> effectsToRemove = new ArrayList<>();
+            for (ActiveVisualEffect vfx : this.activeEffects) {
+                vfx.update(deltaMs);
+                if (vfx.getRemove()) {
+                    effectsToRemove.add(vfx);
+                }
+            }
+            this.activeEffects.removeAll(effectsToRemove);
+
             this.cam.target(player);
             this.cam.update();
             for (final LootContainer lc : this.realmManager.getRealm().getLoot().values()) {
@@ -223,7 +237,11 @@ public class PlayState extends GameState {
                 && !this.getRealmManager().getRealm().getTileManager().isVoidTile(p.getPos().clone(p.getSize()/2, p.getSize()/2), p.getDx(), 0)) {
             p.xCol = false;
             if (p.getDx() != 0.0f) {
-                p.getPos().x += (p.getDx() * 0.45f);
+                if (this.getRealmManager().getRealm().getTileManager().collidesSlowTile(p)) {
+                    p.getPos().x += p.getDx() / 3.0f;
+                } else {
+                    p.getPos().x += p.getDx();
+                }
             }
         } else {
             p.xCol = true;
@@ -234,7 +252,11 @@ public class PlayState extends GameState {
                 && !this.getRealmManager().getRealm().getTileManager().isVoidTile(p.getPos().clone(p.getSize()/2, p.getSize()/2), 0, p.getDy())) {
             p.yCol = false;
             if (p.getDy() != 0.0f) {
-                p.getPos().y += (p.getDy() * 0.45f);
+                if (this.getRealmManager().getRealm().getTileManager().collidesSlowTile(p)) {
+                    p.getPos().y += p.getDy() / 3.0f;
+                } else {
+                    p.getPos().y += p.getDy();
+                }
             }
         } else {
             p.yCol = true;
@@ -316,8 +338,13 @@ public class PlayState extends GameState {
                 final Map<Cardinality, Boolean> lastDirectionTempMap = new HashMap<>();
                 player.input(mouse, key);
                 Cardinality c = null;
-                float spd = (float) ((5.0 * (player.getComputedStats().getSpd() + 53.5)) / 75.0f);
-                spd = spd / 1.5f;
+                // RotMG speed formula: tiles/sec = 4 + 5.6 * (spd_stat / 75)
+                // Convert to pixels/frame: tiles/sec * tile_size / fps
+                float tilesPerSec = 4.0f + 5.6f * (player.getComputedStats().getSpd() / 75.0f);
+                if (player.hasEffect(ProjectileEffectType.SPEEDY)) {
+                    tilesPerSec *= 1.5f;
+                }
+                float spd = tilesPerSec * 32.0f / 60.0f;
                 if (player.getIsUp()) {
                     player.setDy(-spd);
                     c = Cardinality.NORTH;
@@ -651,6 +678,10 @@ public class PlayState extends GameState {
             shapes.rect(wx, barY, barWidth * enemy.getHealthpercent(), barHeight);
         }
         shapes.end();
+
+        // Pass 5: Visual ability effects (rings, arcs, particles)
+        this.renderVisualEffects(shapes);
+
         com.badlogic.gdx.Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
         batch.begin();
 
@@ -850,5 +881,253 @@ public class PlayState extends GameState {
         return this.realmManager.getRealm().getPlayer(this.playerId);
     }
 
+    /**
+     * Render all active visual effects using ShapeRenderer.
+     * Called between batch.end() and batch.begin() while blending is enabled.
+     */
+    private void renderVisualEffects(ShapeRenderer shapes) {
+        if (this.activeEffects.isEmpty()) return;
+
+        final float wx = Vector2f.worldX;
+        final float wy = Vector2f.worldY;
+
+        for (ActiveVisualEffect vfx : this.activeEffects) {
+            final float t = vfx.getProgress();
+            final short type = vfx.getEffectType();
+
+            if (vfx.isAoe()) {
+                renderAoeEffect(shapes, vfx, type, t, wx, wy);
+            } else {
+                renderLineEffect(shapes, vfx, t, wx, wy);
+            }
+        }
+    }
+
+    private void renderAoeEffect(ShapeRenderer shapes, ActiveVisualEffect vfx, short type, float t, float wx, float wy) {
+        final float cx = vfx.getPosX() - wx;
+        final float cy = vfx.getPosY() - wy;
+        final float maxRadius = vfx.getRadius();
+        // Ring expands fast then holds
+        final float currentRadius = maxRadius * Math.min(t * 3.0f, 1.0f);
+        // Stay fully visible for 70% of duration, then fade
+        final float alpha = t < 0.7f ? 1.0f : 1.0f - (t - 0.7f) * 3.33f;
+
+        float r, g, b;
+        switch (type) {
+        case CreateEffectPacket.EFFECT_HEAL_RADIUS:
+            r = 0.1f; g = 1.0f; b = 0.2f;
+            break;
+        case CreateEffectPacket.EFFECT_VAMPIRISM:
+            r = 0.9f; g = 0.0f; b = 1.0f;
+            break;
+        case CreateEffectPacket.EFFECT_STASIS_FIELD:
+            r = 0.3f; g = 0.6f; b = 1.0f;
+            break;
+        case CreateEffectPacket.EFFECT_CURSE_RADIUS:
+            r = 0.8f; g = 0.0f; b = 0.15f;
+            break;
+        default:
+            r = 1.0f; g = 1.0f; b = 1.0f;
+            break;
+        }
+
+        // Filled translucent disc - much more visible
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(r, g, b, alpha * 0.35f);
+        drawCircle(shapes, cx, cy, currentRadius, 48);
+        shapes.end();
+
+        // Thick bright outer ring (draw multiple concentric rings for thickness)
+        shapes.begin(ShapeRenderer.ShapeType.Line);
+        com.badlogic.gdx.Gdx.gl.glLineWidth(4f);
+        shapes.setColor(r, g, b, alpha);
+        drawCircleOutline(shapes, cx, cy, currentRadius, 64);
+        shapes.setColor(r, g, b, alpha * 0.7f);
+        drawCircleOutline(shapes, cx, cy, currentRadius * 0.97f, 64);
+        drawCircleOutline(shapes, cx, cy, currentRadius * 1.03f, 64);
+        shapes.end();
+
+        // Second inner ring, pulsing
+        float pulse = 0.7f + 0.3f * (float) Math.sin(t * Math.PI * 8);
+        shapes.begin(ShapeRenderer.ShapeType.Line);
+        com.badlogic.gdx.Gdx.gl.glLineWidth(2f);
+        shapes.setColor(r, g, b, alpha * 0.8f * pulse);
+        drawCircleOutline(shapes, cx, cy, currentRadius * 0.6f, 48);
+        shapes.end();
+
+        // Large orbiting particles on the ring edge
+        int particleCount = 16;
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        for (int i = 0; i < particleCount; i++) {
+            float angle = (float) (i * Math.PI * 2 / particleCount) + t * (float) Math.PI * 4;
+            float px = cx + (float) Math.cos(angle) * currentRadius;
+            float py = cy + (float) Math.sin(angle) * currentRadius;
+            float pAlpha = alpha * (0.6f + 0.4f * (float) Math.sin(angle * 3 + t * Math.PI * 10));
+            shapes.setColor(Math.min(r + 0.3f, 1f), Math.min(g + 0.3f, 1f), Math.min(b + 0.3f, 1f), pAlpha);
+            shapes.rect(px - 3, py - 3, 6, 6);
+        }
+
+        // Inner scattered particles (moving outward or inward)
+        int innerParticles = 12;
+        for (int i = 0; i < innerParticles; i++) {
+            float angle = (float) (i * Math.PI * 2 / innerParticles) - t * (float) Math.PI * 3;
+            float dist;
+            if (type == CreateEffectPacket.EFFECT_VAMPIRISM) {
+                dist = currentRadius * (1.0f - t);
+            } else {
+                dist = currentRadius * 0.2f + currentRadius * 0.6f * t;
+            }
+            float px = cx + (float) Math.cos(angle) * dist;
+            float py = cy + (float) Math.sin(angle) * dist;
+            float pAlpha = alpha * 0.9f;
+            shapes.setColor(Math.min(r + 0.2f, 1f), Math.min(g + 0.2f, 1f), Math.min(b + 0.2f, 1f), pAlpha);
+            shapes.rect(px - 2.5f, py - 2.5f, 5, 5);
+        }
+
+        // Bright center flash at start
+        if (t < 0.3f) {
+            float flashAlpha = (0.3f - t) * 3.0f;
+            shapes.setColor(1f, 1f, 1f, flashAlpha * 0.5f);
+            drawCircle(shapes, cx, cy, currentRadius * 0.3f * (1.0f - t * 2), 24);
+        }
+        shapes.end();
+
+        com.badlogic.gdx.Gdx.gl.glLineWidth(1f);
+    }
+
+    private void renderLineEffect(ShapeRenderer shapes, ActiveVisualEffect vfx, float t, float wx, float wy) {
+        final float x1 = vfx.getPosX() - wx;
+        final float y1 = vfx.getPosY() - wy;
+        final float x2 = vfx.getTargetPosX() - wx;
+        final float y2 = vfx.getTargetPosY() - wy;
+        // Stay fully visible for 80% of duration, then fade
+        final float alpha = t < 0.8f ? 1.0f : 1.0f - (t - 0.8f) * 5.0f;
+
+        final float dx = x2 - x1;
+        final float dy = y2 - y1;
+        final float length = (float) Math.sqrt(dx * dx + dy * dy);
+        if (length < 1f) return;
+
+        int segments = Math.max(8, (int) (length / 10));
+        float perpX = -dy / length;
+        float perpY = dx / length;
+
+        // Pre-compute jitter offsets for main bolt (reused by glow)
+        float[] jitters = new float[segments + 1];
+        jitters[0] = 0;
+        jitters[segments] = 0;
+        for (int i = 1; i < segments; i++) {
+            float frac = (float) i / segments;
+            jitters[i] = (float) (Math.sin(frac * Math.PI * 5 + t * Math.PI * 14) * 12.0f
+                    + Math.cos(frac * Math.PI * 9 + t * Math.PI * 8) * 5.0f);
+        }
+
+        // Outer glow (thick, dim blue-purple)
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        for (int i = 0; i < segments; i++) {
+            float frac0 = (float) i / segments;
+            float frac1 = (float) (i + 1) / segments;
+            float px0 = x1 + dx * frac0 + perpX * jitters[i];
+            float py0 = y1 + dy * frac0 + perpY * jitters[i];
+            float px1 = x1 + dx * frac1 + perpX * jitters[i + 1];
+            float py1 = y1 + dy * frac1 + perpY * jitters[i + 1];
+            // Draw thick quads along the bolt as glow
+            float glowSize = 6f;
+            shapes.setColor(0.3f, 0.4f, 1.0f, alpha * 0.3f);
+            shapes.rectLine(px0, py0, px1, py1, glowSize);
+        }
+        shapes.end();
+
+        // Main bright bolt - thick electric blue
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        for (int i = 0; i < segments; i++) {
+            float frac0 = (float) i / segments;
+            float frac1 = (float) (i + 1) / segments;
+            float px0 = x1 + dx * frac0 + perpX * jitters[i];
+            float py0 = y1 + dy * frac0 + perpY * jitters[i];
+            float px1 = x1 + dx * frac1 + perpX * jitters[i + 1];
+            float py1 = y1 + dy * frac1 + perpY * jitters[i + 1];
+            shapes.setColor(0.4f, 0.7f, 1.0f, alpha);
+            shapes.rectLine(px0, py0, px1, py1, 3f);
+        }
+        shapes.end();
+
+        // Inner white-hot core
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        for (int i = 0; i < segments; i++) {
+            float frac0 = (float) i / segments;
+            float frac1 = (float) (i + 1) / segments;
+            float px0 = x1 + dx * frac0 + perpX * jitters[i];
+            float py0 = y1 + dy * frac0 + perpY * jitters[i];
+            float px1 = x1 + dx * frac1 + perpX * jitters[i + 1];
+            float py1 = y1 + dy * frac1 + perpY * jitters[i + 1];
+            shapes.setColor(0.8f, 0.9f, 1.0f, alpha * 0.9f);
+            shapes.rectLine(px0, py0, px1, py1, 1.5f);
+        }
+        shapes.end();
+
+        // Secondary fork bolt (different jitter pattern)
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        for (int i = 0; i < segments; i++) {
+            float frac0 = (float) i / segments;
+            float frac1 = (float) (i + 1) / segments;
+            float j0 = (float) (Math.cos(frac0 * Math.PI * 7 + t * Math.PI * 18) * 8.0f);
+            float j1 = (float) (Math.cos(frac1 * Math.PI * 7 + t * Math.PI * 18) * 8.0f);
+            if (i == 0) j0 = 0;
+            if (i == segments - 1) j1 = 0;
+            float px0 = x1 + dx * frac0 + perpX * j0;
+            float py0 = y1 + dy * frac0 + perpY * j0;
+            float px1 = x1 + dx * frac1 + perpX * j1;
+            float py1 = y1 + dy * frac1 + perpY * j1;
+            shapes.setColor(0.5f, 0.6f, 1.0f, alpha * 0.5f);
+            shapes.rectLine(px0, py0, px1, py1, 2f);
+        }
+        shapes.end();
+
+        // Bright glow particles along the bolt
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        int particleCount = Math.max(6, segments / 2);
+        for (int i = 0; i < particleCount; i++) {
+            float frac = (float) i / particleCount;
+            int segIdx = Math.min((int) (frac * segments), segments - 1);
+            float px = x1 + dx * frac + perpX * jitters[segIdx];
+            float py = y1 + dy * frac + perpY * jitters[segIdx];
+            float pAlpha = alpha * (0.5f + 0.5f * (float) Math.sin(frac * Math.PI));
+            shapes.setColor(0.6f, 0.8f, 1.0f, pAlpha);
+            shapes.rect(px - 3, py - 3, 6, 6);
+        }
+
+        // Bright impact circles at endpoints
+        float endSize = 8f + 4f * (float) Math.sin(t * Math.PI * 10);
+        shapes.setColor(0.5f, 0.7f, 1.0f, alpha * 0.8f);
+        drawCircle(shapes, x1, y1, endSize, 12);
+        drawCircle(shapes, x2, y2, endSize, 12);
+        shapes.setColor(1.0f, 1.0f, 1.0f, alpha);
+        drawCircle(shapes, x1, y1, endSize * 0.4f, 8);
+        drawCircle(shapes, x2, y2, endSize * 0.4f, 8);
+        shapes.end();
+    }
+
+    /** Draw a filled circle using triangles (ShapeRenderer.Filled mode must be active) */
+    private static void drawCircle(ShapeRenderer shapes, float cx, float cy, float radius, int segments) {
+        for (int i = 0; i < segments; i++) {
+            float a1 = (float) (i * Math.PI * 2 / segments);
+            float a2 = (float) ((i + 1) * Math.PI * 2 / segments);
+            shapes.triangle(cx, cy,
+                    cx + (float) Math.cos(a1) * radius, cy + (float) Math.sin(a1) * radius,
+                    cx + (float) Math.cos(a2) * radius, cy + (float) Math.sin(a2) * radius);
+        }
+    }
+
+    /** Draw a circle outline (ShapeRenderer.Line mode must be active) */
+    private static void drawCircleOutline(ShapeRenderer shapes, float cx, float cy, float radius, int segments) {
+        for (int i = 0; i < segments; i++) {
+            float a1 = (float) (i * Math.PI * 2 / segments);
+            float a2 = (float) ((i + 1) * Math.PI * 2 / segments);
+            shapes.line(
+                    cx + (float) Math.cos(a1) * radius, cy + (float) Math.sin(a1) * radius,
+                    cx + (float) Math.cos(a2) * radius, cy + (float) Math.sin(a2) * radius);
+        }
+    }
 
 }

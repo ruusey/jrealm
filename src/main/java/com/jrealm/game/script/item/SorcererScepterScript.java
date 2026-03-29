@@ -95,7 +95,7 @@ public class SorcererScepterScript extends UseableItemScriptBase {
             Vector2f targetCenter = currentTarget.getPos().clone(currentTarget.getSize() / 2, currentTarget.getSize() / 2);
             this.mgr.enqueueServerPacket(CreateEffectPacket.lineEffect(
                 CreateEffectPacket.EFFECT_CHAIN_LIGHTNING,
-                chainOrigin.x, chainOrigin.y, targetCenter.x, targetCenter.y, (short) 500));
+                chainOrigin.x, chainOrigin.y, targetCenter.x, targetCenter.y, (short) 1200));
 
             // Track hit and prepare next chain
             hitEnemyIds.add(currentTarget.getId());

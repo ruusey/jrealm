@@ -286,8 +286,10 @@ public class ServerGameLogic {
 		if (toMove.hasEffect(ProjectileEffectType.PARALYZED))
 			return;
 		boolean doMove = playerMovePacket.isMove();
-		float spd = (float) ((5.0 * (toMove.getComputedStats().getSpd() + 53.5)) / 75.0f);
-		spd = spd / 1.5f;
+		// RotMG speed formula: tiles/sec = 4 + 5.6 * (spd_stat / 75)
+		// Convert to pixels per server tick (server runs at 64 tps)
+		float tilesPerSec = 4.0f + 5.6f * (toMove.getComputedStats().getSpd() / 75.0f);
+		float spd = tilesPerSec * 32.0f / 64.0f;
 		if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
 			toMove.setUp(doMove);
 			toMove.setDy(doMove ? -spd : 0.0f);

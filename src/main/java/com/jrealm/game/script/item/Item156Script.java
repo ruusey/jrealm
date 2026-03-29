@@ -35,7 +35,7 @@ public class Item156Script extends UseableItemScriptBase {
         // Broadcast warrior buff visual (orange/yellow expanding ring)
         final Vector2f center = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
         this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
-            CreateEffectPacket.EFFECT_HEAL_RADIUS, center.x, center.y, 160.0f, (short) 600));
+            CreateEffectPacket.EFFECT_HEAL_RADIUS, center.x, center.y, 160.0f, (short) 1500));
     }
 
     @Override
