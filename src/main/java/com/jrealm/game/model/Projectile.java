@@ -25,7 +25,8 @@ public class Projectile {
     private short amplitude;
     private short frequency;
 
-    private List<Short> flags;
+    private List<Short> flags;           // behavior flags: PARAMETRIC(12), PLAYER_PROJECTILE(10), etc.
+    private List<ProjectileEffect> effects; // on-hit status effects with durations
 
     public boolean hasFlag(short flag) {
         return (this.flags != null) && this.flags.contains(flag);

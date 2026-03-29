@@ -667,21 +667,23 @@ public class TileManager {
             }
         }
 
-        // Pass 2: Render wall tiles with 3D effect (shadow, contour, side face)
+        // Pass 2: Render wall tiles with 3D effect (shadow + side face + contour)
         if (!wallTiles.isEmpty()) {
+            // Shadow: small offset, flush with tile bottom
             ShaderManager.applyEffect(batch, Sprite.EffectEnum.SILHOUETTE);
-            batch.setColor(1, 1, 1, 0.35f);
+            batch.setColor(1, 1, 1, 0.25f);
             for (Tile t : wallTiles) {
                 TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) t.getTileId());
                 if (region == null) continue;
                 float wx = t.getPos().getWorldVar().x;
                 float wy = t.getPos().getWorldVar().y;
                 int sz = t.getWidth();
-                batch.draw(region, wx + 3, wy + 3, sz, sz);
+                batch.draw(region, wx + 1, wy + 1, sz, sz);
             }
             batch.setColor(1, 1, 1, 1);
 
-            float ox = 2.0f;
+            // Dark contour outline (1px)
+            float ox = 1.0f;
             for (Tile t : wallTiles) {
                 TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) t.getTileId());
                 if (region == null) continue;
@@ -695,18 +697,20 @@ public class TileManager {
             }
             ShaderManager.clearEffect(batch);
 
+            // Thin darkened side face directly below wall tile
             for (Tile t : wallTiles) {
                 TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) t.getTileId());
                 if (region == null) continue;
                 float wx = t.getPos().getWorldVar().x;
                 float wy = t.getPos().getWorldVar().y;
                 int sz = t.getWidth();
-                int sideHeight = sz / 3;
-                batch.setColor(0.25f, 0.25f, 0.3f, 1f);
+                int sideHeight = Math.max(2, sz / 8);
+                batch.setColor(0.2f, 0.2f, 0.25f, 1f);
                 batch.draw(region, wx, wy + sz, sz, sideHeight);
                 batch.setColor(1, 1, 1, 1);
             }
 
+            // Main wall tile on top
             for (Tile t : wallTiles) {
                 t.render(batch);
             }

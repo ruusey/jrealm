@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
+import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.Stats;
 import com.jrealm.game.graphics.Sprite;
@@ -485,9 +486,10 @@ public class Enemy extends Entity {
             } else {
                 angle = Float.parseFloat(p.getAngle());
             }
-            mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), group.getProjectileGroupId(),
+            Bullet b = mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), group.getProjectileGroupId(),
                     p.getProjectileId(), source.clone(), angle, p.getSize(), p.getMagnitude(), p.getRange(),
                     p.getDamage(), true, p.getFlags(), p.getAmplitude(), p.getFrequency(), this.getId());
+            if (b != null && p.getEffects() != null) b.setEffects(p.getEffects());
         }
     }
 

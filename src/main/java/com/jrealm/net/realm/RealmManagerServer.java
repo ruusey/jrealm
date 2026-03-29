@@ -1220,10 +1220,11 @@ public class RealmManagerServer implements Runnable {
 				if (p.getPositionMode() != ProjectilePositionMode.TARGET_PLAYER) {
 					source = dest;
 				}
-				this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+				Bullet ab1 = this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
 						p.getProjectileId(), source.clone(-offset, -offset), angle + Float.parseFloat(p.getAngle()),
 						p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(),
 						p.getAmplitude(), p.getFrequency(), player.getId());
+				if (ab1 != null && p.getEffects() != null) ab1.setEffects(p.getEffects());
 			}
 			// Apply self-effect if present (e.g., warrior helmet SPEEDY buff)
 			if (effect.isSelf()) {
@@ -1237,10 +1238,11 @@ public class RealmManagerServer implements Runnable {
 				final short offset = (short) (p.getSize() / (short) 2);
 				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
-				this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+				Bullet ab2 = this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
 						p.getProjectileId(), dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
 						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
 						p.getFrequency(), player.getId());
+				if (ab2 != null && p.getEffects() != null) ab2.setEffects(p.getEffects());
 			}
 
 			// If the ability is non damaging or script-only (rogue cloak, priest tome, sorcerer scepter)
@@ -1445,26 +1447,17 @@ public class RealmManagerServer implements Runnable {
 			player.setHealth(player.getHealth() - dmgToInflict);
 			targetRealm.getExpiredBullets().add(b.getId());
 			targetRealm.removeBullet(b);
-			if (b.hasFlag(ProjectileEffectType.PARALYZED)) {
-				if (!p.hasEffect(ProjectileEffectType.PARALYZED)) {
-					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "PARALYZED");
-					p.setDx(0);
-					p.setDy(0);
-					p.addEffect(ProjectileEffectType.PARALYZED, 1500);
-				}
-			}
-
-			if (b.hasFlag(ProjectileEffectType.STUNNED)) {
-				if (!p.hasEffect(ProjectileEffectType.STUNNED)) {
-					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "STUNNED");
-					p.addEffect(ProjectileEffectType.STUNNED, 2500);
-				}
-			}
-			
-			if (b.hasFlag(ProjectileEffectType.DAZED)) {
-				if (!p.hasEffect(ProjectileEffectType.DAZED)) {
-					this.broadcastTextEffect(EntityType.PLAYER, p, TextEffect.DAMAGE, "DAZED");
-					p.addEffect(ProjectileEffectType.DAZED, 5000);
+			// Apply on-hit status effects from projectile's effects list
+			if (b.getEffects() != null) {
+				for (final com.jrealm.game.model.ProjectileEffect pe : b.getEffects()) {
+					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
+					if (effectType != null && !p.hasEffect(effectType)) {
+						p.addEffect(effectType, pe.getDuration());
+						if (effectType.equals(ProjectileEffectType.PARALYZED)) {
+							p.setDx(0); p.setDy(0);
+						}
+						this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, effectType.name());
+					}
 				}
 			}
 			if (p.getDeath()) {
@@ -1518,25 +1511,14 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.getExpiredBullets().add(b.getId());
 				targetRealm.removeBullet(b);
 			}
-			// Handle Projectile Effects
-			if (b.hasFlag(ProjectileEffectType.PARALYZED)) {
-				if (!e.hasEffect(ProjectileEffectType.PARALYZED)) {
-					e.addEffect(ProjectileEffectType.PARALYZED, 5000);
-					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "PARALYZED");
-				}
-			}
-
-			if (b.hasFlag(ProjectileEffectType.STUNNED)) {
-				if (!e.hasEffect(ProjectileEffectType.STUNNED)) {
-					e.addEffect(ProjectileEffectType.STUNNED, 5000);
-					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "STUNNED");
-				}
-			}
-			
-			if (b.hasFlag(ProjectileEffectType.DAZED)) {
-				if (!e.hasEffect(ProjectileEffectType.DAZED)) {
-					e.addEffect(ProjectileEffectType.DAZED, 5000);
-					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "DAZED");
+			// Apply on-hit status effects from projectile's effects list (data-driven durations)
+			if (b.getEffects() != null) {
+				for (final com.jrealm.game.model.ProjectileEffect pe : b.getEffects()) {
+					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
+					if (effectType != null && !e.hasEffect(effectType)) {
+						e.addEffect(effectType, pe.getDuration());
+						this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, effectType.name());
+					}
 				}
 			}
 			
@@ -1548,34 +1530,34 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	public void addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
+	public Bullet addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
 			final int projectileGroupId, final Vector2f src, final Vector2f dest, final short size,
 			final float magnitude, final float range, short damage, final boolean isEnemy, final List<Short> flags, long srcEntityId) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Player player = targetRealm.getPlayer(targetPlayerId);
 		if (player == null)
-			return;
-		final ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
+			return null;
 
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
 
 		final long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
-		final Bullet b = new Bullet(id, projectileId, src, dest, size, magnitude, range, damage, isEnemy);
+		final Bullet b = new Bullet(idToUse, projectileId, src, dest, size, magnitude, range, damage, isEnemy);
 		b.setSrcEntityId(srcEntityId);
 		b.setFlags(flags);
 		targetRealm.addBullet(b);
+		return b;
 	}
 
-	public void addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
+	public Bullet addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
 			final int projectileGroupId, final Vector2f src, final float angle, final short size, final float magnitude,
 			final float range, short damage, final boolean isEnemy, final List<Short> flags, final short amplitude,
 			final short frequency, long srcEntityId) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Player player = targetRealm.getPlayer(targetPlayerId);
 		if (player == null)
-			return;
+			return null;
 		final ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
 		if (!isEnemy) {
 			damage = (short) (damage + player.getStats().getAtt());
@@ -1588,6 +1570,7 @@ public class RealmManagerServer implements Runnable {
 		b.setFrequency(frequency);
 		b.setFlags(flags);
 		targetRealm.addBullet(b);
+		return b;
 	}
 
 	private List<Bullet> getBullets(final long realmId, final Player p) {

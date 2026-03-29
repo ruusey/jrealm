@@ -412,10 +412,11 @@ public class ServerGameLogic {
 				short rolledDamage = player.getInventory()[0].getDamage().getInRange();
 				float shootAngle = angle + Float.parseFloat(proj.getAngle());
 				rolledDamage += player.getComputedStats().getAtt();
-				mgr.addProjectile(realm.getRealmId(), Realm.RANDOM.nextLong(), player.getId(), player.getWeaponId(),
+				Bullet b = mgr.addProjectile(realm.getRealmId(), Realm.RANDOM.nextLong(), player.getId(), player.getWeaponId(),
 						proj.getProjectileId(), source.clone(-offset, -offset), shootAngle, proj.getSize(),
 						proj.getMagnitude(), proj.getRange(), rolledDamage, false, proj.getFlags(), proj.getAmplitude(),
 						proj.getFrequency(), player.getId());
+				if (b != null && proj.getEffects() != null) b.setEffects(proj.getEffects());
 			}
 		}
 	}
