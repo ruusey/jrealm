@@ -36,6 +36,7 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.DungeonGraphNode;
 import com.jrealm.game.model.EnemyGroup;
 import com.jrealm.game.model.EnemyModel;
+import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.OverworldZone;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.ProjectileGroup;
@@ -45,6 +46,7 @@ import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.ServerGameLogic;
+import com.jrealm.util.GameObjectUtils;
 import com.jrealm.util.WorkerThread;
 
 import lombok.AllArgsConstructor;
