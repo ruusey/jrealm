@@ -948,8 +948,8 @@ public class Realm {
         if (params.getEnemyDensity() > 0f) {
             density = params.getEnemyDensity();
         } else {
-            // Legacy fallback: ~0.6% for large overworld maps, ~2% for small dungeons
-            density = hasZones ? 0.006f : 0.02f;
+            // Legacy fallback: ~0.8% for overworld, ~0.4% for dungeons (smaller maps)
+            density = hasZones ? 0.008f : 0.004f;
         }
 
         for (int i = 1; i < mapHeight; i++) {

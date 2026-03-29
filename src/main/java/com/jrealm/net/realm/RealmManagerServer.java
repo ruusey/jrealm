@@ -1107,41 +1107,58 @@ public class RealmManagerServer implements Runnable {
             p.setLeft(false);
             return;
         }
-		
+
 		final Realm targetRealm = this.realms.get(realmId);
 		float dxToUse = p.getDx();
 		float dyToUse = p.getDy();
-		
+
 		// if the player has the 'speedy' status effect (1.5x dex, spd)
 		if (p.hasEffect(ProjectileEffectType.SPEEDY)) {
 			dxToUse = dxToUse * 1.5f;
 			dyToUse = dyToUse * 1.5f;
 		}
-		
-		// Move in x, y direction at speed dx, dy unless we 
-		// will run into terrain/out of bounds
-		if (!targetRealm.getTileManager().collisionTile(p, dxToUse, 0)
-				&& !targetRealm.getTileManager().collidesXLimit(p, dxToUse) && !targetRealm.getTileManager()
-						.isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), dxToUse, 0)) {
-			p.xCol = false;
-			if (targetRealm.getTileManager().collidesSlowTile(p)) {
-				p.getPos().x += dxToUse / 3.0f;
-			} else {
-				p.getPos().x += dxToUse;
+
+		final float slow = targetRealm.getTileManager().collidesSlowTile(p) ? 3.0f : 1.0f;
+		final float effDx = dxToUse / slow;
+		final float effDy = dyToUse / slow;
+
+		// Save original position BEFORE any axis movement so both checks
+		// use the pre-move position. This prevents diagonal wall clipping
+		// where X movement shifts the player into Y collision range.
+		final float origX = p.getPos().x;
+		final float origY = p.getPos().y;
+
+		// Check X collision from original position
+		boolean xBlocked = targetRealm.getTileManager().collisionTile(p, effDx, 0)
+				|| targetRealm.getTileManager().collidesXLimit(p, effDx)
+				|| targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), effDx, 0);
+
+		// Check Y collision from original position (not the X-moved position)
+		boolean yBlocked = targetRealm.getTileManager().collisionTile(p, 0, effDy)
+				|| targetRealm.getTileManager().collidesYLimit(p, effDy)
+				|| targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), 0, effDy);
+
+		// If both axes are free, also check the diagonal to prevent corner cutting
+		if (!xBlocked && !yBlocked && effDx != 0 && effDy != 0) {
+			boolean diagBlocked = targetRealm.getTileManager().collisionTile(p, effDx, effDy)
+					|| targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), effDx, effDy);
+			if (diagBlocked) {
+				// Block the lesser axis to prevent corner cutting
+				if (Math.abs(effDx) >= Math.abs(effDy)) yBlocked = true;
+				else xBlocked = true;
 			}
+		}
+
+		if (!xBlocked) {
+			p.xCol = false;
+			p.getPos().x = origX + effDx;
 		} else {
 			p.xCol = true;
 		}
 
-		if (!targetRealm.getTileManager().collisionTile(p, 0, dyToUse)
-				&& !targetRealm.getTileManager().collidesYLimit(p, dyToUse) && !targetRealm.getTileManager()
-						.isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), 0, dyToUse)) {
+		if (!yBlocked) {
 			p.yCol = false;
-			if (targetRealm.getTileManager().collidesSlowTile(p)) {
-				p.getPos().y += dyToUse / 3.0f;
-			} else {
-				p.getPos().y += dyToUse;
-			}
+			p.getPos().y = origY + effDy;
 		} else {
 			p.yCol = true;
 		}

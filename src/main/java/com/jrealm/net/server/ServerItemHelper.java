@@ -146,6 +146,8 @@ public class ServerItemHelper {
             nearLoot.setItem(lootIdx, null);
             // Re-pack items to fill the gap left by the picked-up item
             nearLoot.repackItems();
+            // Flag container as changed so the next LoadPacket broadcasts the update
+            nearLoot.setContentsChanged(true);
         }
     }
 }
