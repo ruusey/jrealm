@@ -12,7 +12,8 @@ public enum CharacterClass {
     ROGUE(0), ARCHER(1), WIZARD(2), PRIEST(3), WARRIOR(4), KNIGHT(5), PALLADIN(6),
     ASSASSIN(7), NECROMANCER(8), MYSTIC(9), TRICKSTER(10), SORCERER(11),
 
-    ROBE(-1), LEATHER(-2), HEAVY(-3), ALL(-4);
+    ROBE(-1), LEATHER(-2), HEAVY(-3), ALL(-4),
+    STAFF_USER(-5), WAND_USER(-6), DAGGER_USER(-7), BOW_USER(-8);
 
     public static Map<Integer, CharacterClass> map = new HashMap<>();
     static {
@@ -62,24 +63,53 @@ public enum CharacterClass {
         return CharacterClass.valueOf(p.getClassId());
     }
 
+    public static boolean isStaffUser(CharacterClass c) {
+        return c.equals(WIZARD) || c.equals(NECROMANCER);
+    }
+
+    public static boolean isWandUser(CharacterClass c) {
+        return c.equals(PRIEST) || c.equals(SORCERER) || c.equals(MYSTIC);
+    }
+
+    public static boolean isDaggerUser(CharacterClass c) {
+        return c.equals(ROGUE) || c.equals(ASSASSIN) || c.equals(TRICKSTER);
+    }
+
+    public static boolean isBowUser(CharacterClass c) {
+        return c.equals(ARCHER);
+    }
+
     public static boolean isValidUser(Player p, byte requiredClass) {
         CharacterClass req = CharacterClass.valueOf(requiredClass);
+        CharacterClass playerClass = CharacterClass.getPlayerCharacterClass(p);
         boolean result = false;
         switch (req) {
         case ROBE:
-            result = CharacterClass.isPlayerRobeClass(p);
+            result = CharacterClass.isRobeClass(playerClass);
             break;
         case LEATHER:
-            result = CharacterClass.isPlayerLeatherClass(p);
+            result = CharacterClass.isLeatherClass(playerClass);
             break;
         case HEAVY:
-            result = CharacterClass.isPlayerHeavyClass(p);
+            result = CharacterClass.isHeavyClass(playerClass);
             break;
         case ALL:
             result = true;
             break;
+        case STAFF_USER:
+            result = CharacterClass.isStaffUser(playerClass);
+            break;
+        case WAND_USER:
+            result = CharacterClass.isWandUser(playerClass);
+            break;
+        case DAGGER_USER:
+            result = CharacterClass.isDaggerUser(playerClass);
+            break;
+        case BOW_USER:
+            result = CharacterClass.isBowUser(playerClass);
+            break;
         default:
-            result = req.equals(CharacterClass.getPlayerCharacterClass(p));
+            result = req.equals(playerClass);
         }
         return result;
     }

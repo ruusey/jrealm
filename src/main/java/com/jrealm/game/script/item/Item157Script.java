@@ -8,10 +8,19 @@ import com.jrealm.net.client.packet.CreateEffectPacket;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 
+/**
+ * Priest Tome ability — heals self and nearby players.
+ * Handles test tome (157) and tiered tomes (228-234).
+ */
 public class Item157Script extends UseableItemScriptBase {
 
     public Item157Script(final RealmManagerServer mgr) {
         super(mgr);
+    }
+
+    @Override
+    public boolean handles(int itemId) {
+        return itemId == 157 || (itemId >= 228 && itemId <= 234);
     }
 
     @Override

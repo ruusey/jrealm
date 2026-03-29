@@ -78,6 +78,17 @@ public class ServerItemHelper {
         // Equip: inventory (4-11) → equipment (0-3)
         } else if (MoveItemPacket.isInv1(moveItemPacket.getFromSlotIndex())
                 && MoveItemPacket.isEquipment(moveItemPacket.getTargetSlotIndex()) && (from != null)) {
+            // Consumable items (potions, food) cannot be equipped
+            if (from.isConsumable()) {
+                ServerItemHelper.log.warn("Player {} attempted to equip a consumable item {}", player.getId(), from.getName());
+                return;
+            }
+            // Item must be designed for this equipment slot (or auto-assign with targetSlot=-1)
+            if (from.getTargetSlot() >= 0 && from.getTargetSlot() != moveItemPacket.getTargetSlotIndex()) {
+                ServerItemHelper.log.warn("Player {} attempted to equip item {} (targetSlot={}) in slot {}",
+                        player.getId(), from.getName(), from.getTargetSlot(), moveItemPacket.getTargetSlotIndex());
+                return;
+            }
             if (!CharacterClass.isValidUser(player, from.getTargetClass())) {
                 ServerItemHelper.log.warn("Player {} attempted to equip an item not useable by their class",
                         player.getId());

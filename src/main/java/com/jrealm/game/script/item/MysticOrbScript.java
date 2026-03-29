@@ -44,8 +44,13 @@ public class MysticOrbScript extends UseableItemScriptBase {
 
     @Override
     public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem) {
+        invokeItemAbility(targetRealm, player, abilityItem, player.getPos().clone(player.getSize() / 2, player.getSize() / 2));
+    }
+
+    @Override
+    public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem, Vector2f targetPos) {
         // Core code applies NONE effect to player (harmless). Script handles real behavior.
-        final Vector2f center = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+        final Vector2f center = (targetPos != null) ? targetPos : player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 
         // Broadcast stasis visual (frozen blue ring)
         this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(

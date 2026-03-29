@@ -1235,7 +1235,7 @@ public class RealmManagerServer implements Runnable {
 		// Invoke any item specific scripts
 		final UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
 		if (script != null) {
-			script.invokeItemAbility(targetRealm, player, abilityItem);
+			script.invokeItemAbility(targetRealm, player, abilityItem, pos);
 		}
 	}
 

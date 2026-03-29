@@ -22,7 +22,7 @@ public class NecromancerSkullScript extends UseableItemScriptBase {
     // Skull item IDs: 200 (T0) through 206 (T6)
     private static final int MIN_ID = 200;
     private static final int MAX_ID = 206;
-    private static final float DAMAGE_RADIUS = 128.0f; // ~4 tiles
+    private static final float DAMAGE_RADIUS = 80.0f; // ~2.5 tiles
     private static final float HEAL_RATIO = 0.25f; // heal 25% of damage dealt
 
     public NecromancerSkullScript(RealmManagerServer mgr) {
@@ -45,14 +45,14 @@ public class NecromancerSkullScript extends UseableItemScriptBase {
 
     @Override
     public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem) {
-        // The core ability code already applied HEAL effect to self.
-        // This script adds: AoE damage at cursor + vampirism heal.
+        invokeItemAbility(targetRealm, player, abilityItem, player.getPos().clone(player.getSize() / 2, player.getSize() / 2));
+    }
 
-        // Target position comes from the player's last ability target (stored during useAbility)
-        // We approximate by using the player's facing direction; for now use player center
-        // as the ability's target position is not passed to scripts.
-        // We deal damage to all enemies within radius of the player.
-        final Vector2f center = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+    @Override
+    public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem, Vector2f targetPos) {
+        // The core ability code already applied HEAL effect to self.
+        // This script adds: AoE damage at cursor position + vampirism heal.
+        final Vector2f center = (targetPos != null) ? targetPos : player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 
         // Base damage scales with tier (T0=65, T6=320) + attack stat.
         // Tier is encoded in itemId: 200=T0, 201=T1, ..., 206=T6
