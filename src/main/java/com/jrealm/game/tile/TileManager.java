@@ -482,12 +482,14 @@ public class TileManager {
 
     public boolean collisionTile(Entity e, float ax, float ay) {
         final Vector2f futurePos = e.getPos().clone(ax, ay);
+        // Use a tighter hitbox (85% of sprite size) for collision
+        final int hitSize = (int) (e.getSize() * 0.85f);
         for (Tile t : this.getCollisionTiles(e.getPos())) {
             if ((t == null) || t.isVoid()) {
                 continue;
             }
             Rectangle tileBounds = new Rectangle(t.getPos(), t.getWidth(), t.getHeight());
-            Rectangle futurePosBounds = new Rectangle(futurePos, (int) (e.getSize() / 1.5), (int) (e.getSize() / 1.5));
+            Rectangle futurePosBounds = new Rectangle(futurePos, hitSize, hitSize);
             if (tileBounds.intersect(futurePosBounds))
                 return true;
         }

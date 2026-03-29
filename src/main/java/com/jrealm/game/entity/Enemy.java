@@ -618,7 +618,11 @@ public class Enemy extends Entity {
     @Override
     public void updateEffectState() {
         if (this.getSpriteSheet() == null) return;
-        if (this.hasEffect(ProjectileEffectType.PARALYZED)) {
+        if (this.hasEffect(ProjectileEffectType.STASIS)) {
+            if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.STASIS)) {
+                this.getSpriteSheet().setEffect(Sprite.EffectEnum.STASIS);
+            }
+        } else if (this.hasEffect(ProjectileEffectType.PARALYZED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.GRAYSCALE)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.GRAYSCALE);
             }

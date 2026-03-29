@@ -53,6 +53,14 @@ public class ShaderManager {
         0, 0, 0, 0
     };
 
+    // Stasis: dark grey stone look (desaturated + heavily darkened)
+    private static final float[] STASIS = {
+        0.15f, 0.15f, 0.15f, 0,
+        0.15f, 0.15f, 0.15f, 0,
+        0.15f, 0.15f, 0.15f, 0,
+        0.08f, 0.08f, 0.1f, 0
+    };
+
     // Zero out RGB coefficients, use 4th column (constant) for dark grey
     private static final float[] SILHOUETTE = {
         0, 0, 0, 0,
@@ -103,6 +111,7 @@ public class ShaderManager {
     private static com.badlogic.gdx.math.Matrix4 MAT_DECAY;
     private static com.badlogic.gdx.math.Matrix4 MAT_NEGATIVE;
     private static com.badlogic.gdx.math.Matrix4 MAT_SILHOUETTE;
+    private static com.badlogic.gdx.math.Matrix4 MAT_STASIS;
 
     private static final String VERT_SHADER =
         "attribute vec4 a_position;\n" +
@@ -187,6 +196,7 @@ public class ShaderManager {
         MAT_DECAY = new com.badlogic.gdx.math.Matrix4(DECAY);
         MAT_NEGATIVE = new com.badlogic.gdx.math.Matrix4(NEGATIVE);
         MAT_SILHOUETTE = new com.badlogic.gdx.math.Matrix4(SILHOUETTE);
+        MAT_STASIS = new com.badlogic.gdx.math.Matrix4(STASIS);
     }
 
     private static Sprite.EffectEnum lastAppliedEffect = null;
@@ -218,6 +228,7 @@ public class ShaderManager {
             case DECAY: matrix = MAT_DECAY; break;
             case NEGATIVE: matrix = MAT_NEGATIVE; break;
             case SILHOUETTE: matrix = MAT_SILHOUETTE; break;
+            case STASIS: matrix = MAT_STASIS; break;
             default: matrix = MAT_IDENTITY; break;
         }
         effectShader.setUniformMatrix("u_colorMatrix", matrix);
