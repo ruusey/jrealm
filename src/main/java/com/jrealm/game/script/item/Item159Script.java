@@ -21,7 +21,7 @@ public class Item159Script extends UseableItemScriptBase {
 
     @Override
     public boolean handles(int itemId) {
-        return itemId == 157 || (itemId >= 228 && itemId <= 234);
+        return itemId == getTargetItemId();
     }
 
     @Override

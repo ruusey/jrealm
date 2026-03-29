@@ -138,7 +138,7 @@ public class ItemTooltip {
         return lines;
     }
 
-    private void addStat(List<String> parts, String name, short value) {
+    private void addStat(List<String> parts, String name, int value) {
         if (value != 0) {
             String sign = value > 0 ? "+" : "";
             parts.add(name + " " + sign + value);

@@ -942,8 +942,9 @@ public class Realm {
         final int mapHeight = this.tileManager.getMapLayers().get(0).getHeight();
         final int mapWidth = this.tileManager.getMapLayers().get(0).getWidth();
 
-        // Higher density for overworld (has zones), normal for dungeons
-        final int spawnThreshold = hasZones ? 4 : 2;
+        // Higher density for overworld (has zones), much lower for dungeons.
+        // For a 64x64 dungeon: threshold 14 → ~50/64 chance to skip → ~12 enemies
+        final int spawnThreshold = hasZones ? 4 : 14;
 
         for (int i = 1; i < mapHeight; i++) {
             for (int j = 1; j < mapWidth; j++) {

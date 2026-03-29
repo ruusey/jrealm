@@ -1182,9 +1182,14 @@ public class RealmManagerServer implements Runnable {
 			return;
 		player.setMana(player.getMana() - effect.getMpCost());
 		// If the ability is damaging (knight stun, archer arrow, wizard spell)
-		if (((abilityItem.getDamage() != null) && (abilityItem.getEffect() != null))) {
-			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
-					.get(abilityItem.getDamage().getProjectileGroupId());
+		// Resolve the projectile group if the item has a damage definition with a valid projectileGroupId.
+		// Script-only abilities (e.g., scepter chain lightning, necromancer skull) may have no damage
+		// or a damage with projectileGroupId -1, meaning no projectiles should be created.
+		final ProjectileGroup group = (abilityItem.getDamage() != null)
+				? GameDataManager.PROJECTILE_GROUPS.get(abilityItem.getDamage().getProjectileGroupId())
+				: null;
+
+		if (((abilityItem.getDamage() != null) && (abilityItem.getEffect() != null) && (group != null))) {
 
 			final Vector2f dest = new Vector2f(pos.x, pos.y);
 
@@ -1208,9 +1213,7 @@ public class RealmManagerServer implements Runnable {
 				player.addEffect(effect.getEffectId(), effect.getDuration());
 			}
 
-		} else if ((abilityItem.getDamage() != null)) {
-			final ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS
-					.get(abilityItem.getDamage().getProjectileGroupId());
+		} else if ((abilityItem.getDamage() != null) && (group != null)) {
 			final Vector2f dest = new Vector2f(pos.x, pos.y);
 			for (final Projectile p : group.getProjectiles()) {
 
@@ -1223,7 +1226,7 @@ public class RealmManagerServer implements Runnable {
 						p.getFrequency(), player.getId());
 			}
 
-			// If the ability is non damaging (rogue cloak, priest tome)
+			// If the ability is non damaging or script-only (rogue cloak, priest tome, sorcerer scepter)
 		} else if (abilityItem.getEffect() != null) {
 			// Special case for teleporting
 			if (abilityItem.getEffect().getEffectId().equals(ProjectileEffectType.TELEPORT) && !targetRealm.getTileManager().isCollisionTile(pos)) {

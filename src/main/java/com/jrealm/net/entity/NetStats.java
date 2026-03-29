@@ -8,6 +8,7 @@ import com.jrealm.net.Streamable;
 import com.jrealm.net.core.IOService;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.SerializableFieldType;
+import com.jrealm.net.core.nettypes.SerializableInt;
 import com.jrealm.net.core.nettypes.SerializableShort;
 
 import lombok.AllArgsConstructor;
@@ -17,8 +18,8 @@ import lombok.Data;
 @Streamable
 @AllArgsConstructor
 public class NetStats extends SerializableFieldType<NetStats> {
-	@SerializableField(order = 0, type = SerializableShort.class)
-	private short hp;
+	@SerializableField(order = 0, type = SerializableInt.class)
+	private int hp;
 	@SerializableField(order = 1, type = SerializableShort.class)
 	private short mp;
 	@SerializableField(order = 2, type = SerializableShort.class)
@@ -33,7 +34,7 @@ public class NetStats extends SerializableFieldType<NetStats> {
 	private short vit;
 	@SerializableField(order = 7, type = SerializableShort.class)
 	private short wis;
-	
+
 	public NetStats() {
 		this.hp = 0;
 		this.mp = 0;
@@ -44,12 +45,12 @@ public class NetStats extends SerializableFieldType<NetStats> {
 		this.vit = 0;
 		this.wis = 0;
 	}
-	
-	/** Hand-coded write: 16 bytes (8 shorts), bypasses reflection */
+
+	/** Hand-coded write: 18 bytes (1 int + 7 shorts), bypasses reflection */
 	@Override
 	public int write(NetStats value, DataOutputStream stream) throws Exception {
 		final NetStats v = value == null ? new NetStats() : value;
-		stream.writeShort(v.hp);
+		stream.writeInt(v.hp);
 		stream.writeShort(v.mp);
 		stream.writeShort(v.def);
 		stream.writeShort(v.att);
@@ -57,24 +58,25 @@ public class NetStats extends SerializableFieldType<NetStats> {
 		stream.writeShort(v.dex);
 		stream.writeShort(v.vit);
 		stream.writeShort(v.wis);
-		return 16;
+		return 18;
 	}
 
-	/** Hand-coded read: 16 bytes, bypasses reflection */
+	/** Hand-coded read: 18 bytes, bypasses reflection */
 	@Override
 	public NetStats read(DataInputStream stream) throws Exception {
 		return new NetStats(
+			stream.readInt(),
 			stream.readShort(), stream.readShort(),
 			stream.readShort(), stream.readShort(),
 			stream.readShort(), stream.readShort(),
-			stream.readShort(), stream.readShort()
+			stream.readShort()
 		);
 	}
 
 	public static NetStats fromStats(Stats stats) {
 		if (stats == null) return new NetStats();
 		return new NetStats(
-			(short) stats.getHp(), (short) stats.getMp(),
+			stats.getHp(), (short) stats.getMp(),
 			(short) stats.getDef(), (short) stats.getAtt(),
 			(short) stats.getSpd(), (short) stats.getDex(),
 			(short) stats.getVit(), (short) stats.getWis()

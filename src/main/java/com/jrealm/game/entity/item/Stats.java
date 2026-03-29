@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class Stats {
-    private short hp;
+    private int hp;
     private short mp;
     private short def;
     private short att;
@@ -23,7 +23,7 @@ public class Stats {
     public Stats concat(Stats other) {
         if (other == null)
             return this;
-        return Stats.builder().hp((short) (this.hp + other.getHp())).mp((short) (this.mp + other.getMp()))
+        return Stats.builder().hp(this.hp + other.getHp()).mp((short) (this.mp + other.getMp()))
                 .def((short) (this.def + other.getDef())).att((short) (this.att + other.getAtt()))
                 .spd((short) (this.spd + other.getSpd())).dex((short) (this.dex + other.getDex()))
                 .vit((short) (this.vit + other.getVit())).wis((short) (this.wis + other.getWis())).build();
@@ -32,7 +32,7 @@ public class Stats {
     public Stats subtract(Stats other) {
         if (other == null)
             return this;
-        return Stats.builder().hp((short) (this.hp - other.getHp())).mp((short) (this.mp - other.getMp()))
+        return Stats.builder().hp(this.hp - other.getHp()).mp((short) (this.mp - other.getMp()))
                 .def((short) (this.def - other.getDef())).att((short) (this.att - other.getAtt()))
                 .spd((short) (this.spd - other.getSpd())).dex((short) (this.dex - other.getDex()))
                 .vit((short) (this.vit - other.getVit())).wis((short) (this.wis - other.getWis())).build();
@@ -40,9 +40,9 @@ public class Stats {
 
     @Override
     public Stats clone() {
-        return Stats.builder().hp((short) (this.hp)).mp((short) (this.mp)).def((short) (this.def))
-                .att((short) (this.att)).spd((short) (this.spd)).dex((short) (this.dex)).vit((short) (this.vit))
-                .wis((short) (this.wis)).build();
+        return Stats.builder().hp(this.hp).mp(this.mp).def(this.def)
+                .att(this.att).spd(this.spd).dex(this.dex).vit(this.vit)
+                .wis(this.wis).build();
     }
 
     public short getSpd() {
