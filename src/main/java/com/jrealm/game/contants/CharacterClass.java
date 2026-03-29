@@ -64,11 +64,11 @@ public enum CharacterClass {
     }
 
     public static boolean isStaffUser(CharacterClass c) {
-        return c.equals(WIZARD) || c.equals(NECROMANCER);
+        return c.equals(WIZARD) || c.equals(NECROMANCER) || c.equals(MYSTIC);
     }
 
     public static boolean isWandUser(CharacterClass c) {
-        return c.equals(PRIEST) || c.equals(SORCERER) || c.equals(MYSTIC);
+        return c.equals(PRIEST) || c.equals(SORCERER);
     }
 
     public static boolean isDaggerUser(CharacterClass c) {

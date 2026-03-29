@@ -117,15 +117,20 @@ public class Rectangle {
     }
 
     public boolean intersect(Rectangle aBox) {
+        // Standard AABB overlap: two rects overlap iff they overlap on both axes.
+        // Each rect spans [pos + offset, pos + offset + size) on each axis.
+        final float ax1 = this.pos.x + this.xOffset;
+        final float ay1 = this.pos.y + this.yOffset;
+        final float ax2 = ax1 + this.w;
+        final float ay2 = ay1 + this.h;
 
-        if (((this.pos.x + this.xOffset) > (aBox.getPos().x + aBox.getXOffset() + aBox.getSize()))
-                || ((aBox.getPos().x + this.xOffset) > (this.pos.x + aBox.getXOffset() + aBox.getSize())))
-            return false;
+        final float bx1 = aBox.pos.x + aBox.xOffset;
+        final float by1 = aBox.pos.y + aBox.yOffset;
+        final float bx2 = bx1 + aBox.w;
+        final float by2 = by1 + aBox.h;
 
-        if (((this.pos.y + this.yOffset) > (aBox.getPos().y + aBox.getYOffset() + aBox.getSize()))
-                || ((aBox.getPos().y + this.yOffset) > (this.pos.y + aBox.getYOffset() + aBox.getSize())))
-            return false;
-
+        if (ax1 >= bx2 || bx1 >= ax2) return false;
+        if (ay1 >= by2 || by1 >= ay2) return false;
         return true;
     }
 

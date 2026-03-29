@@ -26,17 +26,18 @@ public class LootTableModel {
 
     public List<GameItem> getLootDrop() {
         final List<GameItem> itemsToDrop = new ArrayList<>();
-        itemsToDrop.addAll(this.getGuarunteedDrops());
 
         for (final Map.Entry<String, Float> entry : this.drops.entrySet()) {
-            if (this.isLootGroup(entry.getKey()) && (Realm.RANDOM.nextFloat() < entry.getValue())) {
+            if (Realm.RANDOM.nextFloat() >= entry.getValue()) continue;
+            if (this.isLootGroup(entry.getKey())) {
                 final LootGroupModel lootGroup = GameDataManager.LOOT_GROUPS.get(this.getLootGroupId(entry.getKey()));
+                if (lootGroup == null) continue;
                 final int itemFromGroup = lootGroup.getPotentialDrops()
                         .get(Realm.RANDOM.nextInt(lootGroup.getPotentialDrops().size()));
                 itemsToDrop.add(GameDataManager.GAME_ITEMS.get(itemFromGroup));
-            } else if (!this.isLootGroup(entry.getKey()) && (Realm.RANDOM.nextFloat() < entry.getValue())) {
+            } else {
                 final GameItem item = GameDataManager.GAME_ITEMS.get(this.getLootGroupId(entry.getKey()));
-                itemsToDrop.add(item);
+                if (item != null) itemsToDrop.add(item);
             }
         }
         return itemsToDrop;

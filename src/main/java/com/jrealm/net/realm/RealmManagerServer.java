@@ -1352,6 +1352,10 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 
+		// Terrain hit FIRST: destroy bullets that enter walls before they can
+		// hit entities on the other side
+		this.proccessTerrainHit(realmId, p);
+
 		// Player-bullet collision (enemy bullets hitting player)
 		if (!player.hasEffect(ProjectileEffectType.INVINCIBLE)) {
 			for (final Bullet b : nearbyBullets) {
@@ -1365,7 +1369,6 @@ public class RealmManagerServer implements Runnable {
 				this.proccessEnemyHit(realmId, b, enemy);
 			}
 		}
-		this.proccessTerrainHit(realmId, p);
 	}
 
 	
