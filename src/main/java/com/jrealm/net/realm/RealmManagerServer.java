@@ -1487,13 +1487,30 @@ public class RealmManagerServer implements Runnable {
 			if (b.getEffects() != null) {
 				for (final com.jrealm.game.model.ProjectileEffect pe : b.getEffects()) {
 					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
-					if (effectType != null && !p.hasEffect(effectType)) {
+					if (effectType != null) {
 						p.addEffect(effectType, pe.getDuration());
 						if (effectType.equals(ProjectileEffectType.PARALYZED)) {
 							p.setDx(0); p.setDy(0);
 						}
 						this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, effectType.name());
 					}
+				}
+			}
+			// Legacy: apply status effects from projectile flags
+			if (b.getFlags() != null) {
+				final long defaultDuration = 5000;
+				if (b.hasFlag(ProjectileEffectType.STUNNED)) {
+					p.addEffect(ProjectileEffectType.STUNNED, defaultDuration);
+					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "STUNNED");
+				}
+				if (b.hasFlag(ProjectileEffectType.PARALYZED)) {
+					p.addEffect(ProjectileEffectType.PARALYZED, defaultDuration);
+					p.setDx(0); p.setDy(0);
+					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "PARALYZED");
+				}
+				if (b.hasFlag(ProjectileEffectType.DAZED)) {
+					p.addEffect(ProjectileEffectType.DAZED, defaultDuration);
+					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "DAZED");
 				}
 			}
 			if (p.getDeath()) {
@@ -1551,10 +1568,26 @@ public class RealmManagerServer implements Runnable {
 			if (b.getEffects() != null) {
 				for (final com.jrealm.game.model.ProjectileEffect pe : b.getEffects()) {
 					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
-					if (effectType != null && !e.hasEffect(effectType)) {
+					if (effectType != null) {
 						e.addEffect(effectType, pe.getDuration());
 						this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, effectType.name());
 					}
+				}
+			}
+			// Legacy: apply status effects from projectile flags (STUNNED=3, PARALYZED=2, DAZED=11)
+			if (b.getFlags() != null) {
+				final long defaultDuration = 5000;
+				if (b.hasFlag(ProjectileEffectType.STUNNED)) {
+					e.addEffect(ProjectileEffectType.STUNNED, defaultDuration);
+					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "STUNNED");
+				}
+				if (b.hasFlag(ProjectileEffectType.PARALYZED)) {
+					e.addEffect(ProjectileEffectType.PARALYZED, defaultDuration);
+					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "PARALYZED");
+				}
+				if (b.hasFlag(ProjectileEffectType.DAZED)) {
+					e.addEffect(ProjectileEffectType.DAZED, defaultDuration);
+					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "DAZED");
 				}
 			}
 			

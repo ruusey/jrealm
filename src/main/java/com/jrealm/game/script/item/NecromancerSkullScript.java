@@ -22,8 +22,13 @@ public class NecromancerSkullScript extends UseableItemScriptBase {
     // Skull item IDs: 200 (T0) through 206 (T6)
     private static final int MIN_ID = 200;
     private static final int MAX_ID = 206;
-    private static final float DAMAGE_RADIUS = 80.0f; // ~2.5 tiles
-    private static final float HEAL_RATIO = 0.25f; // heal 25% of damage dealt
+
+    // RotMG wiki values: radius scales T0=2.5 to T6=3.75 tiles (1 tile = 32px)
+    private static final float[] RADIUS_BY_TIER = { 80f, 88f, 96f, 104f, 112f, 120f, 120f };
+    // Base damage per tier: T0=65, T1=95, T2=140, T3=180, T4=230, T5=270, T6=300
+    private static final short[] DAMAGE_BY_TIER = { 65, 95, 140, 180, 230, 270, 300 };
+    // Flat heal amount per tier: T0=25, T1=55, T2=65, T3=90, T4=100, T5=105, T6=110
+    private static final int[] HEAL_BY_TIER = { 25, 55, 65, 90, 100, 105, 110 };
 
     public NecromancerSkullScript(RealmManagerServer mgr) {
         super(mgr);
@@ -50,30 +55,23 @@ public class NecromancerSkullScript extends UseableItemScriptBase {
 
     @Override
     public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem, Vector2f targetPos) {
-        // The core ability code already applied HEAL effect to self.
-        // This script adds: AoE damage at cursor position + vampirism heal.
         final Vector2f center = (targetPos != null) ? targetPos : player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 
-        // Base damage scales with tier (T0=65, T6=320) + attack stat.
-        // Tier is encoded in itemId: 200=T0, 201=T1, ..., 206=T6
         int tier = abilityItem.getItemId() - MIN_ID;
-        short baseDamage = (short) (65 + tier * 42);
-        baseDamage += player.getComputedStats().getAtt();
+        short baseDamage = (short) (DAMAGE_BY_TIER[tier] + player.getComputedStats().getAtt());
+        float radius = RADIUS_BY_TIER[tier];
+        int healAmount = HEAL_BY_TIER[tier];
 
         int totalDamageDealt = 0;
         for (final Enemy enemy : targetRealm.getEnemies().values()) {
             if (enemy.getDeath()) continue;
+            if (enemy.hasEffect(ProjectileEffectType.STASIS)) continue;
             float dx = enemy.getPos().x - center.x;
             float dy = enemy.getPos().y - center.y;
-            float distSq = dx * dx + dy * dy;
-            if (distSq <= DAMAGE_RADIUS * DAMAGE_RADIUS) {
-                // Skip stasis-immune enemies
-                if (enemy.hasEffect(ProjectileEffectType.STASIS)) continue;
-
+            if (dx * dx + dy * dy <= radius * radius) {
                 short dmg = (short) Math.max(baseDamage - enemy.getStats().getDef(), baseDamage * 0.15);
                 enemy.setHealth(enemy.getHealth() - dmg);
                 totalDamageDealt += dmg;
-
                 this.mgr.broadcastTextEffect(EntityType.ENEMY, enemy, TextEffect.DAMAGE, "-" + dmg);
                 if (enemy.getDeath()) {
                     this.mgr.enemyDeath(targetRealm, enemy);
@@ -81,17 +79,14 @@ public class NecromancerSkullScript extends UseableItemScriptBase {
             }
         }
 
-        // Broadcast vampirism visual effect (inward-sucking particles at player center)
+        // Broadcast vampirism visual
         this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
-            CreateEffectPacket.EFFECT_VAMPIRISM, center.x, center.y, DAMAGE_RADIUS, (short) 1500));
+            CreateEffectPacket.EFFECT_VAMPIRISM, center.x, center.y, radius, (short) 1500));
 
-        // Vampirism heal: heal self based on damage dealt
-        if (totalDamageDealt > 0) {
-            int healAmount = (int) (totalDamageDealt * HEAL_RATIO);
-            int maxHp = player.getComputedStats().getHp();
-            int newHealth = Math.min(player.getHealth() + healAmount, maxHp);
-            player.setHealth(newHealth);
-            this.mgr.broadcastTextEffect(EntityType.PLAYER, player, TextEffect.HEAL, "+" + healAmount);
-        }
+        // Flat heal (matches RotMG wiki) — heals regardless of damage dealt
+        int maxHp = player.getComputedStats().getHp();
+        int newHealth = Math.min(player.getHealth() + healAmount, maxHp);
+        player.setHealth(newHealth);
+        this.mgr.broadcastTextEffect(EntityType.PLAYER, player, TextEffect.HEAL, "+" + healAmount);
     }
 }
