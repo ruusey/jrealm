@@ -59,7 +59,9 @@ public class ActiveVisualEffect {
     }
 
     public boolean isAoe() {
-        return this.effectType != CreateEffectPacket.EFFECT_CHAIN_LIGHTNING;
+        // Line effects have radius=0 and target positions set
+        if (this.radius == 0 && (this.targetPosX != 0 || this.targetPosY != 0)) return false;
+        return true;
     }
 
     public boolean getRemove() {

@@ -54,14 +54,20 @@ public class AssassinPoisonScript extends UseableItemScriptBase {
 
         int tier = abilityItem.getItemId() - MIN_ID;
 
-        // Total poison damage scales with tier: T0=100, T6=700
-        int totalDamage = 100 + tier * 100;
-        // Poison duration: T0=4s, T6=2.5s (higher tiers deal damage faster)
-        long poisonDuration = 4000 - tier * 250;
+        // Total poison damage matches RotMG: T0=150, +150 per tier, T6=1050
+        int totalDamage = 150 + tier * 150;
+        // Duration: T0=3.0s, T1=3.2s, ..., T6=4.5s (longer at higher tiers)
+        long poisonDuration = 3000 + tier * 250;
         // Add ATT stat bonus to total damage
         totalDamage += player.getComputedStats().getAtt();
 
-        // Broadcast poison splash visual at cursor position
+        // Broadcast vial throw arc from player to cursor
+        final Vector2f playerCenter = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+        this.mgr.enqueueServerPacket(CreateEffectPacket.lineEffect(
+                CreateEffectPacket.EFFECT_POISON_SPLASH,
+                playerCenter.x, playerCenter.y, center.x, center.y, (short) 600));
+
+        // Broadcast poison splash AoE at cursor position
         this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
                 CreateEffectPacket.EFFECT_POISON_SPLASH,
                 center.x, center.y, POISON_RADIUS, (short) 1500));

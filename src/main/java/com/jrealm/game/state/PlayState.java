@@ -999,6 +999,10 @@ public class PlayState extends GameState {
     }
 
     private void renderLineEffect(ShapeRenderer shapes, ActiveVisualEffect vfx, float t, float wx, float wy) {
+        if (vfx.getEffectType() == CreateEffectPacket.EFFECT_POISON_SPLASH) {
+            renderPoisonThrow(shapes, vfx, t, wx, wy);
+            return;
+        }
         final float x1 = vfx.getPosX() - wx;
         final float y1 = vfx.getPosY() - wy;
         final float x2 = vfx.getTargetPosX() - wx;
@@ -1108,6 +1112,56 @@ public class PlayState extends GameState {
         shapes.setColor(1.0f, 1.0f, 1.0f, alpha);
         drawCircle(shapes, x1, y1, endSize * 0.4f, 8);
         drawCircle(shapes, x2, y2, endSize * 0.4f, 8);
+        shapes.end();
+    }
+
+    /** Render a poison vial arc from player to target position */
+    private void renderPoisonThrow(ShapeRenderer shapes, ActiveVisualEffect vfx, float t, float wx, float wy) {
+        final float x1 = vfx.getPosX() - wx;
+        final float y1 = vfx.getPosY() - wy;
+        final float x2 = vfx.getTargetPosX() - wx;
+        final float y2 = vfx.getTargetPosY() - wy;
+        final float alpha = t < 0.7f ? 1.0f : 1.0f - (t - 0.7f) * 3.33f;
+
+        final float dx = x2 - x1;
+        final float dy = y2 - y1;
+        final float dist = (float) Math.sqrt(dx * dx + dy * dy);
+        if (dist < 1f) return;
+
+        // Draw parabolic arc trail
+        int steps = 16;
+        float arcHeight = dist * 0.4f;
+
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        float prevX = x1, prevY = y1;
+        for (int i = 1; i <= steps; i++) {
+            float frac = (float) i / steps;
+            float px = x1 + dx * frac;
+            float py = y1 + dy * frac;
+            // Parabolic arc: peaks at midpoint
+            float arcOffset = -4.0f * arcHeight * frac * (1.0f - frac);
+            py += arcOffset;
+
+            // Only draw trail up to where the vial currently is
+            if (frac <= t * 1.2f) {
+                float trailAlpha = alpha * (0.3f + 0.4f * (1.0f - frac));
+                shapes.setColor(0.2f, 0.7f, 0.2f, trailAlpha);
+                shapes.rectLine(prevX, prevY, px, py, 2f);
+            }
+            prevX = px;
+            prevY = py;
+        }
+
+        // Draw the vial as a green dot traveling along the arc
+        float vialFrac = Math.min(t * 1.2f, 1.0f);
+        float vialX = x1 + dx * vialFrac;
+        float vialY = y1 + dy * vialFrac - 4.0f * arcHeight * vialFrac * (1.0f - vialFrac);
+        if (vialFrac < 1.0f) {
+            shapes.setColor(0.3f, 0.9f, 0.3f, alpha);
+            drawCircle(shapes, vialX, vialY, 5f, 8);
+            shapes.setColor(1.0f, 1.0f, 1.0f, alpha * 0.6f);
+            drawCircle(shapes, vialX, vialY, 2f, 6);
+        }
         shapes.end();
     }
 

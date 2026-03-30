@@ -153,6 +153,8 @@ public class RealmManagerServer implements Runnable {
 		final long sourcePlayerId;
 		int damageApplied;
 
+		long lastTickTime;
+
 		PoisonDotState(long realmId, long enemyId, int totalDamage, long duration, long sourcePlayerId) {
 			this.realmId = realmId;
 			this.enemyId = enemyId;
@@ -161,12 +163,15 @@ public class RealmManagerServer implements Runnable {
 			this.startTime = java.time.Instant.now().toEpochMilli();
 			this.sourcePlayerId = sourcePlayerId;
 			this.damageApplied = 0;
+			this.lastTickTime = this.startTime;
 		}
 
 		boolean isExpired() {
 			return java.time.Instant.now().toEpochMilli() - startTime >= duration;
 		}
 	}
+
+	private static final long POISON_TICK_INTERVAL_MS = 200;
 
 	private UnloadPacket lastUnload;
 	// Potentially accessed by many threads many times a second.
@@ -2023,9 +2028,10 @@ public class RealmManagerServer implements Runnable {
 
 	/**
 	 * Process all active poison DoTs. Called every server tick.
-	 * Poison ignores defense (matches RotMG behavior).
+	 * Damage ticks every 200ms in visible chunks. Poison ignores defense.
 	 */
 	private void processPoisonDots() {
+		final long now = java.time.Instant.now().toEpochMilli();
 		synchronized (this.activePoisonDots) {
 			final java.util.Iterator<PoisonDotState> it = this.activePoisonDots.iterator();
 			while (it.hasNext()) {
@@ -2036,11 +2042,18 @@ public class RealmManagerServer implements Runnable {
 				if (enemy == null || enemy.getDeath()) { it.remove(); continue; }
 				if (dot.isExpired()) { it.remove(); continue; }
 
-				// Calculate per-tick damage: totalDamage spread over (duration / tickInterval) ticks
-				// Server runs at 64 tps, poison ticks every 4 ticks (~62ms) to avoid spam
-				long elapsed = java.time.Instant.now().toEpochMilli() - dot.startTime;
-				int expectedDamage = (int) ((float) elapsed / dot.duration * dot.totalDamage);
-				int tickDamage = expectedDamage - dot.damageApplied;
+				// Only tick damage every POISON_TICK_INTERVAL_MS (200ms)
+				if (now - dot.lastTickTime < POISON_TICK_INTERVAL_MS) continue;
+				dot.lastTickTime = now;
+
+				// Calculate damage per tick: totalDamage / (duration / interval)
+				int totalTicks = (int) (dot.duration / POISON_TICK_INTERVAL_MS);
+				int tickDamage = Math.max(1, dot.totalDamage / Math.max(1, totalTicks));
+
+				// Cap so we don't exceed total damage
+				if (dot.damageApplied + tickDamage > dot.totalDamage) {
+					tickDamage = dot.totalDamage - dot.damageApplied;
+				}
 				if (tickDamage <= 0) continue;
 
 				dot.damageApplied += tickDamage;
