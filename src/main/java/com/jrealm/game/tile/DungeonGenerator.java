@@ -104,6 +104,9 @@ public class DungeonGenerator {
 
 		log.info("[DungeonGen] Generating new procedural dungeon realm with room count {}. Params: {}", numRooms, this);
 
+		// Track placed room bounds for overlap rejection
+		final java.util.List<int[]> placedRooms = new java.util.ArrayList<>();
+
 		// Place rooms in a chain, each offset from the previous with guaranteed spacing
 		for (int i = 0; i < numRooms; i++) {
 			final boolean isBossRoom = (i == numRooms - 1);
@@ -123,30 +126,64 @@ public class DungeonGenerator {
 					this.shapeTemplates, isBossRoom);
 
 			int offsetX, offsetY;
+			boolean placed = false;
+			int attempts = 0;
+
 			if (i == 0) {
 				// First room: place near top-left area
 				offsetX = 5 + Realm.RANDOM.nextInt(Math.max(1, this.width / 4));
 				offsetY = 5 + Realm.RANDOM.nextInt(Math.max(1, this.height / 4));
+				placed = true;
 			} else {
-				// Each subsequent room: offset from previous with guaranteed minimum gap
-				int minGap = Math.max(this.minRoomWidth, this.minRoomHeight) + 3;
-				int dirX = Realm.RANDOM.nextBoolean() ? 1 : -1;
-				int dirY = Realm.RANDOM.nextBoolean() ? 1 : -1;
-				int gapX = minGap + Realm.RANDOM.nextInt(Math.max(1, this.maxRoomWidth));
-				int gapY = minGap + Realm.RANDOM.nextInt(Math.max(1, this.maxRoomHeight));
-				// Alternate emphasis between horizontal and vertical spread
-				if (Realm.RANDOM.nextBoolean()) {
-					offsetX = previousRoomOffsetX + (dirX * gapX);
-					offsetY = previousRoomOffsetY + (dirY * (minGap / 2 + Realm.RANDOM.nextInt(Math.max(1, gapY / 2))));
-				} else {
-					offsetX = previousRoomOffsetX + (dirX * (minGap / 2 + Realm.RANDOM.nextInt(Math.max(1, gapX / 2))));
-					offsetY = previousRoomOffsetY + (dirY * gapY);
+				offsetX = 0;
+				offsetY = 0;
+				// Try multiple times to find a non-overlapping position
+				while (!placed && attempts < 30) {
+					attempts++;
+					// Spread outward from previous room using a consistent spiral direction
+					int minGap = Math.max(this.minRoomWidth, this.minRoomHeight) + 3;
+					int gapX = minGap + Realm.RANDOM.nextInt(Math.max(1, this.maxRoomWidth));
+					int gapY = minGap + Realm.RANDOM.nextInt(Math.max(1, this.maxRoomHeight));
+
+					// Bias direction outward from map center to spread rooms across the map
+					int centerX = this.width / 2, centerY = this.height / 2;
+					int biasX = previousRoomOffsetX < centerX ? 1 : -1;
+					int biasY = previousRoomOffsetY < centerY ? 1 : -1;
+					// Add randomness but keep the outward bias
+					int dirX = Realm.RANDOM.nextInt(3) == 0 ? -biasX : biasX;
+					int dirY = Realm.RANDOM.nextInt(3) == 0 ? -biasY : biasY;
+
+					if (Realm.RANDOM.nextBoolean()) {
+						offsetX = previousRoomOffsetX + (dirX * gapX);
+						offsetY = previousRoomOffsetY + (dirY * (minGap / 2 + Realm.RANDOM.nextInt(Math.max(1, gapY / 2))));
+					} else {
+						offsetX = previousRoomOffsetX + (dirX * (minGap / 2 + Realm.RANDOM.nextInt(Math.max(1, gapX / 2))));
+						offsetY = previousRoomOffsetY + (dirY * gapY);
+					}
+
+					// Clamp to map bounds
+					offsetX = Math.max(2, Math.min(offsetX, this.width - room.getWidth() - 2));
+					offsetY = Math.max(2, Math.min(offsetY, this.height - room.getHeight() - 2));
+
+					// Check overlap with all placed rooms (with 2-tile padding)
+					boolean overlaps = false;
+					for (int[] pr : placedRooms) {
+						if (offsetX < pr[0] + pr[2] + 2 && offsetX + room.getWidth() + 2 > pr[0]
+								&& offsetY < pr[1] + pr[3] + 2 && offsetY + room.getHeight() + 2 > pr[1]) {
+							overlaps = true;
+							break;
+						}
+					}
+					if (!overlaps) placed = true;
+				}
+				// Fallback: if all attempts fail, just clamp and place anyway
+				if (!placed) {
+					offsetX = Math.max(2, Math.min(offsetX, this.width - room.getWidth() - 2));
+					offsetY = Math.max(2, Math.min(offsetY, this.height - room.getHeight() - 2));
 				}
 			}
 
-			// Clamp to map bounds
-			offsetX = Math.max(1, Math.min(offsetX, this.width - room.getWidth() - 1));
-			offsetY = Math.max(1, Math.min(offsetY, this.height - room.getHeight() - 1));
+			placedRooms.add(new int[]{ offsetX, offsetY, room.getWidth(), room.getHeight() });
 
 			baseLayer.append(room, offsetX, offsetY);
 
