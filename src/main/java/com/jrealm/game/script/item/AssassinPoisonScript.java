@@ -10,18 +10,19 @@ import com.jrealm.game.math.Vector2f;
 import com.jrealm.net.client.packet.CreateEffectPacket;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
+import com.jrealm.util.WorkerThread;
 
 /**
  * Assassin Poison ability (items 249-255, T0-T6).
- * Throws a poison vial at cursor position. Enemies in the AoE radius
- * receive POISONED status and take damage over time (ignores defense).
- * Total damage and duration scale with tier.
+ * Throws a poison vial at cursor position with a 0.8s travel time.
+ * On landing, enemies in the AoE get POISONED and take DoT (ignores defense).
  */
 public class AssassinPoisonScript extends UseableItemScriptBase {
 
     private static final int MIN_ID = 249;
     private static final int MAX_ID = 255;
-    private static final float POISON_RADIUS = 128.0f; // ~4 tiles AoE radius
+    private static final float POISON_RADIUS = 128.0f;
+    private static final long THROW_DURATION_MS = 800;
 
     public AssassinPoisonScript(RealmManagerServer mgr) {
         super(mgr);
@@ -53,44 +54,52 @@ public class AssassinPoisonScript extends UseableItemScriptBase {
                 : player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 
         int tier = abilityItem.getItemId() - MIN_ID;
+        // RotMG values: T0=150, +150 per tier, T6=1050
+        final int totalDamage = 150 + tier * 150 + player.getComputedStats().getAtt();
+        // Duration: T0=3.0s, T6=4.5s
+        final long poisonDuration = 3000 + tier * 250;
 
-        // Total poison damage matches RotMG: T0=150, +150 per tier, T6=1050
-        int totalDamage = 150 + tier * 150;
-        // Duration: T0=3.0s, T1=3.2s, ..., T6=4.5s (longer at higher tiers)
-        long poisonDuration = 3000 + tier * 250;
-        // Add ATT stat bonus to total damage
-        totalDamage += player.getComputedStats().getAtt();
-
-        // Broadcast vial throw arc from player to cursor
+        // Broadcast the throw arc (800ms travel time)
         final Vector2f playerCenter = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
         this.mgr.enqueueServerPacket(CreateEffectPacket.lineEffect(
                 CreateEffectPacket.EFFECT_POISON_SPLASH,
-                playerCenter.x, playerCenter.y, center.x, center.y, (short) 600));
+                playerCenter.x, playerCenter.y, center.x, center.y, (short) THROW_DURATION_MS));
 
-        // Broadcast poison splash AoE at cursor position
-        this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
-                CreateEffectPacket.EFFECT_POISON_SPLASH,
-                center.x, center.y, POISON_RADIUS, (short) 1500));
+        // Schedule the landing effect and damage after the throw completes
+        final long realmId = targetRealm.getRealmId();
+        final long playerId = player.getId();
+        final float landX = center.x;
+        final float landY = center.y;
 
-        // Apply poison to all enemies in radius
-        for (final Enemy enemy : targetRealm.getEnemies().values()) {
-            if (enemy.getDeath()) continue;
-            if (enemy.hasEffect(ProjectileEffectType.STASIS)) continue;
-
-            float dx = enemy.getPos().x - center.x;
-            float dy = enemy.getPos().y - center.y;
-            float distSq = dx * dx + dy * dy;
-
-            if (distSq <= POISON_RADIUS * POISON_RADIUS) {
-                // Apply POISONED visual effect
-                enemy.addEffect(ProjectileEffectType.POISONED, poisonDuration);
-
-                // Register poison DoT with the server
-                this.mgr.registerPoisonDot(targetRealm.getRealmId(), enemy.getId(),
-                        totalDamage, poisonDuration, player.getId());
-
-                this.mgr.broadcastTextEffect(EntityType.ENEMY, enemy, TextEffect.DAMAGE, "POISONED");
+        WorkerThread.submitAndForkRun(() -> {
+            try {
+                Thread.sleep(THROW_DURATION_MS);
+            } catch (InterruptedException e) {
+                return;
             }
-        }
+
+            final Realm realm = this.mgr.getRealms().get(realmId);
+            if (realm == null) return;
+
+            // Broadcast splash AoE on landing
+            this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
+                    CreateEffectPacket.EFFECT_POISON_SPLASH,
+                    landX, landY, POISON_RADIUS, (short) 1500));
+
+            // Apply poison to enemies in radius at the moment of landing
+            for (final Enemy enemy : realm.getEnemies().values()) {
+                if (enemy.getDeath()) continue;
+                if (enemy.hasEffect(ProjectileEffectType.STASIS)) continue;
+
+                float dx = enemy.getPos().x - landX;
+                float dy = enemy.getPos().y - landY;
+                if (dx * dx + dy * dy <= POISON_RADIUS * POISON_RADIUS) {
+                    enemy.addEffect(ProjectileEffectType.POISONED, poisonDuration);
+                    this.mgr.registerPoisonDot(realmId, enemy.getId(),
+                            totalDamage, poisonDuration, playerId);
+                    this.mgr.broadcastTextEffect(EntityType.ENEMY, enemy, TextEffect.DAMAGE, "POISONED");
+                }
+            }
+        });
     }
 }

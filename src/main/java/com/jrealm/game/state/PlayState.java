@@ -1115,53 +1115,76 @@ public class PlayState extends GameState {
         shapes.end();
     }
 
-    /** Render a poison vial arc from player to target position */
+    /** Render a chunky poison vial arc from player to target position (800ms flight) */
     private void renderPoisonThrow(ShapeRenderer shapes, ActiveVisualEffect vfx, float t, float wx, float wy) {
         final float x1 = vfx.getPosX() - wx;
         final float y1 = vfx.getPosY() - wy;
         final float x2 = vfx.getTargetPosX() - wx;
         final float y2 = vfx.getTargetPosY() - wy;
-        final float alpha = t < 0.7f ? 1.0f : 1.0f - (t - 0.7f) * 3.33f;
 
         final float dx = x2 - x1;
         final float dy = y2 - y1;
         final float dist = (float) Math.sqrt(dx * dx + dy * dy);
         if (dist < 1f) return;
 
-        // Draw parabolic arc trail
-        int steps = 16;
-        float arcHeight = dist * 0.4f;
+        // Tall parabolic arc — 50% of throw distance as peak height
+        int steps = 24;
+        float arcHeight = dist * 0.5f;
+
+        // Vial position along arc (t goes 0→1 over the 800ms duration)
+        float vialFrac = Math.min(t, 1.0f);
+
+        // Compute arc positions
+        float[] arcX = new float[steps + 1];
+        float[] arcY = new float[steps + 1];
+        for (int i = 0; i <= steps; i++) {
+            float f = (float) i / steps;
+            arcX[i] = x1 + dx * f;
+            arcY[i] = y1 + dy * f - 4.0f * arcHeight * f * (1.0f - f);
+        }
 
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        float prevX = x1, prevY = y1;
-        for (int i = 1; i <= steps; i++) {
-            float frac = (float) i / steps;
-            float px = x1 + dx * frac;
-            float py = y1 + dy * frac;
-            // Parabolic arc: peaks at midpoint
-            float arcOffset = -4.0f * arcHeight * frac * (1.0f - frac);
-            py += arcOffset;
 
-            // Only draw trail up to where the vial currently is
-            if (frac <= t * 1.2f) {
-                float trailAlpha = alpha * (0.3f + 0.4f * (1.0f - frac));
-                shapes.setColor(0.2f, 0.7f, 0.2f, trailAlpha);
-                shapes.rectLine(prevX, prevY, px, py, 2f);
+        // Thick green trail behind the vial
+        for (int i = 0; i < steps; i++) {
+            float f = (float) (i + 1) / steps;
+            if (f > vialFrac) break;
+            // Trail fades from thin at start to thick near vial
+            float thickness = 3.0f + 5.0f * (f / Math.max(vialFrac, 0.01f));
+            float trailAlpha = 0.15f + 0.4f * (f / Math.max(vialFrac, 0.01f));
+            shapes.setColor(0.2f, 0.65f, 0.15f, trailAlpha);
+            shapes.rectLine(arcX[i], arcY[i], arcX[i + 1], arcY[i + 1], thickness);
+        }
+
+        // Dripping particles along the trail
+        for (int i = 0; i < 6; i++) {
+            float pf = vialFrac * (0.3f + 0.7f * i / 6.0f);
+            int idx = Math.min((int) (pf * steps), steps);
+            float dripY = arcY[idx] + (t * 30.0f * (i + 1) / 6.0f);  // drip downward over time
+            float dripAlpha = Math.max(0, 0.5f - t * 0.6f);
+            if (dripAlpha > 0) {
+                shapes.setColor(0.15f, 0.6f, 0.1f, dripAlpha);
+                shapes.rect(arcX[idx] - 2, dripY - 1, 4, 3 + i);
             }
-            prevX = px;
-            prevY = py;
         }
 
-        // Draw the vial as a green dot traveling along the arc
-        float vialFrac = Math.min(t * 1.2f, 1.0f);
-        float vialX = x1 + dx * vialFrac;
-        float vialY = y1 + dy * vialFrac - 4.0f * arcHeight * vialFrac * (1.0f - vialFrac);
+        // Fat vial blob
         if (vialFrac < 1.0f) {
-            shapes.setColor(0.3f, 0.9f, 0.3f, alpha);
-            drawCircle(shapes, vialX, vialY, 5f, 8);
-            shapes.setColor(1.0f, 1.0f, 1.0f, alpha * 0.6f);
-            drawCircle(shapes, vialX, vialY, 2f, 6);
+            int vialIdx = Math.min((int) (vialFrac * steps), steps);
+            float vx = arcX[vialIdx];
+            float vy = arcY[vialIdx];
+
+            // Outer glow
+            shapes.setColor(0.2f, 0.7f, 0.1f, 0.4f);
+            drawCircle(shapes, vx, vy, 12f, 10);
+            // Main vial body
+            shapes.setColor(0.3f, 0.9f, 0.2f, 0.9f);
+            drawCircle(shapes, vx, vy, 8f, 10);
+            // Bright core / highlight
+            shapes.setColor(0.7f, 1.0f, 0.5f, 0.8f);
+            drawCircle(shapes, vx - 2, vy - 2, 3.5f, 8);
         }
+
         shapes.end();
     }
 
