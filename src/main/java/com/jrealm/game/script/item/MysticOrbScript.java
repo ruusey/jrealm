@@ -20,7 +20,7 @@ public class MysticOrbScript extends UseableItemScriptBase {
 
     private static final int MIN_ID = 256;
     private static final int MAX_ID = 262;
-    private static final float STASIS_RADIUS = 96.0f;  // ~3 tiles inner zone
+    private static final float STASIS_RADIUS = 72.0f;  // ~2.25 tiles inner zone
     private static final float CURSE_RADIUS = 160.0f;  // ~5 tiles outer zone
     private static final long CURSE_DURATION = 5000;    // 5 seconds
 

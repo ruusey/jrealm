@@ -2010,19 +2010,11 @@ public class RealmManagerServer implements Runnable {
 
 	/**
 	 * Register a poison damage-over-time effect on an enemy.
-	 * If the enemy is already poisoned, the stronger poison replaces the weaker one.
+	 * Poisons stack — multiple assassins or repeated uses all tick independently.
 	 */
 	public void registerPoisonDot(long realmId, long enemyId, int totalDamage, long duration, long sourcePlayerId) {
 		synchronized (this.activePoisonDots) {
-			// Remove existing poison on same enemy if weaker
-			this.activePoisonDots.removeIf(dot ->
-					dot.enemyId == enemyId && dot.realmId == realmId && dot.totalDamage <= totalDamage);
-			// Only add if no stronger poison exists
-			boolean hasStronger = this.activePoisonDots.stream()
-					.anyMatch(dot -> dot.enemyId == enemyId && dot.realmId == realmId);
-			if (!hasStronger) {
-				this.activePoisonDots.add(new PoisonDotState(realmId, enemyId, totalDamage, duration, sourcePlayerId));
-			}
+			this.activePoisonDots.add(new PoisonDotState(realmId, enemyId, totalDamage, duration, sourcePlayerId));
 		}
 	}
 

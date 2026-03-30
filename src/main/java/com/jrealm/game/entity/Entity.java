@@ -95,10 +95,35 @@ public abstract class Entity extends GameObject {
     }
 
     public void addEffect(ProjectileEffectType effect, long duration) {
+        final long expireTime = Instant.now().toEpochMilli() + duration;
+
+        // POISONED stacks — always add a new slot (multiple poisons tick independently)
+        if (effect == ProjectileEffectType.POISONED) {
+            for (int i = 0; i < this.effectIds.length; i++) {
+                if (this.effectIds[i] == -1) {
+                    this.effectIds[i] = effect.effectId;
+                    this.effectTimes[i] = expireTime;
+                    return;
+                }
+            }
+            return;
+        }
+
+        // All other effects: refresh duration if already present, otherwise add to empty slot
+        for (int i = 0; i < this.effectIds.length; i++) {
+            if (this.effectIds[i] == effect.effectId) {
+                // Refresh: extend to whichever expires later
+                if (expireTime > this.effectTimes[i]) {
+                    this.effectTimes[i] = expireTime;
+                }
+                return;
+            }
+        }
+        // Not found — add to first empty slot
         for (int i = 0; i < this.effectIds.length; i++) {
             if (this.effectIds[i] == -1) {
                 this.effectIds[i] = effect.effectId;
-                this.effectTimes[i] = (Instant.now().toEpochMilli() + duration);
+                this.effectTimes[i] = expireTime;
                 return;
             }
         }
