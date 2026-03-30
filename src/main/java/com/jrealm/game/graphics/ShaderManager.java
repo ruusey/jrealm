@@ -61,6 +61,14 @@ public class ShaderManager {
         0.08f, 0.08f, 0.1f, 0
     };
 
+    // Poisoned: sickly green tint
+    private static final float[] POISONED = {
+        0.2f, 0.5f, 0.1f, 0,
+        0.1f, 0.6f, 0.1f, 0,
+        0.05f, 0.3f, 0.05f, 0,
+        0.05f, 0.15f, 0.0f, 0
+    };
+
     // Cursed: dark reddish-purple tint (enemy takes more damage)
     private static final float[] CURSED = {
         0.6f, 0.1f, 0.15f, 0,
@@ -121,6 +129,7 @@ public class ShaderManager {
     private static com.badlogic.gdx.math.Matrix4 MAT_SILHOUETTE;
     private static com.badlogic.gdx.math.Matrix4 MAT_STASIS;
     private static com.badlogic.gdx.math.Matrix4 MAT_CURSED;
+    private static com.badlogic.gdx.math.Matrix4 MAT_POISONED;
 
     private static final String VERT_SHADER =
         "attribute vec4 a_position;\n" +
@@ -207,6 +216,7 @@ public class ShaderManager {
         MAT_SILHOUETTE = new com.badlogic.gdx.math.Matrix4(SILHOUETTE);
         MAT_STASIS = new com.badlogic.gdx.math.Matrix4(STASIS);
         MAT_CURSED = new com.badlogic.gdx.math.Matrix4(CURSED);
+        MAT_POISONED = new com.badlogic.gdx.math.Matrix4(POISONED);
     }
 
     private static Sprite.EffectEnum lastAppliedEffect = null;
@@ -240,6 +250,7 @@ public class ShaderManager {
             case SILHOUETTE: matrix = MAT_SILHOUETTE; break;
             case STASIS: matrix = MAT_STASIS; break;
             case CURSED: matrix = MAT_CURSED; break;
+            case POISONED: matrix = MAT_POISONED; break;
             default: matrix = MAT_IDENTITY; break;
         }
         effectShader.setUniformMatrix("u_colorMatrix", matrix);

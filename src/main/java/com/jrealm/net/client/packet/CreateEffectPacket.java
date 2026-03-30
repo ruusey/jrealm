@@ -54,6 +54,7 @@ public class CreateEffectPacket extends Packet {
 	public static final short EFFECT_STASIS_FIELD = 2;
 	public static final short EFFECT_CHAIN_LIGHTNING = 3;
 	public static final short EFFECT_CURSE_RADIUS = 4;
+	public static final short EFFECT_POISON_SPLASH = 5;
 
 	public static CreateEffectPacket aoeEffect(short type, float x, float y, float radius, short duration) {
 		return CreateEffectPacket.builder()

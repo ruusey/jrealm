@@ -140,7 +140,34 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, ObjectMovePacket> playerObjectMoveState = new ConcurrentHashMap<>();
 	private Map<Long, Long> playerGroundDamageState = new ConcurrentHashMap<>();
 	private Map<Long, Long> playerLastHeartbeatTime = new ConcurrentHashMap<>();
-	
+
+	// Poison damage-over-time tracking
+	private final List<PoisonDotState> activePoisonDots = new java.util.ArrayList<>();
+
+	private static class PoisonDotState {
+		final long realmId;
+		final long enemyId;
+		final int totalDamage;
+		final long duration;
+		final long startTime;
+		final long sourcePlayerId;
+		int damageApplied;
+
+		PoisonDotState(long realmId, long enemyId, int totalDamage, long duration, long sourcePlayerId) {
+			this.realmId = realmId;
+			this.enemyId = enemyId;
+			this.totalDamage = totalDamage;
+			this.duration = duration;
+			this.startTime = java.time.Instant.now().toEpochMilli();
+			this.sourcePlayerId = sourcePlayerId;
+			this.damageApplied = 0;
+		}
+
+		boolean isExpired() {
+			return java.time.Instant.now().toEpochMilli() - startTime >= duration;
+		}
+	}
+
 	private UnloadPacket lastUnload;
 	// Potentially accessed by many threads many times a second.
 	// marked volatile to make sure each time this queue is accessed
@@ -1096,6 +1123,7 @@ public class RealmManagerServer implements Runnable {
 		this.removeExpiredBullets();
 		this.removeExpiredLootContainers();
 		this.removeExpiredPortals();
+		this.processPoisonDots();
 	}
 
 	private void movePlayer(final long realmId, final Player p) {
@@ -1972,6 +2000,59 @@ public class RealmManagerServer implements Runnable {
 		} catch (Exception e) {
 			RealmManagerServer.log.error("[SERVER] Failed to broadcast TextEffect Packet for Entity {}. Reason: {}",
 					entity.getId(), e);
+		}
+	}
+
+	/**
+	 * Register a poison damage-over-time effect on an enemy.
+	 * If the enemy is already poisoned, the stronger poison replaces the weaker one.
+	 */
+	public void registerPoisonDot(long realmId, long enemyId, int totalDamage, long duration, long sourcePlayerId) {
+		synchronized (this.activePoisonDots) {
+			// Remove existing poison on same enemy if weaker
+			this.activePoisonDots.removeIf(dot ->
+					dot.enemyId == enemyId && dot.realmId == realmId && dot.totalDamage <= totalDamage);
+			// Only add if no stronger poison exists
+			boolean hasStronger = this.activePoisonDots.stream()
+					.anyMatch(dot -> dot.enemyId == enemyId && dot.realmId == realmId);
+			if (!hasStronger) {
+				this.activePoisonDots.add(new PoisonDotState(realmId, enemyId, totalDamage, duration, sourcePlayerId));
+			}
+		}
+	}
+
+	/**
+	 * Process all active poison DoTs. Called every server tick.
+	 * Poison ignores defense (matches RotMG behavior).
+	 */
+	private void processPoisonDots() {
+		synchronized (this.activePoisonDots) {
+			final java.util.Iterator<PoisonDotState> it = this.activePoisonDots.iterator();
+			while (it.hasNext()) {
+				final PoisonDotState dot = it.next();
+				final Realm realm = this.realms.get(dot.realmId);
+				if (realm == null) { it.remove(); continue; }
+				final Enemy enemy = realm.getEnemy(dot.enemyId);
+				if (enemy == null || enemy.getDeath()) { it.remove(); continue; }
+				if (dot.isExpired()) { it.remove(); continue; }
+
+				// Calculate per-tick damage: totalDamage spread over (duration / tickInterval) ticks
+				// Server runs at 64 tps, poison ticks every 4 ticks (~62ms) to avoid spam
+				long elapsed = java.time.Instant.now().toEpochMilli() - dot.startTime;
+				int expectedDamage = (int) ((float) elapsed / dot.duration * dot.totalDamage);
+				int tickDamage = expectedDamage - dot.damageApplied;
+				if (tickDamage <= 0) continue;
+
+				dot.damageApplied += tickDamage;
+				enemy.setHealth(enemy.getHealth() - tickDamage);
+				this.broadcastTextEffect(com.jrealm.game.contants.EntityType.ENEMY, enemy,
+						com.jrealm.game.contants.TextEffect.DAMAGE, "-" + tickDamage);
+
+				if (enemy.getDeath()) {
+					this.enemyDeath(realm, enemy);
+					it.remove();
+				}
+			}
 		}
 	}
 

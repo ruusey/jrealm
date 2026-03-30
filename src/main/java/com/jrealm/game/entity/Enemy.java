@@ -634,6 +634,10 @@ public class Enemy extends Entity {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.CURSED)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.CURSED);
             }
+        } else if (this.hasEffect(ProjectileEffectType.POISONED)) {
+            if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.POISONED)) {
+                this.getSpriteSheet().setEffect(Sprite.EffectEnum.POISONED);
+            }
         } else if (this.hasNoEffects()) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.NORMAL)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.NORMAL);

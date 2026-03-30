@@ -926,6 +926,9 @@ public class PlayState extends GameState {
         case CreateEffectPacket.EFFECT_CURSE_RADIUS:
             r = 0.8f; g = 0.0f; b = 0.15f;
             break;
+        case CreateEffectPacket.EFFECT_POISON_SPLASH:
+            r = 0.2f; g = 0.8f; b = 0.2f;
+            break;
         default:
             r = 1.0f; g = 1.0f; b = 1.0f;
             break;
