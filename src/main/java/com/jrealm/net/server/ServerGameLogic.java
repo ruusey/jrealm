@@ -212,8 +212,25 @@ public class ServerGameLogic {
 				used.setToRealmId(generatedRealm.getRealmId());
 			}
 		} else {
-			// Target realm already exists
-			user.setPos(targetRealm.getTileManager().getSafePosition());
+			// Target realm already exists — spawn at the dungeon's fixed entry point
+			final Vector2f entryPos = targetRealm.getTileManager().getPlayerSpawnPos();
+			if (entryPos != null) {
+				// Spawn at dungeon entry room with slight random offset to avoid stacking
+				user.setPos(entryPos.clone(
+						Realm.RANDOM.nextInt(32) - 16,
+						Realm.RANDOM.nextInt(32) - 16));
+			} else if (targetRealm.getTileManager().getTerrainParams() != null) {
+				// Overworld: spawn in beach zone
+				user.setPos(targetRealm.getTileManager().getSafePosition());
+			} else {
+				// Static map fallback
+				final MapModel mapModel = GameDataManager.MAPS.get(targetRealm.getMapId());
+				if (mapModel != null) {
+					user.setPos(mapModel.getCenter());
+				} else {
+					user.setPos(targetRealm.getTileManager().getSafePosition());
+				}
+			}
 
 			// Vault cleanup: save chests then remove
 			if (currentRealm.getMapId() == 1) {
@@ -526,14 +543,8 @@ public class ServerGameLogic {
 				if (!isBotAccount) {
 					for (Player existing : mgr.getPlayers()) {
 						if (existing.getAccountUuid() != null && existing.getAccountUuid().equals(accountUuid)) {
-							final Realm currentRealm = mgr.findPlayerRealm(existing.getId());
-							if (currentRealm != null) {
-								currentRealm.removePlayer(existing);
-								if (currentRealm.getMapId() == 1) {
-									mgr.safeRemoveRealm(currentRealm.getRealmId());
-								}
-							}
 							log.info("[SERVER] Disconnecting previous session for account {} (re-login)", accountUuid);
+							mgr.disconnectPlayer(existing);
 							break;
 						}
 					}

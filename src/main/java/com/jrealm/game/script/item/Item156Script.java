@@ -28,11 +28,24 @@ public class Item156Script extends UseableItemScriptBase {
 
     @Override
     public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
-        for (final Player other : targetRealm
+        final long duration = abilityItem.getEffect().getDuration();
+        for (final Player target : targetRealm
                 .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 5))) {
-            other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
+            // Berserk (attack speed) to all nearby players
+            target.addEffect(com.jrealm.game.contants.ProjectileEffectType.BERSERK, duration);
+            if (target.getId() == player.getId()) {
+                // Speedy (move speed) to self only
+                target.addEffect(com.jrealm.game.contants.ProjectileEffectType.SPEEDY, duration);
+                this.mgr.broadcastTextEffect(
+                    com.jrealm.game.contants.EntityType.PLAYER, target,
+                    com.jrealm.game.contants.TextEffect.PLAYER_INFO, "BERSERK + SPEEDY");
+            } else {
+                this.mgr.broadcastTextEffect(
+                    com.jrealm.game.contants.EntityType.PLAYER, target,
+                    com.jrealm.game.contants.TextEffect.PLAYER_INFO, "BERSERK");
+            }
         }
-        // Broadcast warrior buff visual (orange/yellow expanding ring)
+        // Broadcast warrior buff visual
         final Vector2f center = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
         this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
             CreateEffectPacket.EFFECT_HEAL_RADIUS, center.x, center.y, 160.0f, (short) 1500));

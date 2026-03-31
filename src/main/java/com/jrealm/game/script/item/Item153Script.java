@@ -29,10 +29,14 @@ public class Item153Script extends UseableItemScriptBase {
 
     @Override
     public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
-        for (final Player other : targetRealm
+        final long duration = abilityItem.getEffect().getDuration();
+        for (final Player target : targetRealm
                 .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 5))) {
-            other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
-            other.addEffect(ProjectileEffectType.DAMAGING, abilityItem.getEffect().getDuration()*2);
+            target.addEffect(abilityItem.getEffect().getEffectId(), duration);
+            target.addEffect(ProjectileEffectType.DAMAGING, duration * 2);
+            this.mgr.broadcastTextEffect(
+                com.jrealm.game.contants.EntityType.PLAYER, target,
+                com.jrealm.game.contants.TextEffect.PLAYER_INFO, "HEALING + DAMAGING");
         }
         // Broadcast paladin seal visual (golden heal ring)
         final Vector2f center = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);

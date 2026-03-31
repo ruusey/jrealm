@@ -1854,6 +1854,12 @@ public class RealmManagerServer implements Runnable {
 		this.playerLoadMapState.remove(playerId);
 		this.playerLastHeartbeatTime.remove(playerId);
 		this.playerGroundDamageState.remove(playerId);
+		this.playerOutboundPacketQueue.remove(playerId);
+		this.enemyUpdateState.remove(playerId);
+		// Clean up any poison DoTs sourced by this player
+		synchronized (this.activePoisonDots) {
+			this.activePoisonDots.removeIf(dot -> dot.sourcePlayerId == playerId);
+		}
 	}
 
 	public PortalModel getPortalToDepth(int targetDepth) {

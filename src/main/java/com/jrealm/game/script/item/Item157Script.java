@@ -27,25 +27,37 @@ public class Item157Script extends UseableItemScriptBase {
     public void invokeUseItem(final Realm targetRealm, final Player player, final GameItem item) {
     }
 
+    // RotMG wiki heal values: T0=50, T1=90, T2=100, T3=110, T4=120, T5=130, T6=140
+    private static final int[] HEAL_BY_TIER = { 50, 90, 100, 110, 120, 130, 140 };
+
     @Override
     public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
         final Effect effect = abilityItem.getEffect();
-        player.addEffect(effect.getEffectId(), effect.getDuration());
-        // Broadcast heal radius visual effect
+
+        // Calculate heal amount based on tier
+        int tier = 0;
+        if (abilityItem.getItemId() >= 228 && abilityItem.getItemId() <= 234) {
+            tier = abilityItem.getItemId() - 228;
+        }
+        final int healAmount = HEAL_BY_TIER[Math.min(tier, HEAL_BY_TIER.length - 1)];
+
+        // Broadcast heal radius visual
         final Vector2f center = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
         this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
             CreateEffectPacket.EFFECT_HEAL_RADIUS, center.x, center.y, 224.0f, (short) 1500));
-        int healthDiff = player.getComputedStats().getHp() - player.getHealth();
-        if (healthDiff > 0) {
-            int healthToAdd = healthDiff < 50 ? healthDiff : 50;
-            player.setHealth(player.getHealth() + healthToAdd);
-        }
-        for (final Player other : targetRealm
+
+        // Heal ALL players in range (including self) and apply healing effect
+        for (final Player target : targetRealm
                 .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 7))) {
-            healthDiff = player.getComputedStats().getHp() - player.getHealth();
-            if (healthDiff > 0) {
-                int healthToAdd = healthDiff < 50 ? healthDiff : 50;
-                other.setHealth(other.getHealth() + healthToAdd);
+            target.addEffect(effect.getEffectId(), effect.getDuration());
+            int maxHp = target.getComputedStats().getHp();
+            int missing = maxHp - target.getHealth();
+            if (missing > 0) {
+                int toHeal = Math.min(healAmount, missing);
+                target.setHealth(target.getHealth() + toHeal);
+                this.mgr.broadcastTextEffect(
+                    com.jrealm.game.contants.EntityType.PLAYER, target,
+                    com.jrealm.game.contants.TextEffect.HEAL, "+" + toHeal);
             }
         }
     }
