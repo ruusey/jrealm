@@ -954,6 +954,11 @@ public class Realm {
             density = hasZones ? 0.011f : 0.004f;
         }
 
+        // Spawn caps for rare/unique enemies
+        final Map<Integer, Integer> spawnCaps = new java.util.HashMap<>();
+        final Map<Integer, Integer> spawnCounts = new java.util.HashMap<>();
+        spawnCaps.put(13, 2);  // The Man: max 2 per realm
+
         for (int i = 1; i < mapHeight; i++) {
             for (int j = 1; j < mapWidth; j++) {
                 if (Realm.RANDOM.nextFloat() >= density) continue;
@@ -977,6 +982,13 @@ public class Realm {
 
                 if (spawnList.isEmpty()) continue;
                 final EnemyModel toSpawn = spawnList.get(Realm.RANDOM.nextInt(spawnList.size()));
+
+                // Enforce spawn caps for rare enemies (e.g., The Man = max 2)
+                if (spawnCaps.containsKey(toSpawn.getEnemyId())) {
+                    int current = spawnCounts.getOrDefault(toSpawn.getEnemyId(), 0);
+                    if (current >= spawnCaps.get(toSpawn.getEnemyId())) continue;
+                    spawnCounts.merge(toSpawn.getEnemyId(), 1, Integer::sum);
+                }
 
                 final Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
                         spawnPos.clone(), toSpawn.getSize(), toSpawn.getAttackId());
