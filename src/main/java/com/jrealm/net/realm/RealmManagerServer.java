@@ -414,6 +414,20 @@ public class RealmManagerServer implements Runnable {
 					if (playerRealm != null) {
 						final Player dcPlayer = playerRealm.getPlayer(dcPlayerId);
 						if (dcPlayer != null) {
+							// Save vault chests if player is in vault
+							if (playerRealm.getMapId() == 1) {
+								try {
+									java.util.List<com.jrealm.account.dto.ChestDto> chestsToSave = playerRealm.serializeChests();
+									ServerGameLogic.DATA_SERVICE.executePost(
+											"/data/account/" + dcPlayer.getAccountUuid() + "/chest",
+											chestsToSave, com.jrealm.account.dto.PlayerAccountDto.class);
+									log.info("[SERVER] Saved vault chests for DC'd player {}", dcPlayer.getName());
+								} catch (Exception e) {
+									log.error("[SERVER] Failed to save vault on DC for {}. Reason: {}",
+											dcPlayer.getName(), e.getMessage());
+								}
+								this.realms.remove(playerRealm.getRealmId());
+							}
 							this.persistPlayerAsync(dcPlayer);
 							playerRealm.getExpiredPlayers().add(dcPlayerId);
 							playerRealm.removePlayer(dcPlayer);
@@ -558,41 +572,37 @@ public class RealmManagerServer implements Runnable {
 						}
 
 						// --- Self UpdatePacket ---
-						// Full rate (16Hz) for real changes (inventory, effects, stats, XP).
-						// Throttled (4Hz) for HP/MP-only changes (regen tick noise).
+						// Always send immediately when inventory, effects, or XP change.
+						// Throttle HP/MP-only changes to 4Hz.
 						if (doUpdate) {
 							final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
-							final UpdatePacket oldUpdate = this.playerUpdateState.get(player.getKey());
-							if (oldUpdate == null) {
+							final UpdatePacket oldSelfUpdate = this.playerUpdateState.get(player.getKey());
+							if (oldSelfUpdate == null) {
 								this.playerUpdateState.put(player.getKey(), updatePacket);
 								this.enqueueServerPacket(player.getValue(), updatePacket);
-							} else if (!oldUpdate.equals(updatePacket, false)) {
-								// Check if only stats/hp/mp changed (no inventory, effects, xp)
-								boolean onlyStats = oldUpdate.getExperience() == updatePacket.getExperience()
-									&& !updatePacket.inventoryChanged(oldUpdate)
-									&& java.util.Arrays.equals(oldUpdate.getEffectIds(), updatePacket.getEffectIds());
-								// Stats-only changes: throttle to 4Hz (every 16th tick)
+							} else if (!oldSelfUpdate.equals(updatePacket, false)) {
+								boolean onlyStats = oldSelfUpdate.getExperience() == updatePacket.getExperience()
+									&& !updatePacket.inventoryChanged(oldSelfUpdate)
+									&& java.util.Arrays.equals(oldSelfUpdate.getEffectIds(), updatePacket.getEffectIds());
 								if (onlyStats && (this.tickCounter % 16) != 0) {
-									// Skip this tick — will send on next 4Hz boundary
+									// Throttle HP/MP-only noise
 								} else {
 									this.playerUpdateState.put(player.getKey(), updatePacket);
 									this.enqueueServerPacket(player.getValue(), updatePacket);
 								}
 							}
 
-							// Nearby other players' UpdatePackets (uses spatial grid)
+							// Nearby other players — send their updates TO this player.
+							// Use a separate cache so we never corrupt the self-update state.
 							final Player[] otherPlayers = realm.getPlayersInRadiusFast(playerCenter, viewportRadius);
 							for (Player other : otherPlayers) {
 								if (other.getId() == player.getKey()) continue;
 								try {
+									// Build a thin update (no inventory) for other players
 									final UpdatePacket otherUpdate = realm.getPlayerAsPacket(other.getId());
-									if (otherUpdate != null) {
-										final UpdatePacket cachedOther = this.playerUpdateState.get(other.getId());
-										if (cachedOther == null || !cachedOther.equals(otherUpdate, false)) {
-											this.playerUpdateState.put(other.getId(), otherUpdate);
-											this.enqueueServerPacket(player.getValue(), otherUpdate);
-										}
-									}
+									if (otherUpdate == null) continue;
+									final UpdatePacket thinOther = otherUpdate.withoutInventory();
+									this.enqueueServerPacket(player.getValue(), thinOther);
 								} catch (Exception ex) {
 									log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
 								}
@@ -816,9 +826,25 @@ public class RealmManagerServer implements Runnable {
 			log.info("[SERVER] Disconnecting Player {}", player.getName());
 			final Realm playerRealm = this.findPlayerRealm(player.getId());
 			if (playerRealm != null) {
+				// Save vault chests if player is in a vault realm (mapId=1)
+				if (playerRealm.getMapId() == 1) {
+					try {
+						java.util.List<com.jrealm.account.dto.ChestDto> chestsToSave = playerRealm.serializeChests();
+						ServerGameLogic.DATA_SERVICE.executePost(
+								"/data/account/" + player.getAccountUuid() + "/chest",
+								chestsToSave, com.jrealm.account.dto.PlayerAccountDto.class);
+						log.info("[SERVER] Saved vault chests for disconnecting player {}", player.getName());
+					} catch (Exception e) {
+						log.error("[SERVER] Failed to save vault chests on disconnect for {}. Reason: {}",
+								player.getName(), e.getMessage());
+					}
+					// Remove the per-player vault realm
+					this.realms.remove(playerRealm.getRealmId());
+				}
 				playerRealm.getExpiredPlayers().add(player.getId());
 				playerRealm.removePlayer(player);
 			}
+			this.persistPlayerAsync(player);
 			this.clearPlayerState(player.getId());
 			final Map.Entry<String, ClientSession> sessionEntry = this.getPlayerSessionEntry(player);
 			if (sessionEntry != null) {
