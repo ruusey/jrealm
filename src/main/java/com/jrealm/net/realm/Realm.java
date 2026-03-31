@@ -957,7 +957,7 @@ public class Realm {
         // Spawn caps for rare/unique enemies
         final Map<Integer, Integer> spawnCaps = new java.util.HashMap<>();
         final Map<Integer, Integer> spawnCounts = new java.util.HashMap<>();
-        spawnCaps.put(13, 2);  // The Man: max 2 per realm
+        spawnCaps.put(13, 3);  // The Man: max 3 per realm (summit only)
 
         for (int i = 1; i < mapHeight; i++) {
             for (int j = 1; j < mapWidth; j++) {

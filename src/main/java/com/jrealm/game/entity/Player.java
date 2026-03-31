@@ -226,6 +226,10 @@ public class Player extends Entity {
 				stats = stats.concat(item.getStats());
 			}
 		}
+		// ARMORED doubles defense
+		if (this.hasEffect(ProjectileEffectType.ARMORED)) {
+			stats.setDef((short) (stats.getDef() * 2));
+		}
 		return stats;
 	}
 
@@ -262,6 +266,10 @@ public class Player extends Entity {
 		} else if (this.hasEffect(ProjectileEffectType.HEALING)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.REDISH)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.REDISH);
+			}
+		} else if (this.hasEffect(ProjectileEffectType.ARMORED)) {
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.ARMORED)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.ARMORED);
 			}
 		} else if (this.hasEffect(ProjectileEffectType.SPEEDY)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {

@@ -14,7 +14,7 @@ public class Sprite {
     private float angleOffset;
 
     public static enum EffectEnum {
-        NORMAL, SEPIA, REDISH, GRAYSCALE, NEGATIVE, DECAY, SILHOUETTE, STASIS, CURSED, POISONED
+        NORMAL, SEPIA, REDISH, GRAYSCALE, NEGATIVE, DECAY, SILHOUETTE, STASIS, CURSED, POISONED, ARMORED
     }
 
     private EffectEnum currentEffectEnum = EffectEnum.NORMAL;

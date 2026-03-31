@@ -61,6 +61,14 @@ public class ShaderManager {
         0.08f, 0.08f, 0.1f, 0
     };
 
+    // Armored: bright metallic blue-silver tint (doubled defense)
+    private static final float[] ARMORED = {
+        0.5f, 0.4f, 0.2f, 0,
+        0.3f, 0.5f, 0.3f, 0,
+        0.2f, 0.4f, 0.7f, 0,
+        0.1f, 0.1f, 0.15f, 0
+    };
+
     // Poisoned: sickly green tint
     private static final float[] POISONED = {
         0.2f, 0.5f, 0.1f, 0,
@@ -130,6 +138,7 @@ public class ShaderManager {
     private static com.badlogic.gdx.math.Matrix4 MAT_STASIS;
     private static com.badlogic.gdx.math.Matrix4 MAT_CURSED;
     private static com.badlogic.gdx.math.Matrix4 MAT_POISONED;
+    private static com.badlogic.gdx.math.Matrix4 MAT_ARMORED;
 
     private static final String VERT_SHADER =
         "attribute vec4 a_position;\n" +
@@ -217,6 +226,7 @@ public class ShaderManager {
         MAT_STASIS = new com.badlogic.gdx.math.Matrix4(STASIS);
         MAT_CURSED = new com.badlogic.gdx.math.Matrix4(CURSED);
         MAT_POISONED = new com.badlogic.gdx.math.Matrix4(POISONED);
+        MAT_ARMORED = new com.badlogic.gdx.math.Matrix4(ARMORED);
     }
 
     private static Sprite.EffectEnum lastAppliedEffect = null;
@@ -251,6 +261,7 @@ public class ShaderManager {
             case STASIS: matrix = MAT_STASIS; break;
             case CURSED: matrix = MAT_CURSED; break;
             case POISONED: matrix = MAT_POISONED; break;
+            case ARMORED: matrix = MAT_ARMORED; break;
             default: matrix = MAT_IDENTITY; break;
         }
         effectShader.setUniformMatrix("u_colorMatrix", matrix);
