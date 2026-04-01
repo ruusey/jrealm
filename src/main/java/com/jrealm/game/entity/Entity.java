@@ -21,7 +21,7 @@ public abstract class Entity extends GameObject {
     protected boolean left = false;
     protected boolean attack = false;
     protected String lastAnimSet = "idle_side";
-    protected String lastMovementDirection = "side"; // "side", "front", or "up" - used for hysteresis
+    protected String lastMovementDirection = "side"; // "side", "front", or "back" - used for hysteresis
     private static final float DIRECTION_SWITCH_THRESHOLD = 0.15f;
 
     public boolean xCol = false;
@@ -195,14 +195,14 @@ public abstract class Entity extends GameObject {
                 float absDy = Math.abs(this.dy);
                 if ("side".equals(this.lastMovementDirection)) {
                     if (absDy > absDx * (1.0f + DIRECTION_SWITCH_THRESHOLD)) {
-                        this.lastMovementDirection = this.dy < 0 ? "up" : "front";
+                        this.lastMovementDirection = this.dy < 0 ? "back" : "front";
                     }
                 } else {
                     if (absDx > absDy * (1.0f + DIRECTION_SWITCH_THRESHOLD)) {
                         this.lastMovementDirection = "side";
                     } else {
                         // Vertical still dominates — update up/front based on current dy
-                        this.lastMovementDirection = this.dy < 0 ? "up" : "front";
+                        this.lastMovementDirection = this.dy < 0 ? "back" : "front";
                     }
                 }
                 targetAnim = getWalkAnim(this.lastMovementDirection);
@@ -210,7 +210,7 @@ public abstract class Entity extends GameObject {
                 this.lastMovementDirection = "side";
                 targetAnim = "walk_side";
             } else if (this.up || this.down) {
-                this.lastMovementDirection = this.dy < 0 ? "up" : "front";
+                this.lastMovementDirection = this.dy < 0 ? "back" : "front";
                 targetAnim = getWalkAnim(this.lastMovementDirection);
             } else {
                 // Idle: keep facing the same direction as last movement
@@ -223,7 +223,7 @@ public abstract class Entity extends GameObject {
 
     private static String getWalkAnim(String direction) {
         switch (direction) {
-            case "up": return "walk_up";
+            case "back": return "walk_back";
             case "front": return "walk_front";
             default: return "walk_side";
         }
@@ -231,7 +231,7 @@ public abstract class Entity extends GameObject {
 
     private static String getIdleAnim(String direction) {
         switch (direction) {
-            case "up": return "idle_up";
+            case "back": return "idle_back";
             case "front": return "idle_front";
             default: return "idle_side";
         }
