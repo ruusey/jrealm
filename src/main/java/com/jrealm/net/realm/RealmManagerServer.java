@@ -140,6 +140,8 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, ObjectMovePacket> playerObjectMoveState = new ConcurrentHashMap<>();
 	private Map<Long, Long> playerGroundDamageState = new ConcurrentHashMap<>();
 	private Map<Long, Long> playerLastHeartbeatTime = new ConcurrentHashMap<>();
+	// Last sent global player positions per realm (for delta detection)
+	private Map<Long, com.jrealm.net.entity.NetPlayerPosition[]> lastGlobalPositions = new ConcurrentHashMap<>();
 
 	// Poison damage-over-time tracking
 	private final List<PoisonDotState> activePoisonDots = new java.util.ArrayList<>();
@@ -426,6 +428,7 @@ public class RealmManagerServer implements Runnable {
 									log.error("[SERVER] Failed to save vault on DC for {}. Reason: {}",
 											dcPlayer.getName(), e.getMessage());
 								}
+								playerRealm.setShutdown(true);
 								this.realms.remove(playerRealm.getRealmId());
 							}
 							this.persistPlayerAsync(dcPlayer);
@@ -588,7 +591,13 @@ public class RealmManagerServer implements Runnable {
 									// Throttle HP/MP-only noise
 								} else {
 									this.playerUpdateState.put(player.getKey(), updatePacket);
-									this.enqueueServerPacket(player.getValue(), updatePacket);
+									// Send light packet (no inventory) when only HP/MP changed,
+									// since the client already has the current inventory state.
+									if (onlyStats) {
+										this.enqueueServerPacket(player.getValue(), updatePacket.withoutInventory());
+									} else {
+										this.enqueueServerPacket(player.getValue(), updatePacket);
+									}
 								}
 							}
 
@@ -839,6 +848,7 @@ public class RealmManagerServer implements Runnable {
 								player.getName(), e.getMessage());
 					}
 					// Remove the per-player vault realm
+					playerRealm.setShutdown(true);
 					this.realms.remove(playerRealm.getRealmId());
 				}
 				playerRealm.getExpiredPlayers().add(player.getId());
@@ -1156,18 +1166,38 @@ public class RealmManagerServer implements Runnable {
 		this.removeExpiredPortals();
 		this.processPoisonDots();
 
-		// Broadcast global player positions for minimap (1 Hz)
+		// Broadcast global player positions for minimap (1 Hz) — only if any position changed
 		if (this.tickCounter % 64 == 0) {
 			for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
 				final Realm realm = realmEntry.getValue();
-				if (realm.getPlayers().isEmpty()) continue;
+				if (realm.getPlayers().isEmpty()) {
+					this.lastGlobalPositions.remove(realmEntry.getKey());
+					continue;
+				}
 				final com.jrealm.net.entity.NetPlayerPosition[] positions = realm.getPlayers().values().stream()
 						.map(com.jrealm.net.entity.NetPlayerPosition::from)
 						.toArray(com.jrealm.net.entity.NetPlayerPosition[]::new);
-				final com.jrealm.net.client.packet.GlobalPlayerPositionPacket minimapPacket =
-						com.jrealm.net.client.packet.GlobalPlayerPositionPacket.from(positions);
-				for (final Player p : realm.getPlayers().values()) {
-					this.enqueueServerPacket(p, minimapPacket);
+				// Delta check: skip broadcast if no position has changed
+				final com.jrealm.net.entity.NetPlayerPosition[] lastPositions = this.lastGlobalPositions.get(realmEntry.getKey());
+				boolean changed = (lastPositions == null) || (lastPositions.length != positions.length);
+				if (!changed) {
+					for (int i = 0; i < positions.length; i++) {
+						if (positions[i].getPlayerId() != lastPositions[i].getPlayerId()
+								|| positions[i].getX() != lastPositions[i].getX()
+								|| positions[i].getY() != lastPositions[i].getY()
+								|| positions[i].isTeleportable() != lastPositions[i].isTeleportable()) {
+							changed = true;
+							break;
+						}
+					}
+				}
+				if (changed) {
+					this.lastGlobalPositions.put(realmEntry.getKey(), positions);
+					final com.jrealm.net.client.packet.GlobalPlayerPositionPacket minimapPacket =
+							com.jrealm.net.client.packet.GlobalPlayerPositionPacket.from(positions);
+					for (final Player p : realm.getPlayers().values()) {
+						this.enqueueServerPacket(p, minimapPacket);
+					}
 				}
 			}
 		}
@@ -1194,7 +1224,10 @@ public class RealmManagerServer implements Runnable {
 			}
 			for (Long id : realmIdsToRemove) {
 				log.info("[SERVER] Cleaning up empty realm {}", id);
-				this.realms.remove(id);
+				final Realm removed = this.realms.remove(id);
+				if (removed != null) {
+					removed.setShutdown(true);
+				}
 			}
 		}
 	}

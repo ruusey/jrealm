@@ -571,6 +571,7 @@ public class ServerCommandHandler {
                 final com.jrealm.game.model.DungeonGraphNode node =
                         GameDataManager.DUNGEON_GRAPH.get(currentRealm.getNodeId());
                 if (node != null && !node.isEntryPoint()) {
+                    currentRealm.setShutdown(true);
                     mgr.getRealms().remove(currentRealm.getRealmId());
                 }
             }

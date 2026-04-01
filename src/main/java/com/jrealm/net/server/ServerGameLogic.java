@@ -171,6 +171,7 @@ public class ServerGameLogic {
 			} catch (Exception e) {
 				log.error("[SERVER] Failed to save vault chests on portal exit: {}", e.getMessage());
 			}
+			currentRealm.setShutdown(true);
 			mgr.getRealms().remove(currentRealm.getRealmId());
 		}
 
@@ -272,6 +273,7 @@ public class ServerGameLogic {
 				if (currentNode != null && !currentNode.isEntryPoint()) {
 					ServerGameLogic.log.info("[SERVER] Removing empty dungeon realm: {} ({})",
 							currentRealm.getNodeId(), currentNode.getDisplayName());
+					currentRealm.setShutdown(true);
 					mgr.getRealms().remove(currentRealm.getRealmId());
 				}
 			}

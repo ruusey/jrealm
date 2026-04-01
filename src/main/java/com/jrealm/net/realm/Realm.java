@@ -126,14 +126,35 @@ public class Realm {
     }
 
     public void setupChests(final Player player) {
-        final Vector2f chestLoc = new Vector2f((0 + (JRealmGame.width / 2)) - 450, (0 + (JRealmGame.height / 2)) - 200);
         try {
             final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
                     .executeGet("/data/account/" + player.getAccountUuid(), null, PlayerAccountDto.class);
-            for (final ChestDto chest : account.getPlayerVault()) {
-                final List<GameItem> itemsInChest = chest.getItems().stream().map(GameItem::fromGameItemRef)
-                        .collect(Collectors.toList());
-                final Chest toSpawn = new Chest(chestLoc.clone((-64 * chest.getOrdinal())+128, 0),
+            final List<ChestDto> vaultChests = account.getPlayerVault();
+            final int count = vaultChests.size();
+            if (count == 0) return;
+
+            // Layout: 2-column grid centered in the vault room
+            // Vault map is 32x32 tiles (32px each). Inner room roughly tiles 10-22 x 8-24.
+            // Center of room: tile (16, 16) = pixel (512, 512)
+            final int cols = 2;
+            final int rows = (int) Math.ceil(count / (double) cols);
+            final int spacingX = 64;  // horizontal gap between columns
+            final int spacingY = 48;  // vertical gap between rows
+            final float centerX = 16 * 32;  // map center X
+            final float startY = 16 * 32 - (rows * spacingY) / 2f + spacingY / 2f; // vertically centered
+            final float leftColX = centerX - spacingX;
+            final float rightColX = centerX + spacingX;
+
+            for (int i = 0; i < count; i++) {
+                final ChestDto chest = vaultChests.get(i);
+                final int col = i % cols;
+                final int row = i / cols;
+                final float x = col == 0 ? leftColX : rightColX;
+                final float y = startY + row * spacingY;
+
+                final List<GameItem> itemsInChest = chest.getItems().stream()
+                        .map(GameItem::fromGameItemRef).collect(Collectors.toList());
+                final Chest toSpawn = new Chest(new Vector2f(x, y),
                         itemsInChest.toArray(new GameItem[8]));
                 this.addLootContainer(toSpawn);
             }
