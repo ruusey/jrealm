@@ -68,6 +68,9 @@ public class ServerCommandHandler {
         	  log.info("Player {} attempting to invvoke admin restricted command '{}'... validating authority", fromPlayer.getName(), message.getCommand());
               final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE.executeGet("/admin/account/" + fromPlayer.getAccountUuid(), null, AccountDto.class);
         		// has Subscription 'ADMIN'
+              if (playerAccount == null) {
+                  throw new IllegalStateException("Failed to look up account for player " + fromPlayer.getName());
+              }
               if (!playerAccount.isAdmin()) {
             	  throw new IllegalStateException(
                           "Player " + playerAccount.getAccountName() + " is not allowed to use Admin commands.");

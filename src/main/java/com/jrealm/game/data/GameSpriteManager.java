@@ -35,7 +35,12 @@ public class GameSpriteManager {
             "rotmg-classes-0.png", "rotmg-classes-1.png", "rotmg-classes-2.png", "rotmg-classes-3.png",
             "lofi_char.png", "lofi_environment.png", "lofi_obj.png",
             "chars8x8rBeach.png", "chars8x8rHero2.png", "cursedLibraryChars16x16.png",
-            "d3Chars8x8r.png", "cursedLibraryChars8x8.png" };
+            "d3Chars8x8r.png", "cursedLibraryChars8x8.png",
+            "archbishopObjects16x16.png", "autumnNexusObjects16x16.png",
+            "chars16x16dEncounters2.png", "crystalCaveChars16x16.png",
+            "epicHiveChars8x8.png", "lairOfDraconisChars8x8.png",
+            "oryxHordeChars16x16.png", "oryxHordeChars8x8.png",
+            "secludedThicketChars16x16.png" };
 
     public static Map<String, Texture> TEXTURE_CACHE;
     public static Map<Integer, TextureRegion> TILE_SPRITES;
