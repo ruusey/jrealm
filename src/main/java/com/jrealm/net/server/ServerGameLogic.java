@@ -101,6 +101,22 @@ public class ServerGameLogic {
 		if (realm.getOverseer() != null) {
 			realm.getOverseer().welcomePlayer(player);
 		}
+
+		// Show online player list when joining the overworld (beach entry node)
+		if (realm.getNodeId() != null && realm.getNodeId().equals("beach")) {
+			final StringBuilder sb = new StringBuilder("Players online: ");
+			int count = 0;
+			for (Player p : mgr.getPlayers()) {
+				if (p.getId() == player.getId()) continue;
+				if (count > 0) sb.append(", ");
+				sb.append(p.getName());
+				count++;
+			}
+			if (count == 0) {
+				sb.append("(none)");
+			}
+			mgr.enqueueServerPacket(player, TextPacket.create("SYSTEM", player.getName(), sb.toString()));
+		}
 	}
 
 	public static void handleUsePortalServer(RealmManagerServer mgr, Packet packet) {
@@ -136,11 +152,27 @@ public class ServerGameLogic {
 		}
 
 		final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
+		if (currentRealm == null) { mgr.releaseRealmLock(); return; }
 		final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
+		if (user == null) { mgr.releaseRealmLock(); return; }
 		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
+		if (used == null) { mgr.releaseRealmLock(); return; }
 		Realm targetRealm = mgr.getRealms().get(used.getToRealmId());
 		final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 		currentRealm.removePlayer(user);
+
+		// Save + remove vault realm if leaving a vault (regardless of target)
+		if (currentRealm.getMapId() == 1) {
+			try {
+				List<ChestDto> chestsToSave = currentRealm.serializeChests();
+				ServerGameLogic.DATA_SERVICE.executePost(
+						"/data/account/" + user.getAccountUuid() + "/chest", chestsToSave, PlayerAccountDto.class);
+				log.info("[SERVER] Saved vault chests for {} on portal exit", user.getName());
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to save vault chests on portal exit: {}", e.getMessage());
+			}
+			mgr.getRealms().remove(currentRealm.getRealmId());
+		}
 
 		// Resolve target node from dungeon graph
 		final String targetNodeId = used.getTargetNodeId();
@@ -232,21 +264,8 @@ public class ServerGameLogic {
 				}
 			}
 
-			// Vault cleanup: save chests then remove
-			if (currentRealm.getMapId() == 1) {
-				List<ChestDto> chestsToSave = currentRealm.serializeChests();
-				try {
-					final PlayerAccountDto savedAccount = ServerGameLogic.DATA_SERVICE.executePost(
-							"/data/account/" + user.getAccountUuid() + "/chest", chestsToSave, PlayerAccountDto.class);
-					ServerGameLogic.log.info("Succesfully saved chests for account {}", savedAccount.getAccountUuid());
-				} catch (Exception e) {
-					ServerGameLogic.log.error("Failed to save account chests for account {}. Reason: {}",
-							user.getAccountUuid(), e);
-				}
-				mgr.getRealms().remove(currentRealm.getRealmId());
-			}
 			// Dungeon cleanup: remove any non-overworld dungeon when last player leaves
-			else if (currentRealm.getPlayers().size() == 0 && currentRealm.getNodeId() != null) {
+			if (currentRealm.getPlayers().size() == 0 && currentRealm.getNodeId() != null) {
 				final com.jrealm.game.model.DungeonGraphNode currentNode =
 						GameDataManager.DUNGEON_GRAPH.get(currentRealm.getNodeId());
 				// Don't remove the entry-point realm (overworld)

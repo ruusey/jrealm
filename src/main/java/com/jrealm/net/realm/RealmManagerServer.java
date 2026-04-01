@@ -1155,6 +1155,48 @@ public class RealmManagerServer implements Runnable {
 		this.removeExpiredLootContainers();
 		this.removeExpiredPortals();
 		this.processPoisonDots();
+
+		// Broadcast global player positions for minimap (1 Hz)
+		if (this.tickCounter % 64 == 0) {
+			for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+				final Realm realm = realmEntry.getValue();
+				if (realm.getPlayers().isEmpty()) continue;
+				final com.jrealm.net.entity.NetPlayerPosition[] positions = realm.getPlayers().values().stream()
+						.map(com.jrealm.net.entity.NetPlayerPosition::from)
+						.toArray(com.jrealm.net.entity.NetPlayerPosition[]::new);
+				final com.jrealm.net.client.packet.GlobalPlayerPositionPacket minimapPacket =
+						com.jrealm.net.client.packet.GlobalPlayerPositionPacket.from(positions);
+				for (final Player p : realm.getPlayers().values()) {
+					this.enqueueServerPacket(p, minimapPacket);
+				}
+			}
+		}
+
+		// Periodic cleanup: remove empty vault/dungeon realms (every 64 ticks ~1s)
+		if (this.tickCounter % 64 == 0) {
+			final List<Long> realmIdsToRemove = new ArrayList<>();
+			for (final Map.Entry<Long, Realm> entry : this.realms.entrySet()) {
+				final Realm r = entry.getValue();
+				if (r.getPlayers().isEmpty()) {
+					// Vault realms (mapId=1): always remove when empty
+					if (r.getMapId() == 1) {
+						realmIdsToRemove.add(entry.getKey());
+					}
+					// Dungeon realms: remove if non-overworld and empty
+					else if (r.getNodeId() != null) {
+						final com.jrealm.game.model.DungeonGraphNode node =
+								GameDataManager.DUNGEON_GRAPH.get(r.getNodeId());
+						if (node != null && !node.isEntryPoint()) {
+							realmIdsToRemove.add(entry.getKey());
+						}
+					}
+				}
+			}
+			for (Long id : realmIdsToRemove) {
+				log.info("[SERVER] Cleaning up empty realm {}", id);
+				this.realms.remove(id);
+			}
+		}
 	}
 
 	private void movePlayer(final long realmId, final Player p) {
@@ -1522,20 +1564,19 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 			}
-			// Legacy: apply status effects from projectile flags
+			// Legacy: apply status effects from projectile flags (enemy → player: short durations)
 			if (b.getFlags() != null) {
-				final long defaultDuration = 5000;
 				if (b.hasFlag(ProjectileEffectType.STUNNED)) {
-					p.addEffect(ProjectileEffectType.STUNNED, defaultDuration);
+					p.addEffect(ProjectileEffectType.STUNNED, 1500);
 					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "STUNNED");
 				}
 				if (b.hasFlag(ProjectileEffectType.PARALYZED)) {
-					p.addEffect(ProjectileEffectType.PARALYZED, defaultDuration);
+					p.addEffect(ProjectileEffectType.PARALYZED, 1200);
 					p.setDx(0); p.setDy(0);
 					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "PARALYZED");
 				}
 				if (b.hasFlag(ProjectileEffectType.DAZED)) {
-					p.addEffect(ProjectileEffectType.DAZED, defaultDuration);
+					p.addEffect(ProjectileEffectType.DAZED, 2000);
 					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "DAZED");
 				}
 			}
@@ -1600,19 +1641,18 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 			}
-			// Legacy: apply status effects from projectile flags (STUNNED=3, PARALYZED=2, DAZED=11)
+			// Legacy: apply status effects from projectile flags (player → enemy: moderate durations)
 			if (b.getFlags() != null) {
-				final long defaultDuration = 5000;
 				if (b.hasFlag(ProjectileEffectType.STUNNED)) {
-					e.addEffect(ProjectileEffectType.STUNNED, defaultDuration);
+					e.addEffect(ProjectileEffectType.STUNNED, 3000);
 					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "STUNNED");
 				}
 				if (b.hasFlag(ProjectileEffectType.PARALYZED)) {
-					e.addEffect(ProjectileEffectType.PARALYZED, defaultDuration);
+					e.addEffect(ProjectileEffectType.PARALYZED, 3000);
 					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "PARALYZED");
 				}
 				if (b.hasFlag(ProjectileEffectType.DAZED)) {
-					e.addEffect(ProjectileEffectType.DAZED, defaultDuration);
+					e.addEffect(ProjectileEffectType.DAZED, 3000);
 					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "DAZED");
 				}
 			}
