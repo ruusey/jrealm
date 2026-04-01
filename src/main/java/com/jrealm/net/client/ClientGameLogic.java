@@ -401,6 +401,20 @@ public class ClientGameLogic {
 		}
 	}
 
+	public static void handlePlayerStateClient(RealmManagerClient cli, Packet packet) {
+		final com.jrealm.net.client.packet.PlayerStatePacket statePacket =
+			(com.jrealm.net.client.packet.PlayerStatePacket) packet;
+		final Player toUpdate = cli.getRealm().getPlayer(statePacket.getPlayerId());
+		if (toUpdate != null) {
+			toUpdate.applyState(statePacket);
+		} else {
+			final Enemy enemyToUpdate = cli.getRealm().getEnemy(statePacket.getPlayerId());
+			if (enemyToUpdate != null) {
+				enemyToUpdate.applyState(statePacket);
+			}
+		}
+	}
+
 	private static void handleServerError(RealmManagerClient cli, ServerErrorMessage message) {
 		ClientGameLogic.log.error("[CLIENT] Recieved Server Error ***{}", message);
 		cli.getState().getPui().enqueueChat(TextPacket.create("SYSTEM", "", message.toString()));

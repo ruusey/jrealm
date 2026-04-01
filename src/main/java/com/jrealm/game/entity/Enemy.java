@@ -104,6 +104,14 @@ public class Enemy extends Entity {
         this.stats = packet.getStats().asStats();
         this.health = packet.getHealth();
         this.mana = packet.getMana();
+        if (this.stats != null && this.stats.getHp() > 0) {
+            this.healthpercent = (float) this.health / (float) this.stats.getHp();
+        }
+    }
+
+    public void applyState(com.jrealm.net.client.packet.PlayerStatePacket packet) {
+        this.health = packet.getHealth();
+        this.mana = packet.getMana();
         this.setEffectIds(packet.getEffectIds());
         this.setEffectTimes(packet.getEffectTimes());
         if (this.stats != null && this.stats.getHp() > 0) {

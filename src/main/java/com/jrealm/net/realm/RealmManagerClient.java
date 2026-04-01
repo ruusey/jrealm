@@ -132,6 +132,7 @@ public class RealmManagerClient implements Runnable {
         this.registerPacketCallback(UnloadPacket.class, ClientGameLogic::handleUnloadClient);
         this.registerPacketCallback(TextEffectPacket.class, ClientGameLogic::handleTextEffectClient);
         this.registerPacketCallback(PlayerDeathPacket.class, ClientGameLogic::handlePlayerDeathClient);
+        this.registerPacketCallback(com.jrealm.net.client.packet.PlayerStatePacket.class, ClientGameLogic::handlePlayerStateClient);
 //        this.registerPacketCallback(RequestTradePacket.class, ClientGameLogic::handleTradeRequestClient);
 //        this.registerPacketCallback(AcceptTradeRequestPacket.class, ClientGameLogic::handleAcceptTrade);
 

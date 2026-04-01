@@ -412,12 +412,17 @@ public class Player extends Entity {
 		}
 		this.health = packet.getHealth();
 		this.mana = packet.getMana();
-		this.setEffectIds(packet.getEffectIds());
-		this.setEffectTimes(packet.getEffectTimes());
 		if (packet.getPlayerId() == state.getPlayerId()) {
 			state.getPui().setEquipment(this.inventory);
 		}
 		this.experience = packet.getExperience();
+	}
+
+	public void applyState(com.jrealm.net.client.packet.PlayerStatePacket packet) {
+		this.health = packet.getHealth();
+		this.mana = packet.getMana();
+		this.setEffectIds(packet.getEffectIds());
+		this.setEffectTimes(packet.getEffectTimes());
 	}
 
 	public int numStatsMaxed() {

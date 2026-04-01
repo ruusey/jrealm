@@ -9,7 +9,6 @@ import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.core.nettypes.SerializableInt;
 import com.jrealm.net.core.nettypes.SerializableLong;
-import com.jrealm.net.core.nettypes.SerializableShort;
 import com.jrealm.net.core.nettypes.SerializableString;
 import com.jrealm.net.entity.NetGameItem;
 import com.jrealm.net.entity.NetStats;
@@ -19,6 +18,10 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Heavy update packet for inventory, stats, XP, and player name changes.
+ * HP/MP and status effects are now sent via the lighter PlayerStatePacket.
+ */
 @Slf4j
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -41,11 +44,7 @@ public class UpdatePacket extends Packet {
 	private long experience;
 	@SerializableField(order = 6, type = NetGameItem.class, isCollection = true)
 	private NetGameItem[] inventory;
-	@SerializableField(order = 7, type = SerializableShort.class, isCollection = true)
-	private Short[] effectIds;
-	@SerializableField(order = 8, type = SerializableLong.class, isCollection = true)
-	private Long[] effectTimes;
-	
+
 	public static final NetGameItem[] EMPTY_INVENTORY = new NetGameItem[0];
 
 	/**
@@ -66,7 +65,7 @@ public class UpdatePacket extends Packet {
 
 	/**
 	 * Returns a lightweight copy with empty inventory.
-	 * Used when only HP/MP/effects changed — saves ~4KB per packet.
+	 * Used for other-player updates where clients don't need inventory.
 	 */
 	public UpdatePacket withoutInventory() {
 		final UpdatePacket light = new UpdatePacket();
@@ -77,8 +76,6 @@ public class UpdatePacket extends Packet {
 		light.setMana(this.mana);
 		light.setExperience(this.experience);
 		light.setInventory(EMPTY_INVENTORY);
-		light.setEffectIds(this.effectIds);
-		light.setEffectTimes(this.effectTimes);
 		return light;
 	}
 
@@ -93,8 +90,6 @@ public class UpdatePacket extends Packet {
 		updatePacket.setPlayerName("enemy[" + enemy.getId() + "]");
 		updatePacket.setStats(NetStats.fromStats(enemy.getStats()));
 		updatePacket.setInventory(EMPTY_INVENTORY);
-		updatePacket.setEffectTimes(enemy.getEffectTimes().clone());
-		updatePacket.setEffectIds(enemy.getEffectIds().clone());
 		updatePacket.setExperience(0l);
 		return updatePacket;
 	}
@@ -110,12 +105,15 @@ public class UpdatePacket extends Packet {
 		updatePacket.setPlayerName(player.getName());
 		updatePacket.setStats(IOService.mapModel(player.getStats(), NetStats.class));
 		updatePacket.setInventory(IOService.mapModel(player.getInventory(), NetGameItem[].class));
-		updatePacket.setEffectTimes(player.getEffectTimes().clone());
-		updatePacket.setEffectIds(player.getEffectIds().clone());
 		updatePacket.setExperience(player.getExperience());
 		return updatePacket;
 	}
 
+	/**
+	 * Compare UpdatePacket fields (inventory, stats, XP, name).
+	 * HP/MP are included for backward compat but the primary delta
+	 * is inventory + stats + experience.
+	 */
 	public boolean equals(UpdatePacket other, boolean thinMatch) {
 		if(other==null) return false;
 		boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
@@ -142,58 +140,14 @@ public class UpdatePacket extends Packet {
 		if (thinMatch)
 			inv = true;
 
-		// Only compare which effects are active, not their remaining durations.
-		// Effect durations tick down every frame, which would cause this check to
-		// fail every tick and flood the wire with redundant UpdatePackets.
-		boolean effects = true;
-		for (int i = 0; i < this.effectIds.length; i++) {
-			if (this.effectIds[i] != other.getEffectIds()[i]) {
-				effects = false;
-				break;
-			}
-		}
-		if (thinMatch) {
-			inv = true;
-		}
-
 		boolean expEqual = this.experience == other.getExperience();
-		boolean result = basic && stats && inv && effects && expEqual;
+		boolean result = basic && stats && inv && expEqual;
 
 		return result;
 	}
 
 	public boolean equals(UpdatePacket other) {
-		boolean basic = (this.playerId == other.getPlayerId()) && this.playerName.equals(other.getPlayerName())
-				&& (this.health == other.getHealth()) && (this.mana == other.getMana());
-
-		boolean stats = this.stats.equals(other.getStats());
-		boolean inv = true;
-		for (int i = 0; i < this.inventory.length; i++) {
-			if ((this.inventory[i] != null) && (other.getInventory()[i] != null)) {
-				if (this.inventory[i].equals(other.getInventory()[i])) {
-					continue;
-				}
-				inv = false;
-				break;
-			}
-			if ((this.inventory[i] == null) && (other.getInventory()[i] == null)) {
-				continue;
-			}
-			inv = false;
-			break;
-		}
-
-		// Only compare which effects are active, not durations (see thinMatch overload)
-		boolean effects = true;
-		for (int i = 0; i < this.effectIds.length; i++) {
-			if (this.effectIds[i] != other.getEffectIds()[i]) {
-				effects = false;
-				break;
-			}
-		}
-		boolean expEqual = this.experience == other.getExperience();
-		boolean result = basic && stats && inv && effects && expEqual;
-		return result;
+		return this.equals(other, false);
 	}
 
 }

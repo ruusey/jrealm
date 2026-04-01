@@ -134,6 +134,7 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, Long> playerAbilityState = new ConcurrentHashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new ConcurrentHashMap<>();
 	private Map<Long, UpdatePacket> playerUpdateState = new ConcurrentHashMap<>();
+	private Map<Long, com.jrealm.net.client.packet.PlayerStatePacket> playerStateState = new ConcurrentHashMap<>();
 	private Map<Long, UpdatePacket> enemyUpdateState = new ConcurrentHashMap<>();
 	private Map<Long, UnloadPacket> playerUnloadState = new ConcurrentHashMap<>();
 	private Map<Long, LoadMapPacket> playerLoadMapState = new ConcurrentHashMap<>();
@@ -574,9 +575,8 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						// --- Self UpdatePacket ---
-						// Always send immediately when inventory, effects, or XP change.
-						// Throttle HP/MP-only changes to 4Hz.
+						// --- Self UpdatePacket (heavy: inventory/stats/XP/name) ---
+						// Only sent when inventory, stats, XP, or name actually change.
 						if (doUpdate) {
 							final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
 							final UpdatePacket oldSelfUpdate = this.playerUpdateState.get(player.getKey());
@@ -584,36 +584,39 @@ public class RealmManagerServer implements Runnable {
 								this.playerUpdateState.put(player.getKey(), updatePacket);
 								this.enqueueServerPacket(player.getValue(), updatePacket);
 							} else if (!oldSelfUpdate.equals(updatePacket, false)) {
-								boolean onlyStats = oldSelfUpdate.getExperience() == updatePacket.getExperience()
-									&& !updatePacket.inventoryChanged(oldSelfUpdate)
-									&& java.util.Arrays.equals(oldSelfUpdate.getEffectIds(), updatePacket.getEffectIds());
-								if (onlyStats && (this.tickCounter % 16) != 0) {
-									// Throttle HP/MP-only noise
-								} else {
-									this.playerUpdateState.put(player.getKey(), updatePacket);
-									// Send light packet (no inventory) when only HP/MP changed,
-									// since the client already has the current inventory state.
-									if (onlyStats) {
-										this.enqueueServerPacket(player.getValue(), updatePacket.withoutInventory());
-									} else {
-										this.enqueueServerPacket(player.getValue(), updatePacket);
-									}
-								}
+								this.playerUpdateState.put(player.getKey(), updatePacket);
+								this.enqueueServerPacket(player.getValue(), updatePacket);
 							}
 
 							// Nearby other players — send their updates TO this player.
-							// Use a separate cache so we never corrupt the self-update state.
 							final Player[] otherPlayers = realm.getPlayersInRadiusFast(playerCenter, viewportRadius);
 							for (Player other : otherPlayers) {
 								if (other.getId() == player.getKey()) continue;
 								try {
-									// Build a thin update (no inventory) for other players
 									final UpdatePacket otherUpdate = realm.getPlayerAsPacket(other.getId());
 									if (otherUpdate == null) continue;
-									final UpdatePacket thinOther = otherUpdate.withoutInventory();
-									this.enqueueServerPacket(player.getValue(), thinOther);
+									this.enqueueServerPacket(player.getValue(), otherUpdate.withoutInventory());
 								} catch (Exception ex) {
 									log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
+								}
+							}
+						}
+
+						// --- Self PlayerStatePacket (light: HP/MP/effects, throttled to 4Hz) ---
+						if (doUpdate) {
+							final com.jrealm.net.client.packet.PlayerStatePacket statePacket =
+								com.jrealm.net.client.packet.PlayerStatePacket.from(player.getValue());
+							final com.jrealm.net.client.packet.PlayerStatePacket oldState =
+								this.playerStateState.get(player.getKey());
+							if (oldState == null) {
+								this.playerStateState.put(player.getKey(), statePacket);
+								this.enqueueServerPacket(player.getValue(), statePacket);
+							} else if (!oldState.equalsState(statePacket)) {
+								if ((this.tickCounter % 16) != 0) {
+									// Throttle to 4Hz
+								} else {
+									this.playerStateState.put(player.getKey(), statePacket);
+									this.enqueueServerPacket(player.getValue(), statePacket);
 								}
 							}
 						}
@@ -1921,6 +1924,7 @@ public class RealmManagerServer implements Runnable {
 	public void clearPlayerState(long playerId) {
 		this.playerLoadState.remove(playerId);
 		this.playerUpdateState.remove(playerId);
+		this.playerStateState.remove(playerId);
 		this.playerUnloadState.remove(playerId);
 		this.playerObjectMoveState.remove(playerId);
 		this.playerAbilityState.remove(playerId);
