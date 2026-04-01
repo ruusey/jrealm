@@ -27,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GameSpriteManager {
 
     private static final String[] SPRITE_NAMES = {
-            "rotmg-projectiles.png", "rotmg-projectiles-1.png",
+            "rotmg-projectiles.png",
             "rotmg-bosses.png", "rotmg-bosses-1.png", "rotmg-bosses-1_.png",
             "rotmg-items.png", "rotmg-items-1.png",
             "rotmg-tiles.png", "rotmg-tiles-1.png", "rotmg-tiles-2.png", "rotmg-tiles-all.png",
