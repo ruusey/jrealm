@@ -416,6 +416,10 @@ public class Player extends Entity {
 			state.getPui().setEquipment(this.inventory);
 		}
 		this.experience = packet.getExperience();
+		// Update animation speeds based on current stats
+		if (this.getSpriteSheet() != null && this.stats != null) {
+			this.getSpriteSheet().updateDurationsFromStats(this.stats.getSpd(), this.stats.getDex());
+		}
 	}
 
 	public void applyState(com.jrealm.net.client.packet.PlayerStatePacket packet) {

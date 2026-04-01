@@ -21,7 +21,7 @@ public abstract class Entity extends GameObject {
     protected boolean left = false;
     protected boolean attack = false;
     protected String lastAnimSet = "idle_side";
-    protected String lastMovementDirection = "side"; // "side" or "front" - used for hysteresis
+    protected String lastMovementDirection = "side"; // "side", "front", or "up" - used for hysteresis
     private static final float DIRECTION_SWITCH_THRESHOLD = 0.15f;
 
     public boolean xCol = false;
@@ -191,37 +191,49 @@ public abstract class Entity extends GameObject {
                 }
             } else if ((this.left || this.right) && (this.up || this.down)) {
                 // Diagonal movement: use hysteresis to prevent rapid animation switching.
-                // Only switch direction if the dominant axis clearly changes.
                 float absDx = Math.abs(this.dx);
                 float absDy = Math.abs(this.dy);
-                if ("front".equals(this.lastMovementDirection)) {
-                    // Currently showing front - only switch to side if horizontal clearly dominates
-                    if (absDx > absDy * (1.0f + DIRECTION_SWITCH_THRESHOLD)) {
-                        this.lastMovementDirection = "side";
+                if ("side".equals(this.lastMovementDirection)) {
+                    if (absDy > absDx * (1.0f + DIRECTION_SWITCH_THRESHOLD)) {
+                        this.lastMovementDirection = this.dy < 0 ? "up" : "front";
                     }
                 } else {
-                    // Currently showing side - only switch to front if vertical clearly dominates
-                    if (absDy > absDx * (1.0f + DIRECTION_SWITCH_THRESHOLD)) {
-                        this.lastMovementDirection = "front";
+                    if (absDx > absDy * (1.0f + DIRECTION_SWITCH_THRESHOLD)) {
+                        this.lastMovementDirection = "side";
+                    } else {
+                        // Vertical still dominates — update up/front based on current dy
+                        this.lastMovementDirection = this.dy < 0 ? "up" : "front";
                     }
                 }
-                targetAnim = "side".equals(this.lastMovementDirection) ? "walk_side" : "walk_front";
+                targetAnim = getWalkAnim(this.lastMovementDirection);
             } else if (this.left || this.right) {
                 this.lastMovementDirection = "side";
                 targetAnim = "walk_side";
             } else if (this.up || this.down) {
-                this.lastMovementDirection = "front";
-                targetAnim = "walk_front";
+                this.lastMovementDirection = this.dy < 0 ? "up" : "front";
+                targetAnim = getWalkAnim(this.lastMovementDirection);
             } else {
                 // Idle: keep facing the same direction as last movement
-                if ("front".equals(this.lastMovementDirection)) {
-                    targetAnim = "idle_front";
-                } else {
-                    targetAnim = "idle_side";
-                }
+                targetAnim = getIdleAnim(this.lastMovementDirection);
             }
             this.lastAnimSet = targetAnim;
             this.getSpriteSheet().setAnimSet(targetAnim);
+        }
+    }
+
+    private static String getWalkAnim(String direction) {
+        switch (direction) {
+            case "up": return "walk_up";
+            case "front": return "walk_front";
+            default: return "walk_side";
+        }
+    }
+
+    private static String getIdleAnim(String direction) {
+        switch (direction) {
+            case "up": return "idle_up";
+            case "front": return "idle_front";
+            default: return "idle_side";
         }
     }
 

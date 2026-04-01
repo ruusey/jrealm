@@ -3,8 +3,9 @@ package com.jrealm.game.data;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.badlogic.gdx.graphics.Pixmap;
@@ -15,7 +16,9 @@ import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.graphics.SpriteSheet;
-import com.jrealm.game.model.CharacterClassModel;
+import com.jrealm.game.model.AnimationFrameModel;
+import com.jrealm.game.model.AnimationModel;
+import com.jrealm.game.model.AnimationSetModel;
 import com.jrealm.game.model.SpriteModel;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.net.client.ClientGameLogic;
@@ -35,7 +38,7 @@ public class GameSpriteManager {
             "rotmg-classes-0.png", "rotmg-classes-1.png", "rotmg-classes-2.png", "rotmg-classes-3.png",
             "lofi_char.png", "lofi_environment.png", "lofi_obj.png",
             "chars8x8rBeach.png", "chars8x8rHero2.png", "cursedLibraryChars16x16.png",
-            "d3Chars8x8r.png", "cursedLibraryChars8x8.png",
+            "d3Chars8x8r.png", "cursedLibraryChars8x8.png", "cursedLibraryObjects8x8.png",
             "archbishopObjects16x16.png", "autumnNexusObjects16x16.png",
             "chars16x16dEncounters2.png", "crystalCaveChars16x16.png",
             "epicHiveChars8x8.png", "lairOfDraconisChars8x8.png",
@@ -212,86 +215,49 @@ public class GameSpriteManager {
         return CLASS_SHEET_NAMES[0];
     }
 
+    /**
+     * Load class sprites from animations.json data. Animation frame coordinates
+     * (row/col) come from the JSON; durations are stored as defaults but for
+     * player entities they will be overridden at runtime based on speed/dexterity stats.
+     */
     public static SpriteSheet loadClassSprites(CharacterClass cls) {
         if (GameSpriteManager.TEXTURE_CACHE == null) return null;
 
-        CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(cls.classId);
-        if (classModel == null) return null;
-        String sheetName = getClassSheetName(cls.classId);
-        Texture classTexture = GameSpriteManager.TEXTURE_CACHE.get(sheetName);
+        // Try data-driven path first (animations.json loaded)
+        AnimationModel animModel = GameDataManager.ANIMATIONS != null
+                ? GameDataManager.ANIMATIONS.get(cls.classId) : null;
+
+        if (animModel != null) {
+            return loadClassSpritesFromData(cls, animModel);
+        }
+
+        // Fallback: should not happen once animations.json is always present
+        log.warn("No animation data for classId={}, cannot load sprites", cls.classId);
+        return null;
+    }
+
+    private static SpriteSheet loadClassSpritesFromData(CharacterClass cls, AnimationModel animModel) {
+        Texture classTexture = GameSpriteManager.TEXTURE_CACHE.get(animModel.getSpriteKey());
         if (classTexture == null) return null;
 
-        // Each sheet has 3 classes. spriteOffset is the global row; compute local row within the sheet.
-        // Sheet 0: global rows 0-11, Sheet 1: 12-23, Sheet 2: 24-33, Sheet 3: 34-42
-        int sheetIndex = cls.classId / 3;
-        int[] sheetBaseOffsets = {0, 12, 24, 34};
-        int localRow = classModel.getSpriteOffset() - sheetBaseOffsets[sheetIndex];
+        // Determine the first frame's row to use as the initial sprite position
+        AnimationSetModel idleSide = animModel.getAnimations().get("idle_side");
+        int initRow = idleSide != null ? idleSide.getFrames().get(0).getRow() : 0;
+        int initCol = idleSide != null ? idleSide.getFrames().get(0).getCol() : 0;
 
         final SpriteSheet classSprites = new SpriteSheet(classTexture, GlobalConstants.BASE_SPRITE_SIZE,
-                GlobalConstants.BASE_SPRITE_SIZE, 0, localRow);
+                GlobalConstants.BASE_SPRITE_SIZE, initCol, initRow);
 
-        // Sprite layout: 2 rows per direction, cols 0-2 contain main animation frames.
-        // Row 0: Side/primary walk (cols 0-1 = walk frame 1, walk frame 2)
-        // Row 1: Side/primary attack (cols 0-2 = 3 attack frames)
-        // Row 2: Back direction (no face visible)
-        // Row 3: Front direction (4-row classes only; classId <= 6)
-        // For 3-row classes (classId >= 7): front reuses side (rows 0-1).
-        int walkDur = 8;
-        int atkDur = 5;
-        boolean hasFrontRow = (cls.classId <= 6);
-        int frontRow = hasFrontRow ? localRow + 3 : localRow;
-
-        // Side idle + walk: Row 0, cols 0-1
-        classSprites.addAnimSet("idle_side",
-            Arrays.asList(classSprites.getSubSprite(0, localRow)),
-            Arrays.asList(999));
-        classSprites.addAnimSet("walk_side",
-            Arrays.asList(
-                classSprites.getSubSprite(0, localRow),
-                classSprites.getSubSprite(1, localRow)),
-            Arrays.asList(walkDur, walkDur));
-
-        // Side attack (shoot left/right): Row 0, cols 4-5
-        classSprites.addAnimSet("attack_side",
-            Arrays.asList(
-                classSprites.getSubSprite(0, localRow),
-                classSprites.getSubSprite(4, localRow),
-                classSprites.getSubSprite(5, localRow)),
-            Arrays.asList(atkDur, atkDur, atkDur));
-
-        // Down attack (shoot downward, mouse below player): Row 1, cols 4-5
-        classSprites.addAnimSet("attack_down",
-            Arrays.asList(
-                classSprites.getSubSprite(0, localRow + 1),
-                classSprites.getSubSprite(4, localRow + 1),
-                classSprites.getSubSprite(5, localRow + 1)),
-            Arrays.asList(atkDur, atkDur, atkDur));
-
-        // Up attack (shoot upward, mouse above player): Row 2, cols 4-5
-        classSprites.addAnimSet("attack_up",
-            Arrays.asList(
-                classSprites.getSubSprite(0, localRow + 2),
-                classSprites.getSubSprite(4, localRow + 2),
-                classSprites.getSubSprite(5, localRow + 2)),
-            Arrays.asList(atkDur, atkDur, atkDur));
-
-        // Front idle + walk: Row 3 for 4-row classes, or reuse Row 0 for 3-row classes
-        classSprites.addAnimSet("idle_front",
-            Arrays.asList(classSprites.getSubSprite(0, frontRow)),
-            Arrays.asList(999));
-        classSprites.addAnimSet("walk_front",
-            Arrays.asList(
-                classSprites.getSubSprite(0, frontRow),
-                classSprites.getSubSprite(1, frontRow)),
-            Arrays.asList(walkDur, walkDur));
-
-        // Keep attack_front as alias for attack_down (backwards compat)
-        classSprites.addAnimSet("attack_front",
-            Arrays.asList(
-                classSprites.getSubSprite(0, localRow + 1),
-                classSprites.getSubSprite(4, localRow + 1),
-                classSprites.getSubSprite(5, localRow + 1)),
-            Arrays.asList(atkDur, atkDur, atkDur));
+        // Build each animation set from the JSON data
+        for (Map.Entry<String, AnimationSetModel> entry : animModel.getAnimations().entrySet()) {
+            String animName = entry.getKey();
+            AnimationSetModel animSet = entry.getValue();
+            List<Sprite> frames = new ArrayList<>();
+            for (AnimationFrameModel frame : animSet.getFrames()) {
+                frames.add(classSprites.getSubSprite(frame.getCol(), frame.getRow()));
+            }
+            classSprites.addAnimSet(animName, frames, new ArrayList<>(animSet.getDurations()));
+        }
 
         classSprites.setAnimSet("idle_side");
         return classSprites;

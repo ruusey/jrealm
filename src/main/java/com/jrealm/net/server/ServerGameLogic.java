@@ -558,15 +558,34 @@ public class ServerGameLogic {
 				}
 
 				final CharacterDto targetCharacter = characterClass.get();
-				// Check for duplicate login from same account (not same host)
-				// Only disconnect existing session if it's the SAME account UUID
+				// Force disconnect any existing session for this account before proceeding.
+				// This handles ghost players stuck in-game after a dirty disconnect.
 				final boolean isBotAccount = request.getEmail() != null && request.getEmail().endsWith("@jrealm-bot.local");
 				if (!isBotAccount) {
+					boolean disconnectedExisting = false;
 					for (Player existing : mgr.getPlayers()) {
 						if (existing.getAccountUuid() != null && existing.getAccountUuid().equals(accountUuid)) {
-							log.info("[SERVER] Disconnecting previous session for account {} (re-login)", accountUuid);
+							log.info("[SERVER] Force-disconnecting previous session for account {} (re-login)", accountUuid);
 							mgr.disconnectPlayer(existing);
+							disconnectedExisting = true;
 							break;
+						}
+					}
+					if (disconnectedExisting) {
+						// Brief pause to let realm state settle after force-disconnect
+						try { Thread.sleep(250); } catch (InterruptedException ignored) {}
+						// Safety net: if the player is STILL in a realm after disconnect
+						// (e.g. disconnectPlayer partially failed), forcibly remove them
+						for (Player ghost : mgr.getPlayers()) {
+							if (ghost.getAccountUuid() != null && ghost.getAccountUuid().equals(accountUuid)) {
+								log.warn("[SERVER] Ghost player {} still present after disconnect, forcibly removing", ghost.getName());
+								final Realm ghostRealm = mgr.findPlayerRealm(ghost.getId());
+								if (ghostRealm != null) {
+									ghostRealm.getExpiredPlayers().add(ghost.getId());
+									ghostRealm.removePlayer(ghost);
+								}
+								mgr.clearPlayerState(ghost.getId());
+							}
 						}
 					}
 				}

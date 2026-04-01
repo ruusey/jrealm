@@ -822,7 +822,8 @@ public class RealmManagerServer implements Runnable {
 	public Map.Entry<String, ClientSession> getPlayerSessionEntry(Player player) {
 		Map.Entry<String, ClientSession> result = null;
 		for (final Map.Entry<String, ClientSession> client : this.server.getClients().entrySet()) {
-			if (this.remoteAddresses.get(client.getKey()) == player.getId()) {
+			final Long mappedId = this.remoteAddresses.get(client.getKey());
+			if (mappedId != null && mappedId == player.getId()) {
 				result = client;
 			}
 		}
@@ -839,19 +840,22 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public ClientSession getPlayerSession(Player player) {
-		return getPlayerSessionEntry(player).getValue();
+		final Map.Entry<String, ClientSession> entry = getPlayerSessionEntry(player);
+		return entry != null ? entry.getValue() : null;
 	}
 
 	public String getPlayerRemoteAddress(Player player) {
-		return getPlayerSessionEntry(player).getKey();
+		final Map.Entry<String, ClientSession> entry = getPlayerSessionEntry(player);
+		return entry != null ? entry.getKey() : null;
 	}
 
 	public void disconnectPlayer(Player player) {
+		log.info("[SERVER] Disconnecting Player {}", player.getName());
+
+		// Step 1: Remove player from realm (most critical — prevents ghost players)
 		try {
-			log.info("[SERVER] Disconnecting Player {}", player.getName());
 			final Realm playerRealm = this.findPlayerRealm(player.getId());
 			if (playerRealm != null) {
-				// Save vault chests if player is in a vault realm (mapId=1)
 				if (playerRealm.getMapId() == 1) {
 					try {
 						java.util.List<com.jrealm.account.dto.ChestDto> chestsToSave = playerRealm.serializeChests();
@@ -863,15 +867,32 @@ public class RealmManagerServer implements Runnable {
 						log.error("[SERVER] Failed to save vault chests on disconnect for {}. Reason: {}",
 								player.getName(), e.getMessage());
 					}
-					// Remove the per-player vault realm
 					playerRealm.setShutdown(true);
 					this.realms.remove(playerRealm.getRealmId());
 				}
 				playerRealm.getExpiredPlayers().add(player.getId());
 				playerRealm.removePlayer(player);
 			}
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to remove player {} from realm. Reason: {}", player.getName(), e);
+		}
+
+		// Step 2: Persist player data
+		try {
 			this.persistPlayerAsync(player);
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to persist player {} on disconnect. Reason: {}", player.getName(), e);
+		}
+
+		// Step 3: Clear player packet/state queues
+		try {
 			this.clearPlayerState(player.getId());
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to clear state for player {}. Reason: {}", player.getName(), e);
+		}
+
+		// Step 4: Close network session and clean up address mappings
+		try {
 			final Map.Entry<String, ClientSession> sessionEntry = this.getPlayerSessionEntry(player);
 			if (sessionEntry != null) {
 				sessionEntry.getValue().setShutdownProcessing(true);
@@ -880,7 +901,7 @@ public class RealmManagerServer implements Runnable {
 				this.remoteAddresses.remove(sessionEntry.getKey());
 			}
 		} catch (Exception e) {
-			log.error("[SERVER] Failed to disconnect player. Reason:  {}", e);
+			log.error("[SERVER] Failed to close session for player {}. Reason: {}", player.getName(), e);
 		}
 	}
 

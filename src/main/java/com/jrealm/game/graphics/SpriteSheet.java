@@ -175,6 +175,31 @@ public class SpriteSheet {
         return !this.animSets.isEmpty();
     }
 
+    /**
+     * Recalculate animation frame durations based on player stats.
+     * Walk/idle animations scale with speed, attack animations scale with dexterity.
+     * Higher stat = faster animation (lower frame duration).
+     * @param speed player speed stat (typically 10-75)
+     * @param dexterity player dexterity stat (typically 10-75)
+     */
+    public void updateDurationsFromStats(short speed, short dexterity) {
+        for (Map.Entry<String, List<Integer>> entry : this.animSetDurations.entrySet()) {
+            String name = entry.getKey();
+            List<Integer> durations = entry.getValue();
+            boolean isAttack = name.startsWith("attack_");
+            boolean isIdle = name.startsWith("idle_");
+            if (isIdle) continue; // idle durations stay at 999
+
+            // Base duration at stat=0 is 12 frames, at stat=75 is 3 frames
+            // Linear interpolation: duration = max(3, 12 - stat * 0.12)
+            float stat = isAttack ? dexterity : speed;
+            int dur = Math.max(3, Math.round(12.0f - stat * 0.12f));
+            for (int i = 0; i < durations.size(); i++) {
+                durations.set(i, dur);
+            }
+        }
+    }
+
     public TextureRegion getCurrentFrame() {
         if (this.sprites == null || this.sprites.isEmpty()) return null;
         Sprite sprite = this.sprites.get(this.animationFrame);

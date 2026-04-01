@@ -12,6 +12,7 @@ import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.graphics.Sprite;
+import com.jrealm.game.model.AnimationModel;
 import com.jrealm.game.model.CharacterClassModel;
 import com.jrealm.game.model.DungeonGraphNode;
 import com.jrealm.game.model.EnemyModel;
@@ -45,6 +46,7 @@ public class GameDataManager {
 	public static Map<Integer, LootGroupModel>                LOOT_GROUPS = null;
 	public static ExperienceModel                             EXPERIENCE_LVLS = null;
 	public static Map<String, DungeonGraphNode>               DUNGEON_GRAPH = null;
+	public static Map<Integer, AnimationModel>                ANIMATIONS = null;
 
 	private static void loadLootGroups(final boolean remote) throws Exception {
 		GameDataManager.log.info("Loading Loot Groups...");
@@ -251,6 +253,24 @@ public class GameDataManager {
 
 	}
 
+	private static void loadAnimations(final boolean remote) throws Exception {
+		GameDataManager.log.info("Loading Animations...");
+		GameDataManager.ANIMATIONS = new HashMap<>();
+		String text = null;
+		if (remote) {
+			text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/animations.json", null);
+		} else {
+			InputStream inputStream = GameDataManager.class.getClassLoader()
+					.getResourceAsStream("data/animations.json");
+			text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		}
+		AnimationModel[] animations = GameDataManager.JSON_MAPPER.readValue(text, AnimationModel[].class);
+		for (AnimationModel anim : animations) {
+			GameDataManager.ANIMATIONS.put(anim.getObjectId(), anim);
+		}
+		GameDataManager.log.info("Loading Animations... DONE ({} entries)", GameDataManager.ANIMATIONS.size());
+	}
+
 	private static void loadGameItems(final boolean remote) throws Exception {
 		GameDataManager.log.info("Loading Game Items...");
 
@@ -363,6 +383,7 @@ public class GameDataManager {
 			() -> { try { GameDataManager.loadCharacterClasses(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load character classes: {}", e.getMessage()); } },
 			() -> { try { GameDataManager.loadLootTables(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load loot tables: {}", e.getMessage()); } },
 			() -> { try { GameDataManager.loadLootGroups(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load loot groups: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadAnimations(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load animations: {}", e.getMessage()); } },
 		};
 		for (Runnable loader : loaders) {
 			loader.run();

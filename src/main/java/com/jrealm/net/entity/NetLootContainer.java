@@ -59,7 +59,7 @@ public class NetLootContainer extends SerializableFieldType<NetLootContainer>{
 		container.setContentsChanged(this.contentsChanged);
 		
 		if(this.isChest) {
-			container = (Chest) container;
+			container = new Chest(container);
 		}
 		return container;
 	}
