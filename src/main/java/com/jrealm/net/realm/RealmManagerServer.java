@@ -699,12 +699,15 @@ public class RealmManagerServer implements Runnable {
 									if (doSend) {
 										this.enqueueServerPacket(player.getValue(), updatePacket0);
 									}
-									// Send enemy PlayerStatePacket immediately when state changed (responsive health bars)
-									if (doSend) {
-										final Enemy nearEnemy = realm.getEnemy(enemyId);
-										if (nearEnemy != null) {
-											final com.jrealm.net.client.packet.PlayerStatePacket enemyState =
-												com.jrealm.net.client.packet.PlayerStatePacket.from(nearEnemy);
+									// Send enemy PlayerStatePacket when HP or effects change (own diff, not tied to UpdatePacket)
+									final Enemy nearEnemy = realm.getEnemy(enemyId);
+									if (nearEnemy != null) {
+										final com.jrealm.net.client.packet.PlayerStatePacket enemyState =
+											com.jrealm.net.client.packet.PlayerStatePacket.from(nearEnemy);
+										final com.jrealm.net.client.packet.PlayerStatePacket cachedEnemyState =
+											this.playerStateState.get(enemyId);
+										if (cachedEnemyState == null || !cachedEnemyState.equalsState(enemyState)) {
+											this.playerStateState.put(enemyId, enemyState);
 											this.enqueueServerPacket(player.getValue(), enemyState);
 										}
 									}
