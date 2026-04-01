@@ -3,7 +3,8 @@
 ### An 8bit Dungeon Crawler Rogue-Like Game written entirely in Java
 
 <div dsplay="inline">
-<img src="https://github.com/ruusey/jrealm/blob/main/MobileView.png" width="100%">
+    <img src="https://github.com/ruusey/jrealm/blob/main/banner.png" width="100%">
+    <img src="https://github.com/ruusey/jrealm/blob/main/MobileView.png" width="100%">
 </div>
 <br>
 
