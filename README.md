@@ -3,13 +3,7 @@
 ### An 8bit Dungeon Crawler Rogue-Like Game written entirely in Java
 
 <div dsplay="inline">
-<img src="https://i.imgur.com/WTsZ0Td.png" width="312">
-<img src="https://i.imgur.com/QdzDjJh.png" width="312">
-<img src="https://i.imgur.com/PXBqnlh.png" width="312">
-<img src="https://i.imgur.com/glqEiZJ.png" width="312">
-<img src="https://i.imgur.com/G9ilNvu.png" width="312">
-<img src="https://i.imgur.com/8Yz96Oe.png" width="312">
-<img src="https://i.imgur.com/5NYzaBo.png" width="612">
+<img src="https://github.com/ruusey/jrealm/blob/main/MobileView.png" width="100%">
 </div>
 <br>
 
