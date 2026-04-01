@@ -296,12 +296,12 @@ public class ServerCommandHandler {
         }
     }
 
-    @CommandHandler(value="item", description="Spawn a given Item by its id")
+    @CommandHandler(value="item", description="Spawn a given Item by its id. Usage: /item {ITEM_ID} [COUNT]")
 	@AdminRestrictedCommand
     public static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
-            throw new IllegalArgumentException("Usage: /item {ITEM_ID}");
+            throw new IllegalArgumentException("Usage: /item {ITEM_ID} [COUNT]");
         log.info("Player {} spawn item {}", target.getName(), message);
         final Realm targetRealm = mgr.findPlayerRealm(target.getId());
         final int gameItemId = Integer.parseInt(message.getArgs().get(0));
@@ -309,8 +309,24 @@ public class ServerCommandHandler {
         if (itemToSpawn == null) {
             throw new IllegalArgumentException("Item with ID " + gameItemId + " does not exist.");
         }
-        final LootContainer lootDrop = new LootContainer(LootTier.BROWN, target.getPos().clone(), itemToSpawn);
-        targetRealm.addLootContainer(lootDrop);
+        int count = 1;
+        if (message.getArgs().size() >= 2) {
+            count = Math.min(32, Math.max(1, Integer.parseInt(message.getArgs().get(1))));
+        }
+        // Pack items into loot bags of 8
+        int spawned = 0;
+        while (spawned < count) {
+            int bagSize = Math.min(8, count - spawned);
+            GameItem[] bagItems = new GameItem[bagSize];
+            for (int i = 0; i < bagSize; i++) {
+                bagItems[i] = GameDataManager.GAME_ITEMS.get(gameItemId);
+            }
+            final LootContainer lootDrop = new LootContainer(LootTier.BROWN,
+                    target.getPos().clone(Realm.RANDOM.nextInt(48) - 24, Realm.RANDOM.nextInt(48) - 24),
+                    bagItems);
+            targetRealm.addLootContainer(lootDrop);
+            spawned += bagSize;
+        }
     }
 
     @CommandHandler(value="portal", description="Spawn a portal to a map by name. Usage: /portal {MAP_NAME}")

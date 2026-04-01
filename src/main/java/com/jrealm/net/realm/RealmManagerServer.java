@@ -595,10 +595,8 @@ public class RealmManagerServer implements Runnable {
 								try {
 									final UpdatePacket otherUpdate = realm.getPlayerAsPacket(other.getId());
 									if (otherUpdate == null) continue;
+									// Thin update already includes HP/MP/effects — no separate state packet needed
 									this.enqueueServerPacket(player.getValue(), otherUpdate.withoutInventory());
-									// Send PlayerStatePacket for other player's HP/MP/effects
-									this.enqueueServerPacket(player.getValue(),
-										com.jrealm.net.client.packet.PlayerStatePacket.from(other));
 								} catch (Exception ex) {
 									log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
 								}
@@ -701,12 +699,14 @@ public class RealmManagerServer implements Runnable {
 									if (doSend) {
 										this.enqueueServerPacket(player.getValue(), updatePacket0);
 									}
-									// Send enemy PlayerStatePacket for HP/effects
-									final Enemy nearEnemy = realm.getEnemy(enemyId);
-									if (nearEnemy != null) {
-										final com.jrealm.net.client.packet.PlayerStatePacket enemyState =
-											com.jrealm.net.client.packet.PlayerStatePacket.from(nearEnemy);
-										this.enqueueServerPacket(player.getValue(), enemyState);
+									// Send enemy PlayerStatePacket immediately when state changed (responsive health bars)
+									if (doSend) {
+										final Enemy nearEnemy = realm.getEnemy(enemyId);
+										if (nearEnemy != null) {
+											final com.jrealm.net.client.packet.PlayerStatePacket enemyState =
+												com.jrealm.net.client.packet.PlayerStatePacket.from(nearEnemy);
+											this.enqueueServerPacket(player.getValue(), enemyState);
+										}
 									}
 								}
 							}

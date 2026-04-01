@@ -2,6 +2,7 @@ package com.jrealm.game.entity.item;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.model.SpriteModel;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Slf4j
 @EqualsAndHashCode(callSuper = false)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class GameItem extends SpriteModel {
     private int itemId;
     @Builder.Default
