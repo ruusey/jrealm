@@ -40,24 +40,21 @@ public class GameLauncher {
         final String dataServiceUrl = "http://" + args[1] + ":8085/";
 
         if (GameLauncher.argsContains(args, "-server")) {
-            ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(),
-                    dataServiceUrl, null);
+            ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(), dataServiceUrl);
             ClientGameLogic.DATA_SERVICE = new JrealmClientDataService(HttpClient.newHttpClient(),
                     dataServiceUrl, null);
             GameLauncher.pingServer();
             GameDataManager.loadGameData(true);
             GameLauncher.startServer();
         } else if (GameLauncher.argsContains(args, "-client")) {
-            ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(),
-                    dataServiceUrl, null);
+            ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(), dataServiceUrl);
             ClientGameLogic.DATA_SERVICE = new JrealmClientDataService(HttpClient.newHttpClient(),
                     dataServiceUrl, null);
             GameLauncher.pingClient();
             GameDataManager.loadGameData(true);
             GameLauncher.startClient(args);
         } else if (GameLauncher.argsContains(args, "-embedded")) {
-            ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(),
-                    dataServiceUrl, null);
+            ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(), dataServiceUrl);
             ClientGameLogic.DATA_SERVICE = new JrealmClientDataService(HttpClient.newHttpClient(),
                     dataServiceUrl, null);
             GameDataManager.loadGameData(true);
@@ -92,12 +89,6 @@ public class GameLauncher {
     }
 
     private static void startServer() {
-        try {
-            final String sysToken = ServerGameLogic.DATA_SERVICE.executeGet("token", null);
-            ServerGameLogic.DATA_SERVICE.setBearerToken(sysToken);
-        } catch (Exception e) {
-            log.error("Failed to get Server SYS_TOKEN. Reason: {}", e);
-        }
         final RealmManagerServer server = new RealmManagerServer();
         server.doRunServer();
     }

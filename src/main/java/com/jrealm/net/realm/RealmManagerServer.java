@@ -145,37 +145,6 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, com.jrealm.net.entity.NetPlayerPosition[]> lastGlobalPositions = new ConcurrentHashMap<>();
 
 	// Poison damage-over-time tracking
-	private final List<PoisonDotState> activePoisonDots = new java.util.ArrayList<>();
-
-	private static class PoisonDotState {
-		final long realmId;
-		final long enemyId;
-		final int totalDamage;
-		final long duration;
-		final long startTime;
-		final long sourcePlayerId;
-		int damageApplied;
-
-		long lastTickTime;
-
-		PoisonDotState(long realmId, long enemyId, int totalDamage, long duration, long sourcePlayerId) {
-			this.realmId = realmId;
-			this.enemyId = enemyId;
-			this.totalDamage = totalDamage;
-			this.duration = duration;
-			this.startTime = java.time.Instant.now().toEpochMilli();
-			this.sourcePlayerId = sourcePlayerId;
-			this.damageApplied = 0;
-			this.lastTickTime = this.startTime;
-		}
-
-		boolean isExpired() {
-			return java.time.Instant.now().toEpochMilli() - startTime >= duration;
-		}
-	}
-
-	private static final long POISON_TICK_INTERVAL_MS = 200;
-
 	private UnloadPacket lastUnload;
 	// Potentially accessed by many threads many times a second.
 	// marked volatile to make sure each time this queue is accessed
@@ -1204,7 +1173,10 @@ public class RealmManagerServer implements Runnable {
 		this.removeExpiredBullets();
 		this.removeExpiredLootContainers();
 		this.removeExpiredPortals();
-		this.processPoisonDots();
+		for (final Realm realm : this.realms.values()) {
+			realm.processPoisonThrows(this);
+			realm.processPoisonDots(this);
+		}
 
 		// Broadcast global player positions for minimap (1 Hz) — only if any position changed
 		if (this.tickCounter % 64 == 0) {
@@ -1369,9 +1341,12 @@ public class RealmManagerServer implements Runnable {
 			log.info("Ability {} is on cooldown", abilityItem);
 			return;
 		}
-		if (player.getMana() < effect.getMpCost())
-			return;
-		player.setMana(player.getMana() - effect.getMpCost());
+		// Godmode (INVINCIBLE) = infinite mana
+		if (!player.hasEffect(ProjectileEffectType.INVINCIBLE)) {
+			if (player.getMana() < effect.getMpCost())
+				return;
+			player.setMana(player.getMana() - effect.getMpCost());
+		}
 		// If the ability is damaging (knight stun, archer arrow, wizard spell)
 		// Resolve the projectile group if the item has a damage definition with a valid projectileGroupId.
 		// Script-only abilities (e.g., scepter chain lightning, necromancer skull) may have no damage
@@ -1973,9 +1948,10 @@ public class RealmManagerServer implements Runnable {
 		this.playerGroundDamageState.remove(playerId);
 		this.playerOutboundPacketQueue.remove(playerId);
 		this.enemyUpdateState.remove(playerId);
-		// Clean up any poison DoTs sourced by this player
-		synchronized (this.activePoisonDots) {
-			this.activePoisonDots.removeIf(dot -> dot.sourcePlayerId == playerId);
+		// Clean up any poison state sourced by this player
+		for (final Realm realm : this.realms.values()) {
+			realm.removePlayerPoisonDots(playerId);
+			realm.removePlayerPoisonThrows(playerId);
 		}
 		// Clear cached provisions on disconnect
 		ServerCommandHandler.PLAYER_PROVISION_CACHE.remove(playerId);
@@ -1998,6 +1974,7 @@ public class RealmManagerServer implements Runnable {
 	// the realm terrain using any decorators
 	public void addRealm(final Realm realm) {
 		this.tryDecorate(realm);
+		realm.spawnStaticEnemies(realm.getMapId());
 		this.realms.put(realm.getRealmId(), realm);
 	}
 
@@ -2194,54 +2171,12 @@ public class RealmManagerServer implements Runnable {
 
 	/**
 	 * Register a poison damage-over-time effect on an enemy.
-	 * Poisons stack — multiple assassins or repeated uses all tick independently.
+	 * Delegates to the target realm's poison DoT system.
 	 */
 	public void registerPoisonDot(long realmId, long enemyId, int totalDamage, long duration, long sourcePlayerId) {
-		synchronized (this.activePoisonDots) {
-			this.activePoisonDots.add(new PoisonDotState(realmId, enemyId, totalDamage, duration, sourcePlayerId));
-		}
-	}
-
-	/**
-	 * Process all active poison DoTs. Called every server tick.
-	 * Damage ticks every 200ms in visible chunks. Poison ignores defense.
-	 */
-	private void processPoisonDots() {
-		final long now = java.time.Instant.now().toEpochMilli();
-		synchronized (this.activePoisonDots) {
-			final java.util.Iterator<PoisonDotState> it = this.activePoisonDots.iterator();
-			while (it.hasNext()) {
-				final PoisonDotState dot = it.next();
-				final Realm realm = this.realms.get(dot.realmId);
-				if (realm == null) { it.remove(); continue; }
-				final Enemy enemy = realm.getEnemy(dot.enemyId);
-				if (enemy == null || enemy.getDeath()) { it.remove(); continue; }
-				if (dot.isExpired()) { it.remove(); continue; }
-
-				// Only tick damage every POISON_TICK_INTERVAL_MS (200ms)
-				if (now - dot.lastTickTime < POISON_TICK_INTERVAL_MS) continue;
-				dot.lastTickTime = now;
-
-				// Calculate damage per tick: totalDamage / (duration / interval)
-				int totalTicks = (int) (dot.duration / POISON_TICK_INTERVAL_MS);
-				int tickDamage = Math.max(1, dot.totalDamage / Math.max(1, totalTicks));
-
-				// Cap so we don't exceed total damage
-				if (dot.damageApplied + tickDamage > dot.totalDamage) {
-					tickDamage = dot.totalDamage - dot.damageApplied;
-				}
-				if (tickDamage <= 0) continue;
-
-				dot.damageApplied += tickDamage;
-				enemy.setHealth(enemy.getHealth() - tickDamage);
-				this.broadcastTextEffect(com.jrealm.game.contants.EntityType.ENEMY, enemy,
-						com.jrealm.game.contants.TextEffect.DAMAGE, "-" + tickDamage);
-
-				if (enemy.getDeath()) {
-					this.enemyDeath(realm, enemy);
-					it.remove();
-				}
-			}
+		final Realm realm = this.realms.get(realmId);
+		if (realm != null) {
+			realm.registerPoisonDot(enemyId, totalDamage, duration, sourcePlayerId);
 		}
 	}
 

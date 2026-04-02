@@ -83,6 +83,62 @@ public class Realm {
     // Overseer AI for ecosystem management (enemy population, events, taunts)
     private transient RealmOverseer overseer;
 
+    // Poison damage-over-time tracking. Each entry ticks independently (poisons stack).
+    private final List<PoisonDotState> activePoisonDots = new java.util.ArrayList<>();
+    private static final long POISON_TICK_INTERVAL_MS = 200;
+
+    // Pending poison throws — tracked per tick instead of blocking a thread pool thread.
+    private final List<PoisonThrowState> pendingPoisonThrows = new java.util.ArrayList<>();
+
+    static class PoisonThrowState {
+        final long landTime;
+        final long sourcePlayerId;
+        final float landX;
+        final float landY;
+        final float radius;
+        final int totalDamage;
+        final long poisonDuration;
+
+        PoisonThrowState(long delayMs, long sourcePlayerId, float landX, float landY,
+                         float radius, int totalDamage, long poisonDuration) {
+            this.landTime = java.time.Instant.now().toEpochMilli() + delayMs;
+            this.sourcePlayerId = sourcePlayerId;
+            this.landX = landX;
+            this.landY = landY;
+            this.radius = radius;
+            this.totalDamage = totalDamage;
+            this.poisonDuration = poisonDuration;
+        }
+
+        boolean hasLanded() {
+            return java.time.Instant.now().toEpochMilli() >= landTime;
+        }
+    }
+
+    static class PoisonDotState {
+        final long enemyId;
+        final int totalDamage;
+        final long duration;
+        final long startTime;
+        final long sourcePlayerId;
+        int damageApplied;
+        long lastTickTime;
+
+        PoisonDotState(long enemyId, int totalDamage, long duration, long sourcePlayerId) {
+            this.enemyId = enemyId;
+            this.totalDamage = totalDamage;
+            this.duration = duration;
+            this.startTime = java.time.Instant.now().toEpochMilli();
+            this.sourcePlayerId = sourcePlayerId;
+            this.damageApplied = 0;
+            this.lastTickTime = this.startTime;
+        }
+
+        boolean isExpired() {
+            return java.time.Instant.now().toEpochMilli() - startTime >= duration;
+        }
+    }
+
     private boolean isServer;
     private boolean shutdown = false;
 
@@ -1022,20 +1078,130 @@ public class Realm {
             }
         }
 
-        // Static spawns: place specific enemies at fixed positions (for boss rooms, etc.)
-        final MapModel mapModel = GameDataManager.MAPS.get(mapId);
-        if (mapModel.getStaticSpawns() != null) {
-            for (final com.jrealm.game.model.StaticSpawn ss : mapModel.getStaticSpawns()) {
-                final EnemyModel model = GameDataManager.ENEMIES.get(ss.getEnemyId());
-                if (model == null) continue;
-                final Vector2f pos = new Vector2f(ss.getX(), ss.getY());
-                final Enemy enemy = GameObjectUtils.getEnemyFromId(ss.getEnemyId(), pos);
-                int healthMult = this.getDifficultyMultiplier();
-                enemy.setHealth(enemy.getHealth() * Math.max(1, healthMult));
-                enemy.setHealthMultiplier(Math.max(1, healthMult));
-                this.addEnemy(enemy);
-                Realm.log.info("Static spawn: {} at ({}, {})", model.getName(), ss.getX(), ss.getY());
+        this.spawnStaticEnemies(mapId);
+    }
+
+    /**
+     * Register a poison DoT on an enemy in this realm. Poisons stack.
+     */
+    public void registerPoisonDot(long enemyId, int totalDamage, long duration, long sourcePlayerId) {
+        this.activePoisonDots.add(new PoisonDotState(enemyId, totalDamage, duration, sourcePlayerId));
+    }
+
+    /**
+     * Remove all poison DoTs sourced by a specific player (called on disconnect).
+     */
+    public void removePlayerPoisonDots(long playerId) {
+        this.activePoisonDots.removeIf(dot -> dot.sourcePlayerId == playerId);
+    }
+
+    /**
+     * Process all active poison DoTs for this realm. Called every server tick.
+     * @param mgr the server manager, used for enemyDeath and broadcastTextEffect callbacks
+     */
+    public void processPoisonDots(RealmManagerServer mgr) {
+        if (this.activePoisonDots.isEmpty()) return;
+        final long now = java.time.Instant.now().toEpochMilli();
+        final java.util.Iterator<PoisonDotState> it = this.activePoisonDots.iterator();
+        while (it.hasNext()) {
+            final PoisonDotState dot = it.next();
+            final Enemy enemy = this.getEnemy(dot.enemyId);
+            if (enemy == null || enemy.getDeath()) { it.remove(); continue; }
+            if (dot.isExpired()) { it.remove(); continue; }
+
+            if (now - dot.lastTickTime < POISON_TICK_INTERVAL_MS) continue;
+            dot.lastTickTime = now;
+
+            int totalTicks = (int) (dot.duration / POISON_TICK_INTERVAL_MS);
+            int tickDamage = Math.max(1, dot.totalDamage / Math.max(1, totalTicks));
+
+            if (dot.damageApplied + tickDamage > dot.totalDamage) {
+                tickDamage = dot.totalDamage - dot.damageApplied;
             }
+            if (tickDamage <= 0) continue;
+
+            dot.damageApplied += tickDamage;
+            enemy.setHealth(enemy.getHealth() - tickDamage);
+            mgr.broadcastTextEffect(com.jrealm.game.contants.EntityType.ENEMY, enemy,
+                    com.jrealm.game.contants.TextEffect.DAMAGE, "-" + tickDamage);
+
+            if (enemy.getDeath()) {
+                mgr.enemyDeath(this, enemy);
+                it.remove();
+            }
+        }
+    }
+
+    /**
+     * Register a pending poison throw. The landing effect will be applied after the delay
+     * elapses, checked each tick — no threads are blocked.
+     */
+    public void registerPoisonThrow(long delayMs, long sourcePlayerId, float landX, float landY,
+                                     float radius, int totalDamage, long poisonDuration) {
+        this.pendingPoisonThrows.add(new PoisonThrowState(delayMs, sourcePlayerId, landX, landY,
+                radius, totalDamage, poisonDuration));
+    }
+
+    /**
+     * Process pending poison throws. When a throw's travel time has elapsed, apply the
+     * splash AoE and poison DoT to enemies in range. Called every server tick.
+     */
+    public void processPoisonThrows(RealmManagerServer mgr) {
+        if (this.pendingPoisonThrows.isEmpty()) return;
+        final java.util.Iterator<PoisonThrowState> it = this.pendingPoisonThrows.iterator();
+        while (it.hasNext()) {
+            final PoisonThrowState t = it.next();
+            if (!t.hasLanded()) continue;
+            it.remove();
+
+            // Broadcast splash AoE on landing
+            mgr.enqueueServerPacket(com.jrealm.net.client.packet.CreateEffectPacket.aoeEffect(
+                    com.jrealm.net.client.packet.CreateEffectPacket.EFFECT_POISON_SPLASH,
+                    t.landX, t.landY, t.radius, (short) 1500));
+
+            // Apply poison to enemies in radius
+            final float radiusSq = t.radius * t.radius;
+            for (final Enemy enemy : this.enemies.values()) {
+                if (enemy.getDeath()) continue;
+                if (enemy.hasEffect(com.jrealm.game.contants.ProjectileEffectType.STASIS)) continue;
+                float dx = enemy.getPos().x - t.landX;
+                float dy = enemy.getPos().y - t.landY;
+                if (dx * dx + dy * dy <= radiusSq) {
+                    enemy.addEffect(com.jrealm.game.contants.ProjectileEffectType.POISONED, t.poisonDuration);
+                    this.registerPoisonDot(enemy.getId(), t.totalDamage, t.poisonDuration, t.sourcePlayerId);
+                    mgr.broadcastTextEffect(com.jrealm.game.contants.EntityType.ENEMY, enemy,
+                            com.jrealm.game.contants.TextEffect.DAMAGE, "POISONED");
+                }
+            }
+        }
+    }
+
+    /**
+     * Remove pending poison throws from a disconnecting player.
+     */
+    public void removePlayerPoisonThrows(long playerId) {
+        this.pendingPoisonThrows.removeIf(t -> t.sourcePlayerId == playerId);
+    }
+
+    /**
+     * Called automatically when a realm is added, regardless of whether a decorator exists.
+     */
+    public void spawnStaticEnemies(int mapId) {
+        final MapModel mapModel = GameDataManager.MAPS.get(mapId);
+        if (mapModel == null || mapModel.getStaticSpawns() == null) return;
+        for (final com.jrealm.game.model.StaticSpawn ss : mapModel.getStaticSpawns()) {
+            final EnemyModel model = GameDataManager.ENEMIES.get(ss.getEnemyId());
+            if (model == null) {
+                Realm.log.warn("Static spawn references unknown enemyId={}, skipping", ss.getEnemyId());
+                continue;
+            }
+            final Vector2f pos = new Vector2f(ss.getX(), ss.getY());
+            final Enemy enemy = GameObjectUtils.getEnemyFromId(ss.getEnemyId(), pos);
+            int healthMult = this.getDifficultyMultiplier();
+            enemy.setHealth(enemy.getHealth() * Math.max(1, healthMult));
+            enemy.setHealthMultiplier(Math.max(1, healthMult));
+            this.addEnemy(enemy);
+            Realm.log.info("Static spawn: {} at ({}, {}) in realm mapId={}", model.getName(), ss.getX(), ss.getY(), mapId);
         }
     }
 

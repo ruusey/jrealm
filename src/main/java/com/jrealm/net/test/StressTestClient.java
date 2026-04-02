@@ -23,9 +23,9 @@ import com.jrealm.net.server.packet.CommandPacket;
 import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
+import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.util.Cardinality;
 import com.jrealm.util.TimedWorkerThread;
-import com.jrealm.util.WorkerThread;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +64,7 @@ public class StressTestClient implements Runnable {
     @Getter
     private volatile long currentBytesReceived = 0;
 
+    @Getter
     private volatile long assignedPlayerId = -1;
     private volatile boolean loggedIn = false;
     private volatile float spawnX = -1;
@@ -96,6 +97,10 @@ public class StressTestClient implements Runnable {
             return;
         }
 
+        // Use dedicated daemon threads for bots — NOT the shared WorkerThread pool.
+        // Each bot needs 4 long-lived threads; 30 bots = 120 threads which would
+        // starve the 8-16 thread shared pool and block the entire server.
+
         final Runnable readPackets = () -> {
             if (!this.shutdown) this.readPackets();
         };
@@ -105,12 +110,14 @@ public class StressTestClient implements Runnable {
 
         this.sendPacketThread = new TimedWorkerThread(sendPackets, 64);
         this.readPacketThread = new TimedWorkerThread(readPackets, 64);
-        WorkerThread.submitAndForkRun(this.readPacketThread, this.sendPacketThread);
+        startDaemon("bot-" + this.clientIndex + "-read", this.readPacketThread);
+        startDaemon("bot-" + this.clientIndex + "-send", this.sendPacketThread);
 
-        // Send login immediately - the 1750ms handshake timeout is tight
-        WorkerThread.runLater(() -> {
+        // Send login after short delay
+        startDaemon("bot-" + this.clientIndex + "-login", () -> {
+            try { Thread.sleep(100); } catch (InterruptedException e) { return; }
             this.sendLogin();
-        }, 100);
+        });
 
         // Start gameplay simulation once logged in
         final Runnable simulateGameplay = () -> {
@@ -118,12 +125,11 @@ public class StressTestClient implements Runnable {
                 this.simulateGameplay();
             }
         };
-        // Simulate gameplay at ~20 ticks/sec (movement + shooting)
         this.gameplayThread = new TimedWorkerThread(simulateGameplay, 50);
-        WorkerThread.submitAndForkRun(this.gameplayThread);
+        startDaemon("bot-" + this.clientIndex + "-gameplay", this.gameplayThread);
 
         // Process inbound packets (handle login response, drain queue)
-        final Runnable processInbound = () -> {
+        startDaemon("bot-" + this.clientIndex + "-inbound", () -> {
             while (!this.shutdown) {
                 try {
                     this.processInboundPackets();
@@ -132,8 +138,7 @@ public class StressTestClient implements Runnable {
                     // ignore
                 }
             }
-        };
-        WorkerThread.submitAndForkRun(processInbound);
+        });
     }
 
     private void sendLogin() {
@@ -182,6 +187,7 @@ public class StressTestClient implements Runnable {
                                     log.error("[Client-{}] Failed to send tp command: {}", this.clientIndex, ex.getMessage());
                                 }
                             }
+                            // Stats are boosted server-side by the /spawnbots command
                         } else {
                             log.error("[Client-{}] Login failed", this.clientIndex);
                         }
@@ -233,6 +239,15 @@ public class StressTestClient implements Runnable {
                 PlayerShootPacket shootPacket = new PlayerShootPacket(
                         RANDOM.nextLong(), this.assignedPlayerId, 0, destX, destY, 0, 0);
                 this.outboundPacketQueue.add(shootPacket);
+            }
+
+            // Spam ability (poison throw) at random nearby position every ~10 ticks (~2/sec)
+            if (this.moveTick % 10 == 0) {
+                float angle = RANDOM.nextFloat() * 360f;
+                float range = 80 + RANDOM.nextFloat() * 120;
+                float abilityX = this.spawnX + (float) (Math.cos(Math.toRadians(angle)) * range);
+                float abilityY = this.spawnY + (float) (Math.sin(Math.toRadians(angle)) * range);
+                this.outboundPacketQueue.add(new UseAbilityPacket(this.assignedPlayerId, abilityX, abilityY));
             }
 
             // Send heartbeat periodically
@@ -329,6 +344,12 @@ public class StressTestClient implements Runnable {
         } catch (Exception e) {
             // ignore
         }
+    }
+
+    private static void startDaemon(String name, Runnable task) {
+        Thread t = new Thread(task, name);
+        t.setDaemon(true);
+        t.start();
     }
 
     public void setSpawnNear(float x, float y) {

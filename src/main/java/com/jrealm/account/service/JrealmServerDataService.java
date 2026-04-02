@@ -21,13 +21,12 @@ public class JrealmServerDataService implements JrealmDataService{
     private static final transient ObjectMapper REQUEST_MAPPER = new ObjectMapper();
     private HttpClient httpClient;
     private String baseUrl;
-    private String bearerToken;
     
     public <T> T executeDelete(String path, Class<T> responseClass) throws Exception {
         final URI targetURI = new URI(this.baseUrl + path);
         final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json")
                 .uri(targetURI).DELETE();
-        this.setAuth(httpRequest);
+
 
         final HttpResponse<String> response = this.httpClient.send(httpRequest.build(),
                 HttpResponse.BodyHandlers.ofString());
@@ -43,7 +42,7 @@ public class JrealmServerDataService implements JrealmDataService{
                 .ofString(JrealmServerDataService.REQUEST_MAPPER.writeValueAsString(object));
         final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json")
                 .uri(targetURI).POST(body);
-        this.setAuth(httpRequest);
+
 
         HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200)
@@ -58,7 +57,7 @@ public class JrealmServerDataService implements JrealmDataService{
                 .ofString(JrealmServerDataService.REQUEST_MAPPER.writeValueAsString(object));
         final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json")
                 .uri(targetURI).PUT(body);
-        this.setAuth(httpRequest);
+
 
         final HttpResponse<String> response = this.httpClient.send(httpRequest.build(),
                 HttpResponse.BodyHandlers.ofString());
@@ -73,7 +72,7 @@ public class JrealmServerDataService implements JrealmDataService{
         HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json")
                 .uri(targetURI).GET();
         HttpResponse<String> response = this.httpClient.send(httpRequest.build(), HttpResponse.BodyHandlers.ofString());
-        this.setAuth(httpRequest);
+
 
         // TODO: Add query params
         if (response.statusCode() != 200)
@@ -86,7 +85,7 @@ public class JrealmServerDataService implements JrealmDataService{
         final URI targetURI = new URI(this.baseUrl + path);
         final HttpRequest.Builder httpRequest = HttpRequest.newBuilder().header("Content-Type", "application/json")
                 .uri(targetURI).GET();
-        this.setAuth(httpRequest);
+
         final HttpResponse<String> response = this.httpClient.send(httpRequest.build(),
                 HttpResponse.BodyHandlers.ofString());
         // TODO: Add query params
@@ -94,12 +93,6 @@ public class JrealmServerDataService implements JrealmDataService{
             throw new IOException(response.body());
 
         return JrealmServerDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
-    }
-
-    public void setAuth(HttpRequest.Builder builder) {
-        if (this.bearerToken != null) {
-            builder.header("Authorization", "Bearer " + this.bearerToken);
-        }
     }
 
     public static void main(String[] args) {

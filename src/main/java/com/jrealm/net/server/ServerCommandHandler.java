@@ -434,48 +434,62 @@ public class ServerCommandHandler {
         final float spawnY = target.getPos().y;
 
         WorkerThread.doAsync(() -> {
-            // Phase 1: Pre-create ALL accounts and characters (slow HTTP, no game impact)
-            final List<String[]> botCredentials = new ArrayList<>(); // [email, password, characterUuid, accountGuid]
-            log.info("[BOTS] Phase 1: Creating {} accounts...", count);
-            for (int i = 0; i < count; i++) {
-                try {
-                    final String botId = "bot-" + System.currentTimeMillis() + "-" + i;
-                    final String email = botId + "@jrealm-bot.local";
-                    final String password = "botpass-" + UUID.randomUUID().toString();
-                    final String botName = "Bot_" + i;
+            // Phase 1: Pre-create ALL accounts and characters in parallel batches of 10
+            final List<String[]> botCredentials = java.util.Collections.synchronizedList(new ArrayList<>());
+            log.info("[BOTS] Phase 1: Creating {} accounts (10 at a time)...", count);
+            for (int batch = 0; batch < count; batch += 10) {
+                final int batchEnd = Math.min(batch + 10, count);
+                final List<Thread> batchThreads = new ArrayList<>();
+                for (int i = batch; i < batchEnd; i++) {
+                    final int idx = i;
+                    Thread t = new Thread(() -> {
+                        try {
+                            final String botId = "bot-" + UUID.randomUUID().toString();
+                            final String email = botId + "@jrealm-bot.local";
+                            final String password = "botpass-" + UUID.randomUUID().toString();
+                            final String botName = "Bot_" + botId.substring(4, 12);
 
-                    final AccountDto registerReq = AccountDto.builder()
-                            .email(email).password(password).accountName(botName)
-                            .accountProvisions(new ArrayList<>())
-                            .accountSubscriptions(new ArrayList<>())
-                            .build();
-                    final JsonNode registered = ServerGameLogic.DATA_SERVICE.executePost(
-                            "/admin/account/register", registerReq, JsonNode.class);
-                    final String accountGuid = registered.get("accountGuid").asText();
+                            final AccountDto registerReq = AccountDto.builder()
+                                    .email(email).password(password).accountName(botName)
+                                    .accountProvisions(new ArrayList<>())
+                                    .accountSubscriptions(new ArrayList<>())
+                                    .build();
+                            final JsonNode registered = ServerGameLogic.DATA_SERVICE.executePost(
+                                    "/admin/account/register", registerReq, JsonNode.class);
+                            final String accountGuid = registered.get("accountGuid").asText();
 
-                    final List<CharacterClass> classes = CharacterClass.getCharacterClasses();
-                    final int classId = classes.get(Realm.RANDOM.nextInt(classes.size())).classId;
-                    final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executePost(
-                            "/data/account/" + accountGuid + "/character?classId=" + classId,
-                            null, PlayerAccountDto.class);
+                            final int classId = CharacterClass.ASSASSIN.classId;
+                            final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executePost(
+                                    "/data/account/" + accountGuid + "/character?classId=" + classId,
+                                    null, PlayerAccountDto.class);
 
-                    String characterUuid = null;
-                    if (account.getCharacters() != null && !account.getCharacters().isEmpty()) {
-                        characterUuid = account.getCharacters().get(0).getCharacterUuid();
-                    }
-                    if (characterUuid == null) {
-                        log.error("[BOTS] Failed to get character UUID for {}", botName);
-                        continue;
-                    }
-                    log.info("[BOTS] Pre-created {} (class={}, uuid={})", botName, classId, characterUuid);
-                    botCredentials.add(new String[]{email, password, characterUuid, accountGuid});
+                            String characterUuid = null;
+                            if (account.getCharacters() != null && !account.getCharacters().isEmpty()) {
+                                characterUuid = account.getCharacters().get(0).getCharacterUuid();
+                            }
+                            if (characterUuid == null) {
+                                log.error("[BOTS] Failed to get character UUID for {}", botName);
+                                return;
+                            }
+                            log.info("[BOTS] Pre-created {} (class={}, uuid={})", botName, classId, characterUuid);
+                            botCredentials.add(new String[]{email, password, characterUuid, accountGuid});
 
-                    synchronized (BOT_ACCOUNT_GUIDS) {
-                        BOT_ACCOUNT_GUIDS.add(accountGuid);
-                    }
-                } catch (Exception e) {
-                    log.error("[BOTS] Failed to create bot account {}: {}", i, e.getMessage());
+                            synchronized (BOT_ACCOUNT_GUIDS) {
+                                BOT_ACCOUNT_GUIDS.add(accountGuid);
+                            }
+                        } catch (Exception e) {
+                            log.error("[BOTS] Failed to create bot account {}: {}", idx, e.getMessage());
+                        }
+                    }, "bot-create-" + idx);
+                    t.setDaemon(true);
+                    t.start();
+                    batchThreads.add(t);
                 }
+                // Wait for this batch to finish before starting the next
+                for (Thread t : batchThreads) {
+                    try { t.join(10000); } catch (InterruptedException e) { break; }
+                }
+                log.info("[BOTS] Batch complete: {}/{} accounts created", botCredentials.size(), count);
             }
 
             // Phase 2: Connect bots one at a time with stagger (fast, just TCP + login)
@@ -490,17 +504,30 @@ public class ServerCommandHandler {
                     synchronized (ACTIVE_BOTS) {
                         ACTIVE_BOTS.add(bot);
                     }
-                    WorkerThread.submitAndForkRun(bot);
+                    Thread botThread = new Thread(bot, "bot-runner-" + i);
+                    botThread.setDaemon(true);
+                    botThread.start();
 
-                    // Wait for this bot to fully log in before connecting the next one
+                    // Wait for this bot to log in (2s timeout — should take <500ms)
                     long waitStart = System.currentTimeMillis();
                     while (!bot.isLoggedIn() && !bot.isShutdown()
-                            && (System.currentTimeMillis() - waitStart) < 5000) {
-                        Thread.sleep(100);
+                            && (System.currentTimeMillis() - waitStart) < 2000) {
+                        Thread.sleep(50);
                     }
                     if (bot.isLoggedIn()) {
                         success++;
-                        log.info("[BOTS] Bot {} logged in successfully, connecting next...", i);
+                        // Give bot godmode (INVINCIBLE 24h) so it doesn't die during stress test
+                        try {
+                            final Player botPlayer = mgr.getPlayers().stream()
+                                    .filter(p -> p.getId() == bot.getAssignedPlayerId())
+                                    .findFirst().orElse(null);
+                            if (botPlayer != null) {
+                                botPlayer.addEffect(ProjectileEffectType.INVINCIBLE, 1000L * 60 * 60 * 24);
+                            }
+                        } catch (Exception ex) {
+                            log.warn("[BOTS] Failed to set bot {} godmode: {}", i, ex.getMessage());
+                        }
+                        log.info("[BOTS] Bot {} logged in successfully (godmode ON), connecting next...", i);
                     } else {
                         log.warn("[BOTS] Bot {} failed to log in within 5s, continuing...", i);
                     }

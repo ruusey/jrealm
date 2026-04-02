@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WorkerThread {
     // Fixed pool: cores * 2 for mixed IO/CPU workload, capped to avoid thread explosion
-    private static final int THREAD_POOL_COUNT = Math.min(Runtime.getRuntime().availableProcessors() * 2, 16);
+    private static final int THREAD_POOL_COUNT = Math.min(Runtime.getRuntime().availableProcessors() * 8, 50);
     private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
             .newFixedThreadPool(THREAD_POOL_COUNT, Executors.privilegedThreadFactory());
 
