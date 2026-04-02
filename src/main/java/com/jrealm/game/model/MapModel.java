@@ -28,8 +28,20 @@ public class MapModel {
     private Map<String, int[][]> data;
     private DungeonGenerationParams dungeonParams;
     private List<StaticSpawn> staticSpawns;
+    private List<float[]> spawnPoints; // [[x,y], [x,y], ...] — player spawn positions, picked randomly
 
     public Vector2f getCenter() {
         return new Vector2f((this.width / 2) * this.tileSize, ((this.height / 2) * (this.tileSize)));
+    }
+
+    /**
+     * Returns a random spawn point if defined, otherwise the map center.
+     */
+    public Vector2f getRandomSpawnPoint() {
+        if (this.spawnPoints != null && !this.spawnPoints.isEmpty()) {
+            float[] sp = this.spawnPoints.get(new java.util.Random().nextInt(this.spawnPoints.size()));
+            return new Vector2f(sp[0], sp[1]);
+        }
+        return getCenter();
     }
 }

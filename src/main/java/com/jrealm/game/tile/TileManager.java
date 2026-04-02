@@ -47,9 +47,11 @@ public class TileManager {
     private Vector2f bossSpawnPos;
     private Vector2f playerSpawnPos;
     private TerrainGenerationParameters terrainParams;
+    private int mapId;
 
     // Server side constructor
     public TileManager(int mapId) {
+        this.mapId = mapId;
         MapModel model = GameDataManager.MAPS.get(mapId);
         log.info("[TileManager] Building map {}", model);
         // Three types of maps. Fixed data, generated terrain and generated dungeon
@@ -351,6 +353,13 @@ public class TileManager {
     }
 
     public Vector2f getSafePosition() {
+        // If the map defines explicit spawn points, pick one randomly
+        if (this.mapId > 0) {
+            MapModel model = GameDataManager.MAPS.get(this.mapId);
+            if (model != null && model.getSpawnPoints() != null && !model.getSpawnPoints().isEmpty()) {
+                return model.getRandomSpawnPoint();
+            }
+        }
         // If zones are defined, spawn in the outermost zone (beach/shore)
         if (this.terrainParams != null && this.terrainParams.getZones() != null
                 && !this.terrainParams.getZones().isEmpty()) {
