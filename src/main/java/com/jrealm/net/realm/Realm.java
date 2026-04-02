@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import com.jrealm.account.dto.ChestDto;
@@ -75,7 +75,7 @@ public class Realm {
     private List<Long> expiredPlayers;
     private Map<Long, Long> playerLastShotTime;
     private TileManager tileManager;
-    private Semaphore playerLock = new Semaphore(1);
+    private final java.util.concurrent.locks.ReentrantLock playerLock = new java.util.concurrent.locks.ReentrantLock();
 
     // Spatial hash grid for O(1) neighbor lookups (cell size = viewport radius)
     private transient SpatialHashGrid spatialGrid;
@@ -1181,18 +1181,10 @@ public class Realm {
     }
 
     private void acquirePlayerLock() {
-        try {
-            this.playerLock.acquire();
-        } catch (Exception e) {
-            Realm.log.error(e.getMessage());
-        }
+        this.playerLock.lock();
     }
 
     private void releasePlayerLock() {
-        try {
-            this.playerLock.release();
-        } catch (Exception e) {
-            Realm.log.error(e.getMessage());
-        }
+        this.playerLock.unlock();
     }
 }

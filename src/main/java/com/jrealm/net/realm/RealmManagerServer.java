@@ -23,7 +23,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -185,7 +185,9 @@ public class RealmManagerServer implements Runnable {
 	private List<RealmDecoratorBase> realmDecorators = new ArrayList<>();
 	private List<EnemyScriptBase> enemyScripts = new ArrayList<>();
 	private List<UseableItemScriptBase> itemScripts = new ArrayList<>();
-	private Semaphore realmLock = new Semaphore(1);
+	// Note: realmLock is currently unnecessary — all realm access happens on the single tick thread.
+	// Kept as a ReentrantLock for safety if threading model changes in the future.
+	private final java.util.concurrent.locks.ReentrantLock realmLock = new java.util.concurrent.locks.ReentrantLock();
 	private int currentTickCount = 0;
 	private long tickSampleTime = 0;
 
@@ -2244,18 +2246,10 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void acquireRealmLock() {
-		try {
-			this.realmLock.acquire();
-		} catch (Exception e) {
-			log.error("[SERVER] Failed to acquire the realm lock. Reason: {}", e.getMessage());
-		}
+		this.realmLock.lock();
 	}
 
 	public void releaseRealmLock() {
-		try {
-			this.realmLock.release();
-		} catch (Exception e) {
-			log.error("[SERVER] Failed to release the realm lock. Reason: {}", e.getMessage());
-		}
+		this.realmLock.unlock();
 	}
 }

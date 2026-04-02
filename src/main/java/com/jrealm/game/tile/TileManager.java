@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import com.jrealm.game.contants.GlobalConstants;
@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TileManager {
     private static final Integer VIEWPORT_TILE_MIN = 10;
     private static final Integer VIEWPORT_TILE_MAX = 20;
-    private Semaphore mapLock = new Semaphore(1);
+    private final java.util.concurrent.locks.ReentrantLock mapLock = new java.util.concurrent.locks.ReentrantLock();
     private List<TileMap> mapLayers;
     private Vector2f bossSpawnPos;
     private Vector2f playerSpawnPos;
@@ -757,18 +757,10 @@ public class TileManager {
     }
     
     public void releaseMapLock() {
-    	try {
-    		this.mapLock.release();
-    	}catch(Exception e) {
-    		log.error("[TileManager] Failed to release map lock. Reason: {}", e.getMessage());
-    	}
+    	this.mapLock.unlock();
     }
-    
+
     public void acquireMapLock() {
-    	try {
-    		this.mapLock.acquire();
-    	}catch(Exception e) {
-    		log.error("[TileManager] Failed to acquire map lock. Reason: {}", e.getMessage());
-    	}
+    	this.mapLock.lock();
     }
 }
