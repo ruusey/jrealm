@@ -181,6 +181,7 @@ public class RealmManagerServer implements Runnable {
 	
 	private long lastWriteSampleTime = Instant.now().toEpochMilli();
 	private final java.util.concurrent.atomic.AtomicLong bytesWritten = new java.util.concurrent.atomic.AtomicLong(0);
+	private final java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicLong> bytesWrittenByPacketType = new java.util.concurrent.ConcurrentHashMap<>();
 	
 	public RealmManagerServer() {
 		// Probably dont want to auto start the server so migrating
@@ -421,6 +422,11 @@ public class RealmManagerServer implements Runnable {
 		for (final Map.Entry<String, ClientSession> client : this.server.getClients().entrySet()) {
 			try {
 				final ClientSession session = client.getValue();
+				// Inject bandwidth counters so write thread can track stats
+				if (session.getSharedBytesWritten() == null) {
+					session.setSharedBytesWritten(this.bytesWritten);
+					session.setSharedBytesPerType(this.bytesWrittenByPacketType);
+				}
 				final Player player = this.getPlayerByRemoteAddress(client.getKey());
 				if (player == null) {
 					continue;
@@ -451,6 +457,16 @@ public class RealmManagerServer implements Runnable {
 			final long written = this.bytesWritten.getAndSet(0);
 			RealmManagerServer.log.info("[SERVER] current write rate = {} kbit/s",
 					(float) (written / 1024.0f) * 8.0f);
+			final StringBuilder sb = new StringBuilder("[SERVER] Bandwidth by packet type: ");
+			for (var entry : this.bytesWrittenByPacketType.entrySet()) {
+				final long typeBytes = entry.getValue().getAndSet(0);
+				if (typeBytes > 0) {
+					sb.append(entry.getKey()).append("=")
+					  .append(String.format("%.1f", (typeBytes / 1024.0f) * 8.0f))
+					  .append("kbit/s ");
+				}
+			}
+			RealmManagerServer.log.info(sb.toString());
 		}
 		long nanosDiff = System.nanoTime() - startNanos;
 		log.debug("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double) nanosDiff / (double) 1000000l));

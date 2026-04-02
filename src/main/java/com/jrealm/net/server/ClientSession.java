@@ -30,6 +30,10 @@ public class ClientSession {
     private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
     private final Queue<byte[]> writeQueue = new ConcurrentLinkedQueue<>();
     private final Queue<Packet> pendingSerialize = new ConcurrentLinkedQueue<>();
+
+    // Shared bandwidth counters — set by RealmManagerServer, updated by write thread
+    private java.util.concurrent.atomic.AtomicLong sharedBytesWritten;
+    private java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicLong> sharedBytesPerType;
     private ByteBuffer pendingWrite = null;
 
     public ClientSession(SocketChannel channel, String clientKey) {
@@ -110,6 +114,9 @@ public class ClientSession {
 
     public void enqueueWrite(byte[] frame) {
         this.writeQueue.add(com.jrealm.net.core.PacketCompression.compressFrame(frame));
+        if (this.sharedBytesWritten != null) {
+            this.sharedBytesWritten.addAndGet(frame.length);
+        }
     }
 
     /**
@@ -124,19 +131,25 @@ public class ClientSession {
      * Serialize all pending packets into the write queue. Called by the write thread
      * before flushing, NOT on the game tick thread.
      */
-    public int drainPendingSerialize() {
-        int bytes = 0;
+    public void drainPendingSerialize() {
         Packet packet;
         while ((packet = this.pendingSerialize.poll()) != null) {
             try {
                 final byte[] frame = packet.serializeToBytes();
                 this.writeQueue.add(com.jrealm.net.core.PacketCompression.compressFrame(frame));
-                bytes += frame.length;
+                final int len = frame.length;
+                if (this.sharedBytesWritten != null) {
+                    this.sharedBytesWritten.addAndGet(len);
+                }
+                if (this.sharedBytesPerType != null) {
+                    this.sharedBytesPerType
+                            .computeIfAbsent(packet.getClass().getSimpleName(), k -> new java.util.concurrent.atomic.AtomicLong(0))
+                            .addAndGet(len);
+                }
             } catch (Exception e) {
                 // Skip malformed packets
             }
         }
-        return bytes;
     }
 
     public boolean flushWrites() {
