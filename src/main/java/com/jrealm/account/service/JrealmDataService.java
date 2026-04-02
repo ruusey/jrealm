@@ -1,7 +1,6 @@
 package com.jrealm.account.service;
 
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.util.Map;
 
 import com.jrealm.account.dto.LoginRequestDto;
@@ -13,7 +12,6 @@ public interface JrealmDataService {
     public <T> T executePut(String path, Object object, Class<T> responseClass) throws Exception;
     public String executeGet(String path, Map<String, String> queryParams) throws Exception;
     public <T> T executeGet(String path, Map<String, String> queryParams, Class<T> responseClass) throws Exception;
-    public void setAuth(HttpRequest.Builder builder);
 
     public static void main(String[] args) {
         JrealmClientDataService service = new JrealmClientDataService(HttpClient.newHttpClient(), "http://localhost:8085/", null);
