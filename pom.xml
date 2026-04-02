@@ -3,8 +3,10 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.jrealm.game</groupId>
-	<artifactId>jrealm</artifactId>
+	<artifactId>openrealm</artifactId>
 	<version>0.5.0</version>
+	<name>openrealm</name>
+	<description>Game Server and Client for OpenRealm</description>
 	<properties>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
@@ -97,12 +99,12 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub Packages</name>
-			<url>https://maven.pkg.github.com/ruusey/jrealm</url>
+			<url>https://maven.pkg.github.com/ruusey/openrealm</url>
 		</repository>
 	</distributionManagement>
 
 	<build>
-		<finalName>jrealm</finalName>
+		<finalName>openrealm</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
