@@ -565,6 +565,9 @@ public class Realm {
     /**
      * Grid-accelerated circular LoadPacket construction.
      */
+    private static final int MAX_BULLETS_PER_LOAD = 60;
+    private static final int MAX_ENEMIES_PER_LOAD = 80;
+
     public LoadPacket getLoadPacketCircularFast(Vector2f center, float radius) {
         if (this.spatialGrid == null) {
             return getLoadPacketCircular(center, radius);
@@ -581,7 +584,6 @@ public class Realm {
 
             for (int i = 0; i < candidates.size(); i++) {
                 final long id = candidates.get(i);
-                // Check each entity map for this ID
                 Player p = this.players.get(id);
                 if (p != null) {
                     float dx = p.getPos().x - center.x;
@@ -591,6 +593,7 @@ public class Realm {
                 }
                 Enemy e = this.enemies.get(id);
                 if (e != null) {
+                    if (enemiesToLoad.size() >= MAX_ENEMIES_PER_LOAD) continue;
                     float dx = e.getPos().x - center.x;
                     float dy = e.getPos().y - center.y;
                     if (dx * dx + dy * dy <= radiusSq) enemiesToLoad.add(e);
@@ -598,6 +601,7 @@ public class Realm {
                 }
                 Bullet b = this.bullets.get(id);
                 if (b != null) {
+                    if (bulletsToLoad.size() >= MAX_BULLETS_PER_LOAD) continue;
                     float dx = b.getPos().x - center.x;
                     float dy = b.getPos().y - center.y;
                     if (dx * dx + dy * dy <= radiusSq) bulletsToLoad.add(b);

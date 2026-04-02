@@ -8,13 +8,10 @@ import com.jrealm.net.client.packet.CreateEffectPacket;
 import com.jrealm.net.realm.Realm;
 import com.jrealm.net.realm.RealmManagerServer;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * Priest Tome ability — heals self and nearby players.
  * Handles test tome (157) and tiered tomes (228-234).
  */
-@Slf4j
 public class Item157Script extends UseableItemScriptBase {
 
     public Item157Script(final RealmManagerServer mgr) {
@@ -44,9 +41,6 @@ public class Item157Script extends UseableItemScriptBase {
         }
         final int healAmount = HEAL_BY_TIER[Math.min(tier, HEAL_BY_TIER.length - 1)];
 
-        log.info("[PRIEST TOME] Player {} used tome itemId={} tier={} healAmount={}",
-            player.getName(), abilityItem.getItemId(), tier, healAmount);
-
         // Broadcast heal radius visual
         final Vector2f center = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
         this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
@@ -55,22 +49,16 @@ public class Item157Script extends UseableItemScriptBase {
         // Heal ALL players in range (including self) and apply healing effect
         final Player[] targets = targetRealm
                 .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 7));
-        log.info("[PRIEST TOME] Found {} players in heal range", targets.length);
         for (final Player target : targets) {
             target.addEffect(effect.getEffectId(), effect.getDuration());
             int maxHp = target.getComputedStats().getHp();
             int missing = maxHp - target.getHealth();
-            log.info("[PRIEST TOME] Target={} health={} maxHp={} missing={}",
-                target.getName(), target.getHealth(), maxHp, missing);
             if (missing > 0) {
                 int toHeal = Math.min(healAmount, missing);
                 target.setHealth(target.getHealth() + toHeal);
                 this.mgr.broadcastTextEffect(
                     com.jrealm.game.contants.EntityType.PLAYER, target,
                     com.jrealm.game.contants.TextEffect.HEAL, "+" + toHeal);
-                log.info("[PRIEST TOME] Healed {} for {} HP", target.getName(), toHeal);
-            } else {
-                log.info("[PRIEST TOME] {} is at full health, no heal needed", target.getName());
             }
         }
     }

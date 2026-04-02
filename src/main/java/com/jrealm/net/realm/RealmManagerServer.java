@@ -172,10 +172,10 @@ public class RealmManagerServer implements Runnable {
 	// EnemyUpdatePacket: 16Hz - enemy health bars
 	private static final int MOVE_TICK_DIVISOR = 1;      // Inner zone movement at 64Hz (matches Java client)
 	private static final int MOVE_FULL_TICK_DIVISOR = 2;  // Full viewport movement at 32Hz
-	private static final int LOAD_TICK_DIVISOR = 2;       // Entity spawn/despawn at 32Hz (loot needs fast sync)
-	private static final int UPDATE_TICK_DIVISOR = 4;
+	private static final int LOAD_TICK_DIVISOR = 4;       // Entity spawn/despawn at 16Hz (was 32Hz — halves LoadPacket bandwidth)
+	private static final int UPDATE_TICK_DIVISOR = 8;     // Stats/inventory at 8Hz (was 16Hz — stats change slowly)
 	private static final int LOADMAP_TICK_DIVISOR = 16;
-	private static final int ENEMY_UPDATE_TICK_DIVISOR = 4;
+	private static final int ENEMY_UPDATE_TICK_DIVISOR = 8; // Enemy health bars at 8Hz (was 16Hz)
 
 	private boolean  isSetup = false;
 	
@@ -559,14 +559,15 @@ public class RealmManagerServer implements Runnable {
 								this.enqueueServerPacket(player.getValue(), updatePacket);
 							}
 
-							// Nearby other players — send their updates TO this player.
+							// Nearby other players — send their updates TO this player (capped to limit O(N²))
 							final Player[] otherPlayers = realm.getPlayersInRadiusFast(playerCenter, viewportRadius);
-							for (Player other : otherPlayers) {
+							final int maxOtherUpdates = Math.min(otherPlayers.length, 20);
+							for (int opi = 0; opi < maxOtherUpdates; opi++) {
+								final Player other = otherPlayers[opi];
 								if (other.getId() == player.getKey()) continue;
 								try {
 									final UpdatePacket otherUpdate = realm.getPlayerAsPacket(other.getId());
 									if (otherUpdate == null) continue;
-									// Thin update already includes HP/MP/effects — no separate state packet needed
 									this.enqueueServerPacket(player.getValue(), otherUpdate.withoutInventory());
 								} catch (Exception ex) {
 									log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
@@ -1338,7 +1339,7 @@ public class RealmManagerServer implements Runnable {
 				|| (Instant.now().toEpochMilli() - lastAbilityUsage >= effect.getCooldownDuration())) {
 			this.playerAbilityState.put(playerId, Instant.now().toEpochMilli());
 		} else {
-			log.info("Ability {} is on cooldown", abilityItem);
+			log.debug("Ability {} is on cooldown", abilityItem);
 			return;
 		}
 		// Godmode (INVINCIBLE) = infinite mana
@@ -1406,10 +1407,7 @@ public class RealmManagerServer implements Runnable {
 		// Invoke any item specific scripts
 		final UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
 		if (script != null) {
-			log.info("[SERVER] Invoking item script {} for itemId={}", script.getClass().getSimpleName(), abilityItem.getItemId());
 			script.invokeItemAbility(targetRealm, player, abilityItem, pos);
-		} else {
-			log.warn("[SERVER] No item script found for ability itemId={}", abilityItem.getItemId());
 		}
 	}
 
