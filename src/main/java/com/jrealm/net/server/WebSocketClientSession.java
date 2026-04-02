@@ -19,6 +19,8 @@ public class WebSocketClientSession extends ClientSession {
     @Override
     public boolean flushWrites() {
         try {
+            // Serialize any pending packets (deferred from tick thread)
+            this.drainPendingSerialize();
             byte[] frame;
             while ((frame = this.getWriteQueue().poll()) != null) {
                 if (this.wsConnection.isOpen()) {
@@ -48,6 +50,7 @@ public class WebSocketClientSession extends ClientSession {
             log.error("[WS] Failed to close WebSocket for client {}. Reason: {}", this.getClientKey(), e.getMessage());
         }
         this.getPacketQueue().clear();
+        this.getPendingSerialize().clear();
         this.getWriteQueue().clear();
     }
 

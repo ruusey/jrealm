@@ -180,8 +180,7 @@ public class RealmManagerServer implements Runnable {
 	private boolean  isSetup = false;
 	
 	private long lastWriteSampleTime = Instant.now().toEpochMilli();
-	private long bytesWritten = 0;
-	private Map<String, Long> bytesWrittenByPacketType = new HashMap<>();
+	private final java.util.concurrent.atomic.AtomicLong bytesWritten = new java.util.concurrent.atomic.AtomicLong(0);
 	
 	public RealmManagerServer() {
 		// Probably dont want to auto start the server so migrating
@@ -419,45 +418,26 @@ public class RealmManagerServer implements Runnable {
 			}
 		});
 
-		// Pre-serialize broadcast packets once
-		final List<byte[]> broadcastFrames = new ArrayList<>();
-		for (final Packet packet : packetsToBroadcast) {
-			try {
-				final byte[] frame = packet.serializeToBytes();
-				broadcastFrames.add(frame);
-				this.bytesWritten += frame.length;
-			} catch (Exception e) {
-				log.error("[SERVER] Failed to serialize broadcast packet. Reason: {}", e);
-			}
-		}
-
 		for (final Map.Entry<String, ClientSession> client : this.server.getClients().entrySet()) {
 			try {
 				final ClientSession session = client.getValue();
 				final Player player = this.getPlayerByRemoteAddress(client.getKey());
 				if (player == null) {
-					log.debug("[SERVER] Player {} has not yet completed login, skipping broadcast", client.getKey());
 					continue;
 				}
 
-				// Enqueue broadcast frames (already serialized)
-				for (final byte[] frame : broadcastFrames) {
-					session.enqueueWrite(frame);
+				// Enqueue broadcast packets for deferred serialization on write thread
+				for (final Packet packet : packetsToBroadcast) {
+					session.enqueuePacket(packet);
 				}
 
-				// Dequeue and send any player specific packets
+				// Enqueue player-specific packets for deferred serialization on write thread
 				final ConcurrentLinkedQueue<Packet> playerPacketsToSend = this.playerOutboundPacketQueue
 						.get(player.getId());
-
-				while ((playerPacketsToSend != null) && !playerPacketsToSend.isEmpty()) {
-					final Packet packet = playerPacketsToSend.remove();
-					try {
-						final byte[] frame = packet.serializeToBytes();
-						session.enqueueWrite(frame);
-						this.bytesWritten += frame.length;
-						this.bytesWrittenByPacketType.merge(packet.getClass().getSimpleName(), (long) frame.length, Long::sum);
-					} catch (Exception e) {
-						log.error("[SERVER] Failed to serialize player packet. Reason: {}", e);
+				if (playerPacketsToSend != null) {
+					Packet packet;
+					while ((packet = playerPacketsToSend.poll()) != null) {
+						session.enqueuePacket(packet);
 					}
 				}
 			} catch (Exception e) {
@@ -465,21 +445,12 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 
-		// Print server write rate to all connected clients (kbit/s)
+		// Print server write rate (kbit/s) — bytes tracked by write thread via AtomicLong
 		if (Instant.now().toEpochMilli() - this.lastWriteSampleTime > 1000) {
 			this.lastWriteSampleTime = Instant.now().toEpochMilli();
+			final long written = this.bytesWritten.getAndSet(0);
 			RealmManagerServer.log.info("[SERVER] current write rate = {} kbit/s",
-					(float) (this.bytesWritten / 1024.0f) * 8.0f);
-			// Log per-packet-type bandwidth breakdown
-			final StringBuilder sb = new StringBuilder("[SERVER] Bandwidth by packet type: ");
-			for (Map.Entry<String, Long> entry : this.bytesWrittenByPacketType.entrySet()) {
-				sb.append(entry.getKey()).append("=")
-				  .append(String.format("%.1f", (entry.getValue() / 1024.0f) * 8.0f))
-				  .append("kbit/s ");
-			}
-			RealmManagerServer.log.info(sb.toString());
-			this.bytesWrittenByPacketType.clear();
-			this.bytesWritten = 0;
+					(float) (written / 1024.0f) * 8.0f);
 		}
 		long nanosDiff = System.nanoTime() - startNanos;
 		log.debug("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double) nanosDiff / (double) 1000000l));
@@ -720,55 +691,30 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	// For each connected client, dequeue all pending packets
-	// pass the packet and RealmManager context to the handler
-	// script
+	// Maximum packets to process per tick across all clients.
+	// Prevents ability spam from 25+ bots from starving the tick thread.
+	private static final int MAX_PACKETS_PER_TICK = 200;
+
+	// Packet types that get priority processing (shoot/move feel laggy when delayed)
+	private static final Set<Class<? extends Packet>> PRIORITY_PACKETS = Set.of(
+			com.jrealm.net.server.packet.PlayerShootPacket.class,
+			com.jrealm.net.server.packet.PlayerMovePacket.class,
+			com.jrealm.net.server.packet.HeartbeatPacket.class
+	);
+
 	public void processServerPackets() {
+		// Two-pass processing: priority packets first, then everything else (capped)
+		final List<Packet> priorityQueue = new ArrayList<>();
+		final List<Packet> normalQueue = new ArrayList<>();
+
 		for (final Map.Entry<String, ClientSession> entry : this.getServer().getClients().entrySet()) {
 			if (!entry.getValue().isShutdownProcessing()) {
-				// Read all packets from the ClientSession queue
 				while (!entry.getValue().getPacketQueue().isEmpty()) {
 					final Packet packet = entry.getValue().getPacketQueue().remove();
-					try {
-						Packet created = packet;
-						created.setSrcIp(packet.getSrcIp());
-						// Invoke packet callback
-						final List<MethodHandle> packetHandles = this.userPacketCallbacksServer.get(packet.getId());
-						long start = System.nanoTime();
-						if (packetHandles != null) {
-							for (MethodHandle handler : packetHandles) {
-								try {
-									handler.invokeExact(this, created);
-								} catch (Throwable e) {
-									log.error("[SERVER] Failed to invoke packet callback. Reason: {}", e);
-								}
-							}
-							log.info("[SERVER] Invoked {} packet callbacks for PacketType {} using reflection in {} nanos",
-									packetHandles.size(), PacketType.valueOf(created.getId()),
-									(System.nanoTime() - start));
-						}
-						start = System.nanoTime();
-						if (this.packetCallbacksServer.get(created.getClass()) == null) {
-							final List<MethodHandle> callBacHandles = this.userPacketCallbacksServer.get(created.getId());
-							if (callBacHandles != null) {
-								callBacHandles.forEach(callBack -> {
-									try {
-										callBack.invokeExact(this, created);
-									} catch (Throwable e) {
-										log.error(
-												"[SERVER] Failed to invoke user server packet callback for packet id {}. Callback: {}. Reason: {}",
-												created.getId(), callBack, e.getMessage());
-									}
-								});
-							}
-						} else {
-							this.packetCallbacksServer.get(created.getClass()).accept(this, created);
-						}
-						log.debug("[SERVER] Invoked callback for PacketType {} using map in {} nanos",
-								PacketType.valueOf(created.getId()), (System.nanoTime() - start));
-					} catch (Exception e) {
-						RealmManagerServer.log.error("Failed to process server packets {}", e);
-						entry.getValue().setShutdownProcessing(true);
+					if (PRIORITY_PACKETS.contains(packet.getClass())) {
+						priorityQueue.add(packet);
+					} else {
+						normalQueue.add(packet);
 					}
 				}
 			} else {
@@ -788,6 +734,49 @@ public class RealmManagerServer implements Runnable {
 				entry.getValue().close();
 				this.server.getClients().remove(entry.getKey());
 			}
+		}
+
+		// Pass 1: Process ALL priority packets (shoot/move/heartbeat — always responsive)
+		for (final Packet packet : priorityQueue) {
+			processPacket(packet);
+		}
+
+		// Pass 2: Process normal packets up to the per-tick cap
+		final int normalCap = Math.max(0, MAX_PACKETS_PER_TICK - priorityQueue.size());
+		for (int i = 0; i < Math.min(normalQueue.size(), normalCap); i++) {
+			processPacket(normalQueue.get(i));
+		}
+	}
+
+	private void processPacket(final Packet packet) {
+		try {
+			packet.setSrcIp(packet.getSrcIp());
+			final List<MethodHandle> packetHandles = this.userPacketCallbacksServer.get(packet.getId());
+			if (packetHandles != null) {
+				for (MethodHandle handler : packetHandles) {
+					try {
+						handler.invokeExact(this, packet);
+					} catch (Throwable e) {
+						log.error("[SERVER] Failed to invoke packet callback. Reason: {}", e);
+					}
+				}
+			}
+			if (this.packetCallbacksServer.get(packet.getClass()) == null) {
+				final List<MethodHandle> callBackHandles = this.userPacketCallbacksServer.get(packet.getId());
+				if (callBackHandles != null) {
+					for (MethodHandle callBack : callBackHandles) {
+						try {
+							callBack.invokeExact(this, packet);
+						} catch (Throwable e) {
+							log.error("[SERVER] Failed to invoke user packet callback. Reason: {}", e.getMessage());
+						}
+					}
+				}
+			} else {
+				this.packetCallbacksServer.get(packet.getClass()).accept(this, packet);
+			}
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to process packet {}. Reason: {}", packet.getClass().getSimpleName(), e);
 		}
 	}
 
@@ -1523,28 +1512,15 @@ public class RealmManagerServer implements Runnable {
 
 	
 	public void enqueueServerPacket(final Packet packet) {
-		// Synchronize access to the outbound packet queue
-		// To prevent multiple threads enqueuing packets at the same time
-		synchronized (this.outboundPacketQueue) {
-			this.outboundPacketQueue.add(packet);
-		}
+		this.outboundPacketQueue.add(packet);
 	}
 
 	public void enqueueServerPacket(final Player player, final Packet packet) {
 		if (player == null || packet == null)
 			return;
-		
-		// Synchronize access to the player's outbound packet queue
-		// To prevent multiple threads enqueuing packets at the same time
-		synchronized (this.playerOutboundPacketQueue) {
-			if (this.playerOutboundPacketQueue.get(player.getId()) == null) {
-				final ConcurrentLinkedQueue<Packet> packets = new ConcurrentLinkedQueue<>();
-				packets.add(packet);
-				this.playerOutboundPacketQueue.put(player.getId(), packets);
-			} else {
-				this.playerOutboundPacketQueue.get(player.getId()).add(packet);
-			}
-		}
+		this.playerOutboundPacketQueue
+				.computeIfAbsent(player.getId(), k -> new ConcurrentLinkedQueue<>())
+				.add(packet);
 	}
 
 	private void proccessTerrainHit(final long realmId, final Player p) {

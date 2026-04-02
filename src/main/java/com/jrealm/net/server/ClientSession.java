@@ -29,6 +29,7 @@ public class ClientSession {
     private ByteBuffer readBuffer = ByteBuffer.allocateDirect(READ_BUFFER_SIZE);
     private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
     private final Queue<byte[]> writeQueue = new ConcurrentLinkedQueue<>();
+    private final Queue<Packet> pendingSerialize = new ConcurrentLinkedQueue<>();
     private ByteBuffer pendingWrite = null;
 
     public ClientSession(SocketChannel channel, String clientKey) {
@@ -111,8 +112,37 @@ public class ClientSession {
         this.writeQueue.add(com.jrealm.net.core.PacketCompression.compressFrame(frame));
     }
 
+    /**
+     * Enqueue a packet for deferred serialization on the write thread.
+     * Avoids blocking the game tick thread with serialization + compression.
+     */
+    public void enqueuePacket(Packet packet) {
+        this.pendingSerialize.add(packet);
+    }
+
+    /**
+     * Serialize all pending packets into the write queue. Called by the write thread
+     * before flushing, NOT on the game tick thread.
+     */
+    public int drainPendingSerialize() {
+        int bytes = 0;
+        Packet packet;
+        while ((packet = this.pendingSerialize.poll()) != null) {
+            try {
+                final byte[] frame = packet.serializeToBytes();
+                this.writeQueue.add(com.jrealm.net.core.PacketCompression.compressFrame(frame));
+                bytes += frame.length;
+            } catch (Exception e) {
+                // Skip malformed packets
+            }
+        }
+        return bytes;
+    }
+
     public boolean flushWrites() {
         try {
+            // Serialize any pending packets (deferred from tick thread)
+            this.drainPendingSerialize();
             // First try to finish any pending partial write
             if (this.pendingWrite != null) {
                 this.channel.write(this.pendingWrite);
@@ -154,6 +184,7 @@ public class ClientSession {
         }
         this.remoteBuffer = null;
         this.packetQueue.clear();
+        this.pendingSerialize.clear();
         this.writeQueue.clear();
         this.pendingWrite = null;
     }

@@ -60,8 +60,10 @@ public class NioServer implements Runnable {
                     boolean didWork = false;
                     for (ClientSession session : this.clients.values()) {
                         if (session.isShutdownProcessing()) continue;
-                        if (!session.getWriteQueue().isEmpty() || session.getPendingWrite() != null) {
-                            session.flushWrites();
+                        if (!session.getPendingSerialize().isEmpty()
+                                || !session.getWriteQueue().isEmpty()
+                                || session.getPendingWrite() != null) {
+                            session.flushWrites(); // drainPendingSerialize() is called inside
                             didWork = true;
                         }
                     }
