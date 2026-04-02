@@ -75,6 +75,8 @@ public class Realm {
     private List<Long> expiredPlayers;
     private Map<Long, Long> playerLastShotTime;
     private TileManager tileManager;
+    // Compact short ID allocator for bandwidth-efficient movement packets
+    private ShortIdAllocator shortIdAllocator = new ShortIdAllocator();
     private final java.util.concurrent.locks.ReentrantLock playerLock = new java.util.concurrent.locks.ReentrantLock();
 
     // Spatial hash grid for O(1) neighbor lookups (cell size = viewport radius)
@@ -89,6 +91,9 @@ public class Realm {
 
     // Pending poison throws — tracked per tick instead of blocking a thread pool thread.
     private final List<PoisonThrowState> pendingPoisonThrows = new java.util.ArrayList<>();
+
+    // Active decoys — lightweight tick-driven entities for Trickster prism ability.
+    private final List<DecoyState> activeDecoys = new java.util.ArrayList<>();
 
     static class PoisonThrowState {
         final long landTime;
@@ -136,6 +141,37 @@ public class Realm {
 
         boolean isExpired() {
             return java.time.Instant.now().toEpochMilli() - startTime >= duration;
+        }
+    }
+
+    static class DecoyState {
+        final long enemyId;
+        final long sourcePlayerId;
+        final long spawnTime;
+        final long durationMs;
+        final float dx;
+        final float dy;
+        final float maxTravelDistSq;
+        final float originX;
+        final float originY;
+        boolean stopped;
+
+        DecoyState(long enemyId, long sourcePlayerId, float originX, float originY,
+                   float dx, float dy, float maxTravelDist, long durationMs) {
+            this.enemyId = enemyId;
+            this.sourcePlayerId = sourcePlayerId;
+            this.spawnTime = java.time.Instant.now().toEpochMilli();
+            this.durationMs = durationMs;
+            this.dx = dx;
+            this.dy = dy;
+            this.maxTravelDistSq = maxTravelDist * maxTravelDist;
+            this.originX = originX;
+            this.originY = originY;
+            this.stopped = false;
+        }
+
+        boolean isExpired() {
+            return java.time.Instant.now().toEpochMilli() - spawnTime >= durationMs;
         }
     }
 
@@ -278,6 +314,7 @@ public class Realm {
         if (this.spatialGrid != null) {
             this.spatialGrid.insert(player.getId(), player.getPos().x, player.getPos().y);
         }
+        this.shortIdAllocator.getOrAssign(player.getId());
         this.releasePlayerLock();
         return player.getId();
     }
@@ -303,6 +340,7 @@ public class Realm {
         if (this.spatialGrid != null) {
             this.spatialGrid.remove(player.getId());
         }
+        this.shortIdAllocator.release(player.getId());
         this.releasePlayerLock();
         return p != null;
     }
@@ -333,6 +371,7 @@ public class Realm {
         if (this.spatialGrid != null) {
             this.spatialGrid.remove(playerId);
         }
+        this.shortIdAllocator.release(playerId);
         this.releasePlayerLock();
         return p != null;
     }
@@ -438,6 +477,7 @@ public class Realm {
         if (this.spatialGrid != null) {
             this.spatialGrid.insert(enemy.getId(), enemy.getPos().x, enemy.getPos().y);
         }
+        this.shortIdAllocator.getOrAssign(enemy.getId());
         return enemy.getId();
     }
 
@@ -471,6 +511,7 @@ public class Realm {
         if (this.spatialGrid != null) {
             this.spatialGrid.remove(enemy.getId());
         }
+        this.shortIdAllocator.release(enemy.getId());
         return e != null;
     }
 
@@ -623,7 +664,8 @@ public class Realm {
             }
             load = LoadPacket.from(playersToLoadList.toArray(new Player[0]),
                     containersToLoad.toArray(new LootContainer[0]), bulletsToLoad.toArray(new Bullet[0]),
-                    enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]));
+                    enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]),
+                    this.shortIdAllocator);
         } catch (Exception e) {
             Realm.log.error("Failed to get fast circular load Packet. Reason: {}", e.getMessage());
         }
@@ -909,7 +951,8 @@ public class Realm {
 
             load = LoadPacket.from(playersToLoadList.toArray(new Player[0]),
                     containersToLoad.toArray(new LootContainer[0]), bulletsToLoad.toArray(new Bullet[0]),
-                    enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]));
+                    enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]),
+                    this.shortIdAllocator);
         } catch (Exception e) {
             Realm.log.error("Failed to get load Packet. Reason: {}");
         }
@@ -952,7 +995,8 @@ public class Realm {
             }
             load = LoadPacket.from(playersToLoadList.toArray(new Player[0]),
                     containersToLoad.toArray(new LootContainer[0]), bulletsToLoad.toArray(new Bullet[0]),
-                    enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]));
+                    enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]),
+                    this.shortIdAllocator);
         } catch (Exception e) {
             Realm.log.error("Failed to get circular load Packet. Reason: {}", e.getMessage());
         }
@@ -1185,6 +1229,73 @@ public class Realm {
      */
     public void removePlayerPoisonThrows(long playerId) {
         this.pendingPoisonThrows.removeIf(t -> t.sourcePlayerId == playerId);
+    }
+
+    /**
+     * Register a decoy entity. The decoy walks in the given direction until it
+     * covers maxTravelDist pixels, then stands still until durationMs expires.
+     */
+    public void registerDecoy(long enemyId, long sourcePlayerId, float originX, float originY,
+                               float dx, float dy, float maxTravelDist, long durationMs) {
+        this.activeDecoys.add(new DecoyState(enemyId, sourcePlayerId, originX, originY,
+                dx, dy, maxTravelDist, durationMs));
+    }
+
+    /**
+     * Process active decoys: move them each tick, stop after travel distance,
+     * remove after duration expires. Called every server tick.
+     */
+    public void processDecoys(RealmManagerServer mgr) {
+        if (this.activeDecoys.isEmpty()) return;
+        final java.util.Iterator<DecoyState> it = this.activeDecoys.iterator();
+        while (it.hasNext()) {
+            final DecoyState d = it.next();
+            final Enemy decoy = this.enemies.get(d.enemyId);
+
+            // Decoy was killed or realm cleaned up
+            if (decoy == null || decoy.getDeath()) {
+                it.remove();
+                continue;
+            }
+
+            // Duration expired — remove decoy
+            if (d.isExpired()) {
+                it.remove();
+                this.expiredEnemies.add(d.enemyId);
+                this.removeEnemy(decoy);
+                continue;
+            }
+
+            // Move decoy if it hasn't reached travel distance
+            if (!d.stopped) {
+                float traveled_x = decoy.getPos().x - d.originX;
+                float traveled_y = decoy.getPos().y - d.originY;
+                if (traveled_x * traveled_x + traveled_y * traveled_y >= d.maxTravelDistSq) {
+                    d.stopped = true;
+                } else {
+                    decoy.getPos().x += d.dx;
+                    decoy.getPos().y += d.dy;
+                }
+            }
+        }
+    }
+
+    /**
+     * Remove decoys spawned by a disconnecting player.
+     */
+    public void removePlayerDecoys(long playerId) {
+        final java.util.Iterator<DecoyState> it = this.activeDecoys.iterator();
+        while (it.hasNext()) {
+            final DecoyState d = it.next();
+            if (d.sourcePlayerId == playerId) {
+                final Enemy decoy = this.enemies.get(d.enemyId);
+                if (decoy != null) {
+                    this.expiredEnemies.add(d.enemyId);
+                    this.removeEnemy(decoy);
+                }
+                it.remove();
+            }
+        }
     }
 
     /**

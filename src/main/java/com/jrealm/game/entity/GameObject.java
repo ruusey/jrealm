@@ -114,6 +114,85 @@ public abstract class GameObject {
         this.dy = packet.getVelY();
     }
 
+    // --- Dead reckoning support ---
+    // When a server correction arrives, we store the offset between where we
+    // predicted the entity to be and where the server says it actually is.
+    // Each frame, we blend this offset toward zero so the entity smoothly
+    // converges on the corrected position without visible snapping.
+    protected float correctionOffsetX = 0f;
+    protected float correctionOffsetY = 0f;
+    // Correction blend rate per tick — higher = faster snap, lower = smoother.
+    // 0.15 means ~85% of error corrected within 10 ticks (~160ms at 64Hz client).
+    private static final float CORRECTION_BLEND_RATE = 0.15f;
+    // If correction offset exceeds this, snap immediately (teleport/portal)
+    private static final float CORRECTION_SNAP_THRESHOLD_SQ = (3 * 32) * (3 * 32);
+
+    /**
+     * Apply a dead reckoning server correction. Instead of snapping the entity,
+     * we compute the error between our local position and the server's corrected
+     * position, and store it as an offset to be blended out over subsequent frames.
+     * Velocity is always updated immediately since it affects future extrapolation.
+     */
+    public void applyServerCorrection(NetObjectMovement packet) {
+        float errorX = packet.getPosX() - this.pos.x;
+        float errorY = packet.getPosY() - this.pos.y;
+
+        if (errorX * errorX + errorY * errorY > CORRECTION_SNAP_THRESHOLD_SQ) {
+            // Large error — snap directly (teleport, realm transition, etc.)
+            this.pos.x = packet.getPosX();
+            this.pos.y = packet.getPosY();
+            this.correctionOffsetX = 0f;
+            this.correctionOffsetY = 0f;
+        } else {
+            // Accumulate correction offset — will be blended out each tick
+            this.correctionOffsetX += errorX;
+            this.correctionOffsetY += errorY;
+        }
+        // Always update velocity immediately — it drives future extrapolation
+        this.dx = packet.getVelX();
+        this.dy = packet.getVelY();
+        this.bounds = new Rectangle(this.pos, this.size, this.size);
+    }
+
+    /**
+     * Advance position by velocity (dead reckoning extrapolation) and blend
+     * any pending correction offset. Call this once per client tick for entities
+     * that use dead reckoning (enemies). For players, use blendCorrectionOffset()
+     * instead since movePlayer() handles velocity advancement with collision checks.
+     */
+    public void extrapolate() {
+        // Advance position using current velocity
+        this.pos.x += this.dx;
+        this.pos.y += this.dy;
+
+        // Blend correction offset
+        this.blendCorrectionOffset();
+    }
+
+    /**
+     * Blend pending correction offset toward zero without advancing by velocity.
+     * Use this for entities where velocity advancement is handled elsewhere
+     * (e.g., players with collision-checked movement in PlayState.movePlayer).
+     */
+    public void blendCorrectionOffset() {
+        if (this.correctionOffsetX != 0f || this.correctionOffsetY != 0f) {
+            float blendX = this.correctionOffsetX * CORRECTION_BLEND_RATE;
+            float blendY = this.correctionOffsetY * CORRECTION_BLEND_RATE;
+            this.pos.x += blendX;
+            this.pos.y += blendY;
+            this.correctionOffsetX -= blendX;
+            this.correctionOffsetY -= blendY;
+
+            // Zero out tiny residuals to avoid perpetual micro-corrections
+            if (this.correctionOffsetX * this.correctionOffsetX +
+                this.correctionOffsetY * this.correctionOffsetY < 0.01f) {
+                this.correctionOffsetX = 0f;
+                this.correctionOffsetY = 0f;
+            }
+        }
+        this.bounds = new Rectangle(this.pos, this.size, this.size);
+    }
+
     private float lerp(float start, float end, float pct) {
         return (start + ((end - start) * pct));
     }

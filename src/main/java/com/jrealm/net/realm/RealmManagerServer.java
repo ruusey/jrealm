@@ -77,6 +77,7 @@ import com.jrealm.net.Packet;
 import com.jrealm.net.client.SocketClient;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
+import com.jrealm.net.client.packet.CompactMovePacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
@@ -134,6 +135,10 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, UnloadPacket> playerUnloadState = new ConcurrentHashMap<>();
 	private Map<Long, LoadMapPacket> playerLoadMapState = new ConcurrentHashMap<>();
 	private Map<Long, ObjectMovePacket> playerObjectMoveState = new ConcurrentHashMap<>();
+	// Dead reckoning state: outer map = playerId, inner map = entityId -> motion state.
+	// Tracks what each client believes each entity's position to be, so we only send
+	// corrections when the server's actual state diverges beyond a threshold.
+	private Map<Long, Map<Long, EntityMotionState>> playerDeadReckonState = new ConcurrentHashMap<>();
 	private Map<Long, Long> playerGroundDamageState = new ConcurrentHashMap<>();
 	private Map<Long, Long> playerLastHeartbeatTime = new ConcurrentHashMap<>();
 	// Last sent global player positions per realm (for delta detection)
@@ -159,14 +164,15 @@ public class RealmManagerServer implements Runnable {
 	private int tickCounter = 0;
 
 	// Tick rate divisors for tiered packet transmission (at 64 ticks/sec):
-	// Two-tier movement: inner zone (50% radius) at 32Hz, full viewport at 16Hz.
-	// This halves entity count on most ticks since screen edges are less important.
+	// Dead reckoning: clients extrapolate using velocity, server only sends corrections
+	// when actual position diverges from predicted. This allows much lower check rates
+	// while maintaining visual fidelity via client-side interpolation.
 	// LoadPacket: 16Hz - entity spawns/despawns aren't time-critical
-	// UpdatePacket: 16Hz - stats/inventory/effects change slowly
+	// UpdatePacket: 8Hz - stats/inventory/effects change slowly
 	// LoadMapPacket: 4Hz - terrain barely changes
-	// EnemyUpdatePacket: 16Hz - enemy health bars
-	private static final int MOVE_TICK_DIVISOR = 1;      // Inner zone movement at 64Hz (matches Java client)
-	private static final int MOVE_FULL_TICK_DIVISOR = 2;  // Full viewport movement at 32Hz
+	// EnemyUpdatePacket: 8Hz - enemy health bars
+	private static final int MOVE_TICK_DIVISOR = 2;       // Inner zone dead reckoning check at 32Hz
+	private static final int MOVE_FULL_TICK_DIVISOR = 4;  // Full viewport dead reckoning check at 16Hz
 	private static final int LOAD_TICK_DIVISOR = 4;       // Entity spawn/despawn at 16Hz (was 32Hz — halves LoadPacket bandwidth)
 	private static final int UPDATE_TICK_DIVISOR = 8;     // Stats/inventory at 8Hz (was 16Hz — stats change slowly)
 	private static final int LOADMAP_TICK_DIVISOR = 16;
@@ -606,28 +612,51 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						// --- ObjectMovePacket: inner zone at 32Hz, full viewport at 16Hz ---
+						// --- ObjectMovePacket: dead reckoning with tiered check rates ---
+						// Inner zone checked at 32Hz, full viewport at 16Hz.
+						// Only entities whose actual position diverges from the client's
+						// predicted position (based on last-sent pos+vel) are transmitted.
 						if (doMovement) {
-							// Two-tier: use 50% radius on inner-only ticks, full radius on full ticks
 							final float moveRadius = doFullMovement ? viewportRadius : viewportRadius * 0.5f;
-							// Cache key includes radius tier to avoid mixing
 							final long moveCacheKey = doFullMovement ? cellKey : (cellKey ^ 0xDEADBEEFL);
 							ObjectMovePacket movePacket = cellMoveCache.get(moveCacheKey);
 							if (movePacket == null) {
 								movePacket = realm.getGameObjectsAsPacketsCircularFast(playerCenter, moveRadius);
 								cellMoveCache.put(moveCacheKey, movePacket);
 							}
-							if (this.playerObjectMoveState.get(player.getKey()) == null && movePacket != null) {
-								this.playerObjectMoveState.put(player.getKey(), movePacket);
-								this.enqueueServerPacket(player.getValue(), movePacket);
-							} else if (movePacket != null) {
-								final ObjectMovePacket oldMove = this.playerObjectMoveState.get(player.getKey());
-								if (oldMove != null) {
-									final ObjectMovePacket moveDiff = oldMove.getMoveDiff(movePacket);
-									if (moveDiff != null) {
-										this.playerObjectMoveState.put(player.getKey(), movePacket);
-										this.enqueueServerPacket(player.getValue(), moveDiff);
+							if (movePacket != null) {
+								// Get or create per-player dead reckoning state
+								Map<Long, EntityMotionState> drState = this.playerDeadReckonState.get(player.getKey());
+								if (drState == null) {
+									drState = new HashMap<>();
+									this.playerDeadReckonState.put(player.getKey(), drState);
+								}
+
+								// Filter to only entities that need corrections
+								final float tickDuration = 1.0f; // positions advance by vel per tick
+								final List<NetObjectMovement> corrections = new ArrayList<>();
+								for (final NetObjectMovement m : movePacket.getMovements()) {
+									final EntityMotionState state = drState.get(m.getEntityId());
+									if (state == null) {
+										// First time seeing this entity — must send initial state
+										corrections.add(m);
+										drState.put(m.getEntityId(), new EntityMotionState(
+											m.getPosX(), m.getPosY(), m.getVelX(), m.getVelY(), this.tickCounter));
+									} else if (state.needsUpdate(m.getPosX(), m.getPosY(),
+											m.getVelX(), m.getVelY(), this.tickCounter, tickDuration)) {
+										corrections.add(m);
+										state.markSent(m.getPosX(), m.getPosY(),
+											m.getVelX(), m.getVelY(), this.tickCounter);
 									}
+								}
+
+								if (!corrections.isEmpty()) {
+									// Send as standard ObjectMovePacket for webclient compatibility.
+									// TODO: send CompactMovePacket (packet 25) once webclient supports it
+									// for an additional ~44% per-entity size reduction.
+									final ObjectMovePacket correctionPacket = ObjectMovePacket.from(
+										corrections.toArray(new NetObjectMovement[0]));
+									this.enqueueServerPacket(player.getValue(), correctionPacket);
 								}
 							}
 
@@ -1177,6 +1206,7 @@ public class RealmManagerServer implements Runnable {
 		for (final Realm realm : this.realms.values()) {
 			realm.processPoisonThrows(this);
 			realm.processPoisonDots(this);
+			realm.processDecoys(this);
 		}
 
 		// Broadcast global player positions for minimap (1 Hz) — only if any position changed
@@ -1897,6 +1927,7 @@ public class RealmManagerServer implements Runnable {
 		this.playerStateState.remove(playerId);
 		this.playerUnloadState.remove(playerId);
 		this.playerObjectMoveState.remove(playerId);
+		this.playerDeadReckonState.remove(playerId);
 		this.playerAbilityState.remove(playerId);
 		this.playerLoadMapState.remove(playerId);
 		this.playerLastHeartbeatTime.remove(playerId);
@@ -1907,6 +1938,7 @@ public class RealmManagerServer implements Runnable {
 		for (final Realm realm : this.realms.values()) {
 			realm.removePlayerPoisonDots(playerId);
 			realm.removePlayerPoisonThrows(playerId);
+			realm.removePlayerDecoys(playerId);
 		}
 		// Clear cached provisions on disconnect
 		ServerCommandHandler.PLAYER_PROVISION_CACHE.remove(playerId);

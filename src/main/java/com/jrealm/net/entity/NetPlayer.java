@@ -33,7 +33,11 @@ public class NetPlayer extends SerializableFieldType<NetPlayer>{
 	private float dX;
 	@SerializableField(order = 8, type = SerializableFloat.class)
 	private float dY;
-	
+	// Compact short ID for bandwidth-efficient movement packets.
+	// Assigned by ShortIdAllocator when entity enters a realm.
+	@SerializableField(order = 9, type = SerializableShort.class)
+	private short shortId;
+
 	public Player toPlayer() {
 		Player p = new Player();
 		p.setId(this.id);

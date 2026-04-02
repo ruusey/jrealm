@@ -18,6 +18,7 @@ import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
 import com.jrealm.net.entity.NetBullet;
 import com.jrealm.net.entity.NetEnemy;
+import com.jrealm.net.realm.ShortIdAllocator;
 import com.jrealm.net.entity.NetLootContainer;
 import com.jrealm.net.entity.NetPlayer;
 import com.jrealm.net.entity.NetPortal;
@@ -60,6 +61,24 @@ public class LoadPacket extends Packet {
     	}catch(Exception e) {
     		log.error("Failed to build load packet from mapped game data. Reason {}", e);
     	}
+        return load;
+    }
+
+    /**
+     * Build a LoadPacket with compact short IDs populated from the allocator.
+     * Clients use these short IDs to resolve CompactMovePacket entries.
+     */
+    public static LoadPacket from(Player[] players, LootContainer[] loot, Bullet[] bullets, Enemy[] enemies,
+            Portal[] portals, ShortIdAllocator allocator) throws Exception {
+        LoadPacket load = from(players, loot, bullets, enemies, portals);
+        if (load != null && allocator != null) {
+            for (int i = 0; i < load.getPlayers().length; i++) {
+                load.getPlayers()[i].setShortId(allocator.getOrAssign(load.getPlayers()[i].getId()));
+            }
+            for (int i = 0; i < load.getEnemies().length; i++) {
+                load.getEnemies()[i].setShortId(allocator.getOrAssign(load.getEnemies()[i].getId()));
+            }
+        }
         return load;
     }
 

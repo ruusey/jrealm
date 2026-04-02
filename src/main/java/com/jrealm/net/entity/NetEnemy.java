@@ -40,6 +40,10 @@ public class NetEnemy extends SerializableFieldType<NetEnemy> {
 	private int health;
 	@SerializableField(order = 9, type = SerializableInt.class)
 	private int maxHealth;
+	// Compact short ID for bandwidth-efficient movement packets.
+	// Assigned by ShortIdAllocator when entity enters a realm.
+	@SerializableField(order = 10, type = SerializableShort.class)
+	private short shortId;
 
 	public Enemy asEnemy() {
 		final Enemy e = new Enemy();

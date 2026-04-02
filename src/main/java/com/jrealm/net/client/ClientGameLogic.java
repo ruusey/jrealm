@@ -219,6 +219,10 @@ public class ClientGameLogic {
 					continue;
 				}
 				cli.getRealm().addPlayerIfNotExists(p);
+				// Register short ID mapping for compact movement packets
+				if (player.getShortId() != 0) {
+					cli.getShortIdToLongId().put(player.getShortId(), player.getId());
+				}
 			}
 			for (final NetLootContainer loot : loadPacket.getContainers()) {
 				final LootContainer lc = loot.asLootContainer();
@@ -245,6 +249,10 @@ public class ClientGameLogic {
 			for (final NetEnemy enemy : loadPacket.getEnemies()) {
 				final Enemy e = enemy.asEnemy();
 				cli.getRealm().addEnemyIfNotExists(e);
+				// Register short ID mapping for compact movement packets
+				if (enemy.getShortId() != 0) {
+					cli.getShortIdToLongId().put(enemy.getShortId(), enemy.getId());
+				}
 			}
 
 			for (final NetPortal portal : loadPacket.getPortals()) {
@@ -362,7 +370,9 @@ public class ClientGameLogic {
 						playerToUpdate.applyMovementLerp(movement, 0.8f);
 					}
 				} else {
-					playerToUpdate.applyMovementLerp(movement, 0.45f);
+					// Other players: use dead reckoning correction (smooth blend)
+					// Their positions are extrapolated in PlayState.movePlayer()
+					playerToUpdate.applyServerCorrection(movement);
 				}
 				break;
 			case ENEMY:
@@ -370,9 +380,10 @@ public class ClientGameLogic {
 				if (enemyToUpdate == null) {
 					break;
 				}
-				// Snap enemies directly to server position - they change direction too
-				// frequently for lerp smoothing to work without overshooting
-				enemyToUpdate.applyMovement(movement);
+				// Dead reckoning correction: blend toward server position over several
+				// frames instead of snapping. The client extrapolates using velocity
+				// between corrections, so movement stays smooth at lower server send rates.
+				enemyToUpdate.applyServerCorrection(movement);
 				break;
 			case BULLET:
 				final Bullet bulletToUpdate = cli.getRealm().getBullet(movement.getEntityId());
@@ -383,6 +394,44 @@ public class ClientGameLogic {
 				break;
 			default:
 				break;
+			}
+		}
+	}
+
+	/**
+	 * Handles CompactMovePacket — bandwidth-efficient movement corrections using
+	 * 2-byte short entity IDs. Resolves short IDs via the mapping established
+	 * in LoadPacket, then applies dead reckoning corrections.
+	 */
+	public static void handleCompactMoveClient(RealmManagerClient cli, Packet packet) {
+		final com.jrealm.net.client.packet.CompactMovePacket compactPacket =
+			(com.jrealm.net.client.packet.CompactMovePacket) packet;
+		for (com.jrealm.net.entity.NetCompactMovement cm : compactPacket.getMovements()) {
+			final Long longId = cli.getShortIdToLongId().get(cm.getShortEntityId());
+			if (longId == null) {
+				continue; // Unknown short ID — entity not yet loaded
+			}
+			// Build a lightweight movement for the correction
+			final NetObjectMovement movement = new NetObjectMovement();
+			movement.setEntityId(longId);
+			movement.setPosX(cm.getPosX());
+			movement.setPosY(cm.getPosY());
+			movement.setVelX(cm.getVelX());
+			movement.setVelY(cm.getVelY());
+
+			// Try enemy first (most common in combat), then player
+			final Enemy enemyToUpdate = cli.getRealm().getEnemy(longId);
+			if (enemyToUpdate != null) {
+				enemyToUpdate.applyServerCorrection(movement);
+				continue;
+			}
+			final Player playerToUpdate = cli.getRealm().getPlayer(longId);
+			if (playerToUpdate != null) {
+				if (longId == cli.getCurrentPlayerId()) {
+					playerToUpdate.applyMovementLerp(movement, 0.8f);
+				} else {
+					playerToUpdate.applyServerCorrection(movement);
+				}
 			}
 		}
 	}

@@ -64,6 +64,9 @@ public class RealmManagerClient implements Runnable {
     private long currentPlayerId;
     private volatile boolean awaitingRealmTransition = false;
     private TimedWorkerThread workerThread;
+    // Short ID → Long ID mapping for compact movement packets.
+    // Populated from LoadPacket (NetPlayer.shortId / NetEnemy.shortId).
+    private final Map<Short, Long> shortIdToLongId = new java.util.concurrent.ConcurrentHashMap<>();
 
     public RealmManagerClient(PlayState state, Realm realm) {
         this.registerPacketCallbacks();
@@ -133,6 +136,7 @@ public class RealmManagerClient implements Runnable {
         this.registerPacketCallback(TextEffectPacket.class, ClientGameLogic::handleTextEffectClient);
         this.registerPacketCallback(PlayerDeathPacket.class, ClientGameLogic::handlePlayerDeathClient);
         this.registerPacketCallback(com.jrealm.net.client.packet.PlayerStatePacket.class, ClientGameLogic::handlePlayerStateClient);
+        this.registerPacketCallback(com.jrealm.net.client.packet.CompactMovePacket.class, ClientGameLogic::handleCompactMoveClient);
 //        this.registerPacketCallback(RequestTradePacket.class, ClientGameLogic::handleTradeRequestClient);
 //        this.registerPacketCallback(AcceptTradeRequestPacket.class, ClientGameLogic::handleAcceptTrade);
 

@@ -171,6 +171,8 @@ public class PlayState extends GameState {
                     final Player playerOther = (Player) gameObject[i];
                     playerOther.update(time);
                     this.movePlayer(playerOther);
+                    // Blend dead reckoning correction offset for other players
+                    playerOther.blendCorrectionOffset();
                 }
             }
 

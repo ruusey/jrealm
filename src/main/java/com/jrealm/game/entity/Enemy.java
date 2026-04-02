@@ -660,8 +660,10 @@ public class Enemy extends Entity {
         if (this.stats != null && this.stats.getMp() > 0) {
             this.manapercent = (float) this.getMana() / (float) this.stats.getMp();
         }
-        // Enemy positions are purely server-authoritative via ObjectMovePacket lerp.
-        // No client-side extrapolation - movement patterns change direction too frequently.
+        // Dead reckoning: extrapolate position using velocity between server corrections.
+        // Server now only sends corrections when actual position diverges from predicted,
+        // so the client must advance entities locally to maintain smooth movement.
+        this.extrapolate();
     }
 
     public void update(long realmId, RealmManagerServer mgr, double time) {

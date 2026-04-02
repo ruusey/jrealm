@@ -1,0 +1,101 @@
+package com.jrealm.game.script.item;
+
+import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.data.GameDataManager;
+import com.jrealm.game.entity.Enemy;
+import com.jrealm.game.entity.Monster;
+import com.jrealm.game.entity.Player;
+import com.jrealm.game.entity.item.GameItem;
+import com.jrealm.game.math.Vector2f;
+import com.jrealm.net.realm.Realm;
+import com.jrealm.net.realm.RealmManagerServer;
+
+/**
+ * Trickster Prism ability (items 279-285, T0-T6).
+ * Teleports the player to the cursor position and spawns a decoy at
+ * the player's original location. The decoy walks in the direction
+ * the player was last facing for ~5 tiles, then stands still until
+ * the effect duration expires.
+ *
+ * Decoys are tracked per-tick on the Realm (same pattern as poison
+ * throws) so no threads are blocked.
+ */
+public class TricksterPrismScript extends UseableItemScriptBase {
+
+    private static final int MIN_ID = 279;
+    private static final int MAX_ID = 285;
+    private static final int DECOY_ENEMY_ID = 68;
+    private static final float DECOY_SPEED = 0.9f;      // px per tick (~57 px/s at 64 Hz)
+    private static final float DECOY_TRAVEL_DIST = 160f; // ~5 tiles (32 px/tile)
+
+    public TricksterPrismScript(RealmManagerServer mgr) {
+        super(mgr);
+    }
+
+    @Override
+    public boolean handles(int itemId) {
+        return itemId >= MIN_ID && itemId <= MAX_ID;
+    }
+
+    @Override
+    public int getTargetItemId() {
+        return MIN_ID;
+    }
+
+    @Override
+    public void invokeUseItem(Realm targetRealm, Player player, GameItem item) {
+    }
+
+    @Override
+    public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem) {
+        invokeItemAbility(targetRealm, player, abilityItem,
+                player.getPos().clone(player.getSize() / 2, player.getSize() / 2));
+    }
+
+    @Override
+    public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem, Vector2f targetPos) {
+        if (targetPos == null) return;
+
+        // Capture the player's current position (decoy spawn point) before teleporting
+        final float oldX = player.getPos().x;
+        final float oldY = player.getPos().y;
+
+        // Teleport the player to the cursor (same check as core TELEPORT logic)
+        if (!targetRealm.getTileManager().isCollisionTile(targetPos)) {
+            player.setPos(targetPos);
+        }
+
+        // Determine decoy walk direction from the player's last movement
+        float dx = 0f;
+        float dy = 0f;
+        if (player.isRight())      dx =  DECOY_SPEED;
+        else if (player.isLeft())  dx = -DECOY_SPEED;
+        if (player.isDown())       dy =  DECOY_SPEED;
+        else if (player.isUp())    dy = -DECOY_SPEED;
+
+        // Default to facing right if the player was stationary
+        if (dx == 0f && dy == 0f) {
+            dx = DECOY_SPEED;
+        }
+
+        // Normalise diagonal speed
+        if (dx != 0f && dy != 0f) {
+            final float inv = (float) (DECOY_SPEED / Math.sqrt(dx * dx + dy * dy));
+            dx *= inv;
+            dy *= inv;
+        }
+
+        // Spawn the decoy enemy at the player's old position
+        final long decoyId = Realm.RANDOM.nextLong();
+        final long durationMs = abilityItem.getEffect().getDuration();
+        final Enemy decoy = new Monster(decoyId, DECOY_ENEMY_ID,
+                new Vector2f(oldX, oldY), player.getSize(), -1);
+        decoy.setChaseRange(0);
+        decoy.setAttackRange(0);
+        targetRealm.addEnemy(decoy);
+
+        // Register tick-based movement + expiration
+        targetRealm.registerDecoy(decoyId, player.getId(), oldX, oldY,
+                dx, dy, DECOY_TRAVEL_DIST, durationMs);
+    }
+}
