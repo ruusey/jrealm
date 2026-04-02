@@ -512,6 +512,18 @@ public class ServerGameLogic {
 		}
 		try {
 			ServerItemHelper.handleMoveItemPacket(mgr, packet);
+			// Immediately send updated inventory so the client sees the change without waiting
+			// for the next scheduled UpdatePacket tick
+			final Realm realm = mgr.findPlayerRealm(moveItemPacket.getPlayerId());
+			if (realm != null) {
+				final Player player = realm.getPlayer(moveItemPacket.getPlayerId());
+				if (player != null) {
+					final com.jrealm.net.client.packet.UpdatePacket update = realm.getPlayerAsPacket(player.getId());
+					if (update != null) {
+						mgr.enqueueServerPacket(player, update);
+					}
+				}
+			}
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to handle MoveItem packet. Reason: {}", e);
 		}

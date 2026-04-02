@@ -39,7 +39,7 @@ public class GameSpriteManager {
             "lofi_char.png", "lofi_environment.png", "lofi_obj.png", "lofiObj3.png", "lofiObjBig.png",
             "chars8x8rBeach.png", "chars8x8rHero2.png", "cursedLibraryChars16x16.png",
             "d3Chars8x8r.png", "cursedLibraryChars8x8.png", "cursedLibraryObjects8x8.png",
-            "d3LofiObj.png", "lofiProjs.png", "chars16x16dEncounters.png",
+            "d2LofiObj.png", "d3LofiObj.png", "lofiProjs.png", "chars16x16dEncounters.png",
             "archbishopObjects16x16.png", "autumnNexusObjects16x16.png",
             "chars16x16dEncounters2.png", "crystalCaveChars16x16.png",
             "epicHiveChars8x8.png", "lairOfDraconisChars8x8.png",

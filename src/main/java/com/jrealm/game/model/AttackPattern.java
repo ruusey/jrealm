@@ -25,4 +25,16 @@ public class AttackPattern {
     private float maxRange = 9999f;
     @Builder.Default
     private boolean predictive = false;
+    @Builder.Default
+    private String aimMode = "PLAYER";
+    @Builder.Default
+    private int shotCount = 1;
+    @Builder.Default
+    private float spreadAngle = 0f;
+    @Builder.Default
+    private float fixedAngle = 0f;
+    @Builder.Default
+    private boolean mirror = false;
+    @Builder.Default
+    private int sourceNoise = 0;
 }

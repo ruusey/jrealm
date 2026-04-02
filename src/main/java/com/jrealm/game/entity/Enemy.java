@@ -454,50 +454,168 @@ public class Enemy extends Entity {
         if (group == null) return;
 
         Vector2f source = this.getPos().clone(this.getSize() / 2, this.getSize() / 2);
-        Vector2f dest = player.getBounds().getPos().clone(player.getSize() / 2, player.getSize() / 2);
 
-        if (ap.isPredictive() && player.getDx() != 0 || player.getDy() != 0) {
-            float travelTime = source.distanceTo(dest) / 5f; // approximate
-            dest.x += player.getDx() * travelTime;
-            dest.y += player.getDy() * travelTime;
+        // Apply source noise
+        if (ap.getSourceNoise() > 0) {
+            source.x += (Realm.RANDOM.nextFloat() - 0.5f) * ap.getSourceNoise();
+            source.y += (Realm.RANDOM.nextFloat() - 0.5f) * ap.getSourceNoise();
         }
 
-        float baseAngle = Bullet.getAngle(source, dest);
+        Vector2f dest = player.getBounds().getPos().clone(player.getSize() / 2, player.getSize() / 2);
 
-        if (ap.getBurstCount() <= 1) {
-            fireProjectileGroup(group, source, baseAngle, player, mgr, targetRealm);
+        // Compute base angle
+        float baseAngle;
+        if ("FIXED".equals(ap.getAimMode())) {
+            baseAngle = ap.getFixedAngle();
         } else {
-            // Burst fire - async with delays
-            final float angle = baseAngle;
-            WorkerThread.doAsync(() -> {
-                try {
-                    for (int b = 0; b < ap.getBurstCount(); b++) {
-                        float burstAngle = angle + (ap.getAngleOffsetPerBurst() * b);
-                        fireProjectileGroup(group, source.clone(), burstAngle, player, mgr, targetRealm);
-                        if (b < ap.getBurstCount() - 1 && ap.getBurstDelayMs() > 0) {
-                            Thread.sleep(ap.getBurstDelayMs());
+            if (ap.isPredictive() && (player.getDx() != 0 || player.getDy() != 0)) {
+                float travelTime = source.distanceTo(dest) / 5f;
+                dest.x += player.getDx() * travelTime;
+                dest.y += player.getDy() * travelTime;
+            }
+            baseAngle = Bullet.getAngle(source, dest);
+        }
+
+        int shotCount = Math.max(1, ap.getShotCount());
+        int burstCount = ap.getBurstCount();
+
+        if ("RING".equals(ap.getAimMode())) {
+            // Evenly spaced around full circle
+            if (burstCount <= 1) {
+                for (int s = 0; s < shotCount; s++) {
+                    float angle = (float) (s * 2 * Math.PI / shotCount);
+                    fireProjectileGroup(group, source.clone(), angle, player, mgr, targetRealm);
+                }
+            } else {
+                final float[] angles = new float[shotCount];
+                for (int s = 0; s < shotCount; s++) {
+                    angles[s] = (float) (s * 2 * Math.PI / shotCount);
+                }
+                final Vector2f srcCopy = source.clone();
+                WorkerThread.doAsync(() -> {
+                    try {
+                        for (int b = 0; b < burstCount; b++) {
+                            float offset = ap.getAngleOffsetPerBurst() * b;
+                            for (float a : angles) {
+                                fireProjectileGroup(group, srcCopy.clone(), a + offset, player, mgr, targetRealm);
+                            }
+                            if (b < burstCount - 1 && ap.getBurstDelayMs() > 0) {
+                                Thread.sleep(ap.getBurstDelayMs());
+                            }
+                        }
+                    } catch (Exception e) {
+                        Enemy.log.error("Failed burst fire. Reason: {}", e);
+                    }
+                });
+            }
+        } else {
+            // PLAYER or FIXED mode
+            if (shotCount <= 1) {
+                // Single shot (existing behavior)
+                if (burstCount <= 1) {
+                    fireProjectileGroup(group, source, baseAngle, player, mgr, targetRealm);
+                    if (ap.isMirror()) {
+                        fireProjectileGroup(group, source.clone(), -baseAngle, player, mgr, targetRealm);
+                    }
+                } else {
+                    final float angle = baseAngle;
+                    final Vector2f srcCopy = source.clone();
+                    WorkerThread.doAsync(() -> {
+                        try {
+                            for (int b = 0; b < burstCount; b++) {
+                                float burstAngle = angle + (ap.getAngleOffsetPerBurst() * b);
+                                fireProjectileGroup(group, srcCopy.clone(), burstAngle, player, mgr, targetRealm);
+                                if (ap.isMirror()) {
+                                    fireProjectileGroup(group, srcCopy.clone(), -burstAngle, player, mgr, targetRealm);
+                                }
+                                if (b < burstCount - 1 && ap.getBurstDelayMs() > 0) {
+                                    Thread.sleep(ap.getBurstDelayMs());
+                                }
+                            }
+                        } catch (Exception e) {
+                            Enemy.log.error("Failed burst fire. Reason: {}", e);
+                        }
+                    });
+                }
+            } else {
+                // Fan of shotCount projectiles
+                float halfSpread = ap.getSpreadAngle() / 2f;
+                if (burstCount <= 1) {
+                    for (int s = 0; s < shotCount; s++) {
+                        float t = shotCount > 1 ? (float) s / (shotCount - 1) : 0.5f;
+                        float angle = baseAngle - halfSpread + t * ap.getSpreadAngle();
+                        fireProjectileGroup(group, source.clone(), angle, player, mgr, targetRealm);
+                        if (ap.isMirror()) {
+                            float mirrorAngle = baseAngle - (angle - baseAngle);
+                            if (Math.abs(angle - mirrorAngle) > 0.01f) {
+                                fireProjectileGroup(group, source.clone(), mirrorAngle, player, mgr, targetRealm);
+                            }
                         }
                     }
-                } catch (Exception e) {
-                    Enemy.log.error("Failed burst fire. Reason: {}", e);
+                } else {
+                    final float angle = baseAngle;
+                    final Vector2f srcCopy = source.clone();
+                    WorkerThread.doAsync(() -> {
+                        try {
+                            for (int b = 0; b < burstCount; b++) {
+                                float offset = ap.getAngleOffsetPerBurst() * b;
+                                for (int s = 0; s < shotCount; s++) {
+                                    float t = shotCount > 1 ? (float) s / (shotCount - 1) : 0.5f;
+                                    float fanAngle = angle - halfSpread + t * ap.getSpreadAngle() + offset;
+                                    fireProjectileGroup(group, srcCopy.clone(), fanAngle, player, mgr, targetRealm);
+                                }
+                                if (b < burstCount - 1 && ap.getBurstDelayMs() > 0) {
+                                    Thread.sleep(ap.getBurstDelayMs());
+                                }
+                            }
+                        } catch (Exception e) {
+                            Enemy.log.error("Failed burst fire. Reason: {}", e);
+                        }
+                    });
                 }
-            });
+            }
         }
     }
 
     private void fireProjectileGroup(ProjectileGroup group, Vector2f source, float baseAngle,
             Player player, RealmManagerServer mgr, Realm targetRealm) {
-        for (Projectile p : group.getProjectiles()) {
+        final int projCount = group.getProjectiles().size();
+        for (int i = 0; i < projCount; i++) {
+            Projectile p = group.getProjectiles().get(i);
             float angle;
             if (p.getPositionMode().equals(ProjectilePositionMode.TARGET_PLAYER)) {
                 angle = baseAngle + Float.parseFloat(p.getAngle());
             } else {
                 angle = Float.parseFloat(p.getAngle());
             }
-            Bullet b = mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(), group.getProjectileGroupId(),
-                    p.getProjectileId(), source.clone(), angle, p.getSize(), p.getMagnitude(), p.getRange(),
-                    p.getDamage(), true, p.getFlags(), p.getAmplitude(), p.getFrequency(), this.getId());
-            if (b != null && p.getEffects() != null) b.setEffects(p.getEffects());
+
+            boolean isOrbital = p.hasFlag(ProjectileEffectType.ORBITAL.effectId);
+            if (isOrbital) {
+                // For orbital projectiles: spawn evenly spaced around the enemy center.
+                // |amplitude| = orbit radius, sign of amplitude controls orbit direction.
+                // frequency = orbit speed (degrees/tick).
+                float orbitRadius = Math.abs(p.getAmplitude());
+                short effectiveFreq = (short) (p.getAmplitude() < 0 ? -p.getFrequency() : p.getFrequency());
+                float startPhase = (float) (i * 2 * Math.PI / projCount);
+                Vector2f center = this.getPos().clone(this.getSize() / 2, this.getSize() / 2);
+                Vector2f spawnPos = new Vector2f(
+                        center.x + orbitRadius * (float) Math.cos(startPhase),
+                        center.y + orbitRadius * (float) Math.sin(startPhase));
+                Bullet b = mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(),
+                        group.getProjectileGroupId(), p.getProjectileId(), spawnPos, startPhase,
+                        p.getSize(), 0f, p.getRange(), p.getDamage(), true, p.getFlags(),
+                        (short) orbitRadius, effectiveFreq, this.getId());
+                if (b != null) {
+                    b.setupOrbital(center.x, center.y, orbitRadius, startPhase);
+                    if (p.getEffects() != null) b.setEffects(p.getEffects());
+                }
+            } else {
+                Bullet b = mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(),
+                        group.getProjectileGroupId(), p.getProjectileId(), source.clone(), angle,
+                        p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
+                        p.getAmplitude(), p.getFrequency(), this.getId());
+                if (b != null && p.getEffects() != null) b.setEffects(p.getEffects());
+            }
         }
     }
 
