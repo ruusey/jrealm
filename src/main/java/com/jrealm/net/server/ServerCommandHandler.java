@@ -101,7 +101,7 @@ public class ServerCommandHandler {
     }
     
 	@CommandHandler(value = "op", description = "Promote a user to administrator. Or demote them back to a regular user")
-	@AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_SYS_ADMIN})
 	public static void invokeOpUser(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
 		if (message.getArgs() == null || message.getArgs().size() < 1)
 			throw new IllegalArgumentException("Usage: /op {PLAYER_NAME}");
@@ -142,7 +142,7 @@ public class ServerCommandHandler {
 	}
 
     @CommandHandler(value="stat", description="Modify or max individual Player stats")
-	@AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_ADMIN})
     public static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
         if (message.getArgs() == null || message.getArgs().size() < 1)
             throw new IllegalArgumentException("Usage: /stat {STAT_NAME} {STAT_VALUE}");
@@ -184,7 +184,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="testplayers", description="Spawns a variable number of headless test players at the user")
-	@AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_SYS_ADMIN})
     public static void invokeSpawnTest(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() != 1)
@@ -207,7 +207,7 @@ public class ServerCommandHandler {
     }
     
     @CommandHandler(value="tile", description="Change all tiles in the viewport to the provided tile ID")
-	@AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_ADMIN})
     public static void invokeSetTile(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         final Short newTileId = Short.parseShort(message.getArgs().get(0));
@@ -238,7 +238,7 @@ public class ServerCommandHandler {
     }
     
     @CommandHandler(value="heal", description="Restores all Player health and mp")
-	@AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokePlayerHeal(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         target.setHealth(target.getComputedStats().getHp());
@@ -247,7 +247,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="spawn", description="Spawn a given Enemy by it's id")
-	@AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() != 1)
@@ -260,7 +260,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="seteffect", description="Add or remove Player stat effects")
-	@AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
@@ -302,7 +302,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="item", description="Spawn a given Item by its id. Usage: /item {ITEM_ID} [COUNT]")
-	@AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
@@ -335,7 +335,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="portal", description="Spawn a portal to a map by name. Usage: /portal {MAP_NAME}")
-	@AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokeSpawnPortal(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
@@ -401,7 +401,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="godmode", description="Toggle invincibility")
-	@AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokeGodMode(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (target.hasEffect(ProjectileEffectType.INVINCIBLE)) {
@@ -415,7 +415,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="spawnbots", description="Spawn N bot players with real accounts. Usage: /spawnbots {COUNT}")
-    @AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_SYS_ADMIN})
     public static void invokeSpawnBots(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
@@ -546,7 +546,7 @@ public class ServerCommandHandler {
     }
 
     @CommandHandler(value="killbots", description="Disconnect all bot players and delete their accounts")
-    @AdminRestrictedCommand
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_SYS_ADMIN})
     public static void invokeKillBots(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         WorkerThread.doAsync(() -> {

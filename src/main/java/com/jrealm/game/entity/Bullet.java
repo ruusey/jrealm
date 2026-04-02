@@ -37,6 +37,12 @@ public class Bullet extends GameObject  {
     private short amplitude = 4;
     private short frequency = 25;
 
+    // Orbital projectile: orbits around a fixed center point
+    private float orbitCenterX;
+    private float orbitCenterY;
+    private float orbitRadius;
+    private float orbitPhase; // starting angle in radians for this projectile
+
     private long createdTime;
     private long lastUpdateNanos = System.nanoTime();
 
@@ -157,8 +163,9 @@ public class Bullet extends GameObject  {
         this.lastUpdateNanos = now;
         final float bulletScale = dt * 64.0f;
 
-        // if is flagged to be rendered as a parametric projectile
-        if (this.hasFlag(ProjectileEffectType.PARAMETRIC_PROJECTILE)
+        if (this.hasFlag(ProjectileEffectType.ORBITAL)) {
+            this.updateOrbital(bulletScale);
+        } else if (this.hasFlag(ProjectileEffectType.PARAMETRIC_PROJECTILE)
                 || this.hasFlag(ProjectileEffectType.INVERTED_PARAMETRIC_PROJECTILE)) {
             this.updateParametric(bulletScale);
         } else {
@@ -212,6 +219,40 @@ public class Bullet extends GameObject  {
         this.pos.addY(velY);
         this.dx = velX;
         this.dy = velY;
+    }
+
+    /**
+     * Orbital projectile update — positions the bullet on a circle around orbitCenter.
+     * Uses frequency as angular speed (degrees/tick) and amplitude as orbit radius.
+     * The initial angle for each projectile in the ring is set via orbitPhase.
+     */
+    public void updateOrbital(float bulletScale) {
+        this.orbitPhase += (float) Math.toRadians(this.frequency * bulletScale);
+        float newX = this.orbitCenterX + this.orbitRadius * (float) Math.cos(this.orbitPhase);
+        float newY = this.orbitCenterY + this.orbitRadius * (float) Math.sin(this.orbitPhase);
+        this.dx = newX - this.pos.x;
+        this.dy = newY - this.pos.y;
+        this.pos.x = newX;
+        this.pos.y = newY;
+        // Decrease range by arc length traveled per tick
+        this.range -= this.orbitRadius * Math.abs(Math.toRadians(this.frequency * bulletScale));
+    }
+
+    /**
+     * Configure this bullet as an orbital projectile.
+     * @param centerX orbit center X
+     * @param centerY orbit center Y
+     * @param radius orbit radius in pixels
+     * @param startPhase starting angle in radians (evenly spaced for ring patterns)
+     */
+    public void setupOrbital(float centerX, float centerY, float radius, float startPhase) {
+        this.orbitCenterX = centerX;
+        this.orbitCenterY = centerY;
+        this.orbitRadius = radius;
+        this.orbitPhase = startPhase;
+        // Set initial position on the orbit
+        this.pos.x = centerX + radius * (float) Math.cos(startPhase);
+        this.pos.y = centerY + radius * (float) Math.sin(startPhase);
     }
 
     @Override

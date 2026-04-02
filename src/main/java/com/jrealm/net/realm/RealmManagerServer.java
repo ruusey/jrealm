@@ -1592,33 +1592,17 @@ public class RealmManagerServer implements Runnable {
 			player.setHealth(player.getHealth() - dmgToInflict);
 			targetRealm.getExpiredBullets().add(b.getId());
 			targetRealm.removeBullet(b);
-			// Apply on-hit status effects from projectile's effects list
+			// Apply on-hit status effects from projectile's effects list (data-driven with durations)
 			if (b.getEffects() != null) {
 				for (final com.jrealm.game.model.ProjectileEffect pe : b.getEffects()) {
 					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
 					if (effectType != null) {
 						p.addEffect(effectType, pe.getDuration());
-						if (effectType.equals(ProjectileEffectType.PARALYZED)) {
+						if (effectType == ProjectileEffectType.PARALYZED) {
 							p.setDx(0); p.setDy(0);
 						}
 						this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, effectType.name());
 					}
-				}
-			}
-			// Legacy: apply status effects from projectile flags (enemy → player: short durations)
-			if (b.getFlags() != null) {
-				if (b.hasFlag(ProjectileEffectType.STUNNED)) {
-					p.addEffect(ProjectileEffectType.STUNNED, 1500);
-					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "STUNNED");
-				}
-				if (b.hasFlag(ProjectileEffectType.PARALYZED)) {
-					p.addEffect(ProjectileEffectType.PARALYZED, 1200);
-					p.setDx(0); p.setDy(0);
-					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "PARALYZED");
-				}
-				if (b.hasFlag(ProjectileEffectType.DAZED)) {
-					p.addEffect(ProjectileEffectType.DAZED, 2000);
-					this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "DAZED");
 				}
 			}
 			if (p.getDeath()) {
@@ -1673,6 +1657,7 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.removeBullet(b);
 			}
 			// Apply on-hit status effects from projectile's effects list (data-driven durations)
+			// Apply on-hit status effects from projectile's effects list (data-driven with durations)
 			if (b.getEffects() != null) {
 				for (final com.jrealm.game.model.ProjectileEffect pe : b.getEffects()) {
 					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
@@ -1680,21 +1665,6 @@ public class RealmManagerServer implements Runnable {
 						e.addEffect(effectType, pe.getDuration());
 						this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, effectType.name());
 					}
-				}
-			}
-			// Legacy: apply status effects from projectile flags (player → enemy: moderate durations)
-			if (b.getFlags() != null) {
-				if (b.hasFlag(ProjectileEffectType.STUNNED)) {
-					e.addEffect(ProjectileEffectType.STUNNED, 3000);
-					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "STUNNED");
-				}
-				if (b.hasFlag(ProjectileEffectType.PARALYZED)) {
-					e.addEffect(ProjectileEffectType.PARALYZED, 3000);
-					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "PARALYZED");
-				}
-				if (b.hasFlag(ProjectileEffectType.DAZED)) {
-					e.addEffect(ProjectileEffectType.DAZED, 3000);
-					this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "DAZED");
 				}
 			}
 			

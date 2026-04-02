@@ -48,12 +48,12 @@ public class Player extends Entity {
 	private Stats stats;
 	private boolean headless;
 	@Builder.Default
-	private boolean bot =false;
+	private boolean bot = false;
 
-    public Player() {
-        super(0, null, 0);
-    }
-	
+	public Player() {
+		super(0, null, 0);
+	}
+
 	public Player(GameItem[] inventory, long lastStatsTime, LootContainer currentLootContainer, int classId,
 			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless, boolean bot) {
 		super(0, null, 0);
@@ -143,10 +143,10 @@ public class Player extends Entity {
 			this.equipSlot(entry.getKey(), entry.getValue());
 		}
 	}
-	
+
 	public int findItemIndex(GameItem item) {
-		for(int i = 0; i < this.inventory.length ; i++) {
-			if(this.inventory[i]!=null && this.inventory[i].getUid().equals(item.getUid())) {
+		for (int i = 0; i < this.inventory.length; i++) {
+			if (this.inventory[i] != null && this.inventory[i].getUid().equals(item.getUid())) {
 				return i;
 			}
 		}
@@ -161,7 +161,8 @@ public class Player extends Entity {
 		int size = end - start;
 		int idx = 0;
 		GameItem[] items = new GameItem[size];
-		if (this.inventory == null) return items;
+		if (this.inventory == null)
+			return items;
 		for (int i = start; i < end; i++) {
 			items[idx++] = this.inventory[i];
 		}
@@ -218,7 +219,8 @@ public class Player extends Entity {
 	}
 
 	public Stats getComputedStats() {
-		if(this.stats==null) return new Stats();
+		if (this.stats == null)
+			return new Stats();
 		Stats stats = this.stats.clone();
 		GameItem[] equipment = this.getSlots(0, 4);
 		for (GameItem item : equipment) {
@@ -258,7 +260,8 @@ public class Player extends Entity {
 
 	@Override
 	public void updateEffectState() {
-		if (this.getSpriteSheet() == null) return;
+		if (this.getSpriteSheet() == null)
+			return;
 		if (this.hasEffect(ProjectileEffectType.INVISIBLE)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.SEPIA)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.SEPIA);
@@ -284,7 +287,8 @@ public class Player extends Entity {
 
 	@Override
 	public void render(SpriteBatch batch) {
-		if (this.getSpriteSheet() == null) return;
+		if (this.getSpriteSheet() == null)
+			return;
 
 		this.updateEffectState();
 
@@ -402,7 +406,8 @@ public class Player extends Entity {
 	public void applyUpdate(UpdatePacket packet, PlayState state) {
 		this.name = packet.getPlayerName();
 		this.stats = packet.getStats().asStats();
-		this.inventory = packet.getInventory()==null? null:IOService.mapModel(packet.getInventory(), GameItem[].class);
+		this.inventory = packet.getInventory() == null ? null
+				: IOService.mapModel(packet.getInventory(), GameItem[].class);
 		if (this.inventory != null) {
 			for (GameItem item : this.inventory) {
 				if (item != null) {
@@ -508,7 +513,6 @@ public class Player extends Entity {
 		return this.right;
 	}
 
-	
 	public void write(DataOutputStream stream) throws Exception {
 		stream.writeLong(this.getId());
 		stream.writeUTF(this.getName());
@@ -521,52 +525,57 @@ public class Player extends Entity {
 		stream.writeFloat(this.dx);
 		stream.writeFloat(this.dy);
 	}
-	
+
 	public GameItem[] selectGameItems(Boolean[] selectedIdx) {
 		GameItem[] inv = this.getSlots(4, 12);
-		if(selectedIdx.length!=inv.length) {
+		if (selectedIdx.length != inv.length) {
 			System.err.println("SELECT GAME ITEM IDX SIZES NOT EQUAL");
 			return null;
 		}
 		List<GameItem> selected = new ArrayList<>();
-		for(int i = 0 ; i<inv.length;i++) {
-			if(inv[i]==null) continue;
+		for (int i = 0; i < inv.length; i++) {
+			if (inv[i] == null)
+				continue;
 
-			if(selectedIdx[i]!=null && selectedIdx[i]) {
+			if (selectedIdx[i] != null && selectedIdx[i]) {
 				selected.add(inv[i]);
 			}
 		}
 		return selected.toArray(new GameItem[0]);
 	}
-	
+
 	public NetGameItemRef[] getInventoryAsNetGameItemRefs() {
 		final GameItem[] inv = this.getSlots(4, 12);
 		final List<NetGameItemRef> results = new ArrayList<>();
-		for(int i = 0 ; i < inv.length; i++) {
-			if(inv[i]==null) continue;
-			results.add(inv[i].asNetGameItemRef(i+4));
+		for (int i = 0; i < inv.length; i++) {
+			if (inv[i] == null)
+				continue;
+			results.add(inv[i].asNetGameItemRef(i + 4));
 		}
 		return results.toArray(new NetGameItemRef[0]);
 
 	}
-	
+
 	public void addItems(GameItem[] items) {
-		for(GameItem item : items) {
-			if(item == null) continue;
+		for (GameItem item : items) {
+			if (item == null)
+				continue;
 			int slot = this.firstEmptyInvSlot();
-			if(slot == -1) break;
+			if (slot == -1)
+				break;
 			this.inventory[slot] = item;
 		}
 	}
-	
+
 	public void removeItems(GameItem[] items) {
 		final GameItem[] inv = this.getSlots(4, 12);
 
-		for(int i = 0 ; i<inv.length;i++) {
+		for (int i = 0; i < inv.length; i++) {
 			GameItem invItem = inv[i];
-			if(invItem==null) continue;
-			for(GameItem toRemove: items) {
-				if(invItem.getUid()!=null && invItem.getUid().equals(toRemove.getUid())) {
+			if (invItem == null)
+				continue;
+			for (GameItem toRemove : items) {
+				if (invItem.getUid() != null && invItem.getUid().equals(toRemove.getUid())) {
 					this.inventory[i + 4] = null;
 					break;
 				}
@@ -579,10 +588,5 @@ public class Player extends Entity {
 		return this.getId() + " , Pos: " + this.pos.toString() + ", Class: " + this.getClassId() + ", Headless: "
 				+ this.isHeadless();
 	}
-
-
-
-
-
 
 }

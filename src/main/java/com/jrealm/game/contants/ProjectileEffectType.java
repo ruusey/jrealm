@@ -11,7 +11,7 @@ public enum ProjectileEffectType {
     PLAYER_PROJECTILE((short) 10), DAZED((short) 11), PARAMETRIC_PROJECTILE((short) 12),
     INVERTED_PARAMETRIC_PROJECTILE((short) 13), DAMAGING((short) 14),
     STASIS((short) 15), CURSED((short) 16), POISONED((short) 17),
-    ARMORED((short) 18), BERSERK((short) 19);
+    ARMORED((short) 18), BERSERK((short) 19), ORBITAL((short) 20);
 
     public static Map<Short, ProjectileEffectType> map = new HashMap<>();
     static {
