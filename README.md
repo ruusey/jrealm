@@ -1,5 +1,5 @@
 # OpenRealm
-# Play Live In Browser At [OpenRealm.Net](http://openrealm.net:8085/)
+# Play Live In Browser At [OpenRealm.Net](http://openrealm.net/)
 ### An 8bit Dungeon Crawler Rogue-Like Game written entirely in Java
 
 <div dsplay="inline">

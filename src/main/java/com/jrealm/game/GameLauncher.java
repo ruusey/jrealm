@@ -37,7 +37,13 @@ public class GameLauncher {
             System.exit(-1);
         }
 
-        final String dataServiceUrl = "http://" + args[1] + ":8085/";
+        final String addr = args[1];
+        final String dataServiceUrl;
+        if (addr.startsWith("http://")) {
+            dataServiceUrl = addr.endsWith("/") ? addr : addr + "/";
+        } else {
+            dataServiceUrl = "http://" + addr + "/";
+        }
 
         if (GameLauncher.argsContains(args, "-server")) {
             ServerGameLogic.DATA_SERVICE = new JrealmServerDataService(HttpClient.newHttpClient(), dataServiceUrl);
