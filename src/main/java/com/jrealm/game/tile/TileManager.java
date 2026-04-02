@@ -533,8 +533,8 @@ public class TileManager {
         tmpPos.x = p.getPos().x - (tiles * GlobalConstants.BASE_TILE_SIZE);
         tmpPos.y = p.getPos().y - (tiles * GlobalConstants.BASE_TILE_SIZE);
         final Rectangle rect = VIEWPORT_RECT.get();
-        rect.setBox(tmpPos, tiles * GlobalConstants.BASE_TILE_SIZE,
-                tiles * GlobalConstants.BASE_TILE_SIZE);
+        rect.setBox(tmpPos, tiles * 2 * GlobalConstants.BASE_TILE_SIZE,
+                tiles * 2 * GlobalConstants.BASE_TILE_SIZE);
         return rect;
     }
 

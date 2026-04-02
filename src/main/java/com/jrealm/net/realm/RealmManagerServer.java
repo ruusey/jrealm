@@ -1101,8 +1101,9 @@ public class RealmManagerServer implements Runnable {
 					log.info("[SERVER] Registered Command handler in {}. Method: {}{}", method.getDeclaringClass(),
 							method.getName(), mt.toString());
 					if (isAdminRestricted != null) {
-						ServerCommandHandler.ADMIN_RESTRICTED_COMMANDS.add(commandToHandle.value());
-						log.info("[SERVER] Command {} registered as Admin Restricted", commandToHandle.value());
+						ServerCommandHandler.RESTRICTED_COMMAND_PROVISIONS.put(commandToHandle.value(), isAdminRestricted.provisions());
+						log.info("[SERVER] Command {} registered as restricted (requires {})", commandToHandle.value(),
+								java.util.Arrays.toString(isAdminRestricted.provisions()));
 					}
 				}
 			} catch (Exception e) {
@@ -1428,7 +1429,10 @@ public class RealmManagerServer implements Runnable {
 		// Invoke any item specific scripts
 		final UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
 		if (script != null) {
+			log.info("[SERVER] Invoking item script {} for itemId={}", script.getClass().getSimpleName(), abilityItem.getItemId());
 			script.invokeItemAbility(targetRealm, player, abilityItem, pos);
+		} else {
+			log.warn("[SERVER] No item script found for ability itemId={}", abilityItem.getItemId());
 		}
 	}
 
@@ -1971,6 +1975,8 @@ public class RealmManagerServer implements Runnable {
 		synchronized (this.activePoisonDots) {
 			this.activePoisonDots.removeIf(dot -> dot.sourcePlayerId == playerId);
 		}
+		// Clear cached provisions on disconnect
+		ServerCommandHandler.PLAYER_PROVISION_CACHE.remove(playerId);
 	}
 
 	public PortalModel getPortalToDepth(int targetDepth) {

@@ -14,6 +14,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.jrealm.account.dto.AccountDto;
+import com.jrealm.account.dto.AccountProvision;
 import com.jrealm.account.dto.CharacterDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GameLauncher;
@@ -48,8 +49,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ServerCommandHandler {
     public static final Map<String, MethodHandle> COMMAND_CALLBACKS = new HashMap<>();
     public static final Map<String, CommandHandler> COMMAND_DESCRIPTIONS = new HashMap<>();
-    public static final Set<String> ADMIN_RESTRICTED_COMMANDS = new HashSet<>();
-    public static final Set<Long> ADMIN_USER_CACHE = new HashSet<>();
+    public static final Map<String, AccountProvision[]> RESTRICTED_COMMAND_PROVISIONS = new HashMap<>();
+    public static final Map<Long, List<AccountProvision>> PLAYER_PROVISION_CACHE = new HashMap<>();
     private static final List<StressTestClient> ACTIVE_BOTS = new ArrayList<>();
     private static final List<String> BOT_ACCOUNT_GUIDS = new ArrayList<>();
     
@@ -64,20 +65,23 @@ public class ServerCommandHandler {
         // Look up this players account to see if they are allowed
         // to run Admin server commands
         try {
-        	if(ADMIN_RESTRICTED_COMMANDS.contains(message.getCommand().toLowerCase()) && !ADMIN_USER_CACHE.contains(fromPlayer.getId())) {
-        	  log.info("Player {} attempting to invvoke admin restricted command '{}'... validating authority", fromPlayer.getName(), message.getCommand());
-              final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE.executeGet("/admin/account/" + fromPlayer.getAccountUuid(), null, AccountDto.class);
-        		// has Subscription 'ADMIN'
-              if (playerAccount == null) {
-                  throw new IllegalStateException("Failed to look up account for player " + fromPlayer.getName());
-              }
-              if (!playerAccount.isAdmin()) {
-            	  throw new IllegalStateException(
-                          "Player " + playerAccount.getAccountName() + " is not allowed to use Admin commands.");
-              }else {
-            	  ADMIN_USER_CACHE.add(fromPlayer.getId());
-            	  log.info("Player {} attempting to invvoke admin restricted command '{}'... validating authority", fromPlayer.getName(), message.getCommand());
-              }
+        	final AccountProvision[] requiredProvisions = RESTRICTED_COMMAND_PROVISIONS.get(message.getCommand().toLowerCase());
+        	if (requiredProvisions != null) {
+        	    // Check cached provisions first, then fetch from API if not cached
+        	    List<AccountProvision> held = PLAYER_PROVISION_CACHE.get(fromPlayer.getId());
+        	    if (held == null) {
+        	        log.info("Player {} invoking restricted command '{}' — fetching provisions", fromPlayer.getName(), message.getCommand());
+        	        final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE.executeGet("/admin/account/" + fromPlayer.getAccountUuid(), null, AccountDto.class);
+        	        if (playerAccount == null) {
+        	            throw new IllegalStateException("Failed to look up account for player " + fromPlayer.getName());
+        	        }
+        	        held = playerAccount.getAccountProvisions() != null ? playerAccount.getAccountProvisions() : new ArrayList<>();
+        	        PLAYER_PROVISION_CACHE.put(fromPlayer.getId(), held);
+        	    }
+        	    if (!AccountProvision.checkAccess(held, requiredProvisions)) {
+        	        throw new IllegalStateException(
+        	            "Player " + fromPlayer.getName() + " lacks required provision for command /" + message.getCommand());
+        	    }
         	}
             
             final MethodHandle methodHandle = COMMAND_CALLBACKS.get(message.getCommand().toLowerCase());
@@ -120,12 +124,13 @@ public class ServerCommandHandler {
 					.executeGet("/admin/account/" + toOp.getAccountUuid(), null, AccountDto.class);
 			boolean removed = false;
 			if (targetAccount.isAdmin()) {
-				targetAccount.removeAdminSubscription();
-				ADMIN_USER_CACHE.remove(toOp.getId());
+				targetAccount.removeProvision(AccountProvision.OPENREALM_ADMIN);
 				removed = true;
 			} else {
-				targetAccount.addAdminSubscription();
+				targetAccount.addProvision(AccountProvision.OPENREALM_ADMIN);
 			}
+			// Clear provision cache so changes take effect immediately
+			PLAYER_PROVISION_CACHE.remove(toOp.getId());
 			ServerGameLogic.DATA_SERVICE.executePut("/admin/account/" + targetAccount.getAccountGuid(), null,
 					AccountDto.class);
 			final String operation = " is " + (removed ? "no longer " : "now ");

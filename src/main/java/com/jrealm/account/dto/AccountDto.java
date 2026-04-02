@@ -41,22 +41,43 @@ public class AccountDto implements Serializable {
     private Date updated;
     private Date deleted;
 
+    /**
+     * Check if this account has access given a set of required provisions.
+     * Passes if any held provision satisfies any required provision.
+     */
+    public boolean hasAccess(AccountProvision... required) {
+        return AccountProvision.checkAccess(this.accountProvisions, required);
+    }
+
     public boolean isAdmin() {
-        return this.accountSubscriptions != null && this.accountSubscriptions.size() > 0
-                && this.accountSubscriptions.contains(AccountSubscription.ADMIN);
+        return this.hasAccess(AccountProvision.OPENREALM_ADMIN);
     }
-    
-    public void addAdminSubscription() {
-    	if(this.accountSubscriptions==null){
-    		this.accountSubscriptions = new ArrayList<>();
-    	}
-		this.accountSubscriptions.add(AccountSubscription.ADMIN);
+
+    public boolean isSysAdmin() {
+        return this.hasAccess(AccountProvision.OPENREALM_SYS_ADMIN);
     }
-    
-    public void removeAdminSubscription() {
-    	if(this.accountSubscriptions!=null){
-    		this.accountSubscriptions.remove(AccountSubscription.ADMIN);
-    	}
+
+    public boolean isEditor() {
+        return this.hasAccess(AccountProvision.OPENREALM_EDITOR);
+    }
+
+    public boolean isModerator() {
+        return this.hasAccess(AccountProvision.OPENREALM_MODERATOR);
+    }
+
+    public void addProvision(AccountProvision provision) {
+        if (this.accountProvisions == null) {
+            this.accountProvisions = new ArrayList<>();
+        }
+        if (!this.accountProvisions.contains(provision)) {
+            this.accountProvisions.add(provision);
+        }
+    }
+
+    public void removeProvision(AccountProvision provision) {
+        if (this.accountProvisions != null) {
+            this.accountProvisions.remove(provision);
+        }
     }
 
     @Override
