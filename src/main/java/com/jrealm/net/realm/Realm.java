@@ -1089,7 +1089,7 @@ public class Realm {
                 if (Realm.RANDOM.nextFloat() >= density) continue;
 
                 final Vector2f spawnPos = new Vector2f(j * tileSize, i * tileSize);
-                if (this.tileManager.isCollisionTile(spawnPos) || this.tileManager.isVoidTile(spawnPos, 0, 0)) {
+                if (this.tileManager.isVoidTile(spawnPos, 0, 0)) {
                     continue;
                 }
 
@@ -1107,6 +1107,11 @@ public class Realm {
 
                 if (spawnList.isEmpty()) continue;
                 final EnemyModel toSpawn = spawnList.get(Realm.RANDOM.nextInt(spawnList.size()));
+
+                // Hitbox collision check using the enemy's actual size
+                if (this.tileManager.collidesAtPosition(spawnPos, toSpawn.getSize())) {
+                    continue;
+                }
 
                 // Enforce spawn caps for rare enemies (e.g., The Man = max 2)
                 if (spawnCaps.containsKey(toSpawn.getEnemyId())) {
@@ -1337,13 +1342,18 @@ public class Realm {
                 Realm.log.warn("Static spawn references unknown enemyId={}, skipping", ss.getEnemyId());
                 continue;
             }
-            final Vector2f pos = new Vector2f(ss.getX(), ss.getY());
+            Vector2f pos = new Vector2f(ss.getX(), ss.getY());
+            // Validate spawn position against collision tiles using hitbox check
+            if (this.tileManager != null && this.tileManager.collidesAtPosition(pos, model.getSize())) {
+                Realm.log.warn("Static spawn at ({}, {}) collides with tiles, finding safe position", ss.getX(), ss.getY());
+                pos = this.tileManager.getSafePosition();
+            }
             final Enemy enemy = GameObjectUtils.getEnemyFromId(ss.getEnemyId(), pos);
             int healthMult = this.getDifficultyMultiplier();
             enemy.setHealth(enemy.getHealth() * Math.max(1, healthMult));
             enemy.setHealthMultiplier(Math.max(1, healthMult));
             this.addEnemy(enemy);
-            Realm.log.info("Static spawn: {} at ({}, {}) in realm mapId={}", model.getName(), ss.getX(), ss.getY(), mapId);
+            Realm.log.info("Static spawn: {} at ({}, {}) in realm mapId={}", model.getName(), pos.x, pos.y, mapId);
         }
     }
 

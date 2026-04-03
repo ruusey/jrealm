@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
@@ -32,7 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GameDataManager {
-	public static final transient ObjectMapper JSON_MAPPER = new ObjectMapper();
+	public static final transient ObjectMapper JSON_MAPPER = new ObjectMapper()
+		.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 	public static Map<Integer, ProjectileGroup>               PROJECTILE_GROUPS = null;
 	public static Map<Integer, GameItem>                      GAME_ITEMS = null;

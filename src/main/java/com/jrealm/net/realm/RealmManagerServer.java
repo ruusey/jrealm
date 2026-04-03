@@ -1439,10 +1439,12 @@ public class RealmManagerServer implements Runnable {
 
 			// If the ability is non damaging or script-only (rogue cloak, priest tome, sorcerer scepter)
 		} else if (abilityItem.getEffect() != null) {
-			// Special case for teleporting
-			if (abilityItem.getEffect().getEffectId().equals(ProjectileEffectType.TELEPORT) && !targetRealm.getTileManager().isCollisionTile(pos)) {
+			// Special case for teleporting — validate destination with full hitbox check
+			if (abilityItem.getEffect().getEffectId().equals(ProjectileEffectType.TELEPORT)
+					&& !targetRealm.getTileManager().collidesAtPosition(pos, player.getSize())
+					&& !targetRealm.getTileManager().isVoidTile(pos, 0, 0)) {
 				player.setPos(pos);
-			} else {
+			} else if (!abilityItem.getEffect().getEffectId().equals(ProjectileEffectType.TELEPORT)) {
 				player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
 			}
 		}

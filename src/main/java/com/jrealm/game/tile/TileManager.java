@@ -372,8 +372,11 @@ public class TileManager {
             }
         }
         Vector2f pos = this.randomPos();
-        while (this.isCollisionTile(pos) || this.isVoidTile(pos, 0, 0)) {
+        int attempts = 0;
+        while ((this.collidesAtPosition(pos, GlobalConstants.BASE_TILE_SIZE) || this.isVoidTile(pos, 0, 0))
+                && attempts < 500) {
             pos = this.randomPos();
+            attempts++;
         }
         return pos;
     }
@@ -389,7 +392,7 @@ public class TileManager {
 
         for (int attempts = 0; attempts < 500; attempts++) {
             Vector2f pos = this.randomPos();
-            if (this.isCollisionTile(pos) || this.isVoidTile(pos, 0, 0)) continue;
+            if (this.collidesAtPosition(pos, GlobalConstants.BASE_TILE_SIZE) || this.isVoidTile(pos, 0, 0)) continue;
             float dx = pos.x - centerX;
             float dy = pos.y - centerY;
             float dist = (float) Math.sqrt(dx * dx + dy * dy);
@@ -399,8 +402,11 @@ public class TileManager {
         }
         // Fallback if zone is too small or all positions blocked
         Vector2f pos = this.randomPos();
-        while (this.isCollisionTile(pos) || this.isVoidTile(pos, 0, 0)) {
+        int fallbackAttempts = 0;
+        while ((this.collidesAtPosition(pos, GlobalConstants.BASE_TILE_SIZE) || this.isVoidTile(pos, 0, 0))
+                && fallbackAttempts < 500) {
             pos = this.randomPos();
+            fallbackAttempts++;
         }
         return pos;
     }
@@ -503,6 +509,21 @@ public class TileManager {
                 return true;
         }
 
+        return false;
+    }
+
+    /**
+     * Hitbox-based collision check at an arbitrary position and size.
+     * Use this to validate a destination before placing/teleporting an entity.
+     */
+    public boolean collidesAtPosition(Vector2f pos, int entitySize) {
+        final int hitSize = (int) (entitySize * 0.85f);
+        for (Tile t : this.getCollisionTiles(pos)) {
+            if (t == null || t.isVoid()) continue;
+            Rectangle tileBounds = new Rectangle(t.getPos(), t.getWidth(), t.getHeight());
+            Rectangle entityBounds = new Rectangle(pos, hitSize, hitSize);
+            if (tileBounds.intersect(entityBounds)) return true;
+        }
         return false;
     }
 

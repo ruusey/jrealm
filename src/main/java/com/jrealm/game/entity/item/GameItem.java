@@ -1,5 +1,6 @@
 package com.jrealm.game.entity.item;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -29,6 +30,7 @@ public class GameItem extends SpriteModel {
     private Stats stats;
     private Damage damage;
     private Effect effect;
+    private List<Effect> selfEffects;
     private boolean consumable;
     private byte tier;
     private byte targetSlot;
