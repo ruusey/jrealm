@@ -125,6 +125,18 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 		return item;
 	}
 
+	/**
+	 * Value equality based on itemId and uid. Two NetGameItems representing the
+	 * same game item instance will be equal even if they are different objects.
+	 */
+	public boolean equals(NetGameItem other) {
+		if (other == null) return false;
+		if (this.itemId != other.itemId) return false;
+		if (this.uid == null && other.uid == null) return true;
+		if (this.uid == null || other.uid == null) return false;
+		return this.uid.equals(other.uid);
+	}
+
 	public NetGameItem() {
 		this.itemId = -1;
 		this.uid = "";

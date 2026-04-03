@@ -100,6 +100,12 @@ import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
+import GlobalPlayerPositionPacket;
+import PlayerStatePacket;
+import NetPlayerPosition;
+import WebSocketGameServer;
+import DungeonGraphNode;
+import ProjectileEffect;
 import com.jrealm.util.AdminRestrictedCommand;
 import com.jrealm.util.CommandHandler;
 import com.jrealm.util.PacketHandlerServer;
@@ -130,7 +136,7 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, Long> playerAbilityState = new ConcurrentHashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new ConcurrentHashMap<>();
 	private Map<Long, UpdatePacket> playerUpdateState = new ConcurrentHashMap<>();
-	private Map<Long, com.jrealm.net.client.packet.PlayerStatePacket> playerStateState = new ConcurrentHashMap<>();
+	private Map<Long, PlayerStatePacket> playerStateState = new ConcurrentHashMap<>();
 	private Map<Long, UpdatePacket> enemyUpdateState = new ConcurrentHashMap<>();
 	private Map<Long, UnloadPacket> playerUnloadState = new ConcurrentHashMap<>();
 	private Map<Long, LoadMapPacket> playerLoadMapState = new ConcurrentHashMap<>();
@@ -142,7 +148,7 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, Long> playerGroundDamageState = new ConcurrentHashMap<>();
 	private Map<Long, Long> playerLastHeartbeatTime = new ConcurrentHashMap<>();
 	// Last sent global player positions per realm (for delta detection)
-	private Map<Long, com.jrealm.net.entity.NetPlayerPosition[]> lastGlobalPositions = new ConcurrentHashMap<>();
+	private Map<Long, NetPlayerPosition[]> lastGlobalPositions = new ConcurrentHashMap<>();
 
 	// Poison damage-over-time tracking
 	private UnloadPacket lastUnload;
@@ -215,8 +221,8 @@ public class RealmManagerServer implements Runnable {
 
 		// Start WebSocket server for browser-based clients
 		try {
-			final com.jrealm.net.server.WebSocketGameServer wsServer =
-				new com.jrealm.net.server.WebSocketGameServer(2223, this.server);
+			final WebSocketGameServer wsServer =
+				new WebSocketGameServer(2223, this.server);
 			wsServer.start();
 			log.info("[SERVER] WebSocket server started on port 2223");
 		} catch (Exception e) {
@@ -231,7 +237,7 @@ public class RealmManagerServer implements Runnable {
 		this.registerCommandHandlersReflection();
 		this.beginPlayerSync();
 		
-		final com.jrealm.game.model.DungeonGraphNode entryNode = GameDataManager.getEntryNode();
+		final DungeonGraphNode entryNode = GameDataManager.getEntryNode();
 		final Realm realm;
 		if (entryNode != null) {
 			realm = new Realm(true, entryNode.getMapId(), 0, entryNode.getNodeId());
@@ -565,9 +571,9 @@ public class RealmManagerServer implements Runnable {
 
 						// --- Self PlayerStatePacket (light: HP/MP/effects, throttled to 4Hz) ---
 						if (doUpdate) {
-							final com.jrealm.net.client.packet.PlayerStatePacket statePacket =
-								com.jrealm.net.client.packet.PlayerStatePacket.from(player.getValue());
-							final com.jrealm.net.client.packet.PlayerStatePacket oldState =
+							final PlayerStatePacket statePacket =
+								PlayerStatePacket.from(player.getValue());
+							final PlayerStatePacket oldState =
 								this.playerStateState.get(player.getKey());
 							if (oldState == null) {
 								this.playerStateState.put(player.getKey(), statePacket);
@@ -685,9 +691,9 @@ public class RealmManagerServer implements Runnable {
 									// Send enemy PlayerStatePacket when HP or effects change (own diff, not tied to UpdatePacket)
 									final Enemy nearEnemy = realm.getEnemy(enemyId);
 									if (nearEnemy != null) {
-										final com.jrealm.net.client.packet.PlayerStatePacket enemyState =
-											com.jrealm.net.client.packet.PlayerStatePacket.from(nearEnemy);
-										final com.jrealm.net.client.packet.PlayerStatePacket cachedEnemyState =
+										final PlayerStatePacket enemyState =
+											PlayerStatePacket.from(nearEnemy);
+										final PlayerStatePacket cachedEnemyState =
 											this.playerStateState.get(enemyId);
 										if (cachedEnemyState == null || !cachedEnemyState.equalsState(enemyState)) {
 											this.playerStateState.put(enemyId, enemyState);
@@ -943,15 +949,9 @@ public class RealmManagerServer implements Runnable {
 		}
 		// Also consider active decoys — enemies should target the closest
 		// decoy the same way they target a real player.
-		for (final Realm.DecoyState d : targetRealm.activeDecoys) {
-			final Enemy decoy = targetRealm.getEnemies().get(d.enemyId);
-			if (decoy == null) continue;
-			final float dist = decoy.getPos().distanceTo(pos);
-			if (dist < best && dist <= limit) {
-				best = dist;
-				bestPlayer = new Player(d.enemyId, decoy.getPos().clone(),
-						decoy.getSize(), CharacterClass.TRICKSTER);
-			}
+		final Player decoyProxy = targetRealm.getClosestDecoyTarget(pos, best);
+		if (decoyProxy != null) {
+			bestPlayer = decoyProxy;
 		}
 		return bestPlayer;
 	}
@@ -1229,11 +1229,11 @@ public class RealmManagerServer implements Runnable {
 					this.lastGlobalPositions.remove(realmEntry.getKey());
 					continue;
 				}
-				final com.jrealm.net.entity.NetPlayerPosition[] positions = realm.getPlayers().values().stream()
-						.map(com.jrealm.net.entity.NetPlayerPosition::from)
-						.toArray(com.jrealm.net.entity.NetPlayerPosition[]::new);
+				final NetPlayerPosition[] positions = realm.getPlayers().values().stream()
+						.map(NetPlayerPosition::from)
+						.toArray(NetPlayerPosition[]::new);
 				// Delta check: skip broadcast if no position has changed
-				final com.jrealm.net.entity.NetPlayerPosition[] lastPositions = this.lastGlobalPositions.get(realmEntry.getKey());
+				final NetPlayerPosition[] lastPositions = this.lastGlobalPositions.get(realmEntry.getKey());
 				boolean changed = (lastPositions == null) || (lastPositions.length != positions.length);
 				if (!changed) {
 					for (int i = 0; i < positions.length; i++) {
@@ -1248,8 +1248,8 @@ public class RealmManagerServer implements Runnable {
 				}
 				if (changed) {
 					this.lastGlobalPositions.put(realmEntry.getKey(), positions);
-					final com.jrealm.net.client.packet.GlobalPlayerPositionPacket minimapPacket =
-							com.jrealm.net.client.packet.GlobalPlayerPositionPacket.from(positions);
+					final GlobalPlayerPositionPacket minimapPacket =
+							GlobalPlayerPositionPacket.from(positions);
 					for (final Player p : realm.getPlayers().values()) {
 						this.enqueueServerPacket(p, minimapPacket);
 					}
@@ -1269,7 +1269,7 @@ public class RealmManagerServer implements Runnable {
 					}
 					// Dungeon realms: remove if non-overworld and empty
 					else if (r.getNodeId() != null) {
-						final com.jrealm.game.model.DungeonGraphNode node =
+						final DungeonGraphNode node =
 								GameDataManager.DUNGEON_GRAPH.get(r.getNodeId());
 						if (node != null && !node.isEntryPoint()) {
 							realmIdsToRemove.add(entry.getKey());
@@ -1631,7 +1631,7 @@ public class RealmManagerServer implements Runnable {
 			targetRealm.removeBullet(b);
 			// Apply on-hit status effects from projectile's effects list (data-driven with durations)
 			if (b.getEffects() != null) {
-				for (final com.jrealm.game.model.ProjectileEffect pe : b.getEffects()) {
+				for (final ProjectileEffect pe : b.getEffects()) {
 					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
 					if (effectType != null) {
 						p.addEffect(effectType, pe.getDuration());
@@ -1696,7 +1696,7 @@ public class RealmManagerServer implements Runnable {
 			// Apply on-hit status effects from projectile's effects list (data-driven durations)
 			// Apply on-hit status effects from projectile's effects list (data-driven with durations)
 			if (b.getEffects() != null) {
-				for (final com.jrealm.game.model.ProjectileEffect pe : b.getEffects()) {
+				for (final ProjectileEffect pe : b.getEffects()) {
 					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
 					if (effectType != null) {
 						e.addEffect(effectType, pe.getDuration());
@@ -1817,7 +1817,7 @@ public class RealmManagerServer implements Runnable {
 
 			// Portal drops: use dungeon graph if this realm has a nodeId
 			final String currentNodeId = targetRealm.getNodeId();
-			final com.jrealm.game.model.DungeonGraphNode currentNode = (currentNodeId != null && GameDataManager.DUNGEON_GRAPH != null)
+			final DungeonGraphNode currentNode = (currentNodeId != null && GameDataManager.DUNGEON_GRAPH != null)
 					? GameDataManager.DUNGEON_GRAPH.get(currentNodeId) : null;
 
 			log.info("[SERVER] enemyDeath: enemy={} nodeId={} currentNode={} portalDrops={}",

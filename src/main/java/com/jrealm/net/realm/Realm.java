@@ -93,8 +93,7 @@ public class Realm {
     private final List<PoisonThrowState> pendingPoisonThrows = new java.util.ArrayList<>();
 
     // Active decoys — lightweight tick-driven entities for Trickster prism ability.
-    // Package-visible so RealmManagerServer can check decoy positions for enemy targeting.
-    final List<DecoyState> activeDecoys = new java.util.ArrayList<>();
+    private final List<DecoyState> activeDecoys = new java.util.ArrayList<>();
 
     static class PoisonThrowState {
         final long landTime;
@@ -1233,6 +1232,26 @@ public class Realm {
     }
 
     /**
+     * Return a proxy Player positioned at the closest active decoy if it is
+     * nearer than {@code currentBestDist}. Used by enemy targeting so decoys
+     * draw aggro the same way real players do.
+     */
+    public Player getClosestDecoyTarget(final com.jrealm.game.math.Vector2f pos, float currentBestDist) {
+        Player best = null;
+        for (final DecoyState d : this.activeDecoys) {
+            final Enemy decoy = this.enemies.get(d.enemyId);
+            if (decoy == null) continue;
+            final float dist = decoy.getPos().distanceTo(pos);
+            if (dist < currentBestDist) {
+                currentBestDist = dist;
+                best = new Player(d.enemyId, decoy.getPos().clone(),
+                        decoy.getSize(), CharacterClass.TRICKSTER);
+            }
+        }
+        return best;
+    }
+
+    /**
      * Register a decoy entity. The decoy walks in the given direction until it
      * covers maxTravelDist pixels, then stands still until durationMs expires.
      */
@@ -1273,6 +1292,13 @@ public class Realm {
                 float traveled_y = decoy.getPos().y - d.originY;
                 if (traveled_x * traveled_x + traveled_y * traveled_y >= d.maxTravelDistSq) {
                     d.stopped = true;
+                    // Stop movement and clear direction flags so walk animation stops
+                    decoy.setDx(0);
+                    decoy.setDy(0);
+                    decoy.setUp(false);
+                    decoy.setDown(false);
+                    decoy.setLeft(false);
+                    decoy.setRight(false);
                 } else {
                     decoy.getPos().x += d.dx;
                     decoy.getPos().y += d.dy;

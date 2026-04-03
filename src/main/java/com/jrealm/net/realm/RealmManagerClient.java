@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 import org.reflections.Reflections;
@@ -31,6 +32,8 @@ import com.jrealm.net.client.packet.ObjectMovePacket;
 import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.RequestTradePacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
+import com.jrealm.net.client.packet.CompactMovePacket;
+import com.jrealm.net.client.packet.PlayerStatePacket;
 import com.jrealm.net.client.packet.UnloadPacket;
 import com.jrealm.net.client.packet.UpdatePacket;
 import com.jrealm.net.server.ServerGameLogic;
@@ -66,7 +69,7 @@ public class RealmManagerClient implements Runnable {
     private TimedWorkerThread workerThread;
     // Short ID → Long ID mapping for compact movement packets.
     // Populated from LoadPacket (NetPlayer.shortId / NetEnemy.shortId).
-    private final Map<Short, Long> shortIdToLongId = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<Short, Long> shortIdToLongId = new ConcurrentHashMap<>();
 
     public RealmManagerClient(PlayState state, Realm realm) {
         this.registerPacketCallbacks();
@@ -135,8 +138,8 @@ public class RealmManagerClient implements Runnable {
         this.registerPacketCallback(UnloadPacket.class, ClientGameLogic::handleUnloadClient);
         this.registerPacketCallback(TextEffectPacket.class, ClientGameLogic::handleTextEffectClient);
         this.registerPacketCallback(PlayerDeathPacket.class, ClientGameLogic::handlePlayerDeathClient);
-        this.registerPacketCallback(com.jrealm.net.client.packet.PlayerStatePacket.class, ClientGameLogic::handlePlayerStateClient);
-        this.registerPacketCallback(com.jrealm.net.client.packet.CompactMovePacket.class, ClientGameLogic::handleCompactMoveClient);
+        this.registerPacketCallback(PlayerStatePacket.class, ClientGameLogic::handlePlayerStateClient);
+        this.registerPacketCallback(CompactMovePacket.class, ClientGameLogic::handleCompactMoveClient);
 //        this.registerPacketCallback(RequestTradePacket.class, ClientGameLogic::handleTradeRequestClient);
 //        this.registerPacketCallback(AcceptTradeRequestPacket.class, ClientGameLogic::handleAcceptTrade);
 

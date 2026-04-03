@@ -21,7 +21,9 @@ import com.jrealm.game.ui.ActiveVisualEffect;
 import com.jrealm.net.client.packet.CreateEffectPacket;
 import com.jrealm.net.client.packet.LoadMapPacket;
 import com.jrealm.net.client.packet.LoadPacket;
+import com.jrealm.net.client.packet.CompactMovePacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.entity.NetCompactMovement;
 import com.jrealm.net.client.packet.PlayerDeathPacket;
 import com.jrealm.net.client.packet.RequestTradePacket;
 import com.jrealm.net.client.packet.TextEffectPacket;
@@ -404,9 +406,8 @@ public class ClientGameLogic {
 	 * in LoadPacket, then applies dead reckoning corrections.
 	 */
 	public static void handleCompactMoveClient(RealmManagerClient cli, Packet packet) {
-		final com.jrealm.net.client.packet.CompactMovePacket compactPacket =
-			(com.jrealm.net.client.packet.CompactMovePacket) packet;
-		for (com.jrealm.net.entity.NetCompactMovement cm : compactPacket.getMovements()) {
+		final CompactMovePacket compactPacket = (CompactMovePacket) packet;
+		for (NetCompactMovement cm : compactPacket.getMovements()) {
 			final Long longId = cli.getShortIdToLongId().get(cm.getShortEntityId());
 			if (longId == null) {
 				continue; // Unknown short ID — entity not yet loaded

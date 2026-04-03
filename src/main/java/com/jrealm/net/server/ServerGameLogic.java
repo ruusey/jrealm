@@ -24,6 +24,7 @@ import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.math.Vector2f;
+import DungeonGraphNode;
 import com.jrealm.game.model.DungeonGenerationParams;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
@@ -47,8 +48,17 @@ import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
 import com.jrealm.net.client.packet.LoadMapPacket;
+import com.jrealm.net.client.packet.LoadPacket;
 import com.jrealm.net.client.packet.ObjectMovePacket;
+import com.jrealm.net.client.packet.UpdatePacket;
+import com.jrealm.net.core.IOService;
+import com.jrealm.net.entity.NetBullet;
+import com.jrealm.net.entity.NetEnemy;
+import com.jrealm.net.entity.NetLootContainer;
+import com.jrealm.net.entity.NetPlayer;
+import com.jrealm.net.entity.NetPortal;
 import com.jrealm.net.entity.NetTile;
+import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.GameObject;
 import com.jrealm.util.Cardinality;
 import com.jrealm.util.PacketHandlerServer;
@@ -85,7 +95,7 @@ public class ServerGameLogic {
 		// Show dungeon graph node name if available, otherwise fallback to realm ID
 		String zoneName;
 		if (realm.getNodeId() != null && GameDataManager.DUNGEON_GRAPH != null) {
-			com.jrealm.game.model.DungeonGraphNode node = GameDataManager.DUNGEON_GRAPH.get(realm.getNodeId());
+			DungeonGraphNode node = GameDataManager.DUNGEON_GRAPH.get(realm.getNodeId());
 			zoneName = (node != null) ? node.getDisplayName() : realm.getNodeId();
 		} else {
 			zoneName = "Realm " + realm.getRealmId();
@@ -177,7 +187,7 @@ public class ServerGameLogic {
 
 		// Resolve target node from dungeon graph
 		final String targetNodeId = used.getTargetNodeId();
-		final com.jrealm.game.model.DungeonGraphNode targetNode = (targetNodeId != null)
+		final DungeonGraphNode targetNode = (targetNodeId != null)
 				? GameDataManager.DUNGEON_GRAPH.get(targetNodeId) : null;
 
 		if (targetRealm == null) {
@@ -267,7 +277,7 @@ public class ServerGameLogic {
 
 			// Dungeon cleanup: remove any non-overworld dungeon when last player leaves
 			if (currentRealm.getPlayers().size() == 0 && currentRealm.getNodeId() != null) {
-				final com.jrealm.game.model.DungeonGraphNode currentNode =
+				final DungeonGraphNode currentNode =
 						GameDataManager.DUNGEON_GRAPH.get(currentRealm.getNodeId());
 				// Don't remove the entry-point realm (overworld)
 				if (currentNode != null && !currentNode.isEntryPoint()) {
@@ -512,15 +522,41 @@ public class ServerGameLogic {
 		}
 		try {
 			ServerItemHelper.handleMoveItemPacket(mgr, packet);
-			// Immediately send updated inventory so the client sees the change without waiting
-			// for the next scheduled UpdatePacket tick
+			// Immediately send updated inventory AND container state so the client
+			// sees the change without waiting for the next scheduled tick
 			final Realm realm = mgr.findPlayerRealm(moveItemPacket.getPlayerId());
 			if (realm != null) {
 				final Player player = realm.getPlayer(moveItemPacket.getPlayerId());
 				if (player != null) {
-					final com.jrealm.net.client.packet.UpdatePacket update = realm.getPlayerAsPacket(player.getId());
+					// Send inventory update
+					final UpdatePacket update = realm.getPlayerAsPacket(player.getId());
 					if (update != null) {
 						mgr.enqueueServerPacket(player, update);
+					}
+					// Send container update immediately to all nearby players.
+					// Without this, container changes wait for the next LoadPacket tick
+					// (up to 62ms at 16Hz), causing visible desync.
+					final LootContainer nearLoot = mgr.getClosestLootContainer(
+						realm.getRealmId(), player.getPos(), 32);
+					if (nearLoot != null && nearLoot.getContentsChanged()) {
+						try {
+							final NetLootContainer netContainer = IOService.mapModel(nearLoot, NetLootContainer.class);
+							final LoadPacket containerUpdate = new LoadPacket(
+								new NetPlayer[0], new NetEnemy[0], new NetBullet[0],
+								new NetLootContainer[] { netContainer },
+								new NetPortal[0]);
+							// Send to all players near the container, not just the mover
+							for (final Map.Entry<Long, Player> p : realm.getPlayers().entrySet()) {
+								if (p.getValue().isHeadless()) continue;
+								float dx = p.getValue().getPos().x - nearLoot.getPos().x;
+								float dy = p.getValue().getPos().y - nearLoot.getPos().y;
+								if (dx * dx + dy * dy <= 640 * 640) {
+									mgr.enqueueServerPacket(p.getValue(), containerUpdate);
+								}
+							}
+						} catch (Exception ex) {
+							ServerGameLogic.log.error("Failed to send immediate container update: {}", ex.getMessage());
+						}
 					}
 				}
 			}

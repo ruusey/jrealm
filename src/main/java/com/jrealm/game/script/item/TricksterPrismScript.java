@@ -14,8 +14,8 @@ import com.jrealm.net.realm.RealmManagerServer;
  * Trickster Prism ability (items 279-285, T0-T6).
  * Teleports the player to the cursor position and spawns a decoy at
  * the player's original location. The decoy walks in the direction
- * the player was last facing for ~5 tiles, then stands still until
- * the effect duration expires.
+ * the player was last facing at the player's current movement speed,
+ * for ~5 tiles, then stands still until the effect duration expires.
  *
  * Decoys are tracked per-tick on the Realm (same pattern as poison
  * throws) so no threads are blocked.
@@ -25,7 +25,6 @@ public class TricksterPrismScript extends UseableItemScriptBase {
     private static final int MIN_ID = 279;
     private static final int MAX_ID = 285;
     private static final int DECOY_ENEMY_ID = 68;
-    private static final float DECOY_SPEED = 0.9f;      // px per tick (~57 px/s at 64 Hz)
     private static final float DECOY_TRAVEL_DIST = 160f; // ~5 tiles (32 px/tile)
 
     public TricksterPrismScript(RealmManagerServer mgr) {
@@ -65,24 +64,37 @@ public class TricksterPrismScript extends UseableItemScriptBase {
             player.setPos(targetPos);
         }
 
+        // Use the same speed formula as the client (PlayState line 343-349):
+        // tiles/sec = 4 + 5.6 * (spd / 75), then px/tick = tiles/sec * 32 / 64
+        // Server ticks at 64 Hz vs client's 60 Hz, so divide by 64.
+        float spdStat = player.getComputedStats().getSpd();
+        float tilesPerSec = 4.0f + 5.6f * (spdStat / 75.0f);
+        float pxPerTick = tilesPerSec * 32.0f / 64.0f;
+
         // Determine decoy walk direction from the player's last movement
         float dx = 0f;
         float dy = 0f;
-        if (player.isRight())      dx =  DECOY_SPEED;
-        else if (player.isLeft())  dx = -DECOY_SPEED;
-        if (player.isDown())       dy =  DECOY_SPEED;
-        else if (player.isUp())    dy = -DECOY_SPEED;
+        boolean movingRight = player.isRight();
+        boolean movingLeft  = player.isLeft();
+        boolean movingDown  = player.isDown();
+        boolean movingUp    = player.isUp();
+
+        if (movingRight)     dx =  pxPerTick;
+        else if (movingLeft) dx = -pxPerTick;
+        if (movingDown)      dy =  pxPerTick;
+        else if (movingUp)   dy = -pxPerTick;
 
         // Default to facing right if the player was stationary
         if (dx == 0f && dy == 0f) {
-            dx = DECOY_SPEED;
+            dx = pxPerTick;
+            movingRight = true;
         }
 
-        // Normalise diagonal speed
+        // Normalise diagonal speed (same as client: spd * sqrt(2) / 2)
         if (dx != 0f && dy != 0f) {
-            final float inv = (float) (DECOY_SPEED / Math.sqrt(dx * dx + dy * dy));
-            dx *= inv;
-            dy *= inv;
+            float diagSpd = (float) ((pxPerTick * Math.sqrt(2)) / 2.0);
+            dx = (dx > 0 ? diagSpd : -diagSpd);
+            dy = (dy > 0 ? diagSpd : -diagSpd);
         }
 
         // Spawn the decoy enemy at the player's old position
@@ -93,6 +105,15 @@ public class TricksterPrismScript extends UseableItemScriptBase {
         decoy.setChaseRange(0);
         decoy.setAttackRange(0);
         decoy.addEffect(ProjectileEffectType.INVINCIBLE, durationMs);
+
+        // Set direction flags so the client animates the decoy walking
+        decoy.setRight(movingRight);
+        decoy.setLeft(movingLeft);
+        decoy.setDown(movingDown);
+        decoy.setUp(movingUp);
+        decoy.setDx(dx);
+        decoy.setDy(dy);
+
         targetRealm.addEnemy(decoy);
 
         // Register tick-based movement + expiration
