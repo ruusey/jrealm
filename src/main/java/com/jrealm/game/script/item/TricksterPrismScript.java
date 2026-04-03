@@ -106,13 +106,14 @@ public class TricksterPrismScript extends UseableItemScriptBase {
         decoy.setAttackRange(0);
         decoy.addEffect(ProjectileEffectType.INVINCIBLE, durationMs);
 
-        // Set direction flags so the client animates the decoy walking
+        // Set direction flags so the client animates the decoy walking.
+        // Do NOT set dx/dy on the entity — processDecoys handles all position
+        // updates. Setting dx/dy here would cause double movement because
+        // the enemy update loop also advances position by dx/dy.
         decoy.setRight(movingRight);
         decoy.setLeft(movingLeft);
         decoy.setDown(movingDown);
         decoy.setUp(movingUp);
-        decoy.setDx(dx);
-        decoy.setDy(dy);
 
         targetRealm.addEnemy(decoy);
 

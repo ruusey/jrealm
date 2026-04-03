@@ -100,12 +100,12 @@ import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
-import GlobalPlayerPositionPacket;
-import PlayerStatePacket;
-import NetPlayerPosition;
-import WebSocketGameServer;
-import DungeonGraphNode;
-import ProjectileEffect;
+import com.jrealm.net.client.packet.GlobalPlayerPositionPacket;
+import com.jrealm.net.client.packet.PlayerStatePacket;
+import com.jrealm.net.entity.NetPlayerPosition;
+import com.jrealm.net.server.WebSocketGameServer;
+import com.jrealm.game.model.DungeonGraphNode;
+import com.jrealm.game.model.ProjectileEffect;
 import com.jrealm.util.AdminRestrictedCommand;
 import com.jrealm.util.CommandHandler;
 import com.jrealm.util.PacketHandlerServer;
@@ -1718,10 +1718,10 @@ public class RealmManagerServer implements Runnable {
 			final float magnitude, final float range, short damage, final boolean isEnemy, final List<Short> flags, long srcEntityId) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Player player = targetRealm.getPlayer(targetPlayerId);
-		if (player == null)
+		if (player == null && !isEnemy)
 			return null;
 
-		if (!isEnemy) {
+		if (!isEnemy && player != null) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
 
@@ -1739,10 +1739,10 @@ public class RealmManagerServer implements Runnable {
 			final short frequency, long srcEntityId) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Player player = targetRealm.getPlayer(targetPlayerId);
-		if (player == null)
+		if (player == null && !isEnemy)
 			return null;
 		final ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
-		if (!isEnemy) {
+		if (!isEnemy && player != null) {
 			damage = (short) (damage + player.getStats().getAtt());
 		}
 
