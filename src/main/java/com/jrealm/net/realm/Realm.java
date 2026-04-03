@@ -93,7 +93,8 @@ public class Realm {
     private final List<PoisonThrowState> pendingPoisonThrows = new java.util.ArrayList<>();
 
     // Active decoys — lightweight tick-driven entities for Trickster prism ability.
-    private final List<DecoyState> activeDecoys = new java.util.ArrayList<>();
+    // Package-visible so RealmManagerServer can check decoy positions for enemy targeting.
+    final List<DecoyState> activeDecoys = new java.util.ArrayList<>();
 
     static class PoisonThrowState {
         final long landTime;

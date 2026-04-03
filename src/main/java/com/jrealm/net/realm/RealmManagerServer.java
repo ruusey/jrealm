@@ -941,6 +941,18 @@ public class RealmManagerServer implements Runnable {
 				bestPlayer = player;
 			}
 		}
+		// Also consider active decoys — enemies should target the closest
+		// decoy the same way they target a real player.
+		for (final Realm.DecoyState d : targetRealm.activeDecoys) {
+			final Enemy decoy = targetRealm.getEnemies().get(d.enemyId);
+			if (decoy == null) continue;
+			final float dist = decoy.getPos().distanceTo(pos);
+			if (dist < best && dist <= limit) {
+				best = dist;
+				bestPlayer = new Player(d.enemyId, decoy.getPos().clone(),
+						decoy.getSize(), CharacterClass.TRICKSTER);
+			}
+		}
 		return bestPlayer;
 	}
 
@@ -1642,8 +1654,8 @@ public class RealmManagerServer implements Runnable {
 		final EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
 		if (targetRealm.hasHitEnemy(b.getId(), e.getId()) || targetRealm.getExpiredEnemies().contains(e.getId()))
 			return;
-		// Enemies in STASIS are invulnerable — all damage is nullified
-		if (e.hasEffect(ProjectileEffectType.STASIS))
+		// Enemies in STASIS or INVINCIBLE are invulnerable — all damage is nullified
+		if (e.hasEffect(ProjectileEffectType.STASIS) || e.hasEffect(ProjectileEffectType.INVINCIBLE))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			final short minDmg = (short) (b.getDamage() * 0.15);

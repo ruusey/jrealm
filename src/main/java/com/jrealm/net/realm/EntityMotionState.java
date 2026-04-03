@@ -50,9 +50,19 @@ public class EntityMotionState {
     public boolean needsUpdate(float actualPosX, float actualPosY,
                                float actualVelX, float actualVelY,
                                long currentTick, float tickDuration) {
-        // 1. Staleness cap — always correct after MAX_STALE_TICKS
+        // 1. Staleness cap — force resend after MAX_STALE_TICKS, but only if
+        //    the entity isn't perfectly stationary at the same position we last sent.
+        //    Stationary entities (vel=0, pos unchanged) don't need periodic resends
+        //    since the client's prediction is already correct (no drift possible).
         if (currentTick - this.sentTick >= MAX_STALE_TICKS) {
-            return true;
+            boolean velZero = actualVelX == 0f && actualVelY == 0f
+                           && this.sentVelX == 0f && this.sentVelY == 0f;
+            boolean posUnchanged = actualPosX == this.sentPosX && actualPosY == this.sentPosY;
+            if (!(velZero && posUnchanged)) {
+                return true;
+            }
+            // Still update sentTick so we don't re-check every tick
+            this.sentTick = currentTick;
         }
 
         // 2. Velocity changed significantly (direction change, start/stop)

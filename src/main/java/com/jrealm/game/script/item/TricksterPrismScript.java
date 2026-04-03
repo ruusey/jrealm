@@ -92,6 +92,7 @@ public class TricksterPrismScript extends UseableItemScriptBase {
                 new Vector2f(oldX, oldY), player.getSize(), -1);
         decoy.setChaseRange(0);
         decoy.setAttackRange(0);
+        decoy.addEffect(ProjectileEffectType.INVINCIBLE, durationMs);
         targetRealm.addEnemy(decoy);
 
         // Register tick-based movement + expiration

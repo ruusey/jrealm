@@ -15,6 +15,7 @@ import java.util.UUID;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.jrealm.account.dto.AccountDto;
 import com.jrealm.account.dto.AccountProvision;
+import com.jrealm.account.dto.AccountSubscription;
 import com.jrealm.account.dto.CharacterDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GameLauncher;
@@ -451,8 +452,8 @@ public class ServerCommandHandler {
 
                             final AccountDto registerReq = AccountDto.builder()
                                     .email(email).password(password).accountName(botName)
-                                    .accountProvisions(new ArrayList<>())
-                                    .accountSubscriptions(new ArrayList<>())
+                                    .accountProvisions(Arrays.asList(AccountProvision.OPENREALM_PLAYER))
+                                    .accountSubscriptions(Arrays.asList(AccountSubscription.TRIAL))
                                     .build();
                             final JsonNode registered = ServerGameLogic.DATA_SERVICE.executePost(
                                     "/admin/account/register", registerReq, JsonNode.class);
