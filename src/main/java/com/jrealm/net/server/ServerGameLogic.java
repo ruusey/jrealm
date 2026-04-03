@@ -138,8 +138,10 @@ public class ServerGameLogic {
 		
 		if (usePortalPacket.isToVault()) {
 			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
-			if (currentRealm.getMapId() == 1)
+			if (currentRealm == null || currentRealm.getMapId() == 1) {
+				mgr.releaseRealmLock();
 				return;
+			}
 
 			final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 
@@ -275,17 +277,13 @@ public class ServerGameLogic {
 				}
 			}
 
-			// Dungeon cleanup: remove any non-overworld dungeon when last player leaves
-			if (currentRealm.getPlayers().size() == 0 && currentRealm.getNodeId() != null) {
-				final DungeonGraphNode currentNode =
-						GameDataManager.DUNGEON_GRAPH.get(currentRealm.getNodeId());
-				// Don't remove the entry-point realm (overworld)
-				if (currentNode != null && !currentNode.isEntryPoint()) {
-					ServerGameLogic.log.info("[SERVER] Removing empty dungeon realm: {} ({})",
-							currentRealm.getNodeId(), currentNode.getDisplayName());
-					currentRealm.setShutdown(true);
-					mgr.getRealms().remove(currentRealm.getRealmId());
-				}
+			// Dungeon cleanup: remove any dungeon when last player leaves via portal.
+			// depth > 0 covers both dungeon-graph and legacy portal-created dungeons.
+			if (currentRealm.getPlayers().size() == 0 && currentRealm.getDepth() > 0) {
+				ServerGameLogic.log.info("[SERVER] Removing empty dungeon realm {} (mapId={}, node={})",
+						currentRealm.getRealmId(), currentRealm.getMapId(), currentRealm.getNodeId());
+				currentRealm.setShutdown(true);
+				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
 		}
 		targetRealm.addPlayer(user);

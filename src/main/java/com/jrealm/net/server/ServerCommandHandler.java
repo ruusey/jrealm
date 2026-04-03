@@ -62,7 +62,15 @@ public class ServerCommandHandler {
         final ServerCommandMessage message = CommandType.fromPacket(command);
         final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
         final Realm playerRealm = mgr.findPlayerRealm(fromPlayerId);
+        if (playerRealm == null) {
+            log.warn("Command '{}' from player {} ignored — player not in any realm", message.getCommand(), fromPlayerId);
+            return;
+        }
         final Player fromPlayer = playerRealm.getPlayer(fromPlayerId);
+        if (fromPlayer == null) {
+            log.warn("Command '{}' from player {} ignored — player not found in realm", message.getCommand(), fromPlayerId);
+            return;
+        }
         // Look up this players account to see if they are allowed
         // to run Admin server commands
         try {
@@ -295,10 +303,24 @@ public class ServerCommandHandler {
         } else {
             final Player destPlayer = mgr.searchRealmsForPlayer(message.getArgs().get(0));
             if (destPlayer == null) {
-                throw new IllegalArgumentException("Player " + message.getArgs().get(0) + " does not exist.");
-            } else {
-                target.setPos(destPlayer.getPos().clone());
+                throw new IllegalArgumentException("Player " + message.getArgs().get(0) + " is not online.");
             }
+            // Only allow teleport within the same realm — cross-realm teleport
+            // would place the player at coordinates in the wrong map
+            final Realm targetRealm = mgr.findPlayerRealm(target.getId());
+            final Realm destRealm = mgr.findPlayerRealm(destPlayer.getId());
+            if (targetRealm == null || destRealm == null || targetRealm.getRealmId() != destRealm.getRealmId()) {
+                throw new IllegalArgumentException("Cannot teleport to " + destPlayer.getName() + " — they are in a different area.");
+            }
+            // Check teleportable (not invisible/stasis)
+            if (destPlayer.hasEffect(com.jrealm.game.contants.ProjectileEffectType.INVISIBLE)
+                    || destPlayer.hasEffect(com.jrealm.game.contants.ProjectileEffectType.STASIS)) {
+                throw new IllegalArgumentException(destPlayer.getName() + " cannot be teleported to right now.");
+            }
+            target.setPos(destPlayer.getPos().clone());
+            mgr.enqueueServerPacket(target,
+                    com.jrealm.net.server.packet.TextPacket.from("SYSTEM", target.getName(),
+                            "Teleported to " + destPlayer.getName()));
         }
     }
 

@@ -179,7 +179,7 @@ public class RealmManagerServer implements Runnable {
 	// EnemyUpdatePacket: 8Hz - enemy health bars
 	private static final int MOVE_TICK_DIVISOR = 2;       // Inner zone dead reckoning check at 32Hz
 	private static final int MOVE_FULL_TICK_DIVISOR = 4;  // Full viewport dead reckoning check at 16Hz
-	private static final int LOAD_TICK_DIVISOR = 4;       // Entity spawn/despawn at 16Hz (was 32Hz — halves LoadPacket bandwidth)
+	private static final int LOAD_TICK_DIVISOR = 2;       // Entity spawn/despawn at 32Hz — bullets need low latency to avoid burst effect
 	private static final int UPDATE_TICK_DIVISOR = 8;     // Stats/inventory at 8Hz (was 16Hz — stats change slowly)
 	private static final int LOADMAP_TICK_DIVISOR = 16;
 	private static final int ENEMY_UPDATE_TICK_DIVISOR = 8; // Enemy health bars at 8Hz (was 16Hz)
@@ -1257,24 +1257,21 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 
-		// Periodic cleanup: remove empty vault/dungeon realms (every 64 ticks ~1s)
-		if (this.tickCounter % 64 == 0) {
+		// Periodic cleanup: remove empty dungeon/vault realms (every 128 ticks ~2s)
+		if (this.tickCounter % 128 == 0) {
 			final List<Long> realmIdsToRemove = new ArrayList<>();
 			for (final Map.Entry<Long, Realm> entry : this.realms.entrySet()) {
 				final Realm r = entry.getValue();
-				if (r.getPlayers().isEmpty()) {
-					// Vault realms (mapId=1): always remove when empty
-					if (r.getMapId() == 1) {
-						realmIdsToRemove.add(entry.getKey());
-					}
-					// Dungeon realms: remove if non-overworld and empty
-					else if (r.getNodeId() != null) {
-						final DungeonGraphNode node =
-								GameDataManager.DUNGEON_GRAPH.get(r.getNodeId());
-						if (node != null && !node.isEntryPoint()) {
-							realmIdsToRemove.add(entry.getKey());
-						}
-					}
+				if (!r.getPlayers().isEmpty()) continue;
+
+				// Vault realms (mapId=1): always remove when empty
+				if (r.getMapId() == 1) {
+					realmIdsToRemove.add(entry.getKey());
+				}
+				// Dungeon realms (depth > 0): remove when empty — covers both
+				// dungeon-graph nodes and legacy portal-created dungeons
+				else if (r.getDepth() > 0) {
+					realmIdsToRemove.add(entry.getKey());
 				}
 			}
 			for (Long id : realmIdsToRemove) {
