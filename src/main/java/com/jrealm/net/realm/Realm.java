@@ -96,6 +96,44 @@ public class Realm {
     // Active decoys — lightweight tick-driven entities for Trickster prism ability.
     private final List<DecoyState> activeDecoys = new java.util.ArrayList<>();
 
+    // Active realm events — globally announced boss encounters with terrain + minion waves.
+    private final List<ActiveRealmEvent> activeRealmEvents = new java.util.ArrayList<>();
+
+    static class ActiveRealmEvent {
+        final int eventId;
+        final long bossEnemyId;
+        final long spawnTime;
+        final long durationMs;
+        final int tileX, tileY;
+        final int[][] savedBase;
+        final int[][] savedCollision;
+        final java.util.Set<Long> minionIds = new java.util.HashSet<>();
+        final boolean[] wavesTriggered;
+        boolean completed;
+
+        ActiveRealmEvent(int eventId, long bossEnemyId, int tileX, int tileY,
+                         int[][] savedBase, int[][] savedCollision, int waveCount, long durationMs) {
+            this.eventId = eventId;
+            this.bossEnemyId = bossEnemyId;
+            this.spawnTime = java.time.Instant.now().toEpochMilli();
+            this.durationMs = durationMs;
+            this.tileX = tileX;
+            this.tileY = tileY;
+            this.savedBase = savedBase;
+            this.savedCollision = savedCollision;
+            this.wavesTriggered = new boolean[waveCount];
+            this.completed = false;
+        }
+
+        boolean isExpired() {
+            return java.time.Instant.now().toEpochMilli() - spawnTime >= durationMs;
+        }
+    }
+
+    public List<ActiveRealmEvent> getActiveRealmEvents() {
+        return this.activeRealmEvents;
+    }
+
     static class PoisonThrowState {
         final long landTime;
         final long sourcePlayerId;
@@ -1472,13 +1510,21 @@ public class Realm {
             mapW, mapH, tileSize, hasZones, params.getSetPieces().size());
 
         for (com.jrealm.game.model.SetPiece sp : params.getSetPieces()) {
+            // Resolve the setpiece template by ID
+            final com.jrealm.game.model.SetPieceModel model = GameDataManager.SETPIECES != null
+                ? GameDataManager.SETPIECES.get(sp.getSetPieceId()) : null;
+            if (model == null) {
+                Realm.log.warn("[SET_PIECES] SetPieceModel not found for setPieceId={}", sp.getSetPieceId());
+                continue;
+            }
+
             int count = sp.getMinCount() + Realm.RANDOM.nextInt(Math.max(1, sp.getMaxCount() - sp.getMinCount() + 1));
             int placed = 0;
             int zoneRejects = 0, collRejects = 0;
 
             for (int attempt = 0; attempt < count * 100 && placed < count; attempt++) {
-                int px = 4 + Realm.RANDOM.nextInt(Math.max(1, mapW - sp.getWidth() - 8));
-                int py = 4 + Realm.RANDOM.nextInt(Math.max(1, mapH - sp.getHeight() - 8));
+                int px = 4 + Realm.RANDOM.nextInt(Math.max(1, mapW - model.getWidth() - 8));
+                int py = 4 + Realm.RANDOM.nextInt(Math.max(1, mapH - model.getHeight() - 8));
 
                 // Zone check
                 if (hasZones && sp.getAllowedZones() != null) {
@@ -1490,56 +1536,112 @@ public class Realm {
                     }
                 }
 
-                // Only check for overlap with other set pieces — don't check terrain collision
-                // (terrain has too many obstacles, would reject almost everything)
                 boolean fits = true;
-                for (int dy = 0; dy < sp.getHeight() && fits; dy++) {
-                    for (int dx = 0; dx < sp.getWidth() && fits; dx++) {
+                for (int dy = 0; dy < model.getHeight() && fits; dy++) {
+                    for (int dx = 0; dx < model.getWidth() && fits; dx++) {
                         long key = ((long)(py + dy) << 32) | (px + dx);
                         if (occupied.contains(key)) { fits = false; collRejects++; }
                     }
                 }
-                // Also check the tile isn't void
                 Vector2f center = new Vector2f(px * tileSize + tileSize, py * tileSize + tileSize);
                 if (this.tileManager.isVoidTile(center, 0, 0)) { fits = false; collRejects++; }
                 if (!fits) continue;
 
-                // Place the set piece
-                for (int dy = 0; dy < sp.getHeight(); dy++) {
-                    for (int dx = 0; dx < sp.getWidth(); dx++) {
-                        int tx = px + dx, ty = py + dy;
-                        long key = ((long)ty << 32) | tx;
-                        occupied.add(key);
-
-                        // Set base tile
-                        if (sp.getBaseTileId() > 0) {
-                            try {
-                                com.jrealm.game.tile.TileData data = GameDataManager.TILES.get(sp.getBaseTileId()) != null
-                                    ? GameDataManager.TILES.get(sp.getBaseTileId()).getData() : null;
-                                this.tileManager.getMapLayers().get(0).setTileAt(ty, tx,
-                                    (short) sp.getBaseTileId(), data);
-                            } catch (Exception e) { /* skip */ }
-                        }
-
-                        // Set collision tile from layout
-                        int[][] layout = sp.getCollisionLayout();
-                        if (layout != null && dy < layout.length && dx < layout[dy].length) {
-                            int collTileId = layout[dy][dx];
-                            if (collTileId > 0) {
-                                try {
-                                    com.jrealm.game.tile.TileData data = GameDataManager.TILES.get(collTileId) != null
-                                        ? GameDataManager.TILES.get(collTileId).getData() : null;
-                                    this.tileManager.getMapLayers().get(1).setTileAt(ty, tx,
-                                        (short) collTileId, data);
-                                } catch (Exception e) { /* skip */ }
-                            }
-                        }
-                    }
-                }
+                // Stamp the setpiece
+                stampSetPiece(model, px, py, occupied);
                 placed++;
             }
             Realm.log.info("[SET_PIECES] '{}': placed {}/{}, zoneRejects={}, collRejects={}",
-                sp.getName(), placed, count, zoneRejects, collRejects);
+                model.getName(), placed, count, zoneRejects, collRejects);
+        }
+    }
+
+    /**
+     * Stamp a SetPieceModel onto the map at the given tile coordinates.
+     * Writes both base layer and collision layer. Tile ID 0 = transparent (skip).
+     * Optionally tracks occupied tiles in the provided set (may be null).
+     */
+    public void stampSetPiece(com.jrealm.game.model.SetPieceModel model, int px, int py,
+                               java.util.Set<Long> occupied) {
+        for (int dy = 0; dy < model.getHeight(); dy++) {
+            for (int dx = 0; dx < model.getWidth(); dx++) {
+                int tx = px + dx, ty = py + dy;
+                if (occupied != null) {
+                    occupied.add(((long) ty << 32) | tx);
+                }
+
+                // Base layer
+                int[][] baseLayout = model.getBaseLayout();
+                if (baseLayout != null && dy < baseLayout.length && dx < baseLayout[dy].length) {
+                    int baseTileId = baseLayout[dy][dx];
+                    if (baseTileId > 0) {
+                        try {
+                            com.jrealm.game.tile.TileData data = GameDataManager.TILES.get(baseTileId) != null
+                                ? GameDataManager.TILES.get(baseTileId).getData() : null;
+                            this.tileManager.getMapLayers().get(0).setTileAt(ty, tx, (short) baseTileId, data);
+                        } catch (Exception e) { /* skip */ }
+                    }
+                }
+
+                // Collision layer
+                int[][] collLayout = model.getCollisionLayout();
+                if (collLayout != null && dy < collLayout.length && dx < collLayout[dy].length) {
+                    int collTileId = collLayout[dy][dx];
+                    if (collTileId > 0) {
+                        try {
+                            com.jrealm.game.tile.TileData data = GameDataManager.TILES.get(collTileId) != null
+                                ? GameDataManager.TILES.get(collTileId).getData() : null;
+                            this.tileManager.getMapLayers().get(1).setTileAt(ty, tx, (short) collTileId, data);
+                        } catch (Exception e) { /* skip */ }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Save the existing tiles at a location (both layers) so they can be restored later.
+     * Returns [savedBase[h][w], savedCollision[h][w]].
+     */
+    public int[][][] saveTerrainAt(int px, int py, int width, int height) {
+        int[][] savedBase = new int[height][width];
+        int[][] savedColl = new int[height][width];
+        for (int dy = 0; dy < height; dy++) {
+            for (int dx = 0; dx < width; dx++) {
+                int tx = px + dx, ty = py + dy;
+                try {
+                    com.jrealm.game.tile.Tile baseTile = this.tileManager.getMapLayers().get(0).getBlocks()[ty][tx];
+                    savedBase[dy][dx] = baseTile != null ? baseTile.getTileId() : 0;
+                    com.jrealm.game.tile.Tile collTile = this.tileManager.getMapLayers().get(1).getBlocks()[ty][tx];
+                    savedColl[dy][dx] = collTile != null ? collTile.getTileId() : 0;
+                } catch (Exception e) {
+                    savedBase[dy][dx] = 0;
+                    savedColl[dy][dx] = 0;
+                }
+            }
+        }
+        return new int[][][] { savedBase, savedColl };
+    }
+
+    /**
+     * Restore previously saved terrain tiles at a location.
+     */
+    public void restoreTerrainAt(int px, int py, int[][] savedBase, int[][] savedColl) {
+        for (int dy = 0; dy < savedBase.length; dy++) {
+            for (int dx = 0; dx < savedBase[dy].length; dx++) {
+                int tx = px + dx, ty = py + dy;
+                try {
+                    int baseTileId = savedBase[dy][dx];
+                    com.jrealm.game.tile.TileData baseData = baseTileId > 0 && GameDataManager.TILES.get(baseTileId) != null
+                        ? GameDataManager.TILES.get(baseTileId).getData() : null;
+                    this.tileManager.getMapLayers().get(0).setTileAt(ty, tx, (short) baseTileId, baseData);
+
+                    int collTileId = savedColl[dy][dx];
+                    com.jrealm.game.tile.TileData collData = collTileId > 0 && GameDataManager.TILES.get(collTileId) != null
+                        ? GameDataManager.TILES.get(collTileId).getData() : null;
+                    this.tileManager.getMapLayers().get(1).setTileAt(ty, tx, (short) collTileId, collData);
+                } catch (Exception e) { /* skip */ }
+            }
         }
     }
 

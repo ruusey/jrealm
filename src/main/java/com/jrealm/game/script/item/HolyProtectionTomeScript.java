@@ -23,7 +23,7 @@ public class HolyProtectionTomeScript extends UseableItemScriptBase {
 
     private static final int ITEM_ID = 286;
     private static final int HEAL_AMOUNT = 70;
-    private static final long ARMORED_BASE_DURATION = 5000;
+    private static final long ARMORED_BASE_DURATION = 4000;
 
     public HolyProtectionTomeScript(final RealmManagerServer mgr) {
         super(mgr);
@@ -68,9 +68,8 @@ public class HolyProtectionTomeScript extends UseableItemScriptBase {
             }
         }
 
-        // Apply ARMORED to self — duration scales with WIS
-        int wis = player.getComputedStats().getWis();
-        long armoredDuration = ARMORED_BASE_DURATION + Math.max(0, (wis - 30)) * 100;
+        // Apply ARMORED to self
+        long armoredDuration = ARMORED_BASE_DURATION;
         player.addEffect(ProjectileEffectType.ARMORED, armoredDuration);
         this.mgr.broadcastTextEffect(com.jrealm.game.contants.EntityType.PLAYER, player,
                 com.jrealm.game.contants.TextEffect.PLAYER_INFO, "ARMORED");

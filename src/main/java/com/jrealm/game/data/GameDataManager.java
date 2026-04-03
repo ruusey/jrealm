@@ -24,6 +24,8 @@ import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.model.Projectile;
 import com.jrealm.game.model.ProjectileGroup;
+import com.jrealm.game.model.RealmEventModel;
+import com.jrealm.game.model.SetPieceModel;
 import com.jrealm.game.model.TerrainGenerationParameters;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.net.client.ClientGameLogic;
@@ -49,6 +51,8 @@ public class GameDataManager {
 	public static ExperienceModel                             EXPERIENCE_LVLS = null;
 	public static Map<String, DungeonGraphNode>               DUNGEON_GRAPH = null;
 	public static Map<Integer, AnimationModel>                ANIMATIONS = null;
+	public static Map<Integer, SetPieceModel>                 SETPIECES = null;
+	public static Map<Integer, RealmEventModel>               REALM_EVENTS = null;
 
 	private static void loadLootGroups(final boolean remote) throws Exception {
 		GameDataManager.log.info("Loading Loot Groups...");
@@ -273,6 +277,42 @@ public class GameDataManager {
 		GameDataManager.log.info("Loading Animations... DONE ({} entries)", GameDataManager.ANIMATIONS.size());
 	}
 
+	private static void loadSetPieces(final boolean remote) throws Exception {
+		GameDataManager.log.info("Loading SetPieces...");
+		GameDataManager.SETPIECES = new HashMap<>();
+		String text = null;
+		if (remote) {
+			text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/setpieces.json", null);
+		} else {
+			InputStream inputStream = GameDataManager.class.getClassLoader()
+					.getResourceAsStream("data/setpieces.json");
+			text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		}
+		SetPieceModel[] pieces = GameDataManager.JSON_MAPPER.readValue(text, SetPieceModel[].class);
+		for (SetPieceModel piece : pieces) {
+			GameDataManager.SETPIECES.put(piece.getSetPieceId(), piece);
+		}
+		GameDataManager.log.info("Loading SetPieces... DONE ({} entries)", GameDataManager.SETPIECES.size());
+	}
+
+	private static void loadRealmEvents(final boolean remote) throws Exception {
+		GameDataManager.log.info("Loading Realm Events...");
+		GameDataManager.REALM_EVENTS = new HashMap<>();
+		String text = null;
+		if (remote) {
+			text = ClientGameLogic.DATA_SERVICE.executeGet("game-data/realm-events.json", null);
+		} else {
+			InputStream inputStream = GameDataManager.class.getClassLoader()
+					.getResourceAsStream("data/realm-events.json");
+			text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		}
+		RealmEventModel[] events = GameDataManager.JSON_MAPPER.readValue(text, RealmEventModel[].class);
+		for (RealmEventModel event : events) {
+			GameDataManager.REALM_EVENTS.put(event.getEventId(), event);
+		}
+		GameDataManager.log.info("Loading Realm Events... DONE ({} entries)", GameDataManager.REALM_EVENTS.size());
+	}
+
 	private static void loadGameItems(final boolean remote) throws Exception {
 		GameDataManager.log.info("Loading Game Items...");
 
@@ -386,6 +426,8 @@ public class GameDataManager {
 			() -> { try { GameDataManager.loadLootTables(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load loot tables: {}", e.getMessage()); } },
 			() -> { try { GameDataManager.loadLootGroups(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load loot groups: {}", e.getMessage()); } },
 			() -> { try { GameDataManager.loadAnimations(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load animations: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadSetPieces(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load set pieces: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadRealmEvents(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load realm events: {}", e.getMessage()); } },
 		};
 		for (Runnable loader : loaders) {
 			loader.run();
