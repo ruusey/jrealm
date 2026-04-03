@@ -44,7 +44,7 @@ public class ExperienceModel {
 
     public int getLevel(long experience) {
         if (experience > this.maxExperience())
-            return this.maxLevel();
+            return this.maxLevel() + 1;
 
         int level = 1;
         for (final Entry<Integer, Tuple<Integer, Integer>> entry : this.parsedMap.entrySet()) {

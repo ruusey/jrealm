@@ -1,7 +1,6 @@
 package com.jrealm.game.script;
 
 import com.jrealm.game.contants.EntityType;
-import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
@@ -18,7 +17,6 @@ public class Enemy67Script extends EnemyScriptBase {
 
     private static final int HEAL_AMOUNT = 80;
     private static final float HEAL_RADIUS = 224.0f;
-    private static final long HEAL_DURATION = 3000;
 
     public Enemy67Script(RealmManagerServer mgr) {
         super(mgr);
@@ -44,7 +42,6 @@ public class Enemy67Script extends EnemyScriptBase {
             float dy = player.getPos().y - center.y;
             if (dx * dx + dy * dy > radiusSq) continue;
 
-            player.addEffect(ProjectileEffectType.HEALING, HEAL_DURATION);
             int maxHp = player.getComputedStats().getHp();
             int missingHp = maxHp - player.getHealth();
             if (missingHp > 0) {
