@@ -67,6 +67,7 @@ public class Realm {
     private Map<Long, Bullet> bullets;
     private Map<Long, List<Long>> bulletHits;
     private Map<Long, Enemy> enemies;
+    private int initialEnemyCount; // Snapshot of enemy count after initial spawn, used for respawn threshold
     private Map<Long, LootContainer> loot;
     private Map<Long, Portal> portals;
 
@@ -1132,6 +1133,102 @@ public class Realm {
         }
 
         this.spawnStaticEnemies(mapId);
+        this.initialEnemyCount = this.enemies.size();
+    }
+
+    /**
+     * Respawn enemies in the overworld realm to replenish killed mobs.
+     * Only runs on terrain-based realms (depth == 0 with zones).
+     * Spawns a batch of enemies in random positions away from players.
+     */
+    public void respawnEnemies(int batchSize) {
+        final TerrainGenerationParameters params = this.tileManager.getTerrainParams();
+        if (params == null) return;
+        final boolean hasZones = params.getZones() != null && !params.getZones().isEmpty();
+        if (!hasZones) return;
+
+        // Only respawn if enemy count has dropped below 75% of the initial population
+        final int threshold = (int) (this.initialEnemyCount * 0.75);
+        if (this.enemies.size() >= threshold) return;
+
+        // Cap batch so we don't overshoot the initial count
+        batchSize = Math.min(batchSize, this.initialEnemyCount - this.enemies.size());
+        if (batchSize <= 0) return;
+
+        // Pre-build enemy lists per zone
+        final Map<Integer, List<EnemyModel>> enemiesByGroup = new HashMap<>();
+        for (EnemyGroup group : params.getEnemyGroups()) {
+            List<EnemyModel> models = new ArrayList<>();
+            for (int enemyId : group.getEnemyIds()) {
+                EnemyModel m = GameDataManager.ENEMIES.get(enemyId);
+                if (m != null) models.add(m);
+            }
+            enemiesByGroup.put(group.getOrdinal(), models);
+        }
+        final List<EnemyModel> defaultEnemies = enemiesByGroup.getOrDefault(0, new ArrayList<>());
+        if (defaultEnemies.isEmpty() && enemiesByGroup.isEmpty()) return;
+
+        final int tileSize = this.tileManager.getMapLayers().get(0).getTileSize();
+        final int mapHeight = this.tileManager.getMapLayers().get(0).getHeight();
+        final int mapWidth = this.tileManager.getMapLayers().get(0).getWidth();
+
+        // Collect player positions for minimum distance check
+        final float minPlayerDistSq = 320f * 320f; // Don't spawn within 10 tiles of a player
+        final List<Vector2f> playerPositions = new ArrayList<>();
+        for (Player p : this.players.values()) {
+            playerPositions.add(p.getPos());
+        }
+
+        int spawned = 0;
+        int attempts = 0;
+        final int maxAttempts = batchSize * 10;
+
+        while (spawned < batchSize && attempts < maxAttempts) {
+            attempts++;
+            final int col = 1 + Realm.RANDOM.nextInt(mapWidth - 2);
+            final int row = 1 + Realm.RANDOM.nextInt(mapHeight - 2);
+            final Vector2f spawnPos = new Vector2f(col * tileSize, row * tileSize);
+
+            if (this.tileManager.isVoidTile(spawnPos, 0, 0)) continue;
+
+            // Don't spawn near players
+            boolean nearPlayer = false;
+            for (Vector2f pp : playerPositions) {
+                float dx = spawnPos.x - pp.x, dy = spawnPos.y - pp.y;
+                if (dx * dx + dy * dy < minPlayerDistSq) {
+                    nearPlayer = true;
+                    break;
+                }
+            }
+            if (nearPlayer) continue;
+
+            // Select enemy list based on zone
+            List<EnemyModel> spawnList = defaultEnemies;
+            int healthMult = this.getDifficultyMultiplier();
+            OverworldZone zone = this.tileManager.getZoneForPosition(spawnPos.x, spawnPos.y);
+            if (zone != null) {
+                spawnList = enemiesByGroup.getOrDefault(zone.getEnemyGroupOrdinal(), defaultEnemies);
+                healthMult = Math.max(1, zone.getDifficulty());
+            }
+            if (spawnList.isEmpty()) continue;
+
+            final EnemyModel toSpawn = spawnList.get(Realm.RANDOM.nextInt(spawnList.size()));
+            if (this.tileManager.collidesAtPosition(spawnPos, toSpawn.getSize())) continue;
+
+            final Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
+                    spawnPos.clone(), toSpawn.getSize(), toSpawn.getAttackId());
+            enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
+            enemy.setHealth(enemy.getHealth() * healthMult);
+            enemy.setHealthMultiplier(healthMult);
+            enemy.getStats().setHp((short) (enemy.getStats().getHp() * healthMult));
+            enemy.setPos(spawnPos);
+            this.addEnemy(enemy);
+            spawned++;
+        }
+
+        if (spawned > 0) {
+            log.info("[REALM] Respawned {} enemies in overworld (total: {})", spawned, this.enemies.size());
+        }
     }
 
     /**

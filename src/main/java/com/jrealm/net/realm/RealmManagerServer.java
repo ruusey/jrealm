@@ -1257,6 +1257,15 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 
+		// Periodic enemy respawn in overworld (every 1920 ticks ~30s)
+		if (this.tickCounter % 1920 == 0) {
+			for (final Realm realm : this.realms.values()) {
+				if (realm.getDepth() == 0 && realm.getMapId() != 1 && !realm.getPlayers().isEmpty()) {
+					realm.respawnEnemies(50);
+				}
+			}
+		}
+
 		// Periodic cleanup: remove empty dungeon/vault realms (every 128 ticks ~2s)
 		if (this.tickCounter % 128 == 0) {
 			final List<Long> realmIdsToRemove = new ArrayList<>();
