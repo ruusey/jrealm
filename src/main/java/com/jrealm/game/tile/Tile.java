@@ -14,15 +14,15 @@ public class Tile {
 	private short tileId;
 	private short row;
 	private short col;
-	// Pack collision/slows/damaging into a single byte to eliminate TileData object per tile.
-	// Bit 0 = collision, bit 1 = slows, bit 2 = damaging
+	// Pack collision/slows/damaging/isWall into a single byte to eliminate TileData object per tile.
+	// Bit 0 = collision, bit 1 = slows, bit 2 = damaging, bit 3 = isWall
 	private byte flags;
 
-	// Shared TileData instances — only 8 possible flag combinations
-	private static final TileData[] SHARED_DATA = new TileData[8];
+	// Shared TileData instances — 16 possible flag combinations (4 bits)
+	private static final TileData[] SHARED_DATA = new TileData[16];
 	static {
-		for (int i = 0; i < 8; i++) {
-			SHARED_DATA[i] = new TileData((byte)(i & 1), (byte)((i >> 1) & 1), (byte)((i >> 2) & 1));
+		for (int i = 0; i < 16; i++) {
+			SHARED_DATA[i] = new TileData((byte)(i & 1), (byte)((i >> 1) & 1), (byte)((i >> 2) & 1), (byte)((i >> 3) & 1));
 		}
 	}
 
@@ -44,11 +44,12 @@ public class Tile {
 		if (data == null) return 0;
 		return (byte) ((data.hasCollision() ? 1 : 0)
 				| (data.slows() ? 2 : 0)
-				| (data.damaging() ? 4 : 0));
+				| (data.damaging() ? 4 : 0)
+				| (data.isWall() ? 8 : 0));
 	}
 
 	public TileData getData() {
-		return SHARED_DATA[this.flags & 0x7];
+		return SHARED_DATA[this.flags & 0xF];
 	}
 
 	public void setData(TileData data) {
