@@ -1172,8 +1172,9 @@ public class Realm {
         final int mapHeight = this.tileManager.getMapLayers().get(0).getHeight();
         final int mapWidth = this.tileManager.getMapLayers().get(0).getWidth();
 
-        // Collect player positions for minimum distance check
-        final float minPlayerDistSq = 320f * 320f; // Don't spawn within 10 tiles of a player
+        // Don't spawn within player viewport radius (10 tiles = 320px)
+        final float viewportRadius = 10f * GlobalConstants.BASE_TILE_SIZE;
+        final float minPlayerDistSq = viewportRadius * viewportRadius;
         final List<Vector2f> playerPositions = new ArrayList<>();
         for (Player p : this.players.values()) {
             playerPositions.add(p.getPos());
