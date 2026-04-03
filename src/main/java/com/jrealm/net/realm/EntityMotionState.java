@@ -14,12 +14,12 @@ public class EntityMotionState {
     private long sentTick;
 
     // Dead reckoning thresholds
-    // Position error (squared) before we send a correction — 3px radius
-    private static final float POSITION_THRESHOLD_SQ = 3.0f * 3.0f;
+    // Position error (squared) before we send a correction — 4px radius
+    private static final float POSITION_THRESHOLD_SQ = 4.0f * 4.0f;
     // Velocity change (squared) before we send a correction — catches direction changes
     private static final float VELOCITY_THRESHOLD_SQ = 0.25f;
-    // Maximum ticks before forcing an update regardless (staleness cap at ~500ms)
-    private static final int MAX_STALE_TICKS = 32;
+    // Maximum ticks before forcing an update regardless (staleness cap at ~750ms)
+    private static final int MAX_STALE_TICKS = 48;
 
     public EntityMotionState(float posX, float posY, float velX, float velY, long tick) {
         this.sentPosX = posX;

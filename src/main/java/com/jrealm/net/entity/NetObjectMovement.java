@@ -56,8 +56,8 @@ public class NetObjectMovement extends SerializableFieldType<NetObjectMovement> 
         this.posX = Math.round(obj.getPos().x * 2f) / 2f;
         this.posY = Math.round(obj.getPos().y * 2f) / 2f;
 
-        this.velX = Math.round(obj.getDx() * 4f) / 4f;  // 0.25px/tick velocity precision
-        this.velY = Math.round(obj.getDy() * 4f) / 4f;
+        this.velX = Math.round(obj.getDx() * 8f) / 8f;  // 0.125px/tick velocity precision
+        this.velY = Math.round(obj.getDy() * 8f) / 8f;
     }
 
     public EntityType getTargetEntityType() {

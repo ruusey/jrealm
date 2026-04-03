@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.jrealm.account.dto.AccountDto;
 import com.jrealm.account.dto.CharacterDto;
 import com.jrealm.account.dto.ChestDto;
 import com.jrealm.account.dto.GameItemRefDto;
@@ -268,13 +269,8 @@ public class ServerGameLogic {
 				// Overworld: spawn in beach zone
 				user.setPos(targetRealm.getTileManager().getSafePosition());
 			} else {
-				// Static map fallback
-				final MapModel mapModel = GameDataManager.MAPS.get(targetRealm.getMapId());
-				if (mapModel != null) {
-					user.setPos(mapModel.getCenter());
-				} else {
-					user.setPos(targetRealm.getTileManager().getSafePosition());
-				}
+				// Static map: use spawn points if defined, otherwise safe position
+				user.setPos(targetRealm.getTileManager().getSafePosition());
 			}
 
 			// Dungeon cleanup: remove any dungeon when last player leaves via portal.
@@ -332,55 +328,41 @@ public class ServerGameLogic {
 		if (toMove.hasEffect(ProjectileEffectType.PARALYZED))
 			return;
 		boolean doMove = playerMovePacket.isMove();
-		// RotMG speed formula: tiles/sec = 4 + 5.6 * (spd_stat / 75)
-		// Convert to pixels per server tick (server runs at 64 tps)
-		float tilesPerSec = 4.0f + 5.6f * (toMove.getComputedStats().getSpd() / 75.0f);
-		float spd = tilesPerSec * 32.0f / 64.0f;
-		if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
-			toMove.setUp(doMove);
-			toMove.setDy(doMove ? -spd : 0.0f);
-		}
-		if (playerMovePacket.getDirection().equals(Cardinality.SOUTH)) {
-			toMove.setDown(doMove);
-			toMove.setDy(doMove ? spd : 0.0f);
-		}
-		if (playerMovePacket.getDirection().equals(Cardinality.EAST)) {
-			toMove.setRight(doMove);
-			toMove.setDx(doMove ? spd : 0.0f);
-		}
-		if (playerMovePacket.getDirection().equals(Cardinality.WEST)) {
-			toMove.setLeft(doMove);
-			toMove.setDx(doMove ? -spd : 0.0f);
-		}
-		
-		if (toMove.getIsUp() && toMove.getIsRight()) {
-			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
-			toMove.setDy(doMove ? -spd : 0.0f);
-			toMove.setDx(doMove ? spd : 0.0f);
-		}
 
-		if (toMove.getIsUp() && toMove.getIsLeft()) {
-			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
-			toMove.setDy(doMove ? -spd : 0.0f);
-			toMove.setDx(doMove ? -spd : 0.0f);
-		}
-
-		if (toMove.getIsDown() && toMove.getIsRight()) {
-			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
-			toMove.setDy(doMove ? spd : 0.0f);
-			toMove.setDx(doMove ? spd : 0.0f);
-		}
-
-		if (toMove.getIsDown() && toMove.getIsLeft()) {
-			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
-			toMove.setDy(doMove ? spd : 0.0f);
-			toMove.setDx(doMove ? -spd : 0.0f);
-		}
+		// Update direction flags from packet
 		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setLeft(false);
 			toMove.setRight(false);
 			toMove.setDown(false);
 			toMove.setUp(false);
+		} else if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
+			toMove.setUp(doMove);
+		} else if (playerMovePacket.getDirection().equals(Cardinality.SOUTH)) {
+			toMove.setDown(doMove);
+		} else if (playerMovePacket.getDirection().equals(Cardinality.EAST)) {
+			toMove.setRight(doMove);
+		} else if (playerMovePacket.getDirection().equals(Cardinality.WEST)) {
+			toMove.setLeft(doMove);
+		}
+
+		// Recalculate velocity from current flags — always consistent,
+		// no intermediate state where one axis has cardinal speed and
+		// the other has diagonal speed.
+		float tilesPerSec = 4.0f + 5.6f * (toMove.getComputedStats().getSpd() / 75.0f);
+		if (toMove.hasEffect(ProjectileEffectType.SPEEDY)) tilesPerSec *= 1.5f;
+		if (toMove.hasEffect(ProjectileEffectType.DAZED)) tilesPerSec *= 0.5f;
+		float spd = tilesPerSec * 32.0f / 64.0f;
+
+		boolean movingX = toMove.getIsLeft() || toMove.getIsRight();
+		boolean movingY = toMove.getIsUp() || toMove.getIsDown();
+		if (movingX && movingY) {
+			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
+		}
+
+		toMove.setDx(toMove.getIsRight() ? spd : toMove.getIsLeft() ? -spd : 0.0f);
+		toMove.setDy(toMove.getIsDown() ? spd : toMove.getIsUp() ? -spd : 0.0f);
+
+		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
 			toMove.setDx(0);
 			toMove.setDy(0);
 		}
@@ -479,8 +461,8 @@ public class ServerGameLogic {
 //            ServerGameLogic.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}",
 //                    textPacket.getTo(), textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
 
-			TextPacket toBroadcast = TextPacket.create(from.getPlayer(fromPlayerId).getName(), textPacket.getTo(),
-					textPacket.getMessage());
+			String chatTo = fromPlayer.getChatRole() != null ? fromPlayer.getChatRole() : "";
+			TextPacket toBroadcast = TextPacket.create(fromPlayer.getName(), chatTo, textPacket.getMessage());
 			mgr.enqueueServerPacket(toBroadcast);
 			ServerGameLogic.log.info("[SERVER] Broadcasted player chat message from {}", fromPlayer.getName());
 		} catch (Exception e) {
@@ -662,6 +644,16 @@ public class ServerGameLogic {
 				player.applyStats(targetCharacter.getStats());
 				player.setName(accountName);
 				player.setHeadless(false);
+				// Cache chat role from auth provisions for name coloring
+				try {
+					AccountDto authAccount = ServerGameLogic.DATA_SERVICE.executeGet(
+						"/admin/account/" + loginToken.getAccountGuid(), null, AccountDto.class);
+					if (authAccount != null && authAccount.isSysAdmin()) player.setChatRole("sysadmin");
+					else if (authAccount != null && authAccount.isAdmin()) player.setChatRole("admin");
+					else if (authAccount != null && authAccount.isModerator()) player.setChatRole("mod");
+				} catch (Exception roleEx) {
+					log.warn("[SERVER] Could not fetch auth role for {}: {}", accountName, roleEx.getMessage());
+				}
 				if (isBotAccount) {
 					player.setBot(true);
 				}

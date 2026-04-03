@@ -335,7 +335,6 @@ public class RealmManagerServer implements Runnable {
 		RealmManagerServer.log.info("[SERVER] Starting JRealm Server");
 		final Runnable tick = () -> {
 			this.tick();
-			this.update(0);
 		};
 		
 		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 64);
@@ -346,6 +345,11 @@ public class RealmManagerServer implements Runnable {
 	private void tick() {
 		try {
 			this.processServerPackets();
+			// update() runs BEFORE enqueueGameData so that enemy bullets spawned
+			// during Enemy.update() are in the spatial grid when LoadPacket is built.
+			// Previously, enqueueGameData ran first and missed same-tick enemy bullets,
+			// causing them to appear 1-2 ticks late on the client.
+			this.update(0);
 			this.enqueueGameData();
 			this.sendGameData();
 
@@ -508,7 +512,13 @@ public class RealmManagerServer implements Runnable {
 				final Map<Long, ObjectMovePacket> cellMoveCache = new HashMap<>();
 
 				final List<Player> toRemove = new ArrayList<>();
-				final float viewportRadius = 10 * com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+				final float viewportRadius = 10 * GlobalConstants.BASE_TILE_SIZE;
+
+				// Snapshot teleport flags before packet building clears them
+				final Set<Long> teleportedPlayers = new HashSet<>();
+				for (final Player tp : realm.getPlayers().values()) {
+					if (tp.getTeleported()) teleportedPlayers.add(tp.getId());
+				}
 
 				for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
 					if (player.getValue().isHeadless()) {
@@ -638,13 +648,24 @@ public class RealmManagerServer implements Runnable {
 									this.playerDeadReckonState.put(player.getKey(), drState);
 								}
 
-								// Filter to only entities that need corrections
-								final float tickDuration = 1.0f; // positions advance by vel per tick
+								// Filter to only entities that need corrections.
+								// Skip the player's own entity — they predict their own movement
+								// client-side and sending their position back causes rubber-banding
+								// on slow connections (server position is always behind client).
+								final float tickDuration = 1.0f;
 								final List<NetObjectMovement> corrections = new ArrayList<>();
 								for (final NetObjectMovement m : movePacket.getMovements()) {
+									// Local player: skip most ticks (client predicts own movement).
+									// Send on teleport, or every ~2s as reconciliation for drift/collision mismatch.
+									if (m.getEntityId() == player.getKey()
+											&& !teleportedPlayers.contains(player.getKey())) {
+										final EntityMotionState selfState = drState.get(m.getEntityId());
+										if (selfState == null || (this.tickCounter - selfState.getSentTick()) < 128) {
+											continue;
+										}
+									}
 									final EntityMotionState state = drState.get(m.getEntityId());
 									if (state == null) {
-										// First time seeing this entity — must send initial state
 										corrections.add(m);
 										drState.put(m.getEntityId(), new EntityMotionState(
 											m.getPosX(), m.getPosY(), m.getVelX(), m.getVelY(), this.tickCounter));
@@ -757,6 +778,9 @@ public class RealmManagerServer implements Runnable {
 			if (!entry.getValue().isShutdownProcessing()) {
 				while (!entry.getValue().getPacketQueue().isEmpty()) {
 					final Packet packet = entry.getValue().getPacketQueue().remove();
+					// Refresh connect time on any packet activity so pre-login
+					// connections aren't killed while auth is still in progress
+					this.getServer().getClientConnectTime().put(entry.getKey(), Instant.now().toEpochMilli());
 					if (PRIORITY_PACKETS.contains(packet.getClass())) {
 						priorityQueue.add(packet);
 					} else {
@@ -1304,18 +1328,11 @@ public class RealmManagerServer implements Runnable {
         }
 
 		final Realm targetRealm = this.realms.get(realmId);
-		float dxToUse = p.getDx();
-		float dyToUse = p.getDy();
-
-		// if the player has the 'speedy' status effect (1.5x dex, spd)
-		if (p.hasEffect(ProjectileEffectType.SPEEDY)) {
-			dxToUse = dxToUse * 1.5f;
-			dyToUse = dyToUse * 1.5f;
-		}
-
+		// dx/dy already include SPEEDY/DAZED from handlePlayerMoveServer velocity calc.
+		// Only apply slow tile factor here.
 		final float slow = targetRealm.getTileManager().collidesSlowTile(p) ? 3.0f : 1.0f;
-		final float effDx = dxToUse / slow;
-		final float effDy = dyToUse / slow;
+		final float effDx = p.getDx() / slow;
+		final float effDy = p.getDy() / slow;
 
 		// Save original position BEFORE any axis movement so both checks
 		// use the pre-move position. This prevents diagonal wall clipping
@@ -1708,12 +1725,12 @@ public class RealmManagerServer implements Runnable {
 					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
 					if (effectType != null) {
 						e.addEffect(effectType, pe.getDuration());
-						this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, effectType.name());
+						this.broadcastTextEffect(targetRealm, EntityType.ENEMY, e, TextEffect.DAMAGE, effectType.name());
 					}
 				}
 			}
 			
-			this.broadcastTextEffect(EntityType.ENEMY, e, TextEffect.DAMAGE, "-" + dmgToInflict);
+			this.broadcastTextEffect(targetRealm, EntityType.ENEMY, e, TextEffect.DAMAGE, "-" + dmgToInflict);
 			if (e.getDeath()) {
 				targetRealm.getExpiredBullets().add(b.getId());
 				this.enemyDeath(targetRealm, e);
@@ -2166,10 +2183,39 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	public void broadcastTextEffect(final EntityType entityType, final GameObject entity, final TextEffect effect,
-			final String text) {
+	/**
+	 * Broadcast a text effect to players near an entity. Finds the realm automatically.
+	 * For callers that already have the realm, use the overload that accepts it directly.
+	 */
+	public void broadcastTextEffect(final EntityType entityType, final GameObject entity,
+			final TextEffect effect, final String text) {
+		final Realm realm = this.findPlayerRealm(entity.getId());
+		if (realm == null) {
+			// Entity might be an enemy — search all realms
+			for (final Realm r : this.realms.values()) {
+				if (r.getEnemy(entity.getId()) != null || r.getPlayer(entity.getId()) != null) {
+					broadcastTextEffect(r, entityType, entity, effect, text);
+					return;
+				}
+			}
+			return;
+		}
+		broadcastTextEffect(realm, entityType, entity, effect, text);
+	}
+
+	public void broadcastTextEffect(final Realm realm, final EntityType entityType, final GameObject entity,
+			final TextEffect effect, final String text) {
 		try {
-			this.enqueueServerPacket(TextEffectPacket.from(entityType, entity.getId(), effect, text));
+			final TextEffectPacket packet = TextEffectPacket.from(entityType, entity.getId(), effect, text);
+			final float viewRadius = 10 * GlobalConstants.BASE_TILE_SIZE;
+			for (final Player p : realm.getPlayers().values()) {
+				if (p.isHeadless()) continue;
+				float dx = p.getPos().x - entity.getPos().x;
+				float dy = p.getPos().y - entity.getPos().y;
+				if (dx * dx + dy * dy <= viewRadius * viewRadius) {
+					this.enqueueServerPacket(p, packet);
+				}
+			}
 		} catch (Exception e) {
 			RealmManagerServer.log.error("[SERVER] Failed to broadcast TextEffect Packet for Entity {}. Reason: {}",
 					entity.getId(), e);

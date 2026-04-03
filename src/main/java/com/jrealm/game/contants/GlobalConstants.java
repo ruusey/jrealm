@@ -18,5 +18,5 @@ public class GlobalConstants {
 
     public static final int PLAYER_SIZE = 28;
     
-    public static final long SOCKET_READ_TIMEOUT = 5000;
+    public static final long SOCKET_READ_TIMEOUT = 15000;
 }

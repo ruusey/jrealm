@@ -49,13 +49,18 @@ public class Player extends Entity {
 	private boolean headless;
 	@Builder.Default
 	private boolean bot = false;
+	// Chat role prefix cached at login for name coloring in chat.
+	// Values: "sysadmin", "admin", "mod", "editor", or null (regular player)
+	@Builder.Default
+	private String chatRole = null;
 
 	public Player() {
 		super(0, null, 0);
 	}
 
 	public Player(GameItem[] inventory, long lastStatsTime, LootContainer currentLootContainer, int classId,
-			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless, boolean bot) {
+			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless, boolean bot,
+			String chatRole) {
 		super(0, null, 0);
 		this.inventory = inventory;
 		this.lastStatsTime = lastStatsTime;
@@ -67,6 +72,7 @@ public class Player extends Entity {
 		this.stats = stats;
 		this.headless = headless;
 		this.bot = bot;
+		this.chatRole = chatRole;
 	}
 
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {

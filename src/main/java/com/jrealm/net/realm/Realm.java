@@ -645,7 +645,7 @@ public class Realm {
     /**
      * Grid-accelerated circular LoadPacket construction.
      */
-    private static final int MAX_BULLETS_PER_LOAD = 60;
+    private static final int MAX_BULLETS_PER_LOAD = 200;
     private static final int MAX_ENEMIES_PER_LOAD = 80;
 
     public LoadPacket getLoadPacketCircularFast(Vector2f center, float radius) {
