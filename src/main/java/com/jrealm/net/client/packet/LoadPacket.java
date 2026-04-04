@@ -201,11 +201,15 @@ public class LoadPacket extends Packet {
         final List<NetEnemy> enemies = Arrays.asList(this.getEnemies());
         final List<NetPortal> portals = Arrays.asList(this.getPortals());
 
-        // Bullets are NOT unloaded via difference — they are client-predicted and
-        // expire on their own based on range. Unloading them causes flickering when
-        // the bullet count exceeds MAX_BULLETS_PER_LOAD (non-deterministic subset
-        // selection from spatial grid causes random bullets to appear/disappear).
+        // Unload bullets that the server removed (hit entity, hit wall, expired).
+        // Dead reckoning is disabled so all nearby bullets are always sent — no
+        // non-deterministic subset selection to cause flickering.
         final List<Long> bulletsDiff = new ArrayList<>();
+        for (final NetBullet b : bullets) {
+            if (!bulletIdsOther.contains(b.getId())) {
+                bulletsDiff.add(b.getId());
+            }
+        }
 
         final List<Long> portalsDiff = new ArrayList<>();
         for (final NetPortal p : portals) {

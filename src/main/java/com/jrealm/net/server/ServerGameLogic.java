@@ -351,7 +351,7 @@ public class ServerGameLogic {
 		// the other has diagonal speed.
 		float tilesPerSec = 4.0f + 5.6f * (toMove.getComputedStats().getSpd() / 75.0f);
 		if (toMove.hasEffect(ProjectileEffectType.SPEEDY)) tilesPerSec *= 1.5f;
-		if (toMove.hasEffect(ProjectileEffectType.DAZED)) tilesPerSec *= 0.5f;
+		// DAZED only affects dex (attack speed), not movement speed
 		float spd = tilesPerSec * 32.0f / 64.0f;
 
 		boolean movingX = toMove.getIsLeft() || toMove.getIsRight();
