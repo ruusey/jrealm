@@ -581,8 +581,8 @@ public class RealmManagerServer implements Runnable {
 						}
 
 						// --- Self PlayerStatePacket (HP/MP/effects) ---
-						// Send immediately when effects change (SPEEDY/PARALYZED/DAZED affect
-						// client movement prediction). Throttle HP/MP-only changes to 4Hz.
+						// Check for effect changes every tick (must be immediate for movement sync).
+						// HP/MP-only changes throttled to 8Hz via doUpdate.
 						{
 							final PlayerStatePacket statePacket =
 								PlayerStatePacket.from(player.getValue());
@@ -591,10 +591,15 @@ public class RealmManagerServer implements Runnable {
 							if (oldState == null) {
 								this.playerStateState.put(player.getKey(), statePacket);
 								this.enqueueServerPacket(player.getValue(), statePacket);
-							} else if (!oldState.equalsState(statePacket)) {
+							} else {
 								boolean effectsChanged = !java.util.Arrays.equals(
 									oldState.getEffectIds(), statePacket.getEffectIds());
-								if (effectsChanged || (this.tickCounter % 16) == 0) {
+								if (effectsChanged) {
+									// Effects changed — send immediately (affects client movement prediction)
+									this.playerStateState.put(player.getKey(), statePacket);
+									this.enqueueServerPacket(player.getValue(), statePacket);
+								} else if (doUpdate && !oldState.equalsState(statePacket)) {
+									// HP/MP changed — throttle to 8Hz
 									this.playerStateState.put(player.getKey(), statePacket);
 									this.enqueueServerPacket(player.getValue(), statePacket);
 								}
@@ -665,23 +670,16 @@ public class RealmManagerServer implements Runnable {
 
 								final List<NetObjectMovement> corrections = new ArrayList<>();
 								for (final NetObjectMovement m : movePacket.getMovements()) {
-									// Always skip the local player in ObjectMovePacket —
-									// their position comes via PlayerPosAckPacket instead.
+									// Skip local player — their position comes via PlayerPosAckPacket
 									if (m.getEntityId() == player.getKey()
 											&& !teleportedPlayers.contains(player.getKey())) {
 										continue;
 									}
-									final EntityMotionState state = drState.get(m.getEntityId());
-									if (state == null) {
-										corrections.add(m);
-										drState.put(m.getEntityId(), new EntityMotionState(
-											m.getPosX(), m.getPosY(), m.getVelX(), m.getVelY(), this.tickCounter));
-									} else if (state.needsUpdate(m.getPosX(), m.getPosY(),
-											m.getVelX(), m.getVelY(), this.tickCounter, tickDuration)) {
-										corrections.add(m);
-										state.markSent(m.getPosX(), m.getPosY(),
-											m.getVelX(), m.getVelY(), this.tickCounter);
-									}
+									// Send all entities at the movement tick rate (no dead reckoning).
+									// Dead reckoning causes irregular update intervals that make
+									// entities jump on the client. Fixed-rate updates + client lerp
+									// is simpler and smoother.
+									corrections.add(m);
 								}
 
 								if (!corrections.isEmpty()) {
