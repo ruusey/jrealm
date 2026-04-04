@@ -325,6 +325,7 @@ public class ServerGameLogic {
 			return;
 		}
 		final Player toMove = realm.getPlayer(playerMovePacket.getEntityId());
+		toMove.setLastInputSeq(playerMovePacket.getSeq());
 		if (toMove.hasEffect(ProjectileEffectType.PARALYZED))
 			return;
 		boolean doMove = playerMovePacket.isMove();

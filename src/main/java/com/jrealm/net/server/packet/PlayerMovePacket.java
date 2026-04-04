@@ -30,9 +30,11 @@ public class PlayerMovePacket extends Packet {
     private byte dir;
 	@SerializableField(order = 2, type = SerializableBoolean.class)
     private boolean move;
+	@SerializableField(order = 3, type = com.jrealm.net.core.nettypes.SerializableInt.class)
+    private int seq;
 
     public static PlayerMovePacket from(Player player, Cardinality direction, boolean move) throws Exception {
-    	final PlayerMovePacket read = new PlayerMovePacket(player.getId(), direction.cardinalityId, move);
+    	final PlayerMovePacket read = new PlayerMovePacket(player.getId(), direction.cardinalityId, move, 0);
         return read;
     }
 

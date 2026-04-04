@@ -101,6 +101,7 @@ import com.jrealm.net.server.packet.TextPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
 import com.jrealm.net.server.packet.UsePortalPacket;
 import com.jrealm.net.client.packet.GlobalPlayerPositionPacket;
+import com.jrealm.net.client.packet.PlayerPosAckPacket;
 import com.jrealm.net.client.packet.PlayerStatePacket;
 import com.jrealm.net.entity.NetPlayerPosition;
 import com.jrealm.net.server.WebSocketGameServer;
@@ -632,6 +633,17 @@ public class RealmManagerServer implements Runnable {
 						// Inner zone checked at 32Hz, full viewport at 16Hz.
 						// Only entities whose actual position diverges from the client's
 						// predicted position (based on last-sent pos+vel) are transmitted.
+						// Send PlayerPosAckPacket only when player is moving or position changed.
+						// Avoids 17kbit/s idle overhead while maintaining fast reconciliation.
+						final boolean isMoving = player.getValue().getDx() != 0 || player.getValue().getDy() != 0;
+						if (isMoving || teleportedPlayers.contains(player.getKey())) {
+							this.enqueueServerPacket(player.getValue(),
+								PlayerPosAckPacket.from(
+									player.getValue().getLastInputSeq(),
+									player.getValue().getPos().x,
+									player.getValue().getPos().y));
+						}
+
 						if (doMovement) {
 							final float moveRadius = doFullMovement ? viewportRadius : viewportRadius * 0.5f;
 							final long moveCacheKey = doFullMovement ? cellKey : (cellKey ^ 0xDEADBEEFL);
@@ -641,28 +653,21 @@ public class RealmManagerServer implements Runnable {
 								cellMoveCache.put(moveCacheKey, movePacket);
 							}
 							if (movePacket != null) {
-								// Get or create per-player dead reckoning state
 								Map<Long, EntityMotionState> drState = this.playerDeadReckonState.get(player.getKey());
 								if (drState == null) {
 									drState = new HashMap<>();
 									this.playerDeadReckonState.put(player.getKey(), drState);
 								}
 
-								// Filter to only entities that need corrections.
-								// Skip the player's own entity — they predict their own movement
-								// client-side and sending their position back causes rubber-banding
-								// on slow connections (server position is always behind client).
 								final float tickDuration = 1.0f;
+
 								final List<NetObjectMovement> corrections = new ArrayList<>();
 								for (final NetObjectMovement m : movePacket.getMovements()) {
-									// Local player: skip most ticks (client predicts own movement).
-									// Send on teleport, or every ~2s as reconciliation for drift/collision mismatch.
+									// Always skip the local player in ObjectMovePacket —
+									// their position comes via PlayerPosAckPacket instead.
 									if (m.getEntityId() == player.getKey()
 											&& !teleportedPlayers.contains(player.getKey())) {
-										final EntityMotionState selfState = drState.get(m.getEntityId());
-										if (selfState == null || (this.tickCounter - selfState.getSentTick()) < 128) {
-											continue;
-										}
+										continue;
 									}
 									final EntityMotionState state = drState.get(m.getEntityId());
 									if (state == null) {

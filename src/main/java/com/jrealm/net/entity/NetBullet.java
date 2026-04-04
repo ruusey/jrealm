@@ -56,7 +56,15 @@ public class NetBullet extends SerializableFieldType<NetBullet> {
 	private short frequency;
 	@SerializableField(order = 15, type = SerializableLong.class)
 	private long createdTime;
-	
+	@SerializableField(order = 16, type = SerializableFloat.class)
+	private float orbitCenterX;
+	@SerializableField(order = 17, type = SerializableFloat.class)
+	private float orbitCenterY;
+	@SerializableField(order = 18, type = SerializableFloat.class)
+	private float orbitRadius;
+	@SerializableField(order = 19, type = SerializableFloat.class)
+	private float orbitPhase;
+
 	public Bullet asBullet() {
 		final Bullet bullet = new Bullet();
 		bullet.setId(this.id);

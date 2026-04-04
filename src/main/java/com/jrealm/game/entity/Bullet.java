@@ -198,7 +198,7 @@ public class Bullet extends GameObject  {
         this.timeStep = (long) ((this.timeStep + this.frequency * bulletScale) % 360);
 
         float currOffset = (float) (this.amplitude * Math.sin(Math.toRadians(this.timeStep)));
-        float perpDelta = currOffset - prevOffset;
+        float perpDelta = (currOffset - prevOffset) * (this.invert ? -1 : 1);
 
         // Forward velocity along the travel direction
         float forwardX = (float) (Math.sin(this.angle) * this.magnitude * bulletScale);

@@ -228,7 +228,7 @@ public class StressTestClient implements Runnable {
             int dirIdx = (this.movePhase + this.clientIndex) % 4;
             Cardinality[] dirs = { Cardinality.NORTH, Cardinality.EAST, Cardinality.SOUTH, Cardinality.WEST };
             Cardinality dir = dirs[dirIdx];
-            PlayerMovePacket movePacket = new PlayerMovePacket(this.assignedPlayerId, dir.cardinalityId, true);
+            PlayerMovePacket movePacket = new PlayerMovePacket(this.assignedPlayerId, dir.cardinalityId, true, 0);
             this.outboundPacketQueue.add(movePacket);
 
             // Send shoot packet every other tick to create projectiles (more server broadcast data)

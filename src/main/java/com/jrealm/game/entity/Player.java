@@ -53,6 +53,9 @@ public class Player extends Entity {
 	// Values: "sysadmin", "admin", "mod", "editor", or null (regular player)
 	@Builder.Default
 	private String chatRole = null;
+	// Last input sequence number processed by the server (for client reconciliation)
+	@Builder.Default
+	private int lastInputSeq = 0;
 
 	public Player() {
 		super(0, null, 0);
@@ -60,7 +63,7 @@ public class Player extends Entity {
 
 	public Player(GameItem[] inventory, long lastStatsTime, LootContainer currentLootContainer, int classId,
 			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless, boolean bot,
-			String chatRole) {
+			String chatRole, int lastInputSeq) {
 		super(0, null, 0);
 		this.inventory = inventory;
 		this.lastStatsTime = lastStatsTime;
@@ -73,6 +76,7 @@ public class Player extends Entity {
 		this.headless = headless;
 		this.bot = bot;
 		this.chatRole = chatRole;
+		this.lastInputSeq = lastInputSeq;
 	}
 
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
