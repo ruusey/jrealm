@@ -49,7 +49,9 @@ public class GameSpriteManager {
             "lostHallsObjects8x8.png", "magicWoodsObjects8x8.png", "mountainTempleObjects8x8.png",
             "summerNexusObjects8x8.png",
             "oryxHordeChars16x16.png", "oryxHordeChars8x8.png",
-            "secludedThicketChars16x16.png" };
+            "secludedThicketChars16x16.png",
+            "test0.png", "test1.png", "test2.png", "test3.png",
+            "test4.png", "test5.png", "test6.png", "test7.png" };
 
     public static Map<String, Texture> TEXTURE_CACHE;
     public static Map<Integer, TextureRegion> TILE_SPRITES;
@@ -251,8 +253,9 @@ public class GameSpriteManager {
         int initRow = idleSide != null ? idleSide.getFrames().get(0).getRow() : 0;
         int initCol = idleSide != null ? idleSide.getFrames().get(0).getCol() : 0;
 
-        final SpriteSheet classSprites = new SpriteSheet(classTexture, GlobalConstants.BASE_SPRITE_SIZE,
-                GlobalConstants.BASE_SPRITE_SIZE, initCol, initRow);
+        int spSize = animModel.getSpriteSize() > 0 ? animModel.getSpriteSize() : GlobalConstants.BASE_SPRITE_SIZE;
+        final SpriteSheet classSprites = new SpriteSheet(classTexture, spSize,
+                spSize, initCol, initRow);
 
         // Build each animation set from the JSON data
         for (Map.Entry<String, AnimationSetModel> entry : animModel.getAnimations().entrySet()) {

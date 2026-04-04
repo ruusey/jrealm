@@ -14,6 +14,7 @@ public class Tile {
 	private short tileId;
 	private short row;
 	private short col;
+	private short tileSize = (short) com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
 	// Pack collision/slows/damaging/isWall into a single byte to eliminate TileData object per tile.
 	// Bit 0 = collision, bit 1 = slows, bit 2 = damaging, bit 3 = isWall
 	private byte flags;
@@ -28,6 +29,7 @@ public class Tile {
 
 	public Tile(short tileId, Vector2f pos, TileData data, short size, boolean discovered) {
 		this.tileId = tileId;
+		this.tileSize = size;
 		this.col = (short) (pos.x / size);
 		this.row = (short) (pos.y / size);
 		this.flags = dataToFlags(data);
@@ -35,6 +37,7 @@ public class Tile {
 
 	public Tile(short tileId, short row, short col, TileData data, short size) {
 		this.tileId = tileId;
+		this.tileSize = size;
 		this.row = row;
 		this.col = col;
 		this.flags = dataToFlags(data);
@@ -57,7 +60,7 @@ public class Tile {
 	}
 
 	public int getSize() {
-		return com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+		return this.tileSize;
 	}
 
 	public boolean update(Rectangle bounds) {
@@ -65,24 +68,23 @@ public class Tile {
 	}
 
 	public int getWidth() {
-		return com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+		return this.tileSize;
 	}
 
 	public int getHeight() {
-		return com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+		return this.tileSize;
 	}
 
 	public Vector2f getPos() {
-		final int size = com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
-		return new Vector2f(this.col * size, this.row * size);
+		return new Vector2f(this.col * this.tileSize, this.row * this.tileSize);
 	}
 
 	public float getWorldX() {
-		return this.col * com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+		return this.col * this.tileSize;
 	}
 
 	public float getWorldY() {
-		return this.row * com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+		return this.row * this.tileSize;
 	}
 
 	public boolean isVoid() {
@@ -96,10 +98,9 @@ public class Tile {
 	public void render(SpriteBatch batch) {
 		TextureRegion region = GameSpriteManager.TILE_SPRITES.get((int) this.tileId);
 		if (region != null) {
-			final int size = com.jrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
-			float wx = (this.col * size) - Vector2f.worldX;
-			float wy = (this.row * size) - Vector2f.worldY;
-			batch.draw(region, wx, wy, size, size);
+			float wx = (this.col * this.tileSize) - Vector2f.worldX;
+			float wy = (this.row * this.tileSize) - Vector2f.worldY;
+			batch.draw(region, wx, wy, this.tileSize, this.tileSize);
 		}
 	}
 }

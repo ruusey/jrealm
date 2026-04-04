@@ -14,5 +14,6 @@ public class AnimationModel {
     private String objectType;
     private String className;
     private String spriteKey;
+    private int spriteSize;
     private Map<String, AnimationSetModel> animations;
 }

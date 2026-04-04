@@ -106,8 +106,9 @@ public class TileManager {
         }
         final int width = this.getBaseLayer().getWidth();
         final int height = this.getBaseLayer().getHeight();
-        final float centerX = width * GlobalConstants.BASE_TILE_SIZE / 2f;
-        final float centerY = height * GlobalConstants.BASE_TILE_SIZE / 2f;
+        final int ts = this.getBaseLayer().getTileSize();
+        final float centerX = width * ts / 2f;
+        final float centerY = height * ts / 2f;
         final float maxDist = (float) Math.sqrt(centerX * centerX + centerY * centerY);
         final float dx = worldX - centerX;
         final float dy = worldY - centerY;
@@ -284,8 +285,9 @@ public class TileManager {
     
     public Tile[] getBaseTiles(Vector2f pos) {
         Tile[] block = new Tile[144];
-        Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
-                pos.y / GlobalConstants.BASE_TILE_SIZE);
+        final int ts = this.getBaseLayer().getTileSize();
+        Vector2f posNormalized = new Vector2f(pos.x / ts,
+                pos.y / ts);
         this.normalizeToBounds(posNormalized);
         int i = 0;
         for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
@@ -307,8 +309,9 @@ public class TileManager {
 
     public Tile[] getCollisionTiles(Vector2f pos) {
         Tile[] block = new Tile[144];
-        Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
-                pos.y / GlobalConstants.BASE_TILE_SIZE);
+        final int ts = this.getCollisionLayer().getTileSize();
+        Vector2f posNormalized = new Vector2f(pos.x / ts,
+                pos.y / ts);
         this.normalizeToBounds(posNormalized);
         int i = 0;
         for (int x = (int) (posNormalized.x - 5); x < (posNormalized.x + 6); x++) {
@@ -373,7 +376,7 @@ public class TileManager {
         }
         Vector2f pos = this.randomPos();
         int attempts = 0;
-        while ((this.collidesAtPosition(pos, GlobalConstants.BASE_TILE_SIZE) || this.isVoidTile(pos, 0, 0))
+        while ((this.collidesAtPosition(pos, this.getBaseLayer().getTileSize()) || this.isVoidTile(pos, 0, 0))
                 && attempts < 500) {
             pos = this.randomPos();
             attempts++;
@@ -384,15 +387,16 @@ public class TileManager {
     public Vector2f getSafePositionInZone(OverworldZone zone) {
         final int width = this.getBaseLayer().getWidth();
         final int height = this.getBaseLayer().getHeight();
-        final float centerX = width * GlobalConstants.BASE_TILE_SIZE / 2f;
-        final float centerY = height * GlobalConstants.BASE_TILE_SIZE / 2f;
+        final int ts = this.getBaseLayer().getTileSize();
+        final float centerX = width * ts / 2f;
+        final float centerY = height * ts / 2f;
         final float maxDist = (float) Math.sqrt(centerX * centerX + centerY * centerY);
         final float minDist = zone.getMinRadius() * maxDist;
         final float maxDistZone = zone.getMaxRadius() * maxDist;
 
         for (int attempts = 0; attempts < 500; attempts++) {
             Vector2f pos = this.randomPos();
-            if (this.collidesAtPosition(pos, GlobalConstants.BASE_TILE_SIZE) || this.isVoidTile(pos, 0, 0)) continue;
+            if (this.collidesAtPosition(pos, ts) || this.isVoidTile(pos, 0, 0)) continue;
             float dx = pos.x - centerX;
             float dy = pos.y - centerY;
             float dist = (float) Math.sqrt(dx * dx + dy * dy);
@@ -403,7 +407,7 @@ public class TileManager {
         // Fallback if zone is too small or all positions blocked
         Vector2f pos = this.randomPos();
         int fallbackAttempts = 0;
-        while ((this.collidesAtPosition(pos, GlobalConstants.BASE_TILE_SIZE) || this.isVoidTile(pos, 0, 0))
+        while ((this.collidesAtPosition(pos, this.getBaseLayer().getTileSize()) || this.isVoidTile(pos, 0, 0))
                 && fallbackAttempts < 500) {
             pos = this.randomPos();
             fallbackAttempts++;
@@ -534,12 +538,13 @@ public class TileManager {
     }
 
     public Rectangle getRenderViewPort(Camera cam) {
+        final int ts = this.getBaseLayer().getTileSize();
         final Vector2f tmpPos = VIEWPORT_POS.get();
-        tmpPos.x = cam.getTarget().getPos().x - (VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE);
-        tmpPos.y = cam.getTarget().getPos().y - (VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE);
+        tmpPos.x = cam.getTarget().getPos().x - (VIEWPORT_TILE_MIN * ts);
+        tmpPos.y = cam.getTarget().getPos().y - (VIEWPORT_TILE_MIN * ts);
         final Rectangle rect = VIEWPORT_RECT.get();
-        rect.setBox(tmpPos, VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE,
-                VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE);
+        rect.setBox(tmpPos, VIEWPORT_TILE_MAX * ts,
+                VIEWPORT_TILE_MAX * ts);
         return rect;
     }
 
@@ -549,22 +554,24 @@ public class TileManager {
     private static final ThreadLocal<Vector2f> VIEWPORT_POS = ThreadLocal.withInitial(Vector2f::new);
 
     public Rectangle getRenderViewPort(Entity p) {
+        final int ts = this.getBaseLayer().getTileSize();
         final Vector2f tmpPos = VIEWPORT_POS.get();
-        tmpPos.x = p.getPos().x - (VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE);
-        tmpPos.y = p.getPos().y - (VIEWPORT_TILE_MIN * GlobalConstants.BASE_TILE_SIZE);
+        tmpPos.x = p.getPos().x - (VIEWPORT_TILE_MIN * ts);
+        tmpPos.y = p.getPos().y - (VIEWPORT_TILE_MIN * ts);
         final Rectangle rect = VIEWPORT_RECT.get();
-        rect.setBox(tmpPos, VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE,
-                VIEWPORT_TILE_MAX * GlobalConstants.BASE_TILE_SIZE);
+        rect.setBox(tmpPos, VIEWPORT_TILE_MAX * ts,
+                VIEWPORT_TILE_MAX * ts);
         return rect;
     }
 
     public Rectangle getRenderViewPort(Entity p, Integer tiles) {
+        final int ts = this.getBaseLayer().getTileSize();
         final Vector2f tmpPos = VIEWPORT_POS.get();
-        tmpPos.x = p.getPos().x - (tiles * GlobalConstants.BASE_TILE_SIZE);
-        tmpPos.y = p.getPos().y - (tiles * GlobalConstants.BASE_TILE_SIZE);
+        tmpPos.x = p.getPos().x - (tiles * ts);
+        tmpPos.y = p.getPos().y - (tiles * ts);
         final Rectangle rect = VIEWPORT_RECT.get();
-        rect.setBox(tmpPos, tiles * 2 * GlobalConstants.BASE_TILE_SIZE,
-                tiles * 2 * GlobalConstants.BASE_TILE_SIZE);
+        rect.setBox(tmpPos, tiles * 2 * ts,
+                tiles * 2 * ts);
         return rect;
     }
 
@@ -572,8 +579,9 @@ public class TileManager {
         final int playerSize = player.getSize() / 2;
         final Vector2f pos = player.getPos().clone(playerSize, playerSize);
         final List<NetTile> tiles = new ArrayList<>();
-        final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
-                pos.y / GlobalConstants.BASE_TILE_SIZE);
+        final int ts = this.getBaseLayer().getTileSize();
+        final Vector2f posNormalized = new Vector2f(pos.x / ts,
+                pos.y / ts);
         this.normalizeToBounds(posNormalized);
         final float radiusSq = VIEWPORT_TILE_MIN * VIEWPORT_TILE_MIN;
         for (int x = (int) (posNormalized.x - VIEWPORT_TILE_MIN); x < (posNormalized.x + VIEWPORT_TILE_MIN); x++) {
@@ -642,8 +650,9 @@ public class TileManager {
         this.acquireMapLock();
         final int playerSize = player.getSize() / 2;
         final Vector2f pos = player.getPos().clone(playerSize, playerSize);
-        final Vector2f posNormalized = new Vector2f(pos.x / GlobalConstants.BASE_TILE_SIZE,
-                pos.y / GlobalConstants.BASE_TILE_SIZE);
+        final int ts = this.getBaseLayer().getTileSize();
+        final Vector2f posNormalized = new Vector2f(pos.x / ts,
+                pos.y / ts);
         this.normalizeToBounds(posNormalized);
 
         // Separate collision layer tiles into walls, objects, and decorations

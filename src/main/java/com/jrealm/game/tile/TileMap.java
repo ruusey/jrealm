@@ -53,17 +53,17 @@ public class TileMap {
         final TileData data = model.getData();
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                this.tiles[i][j] = new Tile(tid, (short) i, (short) j, data, (short) GlobalConstants.BASE_TILE_SIZE);
+                this.tiles[i][j] = new Tile(tid, (short) i, (short) j, data, (short) this.tileSize);
             }
         }
     }
 
     public void setTileAt(int row, int col, short tileId, TileData data) {
-        this.tiles[row][col] = new Tile(tileId, (short) row, (short) col, data, (short) GlobalConstants.BASE_TILE_SIZE);
+        this.tiles[row][col] = new Tile(tileId, (short) row, (short) col, data, (short) this.tileSize);
     }
 
     public void setTileAt(int row, int col, TileModel model) {
-        this.tiles[row][col] = new Tile((short) model.getTileId(), (short) row, (short) col, model.getData(), (short) GlobalConstants.BASE_TILE_SIZE);
+        this.tiles[row][col] = new Tile((short) model.getTileId(), (short) row, (short) col, model.getData(), (short) this.tileSize);
     }
     
     public TileMap append(TileMap other, int offsetX, int offsetY) {
