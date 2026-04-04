@@ -580,8 +580,10 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						// --- Self PlayerStatePacket (light: HP/MP/effects, throttled to 4Hz) ---
-						if (doUpdate) {
+						// --- Self PlayerStatePacket (HP/MP/effects) ---
+						// Send immediately when effects change (SPEEDY/PARALYZED/DAZED affect
+						// client movement prediction). Throttle HP/MP-only changes to 4Hz.
+						{
 							final PlayerStatePacket statePacket =
 								PlayerStatePacket.from(player.getValue());
 							final PlayerStatePacket oldState =
@@ -590,9 +592,9 @@ public class RealmManagerServer implements Runnable {
 								this.playerStateState.put(player.getKey(), statePacket);
 								this.enqueueServerPacket(player.getValue(), statePacket);
 							} else if (!oldState.equalsState(statePacket)) {
-								if ((this.tickCounter % 16) != 0) {
-									// Throttle to 4Hz
-								} else {
+								boolean effectsChanged = !java.util.Arrays.equals(
+									oldState.getEffectIds(), statePacket.getEffectIds());
+								if (effectsChanged || (this.tickCounter % 16) == 0) {
 									this.playerStateState.put(player.getKey(), statePacket);
 									this.enqueueServerPacket(player.getValue(), statePacket);
 								}
