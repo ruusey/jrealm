@@ -1332,12 +1332,7 @@ public class RealmManagerServer implements Runnable {
             return;
         }
 
-		// Increment tick counter only when the player is actually moving.
-		// Prevents seq inflation during idle periods which would cause
-		// the client to discard its entire input buffer on resume.
-		if (p.getDx() != 0 || p.getDy() != 0) {
-			p.setLastInputSeq(p.getLastInputSeq() + 1);
-		}
+		p.setLastInputSeq(p.getLastInputSeq() + 1);
 
 		final Realm targetRealm = this.realms.get(realmId);
 		// dx/dy already include SPEEDY/DAZED from handlePlayerMoveServer velocity calc.
