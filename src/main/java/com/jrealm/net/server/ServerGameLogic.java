@@ -325,7 +325,7 @@ public class ServerGameLogic {
 			return;
 		}
 		final Player toMove = realm.getPlayer(playerMovePacket.getEntityId());
-		toMove.setLastInputSeq(playerMovePacket.getSeq());
+		// lastInputSeq is now incremented per-tick in movePlayer(), not per-packet
 		if (toMove.hasEffect(ProjectileEffectType.PARALYZED))
 			return;
 		boolean doMove = playerMovePacket.isMove();

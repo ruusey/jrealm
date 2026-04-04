@@ -1332,6 +1332,10 @@ public class RealmManagerServer implements Runnable {
             return;
         }
 
+		// Increment tick counter every server tick — used by PlayerPosAckPacket
+		// so the client knows exactly how many ticks to discard from its input buffer.
+		p.setLastInputSeq(p.getLastInputSeq() + 1);
+
 		final Realm targetRealm = this.realms.get(realmId);
 		// dx/dy already include SPEEDY/DAZED from handlePlayerMoveServer velocity calc.
 		// Only apply slow tile factor here.
