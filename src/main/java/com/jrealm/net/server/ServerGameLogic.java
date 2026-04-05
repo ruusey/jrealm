@@ -194,6 +194,17 @@ public class ServerGameLogic {
 				? GameDataManager.DUNGEON_GRAPH.get(targetNodeId) : null;
 
 		if (targetRealm == null) {
+			// Check if a realm for this node already exists (e.g., the shared overworld).
+			// Only dungeon instances (non-entry nodes) should get fresh realms per portal.
+			if (targetNodeId != null) {
+				Optional<Realm> existing = mgr.findRealmForNode(targetNodeId);
+				if (existing.isPresent()) {
+					targetRealm = existing.get();
+				}
+			}
+		}
+
+		if (targetRealm == null) {
 			// Each portal creates its own dungeon instance (1:1 portal-to-dungeon).
 			// The portal's toRealmId is set after creation so subsequent uses of the
 			// SAME portal route to the SAME instance.

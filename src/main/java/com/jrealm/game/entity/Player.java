@@ -13,6 +13,7 @@ import java.util.Set;
 import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.game.contants.CharacterClass;
+import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.ProjectileEffectType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
@@ -305,20 +306,22 @@ public class Player extends Entity {
 		// Draw outline: 4 offset black silhouettes
 		TextureRegion frame = this.getSpriteSheet().getCurrentFrame();
 		if (frame != null) {
-			float wx = this.pos.getWorldVar().x;
-			float wy = this.pos.getWorldVar().y;
+			int rs = GlobalConstants.PLAYER_RENDER_SIZE;
+			float offset = (rs - this.size) / 2f;
+			float wx = this.pos.getWorldVar().x - offset;
+			float wy = this.pos.getWorldVar().y - offset;
 			float ox = 2.5f;
 			com.jrealm.game.graphics.ShaderManager.applyEffect(batch, Sprite.EffectEnum.SILHOUETTE);
 			if (this.left) {
-				batch.draw(frame, wx + this.size + ox, wy, -this.size, this.size);
-				batch.draw(frame, wx + this.size - ox, wy, -this.size, this.size);
-				batch.draw(frame, wx + this.size, wy + ox, -this.size, this.size);
-				batch.draw(frame, wx + this.size, wy - ox, -this.size, this.size);
+				batch.draw(frame, wx + rs + ox, wy, -rs, rs);
+				batch.draw(frame, wx + rs - ox, wy, -rs, rs);
+				batch.draw(frame, wx + rs, wy + ox, -rs, rs);
+				batch.draw(frame, wx + rs, wy - ox, -rs, rs);
 			} else {
-				batch.draw(frame, wx + ox, wy, this.size, this.size);
-				batch.draw(frame, wx - ox, wy, this.size, this.size);
-				batch.draw(frame, wx, wy + ox, this.size, this.size);
-				batch.draw(frame, wx, wy - ox, this.size, this.size);
+				batch.draw(frame, wx + ox, wy, rs, rs);
+				batch.draw(frame, wx - ox, wy, rs, rs);
+				batch.draw(frame, wx, wy + ox, rs, rs);
+				batch.draw(frame, wx, wy - ox, rs, rs);
 			}
 			com.jrealm.game.graphics.ShaderManager.clearEffect(batch);
 
@@ -327,9 +330,9 @@ public class Player extends Entity {
 			com.jrealm.game.graphics.ShaderManager.applyEffect(batch, currentEffect);
 
 			if (this.left) {
-				batch.draw(frame, wx + this.size, wy, -this.size, this.size);
+				batch.draw(frame, wx + rs, wy, -rs, rs);
 			} else {
-				batch.draw(frame, wx, wy, this.size, this.size);
+				batch.draw(frame, wx, wy, rs, rs);
 			}
 
 			// Clear shader

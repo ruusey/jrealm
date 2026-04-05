@@ -942,13 +942,19 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public Realm getTopRealm() {
-		Realm result = null;
+		final DungeonGraphNode entryNode = GameDataManager.getEntryNode();
+		// Prefer the shared overworld realm (the dungeon graph entry node)
+		if (entryNode != null) {
+			Optional<Realm> entry = this.findRealmForNode(entryNode.getNodeId());
+			if (entry.isPresent()) return entry.get();
+		}
+		// Fallback: any depth-0 non-vault realm
 		for (final Realm realm : this.realms.values()) {
 			if (realm.getDepth() == 0 && realm.getMapId() != 1) {
-				result = realm;
+				return realm;
 			}
 		}
-		return result;
+		return null;
 	}
 
 	public Portal getClosestPortal(final long realmId, final Vector2f pos, final float limit) {
