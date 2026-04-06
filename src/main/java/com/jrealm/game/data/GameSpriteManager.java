@@ -31,13 +31,13 @@ public class GameSpriteManager {
 
     private static final String[] SPRITE_NAMES = {
             "rotmg-projectiles.png",
-            "rotmg-bosses.png", "rotmg-bosses-1.png", "rotmg-bosses-1_.png",
+            "rotmg-bosses.png", "rotmg-bosses-1.png",
             "rotmg-items.png", "rotmg-items-1.png",
             "rotmg-tiles.png", "rotmg-tiles-1.png", "rotmg-tiles-2.png", "rotmg-tiles-all.png",
             "rotmg-abilities.png", "rotmg-misc.png",
             "rotmg-classes-0.png", "rotmg-classes-1.png", "rotmg-classes-2.png", "rotmg-classes-3.png",
-            "lofi_char.png", "lofi_environment.png", "lofi_obj.png", "lofiObj2.png", "lofiObj3.png", "lofiObjBig.png",
-            "lofiEnvironment.png", "lofiEnvironment2.png", "lofiEnvironment3.png",
+            "lofiObj2.png", "lofiObj3.png", "lofiObjBig.png",
+            "lofiEnvironment2.png", "lofiEnvironment3.png",
             "lofi_dungeon_features.png",
             "chars8x8rBeach.png", "chars8x8rHero2.png", "cursedLibraryChars16x16.png",
             "d1Chars16x16r.png", "d3Chars8x8r.png", "cursedLibraryChars8x8.png", "cursedLibraryObjects8x8.png",
@@ -49,9 +49,7 @@ public class GameSpriteManager {
             "lostHallsObjects8x8.png", "magicWoodsObjects8x8.png", "mountainTempleObjects8x8.png",
             "summerNexusObjects8x8.png",
             "oryxHordeChars16x16.png", "oryxHordeChars8x8.png",
-            "secludedThicketChars16x16.png",
-            "test0.png", "test1.png", "test2.png", "test3.png",
-            "test4.png", "test5.png", "test6.png", "test7.png" };
+            "secludedThicketChars16x16.png" };
 
     public static Map<String, Texture> TEXTURE_CACHE;
     public static Map<Integer, TextureRegion> TILE_SPRITES;

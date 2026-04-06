@@ -156,6 +156,7 @@ public class ServerGameLogic {
 			user.setPos(mapModel.getCenter());
 			generatedRealm.addPortal(exitPortal);
 			mgr.addRealm(generatedRealm);
+			user.addEffect(ProjectileEffectType.INVINCIBLE, 4000);
 			generatedRealm.addPlayer(user);
 			mgr.clearPlayerState(user.getId());
 			sendImmediateLoadMap(mgr, generatedRealm, user);
@@ -303,6 +304,7 @@ public class ServerGameLogic {
 				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
 		}
+		user.addEffect(ProjectileEffectType.INVINCIBLE, 4000);
 		targetRealm.addPlayer(user);
 		mgr.clearPlayerState(user.getId());
 		sendImmediateLoadMap(mgr, targetRealm, user);
@@ -679,7 +681,7 @@ public class ServerGameLogic {
 				if (isBotAccount) {
 					player.setBot(true);
 				}
-				player.addEffect(ProjectileEffectType.INVINCIBLE, 3000);
+				player.addEffect(ProjectileEffectType.INVINCIBLE, 4000);
 				player.setPos(targetRealm.getTileManager().getSafePosition());
 				log.info("[SERVER] Adding player {} to realm. bot={}, headless={}, accountUuid={}",
 						player.getName(), player.isBot(), player.isHeadless(), player.getAccountUuid());
