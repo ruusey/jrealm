@@ -193,26 +193,36 @@ public class ServerGameLogic {
 		final DungeonGraphNode targetNode = (targetNodeId != null)
 				? GameDataManager.DUNGEON_GRAPH.get(targetNodeId) : null;
 
-		if (targetRealm == null) {
-			// Check if a realm for this node already exists (e.g., the shared overworld).
-			// Only dungeon instances (non-entry nodes) should get fresh realms per portal.
-			if (targetNodeId != null) {
-				Optional<Realm> existing = mgr.findRealmForNode(targetNodeId);
-				if (existing.isPresent()) {
-					targetRealm = existing.get();
+		// Shared nodes (e.g., overworld): all portals route to the same realm instance.
+		// Non-shared nodes (dungeons): each portal creates a unique instance.
+		// Also check by mapId for legacy portals that lack a targetNodeId.
+		DungeonGraphNode resolvedNode = targetNode;
+		if (resolvedNode == null && portalUsed != null) {
+			for (DungeonGraphNode node : GameDataManager.DUNGEON_GRAPH.values()) {
+				if (node.getMapId() == portalUsed.getMapId() && node.isShared()) {
+					resolvedNode = node;
+					break;
 				}
+			}
+		}
+		if (targetRealm == null && resolvedNode != null && resolvedNode.isShared()) {
+			Optional<Realm> existing = mgr.findRealmForNode(resolvedNode.getNodeId());
+			if (existing.isPresent()) {
+				targetRealm = existing.get();
+				used.setToRealmId(targetRealm.getRealmId());
 			}
 		}
 
 		if (targetRealm == null) {
-			// Each portal creates its own dungeon instance (1:1 portal-to-dungeon).
+			// Non-shared: each portal creates its own dungeon instance (1:1 portal-to-dungeon).
 			// The portal's toRealmId is set after creation so subsequent uses of the
 			// SAME portal route to the SAME instance.
 			{
 				// Create new realm from graph node or legacy portal model
-				final int mapId = (targetNode != null) ? targetNode.getMapId() : portalUsed.getMapId();
-				final int depth = (targetNode != null) ? targetNode.getDifficulty() : portalUsed.getTargetRealmDepth();
-				final Realm generatedRealm = new Realm(true, mapId, depth, targetNodeId);
+				final String resolvedNodeId = (resolvedNode != null) ? resolvedNode.getNodeId() : targetNodeId;
+				final int mapId = (resolvedNode != null) ? resolvedNode.getMapId() : (targetNode != null ? targetNode.getMapId() : portalUsed.getMapId());
+				final int depth = (resolvedNode != null) ? resolvedNode.getDifficulty() : (targetNode != null ? targetNode.getDifficulty() : portalUsed.getTargetRealmDepth());
+				final Realm generatedRealm = new Realm(true, mapId, depth, resolvedNodeId);
 
 				targetRealm = generatedRealm;
 

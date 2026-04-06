@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import java.util.UUID;
@@ -30,6 +31,7 @@ import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.model.CharacterClassModel;
+import com.jrealm.game.model.DungeonGraphNode;
 import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.PortalModel;
 import com.jrealm.game.tile.Tile;
@@ -405,17 +407,32 @@ public class ServerCommandHandler {
             portalModel = GameDataManager.PORTALS.get(6);
         }
 
-        // Create the destination realm
+        // Check if a shared dungeon graph node exists for this map
         final Realm currentRealm = mgr.findPlayerRealm(target.getId());
-        final Realm destinationRealm = new Realm(true, targetMap.getMapId(), portalModel.getTargetRealmDepth());
-        destinationRealm.spawnRandomEnemies(targetMap.getMapId());
-        mgr.addRealm(destinationRealm);
+        Realm destinationRealm = null;
+        String targetNodeId = null;
+        for (DungeonGraphNode node : GameDataManager.DUNGEON_GRAPH.values()) {
+            if (node.getMapId() == targetMap.getMapId() && node.isShared()) {
+                targetNodeId = node.getNodeId();
+                Optional<Realm> existing = mgr.findRealmForNode(node.getNodeId());
+                if (existing.isPresent()) {
+                    destinationRealm = existing.get();
+                }
+                break;
+            }
+        }
+        if (destinationRealm == null) {
+            destinationRealm = new Realm(true, targetMap.getMapId(), portalModel.getTargetRealmDepth(), targetNodeId);
+            destinationRealm.spawnRandomEnemies(targetMap.getMapId());
+            mgr.addRealm(destinationRealm);
+        }
 
         // Create and link portal at player position
         final com.jrealm.game.entity.Portal portal = new com.jrealm.game.entity.Portal(
                 Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(), target.getPos().clone());
         portal.linkPortal(currentRealm, destinationRealm);
         portal.setNeverExpires();
+        if (targetNodeId != null) portal.setTargetNodeId(targetNodeId);
         currentRealm.addPortal(portal);
 
         final String msg = "Portal to " + targetMap.getMapName() + " spawned!";

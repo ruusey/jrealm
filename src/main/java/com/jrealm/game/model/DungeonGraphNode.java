@@ -13,6 +13,7 @@ public class DungeonGraphNode {
     private int difficulty;
     private boolean entryPoint;
     private boolean bossNode;
+    private boolean shared;
     private List<String> childNodes;
     // Maps child nodeId -> portalId used to reach it
     private Map<String, Integer> portalDropNodeMap;
