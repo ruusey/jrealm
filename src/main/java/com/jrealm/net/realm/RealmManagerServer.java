@@ -1817,10 +1817,22 @@ public class RealmManagerServer implements Runnable {
 			for (final Player player : targetRealm
 					.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(enemy))) {
 				final int xpToGive = model.getXp() * (targetRealm.getDepth() == 0 ? 1 : targetRealm.getDepth() + 1);
+				final long prevXp = player.getExperience();
+				final boolean wasMaxLevel = GameDataManager.EXPERIENCE_LVLS.isMaxLvl(prevXp);
 				player.incrementExperience(xpToGive);
 				try {
-					this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
-							TextEffect.PLAYER_INFO, xpToGive + "xp"));
+					if (wasMaxLevel) {
+						// At max level: only show text when a new fame point is earned (every 2500 XP)
+						final long prevFame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(prevXp);
+						final long newFame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(player.getExperience());
+						if (newFame > prevFame) {
+							this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
+									TextEffect.PLAYER_INFO, "+" + (newFame - prevFame) + " Fame"));
+						}
+					} else {
+						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
+								TextEffect.PLAYER_INFO, "+" + xpToGive + "xp"));
+					}
 				} catch (Exception ex) {
 					RealmManagerServer.log.error("[SERVER] Failed to create player experience text effect. Reason: {}", ex);
 				}

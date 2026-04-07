@@ -42,9 +42,7 @@ public class LootContainer {
             this.items[i] = GameDataManager.GAME_ITEMS.get(Realm.RANDOM.nextInt(152) + 1);
         }
         this.spawnedTime = System.currentTimeMillis();
-        if (this.hasUntieredItem()) {
-            this.tier = LootTier.WHITE;
-        }
+        this.tier = this.determineTier();
     }
 
     public boolean getContentsChanged() {
@@ -59,9 +57,7 @@ public class LootContainer {
         this.items = new GameItem[8];
         this.items[0] = loot;
         this.spawnedTime = Instant.now().toEpochMilli();
-        if (this.hasUntieredItem()) {
-            this.tier = LootTier.WHITE;
-        }
+        this.tier = this.determineTier();
     }
 
     public LootContainer(LootTier tier, Vector2f pos, GameItem[] loot) {
@@ -80,9 +76,7 @@ public class LootContainer {
             }
         }
         this.spawnedTime = Instant.now().toEpochMilli();
-        if (this.hasUntieredItem()) {
-            this.tier = LootTier.WHITE;
-        }
+        this.tier = this.determineTier();
     }
 
     public boolean isExpired() {
@@ -105,6 +99,48 @@ public class LootContainer {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Determine the appropriate loot tier based on the items inside.
+     * WHITE(4): any untiered item (tier -1)
+     * BLUE(3): only potions (consumable items)
+     * CYAN(2): any item tier 8+
+     * PURPLE(1): tiered items 0-7
+     * BROWN(0): fallback / empty
+     * CHEST and GRAVE are never reclassified.
+     */
+    public LootTier determineTier() {
+        if (this.tier.equals(LootTier.CHEST) || this.tier.equals(LootTier.GRAVE))
+            return this.tier;
+
+        boolean hasUntiered = false;
+        boolean hasHighTier = false; // tier 8+
+        boolean hasLowTier = false;  // tier 0-7, non-consumable
+        boolean hasPotion = false;
+        boolean hasAnyItem = false;
+
+        for (GameItem item : this.items) {
+            if (item == null) continue;
+            hasAnyItem = true;
+            byte t = item.getTier();
+            if (t == (byte) -1) {
+                hasUntiered = true;
+            } else if (item.isConsumable()) {
+                hasPotion = true;
+            } else if (t >= 8) {
+                hasHighTier = true;
+            } else {
+                hasLowTier = true;
+            }
+        }
+
+        if (!hasAnyItem) return LootTier.BROWN;
+        if (hasUntiered) return LootTier.WHITE;
+        if (hasHighTier) return LootTier.CYAN;
+        if (hasLowTier) return LootTier.PURPLE;
+        if (hasPotion) return LootTier.BLUE;
+        return LootTier.BROWN;
     }
 
     public void setItems(GameItem[] items) {
