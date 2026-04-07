@@ -142,7 +142,7 @@ public class ServerCommandHandler {
 			}
 			// Clear provision cache so changes take effect immediately
 			PLAYER_PROVISION_CACHE.remove(toOp.getId());
-			ServerGameLogic.DATA_SERVICE.executePut("/admin/account/" + targetAccount.getAccountGuid(), null,
+			ServerGameLogic.DATA_SERVICE.executePut("/admin/account", targetAccount,
 					AccountDto.class);
 			final String operation = " is " + (removed ? "no longer " : "now ");
 			final String msg = "Player " + message.getArgs().get(0) + operation + "a server operator";

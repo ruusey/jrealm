@@ -1938,42 +1938,44 @@ public class RealmManagerServer implements Runnable {
 			final boolean hasAmulet = player.getInventory()[3] != null
 					&& player.getInventory()[3].getItemId() == 48;
 
-			targetRealm.getExpiredPlayers().add(player.getId());
-
 			if (player.isHeadless() || player.isBot()) {
 				// Bots/headless: drop grave and remove immediately
-				if (!hasAmulet) {
+				if (hasAmulet) {
+					player.getInventory()[3] = null;
+					player.setHealth(1);
+				} else {
+					targetRealm.getExpiredPlayers().add(player.getId());
 					final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
 							player.getPos().clone(), player.getSlots(4, 12));
 					targetRealm.addLootContainer(graveLoot);
-				}
-				targetRealm.removePlayer(player);
-				this.clearPlayerState(player.getId());
-				if (remoteAddrDeath != null) {
-					this.remoteAddresses.remove(remoteAddrDeath);
-					final ClientSession botSession = this.server.getClients().get(remoteAddrDeath);
-					if (botSession != null) {
-						botSession.setShutdownProcessing(true);
-						botSession.close();
-						this.server.getClients().remove(remoteAddrDeath);
+					targetRealm.removePlayer(player);
+					this.clearPlayerState(player.getId());
+					if (remoteAddrDeath != null) {
+						this.remoteAddresses.remove(remoteAddrDeath);
+						final ClientSession botSession = this.server.getClients().get(remoteAddrDeath);
+						if (botSession != null) {
+							botSession.setShutdownProcessing(true);
+							botSession.close();
+							this.server.getClients().remove(remoteAddrDeath);
+						}
 					}
 				}
 				return;
 			}
 
-			// Send death packet to client
-			this.enqueueServerPacket(player, PlayerDeathPacket.from(player.getId()));
-
 			if (hasAmulet) {
-				// Amulet of Resurrection: character survives, no loot dropped
+				// Amulet of Resurrection: character survives, no loot dropped, no death packet
 				TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
 						player.getName() + "'s Amulet of Resurrection shatters!");
 				this.enqueueServerPacket(toBroadcast);
 				player.getInventory()[3] = null;
-				player.setHealth(1);
+				player.setHealth(player.getComputedStats().getHp());
+				player.addEffect(ProjectileEffectType.INVINCIBLE, 4000);
 				this.persistPlayerAsync(player);
 			} else {
-				// Permadeath: drop inventory slots 4-11 in grave, equipment is lost forever
+				// Permadeath: mark expired, send death packet, drop grave
+				targetRealm.getExpiredPlayers().add(player.getId());
+				this.enqueueServerPacket(player, PlayerDeathPacket.from(player.getId()));
 				final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
 						player.getPos().clone(), player.getSlots(4, 12));
 				targetRealm.addLootContainer(graveLoot);

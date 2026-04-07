@@ -98,7 +98,7 @@ public class LootContainer {
     }
 
     public boolean hasUntieredItem() {
-        if (this.tier.equals(LootTier.CHEST))
+        if (this.tier.equals(LootTier.CHEST) || this.tier.equals(LootTier.GRAVE))
             return false;
         for (GameItem item : this.items) {
             if ((item != null) && (item.getTier() == (byte) -1))
