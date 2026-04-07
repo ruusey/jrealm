@@ -640,10 +640,11 @@ public class RealmManagerServer implements Runnable {
 						// Inner zone checked at 32Hz, full viewport at 16Hz.
 						// Only entities whose actual position diverges from the client's
 						// predicted position (based on last-sent pos+vel) are transmitted.
-						// Send PlayerPosAckPacket only when player is moving or position changed.
-						// Avoids 17kbit/s idle overhead while maintaining fast reconciliation.
+						// Send PlayerPosAckPacket when moving (every tick) or periodically when idle
+						// (~10Hz idle acks) so high-latency clients get stop confirmation.
 						final boolean isMoving = player.getValue().getDx() != 0 || player.getValue().getDy() != 0;
-						if (isMoving || teleportedPlayers.contains(player.getKey())) {
+						final boolean periodicIdleAck = !isMoving && (this.tickCounter % 6 == 0);
+						if (isMoving || teleportedPlayers.contains(player.getKey()) || periodicIdleAck) {
 							this.enqueueServerPacket(player.getValue(),
 								PlayerPosAckPacket.from(
 									player.getValue().getLastInputSeq(),
