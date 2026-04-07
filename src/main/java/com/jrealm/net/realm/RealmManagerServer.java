@@ -1963,23 +1963,23 @@ public class RealmManagerServer implements Runnable {
 				return;
 			}
 
+			// Both paths: player dies, gets kicked to death screen
+			targetRealm.getExpiredPlayers().add(player.getId());
+			this.enqueueServerPacket(player, PlayerDeathPacket.from(player.getId()));
+
 			if (hasAmulet) {
-				// Amulet of Resurrection: character survives, no loot dropped, no death packet
+				// Amulet saves the character: no loot dropped, no deletion
+				// Consume the amulet and persist — character remains playable
 				TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
 						player.getName() + "'s Amulet of Resurrection shatters!");
 				this.enqueueServerPacket(toBroadcast);
 				player.getInventory()[3] = null;
-				player.setHealth(player.getComputedStats().getHp());
-				player.addEffect(ProjectileEffectType.INVINCIBLE, 4000);
 				this.persistPlayerAsync(player);
 			} else {
-				// Permadeath: mark expired, send death packet, drop grave
-				targetRealm.getExpiredPlayers().add(player.getId());
-				this.enqueueServerPacket(player, PlayerDeathPacket.from(player.getId()));
+				// Permadeath: drop inventory (slots 4-11) in grave, delete character
 				final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
 						player.getPos().clone(), player.getSlots(4, 12));
 				targetRealm.addLootContainer(graveLoot);
-				// Mark character as deleted on data service
 				ServerGameLogic.DATA_SERVICE.executeDelete(
 						"/data/account/character/" + player.getCharacterUuid(), Object.class);
 			}
