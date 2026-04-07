@@ -216,7 +216,24 @@ public class ServerCommandHandler {
         mgr.enqueChunkedText(target, text);
         log.info("Player {} request command about.", target.getName());
     }
-    
+
+    @CommandHandler(value="pos", description="Show current world position")
+    public static void invokePos(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        final Vector2f pos = target.getPos();
+        final int tileX = (int) (pos.x / 32);
+        final int tileY = (int) (pos.y / 32);
+        final Realm realm = mgr.findPlayerRealm(target.getId());
+        final String realmInfo = realm != null
+                ? String.format("Realm %d (map %d)", realm.getRealmId(), realm.getMapId())
+                : "Unknown";
+        final List<String> text = Arrays.asList(
+                String.format("Position: %.1f, %.1f", pos.x, pos.y),
+                String.format("Tile: %d, %d", tileX, tileY),
+                realmInfo);
+        mgr.enqueChunkedText(target, text);
+    }
+
     @CommandHandler(value="tile", description="Change all tiles in the viewport to the provided tile ID")
 	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_ADMIN})
     public static void invokeSetTile(RealmManagerServer mgr, Player target, ServerCommandMessage message)
