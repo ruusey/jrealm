@@ -1931,18 +1931,24 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	// Invoked upon player death
+	// Invoked upon player death (permadeath)
 	private void playerDeath(final Realm targetRealm, final Player player) {
 		try {
 			final String remoteAddrDeath = this.getRemoteAddressMapReversed().get(player.getId());
-			final LootContainer graveLoot = new LootContainer(LootTier.GRAVE, player.getPos().clone(),
-					player.getSlots(0, 12));
-			targetRealm.addLootContainer(graveLoot);
+			final boolean hasAmulet = player.getInventory()[3] != null
+					&& player.getInventory()[3].getItemId() == 48;
+
 			targetRealm.getExpiredPlayers().add(player.getId());
+
 			if (player.isHeadless() || player.isBot()) {
+				// Bots/headless: drop grave and remove immediately
+				if (!hasAmulet) {
+					final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
+							player.getPos().clone(), player.getSlots(4, 12));
+					targetRealm.addLootContainer(graveLoot);
+				}
 				targetRealm.removePlayer(player);
 				this.clearPlayerState(player.getId());
-				// Close the bot's session so NIO server stops iterating it
 				if (remoteAddrDeath != null) {
 					this.remoteAddresses.remove(remoteAddrDeath);
 					final ClientSession botSession = this.server.getClients().get(remoteAddrDeath);
@@ -1954,20 +1960,29 @@ public class RealmManagerServer implements Runnable {
 				}
 				return;
 			}
+
+			// Send death packet to client
 			this.enqueueServerPacket(player, PlayerDeathPacket.from(player.getId()));
-			if ((player.getInventory()[3] == null) || (player.getInventory()[3].getItemId() != 48)) {
-				ServerGameLogic.DATA_SERVICE.executeDelete("/data/account/character/" + player.getCharacterUuid(),
-						Object.class);
-			} else { 
-				// Remove their amulet and let them respawn
+
+			if (hasAmulet) {
+				// Amulet of Resurrection: character survives, no loot dropped
 				TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
-						player.getName() + "'s Amulet shatters as they disappear.");
+						player.getName() + "'s Amulet of Resurrection shatters!");
 				this.enqueueServerPacket(toBroadcast);
 				player.getInventory()[3] = null;
+				player.setHealth(1);
 				this.persistPlayerAsync(player);
+			} else {
+				// Permadeath: drop inventory slots 4-11 in grave, equipment is lost forever
+				final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
+						player.getPos().clone(), player.getSlots(4, 12));
+				targetRealm.addLootContainer(graveLoot);
+				// Mark character as deleted on data service
+				ServerGameLogic.DATA_SERVICE.executeDelete(
+						"/data/account/character/" + player.getCharacterUuid(), Object.class);
 			}
 		} catch (Exception e) {
-			RealmManagerServer.log.error("[SERVER] Failed to Remove dead Player {}. Reason: {}", e);
+			RealmManagerServer.log.error("[SERVER] Failed to handle player death {}. Reason: {}", player.getId(), e);
 		}
 	}
 
