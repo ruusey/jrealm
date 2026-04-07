@@ -174,10 +174,30 @@ public class DungeonGenerator {
 							break;
 						}
 					}
+					// Boss room must be at least 40% of the map diagonal away from spawn
+					if (!overlaps && isBossRoom && this.spawnRoomCenterX >= 0) {
+						int bCenterX = offsetX + room.getWidth() / 2;
+						int bCenterY = offsetY + room.getHeight() / 2;
+						double dist = Math.sqrt(Math.pow(bCenterX - this.spawnRoomCenterX, 2)
+								+ Math.pow(bCenterY - this.spawnRoomCenterY, 2));
+						double minDist = Math.sqrt(this.width * this.width + this.height * this.height) * 0.4;
+						if (dist < minDist) {
+							overlaps = true; // reject — too close to spawn
+						}
+					}
 					if (!overlaps) placed = true;
 				}
-				// Fallback: if all attempts fail, just clamp and place anyway
+				// Fallback: if all attempts fail, force placement
 				if (!placed) {
+					if (isBossRoom && this.spawnRoomCenterX >= 0) {
+						// Boss room fallback: place in opposite quadrant from spawn
+						offsetX = this.spawnRoomCenterX < this.width / 2
+								? this.width - room.getWidth() - 5
+								: 5;
+						offsetY = this.spawnRoomCenterY < this.height / 2
+								? this.height - room.getHeight() - 5
+								: 5;
+					}
 					offsetX = Math.max(2, Math.min(offsetX, this.width - room.getWidth() - 2));
 					offsetY = Math.max(2, Math.min(offsetY, this.height - room.getHeight() - 2));
 				}
@@ -219,7 +239,11 @@ public class DungeonGenerator {
 			previousRoom = room;
 		}
 
-		// Post-processing: line all walkable areas with wall tiles
+		// Post-processing: line all walkable areas with wall tiles.
+		// Run twice — the second pass catches diagonal gaps at corridor intersections
+		// where the first pass left a void tile surrounded by walls on two sides
+		// but not directly adjacent to a floor tile.
+		this.lineWithWalls(baseLayer, collisionLayer);
 		this.lineWithWalls(baseLayer, collisionLayer);
 
 		// Carve boss room entrance AFTER wall lining so the opening isn't blocked
@@ -394,9 +418,17 @@ public class DungeonGenerator {
 	}
 
 	// L-shaped: horizontal then vertical, 3 tiles wide (existing behavior)
+	// Fill the corner junction as a solid square to prevent wall gaps at the bend.
 	private void connectLShaped(TileMap targetLayer, int srcX, int srcY, int destX, int destY) {
-		this.fillHorizontal(targetLayer, srcY, srcX, destX, 1);
-		this.fillVertical(targetLayer, destX, srcY, destY, 1);
+		int hw = 1;
+		this.fillHorizontal(targetLayer, srcY, srcX, destX, hw);
+		this.fillVertical(targetLayer, destX, srcY, destY, hw);
+		// Fill corner square to eliminate diagonal gaps at the L-bend
+		for (int r = srcY - hw; r <= srcY + hw; r++) {
+			for (int c = destX - hw; c <= destX + hw; c++) {
+				this.safeSetFloorTile(targetLayer, r, c);
+			}
+		}
 	}
 
 	// Zigzag: break path into segments with random offsets
@@ -410,22 +442,45 @@ public class DungeonGenerator {
 		midX2 = Math.max(1, Math.min(midX2, this.width - 2));
 		midY = Math.max(1, Math.min(midY, this.height - 2));
 
+		int hw = 1;
 		// Segment 1: src -> (midX1, midY)
-		this.fillHorizontal(targetLayer, srcY, srcX, midX1, 1);
-		this.fillVertical(targetLayer, midX1, srcY, midY, 1);
+		this.fillHorizontal(targetLayer, srcY, srcX, midX1, hw);
+		this.fillVertical(targetLayer, midX1, srcY, midY, hw);
+		// Fill corner at (midX1, srcY)
+		for (int r = srcY - hw; r <= srcY + hw; r++)
+			for (int c = midX1 - hw; c <= midX1 + hw; c++)
+				this.safeSetFloorTile(targetLayer, r, c);
 
 		// Segment 2: (midX1, midY) -> (midX2, midY)
-		this.fillHorizontal(targetLayer, midY, midX1, midX2, 1);
+		this.fillHorizontal(targetLayer, midY, midX1, midX2, hw);
+		// Fill corners at (midX1, midY) and (midX2, midY)
+		for (int r = midY - hw; r <= midY + hw; r++) {
+			for (int c = midX1 - hw; c <= midX1 + hw; c++)
+				this.safeSetFloorTile(targetLayer, r, c);
+			for (int c = midX2 - hw; c <= midX2 + hw; c++)
+				this.safeSetFloorTile(targetLayer, r, c);
+		}
 
 		// Segment 3: (midX2, midY) -> dest
-		this.fillVertical(targetLayer, midX2, midY, destY, 1);
-		this.fillHorizontal(targetLayer, destY, midX2, destX, 1);
+		this.fillVertical(targetLayer, midX2, midY, destY, hw);
+		this.fillHorizontal(targetLayer, destY, midX2, destX, hw);
+		// Fill corner at (midX2, destY)
+		for (int r = destY - hw; r <= destY + hw; r++)
+			for (int c = midX2 - hw; c <= midX2 + hw; c++)
+				this.safeSetFloorTile(targetLayer, r, c);
 	}
 
 	// Wide: same L-shaped but 5 tiles wide instead of 3
 	private void connectWide(TileMap targetLayer, int srcX, int srcY, int destX, int destY) {
-		this.fillHorizontal(targetLayer, srcY, srcX, destX, 2);
-		this.fillVertical(targetLayer, destX, srcY, destY, 2);
+		int hw = 2;
+		this.fillHorizontal(targetLayer, srcY, srcX, destX, hw);
+		this.fillVertical(targetLayer, destX, srcY, destY, hw);
+		// Fill corner square to eliminate diagonal gaps at the L-bend
+		for (int r = srcY - hw; r <= srcY + hw; r++) {
+			for (int c = destX - hw; c <= destX + hw; c++) {
+				this.safeSetFloorTile(targetLayer, r, c);
+			}
+		}
 	}
 
 	// Winding: walk toward dest with random perpendicular drift
