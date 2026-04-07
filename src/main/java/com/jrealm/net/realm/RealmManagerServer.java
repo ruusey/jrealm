@@ -1676,7 +1676,7 @@ public class RealmManagerServer implements Runnable {
 						if (effectType == ProjectileEffectType.PARALYZED) {
 							p.setDx(0); p.setDy(0);
 						}
-						this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, effectType.name());
+						this.sendTextEffectToPlayer(player, TextEffect.PLAYER_INFO, effectType.name());
 					}
 				}
 			}
@@ -1738,7 +1738,7 @@ public class RealmManagerServer implements Runnable {
 					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
 					if (effectType != null) {
 						e.addEffect(effectType, pe.getDuration());
-						this.broadcastTextEffect(targetRealm, EntityType.ENEMY, e, TextEffect.DAMAGE, effectType.name());
+						this.broadcastTextEffect(targetRealm, EntityType.ENEMY, e, TextEffect.PLAYER_INFO, effectType.name());
 					}
 				}
 			}
