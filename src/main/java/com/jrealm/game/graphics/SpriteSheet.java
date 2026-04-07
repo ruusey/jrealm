@@ -104,7 +104,7 @@ public class SpriteSheet {
 
     public SpriteSheet(Texture texture, SpriteModel model) {
         this(texture, model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize(),
-                model.getSpriteSize() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getSpriteSize(), model.getCol(),
+                model.getEffectiveSpriteHeight() == 0 ? GlobalConstants.BASE_SPRITE_SIZE : model.getEffectiveSpriteHeight(), model.getCol(),
                 model.getRow());
     }
 

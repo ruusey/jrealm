@@ -15,5 +15,10 @@ public class AnimationModel {
     private String className;
     private String spriteKey;
     private int spriteSize;
+    private int spriteHeight;
     private Map<String, AnimationSetModel> animations;
+
+    public int getEffectiveSpriteHeight() {
+        return this.spriteHeight > 0 ? this.spriteHeight : this.spriteSize;
+    }
 }

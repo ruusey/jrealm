@@ -12,5 +12,10 @@ public abstract class SpriteModel {
     private int row;
     private int col;
     private int spriteSize;
+    private int spriteHeight;
     private String angleOffset;
+
+    public int getEffectiveSpriteHeight() {
+        return this.spriteHeight > 0 ? this.spriteHeight : this.spriteSize;
+    }
 }

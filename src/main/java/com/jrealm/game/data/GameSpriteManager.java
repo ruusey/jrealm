@@ -49,7 +49,9 @@ public class GameSpriteManager {
             "lostHallsObjects8x8.png", "magicWoodsObjects8x8.png", "mountainTempleObjects8x8.png",
             "summerNexusObjects8x8.png",
             "oryxHordeChars16x16.png", "oryxHordeChars8x8.png",
-            "secludedThicketChars16x16.png" };
+            "secludedThicketChars16x16.png",
+            "lofiWorld.png", "lofiBosses16x16.png", "lofiBosses16x20.png",
+            "lofiCharacter10x10.png", "lofiProjectiles.png" };
 
     public static Map<String, Texture> TEXTURE_CACHE;
     public static Map<Integer, TextureRegion> TILE_SPRITES;
@@ -65,10 +67,12 @@ public class GameSpriteManager {
             }
             final Texture spriteTexture = GameSpriteManager.TEXTURE_CACHE.get(model.getSpriteKey());
             if (spriteTexture == null) continue;
+            int sw = model.getSpriteSize();
+            int sh = model.getEffectiveSpriteHeight();
             TextureRegion subRegion = new TextureRegion(spriteTexture,
-                    model.getCol() * model.getSpriteSize(),
-                    model.getRow() * model.getSpriteSize(),
-                    model.getSpriteSize(), model.getSpriteSize());
+                    model.getCol() * sw,
+                    model.getRow() * sh,
+                    sw, sh);
             subRegion.flip(false, true);
             GameSpriteManager.ITEM_SPRITES.put(gameItemId, subRegion);
         }
@@ -85,10 +89,12 @@ public class GameSpriteManager {
 
             final Texture spriteTexture = GameSpriteManager.TEXTURE_CACHE.get(model.getSpriteKey());
             if (spriteTexture == null) continue;
+            int sw = model.getSpriteSize();
+            int sh = model.getEffectiveSpriteHeight();
             TextureRegion subRegion = new TextureRegion(spriteTexture,
-                    model.getCol() * model.getSpriteSize(),
-                    model.getRow() * model.getSpriteSize(),
-                    model.getSpriteSize(), model.getSpriteSize());
+                    model.getCol() * sw,
+                    model.getRow() * sh,
+                    sw, sh);
             subRegion.flip(false, true);
             GameSpriteManager.TILE_SPRITES.put(tileId, subRegion);
         }
@@ -133,10 +139,12 @@ public class GameSpriteManager {
         if (texture == null) {
             return null;
         }
+        int sw = model.getSpriteSize();
+        int sh = model.getEffectiveSpriteHeight();
         final TextureRegion subRegion = new TextureRegion(texture,
-                model.getCol() * model.getSpriteSize(),
-                model.getRow() * model.getSpriteSize(),
-                model.getSpriteSize(), model.getSpriteSize());
+                model.getCol() * sw,
+                model.getRow() * sh,
+                sw, sh);
         subRegion.flip(false, true);
         return new Sprite(subRegion);
     }
@@ -251,9 +259,10 @@ public class GameSpriteManager {
         int initRow = idleSide != null ? idleSide.getFrames().get(0).getRow() : 0;
         int initCol = idleSide != null ? idleSide.getFrames().get(0).getCol() : 0;
 
-        int spSize = animModel.getSpriteSize() > 0 ? animModel.getSpriteSize() : GlobalConstants.BASE_SPRITE_SIZE;
-        final SpriteSheet classSprites = new SpriteSheet(classTexture, spSize,
-                spSize, initCol, initRow);
+        int spW = animModel.getSpriteSize() > 0 ? animModel.getSpriteSize() : GlobalConstants.BASE_SPRITE_SIZE;
+        int spH = animModel.getEffectiveSpriteHeight() > 0 ? animModel.getEffectiveSpriteHeight() : GlobalConstants.BASE_SPRITE_SIZE;
+        final SpriteSheet classSprites = new SpriteSheet(classTexture, spW,
+                spH, initCol, initRow);
 
         // Build each animation set from the JSON data
         for (Map.Entry<String, AnimationSetModel> entry : animModel.getAnimations().entrySet()) {
