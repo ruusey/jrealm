@@ -239,14 +239,21 @@ public class RealmManagerServer implements Runnable {
 		this.registerCommandHandlersReflection();
 		this.beginPlayerSync();
 		
+		Realm realm = null;
 		final DungeonGraphNode entryNode = GameDataManager.getEntryNode();
-		final Realm realm;
-		if (entryNode != null) {
-			realm = new Realm(true, entryNode.getMapId(), entryNode.getNodeId());
-			RealmManagerServer.log.info("[SERVER] Starting realm at graph node: {} ({})", entryNode.getNodeId(), entryNode.getDisplayName());
-		} else {
+		try {
+			if (entryNode != null) {
+				log.info("[SERVER] Creating realm for entry node: {} (mapId={})", entryNode.getNodeId(), entryNode.getMapId());
+				realm = new Realm(true, entryNode.getMapId(), entryNode.getNodeId());
+				log.info("[SERVER] Realm created successfully for node: {}", entryNode.getNodeId());
+			} else {
+				log.warn("[SERVER] No dungeon graph entry node found, falling back to mapId=2");
+				realm = new Realm(true, 2);
+			}
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to create entry realm (mapId={}). Falling back to mapId=2. Reason: {}",
+					entryNode != null ? entryNode.getMapId() : "null", e.getMessage(), e);
 			realm = new Realm(true, 2);
-			RealmManagerServer.log.warn("[SERVER] No dungeon graph entry node found, falling back to mapId=2");
 		}
 		realm.spawnRandomEnemies(realm.getMapId());
 

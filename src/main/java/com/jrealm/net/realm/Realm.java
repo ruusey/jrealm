@@ -1127,8 +1127,14 @@ public class Realm {
             this.enemies = new ConcurrentHashMap<>();
         }
 
-        TerrainGenerationParameters params = GameDataManager.TERRAINS
-                .get(GameDataManager.MAPS.get(mapId).getTerrainId());
+        final MapModel mapModel = GameDataManager.MAPS.get(mapId);
+        if (mapModel == null || mapModel.getTerrainId() < 0) {
+            log.info("MapId {} has no terrain (terrainId={}), skipping enemy spawning", mapId,
+                    mapModel != null ? mapModel.getTerrainId() : "null");
+            return;
+        }
+
+        TerrainGenerationParameters params = GameDataManager.TERRAINS.get(mapModel.getTerrainId());
         if (params == null) {
             log.warn("No Terrain generation params found for MapId {}, using default values", mapId);
             params = GameDataManager.TERRAINS.get(GameDataManager.MAPS.get(4).getTerrainId());
