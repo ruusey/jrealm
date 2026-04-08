@@ -40,7 +40,9 @@ public class WebSocketGameServer extends WebSocketServer {
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         final String clientKey = conn.getAttachment();
         if (clientKey != null) {
-            log.info("[WS-SERVER] WebSocket client disconnected: {} (code={}, reason={})", clientKey, code, reason);
+            final String initiator = remote ? "CLIENT" : "SERVER";
+            final String reasonStr = (reason == null || reason.isEmpty()) ? "none" : reason;
+            log.info("[WS-SERVER] WebSocket closed: {} — initiator={}, code={}, reason={}", clientKey, initiator, code, reasonStr);
             final ClientSession session = this.nioServer.getClients().get(clientKey);
             if (session != null) {
                 session.setShutdownProcessing(true);

@@ -545,7 +545,7 @@ public class ServerGameLogic {
 
 		log.info("Handling death ack for player {}", player.getName());
 		//final Realm playerRealm = mgr.findPlayerRealm(deathPacket.getPlayerId());
-		mgr.disconnectPlayer(player);
+		mgr.disconnectPlayer(player, "death ack received (permadeath)");
 
 	}
 
@@ -582,7 +582,7 @@ public class ServerGameLogic {
 					for (Player existing : mgr.getPlayers()) {
 						if (existing.getAccountUuid() != null && existing.getAccountUuid().equals(accountUuid)) {
 							log.info("[SERVER] Force-disconnecting previous session for account {} (re-login)", accountUuid);
-							mgr.disconnectPlayer(existing);
+							mgr.disconnectPlayer(existing, "force-disconnected: same account re-logged in");
 							disconnectedExisting = true;
 							break;
 						}
@@ -697,8 +697,7 @@ public class ServerGameLogic {
 		if (actualPlayer.getId() != declaredPlayerId) {
 			log.info("Player ids do not match for Packet {}. Actual PlayerId: {}. Declared PlayerId: {}", packet,
 					actualPlayerId, declaredPlayerId);
-			// Disconnect the player
-			mgr.disconnectPlayer(actualPlayer);
+			mgr.disconnectPlayer(actualPlayer, "player ID mismatch (actual=" + actualPlayerId + " declared=" + declaredPlayerId + ")");
 			return false;
 		}
 		return true;

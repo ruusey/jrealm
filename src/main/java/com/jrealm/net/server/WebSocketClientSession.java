@@ -29,7 +29,7 @@ public class WebSocketClientSession extends ClientSession {
             }
             return true;
         } catch (Exception e) {
-            log.error("[WS] Write failed for client {}. Reason: {}", this.getClientKey(), e.getMessage());
+            log.error("[WS] Write failed for client {}, marking for disconnect. Error: {} — {}", this.getClientKey(), e.getClass().getSimpleName(), e.getMessage());
             this.setShutdownProcessing(true);
             return true;
         }

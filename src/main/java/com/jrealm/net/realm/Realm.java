@@ -1039,7 +1039,7 @@ public class Realm {
                     this.shortIdAllocator);
             if (load != null) load.setDifficulty((byte) this.getZoneDifficulty(cam.getPos().x + cam.getWidth() / 2f, cam.getPos().y + cam.getHeight() / 2f));
         } catch (Exception e) {
-            Realm.log.error("Failed to get load Packet. Reason: {}");
+            Realm.log.error("Failed to get load Packet. Reason: {}", e.getMessage(), e);
         }
         return load;
     }

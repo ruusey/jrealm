@@ -400,6 +400,9 @@ public class RealmManagerServer implements Runnable {
 		}
 		staleSessions.forEach(entry -> {
 			try {
+				final boolean wasConnected = entry.getValue().isConnected();
+				final boolean wasShutdown = entry.getValue().isShutdownProcessing();
+				final String staleReason = !wasConnected ? "connection lost (isConnected=false)" : "shutdownProcessing flag already set";
 				entry.getValue().setShutdownProcessing(true);
 				// Remove the player from the realm before removing the client session
 				final Long dcPlayerId = this.remoteAddresses.get(entry.getKey());
@@ -408,6 +411,7 @@ public class RealmManagerServer implements Runnable {
 					if (playerRealm != null) {
 						final Player dcPlayer = playerRealm.getPlayer(dcPlayerId);
 						if (dcPlayer != null) {
+							log.info("[SERVER] Cleaning up stale session for player {} — reason: {}", dcPlayer.getName(), staleReason);
 							// Save vault chests if player is in vault
 							if (playerRealm.getMapId() == 1) {
 								try {
@@ -426,11 +430,14 @@ public class RealmManagerServer implements Runnable {
 							this.persistPlayerAsync(dcPlayer);
 							playerRealm.getExpiredPlayers().add(dcPlayerId);
 							playerRealm.removePlayer(dcPlayer);
-							log.info("[SERVER] Removed disconnected player {} from realm", dcPlayer.getName());
 						}
+					} else {
+						log.info("[SERVER] Cleaning up stale session {} (no player in realm) — reason: {}", entry.getKey(), staleReason);
 					}
 					this.clearPlayerState(dcPlayerId);
 					this.remoteAddresses.remove(entry.getKey());
+				} else {
+					log.info("[SERVER] Cleaning up stale session {} (no mapped player) — reason: {}", entry.getKey(), staleReason);
 				}
 				entry.getValue().close();
 				this.server.getClients().remove(entry.getKey());
@@ -520,7 +527,7 @@ public class RealmManagerServer implements Runnable {
 				final Map<Long, LoadPacket> cellLoadCache = new HashMap<>();
 				final Map<Long, ObjectMovePacket> cellMoveCache = new HashMap<>();
 
-				final List<Player> toRemove = new ArrayList<>();
+				final Map<Player, String> toRemoveReasons = new java.util.LinkedHashMap<>();
 				final float viewportRadius = 10 * GlobalConstants.BASE_TILE_SIZE;
 
 				// Snapshot teleport flags before packet building clears them
@@ -743,7 +750,8 @@ public class RealmManagerServer implements Runnable {
 						final Long playerLastHeartbeatTime = this.playerLastHeartbeatTime.get(player.getKey());
 						if (playerLastHeartbeatTime != null
 								&& ((Instant.now().toEpochMilli() - playerLastHeartbeatTime) > 5000)) {
-							toRemove.add(player.getValue());
+							long elapsed = Instant.now().toEpochMilli() - playerLastHeartbeatTime;
+							toRemoveReasons.put(player.getValue(), "heartbeat timeout (" + elapsed + "ms since last heartbeat)");
 						}
 
 					} catch (Exception e) {
@@ -752,8 +760,8 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 
-				for (Player player : toRemove) {
-					this.disconnectPlayer(player);
+				for (Map.Entry<Player, String> entry : toRemoveReasons.entrySet()) {
+					this.disconnectPlayer(entry.getKey(), entry.getValue());
 				}
 
 				// Reset contentsChanged AFTER all players processed
@@ -894,8 +902,8 @@ public class RealmManagerServer implements Runnable {
 		return entry != null ? entry.getKey() : null;
 	}
 
-	public void disconnectPlayer(Player player) {
-		log.info("[SERVER] Disconnecting Player {}", player.getName());
+	public void disconnectPlayer(Player player, String reason) {
+		log.info("[SERVER] Disconnecting Player {} — reason: {}", player.getName(), reason);
 
 		// Step 1: Remove player from realm (most critical — prevents ghost players)
 		try {
