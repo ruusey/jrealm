@@ -146,7 +146,7 @@ public class ServerGameLogic {
 			final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
 
 			final MapModel mapModel = GameDataManager.MAPS.get(1);
-			final Realm generatedRealm = new Realm(true, 1, -1);
+			final Realm generatedRealm = new Realm(true, 1, "vault");
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, chestLoc);
 			exitPortal.setNeverExpires();
@@ -250,7 +250,7 @@ public class ServerGameLogic {
 					final int bossEnemyId = dungeonParams.getBossEnemyId();
 					if (bossEnemyId > 0) {
 						final Enemy boss = GameObjectUtils.getEnemyFromId(bossEnemyId, bossSpawnPos.clone());
-						final int bossMult = (targetNode != null) ? targetNode.getDifficulty() : 4;
+						final int bossMult = (targetNode != null) ? (int) targetNode.getDifficulty() : 4;
 						boss.setHealth(boss.getHealth() * bossMult);
 						boss.getStats().setHp((short) (boss.getStats().getHp() * bossMult));
 						generatedRealm.addEnemy(boss);

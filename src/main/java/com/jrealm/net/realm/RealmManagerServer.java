@@ -242,7 +242,7 @@ public class RealmManagerServer implements Runnable {
 		final DungeonGraphNode entryNode = GameDataManager.getEntryNode();
 		final Realm realm;
 		if (entryNode != null) {
-			realm = new Realm(true, entryNode.getMapId(), 0, entryNode.getNodeId());
+			realm = new Realm(true, entryNode.getMapId(), entryNode.getNodeId());
 			RealmManagerServer.log.info("[SERVER] Starting realm at graph node: {} ({})", entryNode.getNodeId(), entryNode.getDisplayName());
 		} else {
 			realm = new Realm(true, 2);

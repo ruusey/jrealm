@@ -1037,7 +1037,7 @@ public class Realm {
                     containersToLoad.toArray(new LootContainer[0]), bulletsToLoad.toArray(new Bullet[0]),
                     enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]),
                     this.shortIdAllocator);
-            if (load != null) load.setDifficulty((byte) this.getZoneDifficulty(cam.x + cam.width / 2f, cam.y + cam.height / 2f));
+            if (load != null) load.setDifficulty((byte) this.getZoneDifficulty(cam.getPos().x + cam.getWidth() / 2f, cam.getPos().y + cam.getHeight() / 2f));
         } catch (Exception e) {
             Realm.log.error("Failed to get load Packet. Reason: {}");
         }
