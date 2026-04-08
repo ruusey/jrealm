@@ -950,9 +950,15 @@ public class RealmManagerServer implements Runnable {
 			Optional<Realm> entry = this.findRealmForNode(entryNode.getNodeId());
 			if (entry.isPresent()) return entry.get();
 		}
-		// Fallback: any shared non-vault realm
+		// Fallback: any non-vault realm (prefer by nodeId, then any)
 		for (final Realm realm : this.realms.values()) {
 			if (realm.isOverworld() && realm.getMapId() != 1) {
+				return realm;
+			}
+		}
+		// Last resort: return the first realm that isn't a vault
+		for (final Realm realm : this.realms.values()) {
+			if (realm.getMapId() != 1) {
 				return realm;
 			}
 		}

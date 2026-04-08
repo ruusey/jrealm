@@ -622,6 +622,9 @@ public class ServerGameLogic {
 						(0 + (JRealmGame.height / 2)) - GlobalConstants.PLAYER_SIZE);
 				player = new Player(assignedId, playerPos, GlobalConstants.PLAYER_SIZE, cls);
 				final Realm targetRealm = mgr.getTopRealm();
+				if (targetRealm == null) {
+					throw new Exception("No top-level realm available. Server may still be starting up.");
+				}
 				final ClientSession userSession = mgr.getServer().getClients().get(command.getSrcIp());
 				if (userSession == null) {
 					throw new Exception("Client session not found for " + command.getSrcIp());
