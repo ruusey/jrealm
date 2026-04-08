@@ -1926,6 +1926,23 @@ public class RealmManagerServer implements Runnable {
 
 			// Get a random loot bag drop based on this enemies loot table
 			final List<GameItem> lootToDrop = lootTable.getLootDrop();
+
+			// Difficulty-based loot tier upgrade: higher difficulty zones have a chance
+			// to bump each dropped item up one tier
+			final float diff = enemy.getDifficulty();
+			if (diff > GlobalConstants.LOOT_TIER_UPGRADE_MIN_DIFFICULTY && !lootToDrop.isEmpty()) {
+				final float upgradeChance = (GlobalConstants.LOOT_TIER_UPGRADE_BASE_PERCENT
+						+ GlobalConstants.LOOT_TIER_UPGRADE_PER_DIFFICULTY * diff) / 100.0f;
+				for (int i = 0; i < lootToDrop.size(); i++) {
+					if (Realm.RANDOM.nextFloat() < upgradeChance) {
+						final GameItem upgraded = findUpgradedItem(lootToDrop.get(i));
+						if (upgraded != null) {
+							lootToDrop.set(i, upgraded);
+						}
+					}
+				}
+			}
+
 			if (lootToDrop.size() > 0) {
 				final LootContainer dropsBag = new LootContainer(LootTier.BLUE, enemy.getPos().withNoise(64, 64),
 						lootToDrop.toArray(new GameItem[0]));
@@ -2360,5 +2377,25 @@ public class RealmManagerServer implements Runnable {
 
 	public void releaseRealmLock() {
 		this.realmLock.unlock();
+	}
+
+	/**
+	 * Attempts to find the same item type (slot + class) one tier higher.
+	 * Returns null if no upgrade exists (already max tier, consumable, or untiered).
+	 */
+	private static GameItem findUpgradedItem(GameItem item) {
+		if (item == null || item.isConsumable() || item.getTier() < 0) return null;
+		final byte nextTier = (byte) (item.getTier() + 1);
+		final byte slot = item.getTargetSlot();
+		final byte targetClass = item.getTargetClass();
+		for (GameItem candidate : GameDataManager.GAME_ITEMS.values()) {
+			if (candidate.getTier() == nextTier
+					&& candidate.getTargetSlot() == slot
+					&& candidate.getTargetClass() == targetClass
+					&& !candidate.isConsumable()) {
+				return candidate;
+			}
+		}
+		return null;
 	}
 }
