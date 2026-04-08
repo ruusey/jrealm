@@ -57,6 +57,13 @@ public class Player extends Entity {
 	// Last input sequence number processed by the server (for client reconciliation)
 	@Builder.Default
 	private int lastInputSeq = 0;
+	// Sequence-numbered input queue fields for new movement netcode
+	@Builder.Default
+	private int lastProcessedInputSeq = 0;
+	@Builder.Default
+	private byte currentDirFlags = 0;
+	@Builder.Default
+	private transient java.util.Queue<int[]> inputQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
 	public Player() {
 		super(0, null, 0);
@@ -64,7 +71,8 @@ public class Player extends Entity {
 
 	public Player(GameItem[] inventory, long lastStatsTime, LootContainer currentLootContainer, int classId,
 			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless, boolean bot,
-			String chatRole, int lastInputSeq) {
+			String chatRole, int lastInputSeq, int lastProcessedInputSeq, byte currentDirFlags,
+			java.util.Queue<int[]> inputQueue) {
 		super(0, null, 0);
 		this.inventory = inventory;
 		this.lastStatsTime = lastStatsTime;
@@ -78,6 +86,9 @@ public class Player extends Entity {
 		this.bot = bot;
 		this.chatRole = chatRole;
 		this.lastInputSeq = lastInputSeq;
+		this.lastProcessedInputSeq = lastProcessedInputSeq;
+		this.currentDirFlags = currentDirFlags;
+		this.inputQueue = inputQueue != null ? inputQueue : new java.util.concurrent.ConcurrentLinkedQueue<>();
 	}
 
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
@@ -368,6 +379,13 @@ public class Player extends Entity {
 		if (this.right && this.left) {
 			this.right = false;
 			this.left = false;
+		}
+	}
+
+	public void queueInput(int seq, byte dirFlags) {
+		if (this.inputQueue == null) this.inputQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
+		if (seq > this.lastProcessedInputSeq) {
+			this.inputQueue.add(new int[]{seq, dirFlags});
 		}
 	}
 

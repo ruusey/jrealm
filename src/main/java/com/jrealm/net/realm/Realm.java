@@ -93,6 +93,9 @@ public class Realm {
     // Pending poison throws — tracked per tick instead of blocking a thread pool thread.
     private final List<PoisonThrowState> pendingPoisonThrows = new java.util.ArrayList<>();
 
+    // Active traps — Huntress trap zones that trigger when enemies walk into them.
+    private final List<TrapState> activeTraps = new java.util.ArrayList<>();
+
     // Active decoys — lightweight tick-driven entities for Trickster prism ability.
     private final List<DecoyState> activeDecoys = new java.util.ArrayList<>();
 
@@ -157,6 +160,35 @@ public class Realm {
         boolean hasLanded() {
             return java.time.Instant.now().toEpochMilli() >= landTime;
         }
+    }
+
+    static class TrapState {
+        final long placeTime;   // when the trap was placed (after throw lands)
+        final long expireTime;  // when the trap disappears if not triggered
+        final long sourcePlayerId;
+        final float x, y;
+        final float triggerRadius; // enemies within this radius trigger the trap
+        final short effectId;     // effect to apply (e.g., PARALYZED=2)
+        final long effectDuration;
+        final int damage;
+        boolean armed = false;    // becomes armed after throw lands
+        boolean triggered = false;
+
+        TrapState(long throwDelayMs, long sourcePlayerId, float x, float y,
+                  float triggerRadius, short effectId, long effectDuration, int damage, long lifetimeMs) {
+            this.placeTime = java.time.Instant.now().toEpochMilli() + throwDelayMs;
+            this.expireTime = this.placeTime + lifetimeMs;
+            this.sourcePlayerId = sourcePlayerId;
+            this.x = x;
+            this.y = y;
+            this.triggerRadius = triggerRadius;
+            this.effectId = effectId;
+            this.effectDuration = effectDuration;
+            this.damage = damage;
+        }
+
+        boolean hasLanded() { return java.time.Instant.now().toEpochMilli() >= placeTime; }
+        boolean isExpired() { return java.time.Instant.now().toEpochMilli() >= expireTime; }
     }
 
     static class PoisonDotState {
@@ -1329,6 +1361,76 @@ public class Realm {
                                      float radius, int totalDamage, long poisonDuration) {
         this.pendingPoisonThrows.add(new PoisonThrowState(delayMs, sourcePlayerId, landX, landY,
                 radius, totalDamage, poisonDuration));
+    }
+
+    public void registerTrap(long throwDelayMs, long sourcePlayerId, float x, float y,
+                             float triggerRadius, short effectId, long effectDuration, int damage, long lifetimeMs) {
+        this.activeTraps.add(new TrapState(throwDelayMs, sourcePlayerId, x, y,
+                triggerRadius, effectId, effectDuration, damage, lifetimeMs));
+    }
+
+    public void processTraps(RealmManagerServer mgr) {
+        if (this.activeTraps.isEmpty()) return;
+        final java.util.Iterator<TrapState> it = this.activeTraps.iterator();
+        while (it.hasNext()) {
+            final TrapState trap = it.next();
+            if (trap.isExpired()) { it.remove(); continue; }
+            if (!trap.hasLanded()) continue;
+            if (!trap.armed) {
+                trap.armed = true;
+                // Broadcast armed trap visual to all players in this realm
+                for (final Player p : this.players.values()) {
+                    if (p.isHeadless()) continue;
+                    mgr.enqueueServerPacket(p, com.jrealm.net.client.packet.CreateEffectPacket.aoeEffect(
+                            (short) 7, trap.x, trap.y, trap.triggerRadius,
+                            (short) (trap.expireTime - java.time.Instant.now().toEpochMilli())));
+                }
+            }
+            boolean triggered = false;
+            final float triggerSq = trap.triggerRadius * trap.triggerRadius;
+            for (final Enemy enemy : this.enemies.values()) {
+                if (enemy.getDeath()) continue;
+                float ecx = enemy.getPos().x + enemy.getSize() / 2f;
+                float ecy = enemy.getPos().y + enemy.getSize() / 2f;
+                float dx = ecx - trap.x; float dy = ecy - trap.y;
+                if (dx * dx + dy * dy <= triggerSq) { triggered = true; break; }
+            }
+            if (triggered) {
+                float blastRadius = trap.triggerRadius + 16.0f;
+                float blastSq = blastRadius * blastRadius;
+                // Broadcast trigger visual to all players in this realm
+                for (final Player p : this.players.values()) {
+                    if (p.isHeadless()) continue;
+                    mgr.enqueueServerPacket(p, com.jrealm.net.client.packet.CreateEffectPacket.aoeEffect(
+                            (short) 8, trap.x, trap.y, blastRadius, (short) 500));
+                }
+                final com.jrealm.game.contants.ProjectileEffectType effectType =
+                        com.jrealm.game.contants.ProjectileEffectType.valueOf(trap.effectId);
+                for (final Enemy enemy : this.enemies.values()) {
+                    if (enemy.getDeath()) continue;
+                    float ecx = enemy.getPos().x + enemy.getSize() / 2f;
+                    float ecy = enemy.getPos().y + enemy.getSize() / 2f;
+                    float dx = ecx - trap.x; float dy = ecy - trap.y;
+                    if (dx * dx + dy * dy <= blastSq) {
+                        if (effectType != null) {
+                            enemy.addEffect(effectType, trap.effectDuration);
+                            mgr.broadcastTextEffect(this, com.jrealm.game.contants.EntityType.ENEMY, enemy,
+                                    com.jrealm.game.contants.TextEffect.PLAYER_INFO, "SLOWED");
+                        }
+                        if (trap.damage > 0) {
+                            enemy.setHealth(enemy.getHealth() - trap.damage);
+                            mgr.broadcastTextEffect(this, com.jrealm.game.contants.EntityType.ENEMY, enemy,
+                                    com.jrealm.game.contants.TextEffect.DAMAGE, "-" + trap.damage);
+                        }
+                    }
+                }
+                it.remove();
+            }
+        }
+    }
+
+    public void removePlayerTraps(long playerId) {
+        this.activeTraps.removeIf(t -> t.sourcePlayerId == playerId);
     }
 
     /**

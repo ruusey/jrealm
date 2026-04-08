@@ -135,10 +135,14 @@ public class Enemy extends Entity {
     }
 
     private float getPhaseSpeed(EnemyPhase phase) {
+        float speed;
         if (phase != null && phase.getMovement() != null) {
-            return phase.getMovement().getSpeed();
+            speed = phase.getMovement().getSpeed();
+        } else {
+            speed = (this.model.getMaxSpeed() > 0) ? this.model.getMaxSpeed() : CHASE_SPEED;
         }
-        return (this.model.getMaxSpeed() > 0) ? this.model.getMaxSpeed() : CHASE_SPEED;
+        if (this.hasEffect(ProjectileEffectType.SLOWED)) speed *= 0.5f;
+        return speed;
     }
 
     // ========== MOVEMENT PATTERNS ==========

@@ -647,7 +647,7 @@ public class RealmManagerServer implements Runnable {
 						if (isMoving || teleportedPlayers.contains(player.getKey()) || periodicIdleAck) {
 							this.enqueueServerPacket(player.getValue(),
 								PlayerPosAckPacket.from(
-									player.getValue().getLastInputSeq(),
+									player.getValue().getLastProcessedInputSeq(),
 									player.getValue().getPos().x,
 									player.getValue().getPos().y));
 						}
@@ -1253,6 +1253,7 @@ public class RealmManagerServer implements Runnable {
 		this.removeExpiredPortals();
 		for (final Realm realm : this.realms.values()) {
 			realm.processPoisonThrows(this);
+			realm.processTraps(this);
 			realm.processPoisonDots(this);
 			realm.processDecoys(this);
 		}
@@ -1332,18 +1333,74 @@ public class RealmManagerServer implements Runnable {
 	private void movePlayer(final long realmId, final Player p) {
 		// If the player is paralyzed, stop them and return.
         if (p.hasEffect(ProjectileEffectType.PARALYZED)) {
+            p.setCurrentDirFlags((byte) 0);
+            p.setDx(0); p.setDy(0);
             p.setUp(false);
             p.setDown(false);
             p.setRight(false);
             p.setLeft(false);
+            // Still increment lastProcessedInputSeq so acks stay in sync
+            if (p.getInputQueue() == null) p.setInputQueue(new java.util.concurrent.ConcurrentLinkedQueue<>());
+            while (!p.getInputQueue().isEmpty()) {
+                int[] queued = p.getInputQueue().poll();
+                p.setLastProcessedInputSeq(queued[0]);
+            }
             return;
         }
+
+		// Process ONE input per server tick (1:1 with client simulation ticks).
+		// The client simulates at 64Hz and sends one input per tick. The server
+		// must also process one per tick to keep sequence numbers aligned.
+		// If multiple inputs queued (burst from network), process just the next one.
+		// If none queued, keep using the last dirFlags (repeat last direction).
+		if (p.getInputQueue() == null) p.setInputQueue(new java.util.concurrent.ConcurrentLinkedQueue<>());
+		// Discard stale inputs (seq <= already processed)
+		while (!p.getInputQueue().isEmpty() && p.getInputQueue().peek()[0] <= p.getLastProcessedInputSeq()) {
+		    p.getInputQueue().poll();
+		}
+		// Take exactly one input if available
+		if (!p.getInputQueue().isEmpty()) {
+		    int[] nextInput = p.getInputQueue().poll();
+		    p.setCurrentDirFlags((byte) nextInput[1]);
+		    p.setLastProcessedInputSeq(nextInput[0]);
+		}
+
+		// Compute velocity from dirFlags
+		byte flags = p.getCurrentDirFlags();
+		boolean up    = (flags & 0x01) != 0;
+		boolean down  = (flags & 0x02) != 0;
+		boolean left  = (flags & 0x04) != 0;
+		boolean right = (flags & 0x08) != 0;
+
+		float tilesPerSec = 4.0f + 5.6f * (p.getComputedStats().getSpd() / 75.0f);
+		if (p.hasEffect(ProjectileEffectType.SPEEDY)) tilesPerSec *= 1.5f;
+		if (p.hasEffect(ProjectileEffectType.SLOWED)) tilesPerSec *= 0.5f;
+		float spd = tilesPerSec * 32.0f / 64.0f;
+
+		boolean movingX = left || right;
+		boolean movingY = up || down;
+		if (movingX && movingY) {
+		    spd = (float) (spd * Math.sqrt(2) / 2.0);
+		}
+
+		p.setDx(right ? spd : left ? -spd : 0.0f);
+		p.setDy(down ? spd : up ? -spd : 0.0f);
+
+		if (!movingX && !movingY) {
+		    p.setDx(0);
+		    p.setDy(0);
+		}
+
+		// Also sync the legacy direction booleans for backward compatibility
+		p.setUp(up);
+		p.setDown(down);
+		p.setLeft(left);
+		p.setRight(right);
 
 		p.setLastInputSeq(p.getLastInputSeq() + 1);
 
 		final Realm targetRealm = this.realms.get(realmId);
-		// dx/dy already include SPEEDY/DAZED from handlePlayerMoveServer velocity calc.
-		// Only apply slow tile factor here.
+		// Apply slow tile factor
 		final float slow = targetRealm.getTileManager().collidesSlowTile(p) ? 3.0f : 1.0f;
 		final float effDx = p.getDx() / slow;
 		final float effDy = p.getDy() / slow;
@@ -1482,7 +1539,11 @@ public class RealmManagerServer implements Runnable {
 					&& !targetRealm.getTileManager().isVoidTile(pos, 0, 0)) {
 				player.setPos(pos);
 			} else if (!abilityItem.getEffect().getEffectId().equals(ProjectileEffectType.TELEPORT)) {
-				player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
+				// Only apply effect to self if the effect is marked as self-targeting.
+				// Non-self effects (e.g., Huntress trap) are handled by item scripts.
+				if (abilityItem.getEffect().isSelf()) {
+					player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
+				}
 			}
 		}
 		// Invoke any item specific scripts
@@ -2018,6 +2079,7 @@ public class RealmManagerServer implements Runnable {
 		for (final Realm realm : this.realms.values()) {
 			realm.removePlayerPoisonDots(playerId);
 			realm.removePlayerPoisonThrows(playerId);
+			realm.removePlayerTraps(playerId);
 			realm.removePlayerDecoys(playerId);
 		}
 		// Clear cached provisions on disconnect

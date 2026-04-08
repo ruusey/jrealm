@@ -61,7 +61,6 @@ import com.jrealm.net.entity.NetPortal;
 import com.jrealm.net.entity.NetTile;
 import com.jrealm.game.entity.item.LootContainer;
 import com.jrealm.game.entity.GameObject;
-import com.jrealm.util.Cardinality;
 import com.jrealm.util.PacketHandlerServer;
 import com.jrealm.util.WorkerThread;
 
@@ -320,6 +319,13 @@ public class ServerGameLogic {
 			return;
 		}
 		mgr.getPlayerLastHeartbeatTime().put(player.getId(), heartbeatPacket.getTimestamp());
+		// Echo heartbeat back with the ORIGINAL client timestamp so the client
+		// can measure true round-trip time (not first-random-packet latency).
+		try {
+			mgr.enqueueServerPacket(player, HeartbeatPacket.from(player.getId(), heartbeatPacket.getTimestamp()));
+		} catch (Exception e) {
+			log.debug("Failed to echo heartbeat: {}", e.getMessage());
+		}
 	}
 
 	@PacketHandlerServer(LoginAckPacket.class)
@@ -348,48 +354,8 @@ public class ServerGameLogic {
 			return;
 		}
 		final Player toMove = realm.getPlayer(playerMovePacket.getEntityId());
-		// lastInputSeq is now incremented per-tick in movePlayer(), not per-packet
-		if (toMove.hasEffect(ProjectileEffectType.PARALYZED))
-			return;
-		boolean doMove = playerMovePacket.isMove();
-
-		// Update direction flags from packet
-		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
-			toMove.setLeft(false);
-			toMove.setRight(false);
-			toMove.setDown(false);
-			toMove.setUp(false);
-		} else if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
-			toMove.setUp(doMove);
-		} else if (playerMovePacket.getDirection().equals(Cardinality.SOUTH)) {
-			toMove.setDown(doMove);
-		} else if (playerMovePacket.getDirection().equals(Cardinality.EAST)) {
-			toMove.setRight(doMove);
-		} else if (playerMovePacket.getDirection().equals(Cardinality.WEST)) {
-			toMove.setLeft(doMove);
-		}
-
-		// Recalculate velocity from current flags — always consistent,
-		// no intermediate state where one axis has cardinal speed and
-		// the other has diagonal speed.
-		float tilesPerSec = 4.0f + 5.6f * (toMove.getComputedStats().getSpd() / 75.0f);
-		if (toMove.hasEffect(ProjectileEffectType.SPEEDY)) tilesPerSec *= 1.5f;
-		// DAZED only affects dex (attack speed), not movement speed
-		float spd = tilesPerSec * 32.0f / 64.0f;
-
-		boolean movingX = toMove.getIsLeft() || toMove.getIsRight();
-		boolean movingY = toMove.getIsUp() || toMove.getIsDown();
-		if (movingX && movingY) {
-			spd = (float) ((spd * Math.sqrt(2)) / 2.0f);
-		}
-
-		toMove.setDx(toMove.getIsRight() ? spd : toMove.getIsLeft() ? -spd : 0.0f);
-		toMove.setDy(toMove.getIsDown() ? spd : toMove.getIsUp() ? -spd : 0.0f);
-
-		if (playerMovePacket.getDirection().equals(Cardinality.NONE)) {
-			toMove.setDx(0);
-			toMove.setDy(0);
-		}
+		// Queue the input for processing in movePlayer() on the next tick
+		toMove.queueInput(playerMovePacket.getSeq(), playerMovePacket.getDirFlags());
 	}
 
 	public static void handleUseAbilityServer(RealmManagerServer mgr, Packet packet) {

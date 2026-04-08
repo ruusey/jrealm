@@ -24,7 +24,6 @@ import com.jrealm.net.server.packet.HeartbeatPacket;
 import com.jrealm.net.server.packet.PlayerMovePacket;
 import com.jrealm.net.server.packet.PlayerShootPacket;
 import com.jrealm.net.server.packet.UseAbilityPacket;
-import com.jrealm.util.Cardinality;
 import com.jrealm.util.TimedWorkerThread;
 
 import lombok.Getter;
@@ -225,10 +224,11 @@ public class StressTestClient implements Runnable {
                 this.movePhase = (this.movePhase + 1) % 4;
             }
             // Offset by clientIndex so each bot goes a different direction
+            // dirFlags bitmask: bit0=up, bit1=down, bit2=left, bit3=right
             int dirIdx = (this.movePhase + this.clientIndex) % 4;
-            Cardinality[] dirs = { Cardinality.NORTH, Cardinality.EAST, Cardinality.SOUTH, Cardinality.WEST };
-            Cardinality dir = dirs[dirIdx];
-            PlayerMovePacket movePacket = new PlayerMovePacket(this.assignedPlayerId, dir.cardinalityId, true, 0);
+            byte[] dirFlagsMap = { 0x01, 0x08, 0x02, 0x04 }; // up, right, down, left
+            byte dirFlags = dirFlagsMap[dirIdx];
+            PlayerMovePacket movePacket = new PlayerMovePacket(this.assignedPlayerId, this.moveTick, dirFlags);
             this.outboundPacketQueue.add(movePacket);
 
             // Send shoot packet every other tick to create projectiles (more server broadcast data)

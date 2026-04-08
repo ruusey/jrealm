@@ -5,10 +5,8 @@ import com.jrealm.net.Packet;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.PacketId;
 import com.jrealm.net.core.SerializableField;
-import com.jrealm.net.core.nettypes.SerializableBoolean;
 import com.jrealm.net.core.nettypes.SerializableByte;
 import com.jrealm.net.core.nettypes.SerializableLong;
-import com.jrealm.util.Cardinality;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -26,19 +24,13 @@ import lombok.extern.slf4j.Slf4j;
 public class PlayerMovePacket extends Packet {
 	@SerializableField(order = 0, type = SerializableLong.class)
     private long entityId;
-	@SerializableField(order = 1, type = SerializableByte.class)
-    private byte dir;
-	@SerializableField(order = 2, type = SerializableBoolean.class)
-    private boolean move;
-	@SerializableField(order = 3, type = com.jrealm.net.core.nettypes.SerializableInt.class)
+	@SerializableField(order = 1, type = com.jrealm.net.core.nettypes.SerializableInt.class)
     private int seq;
+	@SerializableField(order = 2, type = SerializableByte.class)
+    private byte dirFlags;
 
-    public static PlayerMovePacket from(Player player, Cardinality direction, boolean move) throws Exception {
-    	final PlayerMovePacket read = new PlayerMovePacket(player.getId(), direction.cardinalityId, move, 0);
+    public static PlayerMovePacket from(Player player, int seq, byte dirFlags) throws Exception {
+    	final PlayerMovePacket read = new PlayerMovePacket(player.getId(), seq, dirFlags);
         return read;
-    }
-
-    public Cardinality getDirection() {
-        return Cardinality.valueOf(this.dir);
     }
 }

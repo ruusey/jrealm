@@ -10,7 +10,7 @@ import com.jrealm.game.entity.Player;
 
 public enum CharacterClass {
     ROGUE(0), ARCHER(1), WIZARD(2), PRIEST(3), WARRIOR(4), KNIGHT(5), PALLADIN(6),
-    ASSASSIN(7), NECROMANCER(8), MYSTIC(9), TRICKSTER(10), SORCERER(11),
+    ASSASSIN(7), NECROMANCER(8), MYSTIC(9), TRICKSTER(10), SORCERER(11), HUNTRESS(12),
 
     ROBE(-1), LEATHER(-2), HEAVY(-3), ALL(-4),
     STAFF_USER(-5), WAND_USER(-6), DAGGER_USER(-7), BOW_USER(-8);
@@ -40,7 +40,8 @@ public enum CharacterClass {
 
     public static boolean isLeatherClass(CharacterClass c) {
         return c.equals(CharacterClass.ARCHER) || c.equals(CharacterClass.ROGUE)
-            || c.equals(CharacterClass.ASSASSIN) || c.equals(CharacterClass.TRICKSTER);
+            || c.equals(CharacterClass.ASSASSIN) || c.equals(CharacterClass.TRICKSTER)
+            || c.equals(CharacterClass.HUNTRESS);
     }
 
     public static boolean isHeavyClass(CharacterClass c) {
@@ -76,7 +77,7 @@ public enum CharacterClass {
     }
 
     public static boolean isBowUser(CharacterClass c) {
-        return c.equals(ARCHER);
+        return c.equals(ARCHER) || c.equals(HUNTRESS);
     }
 
     public static boolean isValidUser(Player p, byte requiredClass) {

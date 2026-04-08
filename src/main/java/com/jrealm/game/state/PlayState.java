@@ -414,15 +414,18 @@ public class PlayState extends GameState {
                 }
 
                 if (!this.lastDirectionMap.equals(lastDirectionTempMap)) {
-                    for (Map.Entry<Cardinality, Boolean> entry : lastDirectionTempMap.entrySet()) {
-                        if (this.lastDirectionMap.get(entry.getKey()) != entry.getValue()) {
-                            try {
-                                PlayerMovePacket packet = PlayerMovePacket.from(player, entry.getKey(), entry.getValue());
-                                this.realmManager.getClient().sendRemote(packet);
-                            } catch (Exception e) {
-                                PlayState.log.error("Failed to create player move packet. Reason: {}", e);
-                            }
-                        }
+                    try {
+                        // Build dirFlags bitmask: bit0=up, bit1=down, bit2=left, bit3=right
+                        byte dirFlags = 0;
+                        if (player.getIsUp())    dirFlags |= 0x01;
+                        if (player.getIsDown())  dirFlags |= 0x02;
+                        if (player.getIsLeft())  dirFlags |= 0x04;
+                        if (player.getIsRight()) dirFlags |= 0x08;
+                        player.setLastInputSeq(player.getLastInputSeq() + 1);
+                        PlayerMovePacket packet = PlayerMovePacket.from(player, player.getLastInputSeq(), dirFlags);
+                        this.realmManager.getClient().sendRemote(packet);
+                    } catch (Exception e) {
+                        PlayState.log.error("Failed to create player move packet. Reason: {}", e);
                     }
                     this.lastDirectionMap = lastDirectionTempMap;
                 }
