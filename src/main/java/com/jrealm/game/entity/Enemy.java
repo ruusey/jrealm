@@ -45,7 +45,7 @@ public class Enemy extends Entity {
     private int enemyId;
     private int weaponId = -1;
     private int idleTime = 0;
-    private int healthMultiplier = 1;
+    private float difficulty = 1.0f;
     private Stats stats;
 
     // Phase-based state

@@ -147,13 +147,13 @@ public class RealmOverseer {
             if (spawnPos == null) continue;
 
             List<EnemyModel> spawnList = defaultList;
-            int healthMult = realm.getDifficultyMultiplier();
+            float diff = realm.getDifficulty();
 
             if (hasZones) {
                 OverworldZone zone = realm.getTileManager().getZoneForPosition(spawnPos.x, spawnPos.y);
                 if (zone != null) {
                     spawnList = enemiesByGroup.getOrDefault(zone.getEnemyGroupOrdinal(), defaultList);
-                    healthMult = Math.max(1, zone.getDifficulty());
+                    diff = Math.max(1.0f, zone.getDifficulty());
                 }
             }
 
@@ -163,9 +163,9 @@ public class RealmOverseer {
             Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
                 spawnPos.clone(), toSpawn.getSize(), toSpawn.getAttackId());
             enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
-            enemy.setHealth(enemy.getHealth() * healthMult);
-            enemy.setHealthMultiplier(healthMult);
-            enemy.getStats().setHp((short) (enemy.getStats().getHp() * healthMult));
+            enemy.setDifficulty(diff);
+            enemy.setHealth((int) (enemy.getHealth() * diff));
+            enemy.getStats().setHp((short) (enemy.getStats().getHp() * diff));
             enemy.setPos(spawnPos);
             realm.addEnemy(enemy);
         }
@@ -205,13 +205,13 @@ public class RealmOverseer {
         Vector2f spawnPos = realm.getTileManager().getSafePosition();
         if (spawnPos == null) return;
 
-        int healthMult = realm.getDifficultyMultiplier() * 2;
+        float diff = realm.getZoneDifficulty(spawnPos.x, spawnPos.y) * 2.0f;
         Enemy boss = new Monster(Realm.RANDOM.nextLong(), eventBoss.getEnemyId(),
             spawnPos.clone(), eventBoss.getSize(), eventBoss.getAttackId());
         boss.setSpriteSheet(GameSpriteManager.getSpriteSheet(eventBoss));
-        boss.setHealth(boss.getHealth() * healthMult);
-        boss.setHealthMultiplier(healthMult);
-        boss.getStats().setHp((short) (boss.getStats().getHp() * healthMult));
+        boss.setDifficulty(diff);
+        boss.setHealth((int) (boss.getHealth() * diff));
+        boss.getStats().setHp((short) (boss.getStats().getHp() * diff));
         boss.setPos(spawnPos);
         realm.addEnemy(boss);
 
@@ -296,13 +296,14 @@ public class RealmOverseer {
             return;
         }
 
-        int healthMult = Math.max(1, event.getHealthMultiplier());
+        float eventMult = Math.max(1, event.getEventMultiplier());
+        float diff = realm.getZoneDifficulty(spawnPos.x, spawnPos.y) * eventMult;
         Enemy boss = new Monster(Realm.RANDOM.nextLong(), bossModel.getEnemyId(),
             spawnPos.clone(), bossModel.getSize(), bossModel.getAttackId());
         boss.setSpriteSheet(GameSpriteManager.getSpriteSheet(bossModel));
-        boss.setHealth(boss.getHealth() * healthMult);
-        boss.setHealthMultiplier(healthMult);
-        boss.getStats().setHp((short) (boss.getStats().getHp() * healthMult));
+        boss.setDifficulty(diff);
+        boss.setHealth((int) (boss.getHealth() * diff));
+        boss.getStats().setHp((short) (boss.getStats().getHp() * diff));
         boss.setPos(spawnPos);
         realm.addEnemy(boss);
 
@@ -392,13 +393,14 @@ public class RealmOverseer {
             float oy = (float) Math.sin(angle) * wave.getOffset();
             Vector2f minionPos = new Vector2f(boss.getPos().x + ox, boss.getPos().y + oy);
 
-            int hpMult = Math.max(1, wave.getHealthMultiplier());
+            float waveMult = Math.max(1, wave.getEventMultiplier());
+            float minionDiff = realm.getZoneDifficulty(minionPos.x, minionPos.y) * waveMult;
             Enemy minion = new Monster(Realm.RANDOM.nextLong(), minionModel.getEnemyId(),
                 minionPos, minionModel.getSize(), minionModel.getAttackId());
             minion.setSpriteSheet(GameSpriteManager.getSpriteSheet(minionModel));
-            minion.setHealth(minion.getHealth() * hpMult);
-            minion.setHealthMultiplier(hpMult);
-            minion.getStats().setHp((short) (minion.getStats().getHp() * hpMult));
+            minion.setDifficulty(minionDiff);
+            minion.setHealth((int) (minion.getHealth() * minionDiff));
+            minion.getStats().setHp((short) (minion.getStats().getHp() * minionDiff));
             realm.addEnemy(minion);
             evt.minionIds.add(minion.getId());
         }

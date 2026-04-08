@@ -28,6 +28,8 @@ public class PotionOfMaxStatsScript extends UseableItemScriptBase {
         player.setStats(classModel.getMaxStats().clone());
         player.setHealth(classModel.getMaxStats().getHp());
         player.setMana(classModel.getMaxStats().getMp());
+        // Set XP to max level so player becomes level 20
+        player.setExperience(GameDataManager.EXPERIENCE_LVLS.maxExperience());
         // Remove the consumed potion
         for (int i = 0; i < player.getInventory().length; i++) {
             if (player.getInventory()[i] != null && player.getInventory()[i].getItemId() == ITEM_ID) {

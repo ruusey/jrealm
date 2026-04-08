@@ -21,7 +21,7 @@ public class RealmEventModel {
     private String defeatMessage;
     private String timeoutMessage;
     private int bossEnemyId;
-    private int healthMultiplier;
+    private int eventMultiplier;
     private int setPieceId;           // SetPieceModel to stamp as arena (-1 = none)
     private List<String> allowedZones;
     private int durationSeconds;

@@ -23,6 +23,6 @@ public class OverworldZone {
     @Builder.Default
     private int enemyGroupOrdinal = 0;
     @Builder.Default
-    private int difficulty = 1;
+    private float difficulty = 1.0f;
     private Map<String, Float> portalDrops;
 }

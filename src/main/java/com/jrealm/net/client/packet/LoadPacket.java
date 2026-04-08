@@ -47,6 +47,8 @@ public class LoadPacket extends Packet {
     private NetLootContainer[] containers;
 	@SerializableField(order = 4, type = NetPortal.class, isCollection=true)
     private NetPortal[] portals;
+	@SerializableField(order = 5, type = com.jrealm.net.core.nettypes.SerializableByte.class)
+    private byte difficulty;
 
     public static LoadPacket from(Player[] players, LootContainer[] loot, Bullet[] bullets, Enemy[] enemies,
             Portal[] portals) throws Exception {
@@ -57,7 +59,7 @@ public class LoadPacket extends Packet {
             final NetBullet[] mappedBullets = IOService.mapModel(bullets, NetBullet[].class);
             final NetLootContainer[] mappedLoot = IOService.mapModel(loot, NetLootContainer[].class);
             final NetPortal[] mappedPortals = IOService.mapModel(portals, NetPortal[].class);
-            load = new LoadPacket(mappedPlayers, mappedEnemies, mappedBullets, mappedLoot, mappedPortals);
+            load = new LoadPacket(mappedPlayers, mappedEnemies, mappedBullets, mappedLoot, mappedPortals, (byte) 0);
     	}catch(Exception e) {
     		log.error("Failed to build load packet from mapped game data. Reason {}", e);
     	}
@@ -183,7 +185,7 @@ public class LoadPacket extends Packet {
             }
         }
         return new LoadPacket(playersDiff.toArray(new NetPlayer[0]), enemyDiff.toArray(new NetEnemy[0]),
-                bulletsDiff.toArray(new NetBullet[0]), lootDiff.toArray(new NetLootContainer[0]), portalDiff.toArray(new NetPortal[0]));
+                bulletsDiff.toArray(new NetBullet[0]), lootDiff.toArray(new NetLootContainer[0]), portalDiff.toArray(new NetPortal[0]), (byte) 0);
     }
 
     public UnloadPacket difference(LoadPacket other) throws Exception {

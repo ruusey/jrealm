@@ -417,21 +417,23 @@ public class Player extends Entity {
 		return this.manapercent;
 	}
 
-	public void incrementExperience(long experience) {
+	public int incrementExperience(long experience) {
 		final long newExperience = this.getExperience() + experience;
 		final int currentLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(this.experience);
 		final int newLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(newExperience);
 		final CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(this.getClassId());
-		// On level up
-		if (newLevel > currentLevel) {
-			// Restore health, mp and apply random
-			// level up stat increases
+		final int levelsGained = newLevel - currentLevel;
+		if (levelsGained > 0) {
+			// Apply random stat increases for EACH level gained
+			for (int i = 0; i < levelsGained; i++) {
+				this.setStats(this.getStats().concat(classModel.getRandomLevelUpStats()));
+			}
+			// Restore health and mana to new max after all stat increases
 			this.setHealth(this.stats.getHp());
 			this.setMana(this.stats.getMp());
-
-			this.setStats(this.getStats().concat(classModel.getRandomLevelUpStats()));
 		}
 		this.setExperience(newExperience);
+		return levelsGained;
 	}
 
 	public void applyUpdate(UpdatePacket packet, PlayState state) {

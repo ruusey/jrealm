@@ -439,7 +439,7 @@ public class ServerCommandHandler {
             }
         }
         if (destinationRealm == null) {
-            destinationRealm = new Realm(true, targetMap.getMapId(), portalModel.getTargetRealmDepth(), targetNodeId);
+            destinationRealm = new Realm(true, targetMap.getMapId(), targetNodeId);
             destinationRealm.spawnRandomEnemies(targetMap.getMapId());
             mgr.addRealm(destinationRealm);
         }
@@ -698,7 +698,7 @@ public class ServerCommandHandler {
             }
             currentRealm.getPlayers().remove(target.getId());
             final PortalModel bossPortal = GameDataManager.PORTALS.get(5);
-            final Realm generatedRealm = new Realm(true, bossPortal.getMapId(), bossPortal.getTargetRealmDepth());
+            final Realm generatedRealm = new Realm(true, bossPortal.getMapId());
             final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
                     GlobalConstants.BASE_TILE_SIZE * 13);
             target.setPos(spawnPos);

@@ -15,6 +15,6 @@ public class MinionWave {
     private float triggerHpPercent; // Spawn when boss HP% drops below this (e.g. 0.75 = 75%)
     private int enemyId;
     private int count;
-    private int healthMultiplier;
+    private int eventMultiplier;
     private float offset;           // Spawn distance from boss in pixels
 }

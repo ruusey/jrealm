@@ -1,7 +1,5 @@
 package com.jrealm.game.script.item;
 
-import java.util.Optional;
-
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.Portal;
@@ -25,17 +23,11 @@ public class Item160Script extends UseableItemScriptBase {
 		final Portal toNewRealmPortal = new Portal(Realm.RANDOM.nextLong(), (short) bossPortal.getPortalId(),
 				player.getPos().withNoise(64, 64));
 
-		final Optional<Realm> realmAtDepth = this.mgr.findRealmAtDepth(bossPortal.getTargetRealmDepth() - 1);
-		if (realmAtDepth.isEmpty()) {
-			toNewRealmPortal.linkPortal(targetRealm, null);
-			log.info("New portal created. Will generate realm id {} on use", bossPortal.getTargetRealmDepth());
-
-		} else {
-			toNewRealmPortal.linkPortal(targetRealm, realmAtDepth.get());
-			log.info("Linking Portal {} to existing realm {}", toNewRealmPortal, realmAtDepth.get().getRealmId());
-		}
+		// Link portal to a new realm (will be created on use)
+		toNewRealmPortal.linkPortal(targetRealm, null);
+		log.info("New boss portal created at player position");
 		targetRealm.addPortal(toNewRealmPortal);
-		
+
 		final int idxToRemove = player.findItemIndex(item);
 		player.getInventory()[idxToRemove] = null;
 	}

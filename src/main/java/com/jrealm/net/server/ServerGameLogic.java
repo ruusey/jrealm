@@ -102,7 +102,7 @@ public class ServerGameLogic {
 		}
 		TextPacket text = TextPacket.create("SYSTEM", player.getName(), zoneName);
 		mgr.enqueueServerPacket(player, text);
-		text = TextPacket.create("SYSTEM", player.getName(), "Difficulty: " + realm.getDifficultyMultiplier());
+		text = TextPacket.create("SYSTEM", player.getName(), "Difficulty: " + realm.getDifficulty());
 		mgr.enqueueServerPacket(player, text);
 		text = TextPacket.create("SYSTEM", player.getName(), "Enemies: " + realm.getEnemies().size());
 		mgr.enqueueServerPacket(player, text);
@@ -221,8 +221,7 @@ public class ServerGameLogic {
 				// Create new realm from graph node or legacy portal model
 				final String resolvedNodeId = (resolvedNode != null) ? resolvedNode.getNodeId() : targetNodeId;
 				final int mapId = (resolvedNode != null) ? resolvedNode.getMapId() : (targetNode != null ? targetNode.getMapId() : portalUsed.getMapId());
-				final int depth = (resolvedNode != null) ? resolvedNode.getDifficulty() : (targetNode != null ? targetNode.getDifficulty() : portalUsed.getTargetRealmDepth());
-				final Realm generatedRealm = new Realm(true, mapId, depth, resolvedNodeId);
+				final Realm generatedRealm = new Realm(true, mapId, resolvedNodeId);
 
 				targetRealm = generatedRealm;
 
@@ -294,9 +293,8 @@ public class ServerGameLogic {
 				user.setPos(targetRealm.getTileManager().getSafePosition());
 			}
 
-			// Dungeon cleanup: remove any dungeon when last player leaves via portal.
-			// depth > 0 covers both dungeon-graph and legacy portal-created dungeons.
-			if (currentRealm.getPlayers().size() == 0 && currentRealm.getDepth() > 0) {
+			// Dungeon cleanup: remove non-shared realms when last player leaves via portal.
+			if (currentRealm.getPlayers().size() == 0 && !currentRealm.isShared()) {
 				ServerGameLogic.log.info("[SERVER] Removing empty dungeon realm {} (mapId={}, node={})",
 						currentRealm.getRealmId(), currentRealm.getMapId(), currentRealm.getNodeId());
 				currentRealm.setShutdown(true);
@@ -514,7 +512,7 @@ public class ServerGameLogic {
 							final LoadPacket containerUpdate = new LoadPacket(
 								new NetPlayer[0], new NetEnemy[0], new NetBullet[0],
 								new NetLootContainer[] { netContainer },
-								new NetPortal[0]);
+								new NetPortal[0], (byte) 0);
 							// Send to all players near the container, not just the mover
 							for (final Map.Entry<Long, Player> p : realm.getPlayers().entrySet()) {
 								if (p.getValue().isHeadless()) continue;

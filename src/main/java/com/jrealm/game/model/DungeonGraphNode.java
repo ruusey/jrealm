@@ -10,7 +10,7 @@ public class DungeonGraphNode {
     private String nodeId;
     private String displayName;
     private int mapId;
-    private int difficulty;
+    private float difficulty;
     private boolean entryPoint;
     private boolean bossNode;
     private boolean shared;

@@ -29,6 +29,8 @@ public class MapModel {
     private DungeonGenerationParams dungeonParams;
     private List<StaticSpawn> staticSpawns;
     private List<float[]> spawnPoints; // [[x,y], [x,y], ...] — player spawn positions, picked randomly
+    private List<PortalModel> staticPortals; // Permanent portals placed on the map
+    private float difficulty; // Map-level difficulty for static maps (fallback when no terrain)
 
     public Vector2f getCenter() {
         return new Vector2f((this.width / 2) * this.tileSize, ((this.height / 2) * (this.tileSize)));

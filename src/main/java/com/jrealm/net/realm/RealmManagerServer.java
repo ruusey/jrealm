@@ -106,6 +106,7 @@ import com.jrealm.net.client.packet.PlayerStatePacket;
 import com.jrealm.net.entity.NetPlayerPosition;
 import com.jrealm.net.server.WebSocketGameServer;
 import com.jrealm.game.model.DungeonGraphNode;
+import com.jrealm.game.model.MapModel;
 import com.jrealm.game.model.ProjectileEffect;
 import com.jrealm.util.AdminRestrictedCommand;
 import com.jrealm.util.CommandHandler;
@@ -949,9 +950,9 @@ public class RealmManagerServer implements Runnable {
 			Optional<Realm> entry = this.findRealmForNode(entryNode.getNodeId());
 			if (entry.isPresent()) return entry.get();
 		}
-		// Fallback: any depth-0 non-vault realm
+		// Fallback: any shared non-vault realm
 		for (final Realm realm : this.realms.values()) {
-			if (realm.getDepth() == 0 && realm.getMapId() != 1) {
+			if (realm.isOverworld() && realm.getMapId() != 1) {
 				return realm;
 			}
 		}
@@ -1297,7 +1298,7 @@ public class RealmManagerServer implements Runnable {
 		// Periodic enemy respawn in overworld (every 1920 ticks ~30s)
 		if (this.tickCounter % 1920 == 0) {
 			for (final Realm realm : this.realms.values()) {
-				if (realm.getDepth() == 0 && realm.getMapId() != 1 && !realm.getPlayers().isEmpty()) {
+				if (realm.isOverworld() && realm.getMapId() != 1 && !realm.getPlayers().isEmpty()) {
 					realm.respawnEnemies(50);
 				}
 			}
@@ -1314,9 +1315,8 @@ public class RealmManagerServer implements Runnable {
 				if (r.getMapId() == 1) {
 					realmIdsToRemove.add(entry.getKey());
 				}
-				// Dungeon realms (depth > 0): remove when empty — covers both
-				// dungeon-graph nodes and legacy portal-created dungeons
-				else if (r.getDepth() > 0) {
+				// Non-shared realms (dungeon instances): remove when empty
+				else if (!r.isShared()) {
 					realmIdsToRemove.add(entry.getKey());
 				}
 			}
@@ -1782,7 +1782,7 @@ public class RealmManagerServer implements Runnable {
 
 			targetRealm.hitEnemy(b.getId(), e.getId());
 			e.setHealth(e.getHealth() - dmgToInflict);
-			int maxHealth = model.getHealth() * e.getHealthMultiplier();
+			int maxHealth = (int) (model.getHealth() * e.getDifficulty());
 			e.setHealthpercent((float) e.getHealth() / (float) maxHealth);
 			if (b.hasFlag(ProjectileEffectType.PLAYER_PROJECTILE) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
@@ -1878,13 +1878,13 @@ public class RealmManagerServer implements Runnable {
 			// Get players in the viewport of this enemy and increment their experience
 			for (final Player player : targetRealm
 					.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(enemy))) {
-				final int xpToGive = model.getXp() * (targetRealm.getDepth() == 0 ? 1 : targetRealm.getDepth() + 1);
+				final int xpToGive = (int) (model.getXp() * enemy.getDifficulty());
 				final long prevXp = player.getExperience();
 				final boolean wasMaxLevel = GameDataManager.EXPERIENCE_LVLS.isMaxLvl(prevXp);
-				player.incrementExperience(xpToGive);
+				final int prevLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(prevXp);
+				final int levelsGained = player.incrementExperience(xpToGive);
 				try {
 					if (wasMaxLevel) {
-						// At max level: only show text when a new fame point is earned (every 2500 XP)
 						final long prevFame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(prevXp);
 						final long newFame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(player.getExperience());
 						if (newFame > prevFame) {
@@ -1894,6 +1894,11 @@ public class RealmManagerServer implements Runnable {
 					} else {
 						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
 								TextEffect.PLAYER_INFO, "+" + xpToGive + "xp"));
+					}
+					if (levelsGained > 0) {
+						final int newLevel = prevLevel + levelsGained;
+						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
+								TextEffect.HEAL, "Level Up! " + prevLevel + " \u2192 " + newLevel));
 					}
 				} catch (Exception ex) {
 					RealmManagerServer.log.error("[SERVER] Failed to create player experience text effect. Reason: {}", ex);
@@ -1978,7 +1983,7 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 			} else {
-				// Legacy depth-based portal drops (fallback for realms without graph nodes)
+				// Fallback portal drops for realms without graph nodes
 				if (lootTable.getPortalDrops() != null) {
 					for (int portalId : lootTable.getPortalDrop()) {
 						PortalModel portalModel = GameDataManager.PORTALS.get(portalId);
@@ -1986,16 +1991,7 @@ public class RealmManagerServer implements Runnable {
 
 						Portal portal = new Portal(Realm.RANDOM.nextLong(),
 								(short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
-						if (portalModel.getTargetRealmDepth() >= 999) {
-							portal.linkPortal(targetRealm, null);
-						} else {
-							Optional<Realm> realmAtDepth = this.findRealmAtDepth(portalModel.getTargetRealmDepth() - 1);
-							if (realmAtDepth.isEmpty()) {
-								portal.linkPortal(targetRealm, null);
-							} else {
-								portal.linkPortal(targetRealm, realmAtDepth.get());
-							}
-						}
+						portal.linkPortal(targetRealm, null);
 						targetRealm.addPortal(portal);
 					}
 				}
@@ -2087,10 +2083,6 @@ public class RealmManagerServer implements Runnable {
 		ServerCommandHandler.PLAYER_PROVISION_CACHE.remove(playerId);
 	}
 
-	public PortalModel getPortalToDepth(int targetDepth) {
-		return GameDataManager.PORTALS.values().stream().filter(portal -> portal.getTargetRealmDepth() == targetDepth)
-				.findAny().get();
-	}
 
 	public Map<Long, String> getRemoteAddressMapReversed() {
 		final Map<Long, String> result = new HashMap<>();
@@ -2101,10 +2093,36 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	// Adds a realm to the map of realms after trying to decorate
-	// the realm terrain using any decorators
+	// the realm terrain using any decorators, spawning static enemies and portals
 	public void addRealm(final Realm realm) {
 		this.tryDecorate(realm);
 		realm.spawnStaticEnemies(realm.getMapId());
+		// Spawn static portals defined in the map data
+		final MapModel mapModel = GameDataManager.MAPS.get(realm.getMapId());
+		if (mapModel != null && mapModel.getStaticPortals() != null) {
+			for (final PortalModel sp : mapModel.getStaticPortals()) {
+				try {
+					final Portal portal = new Portal(Realm.RANDOM.nextLong(), (short) sp.getPortalId(),
+							new Vector2f(sp.getX(), sp.getY()));
+					portal.setNeverExpires();
+					if (sp.getTargetNodeId() != null) {
+						portal.setTargetNodeId(sp.getTargetNodeId());
+						// If target is a shared node with an existing realm, link to it
+						final DungeonGraphNode targetNode = GameDataManager.DUNGEON_GRAPH.get(sp.getTargetNodeId());
+						if (targetNode != null && targetNode.isShared()) {
+							this.findRealmForNode(sp.getTargetNodeId()).ifPresent(
+									existing -> portal.setToRealmId(existing.getRealmId()));
+						}
+						// Non-shared nodes: toRealmId stays 0 — a new instance is created on first use
+					}
+					realm.addPortal(portal);
+					log.info("[SERVER] Placed static portal {} at ({},{}) -> node '{}' in realm {}",
+							sp.getPortalId(), sp.getX(), sp.getY(), sp.getTargetNodeId(), realm.getRealmId());
+				} catch (Exception e) {
+					log.error("[SERVER] Failed to place static portal. Reason: {}", e.getMessage());
+				}
+			}
+		}
 		this.realms.put(realm.getRealmId(), realm);
 	}
 
@@ -2120,9 +2138,6 @@ public class RealmManagerServer implements Runnable {
 		return found;
 	}
 
-	public Optional<Realm> findRealmAtDepth(int depth) {
-		return this.getRealms().values().stream().filter(realm -> realm.getDepth() == (depth + 1)).findAny();
-	}
 
 	public Optional<Realm> findRealmForNode(String nodeId) {
 		if (nodeId == null) return Optional.empty();

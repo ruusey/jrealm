@@ -61,7 +61,6 @@ public class Realm {
     public static final transient SecureRandom RANDOM = new SecureRandom();
     private long realmId;
     private int mapId;
-    private int depth;
     private String nodeId;
     private Map<Long, Player> players;
     private Map<Long, Bullet> bullets;
@@ -250,7 +249,6 @@ public class Realm {
     private boolean shutdown = false;
 
     public Realm(boolean isServer, int mapId) {
-        this.depth = 0;
         this.realmId = Realm.RANDOM.nextLong();
         this.players = new ConcurrentHashMap<>();
         this.isServer = isServer;
@@ -265,19 +263,33 @@ public class Realm {
         }
     }
 
-    public Realm(boolean isServer, int mapId, int depth) {
+    public Realm(boolean isServer, int mapId, String nodeId) {
         this(isServer, mapId);
-        this.depth = depth;
-    }
-
-    public Realm(boolean isServer, int mapId, int depth, String nodeId) {
-        this(isServer, mapId);
-        this.depth = depth;
         this.nodeId = nodeId;
     }
 
-    public int getDepth() {
-        return this.depth;
+    /**
+     * Returns true if this realm is a shared/persistent realm (e.g., overworld, nexus).
+     * Non-shared realms are dungeon instances that get cleaned up when empty.
+     */
+    public boolean isShared() {
+        if (this.nodeId != null && GameDataManager.DUNGEON_GRAPH != null) {
+            DungeonGraphNode node = GameDataManager.DUNGEON_GRAPH.get(this.nodeId);
+            if (node != null) return node.isShared();
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if this realm is the overworld entry point (the top-level shared realm
+     * where enemies respawn). Replaces the old depth == 0 checks.
+     */
+    public boolean isOverworld() {
+        if (this.nodeId != null && GameDataManager.DUNGEON_GRAPH != null) {
+            DungeonGraphNode node = GameDataManager.DUNGEON_GRAPH.get(this.nodeId);
+            if (node != null) return node.isEntryPoint() || node.isShared();
+        }
+        return false;
     }
 
     public List<Long> getExpiredPlayers() {
@@ -737,6 +749,7 @@ public class Realm {
                     containersToLoad.toArray(new LootContainer[0]), bulletsToLoad.toArray(new Bullet[0]),
                     enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]),
                     this.shortIdAllocator);
+            if (load != null) load.setDifficulty((byte) this.getZoneDifficulty(center.x, center.y));
         } catch (Exception e) {
             Realm.log.error("Failed to get fast circular load Packet. Reason: {}", e.getMessage());
         }
@@ -1024,6 +1037,7 @@ public class Realm {
                     containersToLoad.toArray(new LootContainer[0]), bulletsToLoad.toArray(new Bullet[0]),
                     enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]),
                     this.shortIdAllocator);
+            if (load != null) load.setDifficulty((byte) this.getZoneDifficulty(cam.x + cam.width / 2f, cam.y + cam.height / 2f));
         } catch (Exception e) {
             Realm.log.error("Failed to get load Packet. Reason: {}");
         }
@@ -1068,6 +1082,7 @@ public class Realm {
                     containersToLoad.toArray(new LootContainer[0]), bulletsToLoad.toArray(new Bullet[0]),
                     enemiesToLoad.toArray(new Enemy[0]), portalsToLoad.toArray(new Portal[0]),
                     this.shortIdAllocator);
+            if (load != null) load.setDifficulty((byte) this.getZoneDifficulty(center.x, center.y));
         } catch (Exception e) {
             Realm.log.error("Failed to get circular load Packet. Reason: {}", e.getMessage());
         }
@@ -1166,13 +1181,13 @@ public class Realm {
 
                 // Select enemy list based on zone
                 List<EnemyModel> spawnList = defaultEnemies;
-                int healthMult = this.getDifficultyMultiplier();
+                float diff = this.getDifficulty();
 
                 if (hasZones) {
                     OverworldZone zone = this.tileManager.getZoneForPosition(spawnPos.x, spawnPos.y);
                     if (zone != null) {
                         spawnList = enemiesByGroup.getOrDefault(zone.getEnemyGroupOrdinal(), defaultEnemies);
-                        healthMult = Math.max(1, zone.getDifficulty());
+                        diff = Math.max(1.0f, zone.getDifficulty());
                     }
                 }
 
@@ -1194,9 +1209,9 @@ public class Realm {
                 final Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
                         spawnPos.clone(), toSpawn.getSize(), toSpawn.getAttackId());
                 enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
-                enemy.setHealth(enemy.getHealth() * healthMult);
-                enemy.setHealthMultiplier(healthMult);
-                enemy.getStats().setHp((short) (enemy.getStats().getHp() * healthMult));
+                enemy.setDifficulty(diff);
+                enemy.setHealth((int) (enemy.getHealth() * diff));
+                enemy.getStats().setHp((short) (enemy.getStats().getHp() * diff));
                 enemy.setPos(spawnPos);
                 this.addEnemy(enemy);
             }
@@ -1208,7 +1223,7 @@ public class Realm {
 
     /**
      * Respawn enemies in the overworld realm to replenish killed mobs.
-     * Only runs on terrain-based realms (depth == 0 with zones).
+     * Only runs on terrain-based realms with zones.
      * Spawns a batch of enemies in random positions away from players.
      */
     public void respawnEnemies(int batchSize) {
@@ -1275,11 +1290,11 @@ public class Realm {
 
             // Select enemy list based on zone
             List<EnemyModel> spawnList = defaultEnemies;
-            int healthMult = this.getDifficultyMultiplier();
+            float diff = this.getDifficulty();
             OverworldZone zone = this.tileManager.getZoneForPosition(spawnPos.x, spawnPos.y);
             if (zone != null) {
                 spawnList = enemiesByGroup.getOrDefault(zone.getEnemyGroupOrdinal(), defaultEnemies);
-                healthMult = Math.max(1, zone.getDifficulty());
+                diff = Math.max(1.0f, zone.getDifficulty());
             }
             if (spawnList.isEmpty()) continue;
 
@@ -1289,9 +1304,9 @@ public class Realm {
             final Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
                     spawnPos.clone(), toSpawn.getSize(), toSpawn.getAttackId());
             enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
-            enemy.setHealth(enemy.getHealth() * healthMult);
-            enemy.setHealthMultiplier(healthMult);
-            enemy.getStats().setHp((short) (enemy.getStats().getHp() * healthMult));
+            enemy.setDifficulty(diff);
+            enemy.setHealth((int) (enemy.getHealth() * diff));
+            enemy.getStats().setHp((short) (enemy.getStats().getHp() * diff));
             enemy.setPos(spawnPos);
             this.addEnemy(enemy);
             spawned++;
@@ -1587,9 +1602,9 @@ public class Realm {
                 pos = this.tileManager.getSafePosition();
             }
             final Enemy enemy = GameObjectUtils.getEnemyFromId(ss.getEnemyId(), pos);
-            int healthMult = this.getDifficultyMultiplier();
-            enemy.setHealth(enemy.getHealth() * Math.max(1, healthMult));
-            enemy.setHealthMultiplier(Math.max(1, healthMult));
+            float diff = this.getZoneDifficulty(pos.x, pos.y);
+            enemy.setDifficulty(diff);
+            enemy.setHealth((int) (enemy.getHealth() * diff));
             this.addEnemy(enemy);
             Realm.log.info("Static spawn: {} at ({}, {}) in realm mapId={}", model.getName(), pos.x, pos.y, mapId);
         }
@@ -1760,19 +1775,51 @@ public class Realm {
                 toSpawn.getAttackId());
         enemy.setSpriteSheet(GameSpriteManager.getSpriteSheet(toSpawn));
 
-        final int healthMult = this.getDifficultyMultiplier();
-        enemy.setHealth(enemy.getHealth() * healthMult);
+        final float diff = this.getZoneDifficulty(spawnPos.x, spawnPos.y);
+        enemy.setDifficulty(diff);
+        enemy.setHealth((int) (enemy.getHealth() * diff));
         enemy.setPos(spawnPos);
         this.addEnemy(enemy);
     }
 
-    public int getDifficultyMultiplier() {
+    /**
+     * Resolves the base difficulty for this realm from terrain or map data.
+     * Resolution order: terrain difficulty > map difficulty > dungeon-graph > default 1.0
+     * Note: for zone-based terrains, use getZoneDifficulty() instead for positional resolution.
+     */
+    public float getDifficulty() {
+        // Try terrain-level difficulty
+        MapModel map = GameDataManager.MAPS.get(this.mapId);
+        if (map != null && map.getTerrainId() >= 0) {
+            TerrainGenerationParameters terrain = GameDataManager.TERRAINS.get(map.getTerrainId());
+            if (terrain != null && terrain.getDifficulty() > 0f) {
+                return terrain.getDifficulty();
+            }
+        }
+        // Try map-level difficulty (for static maps)
+        if (map != null && map.getDifficulty() > 0f) {
+            return map.getDifficulty();
+        }
+        // Fallback to dungeon graph node difficulty
         if (this.nodeId != null && GameDataManager.DUNGEON_GRAPH != null) {
             DungeonGraphNode node = GameDataManager.DUNGEON_GRAPH.get(this.nodeId);
-            if (node != null) return Math.max(1, node.getDifficulty());
+            if (node != null) return Math.max(1.0f, node.getDifficulty());
         }
-        // Fallback to legacy depth-based scaling
-        return ((this.getDepth() == 0 || this.getDepth() == 999) ? 1 : this.getDepth() + 1);
+        return 1.0f;
+    }
+
+    /**
+     * Resolves difficulty for a specific position, checking zone first.
+     * For zone-based terrains, returns zone difficulty; otherwise falls back to getDifficulty().
+     */
+    public float getZoneDifficulty(float x, float y) {
+        if (this.tileManager != null) {
+            OverworldZone zone = this.tileManager.getZoneForPosition(x, y);
+            if (zone != null) {
+                return Math.max(1.0f, zone.getDifficulty());
+            }
+        }
+        return this.getDifficulty();
     }
 
     private Runnable getStatsThread() {
@@ -1780,7 +1827,7 @@ public class Realm {
             while (!this.shutdown) {
                 final double heapSize = Runtime.getRuntime().totalMemory() / 1024.0 / 1024.0;
                 final String nodeName = (this.nodeId != null) ? this.nodeId : "legacy";
-                Realm.log.info("--- Realm: {} | Node: {} | MapId: {} | Difficulty: {} ---", this.getRealmId(), nodeName, this.getMapId(), this.getDifficultyMultiplier());
+                Realm.log.info("--- Realm: {} | Node: {} | MapId: {} | Difficulty: {} ---", this.getRealmId(), nodeName, this.getMapId(), this.getDifficulty());
                 Realm.log.info("Enemies: {}", this.enemies.size());
                 Realm.log.info("Players: {}", this.players.size());
                 Realm.log.info("Loot: {}", this.loot.size());
