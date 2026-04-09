@@ -28,8 +28,18 @@ public class Bullet extends GameObject  {
     private boolean enemyHit;
     private float tfAngle = (float) (Math.PI / 2);
 
-    private List<Short> flags;           // behavior flags only
-    private List<com.jrealm.game.model.ProjectileEffect> effects; // on-hit status effects
+    /**
+     * Projectile behavior flags (ProjectileFlag IDs): PLAYER_PROJECTILE(10),
+     * PARAMETRIC(12), INVERTED_PARAMETRIC(13), ORBITAL(20).
+     * Controls movement — NOT on-hit effects.
+     */
+    private List<Short> flags;
+    /**
+     * On-hit status effects (StatusEffect IDs + durations).
+     * Applied to the target entity when this bullet hits.
+     * NOT behavior flags — those go in {@link #flags}.
+     */
+    private List<com.jrealm.game.model.ProjectileEffect> effects;
 
     private boolean invert = false;
 

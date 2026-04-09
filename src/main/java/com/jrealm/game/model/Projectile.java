@@ -25,8 +25,18 @@ public class Projectile {
     private short amplitude;
     private short frequency;
 
-    private List<Short> flags;           // behavior flags: PARAMETRIC(12), PLAYER_PROJECTILE(10), etc.
-    private List<ProjectileEffect> effects; // on-hit status effects with durations
+    /**
+     * Projectile behavior flags — control HOW the projectile moves/behaves.
+     * Values are {@link ProjectileFlag} IDs: PLAYER_PROJECTILE(10), PARAMETRIC(12),
+     * INVERTED_PARAMETRIC(13), ORBITAL(20). NOT status effects.
+     */
+    private List<Short> flags;
+    /**
+     * On-hit status effects — applied to the target entity when this projectile hits.
+     * Each entry has an effectId ({@link StatusEffect}) and a duration in ms.
+     * NOT behavior flags — those go in {@link #flags}.
+     */
+    private List<ProjectileEffect> effects;
 
     public boolean hasFlag(short flag) {
         return (this.flags != null) && this.flags.contains(flag);
