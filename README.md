@@ -1,285 +1,196 @@
 # OpenRealm
-# Play Live In Browser At [OpenRealm.Net](http://openrealm.net/)
-### An 8bit Dungeon Crawler Rogue-Like Game written entirely in Java
 
-<div dsplay="inline">
+### A Multiplayer 8-Bit Bullet Hell Dungeon Crawler — Play Now at [OpenRealm.Net](http://openrealm.net/)
+
+<div>
     <img src="https://github.com/ruusey/jrealm/blob/main/banner.png" width="100%">
     <img src="https://github.com/ruusey/jrealm/blob/main/MobileView.png" width="100%">
 </div>
-<br>
 
-### Game Controls
-* **W** - Up <br/>
-* **A** - Left <br/>
-* **S** - Down <br/>
-* **D** - Right <br/>
+---
 
-* **1-8** - Consume/Equip corresponding inventory slot <br/>
+## About
 
-* **Left Click** - Shoot/Pick up loot <br/>
-* **Right Click** - Use Ability/Drop item <br/>
+**OpenRealm** is a real-time multiplayer bullet hell dungeon crawler inspired by classic 8-bit action RPGs. Players explore a persistent overworld, fight through procedurally generated dungeons, collect loot, and battle bosses — all rendered in pixel art and playable directly in the browser or via a native Java client.
 
-* **F1** - Teleport to vault (safe zone) <br/>
-* **F2** - Use nearest portal <br/>
+The game features a server-authoritative architecture with client-side prediction, supporting dozens of concurrent players with responsive movement even at higher latencies. The server runs at a fixed 64Hz tick rate with deterministic physics, ensuring fair and consistent gameplay for all players.
 
-* **Enter** - Chat/Use command
-### Running
-#### *NOTE: As of release 0.3.0 You are now required to run JRealm-Data alongside JRealm-Server see: https://github.com/ruusey/jrealm-data*
+### Key Features
 
-* **General**: <br/>
-```java -jar ./jrealm-{version}.jar {-client | -server | -embedded} {DATA_SERVER_ADDR}```
+- **Browser & Desktop Play** — Full-featured HTML5 web client (PixiJS) with mobile touch controls, plus a native Java desktop client (LibGDX)
+- **Persistent World** — Shared overworld with four biome zones of increasing difficulty, from the Beach to the Summit
+- **Procedural Dungeons** — Over 20 unique dungeon types with generated room layouts, corridor systems, and boss encounters
+- **13 Character Classes** — Each with unique abilities, stat progressions, and equipment types
+- **129+ Enemy Types** — From beach crabs to realm gods, with multi-phase AI, burst patterns, and status effects
+- **Real-Time Combat** — Dodge hundreds of projectiles with precise movement, fire weapons with client-predicted instant feedback
+- **Permadeath & Loot** — Characters die permanently unless equipped with an Amulet of Resurrection. Tiered loot drops from enemies and dungeon bosses
+- **Vault Storage** — Personal vault accessible from the Nexus hub for storing items across characters
+- **Trading System** — Player-to-player item trading with confirmation UI
+- **Guest Accounts** — Play instantly without registration; upgrade to a full account anytime
+- **Game Data Editor** — Full-featured web-based editor for tiles, enemies, items, animations, maps, projectiles, portals, loot tables, and more
+- **Projectile Simulator** — Interactive canvas playground for testing and visualizing projectile patterns and enemy attack behaviors
 
-* **Server**: <br />
-```java -jar ./jrealm-{version}.jar -server {DATA_SERVER_ADDR}``` <br />
-The server requires port 2222 to be available
+---
 
-* **Client**: <br />
-```java -jar ./jrealm-{version}.jar -client {DATA_SERVER_ADDR}``` <br />
-Replace `{SERVER_ADDRESS}` with the IP Address of the server you wish to connect to <br />
-Replace `{PLAYER_EMAIL}` with your account's email <br />
-Replace `{PLAYER_PASSWORD}` with your account's password <br />
-Replace `{CHARACTER_UUID}` with the UUID of your character 
+## Architecture
 
-### Game Data
-See [JRealm-Data](https://github.com/ruusey/jrealm-data) for information on modifying the game's .json data
+OpenRealm consists of two services:
 
-## Packet Handlers
-Applicable classes: 
-`com.jrealm.game.realm.RealmManagerServer, com.jrealm.game.realm.RealmManagerClient, com.jrealm.net.server.ServerGameLogic, com.jrealm.net.server.ClientGameLogic`
+| Service | Description | Stack |
+|---------|-------------|-------|
+| **openrealm** (this repo) | Game server + desktop client | Java 11+, LibGDX, WebSocket (NIO) |
+| **[openrealm-data](https://github.com/ruusey/openrealm-data)** | Data service, REST API, web client, game editor | Java 11+, Spring Boot, MongoDB, PixiJS |
 
-**JRealm** packet handlers exist on both the server and client realm managers to hook callbacks into recieved packets. In general packet callbacks are registered during the `registerPacketCallbacks()`
-routine of `RealmManagerClient` and `RealmManagerServer`. Packet callback methods will typically be a static method with signature `BiConsumer<RealmManager, Packet>` that is passed the target packet and Realm Manager on receiving the packet, although
-any method matching this signature can be used as a packet callback. 
-<br />
+### Networking
 
-**As of JRealm 0.3.5**, developers can now make use of the **@PacketHandler(Class<? extends Packet> packetClass)** annotation to mark a method as a packet handler in server code. Generally
-The **@PacketHandler** annotation sacrifices performance for convenience as the reflection mechanism used to trigger such callbacks is computationally expensive.
+- **Server tick rate**: 64Hz with fixed-timestep simulation
+- **Client prediction**: Sequence-numbered input commands (64Hz) with server reconciliation
+- **Entity interpolation**: Smooth rendering of remote players and enemies between server snapshots
+- **Packet transport**: Binary WebSocket protocol with 26+ packet types
+- **Bandwidth**: ~2-3 KB/s per player during active gameplay
 
-**Example (Register by mapping, high performance)**
-```java
-// RealmManagerServer.java
-private void registerPacketCallbacks() {
-    this.registerPacketCallback(PacketType.PLAYER_MOVE.getPacketId(), ServerGameLogic::handlePlayerMoveServer);
-}
+---
 
-// ServerGameLogic.java
-public static void handlePlayerMoveServer(RealmManagerServer mgr, Packet packet) {
-    final PlayerMovePacket playerMovePacket = (PlayerMovePacket) packet;
-    final Realm realm = mgr.searchRealmsForPlayer(playerMovePacket.getEntityId());
-    if (realm == null) {
-        ServerGameLogic.log.error("Failed to get realm for player {}", playerMovePacket.getEntityId());
-        return;
-    }
-    final Player toMove = realm.getPlayer(playerMovePacket.getEntityId());
-    if (toMove.hasEffect(EffectType.PARALYZED))
-        return;
-    boolean doMove = playerMovePacket.isMove();
-    float spd = (float) ((5.6 * (toMove.getComputedStats().getSpd() + 53.5)) / 75.0f);
-    spd = spd/1.5f;
-    if (playerMovePacket.getDirection().equals(Cardinality.NORTH)) {
-        toMove.setUp(doMove);
-        toMove.setDy(doMove ? -spd : 0.0f);
-    }
-}
+## Getting Started
+
+### Prerequisites
+
+- Java JDK 11+
+- Apache Maven 3.8.3+
+- MongoDB Server (for the data service)
+
+### Running the Data Service
+
+```bash
+cd openrealm-data
+mvn clean package
+java -jar target/openrealm-data-{version}.jar
 ```
-**Example (Register by annotation,  ease of use, introduces some but minimal performance overhead)**
-```java
-@PacketHandler(TextPacket.class)
-public static void handleText0(RealmManagerServer mgr, Packet packet) {
-    final TextPacket textPacket = (TextPacket) packet;
-    final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
-    if(!validateCallingPlayer(mgr, packet, fromPlayerId)) {
-        return;
-    }
-    final Player player = mgr.searchRealmsForPlayer(fromPlayerId);
-    final Realm realm = mgr.findPlayerRealm(fromPlayerId);
 
-    log.info("Player {} says {} from Realm {}", player.getName(), textPacket.getMessage(), realm.getRealmId());
-}
+The data service starts on port 8080 by default and provides:
+- REST API for account management and game data
+- Web client at `/game-data/webclient/index.html`
+- Game data editor at `/game-data/editor/index.html`
+- Static sprite sheet serving
+
+### Running the Game Server
+
+```bash
+cd openrealm
+mvn clean package
+java -jar target/openrealm-{version}.jar -server {DATA_SERVER_ADDR}
 ```
-## Command Handlers
-Applicable classes: 
-`com.jrealm.game.messaging.*, com.jrealm.net.server.ServerGameLogic, com.jrealm.net.server.ServerCommandHandler`
 
-**JRealm** command handlers are a similar subset of functionality to the Packet Callbacks mentioned in the previous section
-that allow users to embed  server commands in the packets they send to **JRealm-Server**. <br />
-CommandPackets consist of a `byte commandId` and a `UTF JSON String command`. When the server recieves a Command Packet it will attempt to deserialize the JSON payload into the model
-targeted by this Command `(defined in com.jrealm.game.messaging.CommandType)`
+The game server listens on:
+- Port 2222 — Native TCP client connections
+- Port 2223 — WebSocket connections (browser client)
 
-The class `ServerCommandHandler` is responsible for handling individual Command functionality. Each command callback is registered dynamically
-at runtime
+### Running the Desktop Client
 
-**Example**:
-```java
-
-    @CommandHandler("setstats")
-    private static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
-        if (message.getArgs() == null || message.getArgs().size() != 2)
-            throw new IllegalArgumentException("Usage: /setstat {STAT_NAME} {STAT_VALUE}");
-        final short valueToSet = Short.parseShort(message.getArgs().get(1));
-        log.info("Player {} set stat {} to {}", target.getName(), message.getArgs().get(0), valueToSet);
-        switch (message.getArgs().get(0)) {
-        case "hp":
-            target.getStats().setHp(valueToSet);
-            break;
-        case "mp":
-            target.getStats().setMp(valueToSet);
-            break;
-        ...
-    }
+```bash
+java -jar target/openrealm-{version}.jar -client {DATA_SERVER_ADDR}
 ```
-Note: Command Handler methods are allowed to throw `Exception` to control flow through the handler. By default if an Exception is thrown, its message
-will be tranformed into a 502 error code message that is returned to the client.
 
+---
 
-### Creating Maps & Terrains
-See https://github.com/ruusey/jrealm-data?tab=readme-ov-file#adding-static-data-maps
+## Controls
 
-## Available Scripted Behaviors
-**JRealm** provides developers with an ever expanding arsenal of tools for implementing game content. The existing toolkit is 
-centered around providing script-like features for modifying the games state and data on the server side. 
-The current script features are:
+### Keyboard (Desktop & Browser)
+
+| Key | Action |
+|-----|--------|
+| **W/A/S/D** | Move Up/Left/Down/Right |
+| **Left Click** | Shoot / Pick up loot |
+| **Right Click** | Use ability |
+| **1-8** | Use inventory slot |
+| **R / F1** | Return to Nexus |
+| **F / F2 / Space** | Use nearest portal |
+| **Enter** | Open chat / send message |
+| **Escape** | Return to character select |
+
+### Mobile (Touch)
+
+- **Left joystick** — Movement
+- **Right joystick** — Aim and shoot
+- **Vault button** — Access vault storage
+- **Double-tap** — Use ability at tap location
+
+---
+
+## Server Commands
+
+Commands are entered in chat with a `/` prefix. Some require admin privileges.
+
+| Command | Description | Access |
+|---------|-------------|--------|
+| `/pos` | Show current world position | All |
+| `/help` | List available commands | All |
+| `/about` | Server information | All |
+| `/stat max` | Max all stats | Admin |
+| `/stat {name} {value}` | Set a specific stat | Admin |
+| `/spawn {enemyId}` | Spawn an enemy | Moderator |
+| `/item {itemId} [count]` | Spawn an item | Admin |
+| `/portal {mapName}` | Open a portal | Admin |
+| `/tp {name or x,y}` | Teleport | Admin |
+| `/op {playerName}` | Promote/demote operator | Sys Admin |
+| `/godmode` | Toggle invincibility | Admin |
+| `/heal` | Restore HP and MP | Admin |
+
+---
+
+## Scripting & Extensibility
+
+OpenRealm provides a reflection-based scripting system for extending game behavior without modifying core code. Scripts are discovered automatically at runtime.
 
 ### Enemy Scripts
-EnemyScripts are small classes that currently allow a developer to implement the `attack` method to provide custom attack behavior. EnemyScripts
-will replace the target enemies default attack pattern with the contents of your script. <br />
-EnemyScripts are run asynchronously and thus support delays and long running attack patterns. Any class extending `EnemyScriptBase` will be loaded as an EnemyScript at runtime.
 
-**Example**
-```java
-public class Enemy10Script extends EnemyScriptBase {
-    // Default constructor
-    public Enemy10Script(RealmManagerServer mgr) {
-        super(mgr);
-    }
-    
-    // Target enemy ID
-    @Override
-    public int getTargetEnemyId() {
-        return 10;
-    }
-    
-    @Override
-    public void attack(Realm targetRealm, Enemy enemy, Player targetPlayer) throws Exception {
-    
-        Player target = targetPlayer;
-        Vector2f dest = target.getBounds().getPos().clone(target.getSize() / 2, target.getSize() / 2);
-    
-        Vector2f source = enemy.getPos().clone(target.getSize() / 2, target.getSize() / 2);
-        float angle = Bullet.getAngle(source, dest);
-        // Get the projectiles for attack ID 2
-        ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(2);
-        Projectile p = group.getProjectiles().get(0);
-        // Create two enemy projectiles with the given data with a 100ms delay in between
-        this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
-        this.sleep(100);
-        this.createProjectile(p, targetRealm.getRealmId(), target.getId(), source.clone(), angle, group);
-    }
-}
-```
+Custom attack patterns for specific enemies. Extend `EnemyScriptBase` and implement `attack()`.
 
-### UseableItem Scripts
-UseableItem scripts are small classes that currently allow developers to implement custom item on use and on consume behavior. Currently useable item scripts allow the 
-developer to implement the `invokeUseItem` and `invokeItemAbility` which will respectively override the behavior of an items on-equip action and its use while equipped in the
-players ability slot. Any class extending `UseableItemScriptBase` will be loaded as a UseableItem script at runtime.
+### Item Scripts
 
-**Example**
-```java 
-// Item script that adds the ability items effect
-// to surrounding players
-public class Item156Script extends UseableItemScriptBase{
-    
-    public Item156Script(RealmManagerServer mgr) {
-        super(mgr);
-    }
-    
-    @Override
-    public void invokeUseItem(Realm targetRealm, Player player, GameItem item) {
-    }
-    
-    @Override
-    public void invokeItemAbility(Realm targetRealm, Player player, GameItem abilityItem) {
-        for (final Player other : targetRealm
-                .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player))) {
-            other.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
-        }
-    }
-    
-    @Override
-    public int getTargetItemId() {
-        return 156;
-    }
-}
-```
+Custom item use and ability behavior. Extend `UseableItemScriptBase` and implement `invokeUseItem()` / `invokeItemAbility()`.
 
-### Terrain Decorator Scripts
-TerrainDecorator scripts are small classes that currently allow developers to implement custom terrain post processing for Realms during their generation process. TerrainDecorators currently
-allow the developer to implement the `decorate` method to modify world tiles, spawn enemies or generate structures. Any class extending `RealmDecoratorBase` will be loaded as a TerrainDecorator
-script at runtime.
+### Terrain Decorators
 
-**Example**
-```java
-// Creates slowing water pool decorations in the Beach Realm
-public class Beach0Decorator extends RealmDecoratorBase {
-    private static final Integer MIN_WATER_POOL_COUNT = 15;
-    private static final Integer MAX_WATER_POOL_COUNT = 25;
-    private static final TileModel WATER_TILE = GameDataManager.TILES.get(41);
-    private static final TileModel WATER_TILE_DEEP = GameDataManager.TILES.get(42);
-    
-    public Beach0Decorator(RealmManagerServer mgr) {
-        super(mgr);
-    }
-    
-    @Override
-    public void decorate(final Realm input) {
-        for (int i = 0; i < (Beach0Decorator.MIN_WATER_POOL_COUNT + Realm.RANDOM
-                .nextInt(Beach0Decorator.MAX_WATER_POOL_COUNT - Beach0Decorator.MIN_WATER_POOL_COUNT)); i++) {
-            final Vector2f pos = input.getTileManager().randomPos();
-            final TileMap baseLayer = input.getTileManager().getBaseLayer();
-            final int centerX = (int) (pos.x / baseLayer.getTileSize());
-            final int centerY = (int) (pos.y / baseLayer.getTileSize());
-    
-            baseLayer.setBlockAt(centerX, centerY, (short) Beach0Decorator.WATER_TILE_DEEP.getTileId(),
-                    Beach0Decorator.WATER_TILE_DEEP.getData());
-            baseLayer.setBlockAt(centerX, (centerY - 1) > -1 ? centerY - 1 : 0,
-                    (short) Beach0Decorator.WATER_TILE.getTileId(),
-                    Beach0Decorator.WATER_TILE.getData());
-            baseLayer.setBlockAt(centerX,
-                    (centerY + 1) >= baseLayer.getHeight() ? baseLayer.getHeight() - 1 : centerY + 1,
-                            (short) Beach0Decorator.WATER_TILE.getTileId(),
-                            Beach0Decorator.WATER_TILE.getData());
-            baseLayer.setBlockAt((centerX - 1) > -1 ? centerX - 1  : 0, centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
-                    Beach0Decorator.WATER_TILE.getData());
-            baseLayer.setBlockAt((centerX + 1) >= baseLayer.getWidth() ? baseLayer.getWidth()-1 : centerX + 1 , centerY, (short) Beach0Decorator.WATER_TILE.getTileId(),
-                    Beach0Decorator.WATER_TILE.getData());
-    
-        }
-    }
-    
-    @Override
-    public Integer getTargetMapId() {
-        return 2;
-    }
-}
-```
+Post-processing hooks for realm generation. Extend `RealmDecoratorBase` and implement `decorate()` to modify tiles, spawn structures, or place entities.
 
+### Packet Handlers
 
-# Important classes:
+Register custom packet handlers via annotation (`@PacketHandlerServer`) or direct callback registration for both server and client.
 
-* `com.jrealm.game.states.PlayState`
-* `com.jrealm.game.realm.Realm`
-* `com.jrealm.game.realm.tile.TileManager`
-* `com.jrealm.net.server.ServerCommandHandler`
-* `com.jrealm.net.server.ServerItemHandler`
-* `com.jrealm.net.server.ProcessingThread`
-* `com.jrealm.game.realm.RealmManagerServer`
-* `com.jrealm.game.realm.RealmManagerClient`
-* `com.jrealm.game.entity.Enemy`
-* `com.jrealm.game.entity.Portal`
-* `com.jrealm.game.entity.LootContainer`
-* `com.jrealm.game.entity.Player`
-* `com.jrealm.game.entity.Bullet`
-* `com.jrealm.net.client.SocketClient`
-* `com.jrealm.net.client.ClientGameLogic`
-* `com.jrealm.net.server.SocketServer`
-* `com.jrealm.net.server.ServerGameLogic`
+### Command Handlers
+
+Register custom chat commands via `@CommandHandler` annotation with optional `@AdminRestrictedCommand` access control.
+
+---
+
+## Game Data
+
+All game content is defined in JSON files served by the data service. Edit them directly or use the built-in web editor at `/game-data/editor/index.html`.
+
+| File | Contents |
+|------|----------|
+| `character-classes.json` | Class definitions, base/max stats, starting equipment |
+| `enemies.json` | Enemy stats, sprites, phase behaviors, attack patterns |
+| `game-items.json` | Weapons, armor, abilities, consumables, stat bonuses |
+| `projectile-groups.json` | Bullet patterns — speed, range, amplitude, flags |
+| `animations.json` | Character sprite animations (idle, walk, attack) |
+| `maps.json` | Static and procedural map definitions with tile layers |
+| `terrains.json` | Procedural terrain parameters, biome zones, enemy groups |
+| `tiles.json` | Tile definitions — collision, slowing, damaging flags |
+| `portals.json` | Portal types and dungeon graph routing |
+| `dungeon-graph.json` | Dungeon node graph — shared/instanced realms |
+| `loot-groups.json` | Item drop groupings by tier |
+| `loot-tables.json` | Per-enemy drop tables with probabilities |
+
+---
+
+## License
+
+Copyright (c) 2024-2026 Robert Usey. All rights reserved.
+
+This software and associated documentation files (the "Software") are the exclusive property of Robert Usey. No part of this Software may be copied, modified, merged, published, distributed, sublicensed, sold, or otherwise made available to any third party, in whole or in part, in any form or by any means, without the prior express written permission of the copyright holder.
+
+Unauthorized reproduction or distribution of this Software, or any portion of it, may result in severe civil and criminal penalties, and will be prosecuted to the maximum extent possible under the law.
+
+For licensing inquiries, contact: **ruusey@gmail.com**
