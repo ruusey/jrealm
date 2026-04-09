@@ -185,7 +185,7 @@ public class LoadPacket extends Packet {
             }
         }
         return new LoadPacket(playersDiff.toArray(new NetPlayer[0]), enemyDiff.toArray(new NetEnemy[0]),
-                bulletsDiff.toArray(new NetBullet[0]), lootDiff.toArray(new NetLootContainer[0]), portalDiff.toArray(new NetPortal[0]), (byte) 0);
+                bulletsDiff.toArray(new NetBullet[0]), lootDiff.toArray(new NetLootContainer[0]), portalDiff.toArray(new NetPortal[0]), other.getDifficulty());
     }
 
     public UnloadPacket difference(LoadPacket other) throws Exception {

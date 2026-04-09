@@ -4,7 +4,7 @@ public class GlobalConstants {
 
     // Loot tier upgrade: in zones with difficulty > 1, each dropped item has a
     // (BASE + PER_DIFFICULTY * difficulty)% chance to be upgraded one tier.
-    public static final float LOOT_TIER_UPGRADE_BASE_PERCENT = 5.0f;
+    public static final float LOOT_TIER_UPGRADE_BASE_PERCENT = 0.0f;
     public static final float LOOT_TIER_UPGRADE_PER_DIFFICULTY = 5.0f;
     public static final float LOOT_TIER_UPGRADE_MIN_DIFFICULTY = 1.0f;
 
