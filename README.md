@@ -67,7 +67,7 @@ mvn clean package
 java -jar target/openrealm-data-{version}.jar
 ```
 
-The data service starts on port 8080 by default and provides:
+The data service starts on port 8085 by default and provides:
 - REST API for account management and game data
 - Web client at `/game-data/webclient/index.html`
 - Game data editor at `/game-data/editor/index.html`
