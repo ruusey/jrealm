@@ -471,19 +471,23 @@ public class ServerCommandHandler {
         log.info("Player {} toggled god mode", target.getName());
     }
 
-    @CommandHandler(value="spawnbots", description="Spawn N bot players with real accounts. Usage: /spawnbots {COUNT}")
+    @CommandHandler(value="spawnbots", description="Spawn N bot players with real accounts. Usage: /spawnbots {COUNT} [spam]")
 	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_SYS_ADMIN})
     public static void invokeSpawnBots(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
-            throw new IllegalArgumentException("Usage: /spawnbots {COUNT}");
+            throw new IllegalArgumentException("Usage: /spawnbots {COUNT} [spam]");
 
         final int count = Integer.parseInt(message.getArgs().get(0));
         if (count < 1 || count > 50)
             throw new IllegalArgumentException("Count must be between 1 and 50");
 
+        final boolean spamMode = message.getArgs().size() >= 2
+                && "spam".equalsIgnoreCase(message.getArgs().get(1));
+        final String modeLabel = spamMode ? " (spam mode - wizards)" : " (walk mode)";
+
         mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(),
-                "Spawning " + count + " bot players..."));
+                "Spawning " + count + " bot players" + modeLabel + "..."));
 
         final String serverHost = "127.0.0.1";
         final int serverPort = 2222;
@@ -515,7 +519,7 @@ public class ServerCommandHandler {
                                     "/admin/account/register", registerReq, JsonNode.class);
                             final String accountGuid = registered.get("accountGuid").asText();
 
-                            final int classId = CharacterClass.ASSASSIN.classId;
+                            final int classId = spamMode ? CharacterClass.WIZARD.classId : CharacterClass.ASSASSIN.classId;
                             final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executePost(
                                     "/data/account/" + accountGuid + "/character?classId=" + classId,
                                     null, PlayerAccountDto.class);
@@ -556,7 +560,7 @@ public class ServerCommandHandler {
                 try {
                     final String[] creds = botCredentials.get(i);
                     final StressTestClient bot = new StressTestClient(i, serverHost, serverPort,
-                            creds[0], creds[1], creds[2]);
+                            creds[0], creds[1], creds[2], spamMode);
                     bot.setSpawnNear(spawnX, spawnY);
                     synchronized (ACTIVE_BOTS) {
                         ACTIVE_BOTS.add(bot);

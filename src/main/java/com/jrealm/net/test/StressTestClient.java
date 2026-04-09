@@ -68,6 +68,7 @@ public class StressTestClient implements Runnable {
     private volatile boolean loggedIn = false;
     private volatile float spawnX = -1;
     private volatile float spawnY = -1;
+    private final boolean spamMode;
 
     private volatile Queue<Packet> inboundPacketQueue = new ConcurrentLinkedQueue<>();
     private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
@@ -77,12 +78,18 @@ public class StressTestClient implements Runnable {
 
     public StressTestClient(int clientIndex, String host, int port, String email, String password,
             String characterUuid) {
+        this(clientIndex, host, port, email, password, characterUuid, false);
+    }
+
+    public StressTestClient(int clientIndex, String host, int port, String email, String password,
+            String characterUuid, boolean spamMode) {
         this.clientIndex = clientIndex;
         this.host = host;
         this.port = port;
         this.email = email;
         this.password = password;
         this.characterUuid = characterUuid;
+        this.spamMode = spamMode;
     }
 
     @Override
@@ -231,23 +238,25 @@ public class StressTestClient implements Runnable {
             PlayerMovePacket movePacket = new PlayerMovePacket(this.assignedPlayerId, this.moveTick, dirFlags);
             this.outboundPacketQueue.add(movePacket);
 
-            // Send shoot packet every other tick to create projectiles (more server broadcast data)
-            if (RANDOM.nextBoolean()) {
-                float angle = RANDOM.nextFloat() * 360f;
-                float destX = (float) (Math.cos(Math.toRadians(angle)) * 200);
-                float destY = (float) (Math.sin(Math.toRadians(angle)) * 200);
-                PlayerShootPacket shootPacket = new PlayerShootPacket(
-                        RANDOM.nextLong(), this.assignedPlayerId, 0, destX, destY, 0, 0);
-                this.outboundPacketQueue.add(shootPacket);
-            }
+            if (this.spamMode) {
+                // Send shoot packet every other tick to create projectiles (more server broadcast data)
+                if (RANDOM.nextBoolean()) {
+                    float angle = RANDOM.nextFloat() * 360f;
+                    float destX = (float) (Math.cos(Math.toRadians(angle)) * 200);
+                    float destY = (float) (Math.sin(Math.toRadians(angle)) * 200);
+                    PlayerShootPacket shootPacket = new PlayerShootPacket(
+                            RANDOM.nextLong(), this.assignedPlayerId, 0, destX, destY, 0, 0);
+                    this.outboundPacketQueue.add(shootPacket);
+                }
 
-            // Spam ability (poison throw) at random nearby position every ~10 ticks (~2/sec)
-            if (this.moveTick % 10 == 0) {
-                float angle = RANDOM.nextFloat() * 360f;
-                float range = 80 + RANDOM.nextFloat() * 120;
-                float abilityX = this.spawnX + (float) (Math.cos(Math.toRadians(angle)) * range);
-                float abilityY = this.spawnY + (float) (Math.sin(Math.toRadians(angle)) * range);
-                this.outboundPacketQueue.add(new UseAbilityPacket(this.assignedPlayerId, abilityX, abilityY));
+                // Spam ability at random nearby position every ~10 ticks (~2/sec)
+                if (this.moveTick % 10 == 0) {
+                    float angle = RANDOM.nextFloat() * 360f;
+                    float range = 80 + RANDOM.nextFloat() * 120;
+                    float abilityX = this.spawnX + (float) (Math.cos(Math.toRadians(angle)) * range);
+                    float abilityY = this.spawnY + (float) (Math.sin(Math.toRadians(angle)) * range);
+                    this.outboundPacketQueue.add(new UseAbilityPacket(this.assignedPlayerId, abilityX, abilityY));
+                }
             }
 
             // Send heartbeat periodically
