@@ -137,9 +137,9 @@ public class LootContainer {
 
         if (!hasAnyItem) return LootTier.BROWN;
         if (hasUntiered) return LootTier.WHITE;
+        if (hasPotion) return LootTier.BLUE;
         if (hasHighTier) return LootTier.CYAN;
         if (hasLowTier) return LootTier.PURPLE;
-        if (hasPotion) return LootTier.BLUE;
         return LootTier.BROWN;
     }
 
