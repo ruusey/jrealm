@@ -1,6 +1,6 @@
 package com.jrealm.game.script.item;
 
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Monster;
@@ -104,7 +104,7 @@ public class TricksterPrismScript extends UseableItemScriptBase {
                 new Vector2f(oldX, oldY), player.getSize(), -1);
         decoy.setChaseRange(0);
         decoy.setAttackRange(0);
-        decoy.addEffect(ProjectileEffectType.INVINCIBLE, durationMs);
+        decoy.addEffect(StatusEffectType.INVINCIBLE, durationMs);
 
         // Set direction flags so the client animates the decoy walking.
         // Do NOT set dx/dy on the entity — processDecoys handles all position

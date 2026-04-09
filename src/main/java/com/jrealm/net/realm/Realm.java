@@ -1425,8 +1425,8 @@ public class Realm {
                     mgr.enqueueServerPacket(p, com.jrealm.net.client.packet.CreateEffectPacket.aoeEffect(
                             (short) 8, trap.x, trap.y, blastRadius, (short) 500));
                 }
-                final com.jrealm.game.contants.ProjectileEffectType effectType =
-                        com.jrealm.game.contants.ProjectileEffectType.valueOf(trap.effectId);
+                final com.jrealm.game.contants.StatusEffectType effectType =
+                        com.jrealm.game.contants.StatusEffectType.valueOf(trap.effectId);
                 for (final Enemy enemy : this.enemies.values()) {
                     if (enemy.getDeath()) continue;
                     float ecx = enemy.getPos().x + enemy.getSize() / 2f;
@@ -1475,11 +1475,11 @@ public class Realm {
             final float radiusSq = t.radius * t.radius;
             for (final Enemy enemy : this.enemies.values()) {
                 if (enemy.getDeath()) continue;
-                if (enemy.hasEffect(com.jrealm.game.contants.ProjectileEffectType.STASIS)) continue;
+                if (enemy.hasEffect(com.jrealm.game.contants.StatusEffectType.STASIS)) continue;
                 float dx = enemy.getPos().x - t.landX;
                 float dy = enemy.getPos().y - t.landY;
                 if (dx * dx + dy * dy <= radiusSq) {
-                    enemy.addEffect(com.jrealm.game.contants.ProjectileEffectType.POISONED, t.poisonDuration);
+                    enemy.addEffect(com.jrealm.game.contants.StatusEffectType.POISONED, t.poisonDuration);
                     this.registerPoisonDot(enemy.getId(), t.totalDamage, t.poisonDuration, t.sourcePlayerId);
                     mgr.broadcastTextEffect(com.jrealm.game.contants.EntityType.ENEMY, enemy,
                             com.jrealm.game.contants.TextEffect.DAMAGE, "POISONED");

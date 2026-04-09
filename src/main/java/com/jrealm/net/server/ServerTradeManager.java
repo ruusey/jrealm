@@ -71,6 +71,11 @@ public class ServerTradeManager {
 		if (message.getArgs() == null || message.getArgs().size() != 1)
 			throw new IllegalArgumentException("Usage: /trade {PLAYER_NAME}");
 
+		// Demo/guest accounts cannot trade
+		if ("demo".equals(target.getChatRole())) {
+			throw new Exception("Guest accounts cannot trade");
+		}
+
 		if (isTradeReqPending(target.getId())) {
 			throw new Exception("You already have a pending trade request");
 		}
@@ -102,6 +107,10 @@ public class ServerTradeManager {
 	@CommandHandler(value = "accept", description = "Accepts trade proposed to user")
 	public static void acceptTrade(RealmManagerServer mgr, Player target, ServerCommandMessage message)
 			throws Exception {
+		// Demo/guest accounts cannot trade
+		if ("demo".equals(target.getChatRole())) {
+			throw new Exception("Guest accounts cannot trade");
+		}
 		log.info("[TRADE] Player {} ({}) accepting trade", target.getName(), target.getId());
 		Long otherTraderId = ServerTradeManager.findTradePartner(target.getId());
 		if (otherTraderId == null) {

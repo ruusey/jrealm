@@ -1,7 +1,7 @@
 package com.jrealm.game.script.item;
 
 import com.jrealm.game.contants.EntityType;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
@@ -63,7 +63,7 @@ public class MysticOrbScript extends UseableItemScriptBase {
         for (final Enemy enemy : targetRealm.getEnemies().values()) {
             if (enemy.getDeath()) continue;
             // Don't re-stasis enemies already in stasis
-            if (enemy.hasEffect(ProjectileEffectType.STASIS)) continue;
+            if (enemy.hasEffect(StatusEffectType.STASIS)) continue;
 
             float dx = enemy.getPos().x - center.x;
             float dy = enemy.getPos().y - center.y;
@@ -71,11 +71,11 @@ public class MysticOrbScript extends UseableItemScriptBase {
 
             if (distSq <= STASIS_RADIUS * STASIS_RADIUS) {
                 // Inner zone: STASIS (frozen + invulnerable + can't attack)
-                enemy.addEffect(ProjectileEffectType.STASIS, stasisDuration);
+                enemy.addEffect(StatusEffectType.STASIS, stasisDuration);
                 this.mgr.broadcastTextEffect(EntityType.ENEMY, enemy, TextEffect.DAMAGE, "STASIS");
             } else if (distSq <= CURSE_RADIUS * CURSE_RADIUS) {
                 // Outer zone: CURSED (take 25% more damage)
-                enemy.addEffect(ProjectileEffectType.CURSED, CURSE_DURATION);
+                enemy.addEffect(StatusEffectType.CURSED, CURSE_DURATION);
                 this.mgr.broadcastTextEffect(EntityType.ENEMY, enemy, TextEffect.DAMAGE, "CURSED");
             }
         }

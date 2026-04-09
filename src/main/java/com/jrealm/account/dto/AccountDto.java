@@ -65,6 +65,10 @@ public class AccountDto implements Serializable {
         return this.hasAccess(AccountProvision.OPENREALM_MODERATOR);
     }
 
+    public boolean isDemo() {
+        return this.hasAccess(AccountProvision.OPENREALM_DEMO);
+    }
+
     public void addProvision(AccountProvision provision) {
         if (this.accountProvisions == null) {
             this.accountProvisions = new ArrayList<>();

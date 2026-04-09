@@ -13,4 +13,5 @@ public class LoginRequestMessage {
     private String email;
     private String password;
     private String characterUuid;
+    private String token;
 }

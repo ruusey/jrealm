@@ -32,10 +32,10 @@ public class Item156Script extends UseableItemScriptBase {
         for (final Player target : targetRealm
                 .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 5))) {
             // Berserk (attack speed) to all nearby players
-            target.addEffect(com.jrealm.game.contants.ProjectileEffectType.BERSERK, duration);
+            target.addEffect(com.jrealm.game.contants.StatusEffectType.BERSERK, duration);
             if (target.getId() == player.getId()) {
                 // Speedy (move speed) to self only
-                target.addEffect(com.jrealm.game.contants.ProjectileEffectType.SPEEDY, duration);
+                target.addEffect(com.jrealm.game.contants.StatusEffectType.SPEEDY, duration);
                 this.mgr.broadcastTextEffect(
                     com.jrealm.game.contants.EntityType.PLAYER, target,
                     com.jrealm.game.contants.TextEffect.PLAYER_INFO, "BERSERK + SPEEDY");

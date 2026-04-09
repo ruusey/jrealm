@@ -19,7 +19,7 @@ import com.jrealm.game.JRealmGame;
 import com.badlogic.gdx.graphics.Color;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.model.TileModel;
 import com.jrealm.game.tile.Tile;
 import com.jrealm.game.tile.TileData;
@@ -230,7 +230,7 @@ public class PlayState extends GameState {
     }
 
     private void movePlayer(Player p) {
-        if (p.hasEffect(ProjectileEffectType.PARALYZED)) {
+        if (p.hasEffect(StatusEffectType.PARALYZED)) {
             p.setDx(0);
             p.setDy(0);
         }
@@ -336,14 +336,14 @@ public class PlayState extends GameState {
         this.cam.input(mouse, key);
 
         if (!this.gsm.isStateActive(GameStateManager.PAUSE)) {
-            if ((this.cam.getTarget() == player) && !player.hasEffect(ProjectileEffectType.PARALYZED)) {
+            if ((this.cam.getTarget() == player) && !player.hasEffect(StatusEffectType.PARALYZED)) {
                 final Map<Cardinality, Boolean> lastDirectionTempMap = new HashMap<>();
                 player.input(mouse, key);
                 Cardinality c = null;
                 // RotMG speed formula: tiles/sec = 4 + 5.6 * (spd_stat / 75)
                 // Convert to pixels/frame: tiles/sec * tile_size / fps
                 float tilesPerSec = 4.0f + 5.6f * (player.getComputedStats().getSpd() / 75.0f);
-                if (player.hasEffect(ProjectileEffectType.SPEEDY)) {
+                if (player.hasEffect(StatusEffectType.SPEEDY)) {
                     tilesPerSec *= 1.5f;
                 }
                 float spd = tilesPerSec * 32.0f / 60.0f;
@@ -509,7 +509,7 @@ public class PlayState extends GameState {
         }
 
         double dex = (int) ((6.5 * (this.getPlayer().getComputedStats().getDex() + 17.3)) / 75);
-		if (player.hasEffect(ProjectileEffectType.SPEEDY)) {
+		if (player.hasEffect(StatusEffectType.SPEEDY)) {
 			dex = dex * 1.5;
 		}
         boolean canShoot = (System.currentTimeMillis() - this.lastShotTick) > (1000 / dex + 10);

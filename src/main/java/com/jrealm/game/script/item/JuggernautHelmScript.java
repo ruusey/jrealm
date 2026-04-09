@@ -1,6 +1,6 @@
 package com.jrealm.game.script.item;
 
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.math.Vector2f;
@@ -44,11 +44,11 @@ public class JuggernautHelmScript extends UseableItemScriptBase {
         // Apply Berserk to all nearby players (increases attack speed)
         for (final Player other : targetRealm
                 .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 5))) {
-            other.addEffect(ProjectileEffectType.BERSERK, duration);
+            other.addEffect(StatusEffectType.BERSERK, duration);
         }
 
         // Apply Armored to self (doubles DEF)
-        player.addEffect(ProjectileEffectType.ARMORED, duration);
+        player.addEffect(StatusEffectType.ARMORED, duration);
         this.mgr.broadcastTextEffect(com.jrealm.game.contants.EntityType.PLAYER, player,
                 com.jrealm.game.contants.TextEffect.PLAYER_INFO, "ARMORED");
 

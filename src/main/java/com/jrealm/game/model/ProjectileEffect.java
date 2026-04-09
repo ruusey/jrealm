@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ProjectileEffect {
-    private short effectId;  // ProjectileEffectType ordinal
+    private short effectId;  // StatusEffectType ordinal
     private long duration;   // milliseconds
 }

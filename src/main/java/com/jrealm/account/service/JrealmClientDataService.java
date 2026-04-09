@@ -99,6 +99,21 @@ public class JrealmClientDataService implements JrealmDataService{
         return JrealmClientDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
     }
 
+    public <T> T executeGetWithToken(String path, String token, Class<T> responseClass) throws Exception {
+        final URI targetURI = new URI(this.baseUrl + path);
+        final HttpRequest request = HttpRequest.newBuilder()
+                .uri(targetURI)
+                .GET()
+                .header("Content-Type", "application/json")
+                .header("Authorization", token)
+                .build();
+        final HttpResponse<String> response = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new IOException(response.body());
+        }
+        return JrealmClientDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
+    }
+
     public void setAuth(HttpRequest.Builder builder) {
         if (this.sessionToken != null) {
             builder.header("Authorization", this.sessionToken);

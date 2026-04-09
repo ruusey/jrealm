@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jrealm.game.contants.EntityType;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
@@ -73,7 +73,7 @@ public class SorcererScepterScript extends UseableItemScriptBase {
 
         for (int chain = 0; chain < maxTargets && currentTarget != null; chain++) {
             if (currentTarget.getDeath()) break;
-            if (currentTarget.hasEffect(ProjectileEffectType.STASIS)) {
+            if (currentTarget.hasEffect(StatusEffectType.STASIS)) {
                 // Skip stasis enemies, try next
                 hitEnemyIds.add(currentTarget.getId());
                 currentTarget = findNearestEnemy(targetRealm, chainOrigin, CHAIN_RANGE, hitEnemyIds);
@@ -82,10 +82,10 @@ public class SorcererScepterScript extends UseableItemScriptBase {
 
             // Apply chain damage
             short dmg = (short) Math.max(currentDamage - currentTarget.getStats().getDef(), currentDamage * 0.15);
-            if (player.hasEffect(ProjectileEffectType.DAMAGING)) {
+            if (player.hasEffect(StatusEffectType.DAMAGING)) {
                 dmg = (short) (dmg * 1.5);
             }
-            if (currentTarget.hasEffect(ProjectileEffectType.CURSED)) {
+            if (currentTarget.hasEffect(StatusEffectType.CURSED)) {
                 dmg = (short) (dmg * 1.25);
             }
 

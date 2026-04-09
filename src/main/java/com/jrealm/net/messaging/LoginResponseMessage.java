@@ -18,5 +18,6 @@ public class LoginResponseMessage {
     private float spawnX;
     private float spawnY;
     private String token;
+    private String chatRole;
     private PlayerAccountDto account;
 }

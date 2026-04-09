@@ -1,7 +1,7 @@
 package com.jrealm.game.script.item;
 
 import com.jrealm.game.contants.EntityType;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
@@ -65,7 +65,7 @@ public class NecromancerSkullScript extends UseableItemScriptBase {
         int totalDamageDealt = 0;
         for (final Enemy enemy : targetRealm.getEnemies().values()) {
             if (enemy.getDeath()) continue;
-            if (enemy.hasEffect(ProjectileEffectType.STASIS)) continue;
+            if (enemy.hasEffect(StatusEffectType.STASIS)) continue;
             float dx = enemy.getPos().x - center.x;
             float dy = enemy.getPos().y - center.y;
             if (dx * dx + dy * dy <= radius * radius) {

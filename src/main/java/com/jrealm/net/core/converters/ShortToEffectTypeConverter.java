@@ -1,11 +1,11 @@
 package com.jrealm.net.core.converters;
 
 import org.modelmapper.AbstractConverter;
-import com.jrealm.game.contants.ProjectileEffectType;
-public class ShortToEffectTypeConverter extends AbstractConverter<ProjectileEffectType, Short> {
+import com.jrealm.game.contants.StatusEffectType;
+public class ShortToEffectTypeConverter extends AbstractConverter<StatusEffectType, Short> {
 
     @Override
-    protected Short convert(ProjectileEffectType source) {
+    protected Short convert(StatusEffectType source) {
         return source.effectId;
     }
 }

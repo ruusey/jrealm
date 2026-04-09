@@ -1,7 +1,7 @@
 package com.jrealm.game.script.item;
 
 import com.jrealm.game.contants.EntityType;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.entity.Enemy;
 import com.jrealm.game.entity.Player;
@@ -59,14 +59,14 @@ public class OrbOfConflictScript extends UseableItemScriptBase {
 
         for (final Enemy enemy : targetRealm.getEnemies().values()) {
             if (enemy.getDeath()) continue;
-            if (enemy.hasEffect(ProjectileEffectType.STASIS)) continue;
+            if (enemy.hasEffect(StatusEffectType.STASIS)) continue;
 
             float dx = enemy.getPos().x - center.x;
             float dy = enemy.getPos().y - center.y;
             float distSq = dx * dx + dy * dy;
 
             if (distSq <= STASIS_RADIUS * STASIS_RADIUS) {
-                enemy.addEffect(ProjectileEffectType.STASIS, stasisDuration);
+                enemy.addEffect(StatusEffectType.STASIS, stasisDuration);
                 this.mgr.broadcastTextEffect(EntityType.ENEMY, enemy, TextEffect.DAMAGE, "STASIS");
             }
         }
@@ -75,8 +75,8 @@ public class OrbOfConflictScript extends UseableItemScriptBase {
         int wis = player.getComputedStats().getWis();
         long selfDuration = SELF_BUFF_BASE + Math.max(0, (wis - 50)) * 100;
 
-        player.addEffect(ProjectileEffectType.SPEEDY, selfDuration);
-        player.addEffect(ProjectileEffectType.DAMAGING, selfDuration);
+        player.addEffect(StatusEffectType.SPEEDY, selfDuration);
+        player.addEffect(StatusEffectType.DAMAGING, selfDuration);
         this.mgr.broadcastTextEffect(EntityType.PLAYER, player,
                 TextEffect.PLAYER_INFO, "SPEEDY + DAMAGING");
 

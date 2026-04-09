@@ -1,6 +1,6 @@
 package com.jrealm.game.script.item;
 
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.math.Vector2f;
@@ -33,7 +33,7 @@ public class Item153Script extends UseableItemScriptBase {
         for (final Player target : targetRealm
                 .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 5))) {
             target.addEffect(abilityItem.getEffect().getEffectId(), duration);
-            target.addEffect(ProjectileEffectType.DAMAGING, duration * 2);
+            target.addEffect(StatusEffectType.DAMAGING, duration * 2);
             this.mgr.broadcastTextEffect(
                 com.jrealm.game.contants.EntityType.PLAYER, target,
                 com.jrealm.game.contants.TextEffect.PLAYER_INFO, "HEALING + DAMAGING");

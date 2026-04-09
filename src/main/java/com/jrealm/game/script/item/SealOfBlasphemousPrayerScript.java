@@ -1,7 +1,7 @@
 package com.jrealm.game.script.item;
 
 import com.jrealm.game.contants.EntityType;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.contants.TextEffect;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.GameItem;
@@ -37,14 +37,14 @@ public class SealOfBlasphemousPrayerScript extends UseableItemScriptBase {
         // All nearby players get Invulnerable
         for (final Player target : targetRealm
                 .getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(player, 5))) {
-            target.addEffect(ProjectileEffectType.INVINCIBLE, duration);
+            target.addEffect(StatusEffectType.INVINCIBLE, duration);
             this.mgr.broadcastTextEffect(
                 EntityType.PLAYER, target, TextEffect.PLAYER_INFO, "INVULNERABLE");
         }
 
         // Self: also gets Healing + Damaging for double duration
-        player.addEffect(ProjectileEffectType.HEALING, duration * 2);
-        player.addEffect(ProjectileEffectType.DAMAGING, duration * 2);
+        player.addEffect(StatusEffectType.HEALING, duration * 2);
+        player.addEffect(StatusEffectType.DAMAGING, duration * 2);
         this.mgr.broadcastTextEffect(
             EntityType.PLAYER, player, TextEffect.PLAYER_INFO, "HEALING + DAMAGING");
 

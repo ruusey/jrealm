@@ -1,6 +1,6 @@
 package com.jrealm.game.entity.item;
 
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Effect {
     private boolean self;
-    private ProjectileEffectType effectId;
+    private StatusEffectType effectId;
     private long duration;
     private long cooldownDuration;
     private short mpCost;

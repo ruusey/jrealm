@@ -3,7 +3,7 @@ package com.jrealm.net.entity;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.entity.item.Effect;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.SerializableField;
@@ -39,7 +39,7 @@ public class NetEffect extends SerializableFieldType<NetEffect> {
 	}
 
 	public Effect asEffect() {
-		return Effect.builder().self(this.self).effectId(ProjectileEffectType.valueOf(this.effectId)).duration(this.duration)
+		return Effect.builder().self(this.self).effectId(StatusEffectType.valueOf(this.effectId)).duration(this.duration)
 				.cooldownDuration(this.cooldownDuration).mpCost(this.mpCost).build();
 	}
 

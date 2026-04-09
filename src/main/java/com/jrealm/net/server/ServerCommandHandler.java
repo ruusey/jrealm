@@ -21,7 +21,7 @@ import com.jrealm.account.dto.CharacterDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.GameLauncher;
 import com.jrealm.net.test.StressTestClient;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
 import com.jrealm.game.data.GameDataManager;
@@ -296,7 +296,7 @@ public class ServerCommandHandler {
         log.info("Player {} set effect {}", target.getName(), message);
         switch (message.getArgs().get(0)) {
         case "add":
-            target.addEffect(ProjectileEffectType.valueOf(Short.valueOf(message.getArgs().get(1))),
+            target.addEffect(StatusEffectType.valueOf(Short.valueOf(message.getArgs().get(1))),
                     1000 * Long.parseLong(message.getArgs().get(2)));
             break;
         case "clear":
@@ -332,8 +332,8 @@ public class ServerCommandHandler {
                 throw new IllegalArgumentException("Cannot teleport to " + destPlayer.getName() + " — they are in a different area.");
             }
             // Check teleportable (not invisible/stasis)
-            if (destPlayer.hasEffect(com.jrealm.game.contants.ProjectileEffectType.INVISIBLE)
-                    || destPlayer.hasEffect(com.jrealm.game.contants.ProjectileEffectType.STASIS)) {
+            if (destPlayer.hasEffect(com.jrealm.game.contants.StatusEffectType.INVISIBLE)
+                    || destPlayer.hasEffect(com.jrealm.game.contants.StatusEffectType.STASIS)) {
                 throw new IllegalArgumentException(destPlayer.getName() + " cannot be teleported to right now.");
             }
             target.setPos(destPlayer.getPos().clone());
@@ -461,11 +461,11 @@ public class ServerCommandHandler {
 	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokeGodMode(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
-        if (target.hasEffect(ProjectileEffectType.INVINCIBLE)) {
+        if (target.hasEffect(StatusEffectType.INVINCIBLE)) {
             target.resetEffects();
             mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), "God mode OFF"));
         } else {
-            target.addEffect(ProjectileEffectType.INVINCIBLE, 1000 * 60 * 60 * 24);
+            target.addEffect(StatusEffectType.INVINCIBLE, 1000 * 60 * 60 * 24);
             mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), "God mode ON"));
         }
         log.info("Player {} toggled god mode", target.getName());
@@ -579,7 +579,7 @@ public class ServerCommandHandler {
                                     .filter(p -> p.getId() == bot.getAssignedPlayerId())
                                     .findFirst().orElse(null);
                             if (botPlayer != null) {
-                                botPlayer.addEffect(ProjectileEffectType.INVINCIBLE, 1000L * 60 * 60 * 24);
+                                botPlayer.addEffect(StatusEffectType.INVINCIBLE, 1000L * 60 * 60 * 24);
                             }
                         } catch (Exception ex) {
                             log.warn("[BOTS] Failed to set bot {} godmode: {}", i, ex.getMessage());

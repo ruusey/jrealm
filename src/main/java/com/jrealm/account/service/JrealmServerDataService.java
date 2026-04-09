@@ -95,6 +95,21 @@ public class JrealmServerDataService implements JrealmDataService{
         return JrealmServerDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
     }
 
+    public <T> T executeGetWithToken(String path, String token, Class<T> responseClass) throws Exception {
+        final URI targetURI = new URI(this.baseUrl + path);
+        final HttpRequest request = HttpRequest.newBuilder()
+                .uri(targetURI)
+                .GET()
+                .header("Content-Type", "application/json")
+                .header("Authorization", token)
+                .build();
+        final HttpResponse<String> response = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new IOException(response.body());
+        }
+        return JrealmServerDataService.REQUEST_MAPPER.readValue(response.body(), responseClass);
+    }
+
     public static void main(String[] args) {
         JrealmClientDataService service = new JrealmClientDataService(HttpClient.newHttpClient(), "http://localhost/", null);
         LoginRequestDto login = new LoginRequestDto("ru-admin@jrealm.com", "password");

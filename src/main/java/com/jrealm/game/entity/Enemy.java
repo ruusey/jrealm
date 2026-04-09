@@ -4,7 +4,8 @@ import java.util.List;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.ProjectileFlag;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.contants.ProjectilePositionMode;
 import com.jrealm.game.entity.Bullet;
 import com.jrealm.game.data.GameDataManager;
@@ -141,14 +142,14 @@ public class Enemy extends Entity {
         } else {
             speed = (this.model.getMaxSpeed() > 0) ? this.model.getMaxSpeed() : CHASE_SPEED;
         }
-        if (this.hasEffect(ProjectileEffectType.SLOWED)) speed *= 0.5f;
+        if (this.hasEffect(StatusEffectType.SLOWED)) speed *= 0.5f;
         return speed;
     }
 
     // ========== MOVEMENT PATTERNS ==========
 
     private void applyMovement(Player player, EnemyPhase phase) {
-        if (player == null || player.hasEffect(ProjectileEffectType.INVISIBLE)) {
+        if (player == null || player.hasEffect(StatusEffectType.INVISIBLE)) {
             this.dx = 0;
             this.dy = 0;
             this.up = false;
@@ -391,8 +392,8 @@ public class Enemy extends Entity {
     // ========== ATTACK PATTERNS ==========
 
     private void processAttacks(Player player, EnemyPhase phase, RealmManagerServer mgr, Realm targetRealm) {
-        if (player.hasEffect(ProjectileEffectType.INVISIBLE)) return;
-        if (this.hasEffect(ProjectileEffectType.STUNNED)) return;
+        if (player.hasEffect(StatusEffectType.INVISIBLE)) return;
+        if (this.hasEffect(StatusEffectType.STUNNED)) return;
 
         float dist = this.pos.distanceTo(player.pos);
 
@@ -593,7 +594,7 @@ public class Enemy extends Entity {
                 angle = Float.parseFloat(p.getAngle());
             }
 
-            boolean isOrbital = p.hasFlag(ProjectileEffectType.ORBITAL.effectId);
+            boolean isOrbital = p.hasFlag(ProjectileFlag.ORBITAL.flagId);
             if (isOrbital) {
                 // For orbital projectiles: spawn evenly spaced around the enemy center.
                 // |amplitude| = orbit radius, sign of amplitude controls orbit direction.
@@ -635,7 +636,7 @@ public class Enemy extends Entity {
     // ========== LEGACY CHASE (for backwards compat without phases) ==========
 
     public void chase(Player player) {
-        if (player == null || player.hasEffect(ProjectileEffectType.INVISIBLE)) {
+        if (player == null || player.hasEffect(StatusEffectType.INVISIBLE)) {
             this.up = false;
             this.dy = 0;
             this.dx = 0;
@@ -688,7 +689,7 @@ public class Enemy extends Entity {
         EnemyPhase phase = this.getActivePhase();
 
         // Movement — STASIS freezes movement AND attacks (like PARALYZED + STUNNED combined)
-        final boolean frozen = this.hasEffect(ProjectileEffectType.PARALYZED) || this.hasEffect(ProjectileEffectType.STASIS);
+        final boolean frozen = this.hasEffect(StatusEffectType.PARALYZED) || this.hasEffect(StatusEffectType.STASIS);
         if (frozen) {
             this.up = false;
             this.down = false;
@@ -703,8 +704,8 @@ public class Enemy extends Entity {
         }
 
         // Attacks — STASIS also prevents attacking
-        final boolean notInvisible = !player.hasEffect(ProjectileEffectType.INVISIBLE);
-        if (notInvisible && !this.hasEffect(ProjectileEffectType.STUNNED) && !this.hasEffect(ProjectileEffectType.STASIS)) {
+        final boolean notInvisible = !player.hasEffect(StatusEffectType.INVISIBLE);
+        if (notInvisible && !this.hasEffect(StatusEffectType.STUNNED) && !this.hasEffect(StatusEffectType.STASIS)) {
             this.processAttacks(player, phase, mgr, targetRealm);
         } else {
             this.attack = false;
@@ -750,23 +751,23 @@ public class Enemy extends Entity {
     @Override
     public void updateEffectState() {
         if (this.getSpriteSheet() == null) return;
-        if (this.hasEffect(ProjectileEffectType.STASIS)) {
+        if (this.hasEffect(StatusEffectType.STASIS)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.STASIS)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.STASIS);
             }
-        } else if (this.hasEffect(ProjectileEffectType.PARALYZED)) {
+        } else if (this.hasEffect(StatusEffectType.PARALYZED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.GRAYSCALE)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.GRAYSCALE);
             }
-        } else if (this.hasEffect(ProjectileEffectType.STUNNED)) {
+        } else if (this.hasEffect(StatusEffectType.STUNNED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.DECAY);
             }
-        } else if (this.hasEffect(ProjectileEffectType.CURSED)) {
+        } else if (this.hasEffect(StatusEffectType.CURSED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.CURSED)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.CURSED);
             }
-        } else if (this.hasEffect(ProjectileEffectType.POISONED)) {
+        } else if (this.hasEffect(StatusEffectType.POISONED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.POISONED)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.POISONED);
             }

@@ -6,7 +6,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.ProjectileFlag;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.math.Vector2f;
 import com.jrealm.game.model.ProjectileGroup;
@@ -136,7 +137,11 @@ public class Bullet extends GameObject  {
         return (this.flags != null) && (this.flags.contains(flag));
     }
     
-    public boolean hasFlag(ProjectileEffectType flag) {
+    public boolean hasFlag(ProjectileFlag flag) {
+        return (this.flags != null) && (this.flags.contains(flag.flagId));
+    }
+
+    public boolean hasFlag(StatusEffectType flag) {
         return (this.flags != null) && (this.flags.contains(flag.effectId));
     }
 
@@ -173,10 +178,10 @@ public class Bullet extends GameObject  {
         this.lastUpdateNanos = now;
         final float bulletScale = dt * 64.0f;
 
-        if (this.hasFlag(ProjectileEffectType.ORBITAL)) {
+        if (this.hasFlag(ProjectileFlag.ORBITAL)) {
             this.updateOrbital(bulletScale);
-        } else if (this.hasFlag(ProjectileEffectType.PARAMETRIC_PROJECTILE)
-                || this.hasFlag(ProjectileEffectType.INVERTED_PARAMETRIC_PROJECTILE)) {
+        } else if (this.hasFlag(ProjectileFlag.PARAMETRIC)
+                || this.hasFlag(ProjectileFlag.INVERTED_PARAMETRIC)) {
             this.updateParametric(bulletScale);
         } else {
             // Regular straight line projectile

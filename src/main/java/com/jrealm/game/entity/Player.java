@@ -14,7 +14,7 @@ import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.game.contants.CharacterClass;
 import com.jrealm.game.contants.GlobalConstants;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.item.GameItem;
 import com.jrealm.game.entity.item.LootContainer;
@@ -215,7 +215,7 @@ public class Player extends Entity {
 		if (((Instant.now().toEpochMilli() - this.lastStatsTime) >= 1000)) {
 			this.lastStatsTime = System.currentTimeMillis();
 			float mult = 1.0f;
-			if (this.hasEffect(ProjectileEffectType.HEALING)) {
+			if (this.hasEffect(StatusEffectType.HEALING)) {
 				mult = 1.5f;
 			}
 			final int vit = (int) ((0.24f * (stats.getVit() + 4.2f)) * mult);
@@ -251,7 +251,7 @@ public class Player extends Entity {
 			}
 		}
 		// ARMORED doubles defense
-		if (this.hasEffect(ProjectileEffectType.ARMORED)) {
+		if (this.hasEffect(StatusEffectType.ARMORED)) {
 			stats.setDef((short) (stats.getDef() * 2));
 		}
 		return stats;
@@ -284,19 +284,19 @@ public class Player extends Entity {
 	public void updateEffectState() {
 		if (this.getSpriteSheet() == null)
 			return;
-		if (this.hasEffect(ProjectileEffectType.INVISIBLE)) {
+		if (this.hasEffect(StatusEffectType.INVISIBLE)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.SEPIA)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.SEPIA);
 			}
-		} else if (this.hasEffect(ProjectileEffectType.HEALING)) {
+		} else if (this.hasEffect(StatusEffectType.HEALING)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.REDISH)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.REDISH);
 			}
-		} else if (this.hasEffect(ProjectileEffectType.ARMORED)) {
+		} else if (this.hasEffect(StatusEffectType.ARMORED)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.ARMORED)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.ARMORED);
 			}
-		} else if (this.hasEffect(ProjectileEffectType.SPEEDY)) {
+		} else if (this.hasEffect(StatusEffectType.SPEEDY)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.DECAY);
 			}

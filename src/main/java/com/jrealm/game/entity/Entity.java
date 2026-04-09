@@ -4,7 +4,7 @@ import java.time.Instant;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.graphics.Sprite;
 import com.jrealm.game.math.Rectangle;
 import com.jrealm.game.math.Vector2f;
@@ -71,7 +71,7 @@ public abstract class Entity extends GameObject {
         }
     }
 
-    public boolean hasEffect(ProjectileEffectType effect) {
+    public boolean hasEffect(StatusEffectType effect) {
         if (this.effectIds == null)
             return false;
         for (int i = 0; i < this.effectIds.length; i++) {
@@ -94,11 +94,11 @@ public abstract class Entity extends GameObject {
         this.effectTimes = new Long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
     }
 
-    public void addEffect(ProjectileEffectType effect, long duration) {
+    public void addEffect(StatusEffectType effect, long duration) {
         final long expireTime = Instant.now().toEpochMilli() + duration;
 
         // POISONED stacks — always add a new slot (multiple poisons tick independently)
-        if (effect == ProjectileEffectType.POISONED) {
+        if (effect == StatusEffectType.POISONED) {
             for (int i = 0; i < this.effectIds.length; i++) {
                 if (this.effectIds[i] == -1) {
                     this.effectIds[i] = effect.effectId;

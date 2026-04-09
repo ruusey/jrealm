@@ -1,6 +1,6 @@
 package com.jrealm.game.script.item;
 
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.Effect;
 import com.jrealm.game.entity.item.GameItem;
@@ -70,7 +70,7 @@ public class HolyProtectionTomeScript extends UseableItemScriptBase {
 
         // Apply ARMORED to self
         long armoredDuration = ARMORED_BASE_DURATION;
-        player.addEffect(ProjectileEffectType.ARMORED, armoredDuration);
+        player.addEffect(StatusEffectType.ARMORED, armoredDuration);
         this.mgr.broadcastTextEffect(com.jrealm.game.contants.EntityType.PLAYER, player,
                 com.jrealm.game.contants.TextEffect.PLAYER_INFO, "ARMORED");
     }

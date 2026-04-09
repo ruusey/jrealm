@@ -35,7 +35,8 @@ import com.jrealm.account.dto.CharacterStatsDto;
 import com.jrealm.account.dto.GameItemRefDto;
 import com.jrealm.account.dto.PlayerAccountDto;
 import com.jrealm.game.contants.CharacterClass;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.ProjectileFlag;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.contants.EntityType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.contants.LootTier;
@@ -1350,7 +1351,7 @@ public class RealmManagerServer implements Runnable {
 
 	private void movePlayer(final long realmId, final Player p) {
 		// If the player is paralyzed, stop them and return.
-        if (p.hasEffect(ProjectileEffectType.PARALYZED)) {
+        if (p.hasEffect(StatusEffectType.PARALYZED)) {
             p.setCurrentDirFlags((byte) 0);
             p.setDx(0); p.setDy(0);
             p.setUp(false);
@@ -1409,8 +1410,8 @@ public class RealmManagerServer implements Runnable {
 		boolean right = (flags & 0x08) != 0;
 
 		float tilesPerSec = 4.0f + 5.6f * (p.getComputedStats().getSpd() / 75.0f);
-		if (p.hasEffect(ProjectileEffectType.SPEEDY)) tilesPerSec *= 1.5f;
-		if (p.hasEffect(ProjectileEffectType.SLOWED)) tilesPerSec *= 0.5f;
+		if (p.hasEffect(StatusEffectType.SPEEDY)) tilesPerSec *= 1.5f;
+		if (p.hasEffect(StatusEffectType.SLOWED)) tilesPerSec *= 0.5f;
 		float spd = tilesPerSec * 32.0f / 64.0f;
 
 		boolean movingX = left || right;
@@ -1476,7 +1477,7 @@ public class RealmManagerServer implements Runnable {
 			return;
 		}
 		// Godmode (INVINCIBLE) = infinite mana
-		if (!player.hasEffect(ProjectileEffectType.INVINCIBLE)) {
+		if (!player.hasEffect(StatusEffectType.INVINCIBLE)) {
 			if (player.getMana() < effect.getMpCost())
 				return;
 			player.setMana(player.getMana() - effect.getMpCost());
@@ -1531,11 +1532,11 @@ public class RealmManagerServer implements Runnable {
 			// If the ability is non damaging or script-only (rogue cloak, priest tome, sorcerer scepter)
 		} else if (abilityItem.getEffect() != null) {
 			// Special case for teleporting — validate destination with full hitbox check
-			if (abilityItem.getEffect().getEffectId().equals(ProjectileEffectType.TELEPORT)
+			if (abilityItem.getEffect().getEffectId().equals(StatusEffectType.TELEPORT)
 					&& !targetRealm.getTileManager().collidesAtPosition(pos, player.getSize())
 					&& !targetRealm.getTileManager().isVoidTile(pos, 0, 0)) {
 				player.setPos(pos);
-			} else if (!abilityItem.getEffect().getEffectId().equals(ProjectileEffectType.TELEPORT)) {
+			} else if (!abilityItem.getEffect().getEffectId().equals(StatusEffectType.TELEPORT)) {
 				// Only apply effect to self if the effect is marked as self-targeting.
 				// Non-self effects (e.g., Huntress trap) are handled by item scripts.
 				if (abilityItem.getEffect().isSelf()) {
@@ -1646,7 +1647,7 @@ public class RealmManagerServer implements Runnable {
 		this.proccessTerrainHit(realmId, p);
 
 		// Player-bullet collision (enemy bullets hitting player)
-		if (!player.hasEffect(ProjectileEffectType.INVINCIBLE)) {
+		if (!player.hasEffect(StatusEffectType.INVINCIBLE)) {
 			for (final Bullet b : nearbyBullets) {
 				this.processPlayerHit(realmId, b, player);
 			}
@@ -1729,10 +1730,10 @@ public class RealmManagerServer implements Runnable {
 			// Apply on-hit status effects from projectile's effects list (data-driven with durations)
 			if (b.getEffects() != null) {
 				for (final ProjectileEffect pe : b.getEffects()) {
-					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
+					final StatusEffectType effectType = StatusEffectType.valueOf(pe.getEffectId());
 					if (effectType != null) {
 						p.addEffect(effectType, pe.getDuration());
-						if (effectType == ProjectileEffectType.PARALYZED) {
+						if (effectType == StatusEffectType.PARALYZED) {
 							p.setDx(0); p.setDy(0);
 						}
 						this.sendTextEffectToPlayer(player, TextEffect.PLAYER_INFO, effectType.name());
@@ -1752,7 +1753,7 @@ public class RealmManagerServer implements Runnable {
 		if (targetRealm.hasHitEnemy(b.getId(), e.getId()) || targetRealm.getExpiredEnemies().contains(e.getId()))
 			return;
 		// Enemies in STASIS or INVINCIBLE are invulnerable — all damage is nullified
-		if (e.hasEffect(ProjectileEffectType.STASIS) || e.hasEffect(ProjectileEffectType.INVINCIBLE))
+		if (e.hasEffect(StatusEffectType.STASIS) || e.hasEffect(StatusEffectType.INVINCIBLE))
 			return;
 		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
 			final short minDmg = (short) (b.getDamage() * 0.15);
@@ -1768,12 +1769,12 @@ public class RealmManagerServer implements Runnable {
 
 			if(b.getSrcEntityId() != 0l) {
 				final Player fromPlayer = this.getPlayerById(b.getSrcEntityId());
-				if(fromPlayer!=null &&  fromPlayer.hasEffect(ProjectileEffectType.DAMAGING)) {
+				if(fromPlayer!=null &&  fromPlayer.hasEffect(StatusEffectType.DAMAGING)) {
 					dmgToInflict = (short)(dmgToInflict * 1.5);
 				}
 			}
 			// CURSED enemies take 25% more damage from all sources
-			if (e.hasEffect(ProjectileEffectType.CURSED)) {
+			if (e.hasEffect(StatusEffectType.CURSED)) {
 				dmgToInflict = (short)(dmgToInflict * 1.25);
 			}
 
@@ -1781,7 +1782,7 @@ public class RealmManagerServer implements Runnable {
 			e.setHealth(e.getHealth() - dmgToInflict);
 			int maxHealth = (int) (model.getHealth() * e.getDifficulty());
 			e.setHealthpercent((float) e.getHealth() / (float) maxHealth);
-			if (b.hasFlag(ProjectileEffectType.PLAYER_PROJECTILE) && !b.isEnemyHit()) {
+			if (b.hasFlag(ProjectileFlag.PLAYER_PROJECTILE) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
 			} else if (b.remove()) {
 				targetRealm.getExpiredBullets().add(b.getId());
@@ -1794,7 +1795,7 @@ public class RealmManagerServer implements Runnable {
 			// Apply on-hit status effects from projectile's effects list (data-driven with durations)
 			if (b.getEffects() != null) {
 				for (final ProjectileEffect pe : b.getEffects()) {
-					final ProjectileEffectType effectType = ProjectileEffectType.valueOf(pe.getEffectId());
+					final StatusEffectType effectType = StatusEffectType.valueOf(pe.getEffectId());
 					if (effectType != null) {
 						e.addEffect(effectType, pe.getDuration());
 						this.broadcastTextEffect(targetRealm, EntityType.ENEMY, e, TextEffect.PLAYER_INFO, effectType.name());

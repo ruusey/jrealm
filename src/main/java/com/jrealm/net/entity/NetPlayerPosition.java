@@ -1,6 +1,6 @@
 package com.jrealm.net.entity;
 
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.net.Streamable;
 import com.jrealm.net.core.SerializableField;
@@ -31,8 +31,8 @@ public class NetPlayerPosition extends SerializableFieldType<NetPlayerPosition> 
     private boolean teleportable;
 
     public static NetPlayerPosition from(Player player) {
-        boolean canTeleport = !player.hasEffect(ProjectileEffectType.INVISIBLE)
-                && !player.hasEffect(ProjectileEffectType.STASIS);
+        boolean canTeleport = !player.hasEffect(StatusEffectType.INVISIBLE)
+                && !player.hasEffect(StatusEffectType.STASIS);
         return new NetPlayerPosition(
                 player.getId(),
                 player.getName() != null ? player.getName() : "Player",

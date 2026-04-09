@@ -1,6 +1,6 @@
 package com.jrealm.game.script.item;
 
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.entity.Player;
 import com.jrealm.game.entity.item.Effect;
 import com.jrealm.game.entity.item.GameItem;
@@ -31,7 +31,7 @@ public class Item159Script extends UseableItemScriptBase {
     @Override
     public void invokeItemAbility(final Realm targetRealm, final Player player, final GameItem abilityItem) {
         
-        player.addEffect(ProjectileEffectType.INVISIBLE, 3750);
+        player.addEffect(StatusEffectType.INVISIBLE, 3750);
         // Broadcast heal radius visual effect
     }
 

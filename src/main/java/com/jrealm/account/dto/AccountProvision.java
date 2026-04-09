@@ -11,6 +11,8 @@ import java.util.List;
  * OPENREALM_ADMIN      - Full in-game admin commands. Subsumes MODERATOR, EDITOR, and PLAYER.
  * OPENREALM_SYS_ADMIN  - Highest privilege. Subsumes all other provisions.
  *
+ * OPENREALM_DEMO      - Guest/demo account with limited features (1 character, 1 chest, no trading).
+ *
  * EDITOR and MODERATOR are separate capability branches — neither implies the other.
  * ADMIN and SYS_ADMIN are superuser tiers that implicitly grant all lower capabilities.
  */
@@ -19,7 +21,8 @@ public enum AccountProvision {
     OPENREALM_MODERATOR,
     OPENREALM_EDITOR,
     OPENREALM_ADMIN,
-    OPENREALM_SYS_ADMIN;
+    OPENREALM_SYS_ADMIN,
+    OPENREALM_DEMO;
 
     /**
      * Returns true if this provision satisfies the given required provision.

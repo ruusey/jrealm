@@ -16,7 +16,7 @@ import com.jrealm.account.dto.SessionTokenDto;
 import com.jrealm.account.service.JrealmServerDataService;
 import com.jrealm.game.JRealmGame;
 import com.jrealm.game.contants.CharacterClass;
-import com.jrealm.game.contants.ProjectileEffectType;
+import com.jrealm.game.contants.StatusEffectType;
 import com.jrealm.game.contants.GlobalConstants;
 import com.jrealm.game.data.GameDataManager;
 import com.jrealm.game.entity.Bullet;
@@ -156,7 +156,7 @@ public class ServerGameLogic {
 			user.setPos(mapModel.getCenter());
 			generatedRealm.addPortal(exitPortal);
 			mgr.addRealm(generatedRealm);
-			user.addEffect(ProjectileEffectType.INVINCIBLE, 4000);
+			user.addEffect(StatusEffectType.INVINCIBLE, 4000);
 			generatedRealm.addPlayer(user);
 			mgr.clearPlayerState(user.getId());
 			sendImmediateLoadMap(mgr, generatedRealm, user);
@@ -202,7 +202,7 @@ public class ServerGameLogic {
 
 			final MapModel nexusMap = GameDataManager.MAPS.get(nexus.getMapId());
 			user.setPos(nexusMap != null ? nexusMap.getRandomSpawnPoint() : nexus.getTileManager().getSafePosition());
-			user.addEffect(ProjectileEffectType.INVINCIBLE, 4000);
+			user.addEffect(StatusEffectType.INVINCIBLE, 4000);
 			nexus.addPlayer(user);
 			mgr.clearPlayerState(user.getId());
 			sendImmediateLoadMap(mgr, nexus, user);
@@ -348,7 +348,7 @@ public class ServerGameLogic {
 				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
 		}
-		user.addEffect(ProjectileEffectType.INVINCIBLE, 4000);
+		user.addEffect(StatusEffectType.INVINCIBLE, 4000);
 		targetRealm.addPlayer(user);
 		mgr.clearPlayerState(user.getId());
 		sendImmediateLoadMap(mgr, targetRealm, user);
@@ -443,14 +443,14 @@ public class ServerGameLogic {
 		boolean canShoot = false;
 		if (realm.getPlayerLastShotTime().get(player.getId()) != null) {
 			double dex = (int) ((6.5 * (player.getComputedStats().getDex() + 17.3)) / 75);
-			if (player.hasEffect(ProjectileEffectType.SPEEDY)) {
+			if (player.hasEffect(StatusEffectType.SPEEDY)) {
 				dex = dex * 1.5;
-			}else if(player.hasEffect(ProjectileEffectType.DAZED)) {
+			}else if(player.hasEffect(StatusEffectType.DAZED)) {
 				dex = 1.0;
 			}
 			canShoot = ((Instant.now().toEpochMilli() - realm.getPlayerLastShotTime().get(player.getId())) > (1000
 					/ dex));
-			if (canShoot && !player.hasEffect(ProjectileEffectType.STUNNED)) {
+			if (canShoot && !player.hasEffect(StatusEffectType.STUNNED)) {
 				realm.getPlayerLastShotTime().put(player.getId(), Instant.now().toEpochMilli());
 			} else {
 				canShoot = false;
@@ -610,7 +610,18 @@ public class ServerGameLogic {
 			long assignedId = -1l;
 			Player player = null;
 			try {
-				SessionTokenDto loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
+				SessionTokenDto loginToken;
+				if (request.getToken() != null && !request.getToken().isEmpty()) {
+					// Token-based auth: resolve the token to get account info
+					loginToken = new SessionTokenDto();
+					loginToken.setToken(request.getToken());
+					AccountDto resolved = ServerGameLogic.DATA_SERVICE.executeGetWithToken(
+						"/admin/account/token/resolve", request.getToken(), AccountDto.class);
+					loginToken.setAccountGuid(resolved.getAccountGuid());
+				} else {
+					// Legacy email+password auth
+					loginToken = ServerGameLogic.doLoginRemote(request.getEmail(), request.getPassword());
+				}
 				PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executeGet(
 						"/data/account/" + loginToken.getAccountGuid(), null, PlayerAccountDto.class);
 				String accountName = account.getAccountName();
@@ -690,13 +701,14 @@ public class ServerGameLogic {
 					if (authAccount != null && authAccount.isSysAdmin()) player.setChatRole("sysadmin");
 					else if (authAccount != null && authAccount.isAdmin()) player.setChatRole("admin");
 					else if (authAccount != null && authAccount.isModerator()) player.setChatRole("mod");
+					else if (authAccount != null && authAccount.isDemo()) player.setChatRole("demo");
 				} catch (Exception roleEx) {
 					log.warn("[SERVER] Could not fetch auth role for {}: {}", accountName, roleEx.getMessage());
 				}
 				if (isBotAccount) {
 					player.setBot(true);
 				}
-				player.addEffect(ProjectileEffectType.INVINCIBLE, 4000);
+				player.addEffect(StatusEffectType.INVINCIBLE, 4000);
 				player.setPos(targetRealm.getTileManager().getSafePosition());
 				log.info("[SERVER] Adding player {} to realm. bot={}, headless={}, accountUuid={}",
 						player.getName(), player.isBot(), player.isHeadless(), player.getAccountUuid());
@@ -706,7 +718,8 @@ public class ServerGameLogic {
 				final LoginResponseMessage message = LoginResponseMessage.builder()
 						.classId(resolvedClassId != null ? resolvedClassId : 0)
 						.spawnX(player.getPos().x).spawnY(player.getPos().y)
-						.playerId(player.getId()).success(true).account(account).token(loginToken.getToken()).build();
+						.playerId(player.getId()).success(true).account(account).token(loginToken.getToken())
+						.chatRole(player.getChatRole()).build();
 				mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
 
 				commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);

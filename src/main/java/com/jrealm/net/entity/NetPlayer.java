@@ -37,6 +37,8 @@ public class NetPlayer extends SerializableFieldType<NetPlayer>{
 	// Assigned by ShortIdAllocator when entity enters a realm.
 	@SerializableField(order = 9, type = SerializableShort.class)
 	private short shortId;
+	@SerializableField(order = 10, type = SerializableString.class)
+	private String chatRole;
 
 	public Player toPlayer() {
 		Player p = new Player();
@@ -49,6 +51,7 @@ public class NetPlayer extends SerializableFieldType<NetPlayer>{
 		p.setPos(this.pos);
 		p.setDx(this.dX);
 		p.setDy(this.dY);
+		p.setChatRole(this.chatRole);
 		return p;
 	}
 }
