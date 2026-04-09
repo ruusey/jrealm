@@ -255,32 +255,29 @@ public class RealmManagerServer implements Runnable {
 					entryNode != null ? entryNode.getMapId() : "null", e.getMessage(), e);
 			realm = new Realm(true, 2);
 		}
+		final var entryMapModel = GameDataManager.MAPS.get(realm.getMapId());
+		final boolean isStaticMap = entryMapModel != null && entryMapModel.getTerrainId() < 0;
+
 		realm.spawnRandomEnemies(realm.getMapId());
 
-		// Initialize Overseer AI for the main realm (ecosystem management, boss events, taunts)
-		realm.setOverseer(new RealmOverseer(realm, this));
+		// No overseer on static maps (nexus, vault) — no boss events or enemy respawns
+		if (!isStaticMap) {
+			realm.setOverseer(new RealmOverseer(realm, this));
+		}
 
-		// Place set piece structures (ruins, graveyards, etc.) after terrain generation
-		TerrainGenerationParameters terrainParams = null;
-		if (GameDataManager.TERRAINS != null) {
-			// Try to get terrain params from the map's terrainId
-			final var mapModel = GameDataManager.MAPS.get(realm.getMapId());
-			if (mapModel != null && mapModel.getTerrainId() >= 0) {
-				terrainParams = GameDataManager.TERRAINS.get(mapModel.getTerrainId());
-			}
-			// Fallback to terrain 0 (overworld)
+		// Place set piece structures only for terrain-generated maps
+		if (entryMapModel != null && entryMapModel.getTerrainId() >= 0 && GameDataManager.TERRAINS != null) {
+			TerrainGenerationParameters terrainParams = GameDataManager.TERRAINS.get(entryMapModel.getTerrainId());
 			if (terrainParams == null) {
 				terrainParams = GameDataManager.TERRAINS.get(0);
 			}
-		}
-		if (terrainParams != null && terrainParams.getSetPieces() != null) {
-			log.info("[SERVER] Placing set pieces for terrain '{}' ({} types defined)",
-				terrainParams.getName(), terrainParams.getSetPieces().size());
-			realm.placeSetPieces(terrainParams);
+			if (terrainParams != null && terrainParams.getSetPieces() != null) {
+				log.info("[SERVER] Placing set pieces for terrain '{}' ({} types defined)",
+					terrainParams.getName(), terrainParams.getSetPieces().size());
+				realm.placeSetPieces(terrainParams);
+			}
 		} else {
-			log.info("[SERVER] No set pieces to place (terrainParams={}, setPieces={})",
-				terrainParams != null ? terrainParams.getName() : "null",
-				terrainParams != null && terrainParams.getSetPieces() != null ? terrainParams.getSetPieces().size() : "null");
+			log.info("[SERVER] Static map (mapId={}), skipping set piece placement", realm.getMapId());
 		}
 		this.addRealm(realm);
 		
@@ -749,7 +746,7 @@ public class RealmManagerServer implements Runnable {
 						// Heartbeat timeout check (every tick)
 						final Long playerLastHeartbeatTime = this.playerLastHeartbeatTime.get(player.getKey());
 						if (playerLastHeartbeatTime != null
-								&& ((Instant.now().toEpochMilli() - playerLastHeartbeatTime) > 5000)) {
+								&& ((Instant.now().toEpochMilli() - playerLastHeartbeatTime) > 10000)) {
 							long elapsed = Instant.now().toEpochMilli() - playerLastHeartbeatTime;
 							toRemoveReasons.put(player.getValue(), "heartbeat timeout (" + elapsed + "ms since last heartbeat)");
 						}
@@ -1369,24 +1366,42 @@ public class RealmManagerServer implements Runnable {
             return;
         }
 
-		// Process ONE input per server tick (1:1 with client simulation ticks).
-		// The client simulates at 64Hz and sends one input per tick. The server
-		// must also process one per tick to keep sequence numbers aligned.
-		// If multiple inputs queued (burst from network), process just the next one.
-		// If none queued, keep using the last dirFlags (repeat last direction).
+		// Process ALL queued inputs this tick. At high ping, inputs arrive in
+		// bursts — processing all of them prevents server position from drifting
+		// behind the client. Capped at 8 per tick (125ms catch-up) to prevent abuse.
 		if (p.getInputQueue() == null) p.setInputQueue(new java.util.concurrent.ConcurrentLinkedQueue<>());
-		// Discard stale inputs (seq <= already processed)
 		while (!p.getInputQueue().isEmpty() && p.getInputQueue().peek()[0] <= p.getLastProcessedInputSeq()) {
 		    p.getInputQueue().poll();
 		}
-		// Take exactly one input if available
-		if (!p.getInputQueue().isEmpty()) {
+
+		final Realm targetRealm = this.realms.get(realmId);
+		int processed = 0;
+		while (!p.getInputQueue().isEmpty() && processed < 8) {
 		    int[] nextInput = p.getInputQueue().poll();
 		    p.setCurrentDirFlags((byte) nextInput[1]);
 		    p.setLastProcessedInputSeq(nextInput[0]);
+		    this.applyMovementTick(targetRealm, p);
+		    processed++;
+		}
+		// If no queued inputs, run one tick with the last dirFlags (coast)
+		if (processed == 0) {
+		    this.applyMovementTick(targetRealm, p);
 		}
 
-		// Compute velocity from dirFlags
+		// Calculate if we should apply ground damage
+		if (targetRealm.getTileManager().collidesDamagingTile(p)) {
+			final Long lastDamageTime = this.playerGroundDamageState.get(p.getId());
+			if (lastDamageTime == null || (Instant.now().toEpochMilli() - lastDamageTime) > 450) {
+				int damageToInflict = 30 + Realm.RANDOM.nextInt(15);
+				this.sendTextEffectToPlayer(p, TextEffect.DAMAGE, "-" + damageToInflict);
+				p.setHealth(p.getHealth() - damageToInflict);
+				this.playerGroundDamageState.put(p.getId(), Instant.now().toEpochMilli());
+			}
+		}
+	}
+
+	/** Applies one movement tick for a player using their current dirFlags. */
+	private void applyMovementTick(final Realm targetRealm, final Player p) {
 		byte flags = p.getCurrentDirFlags();
 		boolean up    = (flags & 0x01) != 0;
 		boolean down  = (flags & 0x02) != 0;
@@ -1406,77 +1421,38 @@ public class RealmManagerServer implements Runnable {
 
 		p.setDx(right ? spd : left ? -spd : 0.0f);
 		p.setDy(down ? spd : up ? -spd : 0.0f);
-
 		if (!movingX && !movingY) {
-		    p.setDx(0);
-		    p.setDy(0);
+		    p.setDx(0); p.setDy(0);
 		}
-
-		// Also sync the legacy direction booleans for backward compatibility
-		p.setUp(up);
-		p.setDown(down);
-		p.setLeft(left);
-		p.setRight(right);
-
+		p.setUp(up); p.setDown(down); p.setLeft(left); p.setRight(right);
 		p.setLastInputSeq(p.getLastInputSeq() + 1);
 
-		final Realm targetRealm = this.realms.get(realmId);
-		// Apply slow tile factor
 		final float slow = targetRealm.getTileManager().collidesSlowTile(p) ? 3.0f : 1.0f;
 		final float effDx = p.getDx() / slow;
 		final float effDy = p.getDy() / slow;
-
-		// Save original position BEFORE any axis movement so both checks
-		// use the pre-move position. This prevents diagonal wall clipping
-		// where X movement shifts the player into Y collision range.
 		final float origX = p.getPos().x;
 		final float origY = p.getPos().y;
 
-		// Check X collision from original position
 		boolean xBlocked = targetRealm.getTileManager().collisionTile(p, effDx, 0)
 				|| targetRealm.getTileManager().collidesXLimit(p, effDx)
 				|| targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), effDx, 0);
-
-		// Check Y collision from original position (not the X-moved position)
 		boolean yBlocked = targetRealm.getTileManager().collisionTile(p, 0, effDy)
 				|| targetRealm.getTileManager().collidesYLimit(p, effDy)
 				|| targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), 0, effDy);
 
-		// If both axes are free, also check the diagonal to prevent corner cutting
 		if (!xBlocked && !yBlocked && effDx != 0 && effDy != 0) {
 			boolean diagBlocked = targetRealm.getTileManager().collisionTile(p, effDx, effDy)
 					|| targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), effDx, effDy);
 			if (diagBlocked) {
-				// Block the lesser axis to prevent corner cutting
 				if (Math.abs(effDx) >= Math.abs(effDy)) yBlocked = true;
 				else xBlocked = true;
 			}
 		}
 
-		if (!xBlocked) {
-			p.xCol = false;
-			p.getPos().x = origX + effDx;
-		} else {
-			p.xCol = true;
-		}
-
-		if (!yBlocked) {
-			p.yCol = false;
-			p.getPos().y = origY + effDy;
-		} else {
-			p.yCol = true;
-		}
-
-		// Calculate if we should apply ground damage
-		if (targetRealm.getTileManager().collidesDamagingTile(p)) {
-			final Long lastDamageTime = this.playerGroundDamageState.get(p.getId());
-			if (lastDamageTime == null || (Instant.now().toEpochMilli() - lastDamageTime) > 450) {
-				int damageToInflict = 30 + Realm.RANDOM.nextInt(15);
-				this.sendTextEffectToPlayer(p, TextEffect.DAMAGE, "-" + damageToInflict);
-				p.setHealth(p.getHealth() - damageToInflict);
-				this.playerGroundDamageState.put(p.getId(), Instant.now().toEpochMilli());
-			}
-		}
+		if (!xBlocked) { p.xCol = false; p.getPos().x = origX + effDx; }
+		else { p.xCol = true; }
+		if (!yBlocked) { p.yCol = false; p.getPos().y = origY + effDy; }
+		else { p.yCol = true; }
 	}
 
 	// Invokes an ability usage server side for the given player at the

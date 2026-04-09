@@ -150,7 +150,8 @@ public class ServerGameLogic {
 			final Vector2f chestLoc = new Vector2f((0 + (1920 / 2)) - 450, (0 + (1080 / 2)) - 300);
 			final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, chestLoc);
 			exitPortal.setNeverExpires();
-			exitPortal.linkPortal(generatedRealm, currentRealm);
+			final Realm vaultExitTarget = mgr.getTopRealm();
+			exitPortal.linkPortal(generatedRealm, vaultExitTarget != null ? vaultExitTarget : currentRealm);
 			generatedRealm.setupChests(user);
 			user.setPos(mapModel.getCenter());
 			generatedRealm.addPortal(exitPortal);
@@ -160,6 +161,52 @@ public class ServerGameLogic {
 			mgr.clearPlayerState(user.getId());
 			sendImmediateLoadMap(mgr, generatedRealm, user);
 			onPlayerJoin(mgr, generatedRealm, user);
+			mgr.releaseRealmLock();
+			return;
+		}
+
+		if (usePortalPacket.isToNexus()) {
+			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
+			if (currentRealm == null) { mgr.releaseRealmLock(); return; }
+			final Realm nexus = mgr.getTopRealm();
+			if (nexus == null || nexus.getRealmId() == currentRealm.getRealmId()) {
+				mgr.releaseRealmLock();
+				return;
+			}
+			final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
+			if (user == null) { mgr.releaseRealmLock(); return; }
+			currentRealm.removePlayer(user);
+
+			// Save vault chests if leaving vault
+			if (currentRealm.getMapId() == 1) {
+				try {
+					java.util.List<com.jrealm.account.dto.ChestDto> chestsToSave = currentRealm.serializeChests();
+					ServerGameLogic.DATA_SERVICE.executePost(
+							"/data/account/" + user.getAccountUuid() + "/chest", chestsToSave, com.jrealm.account.dto.PlayerAccountDto.class);
+				} catch (Exception e) {
+					log.error("[SERVER] Failed to save vault chests: {}", e.getMessage());
+				}
+				currentRealm.setShutdown(true);
+				mgr.getRealms().remove(currentRealm.getRealmId());
+			}
+
+			// Clean up empty dungeons
+			if (currentRealm.getPlayers().isEmpty() && currentRealm.getNodeId() != null
+					&& !"nexus".equals(currentRealm.getNodeId())) {
+				DungeonGraphNode node = GameDataManager.DUNGEON_GRAPH.get(currentRealm.getNodeId());
+				if (node != null && !node.isShared()) {
+					currentRealm.setShutdown(true);
+					mgr.getRealms().remove(currentRealm.getRealmId());
+				}
+			}
+
+			final MapModel nexusMap = GameDataManager.MAPS.get(nexus.getMapId());
+			user.setPos(nexusMap != null ? nexusMap.getRandomSpawnPoint() : nexus.getTileManager().getSafePosition());
+			user.addEffect(ProjectileEffectType.INVINCIBLE, 4000);
+			nexus.addPlayer(user);
+			mgr.clearPlayerState(user.getId());
+			sendImmediateLoadMap(mgr, nexus, user);
+			onPlayerJoin(mgr, nexus, user);
 			mgr.releaseRealmLock();
 			return;
 		}
@@ -313,10 +360,11 @@ public class ServerGameLogic {
 		final HeartbeatPacket heartbeatPacket = (HeartbeatPacket) packet;
 		final Player player = mgr.getPlayerByRemoteAddress(packet.getSrcIp());
 		if(player==null) {
-			log.debug("Failed to process heartbeat packet. Player does not exist");
+			log.warn("[SERVER] Heartbeat from unknown player (srcIp={}). Known addresses: {}", packet.getSrcIp(), mgr.getRemoteAddresses().keySet());
 			return;
 		}
-		mgr.getPlayerLastHeartbeatTime().put(player.getId(), heartbeatPacket.getTimestamp());
+		// Store SERVER time when heartbeat was received (not client timestamp which may be clock-skewed)
+		mgr.getPlayerLastHeartbeatTime().put(player.getId(), Instant.now().toEpochMilli());
 		// Echo heartbeat back with the ORIGINAL client timestamp so the client
 		// can measure true round-trip time (not first-random-packet latency).
 		try {
