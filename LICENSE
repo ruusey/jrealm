@@ -1,28 +1,33 @@
-BSD 3-Clause License
+Copyright (c) 2024-2026 Robert Usey. All Rights Reserved.
 
-Copyright (c) 2024, Robert Usey
+PROPRIETARY SOFTWARE LICENSE
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+This software and associated documentation files (the "Software") are the
+exclusive property of Robert Usey ("Owner"). The Software is protected by
+copyright law and international treaties.
 
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
+NO LICENSE IS GRANTED. Unless you have received prior express written permission
+from the Owner, you may NOT:
 
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
+  - Copy, reproduce, or duplicate the Software, in whole or in part
+  - Modify, adapt, translate, or create derivative works based on the Software
+  - Distribute, publish, transmit, or otherwise make the Software available
+    to any third party
+  - Sublicense, lease, rent, loan, or sell the Software
+  - Reverse engineer, decompile, or disassemble the Software
+  - Use the Software for any commercial or non-commercial purpose
+  - Remove or alter any proprietary notices, labels, or marks on the Software
 
-3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+Any unauthorized use, reproduction, or distribution of this Software, or any
+portion of it, is strictly prohibited and may result in severe civil and
+criminal penalties. Violators will be prosecuted to the maximum extent
+possible under applicable law.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+OWNER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+For licensing inquiries, contact: ruusey@gmail.com
