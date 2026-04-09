@@ -697,9 +697,15 @@ public class Realm {
             return getLoadPacketCircular(center, radius);
         }
         final float radiusSq = radius * radius;
+        // Use a wider radius for bullets so projectiles fired by enemies beyond the
+        // viewport edge are still sent to the client. Without this, bullets spawned
+        // outside the normal viewport radius are never included in any LoadPacket and
+        // become invisible to the client while still dealing damage on the server.
+        final float bulletRadius = radius * 2f;
+        final float bulletRadiusSq = bulletRadius * bulletRadius;
         LoadPacket load = null;
         try {
-            final List<Long> candidates = this.spatialGrid.queryRadius(center.x, center.y, radius);
+            final List<Long> candidates = this.spatialGrid.queryRadius(center.x, center.y, bulletRadius);
             final List<Player> playersToLoadList = new ArrayList<>();
             final List<LootContainer> containersToLoad = new ArrayList<>();
             final List<Bullet> bulletsToLoad = new ArrayList<>();
@@ -728,7 +734,7 @@ public class Realm {
                     if (bulletsToLoad.size() >= MAX_BULLETS_PER_LOAD) continue;
                     float dx = b.getPos().x - center.x;
                     float dy = b.getPos().y - center.y;
-                    if (dx * dx + dy * dy <= radiusSq) bulletsToLoad.add(b);
+                    if (dx * dx + dy * dy <= bulletRadiusSq) bulletsToLoad.add(b);
                     continue;
                 }
                 Portal portal = this.portals.get(id);
@@ -1046,6 +1052,7 @@ public class Realm {
 
     public LoadPacket getLoadPacketCircular(Vector2f center, float radius) {
         final float radiusSq = radius * radius;
+        final float bulletRadiusSq = (radius * 2f) * (radius * 2f);
         LoadPacket load = null;
         try {
             final List<Player> playersToLoadList = new ArrayList<>();
@@ -1064,7 +1071,7 @@ public class Realm {
             for (Bullet b : this.bullets.values()) {
                 float dx = b.getPos().x - center.x;
                 float dy = b.getPos().y - center.y;
-                if (dx * dx + dy * dy <= radiusSq) bulletsToLoad.add(b);
+                if (dx * dx + dy * dy <= bulletRadiusSq) bulletsToLoad.add(b);
             }
             final List<Enemy> enemiesToLoad = new ArrayList<>();
             for (Enemy e : this.enemies.values()) {
