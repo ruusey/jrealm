@@ -472,17 +472,20 @@ public class TileManager {
     }
 
     public boolean collidesSlowTile(Entity e) {
+        // Simple center-cell lookup. The previous AABB-based check used a 28x28
+        // hitbox which mismatched the client's check, causing slow-tile detection
+        // to disagree near tile boundaries and produce position desync / snapping.
         final Vector2f centerPos = e.getCenteredPosition();
-        final int startX = (int) (centerPos.x / (float) this.getBaseLayer().getTileSize());
-        final int startY = (int) (centerPos.y / (float) this.getBaseLayer().getTileSize());
-
-        final Tile currentTile = this.getBaseLayer().getBlocks()[startY][startX];
-
-        final Rectangle tileBounds = new Rectangle(currentTile.getPos(), currentTile.getWidth(),
-                currentTile.getHeight());
-        final Rectangle futurePosBounds = new Rectangle(e.getPos(), (e.getSize()), e.getSize());
-
-        return currentTile.getData().slows() && tileBounds.intersect(futurePosBounds);
+        final int ts = this.getBaseLayer().getTileSize();
+        final int tx = (int) (centerPos.x / (float) ts);
+        final int ty = (int) (centerPos.y / (float) ts);
+        if (ty < 0 || ty >= this.getBaseLayer().getBlocks().length
+                || tx < 0 || tx >= this.getBaseLayer().getBlocks()[0].length) {
+            return false;
+        }
+        final Tile currentTile = this.getBaseLayer().getBlocks()[ty][tx];
+        if (currentTile == null || currentTile.getData() == null) return false;
+        return currentTile.getData().slows();
     }
     
     public boolean collidesDamagingTile(Entity e) {

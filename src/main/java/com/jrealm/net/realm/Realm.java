@@ -697,15 +697,15 @@ public class Realm {
             return getLoadPacketCircular(center, radius);
         }
         final float radiusSq = radius * radius;
-        // Use a wider radius for bullets so projectiles fired by enemies beyond the
-        // viewport edge are still sent to the client. Without this, bullets spawned
-        // outside the normal viewport radius are never included in any LoadPacket and
-        // become invisible to the client while still dealing damage on the server.
+        // Bullets use a wider radius so projectiles fired by enemies beyond the
+        // viewport edge are still sent to the client. We do a SEPARATE query for
+        // bullets so the entity iteration order (which interacts with the
+        // MAX_ENEMIES_PER_LOAD cap) is unchanged from the original behavior.
         final float bulletRadius = radius * 2f;
         final float bulletRadiusSq = bulletRadius * bulletRadius;
         LoadPacket load = null;
         try {
-            final List<Long> candidates = this.spatialGrid.queryRadius(center.x, center.y, bulletRadius);
+            final List<Long> candidates = this.spatialGrid.queryRadius(center.x, center.y, radius);
             final List<Player> playersToLoadList = new ArrayList<>();
             final List<LootContainer> containersToLoad = new ArrayList<>();
             final List<Bullet> bulletsToLoad = new ArrayList<>();
@@ -734,7 +734,7 @@ public class Realm {
                     if (bulletsToLoad.size() >= MAX_BULLETS_PER_LOAD) continue;
                     float dx = b.getPos().x - center.x;
                     float dy = b.getPos().y - center.y;
-                    if (dx * dx + dy * dy <= bulletRadiusSq) bulletsToLoad.add(b);
+                    if (dx * dx + dy * dy <= radiusSq) bulletsToLoad.add(b);
                     continue;
                 }
                 Portal portal = this.portals.get(id);
@@ -750,6 +750,23 @@ public class Realm {
                     float dy = lc.getPos().y - center.y;
                     if (dx * dx + dy * dy <= radiusSq) containersToLoad.add(lc);
                 }
+            }
+
+            // Second pass: query the wider bullet radius for bullets only.
+            // This catches projectiles fired by enemies just beyond the viewport
+            // (e.g. enemies whose attack range exceeds the load radius).
+            final List<Long> bulletCandidates = this.spatialGrid.queryRadius(center.x, center.y, bulletRadius);
+            for (int i = 0; i < bulletCandidates.size(); i++) {
+                if (bulletsToLoad.size() >= MAX_BULLETS_PER_LOAD) break;
+                final long id = bulletCandidates.get(i);
+                Bullet b = this.bullets.get(id);
+                if (b == null) continue;
+                // Skip bullets already added in the inner-radius pass (avoid dupes)
+                float dx = b.getPos().x - center.x;
+                float dy = b.getPos().y - center.y;
+                float dsq = dx * dx + dy * dy;
+                if (dsq <= radiusSq) continue; // already added above
+                if (dsq <= bulletRadiusSq) bulletsToLoad.add(b);
             }
             load = LoadPacket.from(playersToLoadList.toArray(new Player[0]),
                     containersToLoad.toArray(new LootContainer[0]), bulletsToLoad.toArray(new Bullet[0]),

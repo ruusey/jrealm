@@ -520,11 +520,6 @@ public class RealmManagerServer implements Runnable {
 				// Update spatial grid positions once per tick for this realm
 				realm.updateSpatialGrid();
 
-				// Per-cell cache: share expensive LoadPacket/ObjectMovePacket between
-				// players in the same spatial cell (they see ~the same entities)
-				final Map<Long, LoadPacket> cellLoadCache = new HashMap<>();
-				final Map<Long, ObjectMovePacket> cellMoveCache = new HashMap<>();
-
 				final Map<Player, String> toRemoveReasons = new java.util.LinkedHashMap<>();
 				final float viewportRadius = 10 * GlobalConstants.BASE_TILE_SIZE;
 
@@ -619,14 +614,14 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						// --- LoadPacket (32 Hz) - uses per-cell cache + spatial grid ---
+						// --- LoadPacket (32 Hz) - per-player spatial grid query ---
 						if (doLoad) {
-							// Reuse LoadPacket if another player in the same cell already built it
-							LoadPacket loadPacket = cellLoadCache.get(cellKey);
-							if (loadPacket == null) {
-								loadPacket = realm.getLoadPacketCircularFast(playerCenter, viewportRadius);
-								cellLoadCache.put(cellKey, loadPacket);
-							}
+							// Build a fresh LoadPacket centered on THIS player. We do not
+							// cache by cell because two players in the same cell can be at
+							// different positions, and reusing one player's perspective
+							// causes the other player to unload entities still within their
+							// own viewport (causing flicker / disappearing entities).
+							final LoadPacket loadPacket = realm.getLoadPacketCircularFast(playerCenter, viewportRadius);
 							if (this.playerLoadState.get(player.getKey()) == null) {
 								this.playerLoadState.put(player.getKey(), loadPacket);
 								this.enqueueServerPacket(player.getValue(), loadPacket);
@@ -667,12 +662,12 @@ public class RealmManagerServer implements Runnable {
 
 						if (doMovement) {
 							final float moveRadius = doFullMovement ? viewportRadius : viewportRadius * 0.5f;
-							final long moveCacheKey = doFullMovement ? cellKey : (cellKey ^ 0xDEADBEEFL);
-							ObjectMovePacket movePacket = cellMoveCache.get(moveCacheKey);
-							if (movePacket == null) {
-								movePacket = realm.getGameObjectsAsPacketsCircularFast(playerCenter, moveRadius);
-								cellMoveCache.put(moveCacheKey, movePacket);
-							}
+							// Build a fresh ObjectMovePacket centered on THIS player. Same
+							// reasoning as the LoadPacket: cells can hold multiple players
+							// at different positions, and reusing one player's perspective
+							// causes incorrect movement updates for others.
+							final ObjectMovePacket movePacket =
+									realm.getGameObjectsAsPacketsCircularFast(playerCenter, moveRadius);
 							if (movePacket != null) {
 								Map<Long, EntityMotionState> drState = this.playerDeadReckonState.get(player.getKey());
 								if (drState == null) {
