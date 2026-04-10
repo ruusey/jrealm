@@ -1,4 +1,4 @@
-name: Build & Release JRealm
+name: Build & Release OpenRealm
 
 on:
   workflow_dispatch:
@@ -47,9 +47,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          name: JRealm v${{ steps.version.outputs.version }}
+          name: OpenRealm v${{ steps.version.outputs.version }}
           body: |
-            ## JRealm v${{ steps.version.outputs.version }}
+            ## OpenRealm v${{ steps.version.outputs.version }}
 
             Single JAR supporting `-client`, `-server`, and `-embedded` modes.
 
@@ -57,7 +57,7 @@ jobs:
             ${{ steps.changelog.outputs.log }}
           draft: false
           prerelease: false
-          files: target/jrealm.jar
+          files: target/openrealm.jar
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

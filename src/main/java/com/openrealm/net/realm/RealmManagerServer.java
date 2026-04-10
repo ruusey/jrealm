@@ -1,0 +1,2413 @@
+package com.openrealm.net.realm;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
+import org.reflections.Reflections;
+import org.reflections.scanners.Scanners;
+
+import com.openrealm.account.dto.CharacterDto;
+import com.openrealm.account.dto.CharacterStatsDto;
+import com.openrealm.account.dto.GameItemRefDto;
+import com.openrealm.account.dto.PlayerAccountDto;
+import com.openrealm.game.contants.CharacterClass;
+import com.openrealm.game.contants.ProjectileFlag;
+import com.openrealm.game.contants.StatusEffectType;
+import com.openrealm.game.contants.EntityType;
+import com.openrealm.game.contants.GlobalConstants;
+import com.openrealm.game.contants.LootTier;
+import com.openrealm.game.contants.PacketType;
+import com.openrealm.game.contants.ProjectilePositionMode;
+import com.openrealm.game.contants.TextEffect;
+import com.openrealm.game.data.GameDataManager;
+import com.openrealm.game.entity.Bullet;
+import com.openrealm.game.entity.Enemy;
+import com.openrealm.game.entity.GameObject;
+import com.openrealm.game.entity.Monster;
+import com.openrealm.game.entity.Player;
+import com.openrealm.game.entity.Portal;
+import com.openrealm.game.entity.item.Effect;
+import com.openrealm.game.entity.item.GameItem;
+import com.openrealm.game.entity.item.LootContainer;
+import com.openrealm.game.entity.item.Stats;
+import com.openrealm.game.math.Rectangle;
+import com.openrealm.game.math.Vector2f;
+import com.openrealm.game.model.EnemyModel;
+import com.openrealm.game.model.TerrainGenerationParameters;
+import com.openrealm.game.model.LootTableModel;
+import com.openrealm.game.model.PortalModel;
+import com.openrealm.game.model.Projectile;
+import com.openrealm.game.model.ProjectileGroup;
+import com.openrealm.game.script.EnemyScriptBase;
+import com.openrealm.game.script.item.Item153Script;
+import com.openrealm.game.script.item.Item156Script;
+import com.openrealm.game.script.item.Item157Script;
+import com.openrealm.game.script.item.UseableItemScript;
+import com.openrealm.game.script.item.UseableItemScriptBase;
+import com.openrealm.game.tile.Tile;
+import com.openrealm.game.tile.TileMap;
+import com.openrealm.game.tile.decorators.Beach0Decorator;
+import com.openrealm.game.tile.decorators.Grasslands0Decorator;
+import com.openrealm.game.tile.decorators.RealmDecorator;
+import com.openrealm.game.tile.decorators.RealmDecoratorBase;
+import com.openrealm.net.Packet;
+import com.openrealm.net.client.SocketClient;
+import com.openrealm.net.client.packet.LoadMapPacket;
+import com.openrealm.net.client.packet.LoadPacket;
+import com.openrealm.net.client.packet.CompactMovePacket;
+import com.openrealm.net.client.packet.ObjectMovePacket;
+import com.openrealm.net.client.packet.PlayerDeathPacket;
+import com.openrealm.net.client.packet.TextEffectPacket;
+import com.openrealm.net.client.packet.UnloadPacket;
+import com.openrealm.net.client.packet.UpdatePacket;
+
+import com.openrealm.net.entity.NetTile;
+import com.openrealm.net.entity.NetObjectMovement;
+import com.openrealm.net.messaging.ServerCommandMessage;
+import com.openrealm.net.server.ClientSession;
+import com.openrealm.net.server.NioServer;
+import com.openrealm.net.server.ServerCommandHandler;
+import com.openrealm.net.server.ServerGameLogic;
+import com.openrealm.net.server.ServerTradeManager;
+import com.openrealm.net.server.packet.CommandPacket;
+import com.openrealm.net.server.packet.HeartbeatPacket;
+import com.openrealm.net.server.packet.MoveItemPacket;
+import com.openrealm.net.server.packet.PlayerMovePacket;
+import com.openrealm.net.server.packet.PlayerShootPacket;
+import com.openrealm.net.server.packet.TextPacket;
+import com.openrealm.net.server.packet.UseAbilityPacket;
+import com.openrealm.net.server.packet.UsePortalPacket;
+import com.openrealm.net.client.packet.GlobalPlayerPositionPacket;
+import com.openrealm.net.client.packet.PlayerPosAckPacket;
+import com.openrealm.net.client.packet.PlayerStatePacket;
+import com.openrealm.net.entity.NetPlayerPosition;
+import com.openrealm.net.server.WebSocketGameServer;
+import com.openrealm.game.model.DungeonGraphNode;
+import com.openrealm.game.model.MapModel;
+import com.openrealm.game.model.ProjectileEffect;
+import com.openrealm.util.AdminRestrictedCommand;
+import com.openrealm.util.CommandHandler;
+import com.openrealm.util.PacketHandlerServer;
+import com.openrealm.util.TimedWorkerThread;
+import com.openrealm.util.WorkerThread;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
+
+@Data
+@Slf4j
+@EqualsAndHashCode(callSuper = false)
+@SuppressWarnings("unused")
+public class RealmManagerServer implements Runnable {
+	
+	private NioServer server;
+	private boolean shutdown = false;
+	private Reflections classPathScanner = new Reflections("com.openrealm", Scanners.SubTypes, Scanners.MethodsAnnotated);
+	private MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
+	private final Map<Class<? extends Packet>, BiConsumer<RealmManagerServer, Packet>> packetCallbacksServer = new HashMap<>();
+	private final Map<Byte, List<MethodHandle>> userPacketCallbacksServer = new HashMap<>();
+
+	private List<Vector2f> shotDestQueue = new ArrayList<>();
+	private Map<Long, Realm> realms = new ConcurrentHashMap<>();
+	private Map<String, Long> remoteAddresses = new ConcurrentHashMap<>();
+	
+	private Map<Long, Long> playerAbilityState = new ConcurrentHashMap<>();
+	private Map<Long, LoadPacket> playerLoadState = new ConcurrentHashMap<>();
+	private Map<Long, UpdatePacket> playerUpdateState = new ConcurrentHashMap<>();
+	private Map<Long, PlayerStatePacket> playerStateState = new ConcurrentHashMap<>();
+	private Map<Long, UpdatePacket> enemyUpdateState = new ConcurrentHashMap<>();
+	private Map<Long, UnloadPacket> playerUnloadState = new ConcurrentHashMap<>();
+	private Map<Long, LoadMapPacket> playerLoadMapState = new ConcurrentHashMap<>();
+	private Map<Long, ObjectMovePacket> playerObjectMoveState = new ConcurrentHashMap<>();
+	// Dead reckoning state: outer map = playerId, inner map = entityId -> motion state.
+	// Tracks what each client believes each entity's position to be, so we only send
+	// corrections when the server's actual state diverges beyond a threshold.
+	private Map<Long, Map<Long, EntityMotionState>> playerDeadReckonState = new ConcurrentHashMap<>();
+	private Map<Long, Long> playerGroundDamageState = new ConcurrentHashMap<>();
+	private Map<Long, Long> playerLastHeartbeatTime = new ConcurrentHashMap<>();
+	// Last sent global player positions per realm (for delta detection)
+	private Map<Long, NetPlayerPosition[]> lastGlobalPositions = new ConcurrentHashMap<>();
+
+	// Poison damage-over-time tracking
+	private UnloadPacket lastUnload;
+	// Potentially accessed by many threads many times a second.
+	// marked volatile to make sure each time this queue is accessed
+	// we are not looking at a cached version. Make a PR if my assumption is wrong :)
+	private volatile Queue<Packet> outboundPacketQueue = new ConcurrentLinkedQueue<>();
+	private volatile Map<Long, ConcurrentLinkedQueue<Packet>> playerOutboundPacketQueue = new ConcurrentHashMap<Long, ConcurrentLinkedQueue<Packet>>();
+	private List<RealmDecoratorBase> realmDecorators = new ArrayList<>();
+	private List<EnemyScriptBase> enemyScripts = new ArrayList<>();
+	private List<UseableItemScriptBase> itemScripts = new ArrayList<>();
+	// Note: realmLock is currently unnecessary — all realm access happens on the single tick thread.
+	// Kept as a ReentrantLock for safety if threading model changes in the future.
+	private final java.util.concurrent.locks.ReentrantLock realmLock = new java.util.concurrent.locks.ReentrantLock();
+	private int currentTickCount = 0;
+	private long tickSampleTime = 0;
+
+	// Tiered update rate tick counter (increments every tick, wraps at 64)
+	private int tickCounter = 0;
+
+	// Tick rate divisors for tiered packet transmission (at 64 ticks/sec):
+	// Dead reckoning: clients extrapolate using velocity, server only sends corrections
+	// when actual position diverges from predicted. This allows much lower check rates
+	// while maintaining visual fidelity via client-side interpolation.
+	// LoadPacket: 16Hz - entity spawns/despawns aren't time-critical
+	// UpdatePacket: 8Hz - stats/inventory/effects change slowly
+	// LoadMapPacket: 4Hz - terrain barely changes
+	// EnemyUpdatePacket: 8Hz - enemy health bars
+	private static final int MOVE_TICK_DIVISOR = 2;       // Inner zone dead reckoning check at 32Hz
+	private static final int MOVE_FULL_TICK_DIVISOR = 4;  // Full viewport dead reckoning check at 16Hz
+	private static final int LOAD_TICK_DIVISOR = 2;       // Entity spawn/despawn at 32Hz — bullets need low latency to avoid burst effect
+	private static final int UPDATE_TICK_DIVISOR = 8;     // Stats/inventory at 8Hz (was 16Hz — stats change slowly)
+	private static final int LOADMAP_TICK_DIVISOR = 16;
+	private static final int ENEMY_UPDATE_TICK_DIVISOR = 8; // Enemy health bars at 8Hz (was 16Hz)
+
+	private boolean  isSetup = false;
+	
+	private long lastWriteSampleTime = Instant.now().toEpochMilli();
+	private final java.util.concurrent.atomic.AtomicLong bytesWritten = new java.util.concurrent.atomic.AtomicLong(0);
+	private final java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicLong> bytesWrittenByPacketType = new java.util.concurrent.ConcurrentHashMap<>();
+	
+	public RealmManagerServer() {
+		// Probably dont want to auto start the server so migrating
+		// this to be invoked from somewhere else (GameLauncher.class)
+//		this.doRunServer();
+	}
+	
+	public void doRunServer() {
+		// TODO: Make the trade manager a class variable so we dont
+		// have to do this whacky static assignment
+		ServerTradeManager.mgr = this;
+		
+		// Spawn initial realm and add the global
+		// save player shutdown hook to the Runtime
+		this.doSetup();
+		
+		// Two core threads, the inbound connection listener
+		// and the actual realm manager thread to handle game processing
+		WorkerThread.submitAndForkRun(this.server);
+		WorkerThread.submitAndForkRun(this);
+	}
+	
+	private void doSetup() {
+		if(this.isSetup) {
+			log.warn("[SERVER] Server is already setup, ignoring extra call");
+			return;
+		}
+		// Start listening for connections
+		this.server = new NioServer(2222);
+
+		// Start WebSocket server for browser-based clients
+		try {
+			final WebSocketGameServer wsServer =
+				new WebSocketGameServer(2223, this.server);
+			wsServer.start();
+			log.info("[SERVER] WebSocket server started on port 2223");
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to start WebSocket server: {}", e.getMessage());
+		}
+
+		this.registerRealmDecorators();
+		this.registerEnemyScripts();
+		this.registerPacketCallbacks();
+		this.registerPacketCallbacksReflection();
+		this.registerItemScripts();
+		this.registerCommandHandlersReflection();
+		this.beginPlayerSync();
+		
+		Realm realm = null;
+		final DungeonGraphNode entryNode = GameDataManager.getEntryNode();
+		try {
+			if (entryNode != null) {
+				log.info("[SERVER] Creating realm for entry node: {} (mapId={})", entryNode.getNodeId(), entryNode.getMapId());
+				realm = new Realm(true, entryNode.getMapId(), entryNode.getNodeId());
+				log.info("[SERVER] Realm created successfully for node: {}", entryNode.getNodeId());
+			} else {
+				log.warn("[SERVER] No dungeon graph entry node found, falling back to mapId=2");
+				realm = new Realm(true, 2);
+			}
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to create entry realm (mapId={}). Falling back to mapId=2. Reason: {}",
+					entryNode != null ? entryNode.getMapId() : "null", e.getMessage(), e);
+			realm = new Realm(true, 2);
+		}
+		final var entryMapModel = GameDataManager.MAPS.get(realm.getMapId());
+		final boolean isStaticMap = entryMapModel != null && entryMapModel.getTerrainId() < 0;
+
+		realm.spawnRandomEnemies(realm.getMapId());
+
+		// No overseer on static maps (nexus, vault) — no boss events or enemy respawns
+		if (!isStaticMap) {
+			realm.setOverseer(new RealmOverseer(realm, this));
+		}
+
+		// Place set piece structures only for terrain-generated maps
+		if (entryMapModel != null && entryMapModel.getTerrainId() >= 0 && GameDataManager.TERRAINS != null) {
+			TerrainGenerationParameters terrainParams = GameDataManager.TERRAINS.get(entryMapModel.getTerrainId());
+			if (terrainParams == null) {
+				terrainParams = GameDataManager.TERRAINS.get(0);
+			}
+			if (terrainParams != null && terrainParams.getSetPieces() != null) {
+				log.info("[SERVER] Placing set pieces for terrain '{}' ({} types defined)",
+					terrainParams.getName(), terrainParams.getSetPieces().size());
+				realm.placeSetPieces(terrainParams);
+			}
+		} else {
+			log.info("[SERVER] Static map (mapId={}), skipping set piece placement", realm.getMapId());
+		}
+		this.addRealm(realm);
+		
+		Runtime.getRuntime().addShutdownHook(this.shutdownHook());
+		
+		this.isSetup = true;
+	}
+
+	// Adds a specified amount of random headless players
+	public void spawnTestPlayers(final long realmId, final int count, final Vector2f pos) {
+		final Realm targetRealm = this.realms.get(realmId);
+		final Runnable spawnTestPlayers = () -> {
+			final Random random = Realm.RANDOM;
+			for (int i = 0; i < count; i++) {
+				final CharacterClass classToSpawn = CharacterClass.getCharacterClasses()
+						.get(random.nextInt(CharacterClass.getCharacterClasses().size()));
+				try {
+					final Vector2f spawnPos = pos.clone(50, 50);
+					final Player player = new Player(Realm.RANDOM.nextLong(), spawnPos, GlobalConstants.PLAYER_SIZE,
+							classToSpawn);
+					String playerName = UUID.randomUUID().toString().replaceAll("-", "");
+					playerName = playerName.substring(playerName.length() / 2);
+					player.setName(playerName);
+					player.equipSlots(GameDataManager.getStartingEquipment(classToSpawn));
+					player.setCharacterUuid(UUID.randomUUID().toString());
+					player.setAccountUuid(UUID.randomUUID().toString());
+
+					final boolean up = random.nextBoolean();
+					final boolean right = random.nextBoolean();
+
+					if (up) {
+						// player.setUp(true);
+						player.setDy(-random.nextFloat());
+					} else {
+						// player.setDown(true);
+						player.setDy(random.nextFloat());
+					}
+					if (right) {
+						// player.setRight(true);
+						player.setDx(random.nextFloat());
+					} else {
+						// player.setLeft(true);
+						player.setDx(-random.nextFloat());
+					}
+					Thread.sleep(100);
+					player.setHeadless(true);
+
+					final long newId = targetRealm.addPlayer(player);
+				} catch (Exception e) {
+					RealmManagerServer.log.error("Failed to spawn test character of class type {}. Reason: {}",
+							classToSpawn, e);
+				}
+			}
+		};
+		// Run this in a completely separate thread
+		WorkerThread.submitAndForkRun(spawnTestPlayers);
+	}
+
+	@Override
+	public void run() {
+		RealmManagerServer.log.info("[SERVER] Starting OpenRealm Server");
+		final Runnable tick = () -> {
+			this.tick();
+		};
+		
+		final TimedWorkerThread workerThread = new TimedWorkerThread(tick, 64);
+		WorkerThread.submitAndForkRun(workerThread);
+		RealmManagerServer.log.info("[SERVER] RealmManagerServer exiting run().");
+	}
+
+	private void tick() {
+		try {
+			this.processServerPackets();
+			// update() runs BEFORE enqueueGameData so that enemy bullets spawned
+			// during Enemy.update() are in the spatial grid when LoadPacket is built.
+			// Previously, enqueueGameData ran first and missed same-tick enemy bullets,
+			// causing them to appear 1-2 ticks late on the client.
+			this.update(0);
+			this.enqueueGameData();
+			this.sendGameData();
+
+			// Tick all realm overseers (ecosystem management)
+			for (Realm realm : this.realms.values()) {
+				if (realm.getOverseer() != null) {
+					realm.getOverseer().tick();
+				}
+			}
+
+			if (Instant.now().toEpochMilli() - this.tickSampleTime > 1000) {
+				this.tickSampleTime = Instant.now().toEpochMilli();
+				log.info("[SERVER] ticks this second: {}", this.currentTickCount);
+				this.currentTickCount = 0;
+			} else {
+				this.currentTickCount++;
+			}
+		} catch (Exception e) {
+			RealmManagerServer.log.error("Failed to process server tick. Reason: {}", e);
+		}
+	}
+
+
+
+	private void sendGameData() {
+		long startNanos = System.nanoTime();
+		final List<Packet> packetsToBroadcast = new ArrayList<>();
+		// TODO: Possibly rework this queue as we dont usually send stuff globally
+		while (!this.outboundPacketQueue.isEmpty()) {
+			packetsToBroadcast.add(this.outboundPacketQueue.remove());
+		}
+
+		// Detect stale sessions
+		final List<Map.Entry<String, ClientSession>> staleSessions = new ArrayList<>();
+		for (final Map.Entry<String, ClientSession> client : this.server.getClients().entrySet()) {
+			if (!client.getValue().isConnected() || client.getValue().isShutdownProcessing()) {
+				staleSessions.add(client);
+			}
+		}
+		staleSessions.forEach(entry -> {
+			try {
+				final boolean wasConnected = entry.getValue().isConnected();
+				final boolean wasShutdown = entry.getValue().isShutdownProcessing();
+				final String staleReason = !wasConnected ? "connection lost (isConnected=false)" : "shutdownProcessing flag already set";
+				entry.getValue().setShutdownProcessing(true);
+				// Remove the player from the realm before removing the client session
+				final Long dcPlayerId = this.remoteAddresses.get(entry.getKey());
+				if (dcPlayerId != null) {
+					final Realm playerRealm = this.findPlayerRealm(dcPlayerId);
+					if (playerRealm != null) {
+						final Player dcPlayer = playerRealm.getPlayer(dcPlayerId);
+						if (dcPlayer != null) {
+							log.info("[SERVER] Cleaning up stale session for player {} — reason: {}", dcPlayer.getName(), staleReason);
+							// Save vault chests if player is in vault
+							if (playerRealm.getMapId() == 1) {
+								try {
+									java.util.List<com.openrealm.account.dto.ChestDto> chestsToSave = playerRealm.serializeChests();
+									ServerGameLogic.DATA_SERVICE.executePost(
+											"/data/account/" + dcPlayer.getAccountUuid() + "/chest",
+											chestsToSave, com.openrealm.account.dto.PlayerAccountDto.class);
+									log.info("[SERVER] Saved vault chests for DC'd player {}", dcPlayer.getName());
+								} catch (Exception e) {
+									log.error("[SERVER] Failed to save vault on DC for {}. Reason: {}",
+											dcPlayer.getName(), e.getMessage());
+								}
+								playerRealm.setShutdown(true);
+								this.realms.remove(playerRealm.getRealmId());
+							}
+							this.persistPlayerAsync(dcPlayer);
+							playerRealm.getExpiredPlayers().add(dcPlayerId);
+							playerRealm.removePlayer(dcPlayer);
+						}
+					} else {
+						log.info("[SERVER] Cleaning up stale session {} (no player in realm) — reason: {}", entry.getKey(), staleReason);
+					}
+					this.clearPlayerState(dcPlayerId);
+					this.remoteAddresses.remove(entry.getKey());
+				} else {
+					log.info("[SERVER] Cleaning up stale session {} (no mapped player) — reason: {}", entry.getKey(), staleReason);
+				}
+				entry.getValue().close();
+				this.server.getClients().remove(entry.getKey());
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to remove stale session. Reason:  {}", e);
+			}
+		});
+
+		for (final Map.Entry<String, ClientSession> client : this.server.getClients().entrySet()) {
+			try {
+				final ClientSession session = client.getValue();
+				// Inject bandwidth counters so write thread can track stats
+				if (session.getSharedBytesWritten() == null) {
+					session.setSharedBytesWritten(this.bytesWritten);
+					session.setSharedBytesPerType(this.bytesWrittenByPacketType);
+				}
+				final Player player = this.getPlayerByRemoteAddress(client.getKey());
+				if (player == null) {
+					continue;
+				}
+
+				// Enqueue broadcast packets for deferred serialization on write thread
+				for (final Packet packet : packetsToBroadcast) {
+					session.enqueuePacket(packet);
+				}
+
+				// Enqueue player-specific packets for deferred serialization on write thread
+				final ConcurrentLinkedQueue<Packet> playerPacketsToSend = this.playerOutboundPacketQueue
+						.get(player.getId());
+				if (playerPacketsToSend != null) {
+					Packet packet;
+					while ((packet = playerPacketsToSend.poll()) != null) {
+						session.enqueuePacket(packet);
+					}
+				}
+			} catch (Exception e) {
+				//RealmManagerServer.log.error("[SERVER] Failed to enqueue data to Client. Reason: {}", e);
+			}
+		}
+
+		// Print server write rate (kbit/s) — bytes tracked by write thread via AtomicLong
+		if (Instant.now().toEpochMilli() - this.lastWriteSampleTime > 1000) {
+			this.lastWriteSampleTime = Instant.now().toEpochMilli();
+			final long written = this.bytesWritten.getAndSet(0);
+			RealmManagerServer.log.info("[SERVER] current write rate = {} kbit/s",
+					(float) (written / 1024.0f) * 8.0f);
+			final StringBuilder sb = new StringBuilder("[SERVER] Bandwidth by packet type: ");
+			for (var entry : this.bytesWrittenByPacketType.entrySet()) {
+				final long typeBytes = entry.getValue().getAndSet(0);
+				if (typeBytes > 0) {
+					sb.append(entry.getKey()).append("=")
+					  .append(String.format("%.1f", (typeBytes / 1024.0f) * 8.0f))
+					  .append("kbit/s ");
+				}
+			}
+			RealmManagerServer.log.info(sb.toString());
+		}
+		long nanosDiff = System.nanoTime() - startNanos;
+		log.debug("Game data broadcast in {} nanos ({}ms}", nanosDiff, ((double) nanosDiff / (double) 1000000l));
+	}
+
+	// Enqueues outbound game packets every tick using:
+	// - Spatial hash grid for O(1) neighbor lookups
+	// - Tiered update rates (movement=64Hz, load=32Hz, update=16Hz, map=4Hz)
+	// - Per-cell packet sharing (players in same cell share entity queries)
+	public void enqueueGameData() {
+		try {
+			long startNanos = System.nanoTime();
+			this.acquireRealmLock();
+			this.tickCounter++;
+
+			final boolean doMovement = (this.tickCounter % MOVE_TICK_DIVISOR) == 0;
+			final boolean doFullMovement = (this.tickCounter % MOVE_FULL_TICK_DIVISOR) == 0;
+			final boolean doLoad = (this.tickCounter % LOAD_TICK_DIVISOR) == 0;
+			final boolean doUpdate = (this.tickCounter % UPDATE_TICK_DIVISOR) == 0;
+			final boolean doLoadMap = (this.tickCounter % LOADMAP_TICK_DIVISOR) == 0;
+			final boolean doEnemyUpdate = (this.tickCounter % ENEMY_UPDATE_TICK_DIVISOR) == 0;
+
+			for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+				Realm realm = realmEntry.getValue();
+
+				// Update spatial grid positions once per tick for this realm
+				realm.updateSpatialGrid();
+
+				final Map<Player, String> toRemoveReasons = new java.util.LinkedHashMap<>();
+				final float viewportRadius = 10 * GlobalConstants.BASE_TILE_SIZE;
+
+				// Snapshot teleport flags before packet building clears them
+				final Set<Long> teleportedPlayers = new HashSet<>();
+				for (final Player tp : realm.getPlayers().values()) {
+					if (tp.getTeleported()) teleportedPlayers.add(tp.getId());
+				}
+
+				for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
+					if (player.getValue().isHeadless()) {
+						continue;
+					}
+					try {
+						realm = this.findPlayerRealm(player.getKey());
+						final Vector2f playerCenter = player.getValue().getPos();
+						final long cellKey = realm.getSpatialCellKey(playerCenter.x, playerCenter.y);
+
+						// --- LoadMapPacket (4 Hz) ---
+						if (doLoadMap) {
+							final NetTile[] netTilesForPlayer = realm.getTileManager().getLoadMapTiles(player.getValue());
+							final LoadMapPacket newLoadMapPacket = LoadMapPacket.from(realm.getRealmId(),
+									(short) realm.getMapId(), realm.getTileManager().getMapWidth(),
+									realm.getTileManager().getMapHeight(), netTilesForPlayer);
+							if (this.playerLoadMapState.get(player.getKey()) == null) {
+								this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
+								this.enqueueServerPacket(player.getValue(), newLoadMapPacket);
+							} else {
+								final LoadMapPacket oldLoadMapPacket = this.playerLoadMapState.get(player.getKey());
+								if (!oldLoadMapPacket.equals(newLoadMapPacket)) {
+									final LoadMapPacket loadMapDiff = oldLoadMapPacket.difference(newLoadMapPacket);
+									this.playerLoadMapState.put(player.getKey(), newLoadMapPacket);
+									if (loadMapDiff != null) {
+										this.enqueueServerPacket(player.getValue(), loadMapDiff);
+									}
+								}
+							}
+						}
+
+						// --- Self UpdatePacket (heavy: inventory/stats/XP/name) ---
+						// Only sent when inventory, stats, XP, or name actually change.
+						if (doUpdate) {
+							final UpdatePacket updatePacket = realm.getPlayerAsPacket(player.getValue().getId());
+							final UpdatePacket oldSelfUpdate = this.playerUpdateState.get(player.getKey());
+							if (oldSelfUpdate == null) {
+								this.playerUpdateState.put(player.getKey(), updatePacket);
+								this.enqueueServerPacket(player.getValue(), updatePacket);
+							} else if (!oldSelfUpdate.equals(updatePacket, false)) {
+								this.playerUpdateState.put(player.getKey(), updatePacket);
+								this.enqueueServerPacket(player.getValue(), updatePacket);
+							}
+
+							// Nearby other players — send their updates TO this player (capped to limit O(N²))
+							final Player[] otherPlayers = realm.getPlayersInRadiusFast(playerCenter, viewportRadius);
+							final int maxOtherUpdates = Math.min(otherPlayers.length, 20);
+							for (int opi = 0; opi < maxOtherUpdates; opi++) {
+								final Player other = otherPlayers[opi];
+								if (other.getId() == player.getKey()) continue;
+								try {
+									final UpdatePacket otherUpdate = realm.getPlayerAsPacket(other.getId());
+									if (otherUpdate == null) continue;
+									this.enqueueServerPacket(player.getValue(), otherUpdate.withoutInventory());
+								} catch (Exception ex) {
+									log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
+								}
+							}
+						}
+
+						// --- Self PlayerStatePacket (HP/MP/effects) ---
+						// Check for effect changes every tick (must be immediate for movement sync).
+						// HP/MP-only changes throttled to 8Hz via doUpdate.
+						{
+							final PlayerStatePacket statePacket =
+								PlayerStatePacket.from(player.getValue());
+							final PlayerStatePacket oldState =
+								this.playerStateState.get(player.getKey());
+							if (oldState == null) {
+								this.playerStateState.put(player.getKey(), statePacket);
+								this.enqueueServerPacket(player.getValue(), statePacket);
+							} else {
+								boolean effectsChanged = !java.util.Arrays.equals(
+									oldState.getEffectIds(), statePacket.getEffectIds());
+								if (effectsChanged) {
+									// Effects changed — send immediately (affects client movement prediction)
+									this.playerStateState.put(player.getKey(), statePacket);
+									this.enqueueServerPacket(player.getValue(), statePacket);
+								} else if (doUpdate && !oldState.equalsState(statePacket)) {
+									// HP/MP changed — throttle to 8Hz
+									this.playerStateState.put(player.getKey(), statePacket);
+									this.enqueueServerPacket(player.getValue(), statePacket);
+								}
+							}
+						}
+
+						// --- LoadPacket (32 Hz) - per-player spatial grid query ---
+						if (doLoad) {
+							// Build a fresh LoadPacket centered on THIS player. We do not
+							// cache by cell because two players in the same cell can be at
+							// different positions, and reusing one player's perspective
+							// causes the other player to unload entities still within their
+							// own viewport (causing flicker / disappearing entities).
+							final LoadPacket loadPacket = realm.getLoadPacketCircularFast(playerCenter, viewportRadius);
+							if (this.playerLoadState.get(player.getKey()) == null) {
+								this.playerLoadState.put(player.getKey(), loadPacket);
+								this.enqueueServerPacket(player.getValue(), loadPacket);
+							} else {
+								final LoadPacket oldLoad = this.playerLoadState.get(player.getKey());
+								if (!oldLoad.equals(loadPacket)) {
+									final LoadPacket toSend = oldLoad.combine(loadPacket);
+									this.playerLoadState.put(player.getKey(), loadPacket);
+									if (!toSend.isEmpty()) {
+										this.enqueueServerPacket(player.getValue(), toSend);
+									}
+									final UnloadPacket unloadDelta = oldLoad.difference(loadPacket);
+									if (unloadDelta.isNotEmpty()) {
+										this.enqueueServerPacket(player.getValue(), unloadDelta);
+										for (long unloadedEnemy : unloadDelta.getEnemies()) {
+											this.enemyUpdateState.remove(unloadedEnemy);
+										}
+									}
+								}
+							}
+						}
+
+						// --- ObjectMovePacket: dead reckoning with tiered check rates ---
+						// Inner zone checked at 32Hz, full viewport at 16Hz.
+						// Only entities whose actual position diverges from the client's
+						// predicted position (based on last-sent pos+vel) are transmitted.
+						// Send PlayerPosAckPacket when moving (every tick) or periodically when idle
+						// (~10Hz idle acks) so high-latency clients get stop confirmation.
+						final boolean isMoving = player.getValue().getDx() != 0 || player.getValue().getDy() != 0;
+						final boolean periodicIdleAck = !isMoving && (this.tickCounter % 6 == 0);
+						if (isMoving || teleportedPlayers.contains(player.getKey()) || periodicIdleAck) {
+							this.enqueueServerPacket(player.getValue(),
+								PlayerPosAckPacket.from(
+									player.getValue().getLastProcessedInputSeq(),
+									player.getValue().getPos().x,
+									player.getValue().getPos().y));
+						}
+
+						if (doMovement) {
+							final float moveRadius = doFullMovement ? viewportRadius : viewportRadius * 0.5f;
+							// Build a fresh ObjectMovePacket centered on THIS player. Same
+							// reasoning as the LoadPacket: cells can hold multiple players
+							// at different positions, and reusing one player's perspective
+							// causes incorrect movement updates for others.
+							final ObjectMovePacket movePacket =
+									realm.getGameObjectsAsPacketsCircularFast(playerCenter, moveRadius);
+							if (movePacket != null) {
+								Map<Long, EntityMotionState> drState = this.playerDeadReckonState.get(player.getKey());
+								if (drState == null) {
+									drState = new HashMap<>();
+									this.playerDeadReckonState.put(player.getKey(), drState);
+								}
+
+								final float tickDuration = 1.0f;
+
+								final List<NetObjectMovement> corrections = new ArrayList<>();
+								for (final NetObjectMovement m : movePacket.getMovements()) {
+									// Skip local player — their position comes via PlayerPosAckPacket
+									if (m.getEntityId() == player.getKey()
+											&& !teleportedPlayers.contains(player.getKey())) {
+										continue;
+									}
+									// Send all entities at the movement tick rate (no dead reckoning).
+									// Dead reckoning causes irregular update intervals that make
+									// entities jump on the client. Fixed-rate updates + client lerp
+									// is simpler and smoother.
+									corrections.add(m);
+								}
+
+								if (!corrections.isEmpty()) {
+									// Send as standard ObjectMovePacket for webclient compatibility.
+									// TODO: send CompactMovePacket (packet 25) once webclient supports it
+									// for an additional ~44% per-entity size reduction.
+									final ObjectMovePacket correctionPacket = ObjectMovePacket.from(
+										corrections.toArray(new NetObjectMovement[0]));
+									this.enqueueServerPacket(player.getValue(), correctionPacket);
+								}
+							}
+
+							// Enemy UpdatePackets (16 Hz) - extract enemy IDs from move packet
+							if (doEnemyUpdate && movePacket != null) {
+								final Set<Long> nearEnemyIds = new HashSet<>();
+								for (NetObjectMovement m : movePacket.getMovements()) {
+									if (m.getEntityType() == EntityType.ENEMY.getEntityTypeId()) {
+										nearEnemyIds.add(m.getEntityId());
+									}
+								}
+								for (Long enemyId : nearEnemyIds) {
+									final UpdatePacket updatePacket0 = realm.getEnemyAsPacket(enemyId);
+									final UpdatePacket oldState = this.enemyUpdateState.get(enemyId);
+									boolean doSend = false;
+									if (oldState == null) {
+										this.enemyUpdateState.put(enemyId, updatePacket0);
+										doSend = true;
+									} else if (!oldState.equals(updatePacket0, true)) {
+										this.enemyUpdateState.put(enemyId, updatePacket0);
+										doSend = true;
+									}
+									if (doSend) {
+										this.enqueueServerPacket(player.getValue(), updatePacket0);
+									}
+									// Send enemy PlayerStatePacket when HP or effects change (own diff, not tied to UpdatePacket)
+									final Enemy nearEnemy = realm.getEnemy(enemyId);
+									if (nearEnemy != null) {
+										final PlayerStatePacket enemyState =
+											PlayerStatePacket.from(nearEnemy);
+										final PlayerStatePacket cachedEnemyState =
+											this.playerStateState.get(enemyId);
+										if (cachedEnemyState == null || !cachedEnemyState.equalsState(enemyState)) {
+											this.playerStateState.put(enemyId, enemyState);
+											this.enqueueServerPacket(player.getValue(), enemyState);
+										}
+									}
+								}
+							}
+						}
+
+						// Heartbeat timeout check (every tick)
+						final Long playerLastHeartbeatTime = this.playerLastHeartbeatTime.get(player.getKey());
+						if (playerLastHeartbeatTime != null
+								&& ((Instant.now().toEpochMilli() - playerLastHeartbeatTime) > 10000)) {
+							long elapsed = Instant.now().toEpochMilli() - playerLastHeartbeatTime;
+							toRemoveReasons.put(player.getValue(), "heartbeat timeout (" + elapsed + "ms since last heartbeat)");
+						}
+
+					} catch (Exception e) {
+						RealmManagerServer.log.error("[SERVER] Failed to build game data for Player {}. Reason: {}",
+								player.getKey(), e);
+					}
+				}
+
+				for (Map.Entry<Player, String> entry : toRemoveReasons.entrySet()) {
+					this.disconnectPlayer(entry.getKey(), entry.getValue());
+				}
+
+				// Reset contentsChanged AFTER all players processed
+				// (was inside player loop before — caused Player B to miss updates)
+				for (LootContainer lc : realm.getLoot().values()) {
+					lc.setContentsChanged(false);
+				}
+			}
+
+			long nanosDiff = System.nanoTime() - startNanos;
+			log.debug("[SERVER] Game data enqueued in {} nanos ({}ms)", nanosDiff,
+					((double) nanosDiff / (double) 1000000l));
+			this.releaseRealmLock();
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to enqueue game data. Reason: {}", e);
+		}
+	}
+
+	// Maximum packets to process per tick across all clients.
+	// Prevents ability spam from 25+ bots from starving the tick thread.
+	private static final int MAX_PACKETS_PER_TICK = 200;
+
+	// Packet types that get priority processing (shoot/move feel laggy when delayed)
+	private static final Set<Class<? extends Packet>> PRIORITY_PACKETS = Set.of(
+			com.openrealm.net.server.packet.PlayerShootPacket.class,
+			com.openrealm.net.server.packet.PlayerMovePacket.class,
+			com.openrealm.net.server.packet.HeartbeatPacket.class
+	);
+
+	public void processServerPackets() {
+		// Two-pass processing: priority packets first, then everything else (capped)
+		final List<Packet> priorityQueue = new ArrayList<>();
+		final List<Packet> normalQueue = new ArrayList<>();
+
+		for (final Map.Entry<String, ClientSession> entry : this.getServer().getClients().entrySet()) {
+			if (!entry.getValue().isShutdownProcessing()) {
+				while (!entry.getValue().getPacketQueue().isEmpty()) {
+					final Packet packet = entry.getValue().getPacketQueue().remove();
+					// Refresh connect time on any packet activity so pre-login
+					// connections aren't killed while auth is still in progress
+					this.getServer().getClientConnectTime().put(entry.getKey(), Instant.now().toEpochMilli());
+					if (PRIORITY_PACKETS.contains(packet.getClass())) {
+						priorityQueue.add(packet);
+					} else {
+						normalQueue.add(packet);
+					}
+				}
+			} else {
+				// Player Disconnect routine
+				final Long dcPlayerId = this.getRemoteAddresses().get(entry.getKey());
+				if (dcPlayerId == null) {
+					entry.getValue().setShutdownProcessing(true);
+					return;
+				}
+				final Realm playerLocation = this.findPlayerRealm(dcPlayerId);
+				if (playerLocation != null) {
+					final Player dcPlayer = playerLocation.getPlayer(dcPlayerId);
+					this.persistPlayerAsync(dcPlayer);
+					playerLocation.getExpiredPlayers().add(dcPlayerId);
+					playerLocation.getPlayers().remove(dcPlayerId);
+				}
+				entry.getValue().close();
+				this.server.getClients().remove(entry.getKey());
+			}
+		}
+
+		// Pass 1: Process ALL priority packets (shoot/move/heartbeat — always responsive)
+		for (final Packet packet : priorityQueue) {
+			processPacket(packet);
+		}
+
+		// Pass 2: Process normal packets up to the per-tick cap
+		final int normalCap = Math.max(0, MAX_PACKETS_PER_TICK - priorityQueue.size());
+		for (int i = 0; i < Math.min(normalQueue.size(), normalCap); i++) {
+			processPacket(normalQueue.get(i));
+		}
+	}
+
+	private void processPacket(final Packet packet) {
+		try {
+			packet.setSrcIp(packet.getSrcIp());
+			final List<MethodHandle> packetHandles = this.userPacketCallbacksServer.get(packet.getId());
+			if (packetHandles != null) {
+				for (MethodHandle handler : packetHandles) {
+					try {
+						handler.invokeExact(this, packet);
+					} catch (Throwable e) {
+						log.error("[SERVER] Failed to invoke packet callback. Reason: {}", e);
+					}
+				}
+			}
+			if (this.packetCallbacksServer.get(packet.getClass()) == null) {
+				final List<MethodHandle> callBackHandles = this.userPacketCallbacksServer.get(packet.getId());
+				if (callBackHandles != null) {
+					for (MethodHandle callBack : callBackHandles) {
+						try {
+							callBack.invokeExact(this, packet);
+						} catch (Throwable e) {
+							log.error("[SERVER] Failed to invoke user packet callback. Reason: {}", e.getMessage());
+						}
+					}
+				}
+			} else {
+				this.packetCallbacksServer.get(packet.getClass()).accept(this, packet);
+			}
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to process packet {}. Reason: {}", packet.getClass().getSimpleName(), e);
+		}
+	}
+
+	public Map.Entry<String, ClientSession> getPlayerSessionEntry(Player player) {
+		Map.Entry<String, ClientSession> result = null;
+		for (final Map.Entry<String, ClientSession> client : this.server.getClients().entrySet()) {
+			final Long mappedId = this.remoteAddresses.get(client.getKey());
+			if (mappedId != null && mappedId == player.getId()) {
+				result = client;
+			}
+		}
+		return result;
+	}
+
+	public Player getPlayerByRemoteAddress(String remoteAddr) {
+		final Long playerId = this.remoteAddresses.get(remoteAddr);
+		if (playerId == null) {
+			return null;
+		}
+		final Player found = this.searchRealmsForPlayer(playerId);
+		return found;
+	}
+
+	public ClientSession getPlayerSession(Player player) {
+		final Map.Entry<String, ClientSession> entry = getPlayerSessionEntry(player);
+		return entry != null ? entry.getValue() : null;
+	}
+
+	public String getPlayerRemoteAddress(Player player) {
+		final Map.Entry<String, ClientSession> entry = getPlayerSessionEntry(player);
+		return entry != null ? entry.getKey() : null;
+	}
+
+	public void disconnectPlayer(Player player, String reason) {
+		log.info("[SERVER] Disconnecting Player {} — reason: {}", player.getName(), reason);
+
+		// Step 1: Remove player from realm (most critical — prevents ghost players)
+		try {
+			final Realm playerRealm = this.findPlayerRealm(player.getId());
+			if (playerRealm != null) {
+				if (playerRealm.getMapId() == 1) {
+					try {
+						java.util.List<com.openrealm.account.dto.ChestDto> chestsToSave = playerRealm.serializeChests();
+						ServerGameLogic.DATA_SERVICE.executePost(
+								"/data/account/" + player.getAccountUuid() + "/chest",
+								chestsToSave, com.openrealm.account.dto.PlayerAccountDto.class);
+						log.info("[SERVER] Saved vault chests for disconnecting player {}", player.getName());
+					} catch (Exception e) {
+						log.error("[SERVER] Failed to save vault chests on disconnect for {}. Reason: {}",
+								player.getName(), e.getMessage());
+					}
+					playerRealm.setShutdown(true);
+					this.realms.remove(playerRealm.getRealmId());
+				}
+				playerRealm.getExpiredPlayers().add(player.getId());
+				playerRealm.removePlayer(player);
+			}
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to remove player {} from realm. Reason: {}", player.getName(), e);
+		}
+
+		// Step 2: Persist player data
+		try {
+			this.persistPlayerAsync(player);
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to persist player {} on disconnect. Reason: {}", player.getName(), e);
+		}
+
+		// Step 3: Clear player packet/state queues
+		try {
+			this.clearPlayerState(player.getId());
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to clear state for player {}. Reason: {}", player.getName(), e);
+		}
+
+		// Step 4: Close network session and clean up address mappings
+		try {
+			final Map.Entry<String, ClientSession> sessionEntry = this.getPlayerSessionEntry(player);
+			if (sessionEntry != null) {
+				sessionEntry.getValue().setShutdownProcessing(true);
+				sessionEntry.getValue().close();
+				this.server.getClients().remove(sessionEntry.getKey());
+				this.remoteAddresses.remove(sessionEntry.getKey());
+			}
+		} catch (Exception e) {
+			log.error("[SERVER] Failed to close session for player {}. Reason: {}", player.getName(), e);
+		}
+	}
+
+	public Realm getTopRealm() {
+		final DungeonGraphNode entryNode = GameDataManager.getEntryNode();
+		// Prefer the shared overworld realm (the dungeon graph entry node)
+		if (entryNode != null) {
+			Optional<Realm> entry = this.findRealmForNode(entryNode.getNodeId());
+			if (entry.isPresent()) return entry.get();
+		}
+		// Fallback: any non-vault realm (prefer by nodeId, then any)
+		for (final Realm realm : this.realms.values()) {
+			if (realm.isOverworld() && realm.getMapId() != 1) {
+				return realm;
+			}
+		}
+		// Last resort: return the first realm that isn't a vault
+		for (final Realm realm : this.realms.values()) {
+			if (realm.getMapId() != 1) {
+				return realm;
+			}
+		}
+		return null;
+	}
+
+	public Portal getClosestPortal(final long realmId, final Vector2f pos, final float limit) {
+		float best = Float.MAX_VALUE;
+		Portal bestPortal = null;
+		final Realm targetRealm = this.realms.get(realmId);
+		for (final Portal portal : targetRealm.getPortals().values()) {
+			float dist = portal.getPos().distanceTo(pos);
+			if ((dist < best) && (dist <= limit)) {
+				best = dist;
+				bestPortal = portal;
+			}
+		}
+		return bestPortal;
+	}
+
+	public Player getClosestPlayer(final long realmId, final Vector2f pos, final float limit) {
+		float best = Float.MAX_VALUE;
+		Player bestPlayer = null;
+		final Realm targetRealm = this.realms.get(realmId);
+		for (final Player player : targetRealm.getPlayers().values()) {
+			final float dist = player.getPos().distanceTo(pos);
+			if ((dist < best) && (dist <= limit)) {
+				best = dist;
+				bestPlayer = player;
+			}
+		}
+		// Also consider active decoys — enemies should target the closest
+		// decoy the same way they target a real player.
+		final Player decoyProxy = targetRealm.getClosestDecoyTarget(pos, best);
+		if (decoyProxy != null) {
+			bestPlayer = decoyProxy;
+		}
+		return bestPlayer;
+	}
+
+	public LootContainer getClosestLootContainer(final long realmId, final Vector2f pos, final float limit) {
+		float best = Float.MAX_VALUE;
+		LootContainer bestLoot = null;
+		final Realm targetRealm = this.realms.get(realmId);
+		for (final LootContainer lootContainer : targetRealm.getLoot().values()) {
+			float dist = lootContainer.getPos().distanceTo(pos);
+			if ((dist < best) && (dist <= limit)) {
+				best = dist;
+				bestLoot = lootContainer;
+			}
+		}
+		return bestLoot;
+	}
+
+	private UnloadPacket getUnloadPacket(long realmId) throws Exception {
+		final Realm targetRealm = this.realms.get(realmId);
+		final Long[] expiredBullets = targetRealm.getExpiredBullets().toArray(new Long[0]);
+		final Long[] expiredEnemies = targetRealm.getExpiredEnemies().toArray(new Long[0]);
+		final Long[] expiredPlayers = targetRealm.getExpiredPlayers().toArray(new Long[0]);
+		targetRealm.getExpiredPlayers().clear();
+		targetRealm.getExpiredBullets().clear();
+		targetRealm.getExpiredEnemies().clear();
+		final List<Long> lootContainers = targetRealm.getLoot().values().stream()
+				.filter(lc -> lc.isExpired() || lc.isEmpty()).map(LootContainer::getLootContainerId)
+				.collect(Collectors.toList());
+		final List<Long> portals = targetRealm.getPortals().values().stream().filter(Portal::isExpired)
+				.map(Portal::getId).collect(Collectors.toList());
+		for (final Long lcId : lootContainers) {
+			targetRealm.getLoot().remove(lcId);
+		}
+		for (final Long pId : portals) {
+			targetRealm.getPortals().remove(pId);
+		}
+		return UnloadPacket.from(expiredPlayers, lootContainers.toArray(new Long[0]), expiredBullets, expiredEnemies,
+				portals.toArray(new Long[0]));
+	}
+
+	public void tryDecorate(final Realm realm) {
+		final RealmDecorator decorator = this.getRealmDecorator(realm.getMapId());
+		if (decorator != null) {
+			decorator.decorate(realm);
+		}
+	}
+
+	private RealmDecorator getRealmDecorator(int mapId) {
+		RealmDecorator result = null;
+		for (final RealmDecorator decorator : this.realmDecorators) {
+			if (decorator.getTargetMapId() == mapId) {
+				result = decorator;
+			}
+		}
+		return result;
+	}
+
+	public EnemyScriptBase getEnemyScript(int enemyId) {
+		EnemyScriptBase result = null;
+		for (final EnemyScriptBase enemyScript : this.enemyScripts) {
+			if (enemyScript.getTargetEnemyId() == enemyId) {
+				result = enemyScript;
+			}
+		}
+		return result;
+	}
+
+	public UseableItemScriptBase getItemScript(int itemId) {
+		UseableItemScriptBase result = null;
+		for (final UseableItemScriptBase itemScript : this.itemScripts) {
+			if (itemScript.handles(itemId)) {
+				result = itemScript;
+			}
+		}
+		return result;
+	}
+
+	// Register any custom realm type decorators.
+	// Each time a realm of the target type is added, an instance
+	// of it will be passed to the decorator for post processing
+	// (generate static enemies, terrain, events)
+	private void registerRealmDecorators() {
+		this.registerRealmDecoratorsReflection();
+	}
+
+	private void registerRealmDecoratorsReflection() {
+		final Set<Class<? extends RealmDecoratorBase>> subclasses = this.classPathScanner
+				.getSubTypesOf(RealmDecoratorBase.class);
+		for (Class<? extends RealmDecoratorBase> clazz : subclasses) {
+			try {
+				final RealmDecoratorBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class)
+						.newInstance(this);
+				this.realmDecorators.add(realmDecoratorInstance);
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to register realm decorator for script {}. Reason: {}", clazz, e.getMessage());
+			}
+		}
+	}
+
+	private void registerEnemyScripts() {
+		this.registerEnemyScriptsReflection();
+	}
+
+	private void registerEnemyScriptsReflection() {
+		final Set<Class<? extends EnemyScriptBase>> subclasses = this.classPathScanner
+				.getSubTypesOf(EnemyScriptBase.class);
+		for (Class<? extends EnemyScriptBase> clazz : subclasses) {
+			try {
+				final EnemyScriptBase realmDecoratorInstance = clazz.getDeclaredConstructor(RealmManagerServer.class)
+						.newInstance(this);
+				this.enemyScripts.add(realmDecoratorInstance);
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to register enemy script for script {}. Reason: {}", clazz, e.getMessage());
+			}
+		}
+	}
+
+	private void registerItemScripts() {
+		this.registerItemScriptsReflection();
+	}
+
+	private void registerItemScriptsReflection() {
+		final Set<Class<? extends UseableItemScriptBase>> subclasses = this.classPathScanner
+				.getSubTypesOf(UseableItemScriptBase.class);
+		for (Class<? extends UseableItemScriptBase> clazz : subclasses) {
+			try {
+				final UseableItemScriptBase realmDecoratorInstance = clazz
+						.getDeclaredConstructor(RealmManagerServer.class).newInstance(this);
+				this.itemScripts.add(realmDecoratorInstance);
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to register useable item script for script {}. Reason: {}", clazz, e.getMessage());
+			}
+		}
+	}
+
+	private void registerCommandHandlersReflection() {
+		// Target method signature. ex. public static void myMethod(RealmManagerServer,
+		// Player, ServerCommandMessage)
+		final MethodType mt = MethodType.methodType(void.class, RealmManagerServer.class, Player.class,
+				ServerCommandMessage.class);
+		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(CommandHandler.class);
+		for (final Method method : subclasses) {
+			try {
+				// Get the annotation on the method
+				final CommandHandler commandToHandle = method.getDeclaredAnnotation(CommandHandler.class);
+				final AdminRestrictedCommand isAdminRestricted = method
+						.getDeclaredAnnotation(AdminRestrictedCommand.class);
+
+				// Find the static method with given name in the target class
+				MethodHandle handlerMethod = null;
+				try {
+					handlerMethod = this.publicLookup.findStatic(ServerCommandHandler.class, method.getName(), mt);
+				} catch (Exception e) {
+					handlerMethod = this.publicLookup.findStatic(ServerTradeManager.class, method.getName(), mt);
+				}
+				if (handlerMethod != null) {
+					ServerCommandHandler.COMMAND_CALLBACKS.put(commandToHandle.value(), handlerMethod);
+					ServerCommandHandler.COMMAND_DESCRIPTIONS.put(commandToHandle.value(), commandToHandle);
+					log.info("[SERVER] Registered Command handler in {}. Method: {}{}", method.getDeclaringClass(),
+							method.getName(), mt.toString());
+					if (isAdminRestricted != null) {
+						ServerCommandHandler.RESTRICTED_COMMAND_PROVISIONS.put(commandToHandle.value(), isAdminRestricted.provisions());
+						log.info("[SERVER] Command {} registered as restricted (requires {})", commandToHandle.value(),
+								java.util.Arrays.toString(isAdminRestricted.provisions()));
+					}
+				}
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
+			}
+		}
+	}
+
+	// Registers any user defined packet callbacks with the server
+	private void registerPacketCallbacksReflection() {
+		log.info("[SERVER] Registering packet handlers using reflection");
+		final MethodType mt = MethodType.methodType(void.class, RealmManagerServer.class, Packet.class);
+
+		final Set<Method> subclasses = this.classPathScanner.getMethodsAnnotatedWith(PacketHandlerServer.class);
+		for (final Method method : subclasses) {
+			try {
+				final PacketHandlerServer packetToHandle = method.getDeclaredAnnotation(PacketHandlerServer.class);
+				MethodHandle handleToHandler = null;
+				try {
+					handleToHandler = this.publicLookup.findStatic(ServerGameLogic.class, method.getName(), mt);
+				} catch (Exception e) {
+					handleToHandler = this.publicLookup.findStatic(ServerTradeManager.class, method.getName(), mt);
+				}
+
+				if (handleToHandler != null) {
+					final Entry<Byte, Class<? extends Packet>> targetPacketType = PacketType.valueOf(packetToHandle.value());
+					List<MethodHandle> existing = this.userPacketCallbacksServer.get(targetPacketType.getKey());
+					if (existing == null) {
+						existing = new ArrayList<>();
+					}
+					existing.add(handleToHandler);
+					log.info("[SERVER] Added new packet handler for packet {}. Handler method: {}", targetPacketType,
+							handleToHandler.toString());
+					this.userPacketCallbacksServer.put(targetPacketType.getKey(), existing);
+				}
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to get MethodHandle to method {}. Reason: {}", method.getName(), e);
+			}
+		}
+	}
+
+	// For packet callbacks requiring high performance we will invoke them in a
+	// functional manner using hashmap to store the references.
+	// The server operator is encouraged to add auxiliary packet handling
+	// functionality using the @PacketHandler annotation
+	private void registerPacketCallbacks() {
+		this.registerPacketCallback(PlayerMovePacket.class, ServerGameLogic::handlePlayerMoveServer);
+		this.registerPacketCallback(PlayerShootPacket.class, ServerGameLogic::handlePlayerShootServer);
+		this.registerPacketCallback(HeartbeatPacket.class, ServerGameLogic::handleHeartbeatServer);
+		this.registerPacketCallback(TextPacket.class, ServerGameLogic::handleTextServer);
+		this.registerPacketCallback(CommandPacket.class, ServerGameLogic::handleCommandServer);
+		// this.registerPacketCallback(PacketType.LOAD_MAP.getPacketId(),
+		// ServerGameLogic::handleLoadMapServer);
+		this.registerPacketCallback(UseAbilityPacket.class, ServerGameLogic::handleUseAbilityServer);
+		this.registerPacketCallback(MoveItemPacket.class, ServerGameLogic::handleMoveItemServer);
+		this.registerPacketCallback(UsePortalPacket.class, ServerGameLogic::handleUsePortalServer);
+	}
+
+	private void registerPacketCallback(final Class<? extends Packet> packetId, final BiConsumer<RealmManagerServer, Packet> callback) {
+		this.packetCallbacksServer.put(packetId, callback);
+	}
+
+	// Updates all game objects on the server
+	public void update(double time) {
+		// For each world on the server
+		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+			final Realm realm = realmEntry.getValue();
+			// Update player specific game objects — run inline, these are fast per-player ops
+			for (final Map.Entry<Long, Player> player : realm.getPlayers().entrySet()) {
+				final Player p = realm.getPlayer(player.getValue().getId());
+				if (p == null) {
+					continue;
+				}
+				this.processBulletHit(realm.getRealmId(), p);
+				p.update(time);
+				p.removeExpiredEffects();
+				this.movePlayer(realm.getRealmId(), p);
+			}
+			// Once per tick update all non player game objects (bullets, enemies)
+			final GameObject[] gameObject = realm.getAllGameObjects();
+			for (int i = 0; i < gameObject.length; i++) {
+				if (gameObject[i] instanceof Enemy || gameObject[i] instanceof Monster) {
+					final Enemy enemy = ((Enemy) gameObject[i]);
+					enemy.update(realm.getRealmId(), this, time);
+					enemy.removeExpiredEffects();
+				}
+				if (gameObject[i] instanceof Bullet) {
+					final Bullet bullet = ((Bullet) gameObject[i]);
+					if (bullet != null) {
+						bullet.update();
+					}
+				}
+			}
+		}
+
+		this.removeExpiredBullets();
+		this.removeExpiredLootContainers();
+		this.removeExpiredPortals();
+		for (final Realm realm : this.realms.values()) {
+			realm.processPoisonThrows(this);
+			realm.processTraps(this);
+			realm.processPoisonDots(this);
+			realm.processDecoys(this);
+		}
+
+		// Broadcast global player positions for minimap (1 Hz) — only if any position changed
+		if (this.tickCounter % 64 == 0) {
+			for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+				final Realm realm = realmEntry.getValue();
+				if (realm.getPlayers().isEmpty()) {
+					this.lastGlobalPositions.remove(realmEntry.getKey());
+					continue;
+				}
+				final NetPlayerPosition[] positions = realm.getPlayers().values().stream()
+						.map(NetPlayerPosition::from)
+						.toArray(NetPlayerPosition[]::new);
+				// Delta check: skip broadcast if no position has changed
+				final NetPlayerPosition[] lastPositions = this.lastGlobalPositions.get(realmEntry.getKey());
+				boolean changed = (lastPositions == null) || (lastPositions.length != positions.length);
+				if (!changed) {
+					for (int i = 0; i < positions.length; i++) {
+						if (positions[i].getPlayerId() != lastPositions[i].getPlayerId()
+								|| positions[i].getX() != lastPositions[i].getX()
+								|| positions[i].getY() != lastPositions[i].getY()
+								|| positions[i].isTeleportable() != lastPositions[i].isTeleportable()) {
+							changed = true;
+							break;
+						}
+					}
+				}
+				if (changed) {
+					this.lastGlobalPositions.put(realmEntry.getKey(), positions);
+					final GlobalPlayerPositionPacket minimapPacket =
+							GlobalPlayerPositionPacket.from(positions);
+					for (final Player p : realm.getPlayers().values()) {
+						this.enqueueServerPacket(p, minimapPacket);
+					}
+				}
+			}
+		}
+
+		// Periodic enemy respawn in overworld (every 1920 ticks ~30s)
+		if (this.tickCounter % 1920 == 0) {
+			for (final Realm realm : this.realms.values()) {
+				if (realm.isOverworld() && realm.getMapId() != 1 && !realm.getPlayers().isEmpty()) {
+					realm.respawnEnemies(50);
+				}
+			}
+		}
+
+		// Periodic cleanup: remove empty dungeon/vault realms (every 128 ticks ~2s)
+		if (this.tickCounter % 128 == 0) {
+			final List<Long> realmIdsToRemove = new ArrayList<>();
+			for (final Map.Entry<Long, Realm> entry : this.realms.entrySet()) {
+				final Realm r = entry.getValue();
+				if (!r.getPlayers().isEmpty()) continue;
+
+				// Vault realms (mapId=1): always remove when empty
+				if (r.getMapId() == 1) {
+					realmIdsToRemove.add(entry.getKey());
+				}
+				// Non-shared realms (dungeon instances): remove when empty
+				else if (!r.isShared()) {
+					realmIdsToRemove.add(entry.getKey());
+				}
+			}
+			for (Long id : realmIdsToRemove) {
+				log.info("[SERVER] Cleaning up empty realm {}", id);
+				final Realm removed = this.realms.remove(id);
+				if (removed != null) {
+					removed.setShutdown(true);
+				}
+			}
+		}
+	}
+
+	private void movePlayer(final long realmId, final Player p) {
+		// If the player is paralyzed, stop them and return.
+        if (p.hasEffect(StatusEffectType.PARALYZED)) {
+            p.setCurrentDirFlags((byte) 0);
+            p.setDx(0); p.setDy(0);
+            p.setUp(false);
+            p.setDown(false);
+            p.setRight(false);
+            p.setLeft(false);
+            // Still increment lastProcessedInputSeq so acks stay in sync
+            if (p.getInputQueue() == null) p.setInputQueue(new java.util.concurrent.ConcurrentLinkedQueue<>());
+            while (!p.getInputQueue().isEmpty()) {
+                int[] queued = p.getInputQueue().poll();
+                p.setLastProcessedInputSeq(queued[0]);
+            }
+            return;
+        }
+
+		// Process ALL queued inputs this tick. At high ping, inputs arrive in
+		// bursts — processing all of them prevents server position from drifting
+		// behind the client. Capped at 8 per tick (125ms catch-up) to prevent abuse.
+		if (p.getInputQueue() == null) p.setInputQueue(new java.util.concurrent.ConcurrentLinkedQueue<>());
+		while (!p.getInputQueue().isEmpty() && p.getInputQueue().peek()[0] <= p.getLastProcessedInputSeq()) {
+		    p.getInputQueue().poll();
+		}
+
+		final Realm targetRealm = this.realms.get(realmId);
+		int processed = 0;
+		while (!p.getInputQueue().isEmpty() && processed < 8) {
+		    int[] nextInput = p.getInputQueue().poll();
+		    p.setCurrentDirFlags((byte) nextInput[1]);
+		    p.setLastProcessedInputSeq(nextInput[0]);
+		    this.applyMovementTick(targetRealm, p);
+		    processed++;
+		}
+		// If no queued inputs, run one tick with the last dirFlags (coast)
+		if (processed == 0) {
+		    this.applyMovementTick(targetRealm, p);
+		}
+
+		// Calculate if we should apply ground damage
+		if (targetRealm.getTileManager().collidesDamagingTile(p)) {
+			final Long lastDamageTime = this.playerGroundDamageState.get(p.getId());
+			if (lastDamageTime == null || (Instant.now().toEpochMilli() - lastDamageTime) > 450) {
+				int damageToInflict = 30 + Realm.RANDOM.nextInt(15);
+				this.sendTextEffectToPlayer(p, TextEffect.DAMAGE, "-" + damageToInflict);
+				p.setHealth(p.getHealth() - damageToInflict);
+				this.playerGroundDamageState.put(p.getId(), Instant.now().toEpochMilli());
+			}
+		}
+	}
+
+	/** Applies one movement tick for a player using their current dirFlags. */
+	private void applyMovementTick(final Realm targetRealm, final Player p) {
+		byte flags = p.getCurrentDirFlags();
+		boolean up    = (flags & 0x01) != 0;
+		boolean down  = (flags & 0x02) != 0;
+		boolean left  = (flags & 0x04) != 0;
+		boolean right = (flags & 0x08) != 0;
+
+		float tilesPerSec = 4.0f + 5.6f * (p.getComputedStats().getSpd() / 75.0f);
+		if (p.hasEffect(StatusEffectType.SPEEDY)) tilesPerSec *= 1.5f;
+		if (p.hasEffect(StatusEffectType.SLOWED)) tilesPerSec *= 0.5f;
+		float spd = tilesPerSec * 32.0f / 64.0f;
+
+		boolean movingX = left || right;
+		boolean movingY = up || down;
+		if (movingX && movingY) {
+		    spd = (float) (spd * Math.sqrt(2) / 2.0);
+		}
+
+		p.setDx(right ? spd : left ? -spd : 0.0f);
+		p.setDy(down ? spd : up ? -spd : 0.0f);
+		if (!movingX && !movingY) {
+		    p.setDx(0); p.setDy(0);
+		}
+		p.setUp(up); p.setDown(down); p.setLeft(left); p.setRight(right);
+		p.setLastInputSeq(p.getLastInputSeq() + 1);
+
+		final float slow = targetRealm.getTileManager().collidesSlowTile(p) ? 3.0f : 1.0f;
+		final float effDx = p.getDx() / slow;
+		final float effDy = p.getDy() / slow;
+		final float origX = p.getPos().x;
+		final float origY = p.getPos().y;
+
+		boolean xBlocked = targetRealm.getTileManager().collisionTile(p, effDx, 0)
+				|| targetRealm.getTileManager().collidesXLimit(p, effDx)
+				|| targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), effDx, 0);
+		boolean yBlocked = targetRealm.getTileManager().collisionTile(p, 0, effDy)
+				|| targetRealm.getTileManager().collidesYLimit(p, effDy)
+				|| targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), 0, effDy);
+
+		if (!xBlocked && !yBlocked && effDx != 0 && effDy != 0) {
+			boolean diagBlocked = targetRealm.getTileManager().collisionTile(p, effDx, effDy)
+					|| targetRealm.getTileManager().isVoidTile(p.getPos().clone(p.getSize() / 2, p.getSize() / 2), effDx, effDy);
+			if (diagBlocked) {
+				if (Math.abs(effDx) >= Math.abs(effDy)) yBlocked = true;
+				else xBlocked = true;
+			}
+		}
+
+		if (!xBlocked) { p.xCol = false; p.getPos().x = origX + effDx; }
+		else { p.xCol = true; }
+		if (!yBlocked) { p.yCol = false; p.getPos().y = origY + effDy; }
+		else { p.yCol = true; }
+	}
+
+	// Invokes an ability usage server side for the given player at the
+	// desired location if applicable
+	public void useAbility(final long realmId, final long playerId, final Vector2f pos) {
+		final Realm targetRealm = this.realms.get(realmId);
+
+		final Player player = targetRealm.getPlayer(playerId);
+		if (player == null || player.getAbility() == null)
+			return;
+		final GameItem abilityItem = GameDataManager.GAME_ITEMS.get(player.getAbility().getItemId());
+		if ((abilityItem == null))
+			return;
+		final Effect effect = abilityItem.getEffect();
+		final Long lastAbilityUsage = this.playerAbilityState.get(playerId);
+		if (lastAbilityUsage == null
+				|| (Instant.now().toEpochMilli() - lastAbilityUsage >= effect.getCooldownDuration())) {
+			this.playerAbilityState.put(playerId, Instant.now().toEpochMilli());
+		} else {
+			log.debug("Ability {} is on cooldown", abilityItem);
+			return;
+		}
+		// Godmode (INVINCIBLE) = infinite mana
+		if (!player.hasEffect(StatusEffectType.INVINCIBLE)) {
+			if (player.getMana() < effect.getMpCost())
+				return;
+			player.setMana(player.getMana() - effect.getMpCost());
+		}
+		// If the ability is damaging (knight stun, archer arrow, wizard spell)
+		// Resolve the projectile group if the item has a damage definition with a valid projectileGroupId.
+		// Script-only abilities (e.g., scepter chain lightning, necromancer skull) may have no damage
+		// or a damage with projectileGroupId -1, meaning no projectiles should be created.
+		final ProjectileGroup group = (abilityItem.getDamage() != null)
+				? GameDataManager.PROJECTILE_GROUPS.get(abilityItem.getDamage().getProjectileGroupId())
+				: null;
+
+		if (((abilityItem.getDamage() != null) && (abilityItem.getEffect() != null) && (group != null))) {
+
+			final Vector2f dest = new Vector2f(pos.x, pos.y);
+
+			Vector2f source = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+			final float angle = Bullet.getAngle(source, dest);
+
+			for (final Projectile p : group.getProjectiles()) {
+				final short offset = (short) (p.getSize() / (short) 2);
+				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
+				rolledDamage += player.getComputedStats().getAtt();
+				if (p.getPositionMode() != ProjectilePositionMode.TARGET_PLAYER) {
+					source = dest;
+				}
+				Bullet ab1 = this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+						p.getProjectileId(), source.clone(-offset, -offset), angle + Float.parseFloat(p.getAngle()),
+						p.getSize(), p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(),
+						p.getAmplitude(), p.getFrequency(), player.getId());
+				if (ab1 != null && p.getEffects() != null) ab1.setEffects(p.getEffects());
+			}
+			// Apply self-effect if present (e.g., warrior helmet SPEEDY buff)
+			if (effect.isSelf()) {
+				player.addEffect(effect.getEffectId(), effect.getDuration());
+			}
+
+		} else if ((abilityItem.getDamage() != null) && (group != null)) {
+			final Vector2f dest = new Vector2f(pos.x, pos.y);
+			for (final Projectile p : group.getProjectiles()) {
+
+				final short offset = (short) (p.getSize() / (short) 2);
+				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
+				rolledDamage += player.getComputedStats().getAtt();
+				Bullet ab2 = this.addProjectile(realmId, 0l, player.getId(), abilityItem.getDamage().getProjectileGroupId(),
+						p.getProjectileId(), dest.clone(-offset, -offset), Float.parseFloat(p.getAngle()), p.getSize(),
+						p.getMagnitude(), p.getRange(), rolledDamage, false, p.getFlags(), p.getAmplitude(),
+						p.getFrequency(), player.getId());
+				if (ab2 != null && p.getEffects() != null) ab2.setEffects(p.getEffects());
+			}
+
+			// If the ability is non damaging or script-only (rogue cloak, priest tome, sorcerer scepter)
+		} else if (abilityItem.getEffect() != null) {
+			// Special case for teleporting — validate destination with full hitbox check
+			if (abilityItem.getEffect().getEffectId().equals(StatusEffectType.TELEPORT)
+					&& !targetRealm.getTileManager().collidesAtPosition(pos, player.getSize())
+					&& !targetRealm.getTileManager().isVoidTile(pos, 0, 0)) {
+				player.setPos(pos);
+			} else if (!abilityItem.getEffect().getEffectId().equals(StatusEffectType.TELEPORT)) {
+				// Only apply effect to self if the effect is marked as self-targeting.
+				// Non-self effects (e.g., Huntress trap) are handled by item scripts.
+				if (abilityItem.getEffect().isSelf()) {
+					player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
+				}
+			}
+		}
+		// Invoke any item specific scripts
+		final UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
+		if (script != null) {
+			script.invokeItemAbility(targetRealm, player, abilityItem, pos);
+		}
+	}
+
+	public void removeExpiredBullets() {
+		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+			final Realm realm = realmEntry.getValue();
+
+			final List<Bullet> toRemove = new ArrayList<>();
+			for (final Bullet b : realm.getBullets().values()) {
+				if (b.remove()) {
+					toRemove.add(b);
+				}
+			}
+			toRemove.forEach(bullet -> {
+				realm.getExpiredBullets().add(bullet.getId());
+				realm.removeBullet(bullet);
+			});
+		}
+	}
+
+	public void removeExpiredLootContainers() {
+		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+			final Realm realm = realmEntry.getValue();
+
+			final List<LootContainer> toRemove = new ArrayList<>();
+			for (final LootContainer lc : realm.getLoot().values()) {
+				if (lc.isExpired() || lc.isEmpty()) {
+					toRemove.add(lc);
+				}
+			}
+			// fight me for using both kinds of loops
+			toRemove.forEach(lc -> {
+				realm.removeLootContainer(lc);
+			});
+		}
+	}
+
+	public void removeExpiredPortals() {
+		for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
+			final Realm realm = realmEntry.getValue();
+
+			final List<Portal> toRemove = new ArrayList<>();
+			for (final Portal portal : realm.getPortals().values()) {
+				if (portal.isExpired()) {
+					toRemove.add(portal);
+				}
+			}
+			toRemove.forEach(portal -> {
+				realm.removePortal(portal);
+			});
+		}
+	}
+
+	public void processBulletHit(final long realmId, final Player p) {
+		final Realm targetRealm = this.realms.get(realmId);
+		final Player player = targetRealm.getPlayer(p.getId());
+		if (player == null) return;
+
+		// Use spatial grid for O(cells) instead of O(all_entities) brute-force
+		final float collisionRadius = 10 * com.openrealm.game.contants.GlobalConstants.BASE_TILE_SIZE;
+		final Vector2f center = player.getPos();
+
+		// Collect bullets and enemies near this player using spatial grid
+		final List<Bullet> nearbyBullets = new ArrayList<>();
+		final List<Enemy> nearbyEnemies = new ArrayList<>();
+
+		if (targetRealm.getSpatialGrid() != null) {
+			final float radiusSq = collisionRadius * collisionRadius;
+			final List<Long> candidates = targetRealm.getSpatialGrid().queryRadius(center.x, center.y, collisionRadius);
+			for (int i = 0; i < candidates.size(); i++) {
+				final long id = candidates.get(i);
+				final Bullet b = targetRealm.getBullets().get(id);
+				if (b != null) {
+					float dx = b.getPos().x - center.x, dy = b.getPos().y - center.y;
+					if (dx * dx + dy * dy <= radiusSq) nearbyBullets.add(b);
+					continue;
+				}
+				final Enemy e = targetRealm.getEnemies().get(id);
+				if (e != null) {
+					float dx = e.getPos().x - center.x, dy = e.getPos().y - center.y;
+					if (dx * dx + dy * dy <= radiusSq) nearbyEnemies.add(e);
+				}
+			}
+		} else {
+			// Fallback: brute-force (only when no spatial grid)
+			final com.openrealm.game.math.Rectangle viewport = targetRealm.getTileManager().getRenderViewPort(player);
+			for (final Bullet b : targetRealm.getBullets().values()) {
+				if (b.getBounds().intersect(viewport)) nearbyBullets.add(b);
+			}
+			for (final Enemy e : targetRealm.getEnemies().values()) {
+				if (e.getBounds().intersect(viewport)) nearbyEnemies.add(e);
+			}
+		}
+
+		// Terrain hit FIRST: destroy bullets that enter walls before they can
+		// hit entities on the other side
+		this.proccessTerrainHit(realmId, p);
+
+		// Player-bullet collision (enemy bullets hitting player)
+		if (!player.hasEffect(StatusEffectType.INVINCIBLE)) {
+			for (final Bullet b : nearbyBullets) {
+				this.processPlayerHit(realmId, b, player);
+			}
+		}
+
+		// Bullet-enemy collision (player bullets hitting enemies)
+		for (final Enemy enemy : nearbyEnemies) {
+			for (final Bullet b : nearbyBullets) {
+				this.proccessEnemyHit(realmId, b, enemy);
+			}
+		}
+	}
+
+	
+	public void enqueueServerPacket(final Packet packet) {
+		this.outboundPacketQueue.add(packet);
+	}
+
+	public void enqueueServerPacket(final Player player, final Packet packet) {
+		if (player == null || packet == null)
+			return;
+		this.playerOutboundPacketQueue
+				.computeIfAbsent(player.getId(), k -> new ConcurrentLinkedQueue<>())
+				.add(packet);
+	}
+
+	/**
+	 * Circle-vs-circle hit test for a bullet against an entity. Centers come from
+	 * (pos.x + size/2, pos.y + size/2). Radii are size * HIT_RADIUS_FACTOR. The
+	 * client mirrors this exactly in game.js — if you change the formula here,
+	 * change it there too.
+	 */
+	private static boolean circleHit(final Bullet b, final com.openrealm.game.entity.GameObject e) {
+		final float br = b.getSize() * GlobalConstants.HIT_RADIUS_FACTOR;
+		final float er = e.getSize() * GlobalConstants.HIT_RADIUS_FACTOR;
+		final float bcx = b.getPos().x + b.getSize() * 0.5f;
+		final float bcy = b.getPos().y + b.getSize() * 0.5f;
+		final float ecx = e.getPos().x + e.getSize() * 0.5f;
+		final float ecy = e.getPos().y + e.getSize() * 0.5f;
+		final float dx = bcx - ecx;
+		final float dy = bcy - ecy;
+		final float rsum = br + er;
+		return (dx * dx + dy * dy) < (rsum * rsum);
+	}
+
+	private void proccessTerrainHit(final long realmId, final Player p) {
+		final Realm targetRealm = this.realms.get(realmId);
+
+		final List<Bullet> toRemove = new ArrayList<>();
+		final TileMap currentMap = targetRealm.getTileManager().getCollisionLayer();
+		Tile[] viewportTiles = null;
+		if (currentMap == null)
+			return;
+		viewportTiles = targetRealm.getTileManager().getCollisionTiles(p.getPos());
+		for (final Bullet b : this.getBullets(realmId, p)) {
+			if (b.remove()) {
+				toRemove.add(b);
+				continue;
+			}
+			for (final Tile tile : viewportTiles) {
+				if ((tile == null) || tile.isVoid()) {
+					continue;
+				}
+				Rectangle tileBounds = new Rectangle(tile.getPos(), GlobalConstants.BASE_TILE_SIZE,
+						GlobalConstants.BASE_TILE_SIZE);
+				Vector2f bulletPosCenter = b.getCenteredPosition();
+				if (tileBounds.inside((int) bulletPosCenter.x, (int) bulletPosCenter.y)) {
+					b.setRange(0);
+					toRemove.add(b);
+				}
+			}
+		}
+		toRemove.forEach(bullet -> {
+			targetRealm.getExpiredBullets().add(bullet.getId());
+			targetRealm.removeBullet(bullet);
+		});
+	}
+
+	private void processPlayerHit(final long realmId, final Bullet b, final Player p) {
+		final Realm targetRealm = this.realms.get(realmId);
+		final Player player = targetRealm.getPlayer(p.getId());
+		if (player == null)
+			return;
+		if (circleHit(b, player) && b.isEnemy() && !b.isPlayerHit()) {
+			final Stats stats = player.getComputedStats();
+			b.setPlayerHit(true);
+			final short minDmg = (short) (b.getDamage() * 0.15);
+			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
+			if (dmgToInflict < minDmg) {
+				dmgToInflict = minDmg;
+			}
+			
+
+			this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "-" + dmgToInflict);
+
+			player.setHealth(player.getHealth() - dmgToInflict);
+			targetRealm.getExpiredBullets().add(b.getId());
+			targetRealm.removeBullet(b);
+			// Apply on-hit status effects from projectile's effects list (data-driven with durations)
+			if (b.getEffects() != null) {
+				for (final ProjectileEffect pe : b.getEffects()) {
+					final StatusEffectType effectType = StatusEffectType.valueOf(pe.getEffectId());
+					if (effectType != null) {
+						p.addEffect(effectType, pe.getDuration());
+						if (effectType == StatusEffectType.PARALYZED) {
+							p.setDx(0); p.setDy(0);
+						}
+						this.sendTextEffectToPlayer(player, TextEffect.PLAYER_INFO, effectType.name());
+					}
+				}
+			}
+			if (p.getDeath()) {
+				this.playerDeath(targetRealm, player);
+
+			}
+		}
+	}
+
+	private void proccessEnemyHit(final long realmId, final Bullet b, final Enemy e) {
+		final Realm targetRealm = this.realms.get(realmId);
+		final EnemyModel model = GameDataManager.ENEMIES.get(e.getEnemyId());
+		if (targetRealm.hasHitEnemy(b.getId(), e.getId()) || targetRealm.getExpiredEnemies().contains(e.getId()))
+			return;
+		// Enemies in STASIS or INVINCIBLE are invulnerable — all damage is nullified
+		if (e.hasEffect(StatusEffectType.STASIS) || e.hasEffect(StatusEffectType.INVINCIBLE))
+			return;
+		if (circleHit(b, e) && !b.isEnemy()) {
+			final short minDmg = (short) (b.getDamage() * 0.15);
+			short dmgToInflict = (short) (b.getDamage() - model.getStats().getDef());
+			if (dmgToInflict < minDmg) {
+				dmgToInflict = minDmg;
+			}
+
+			// Track damage for loot credit
+			if (b.getSrcEntityId() != 0L && targetRealm.getOverseer() != null) {
+				targetRealm.getOverseer().trackDamage(e.getId(), b.getSrcEntityId(), dmgToInflict);
+			}
+
+			if(b.getSrcEntityId() != 0l) {
+				final Player fromPlayer = this.getPlayerById(b.getSrcEntityId());
+				if(fromPlayer!=null &&  fromPlayer.hasEffect(StatusEffectType.DAMAGING)) {
+					dmgToInflict = (short)(dmgToInflict * 1.5);
+				}
+			}
+			// CURSED enemies take 25% more damage from all sources
+			if (e.hasEffect(StatusEffectType.CURSED)) {
+				dmgToInflict = (short)(dmgToInflict * 1.25);
+			}
+
+			targetRealm.hitEnemy(b.getId(), e.getId());
+			e.setHealth(e.getHealth() - dmgToInflict);
+			int maxHealth = (int) (model.getHealth() * e.getDifficulty());
+			e.setHealthpercent((float) e.getHealth() / (float) maxHealth);
+			if (b.hasFlag(ProjectileFlag.PLAYER_PROJECTILE) && !b.isEnemyHit()) {
+				b.setEnemyHit(true);
+			} else if (b.remove()) {
+				targetRealm.getExpiredBullets().add(b.getId());
+				targetRealm.removeBullet(b);
+			} else {
+				targetRealm.getExpiredBullets().add(b.getId());
+				targetRealm.removeBullet(b);
+			}
+			// Apply on-hit status effects from projectile's effects list (data-driven durations)
+			// Apply on-hit status effects from projectile's effects list (data-driven with durations)
+			if (b.getEffects() != null) {
+				for (final ProjectileEffect pe : b.getEffects()) {
+					final StatusEffectType effectType = StatusEffectType.valueOf(pe.getEffectId());
+					if (effectType != null) {
+						e.addEffect(effectType, pe.getDuration());
+						this.broadcastTextEffect(targetRealm, EntityType.ENEMY, e, TextEffect.PLAYER_INFO, effectType.name());
+					}
+				}
+			}
+			
+			this.broadcastTextEffect(targetRealm, EntityType.ENEMY, e, TextEffect.DAMAGE, "-" + dmgToInflict);
+			if (e.getDeath()) {
+				targetRealm.getExpiredBullets().add(b.getId());
+				this.enemyDeath(targetRealm, e);
+			}
+		}
+	}
+
+	public Bullet addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
+			final int projectileGroupId, final Vector2f src, final Vector2f dest, final short size,
+			final float magnitude, final float range, short damage, final boolean isEnemy, final List<Short> flags, long srcEntityId) {
+		final Realm targetRealm = this.realms.get(realmId);
+		final Player player = targetRealm.getPlayer(targetPlayerId);
+		if (player == null && !isEnemy)
+			return null;
+
+		if (!isEnemy && player != null) {
+			damage = (short) (damage + player.getStats().getAtt());
+		}
+
+		final long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
+		final Bullet b = new Bullet(idToUse, projectileId, src, dest, size, magnitude, range, damage, isEnemy);
+		b.setSrcEntityId(srcEntityId);
+		b.setFlags(flags);
+		targetRealm.addBullet(b);
+		return b;
+	}
+
+	public Bullet addProjectile(final long realmId, final long id, final long targetPlayerId, final int projectileId,
+			final int projectileGroupId, final Vector2f src, final float angle, final short size, final float magnitude,
+			final float range, short damage, final boolean isEnemy, final List<Short> flags, final short amplitude,
+			final short frequency, long srcEntityId) {
+		final Realm targetRealm = this.realms.get(realmId);
+		final Player player = targetRealm.getPlayer(targetPlayerId);
+		if (player == null && !isEnemy)
+			return null;
+		final ProjectileGroup pg = GameDataManager.PROJECTILE_GROUPS.get(projectileGroupId);
+		if (!isEnemy && player != null) {
+			damage = (short) (damage + player.getStats().getAtt());
+		}
+
+		final long idToUse = id == 0l ? Realm.RANDOM.nextLong() : id;
+		final Bullet b = new Bullet(idToUse, projectileId, src, angle, size, magnitude, range, damage, isEnemy);
+		b.setSrcEntityId(srcEntityId);
+		b.setAmplitude(amplitude);
+		b.setFrequency(frequency);
+		b.setFlags(flags);
+		targetRealm.addBullet(b);
+		return b;
+	}
+
+	private List<Bullet> getBullets(final long realmId, final Player p) {
+		final Realm targetRealm = this.realms.get(realmId);
+		final GameObject[] gameObject = targetRealm
+				.getGameObjectsInBounds(targetRealm.getTileManager().getRenderViewPort(p));
+
+		final List<Bullet> results = new ArrayList<>();
+		for (int i = 0; i < gameObject.length; i++) {
+			if (gameObject[i] instanceof Bullet) {
+				results.add((Bullet) gameObject[i]);
+			}
+		}
+		return results;
+	}
+
+	// Invoked upon enemy death. Public so item scripts (e.g., Necromancer skull,
+	// Sorcerer scepter) can trigger proper death handling with loot/XP.
+	public void enemyDeath(final Realm targetRealm, final Enemy enemy) {
+		final EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
+		try {
+			// Get players in the viewport of this enemy and increment their experience
+			for (final Player player : targetRealm
+					.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(enemy))) {
+				final int xpToGive = (int) (model.getXp() * enemy.getDifficulty());
+				final long prevXp = player.getExperience();
+				final boolean wasMaxLevel = GameDataManager.EXPERIENCE_LVLS.isMaxLvl(prevXp);
+				final int prevLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(prevXp);
+				final int levelsGained = player.incrementExperience(xpToGive);
+				try {
+					if (wasMaxLevel) {
+						final long prevFame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(prevXp);
+						final long newFame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(player.getExperience());
+						if (newFame > prevFame) {
+							this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
+									TextEffect.PLAYER_INFO, "+" + (newFame - prevFame) + " Fame"));
+						}
+					} else {
+						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
+								TextEffect.PLAYER_INFO, "+" + xpToGive + "xp"));
+					}
+					if (levelsGained > 0) {
+						final int newLevel = prevLevel + levelsGained;
+						this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(),
+								TextEffect.HEAL, "Level Up! " + prevLevel + " \u2192 " + newLevel));
+					}
+				} catch (Exception ex) {
+					RealmManagerServer.log.error("[SERVER] Failed to create player experience text effect. Reason: {}", ex);
+				}
+			}
+
+			// Notify the overseer of the kill (handles taunts, event spawning, damage credit)
+			if (targetRealm.getOverseer() != null) {
+				long killerId = targetRealm.getOverseer().getTopDamageDealer(enemy.getId());
+				targetRealm.getOverseer().onEnemyKilled(enemy, killerId);
+				targetRealm.getOverseer().clearDamageTracking(enemy.getId());
+			}
+
+			targetRealm.getExpiredEnemies().add(enemy.getId());
+			targetRealm.clearHitMap();
+			// Overseer handles repopulation now — skip legacy spawnRandomEnemy for overworld
+			targetRealm.removeEnemy(enemy);
+
+			// Try to get the loot model mapped by this enemyId
+			final LootTableModel lootTable = GameDataManager.LOOT_TABLES.get(enemy.getEnemyId());
+			if (lootTable == null) {
+				log.warn("[SERVER] No loot table registered for enemy {}", enemy.getEnemyId());
+				return;
+			}
+
+			// Get a random loot bag drop based on this enemies loot table
+			final List<GameItem> lootToDrop = lootTable.getLootDrop();
+
+			// Difficulty-based loot tier upgrade: higher difficulty zones have a chance
+			// to bump each dropped item up one tier
+			final float diff = enemy.getDifficulty();
+			if (diff > GlobalConstants.LOOT_TIER_UPGRADE_MIN_DIFFICULTY && !lootToDrop.isEmpty()) {
+				final float upgradeChance = (GlobalConstants.LOOT_TIER_UPGRADE_BASE_PERCENT
+						+ GlobalConstants.LOOT_TIER_UPGRADE_PER_DIFFICULTY * diff) / 100.0f;
+				for (int i = 0; i < lootToDrop.size(); i++) {
+					if (Realm.RANDOM.nextFloat() < upgradeChance) {
+						final GameItem upgraded = findUpgradedItem(lootToDrop.get(i));
+						if (upgraded != null) {
+							lootToDrop.set(i, upgraded);
+						}
+					}
+				}
+			}
+
+			if (lootToDrop.size() > 0) {
+				final LootContainer dropsBag = new LootContainer(LootTier.BLUE, enemy.getPos().withNoise(64, 64),
+						lootToDrop.toArray(new GameItem[0]));
+				targetRealm.addLootContainer(dropsBag);
+			}
+
+			// Portal drops: use dungeon graph if this realm has a nodeId
+			final String currentNodeId = targetRealm.getNodeId();
+			final DungeonGraphNode currentNode = (currentNodeId != null && GameDataManager.DUNGEON_GRAPH != null)
+					? GameDataManager.DUNGEON_GRAPH.get(currentNodeId) : null;
+
+			log.info("[SERVER] enemyDeath: enemy={} nodeId={} currentNode={} portalDrops={}",
+					enemy.getEnemyId(), currentNodeId, currentNode != null ? currentNode.getDisplayName() : "null",
+					lootTable.getPortalDrops());
+
+			if (currentNode != null && currentNode.getPortalDropNodeMap() != null
+					&& !currentNode.getPortalDropNodeMap().isEmpty()) {
+				// Graph-based portal drops: drop portals to child nodes
+				if (lootTable.getPortalDrops() != null) {
+					final List<Integer> rolledPortals = lootTable.getPortalDrop();
+					log.info("[SERVER] enemyDeath: rolled portals={} from drops={}", rolledPortals, lootTable.getPortalDrops());
+					for (int portalId : rolledPortals) {
+						// Find which child node this portalId leads to from the current node
+						String targetNodeId = null;
+						for (Map.Entry<String, Integer> entry : currentNode.getPortalDropNodeMap().entrySet()) {
+							if (entry.getValue() == portalId) {
+								targetNodeId = entry.getKey();
+								break;
+							}
+						}
+						if (targetNodeId == null) {
+							log.info("[SERVER] enemyDeath: portalId {} not in node's portalDropNodeMap {}, skipping",
+									portalId, currentNode.getPortalDropNodeMap());
+							continue;
+						}
+
+						PortalModel portalModel = GameDataManager.PORTALS.get(portalId);
+						if (portalModel == null) continue;
+
+						Portal portal = new Portal(Realm.RANDOM.nextLong(),
+								(short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
+
+						// Check if a realm for this node already exists
+						Optional<Realm> existingRealm = this.findRealmForNode(targetNodeId);
+						if (existingRealm.isPresent()) {
+							portal.linkPortal(targetRealm, existingRealm.get());
+						} else {
+							portal.linkPortal(targetRealm, null);
+						}
+						// Store target node info on the portal for lazy realm creation
+						portal.setTargetNodeId(targetNodeId);
+						targetRealm.addPortal(portal);
+						log.info("[SERVER] enemyDeath: SPAWNED portal {} -> node {} at ({}, {})",
+								portalId, targetNodeId, portal.getPos().x, portal.getPos().y);
+					}
+				}
+			} else {
+				// Fallback portal drops for realms without graph nodes
+				if (lootTable.getPortalDrops() != null) {
+					for (int portalId : lootTable.getPortalDrop()) {
+						PortalModel portalModel = GameDataManager.PORTALS.get(portalId);
+						if (portalModel == null) continue;
+
+						Portal portal = new Portal(Realm.RANDOM.nextLong(),
+								(short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
+						portal.linkPortal(targetRealm, null);
+						targetRealm.addPortal(portal);
+					}
+				}
+			}
+		} catch (Exception e) {
+			RealmManagerServer.log.error("[SERVER] Failed to handle dead Enemy {}. Reason: {}", enemy.getId(), e);
+		}
+	}
+
+	// Invoked upon player death (permadeath)
+	private void playerDeath(final Realm targetRealm, final Player player) {
+		try {
+			final String remoteAddrDeath = this.getRemoteAddressMapReversed().get(player.getId());
+			final boolean hasAmulet = player.getInventory()[3] != null
+					&& player.getInventory()[3].getItemId() == 48;
+
+			if (player.isHeadless() || player.isBot()) {
+				// Bots/headless: drop grave and remove immediately
+				if (hasAmulet) {
+					player.getInventory()[3] = null;
+					player.setHealth(1);
+				} else {
+					targetRealm.getExpiredPlayers().add(player.getId());
+					final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
+							player.getPos().clone(), player.getSlots(4, 12));
+					targetRealm.addLootContainer(graveLoot);
+					targetRealm.removePlayer(player);
+					this.clearPlayerState(player.getId());
+					if (remoteAddrDeath != null) {
+						this.remoteAddresses.remove(remoteAddrDeath);
+						final ClientSession botSession = this.server.getClients().get(remoteAddrDeath);
+						if (botSession != null) {
+							botSession.setShutdownProcessing(true);
+							botSession.close();
+							this.server.getClients().remove(remoteAddrDeath);
+						}
+					}
+				}
+				return;
+			}
+
+			// Both paths: player is removed from realm and sent to death/char select screen
+			targetRealm.getExpiredPlayers().add(player.getId());
+			this.enqueueServerPacket(player, PlayerDeathPacket.from(player.getId()));
+
+			if (hasAmulet) {
+				// Amulet saves the character: consume amulet, restore HP, persist.
+				// Character is NOT deleted — player can re-login with it.
+				TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
+						player.getName() + "'s Amulet of Resurrection shatters!");
+				this.enqueueServerPacket(toBroadcast);
+				player.getInventory()[3] = null;
+				player.setHealth(player.getStats().getHp());
+				this.persistPlayerAsync(player);
+			} else {
+				// Permadeath: drop grave, delete character permanently
+				final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
+						player.getPos().clone(), player.getSlots(4, 12));
+				targetRealm.addLootContainer(graveLoot);
+				ServerGameLogic.DATA_SERVICE.executeDelete(
+						"/data/account/character/" + player.getCharacterUuid(), Object.class);
+			}
+		} catch (Exception e) {
+			RealmManagerServer.log.error("[SERVER] Failed to handle player death {}. Reason: {}", player.getId(), e);
+		}
+	}
+
+	public void clearPlayerState(long playerId) {
+		this.playerLoadState.remove(playerId);
+		this.playerUpdateState.remove(playerId);
+		this.playerStateState.remove(playerId);
+		this.playerUnloadState.remove(playerId);
+		this.playerObjectMoveState.remove(playerId);
+		this.playerDeadReckonState.remove(playerId);
+		this.playerAbilityState.remove(playerId);
+		this.playerLoadMapState.remove(playerId);
+		this.playerLastHeartbeatTime.remove(playerId);
+		this.playerGroundDamageState.remove(playerId);
+		this.playerOutboundPacketQueue.remove(playerId);
+		this.enemyUpdateState.remove(playerId);
+		// Clean up any poison state sourced by this player
+		for (final Realm realm : this.realms.values()) {
+			realm.removePlayerPoisonDots(playerId);
+			realm.removePlayerPoisonThrows(playerId);
+			realm.removePlayerTraps(playerId);
+			realm.removePlayerDecoys(playerId);
+		}
+		// Clear cached provisions on disconnect
+		ServerCommandHandler.PLAYER_PROVISION_CACHE.remove(playerId);
+	}
+
+
+	public Map<Long, String> getRemoteAddressMapReversed() {
+		final Map<Long, String> result = new HashMap<>();
+		for (final Entry<String, Long> entry : this.remoteAddresses.entrySet()) {
+			result.put(entry.getValue(), entry.getKey());
+		}
+		return result;
+	}
+
+	// Adds a realm to the map of realms after trying to decorate
+	// the realm terrain using any decorators, spawning static enemies and portals
+	public void addRealm(final Realm realm) {
+		this.tryDecorate(realm);
+		realm.spawnStaticEnemies(realm.getMapId());
+		// Spawn static portals defined in the map data
+		final MapModel mapModel = GameDataManager.MAPS.get(realm.getMapId());
+		if (mapModel != null && mapModel.getStaticPortals() != null) {
+			for (final PortalModel sp : mapModel.getStaticPortals()) {
+				try {
+					final Portal portal = new Portal(Realm.RANDOM.nextLong(), (short) sp.getPortalId(),
+							new Vector2f(sp.getX(), sp.getY()));
+					portal.setNeverExpires();
+					if (sp.getTargetNodeId() != null) {
+						portal.setTargetNodeId(sp.getTargetNodeId());
+						// If target is a shared node with an existing realm, link to it
+						final DungeonGraphNode targetNode = GameDataManager.DUNGEON_GRAPH.get(sp.getTargetNodeId());
+						if (targetNode != null && targetNode.isShared()) {
+							this.findRealmForNode(sp.getTargetNodeId()).ifPresent(
+									existing -> portal.setToRealmId(existing.getRealmId()));
+						}
+						// Non-shared nodes: toRealmId stays 0 — a new instance is created on first use
+					}
+					realm.addPortal(portal);
+					log.info("[SERVER] Placed static portal {} at ({},{}) -> node '{}' in realm {}",
+							sp.getPortalId(), sp.getX(), sp.getY(), sp.getTargetNodeId(), realm.getRealmId());
+				} catch (Exception e) {
+					log.error("[SERVER] Failed to place static portal. Reason: {}", e.getMessage());
+				}
+			}
+		}
+		this.realms.put(realm.getRealmId(), realm);
+	}
+
+	public Realm findPlayerRealm(long playerId) {
+		Realm found = null;
+		for (Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
+			for (Player player : realm.getValue().getPlayers().values()) {
+				if (player.getId() == playerId) {
+					found = realm.getValue();
+				}
+			}
+		}
+		return found;
+	}
+
+
+	public Optional<Realm> findRealmForNode(String nodeId) {
+		if (nodeId == null) return Optional.empty();
+		return this.getRealms().values().stream()
+				.filter(realm -> nodeId.equals(realm.getNodeId()))
+				.findAny();
+	}
+
+	public void enqueChunkedText(Player target, List<String> textLines) {
+		for (String line : textLines) {
+			TextPacket textPacket;
+			try {
+				textPacket = TextPacket.from("SYSTEM", target.getName(), line);
+				this.enqueueServerPacket(target, textPacket);
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to send text line {} to player {}. Reason: {}", line, target.getName(), e);
+			}
+		}
+	}
+
+	public Player findPlayerByName(String name) {
+		Player result = null;
+		for (Realm realm : this.getRealms().values()) {
+			for (Player player : realm.getPlayers().values()) {
+				if (player.getName().equalsIgnoreCase(name)) {
+					result = player;
+					break;
+				}
+			}
+			if (result != null) {
+				break;
+			}
+		}
+		return result;
+	}
+
+	public Player searchRealmsForPlayer(String playerName) {
+		Player found = null;
+		final List<Player> allPlayers = this.getPlayers();
+		for (Player player : allPlayers) {
+			if (player.getName() != null && player.getName().equalsIgnoreCase(playerName)) {
+				found = player;
+			}
+		}
+		if (found == null) {
+			log.info("[SERVER] searchRealmsForPlayer('{}') not found. Online players: {}",
+				playerName, allPlayers.stream().map(p -> p.getName()).collect(java.util.stream.Collectors.toList()));
+		}
+		return found;
+	}
+
+	public Player searchRealmsForPlayer(long playerId) {
+		Player found = null;
+		for (Player player : this.getPlayers()) {
+			if (player.getId() == playerId) {
+				found = player;
+			}
+
+		}
+		return found;
+	}
+
+	// Background thread for persisting player data to DB
+	private void beginPlayerSync() {
+		final Runnable playerSync = () -> {
+			try {
+				while (!this.shutdown) {
+					Thread.sleep(12000);
+					RealmManagerServer.log.info("[SERVER] Performing asynchronous player data sync.");
+					this.persistsPlayersAsync();
+				}
+			} catch (Exception e) {
+				RealmManagerServer.log.error("[SERVER] Failed to perform player data sync. Reason: {}", e.getMessage());
+			}
+		};
+		WorkerThread.submitAndForkRun(playerSync);
+	}
+
+	// Server shutdown task. Attempts to save all player data before JVM exit
+	public Thread shutdownHook() {
+		final Runnable shutdownTask = () -> {
+			RealmManagerServer.log.info("[SERVER] Performing pre-shutdown player sync...");
+			this.persistsPlayersAsync();
+			RealmManagerServer.log.info("[SERVER] Shutdown player sync complete");
+		};
+		return new Thread(shutdownTask);
+	}
+
+	public void persistsPlayersAsync() {
+		final Runnable persist = () -> {
+			for (Player player : this.getPlayers()) {
+				this.persistPlayer(player);
+			}
+		};
+		WorkerThread.doAsync(persist);
+	}
+
+	public List<Player> getPlayers() {
+		final List<Player> players = new ArrayList<>();
+		for (final Map.Entry<Long, Realm> realm : this.realms.entrySet()) {
+			for (final Player player : realm.getValue().getPlayers().values()) {
+				players.add(player);
+			}
+		}
+		return players;
+	}
+
+	public Player getPlayerById(long playerId) {
+		return this.getPlayers().stream().filter(p -> p.getId() == playerId).findAny().orElse(null);
+	}
+
+	public void safeRemoveRealm(final Realm realm) {
+		this.safeRemoveRealm(realm.getRealmId());
+	}
+
+	public void safeRemoveRealm(final long realmId) {
+		this.acquireRealmLock();
+		final Realm realm = this.realms.remove(realmId);
+		realm.setShutdown(true);
+		this.releaseRealmLock();
+	}
+
+	private void persistPlayerAsync(final Player player) {
+		final Runnable persist = () -> {
+			this.persistPlayer(player);
+		};
+		WorkerThread.doAsync(persist);
+	}
+
+	private boolean persistPlayer(final Player player) {
+		if (player.isHeadless() || player.isBot())
+			return false;
+		// Extra safety: never persist bot accounts even if flag wasn't set
+		if (player.getAccountUuid() == null || player.getName() == null || player.getName().startsWith("Bot_"))
+			return false;
+		try {
+			final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
+					.executeGet("/data/account/" + player.getAccountUuid(), null, PlayerAccountDto.class);
+			final Optional<CharacterDto> currentCharacter = account.getCharacters().stream()
+					.filter(character -> character.getCharacterUuid().equals(player.getCharacterUuid())).findAny();
+			if (currentCharacter.isPresent()) {
+				final CharacterDto character = currentCharacter.get();
+				final CharacterStatsDto newStats = player.serializeStats();
+				final Set<GameItemRefDto> newItems = player.serializeItems();
+				character.setItems(newItems);
+				character.setStats(newStats);
+				final CharacterDto savedStats = ServerGameLogic.DATA_SERVICE.executePost(
+						"/data/account/character/" + character.getCharacterUuid(), character, CharacterDto.class);
+				RealmManagerServer.log.info("[SERVER] Succesfully persisted user account {}",
+						account.getAccountEmail());
+			}
+		} catch (Exception e) {
+			RealmManagerServer.log.error("[SERVER] Failed to get player account. Reason: {}", e);
+		}
+		return true;
+	}
+
+	private void sendTextEffectToPlayer(final Player player, final TextEffect effect, final String text) {
+		try {
+			this.enqueueServerPacket(player, TextEffectPacket.from(EntityType.PLAYER, player.getId(), effect, text));
+		} catch (Exception e) {
+			RealmManagerServer.log.error("[SERVER] Failed to send TextEffect Packet to Player {}. Reason: {}",
+					player.getId(), e);
+		}
+	}
+
+	/**
+	 * Broadcast a text effect to players near an entity. Finds the realm automatically.
+	 * For callers that already have the realm, use the overload that accepts it directly.
+	 */
+	public void broadcastTextEffect(final EntityType entityType, final GameObject entity,
+			final TextEffect effect, final String text) {
+		final Realm realm = this.findPlayerRealm(entity.getId());
+		if (realm == null) {
+			// Entity might be an enemy — search all realms
+			for (final Realm r : this.realms.values()) {
+				if (r.getEnemy(entity.getId()) != null || r.getPlayer(entity.getId()) != null) {
+					broadcastTextEffect(r, entityType, entity, effect, text);
+					return;
+				}
+			}
+			return;
+		}
+		broadcastTextEffect(realm, entityType, entity, effect, text);
+	}
+
+	public void broadcastTextEffect(final Realm realm, final EntityType entityType, final GameObject entity,
+			final TextEffect effect, final String text) {
+		try {
+			final TextEffectPacket packet = TextEffectPacket.from(entityType, entity.getId(), effect, text);
+			final float viewRadius = 10 * GlobalConstants.BASE_TILE_SIZE;
+			for (final Player p : realm.getPlayers().values()) {
+				if (p.isHeadless()) continue;
+				float dx = p.getPos().x - entity.getPos().x;
+				float dy = p.getPos().y - entity.getPos().y;
+				if (dx * dx + dy * dy <= viewRadius * viewRadius) {
+					this.enqueueServerPacket(p, packet);
+				}
+			}
+		} catch (Exception e) {
+			RealmManagerServer.log.error("[SERVER] Failed to broadcast TextEffect Packet for Entity {}. Reason: {}",
+					entity.getId(), e);
+		}
+	}
+
+	/**
+	 * Register a poison damage-over-time effect on an enemy.
+	 * Delegates to the target realm's poison DoT system.
+	 */
+	public void registerPoisonDot(long realmId, long enemyId, int totalDamage, long duration, long sourcePlayerId) {
+		final Realm realm = this.realms.get(realmId);
+		if (realm != null) {
+			realm.registerPoisonDot(enemyId, totalDamage, duration, sourcePlayerId);
+		}
+	}
+
+	public void acquireRealmLock() {
+		this.realmLock.lock();
+	}
+
+	public void releaseRealmLock() {
+		this.realmLock.unlock();
+	}
+
+	/**
+	 * Attempts to find the same item type (slot + class) one tier higher.
+	 * Returns null if no upgrade exists (already max tier, consumable, or untiered).
+	 */
+	private static GameItem findUpgradedItem(GameItem item) {
+		if (item == null || item.isConsumable() || item.getTier() < 0) return null;
+		final byte nextTier = (byte) (item.getTier() + 1);
+		final byte slot = item.getTargetSlot();
+		final byte targetClass = item.getTargetClass();
+		for (GameItem candidate : GameDataManager.GAME_ITEMS.values()) {
+			if (candidate.getTier() == nextTier
+					&& candidate.getTargetSlot() == slot
+					&& candidate.getTargetClass() == targetClass
+					&& !candidate.isConsumable()) {
+				return candidate;
+			}
+		}
+		return null;
+	}
+}

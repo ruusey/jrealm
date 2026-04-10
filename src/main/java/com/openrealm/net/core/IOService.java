@@ -1,0 +1,397 @@
+package com.openrealm.net.core;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.VarHandle;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import java.util.Set;
+
+import org.modelmapper.AbstractConverter;
+import org.modelmapper.ModelMapper;
+import org.reflections.Reflections;
+import org.reflections.scanners.Scanners;
+
+import com.openrealm.game.contants.PacketType;
+import com.openrealm.net.NetConstants;
+import com.openrealm.net.Packet;
+import com.openrealm.net.Streamable;
+import com.openrealm.net.client.packet.LoadMapPacket;
+import com.openrealm.net.client.packet.UnloadPacket;
+import com.openrealm.net.core.converters.*;
+import com.openrealm.net.core.nettypes.SerializableLong;
+import com.openrealm.net.entity.NetTile;
+import lombok.extern.slf4j.Slf4j;
+/** 
+ * @author Robert Usey
+ * <br>
+ * <p>IOService.java is a service layer for reading and writing JNET
+ * objects to and from and input/output streams (typically for use with sockets).
+ * </p>
+ * <p>
+ * IOService is used in conjunction with {@link Streamable} POJOs
+ * to build robust socket-based applications in a manner similar to gRPC.
+ * </p>
+ * <p>
+ * Packets are classes extending the {@link Packet} superclass
+ * made up of {@link SerializableFieldType} members where a {@link SerializableFieldType} 
+ * is simply a member variable that is also {@link Streamable}. {@link SerializableFieldType} at
+ * the lowest level are simply wrappers for the core Java primitive types allowing developers
+ * to create complex network objects
+ * </p>
+ * <p>
+ * {@link SerializableField} Packet members must have 3 properties 
+ * <b> order, type, isCollection (default false)</b> where <b>order</b>
+ * denotes the serialization order of the field when going down the wire
+ * as bytes, <b>type</b> denotes the POJO class to map to/from bytes
+ * and <b>isCollection</b> which tells JNET whether to write the object
+ * as a collection of object or as a single value.
+ * </br>
+ * <b>note:</b> collections have an extra 4 byte int32 length value written at the 
+ * start of serialization
+ * </br>
+ * <b>examples:</b>
+ * </p>
+ * <pre>
+ * <code>
+ *{@link @SerializableField}(order = 0, type = NetTile.class, isCollection=true)
+ * private NetTile[] tiles;
+ *   
+ *{@link @SerializableField}(order = 1, type = SerializableLong.class)
+ * private long realmId;
+ * </code>
+ * </pre>
+ * <p> 
+ * Once you have written your {@link Packet} model and any 
+ * accompanying subclasses of {@link SerializableFieldType}
+ * you can read and write your POJO to a socket input or output stream using the following routines:
+ * </br>
+ * <b> Read Usage:</b>
+ * <pre>
+ *     <code>
+ * final byte[] data = ...
+ * final MyPacket readPacket = IOService.readPacket(MyPacket.class, data);
+ *     </code>
+ * </pre>
+ * <b>Write Usage:</b>
+ * <pre>
+ *     <code> 
+ * final DataOutputStream outputStream = ...
+ * final MyPacket toWrite = ...
+ * IOService.writePacket(toWrite, outputStream);
+ *     </code>
+ * </pre>
+ * </br>
+ * <b>note:</b> All  members annotated {@link SerializableField} are automatically written and read
+ * to/from the stream when reading/writing the containing packet.
+ * </br>
+ * <b>note:</b> You may override the default behavior for {@link Packet} read/write
+ * routines as well as {@link SerializableFieldType} read/write routines. 
+ * See {@link NetStats} and {@link NetGameItem} for examples of this. 
+ */
+@Slf4j
+@SuppressWarnings({ "unused", "rawtypes", "unchecked" })
+public class IOService {
+	private static final ModelMapper MAPPER = new ModelMapper();
+	private static final Lookup METHOD_LOOKUP = MethodHandles.lookup();
+	// Array-backed for zero-allocation iteration on the hot path
+	private static final Map<Class<?>, PacketMappingInformation[]> MAPPING_DATA = new HashMap<>();
+	public static final Reflections CLASSPATH_SCANNER = new Reflections("com.openrealm", Scanners.SubTypes);
+
+	static {
+		try {
+			registerModelConverter(new ShortToEffectTypeConverter());
+			registerModelConverter(new EffectTypeToShortConverter());
+			registerModelConverter(new ByteToLootTierConverter());
+			registerModelConverter(new LootTierToByteConverter());
+		}catch(Exception e) {
+			log.error("[IOService] Failed to register custom mapper. Reason: {}", e.getMessage());
+		}
+	}
+	
+	// Register a model mapper custom converter to aid in transforming
+	// byte level data structures into POJOs
+	public static void registerModelConverter(AbstractConverter converter) throws Exception {
+		MAPPER.addConverter(converter);
+	}
+
+	public static <T> T readPacket(Class<? extends Packet> clazz, byte[] data) throws Exception {
+		final ByteArrayInputStream bis = new ByteArrayInputStream(data);
+		final DataInputStream dis = new DataInputStream(bis);
+		final byte packetIdRead = removeHeader(dis);
+		final Packet read = ((Packet)readStream(clazz, dis));
+		read.setId(packetIdRead);
+		return (T) read;
+	}
+
+	public static <T> T readPacket(Class<? extends Packet> clazz, DataInputStream stream) throws Exception {
+		final byte packetIdRead = removeHeader(stream);
+		return readStream(clazz, stream);
+	}
+
+	public static byte[] writePacket(Packet packet, DataOutputStream stream) throws Exception {
+		// Write payload to temp stream to determine length
+		final ByteArrayOutputStream payloadStream = new ByteArrayOutputStream();
+		final DataOutputStream payloadOut = new DataOutputStream(payloadStream);
+		writeStream(packet, payloadOut);
+		final byte[] payload = payloadStream.toByteArray();
+
+		// Look up packet ID via O(1) reverse map
+		final Byte packetId = PacketType.getPacketId(packet.getClass());
+		if (packetId == null) {
+			log.error("[IOService] NO PACKET MAPPING FOR PACKET {}", packet);
+			return new byte[0];
+		}
+
+		// Build complete frame: header (1 byte id + 4 byte length) + payload
+		final int frameSize = NetConstants.PACKET_HEADER_SIZE + payload.length;
+		final ByteArrayOutputStream frameStream = new ByteArrayOutputStream(frameSize);
+		final DataOutputStream frameOut = new DataOutputStream(frameStream);
+		frameOut.writeByte(packetId);
+		frameOut.writeInt(payload.length + NetConstants.PACKET_HEADER_SIZE);
+		frameOut.write(payload);
+		final byte[] frame = frameStream.toByteArray();
+
+		// Write to target stream
+		stream.write(frame);
+		return frame;
+	}
+
+	public static int writeStream(Object model, DataOutputStream stream0) throws Exception {
+		final PacketMappingInformation[] mappingInfo = MAPPING_DATA.get(model.getClass());
+		if (log.isDebugEnabled())
+			log.info("[IOService::WRITE] class {} begin. data = {}", model.getClass(), model);
+		if (mappingInfo == null) {
+			log.error("[IOService::WRITE] **CRITICAL** No mapping for class {}", model.getClass());
+			return 0;
+		}
+		int bytesWritten = 0;
+		// Array iteration: no iterator allocation, branch-friendly for JIT
+		for (int idx = 0; idx < mappingInfo.length; idx++) {
+			final PacketMappingInformation info = mappingInfo[idx];
+			final SerializableFieldType serializer = info.getSerializer();
+			if (info.isCollection()) {
+				final Object[] collection = (Object[]) info.getPropertyHandle().get(model);
+				final int collectionLength = collection != null ? collection.length : 0;
+				stream0.writeInt(collectionLength);
+				bytesWritten += NetConstants.INT32_LENGTH;
+				for (int i = 0; i < collectionLength; i++) {
+					bytesWritten += serializer.write(collection[i], stream0);
+				}
+			} else {
+				final Object obj = info.getPropertyHandle().get(model);
+				bytesWritten += serializer.write(obj, stream0);
+			}
+		}
+		return bytesWritten;
+	}
+
+	public static <T> T mapModel(Object model, Class<T> target) {
+		return MAPPER.map(model, target);
+	}
+
+	// Nominate me for a nobel peace prize or somethin
+	public static <T> T readStream(Class<?> clazz, DataInputStream stream, Object result) throws Exception {
+		final PacketMappingInformation[] mappingInfo = MAPPING_DATA.get(clazz);
+		if(mappingInfo==null) {
+			log.error("[IOService::READ] **CRITICAL** No mapping for class {}", clazz);
+			throw new Exception("No mapping for class "+clazz.getSimpleName());
+		}
+		if (log.isDebugEnabled())
+			log.info("[IOService::READ] class {} begin. CurrentRessults = {}", clazz, result);
+		if (result == null) {
+			final Object packet = clazz.getDeclaredConstructor().newInstance();
+			result = packet;
+		}
+
+		// Array iteration: no iterator allocation, branch-friendly for JIT
+		for (int idx = 0; idx < mappingInfo.length; idx++) {
+			final PacketMappingInformation info = mappingInfo[idx];
+			final SerializableFieldType<?> serializer = info.getSerializer();
+			if (info.isCollection()) {
+				final int collectionLength = stream.readInt();
+				final Object[] collection = (Object[]) Array
+						.newInstance(info.getPropertyHandle().varType().getComponentType(), collectionLength);
+				for (int i = 0; i < collectionLength; i++) {
+					collection[i] = serializer.read(stream);
+				}
+				info.getPropertyHandle().set(result, collection);
+			} else {
+				info.getPropertyHandle().set(result, serializer.read(stream));
+			}
+		}
+		return (T) result;
+	}
+
+	public static <T> T readStream(Class<?> clazz, DataInputStream stream) throws Exception {
+		return readStream(clazz, stream, null);
+	}
+
+	public static <T> T readStream(Class<?> clazz, byte[] stream) throws Exception {
+		final ByteArrayInputStream bis = new ByteArrayInputStream(stream);
+		final DataInputStream dis = new DataInputStream(bis);
+		return readStream(clazz, dis, null);
+	}
+
+	public static void addHeader(Packet packet, int dataSize, DataOutputStream stream) throws Exception {
+		final Byte packetId = PacketType.getPacketId(packet.getClass());
+		if(packetId==null) {
+			log.error("[IOService] NO PACKET MAPPING FOR PACKET {}", packet);
+			return;
+		}
+		stream.writeByte(packetId);
+		stream.writeInt(dataSize + NetConstants.PACKET_HEADER_SIZE);
+	}
+
+	public static byte removeHeader(DataInputStream stream) throws Exception {
+		// read the first byte of the stream as packetId
+		final byte packetId = stream.readByte();
+		// read the next 4 bytes of the stream as signed int32
+		final int len = stream.readInt();
+		return packetId;
+	}
+
+	public static long[] convertLongArray(Long[] in) {
+		final long[] intArr = new long[in.length];
+		for (int i = 0; i < in.length; i++) {
+			intArr[i] = in[i];
+		}
+		return intArr;
+	}
+
+	public static int[] convertIntArray(Integer[] in) {
+		final int[] intArr = new int[in.length];
+		for (int i = 0; i < in.length; i++) {
+			intArr[i] = in[i];
+		}
+		return intArr;
+	}
+
+	public static short[] convertShortArray(Short[] in) {
+		final short[] shortArr = new short[in.length];
+		for (int i = 0; i < in.length; i++) {
+			shortArr[i] = in[i];
+		}
+		return shortArr;
+	}
+
+	public static Long[] convertLongArray(long[] in) {
+		final Long[] intArr = new Long[in.length];
+		for (int i = 0; i < in.length; i++) {
+			intArr[i] = in[i];
+		}
+		return intArr;
+	}
+
+	public static Integer[] convertIntArray(int[] in) {
+		final Integer[] intArr = new Integer[in.length];
+		for (int i = 0; i < in.length; i++) {
+			intArr[i] = in[i];
+		}
+		return intArr;
+	}
+
+	public static Short[] convertShortArray(short[] in) {
+		final Short[] shortArr = new Short[in.length];
+		for (int i = 0; i < in.length; i++) {
+			shortArr[i] = in[i];
+		}
+		return shortArr;
+	}
+
+	// Map annotated JNET entity members into an in memory map
+	// for runtime serialization/deserialization from byte streams
+	public static void mapSerializableData() throws Exception {
+		log.info("[IOService::INIT] Loading classes to map packet data");
+		final Set<Class<? extends Packet>> packetsToMap = CLASSPATH_SCANNER.getSubTypesOf(Packet.class);
+		final Set<Class<? extends SerializableFieldType>> netEntitiesToMap = CLASSPATH_SCANNER.getSubTypesOf(SerializableFieldType.class);
+		final Set<Class> allClasses = new HashSet<>();
+		allClasses.addAll(packetsToMap);
+		allClasses.addAll(netEntitiesToMap);
+
+		for (Class<?> clazz : allClasses) {
+			// If not streamable at all dont bother
+			if (!isStreamableClass(clazz))
+				continue;
+			final List<PacketMappingInformation> mappingForClass = new LinkedList<>();
+			final Field[] fieldsToWrite = clazz.getDeclaredFields();
+			for (Field objField : fieldsToWrite) {
+				objField.setAccessible(true);
+				final Annotation[] annots = objField.getAnnotations();
+				for (Annotation annot : annots) {
+					if (annot instanceof SerializableField) {
+						final SerializableField serdesAnnotation = (SerializableField) annot;
+						final int order = serdesAnnotation.order();
+						SerializableFieldType<?> serializer = null;
+						try {
+							// Try to lookup private members within @Streamable classes
+							final Lookup tempLookup = MethodHandles.privateLookupIn(clazz, METHOD_LOOKUP);
+							final Class<? extends SerializableFieldType<?>> serializerType = serdesAnnotation.type();
+							final boolean isCollection = serdesAnnotation.isCollection();
+
+							serializer = serializerType.getDeclaredConstructor().newInstance();
+							final VarHandle fieldHandle = tempLookup.findVarHandle(clazz, objField.getName(),
+									objField.getType());
+
+							log.info(
+									"[IOService::INIT] Successfully located serializable packet field in Class {}. Field: {}. Serializer: {}. isCollection: {}. Order: {}",
+									clazz.getName(), objField.getName(), serializer.getClass(), isCollection, order);
+
+							final PacketMappingInformation mappingInfo = PacketMappingInformation.builder()
+									.propertyHandle(fieldHandle).order(order).serializer(serializer)
+									.isCollection(isCollection).build();
+							mappingForClass.add(mappingInfo);
+						} catch (Exception e) {
+							log.error("[IOService::INIT] **CRITICAL** Failed parsing serializable types in packets. Reason: {}", e);
+						}
+					}
+				}
+			}
+			
+			if (mappingForClass.size() > 0) {
+				// Sort the properties to be mapped using the order provided in the annotation
+				// handles cases where the implementor wants to write class fields out
+				// of sequential order
+				Collections.sort(mappingForClass, new Comparator<PacketMappingInformation>() {
+					@Override
+					public int compare(PacketMappingInformation info0, PacketMappingInformation info1) {
+						return info0.getOrder() - info1.getOrder();
+					}
+				});
+				// Store as array for zero-allocation iteration on the hot path
+				MAPPING_DATA.put(clazz, mappingForClass.toArray(new PacketMappingInformation[0]));
+			}
+		}
+		log.info("[IOService::INIT] Mapping completed");
+	}
+
+	// Check if the class is annotated @Streamable
+	public static boolean isStreamableClass(Class<?> clazz) {
+		if(clazz==null) return false;
+		boolean result = false;
+		for (Annotation annot : clazz.getDeclaredAnnotations()) {
+			if (annot instanceof Streamable) {
+				result = true;
+				break;
+			}
+		}
+		return result;
+	}
+}

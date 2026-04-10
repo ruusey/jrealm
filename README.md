@@ -3,8 +3,8 @@
 ### A Multiplayer 8-Bit Bullet Hell Dungeon Crawler — Play Now at [OpenRealm.Net](http://openrealm.net/)
 
 <div>
-    <img src="https://github.com/ruusey/jrealm/blob/main/banner.png" width="100%">
-    <img src="https://github.com/ruusey/jrealm/blob/main/MobileView.png" width="100%">
+    <img src="https://github.com/ruusey/openrealm/blob/main/banner.png" width="100%">
+    <img src="https://github.com/ruusey/openrealm/blob/main/MobileView.png" width="100%">
 </div>
 
 ---

@@ -1,0 +1,30 @@
+package com.openrealm.game.model;
+
+import java.util.List;
+
+import com.openrealm.game.entity.item.Stats;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@EqualsAndHashCode(callSuper = false)
+public class EnemyModel extends SpriteModel {
+    private int enemyId;
+    private int size;
+    private int attackId;
+    private String name;
+    private int xp;
+    private Stats stats;
+    private int health;
+    private float maxSpeed;
+    private float chaseRange;
+    private float attackRange;
+    private List<EnemyPhase> phases;
+}

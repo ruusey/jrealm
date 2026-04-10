@@ -1,0 +1,718 @@
+package com.openrealm.net.server;
+
+import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import java.util.UUID;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.openrealm.account.dto.AccountDto;
+import com.openrealm.account.dto.AccountProvision;
+import com.openrealm.account.dto.AccountSubscription;
+import com.openrealm.account.dto.CharacterDto;
+import com.openrealm.account.dto.PlayerAccountDto;
+import com.openrealm.game.GameLauncher;
+import com.openrealm.net.test.StressTestClient;
+import com.openrealm.game.contants.StatusEffectType;
+import com.openrealm.game.contants.GlobalConstants;
+import com.openrealm.game.contants.LootTier;
+import com.openrealm.game.data.GameDataManager;
+import com.openrealm.game.entity.Player;
+import com.openrealm.game.entity.item.GameItem;
+import com.openrealm.game.entity.item.LootContainer;
+import com.openrealm.game.math.Vector2f;
+import com.openrealm.game.contants.CharacterClass;
+import com.openrealm.game.model.CharacterClassModel;
+import com.openrealm.game.model.DungeonGraphNode;
+import com.openrealm.game.model.MapModel;
+import com.openrealm.game.model.PortalModel;
+import com.openrealm.game.tile.Tile;
+import com.openrealm.net.messaging.CommandType;
+import com.openrealm.net.messaging.ServerCommandMessage;
+import com.openrealm.net.realm.Realm;
+import com.openrealm.net.realm.RealmManagerServer;
+import com.openrealm.net.server.packet.CommandPacket;
+import com.openrealm.net.server.packet.TextPacket;
+import com.openrealm.util.AdminRestrictedCommand;
+import com.openrealm.util.CommandHandler;
+import com.openrealm.util.GameObjectUtils;
+import com.openrealm.util.WorkerThread;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public class ServerCommandHandler {
+    public static final Map<String, MethodHandle> COMMAND_CALLBACKS = new HashMap<>();
+    public static final Map<String, CommandHandler> COMMAND_DESCRIPTIONS = new HashMap<>();
+    public static final Map<String, AccountProvision[]> RESTRICTED_COMMAND_PROVISIONS = new HashMap<>();
+    public static final Map<Long, List<AccountProvision>> PLAYER_PROVISION_CACHE = new HashMap<>();
+    private static final List<StressTestClient> ACTIVE_BOTS = new ArrayList<>();
+    private static final List<String> BOT_ACCOUNT_GUIDS = new ArrayList<>();
+    
+    // Handler methods are passed a reference to the current RealmManager, the
+    // invoking Player object
+    // and the ServerCommand message object.
+    public static void invokeCommand(RealmManagerServer mgr, CommandPacket command) throws Exception {
+        final ServerCommandMessage message = CommandType.fromPacket(command);
+        final long fromPlayerId = mgr.getRemoteAddresses().get(command.getSrcIp());
+        final Realm playerRealm = mgr.findPlayerRealm(fromPlayerId);
+        if (playerRealm == null) {
+            log.warn("Command '{}' from player {} ignored — player not in any realm", message.getCommand(), fromPlayerId);
+            return;
+        }
+        final Player fromPlayer = playerRealm.getPlayer(fromPlayerId);
+        if (fromPlayer == null) {
+            log.warn("Command '{}' from player {} ignored — player not found in realm", message.getCommand(), fromPlayerId);
+            return;
+        }
+        // Look up this players account to see if they are allowed
+        // to run Admin server commands
+        try {
+        	final AccountProvision[] requiredProvisions = RESTRICTED_COMMAND_PROVISIONS.get(message.getCommand().toLowerCase());
+        	if (requiredProvisions != null) {
+        	    // Check cached provisions first, then fetch from API if not cached
+        	    List<AccountProvision> held = PLAYER_PROVISION_CACHE.get(fromPlayer.getId());
+        	    if (held == null) {
+        	        log.info("Player {} invoking restricted command '{}' — fetching provisions", fromPlayer.getName(), message.getCommand());
+        	        final AccountDto playerAccount = ServerGameLogic.DATA_SERVICE.executeGet("/admin/account/" + fromPlayer.getAccountUuid(), null, AccountDto.class);
+        	        if (playerAccount == null) {
+        	            throw new IllegalStateException("Failed to look up account for player " + fromPlayer.getName());
+        	        }
+        	        held = playerAccount.getAccountProvisions() != null ? playerAccount.getAccountProvisions() : new ArrayList<>();
+        	        PLAYER_PROVISION_CACHE.put(fromPlayer.getId(), held);
+        	    }
+        	    if (!AccountProvision.checkAccess(held, requiredProvisions)) {
+        	        throw new IllegalStateException(
+        	            "Player " + fromPlayer.getName() + " lacks required provision for command /" + message.getCommand());
+        	    }
+        	}
+            
+            final MethodHandle methodHandle = COMMAND_CALLBACKS.get(message.getCommand().toLowerCase());
+
+            if (methodHandle == null) {
+                final CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 501,
+                        "Unknown command " + message.getCommand());
+                mgr.enqueueServerPacket(fromPlayer, errorResponse);
+            } else {
+                methodHandle.invokeExact(mgr, fromPlayer, message);
+            }
+        } catch (Throwable e) {
+            log.error("Failed to handle server command. Reason: {}", e.getMessage());
+            final CommandPacket errorResponse = CommandPacket.createError(fromPlayer, 502, e.getMessage());
+            mgr.enqueueServerPacket(fromPlayer, errorResponse);
+        }
+    }
+    
+	@CommandHandler(value = "op", description = "Promote a user to administrator. Or demote them back to a regular user")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_SYS_ADMIN})
+	public static void invokeOpUser(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+		if (message.getArgs() == null || message.getArgs().size() < 1)
+			throw new IllegalArgumentException("Usage: /op {PLAYER_NAME}");
+		log.info("**Player OP** Player {} is promoting/demoting {} to/from server operator", target.getAccountUuid(),
+				message.getArgs().get(0));
+		try {
+			final AccountDto callerAccount = ServerGameLogic.DATA_SERVICE
+					.executeGet("/admin/account/" + target.getAccountUuid(), null, AccountDto.class);
+			if (!callerAccount.isAdmin()) {
+				throw new IllegalArgumentException("You are required to be a server operator to invoke this command");
+			}
+			final Player toOp = mgr.findPlayerByName(message.getArgs().get(0));
+			if (toOp == null) {
+				throw new IllegalArgumentException("Player " + message.getArgs().get(0) + " does not exist.");
+			} else if (toOp.getAccountUuid().equals(target.getAccountUuid())) {
+				throw new IllegalArgumentException("You cannot OP yourself. Idiot.");
+			}
+
+			final AccountDto targetAccount = ServerGameLogic.DATA_SERVICE
+					.executeGet("/admin/account/" + toOp.getAccountUuid(), null, AccountDto.class);
+			boolean removed = false;
+			if (targetAccount.isAdmin()) {
+				targetAccount.removeProvision(AccountProvision.OPENREALM_ADMIN);
+				removed = true;
+			} else {
+				targetAccount.addProvision(AccountProvision.OPENREALM_ADMIN);
+			}
+			// Clear provision cache so changes take effect immediately
+			PLAYER_PROVISION_CACHE.remove(toOp.getId());
+			ServerGameLogic.DATA_SERVICE.executePut("/admin/account", targetAccount,
+					AccountDto.class);
+			final String operation = " is " + (removed ? "no longer " : "now ");
+			final String msg = "Player " + message.getArgs().get(0) + operation + "a server operator";
+			mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), msg));
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Failed to op user. Reason: " + e.getMessage());
+		}
+	}
+
+    @CommandHandler(value="stat", description="Modify or max individual Player stats")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_ADMIN})
+    public static void invokeSetStats(RealmManagerServer mgr, Player target, ServerCommandMessage message) {
+        if (message.getArgs() == null || message.getArgs().size() < 1)
+            throw new IllegalArgumentException("Usage: /stat {STAT_NAME} {STAT_VALUE}");
+        final short valueToSet = message.getArgs().get(0).equalsIgnoreCase("max") ? -1
+                : Short.parseShort(message.getArgs().get(1));
+        CharacterClassModel classModel = GameDataManager.CHARACTER_CLASSES.get(target.getClassId());
+        log.info("Player {} set stat {} to {}", target.getName(), message.getArgs().get(0), valueToSet);
+        switch (message.getArgs().get(0)) {
+        case "hp":
+            target.getStats().setHp(valueToSet);
+            break;
+        case "mp":
+            target.getStats().setMp(valueToSet);
+            break;
+        case "att":
+            target.getStats().setAtt(valueToSet);
+            break;
+        case "def":
+            target.getStats().setDef(valueToSet);
+            break;
+        case "spd":
+            target.getStats().setSpd(valueToSet);
+            break;
+        case "dex":
+            target.getStats().setDex(valueToSet);
+            break;
+        case "vit":
+            target.getStats().setVit(valueToSet);
+            break;
+        case "wis":
+            target.getStats().setWis(valueToSet);
+            break;
+        case "max":
+            target.setStats(classModel.getMaxStats());
+            break;
+        default:
+            throw new IllegalArgumentException("Unknown stat " + message.getArgs().get(0));
+        }
+    }
+
+    @CommandHandler(value="testplayers", description="Spawns a variable number of headless test players at the user")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_SYS_ADMIN})
+    public static void invokeSpawnTest(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (message.getArgs() == null || message.getArgs().size() != 1)
+            throw new IllegalArgumentException("Usage: /testplayers {COUNT}");
+        final Realm playerRealm = mgr.findPlayerRealm(target.getId());
+        log.info("Player {} spawn {} players  at {}", target.getName(), message.getArgs().get(0), target.getPos());
+        mgr.spawnTestPlayers(playerRealm.getRealmId(), Integer.parseInt(message.getArgs().get(0)),
+                target.getPos().clone());
+    }
+    
+    @CommandHandler(value="about", description="Get server info")
+    public static void invokeAbout(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        final List<String> text = Arrays.asList(
+                "OpenRealm Server " + GameLauncher.GAME_VERSION,
+                "Players connected: " + mgr.getRealms().values().stream().map(realm -> realm.getPlayers().size()).collect(Collectors.summingInt(count -> count)),
+                "Players in my realm: " + mgr.findPlayerRealm(target.getId()).getPlayers().size());
+        mgr.enqueChunkedText(target, text);
+        log.info("Player {} request command about.", target.getName());
+    }
+
+    @CommandHandler(value="pos", description="Show current world position")
+    public static void invokePos(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        final Vector2f pos = target.getPos();
+        final int tileX = (int) (pos.x / 32);
+        final int tileY = (int) (pos.y / 32);
+        final Realm realm = mgr.findPlayerRealm(target.getId());
+        final String realmInfo = realm != null
+                ? String.format("Realm %d (map %d)", realm.getRealmId(), realm.getMapId())
+                : "Unknown";
+        final List<String> text = Arrays.asList(
+                String.format("Position: %.1f, %.1f", pos.x, pos.y),
+                String.format("Tile: %d, %d", tileX, tileY),
+                realmInfo);
+        mgr.enqueChunkedText(target, text);
+    }
+
+    @CommandHandler(value="tile", description="Change all tiles in the viewport to the provided tile ID")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_ADMIN})
+    public static void invokeSetTile(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        final Short newTileId = Short.parseShort(message.getArgs().get(0));
+        final Vector2f playerPos = target.getPos();
+        final Realm playerRealm = mgr.findPlayerRealm(target.getId());
+        final Tile[] toModify = playerRealm.getTileManager().getBaseTiles(playerPos);
+        for(Tile tile : toModify) {
+            if(tile==null) continue;
+            tile.setTileId(newTileId);
+        }
+        log.info("Player {} request command tile.", target.getName());
+    }
+
+    @CommandHandler(value="help", description="This command")
+    public static void invokeHelp(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        String commandHelpText = "Available Commands:   ";
+        TextPacket commandHelp = TextPacket.from("SYSTEM", target.getName(), commandHelpText);
+        mgr.enqueueServerPacket(target, commandHelp);
+        for (String commandHandlerKey : COMMAND_CALLBACKS.keySet()) {
+            final CommandHandler handler = COMMAND_DESCRIPTIONS.get(commandHandlerKey);
+            commandHelpText = "/" + commandHandlerKey + " - "+handler.description();
+            commandHelp = TextPacket.from("SYSTEM", target.getName(), commandHelpText);
+            mgr.enqueueServerPacket(target, commandHelp);
+        }
+
+        log.info("Player {} request command help.", commandHelp);
+    }
+    
+    @CommandHandler(value="heal", description="Restores all Player health and mp")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
+    public static void invokePlayerHeal(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        target.setHealth(target.getComputedStats().getHp());
+        target.setMana(target.getComputedStats().getMp());
+        log.info("Player {} healed themselves", target.getName());
+    }
+
+    @CommandHandler(value="spawn", description="Spawn a given Enemy by it's id")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
+    public static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (message.getArgs() == null || message.getArgs().size() != 1)
+            throw new IllegalArgumentException("Usage: /spawn {ENEMY_ID}");
+
+        log.info("Player {} spawn enemy {} at {}", target.getName(), message.getArgs().get(0), target.getPos());
+        final Realm from = mgr.findPlayerRealm(target.getId());
+        final int enemyId = Integer.parseInt(message.getArgs().get(0));
+        from.addEnemy(GameObjectUtils.getEnemyFromId(enemyId, target.getPos().clone()));
+    }
+
+    @CommandHandler(value="seteffect", description="Add or remove Player stat effects")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
+    public static void invokeSetEffect(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (message.getArgs() == null || message.getArgs().size() < 1)
+            throw new IllegalArgumentException("Usage: /seteffect {add | clear} {EFFECT_ID} {DURATION (sec)}");
+        log.info("Player {} set effect {}", target.getName(), message);
+        switch (message.getArgs().get(0)) {
+        case "add":
+            target.addEffect(StatusEffectType.valueOf(Short.valueOf(message.getArgs().get(1))),
+                    1000 * Long.parseLong(message.getArgs().get(2)));
+            break;
+        case "clear":
+            target.resetEffects();
+            break;
+        }
+    }
+
+    @CommandHandler(value="tp", description="Teleport to a given Player name or X,Y coordinates")
+    public static void invokeTeleport(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (message.getArgs() == null || message.getArgs().size() < 1)
+            throw new IllegalArgumentException("Usage: /tp {PLAYER_NAME}. /tp {X_CORD} {Y_CORD}");
+
+        log.info("Player {} teleport {}", target.getName(), message);
+        if (message.getArgs().size() == 2) {
+            final float destX = Float.parseFloat(message.getArgs().get(0));
+            final float destY = Float.parseFloat(message.getArgs().get(1));
+            if (destX < GlobalConstants.PLAYER_SIZE || destY < GlobalConstants.PLAYER_SIZE) {
+                throw new IllegalArgumentException("Invalid destination");
+            }
+            target.setPos(new Vector2f(destX, destY));
+        } else {
+            final Player destPlayer = mgr.searchRealmsForPlayer(message.getArgs().get(0));
+            if (destPlayer == null) {
+                throw new IllegalArgumentException("Player " + message.getArgs().get(0) + " is not online.");
+            }
+            // Only allow teleport within the same realm — cross-realm teleport
+            // would place the player at coordinates in the wrong map
+            final Realm targetRealm = mgr.findPlayerRealm(target.getId());
+            final Realm destRealm = mgr.findPlayerRealm(destPlayer.getId());
+            if (targetRealm == null || destRealm == null || targetRealm.getRealmId() != destRealm.getRealmId()) {
+                throw new IllegalArgumentException("Cannot teleport to " + destPlayer.getName() + " — they are in a different area.");
+            }
+            // Check teleportable (not invisible/stasis)
+            if (destPlayer.hasEffect(com.openrealm.game.contants.StatusEffectType.INVISIBLE)
+                    || destPlayer.hasEffect(com.openrealm.game.contants.StatusEffectType.STASIS)) {
+                throw new IllegalArgumentException(destPlayer.getName() + " cannot be teleported to right now.");
+            }
+            target.setPos(destPlayer.getPos().clone());
+            mgr.enqueueServerPacket(target,
+                    com.openrealm.net.server.packet.TextPacket.from("SYSTEM", target.getName(),
+                            "Teleported to " + destPlayer.getName()));
+        }
+    }
+
+    @CommandHandler(value="item", description="Spawn a given Item by its id. Usage: /item {ITEM_ID} [COUNT]")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
+    public static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (message.getArgs() == null || message.getArgs().size() < 1)
+            throw new IllegalArgumentException("Usage: /item {ITEM_ID} [COUNT]");
+        log.info("Player {} spawn item {}", target.getName(), message);
+        final Realm targetRealm = mgr.findPlayerRealm(target.getId());
+        final int gameItemId = Integer.parseInt(message.getArgs().get(0));
+        final GameItem itemToSpawn = GameDataManager.GAME_ITEMS.get(gameItemId);
+        if (itemToSpawn == null) {
+            throw new IllegalArgumentException("Item with ID " + gameItemId + " does not exist.");
+        }
+        int count = 1;
+        if (message.getArgs().size() >= 2) {
+            count = Math.min(32, Math.max(1, Integer.parseInt(message.getArgs().get(1))));
+        }
+        // Pack items into loot bags of 8
+        int spawned = 0;
+        while (spawned < count) {
+            int bagSize = Math.min(8, count - spawned);
+            GameItem[] bagItems = new GameItem[bagSize];
+            for (int i = 0; i < bagSize; i++) {
+                bagItems[i] = GameDataManager.GAME_ITEMS.get(gameItemId);
+            }
+            final LootContainer lootDrop = new LootContainer(LootTier.BROWN,
+                    target.getPos().clone(Realm.RANDOM.nextInt(48) - 24, Realm.RANDOM.nextInt(48) - 24),
+                    bagItems);
+            targetRealm.addLootContainer(lootDrop);
+            spawned += bagSize;
+        }
+    }
+
+    @CommandHandler(value="portal", description="Spawn a portal to a map by name. Usage: /portal {MAP_NAME}")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
+    public static void invokeSpawnPortal(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (message.getArgs() == null || message.getArgs().size() < 1)
+            throw new IllegalArgumentException("Usage: /portal {MAP_NAME}");
+
+        final String mapName = String.join(" ", message.getArgs());
+        log.info("Player {} spawning portal to map '{}'", target.getName(), mapName);
+
+        // Find map by name (case-insensitive, supports partial match)
+        MapModel targetMap = null;
+        for (MapModel m : GameDataManager.MAPS.values()) {
+            if (m.getMapName().equalsIgnoreCase(mapName)) {
+                targetMap = m;
+                break;
+            }
+        }
+        // Fallback: partial match
+        if (targetMap == null) {
+            for (MapModel m : GameDataManager.MAPS.values()) {
+                if (m.getMapName().toLowerCase().contains(mapName.toLowerCase())) {
+                    targetMap = m;
+                    break;
+                }
+            }
+        }
+        if (targetMap == null) {
+            // List available maps in error message
+            final String available = GameDataManager.MAPS.values().stream()
+                    .map(m -> m.getMapName() + " (" + m.getMapId() + ")")
+                    .collect(Collectors.joining(", "));
+            throw new IllegalArgumentException("Map '" + mapName + "' not found. Available: " + available);
+        }
+
+        // Find a portal model that targets this map, or fall back to a generic portal
+        PortalModel portalModel = null;
+        for (PortalModel pm : GameDataManager.PORTALS.values()) {
+            if (pm.getMapId() == targetMap.getMapId()) {
+                portalModel = pm;
+                break;
+            }
+        }
+        // Fall back to dungeon portal (portalId 6) if no matching portal model
+        if (portalModel == null) {
+            portalModel = GameDataManager.PORTALS.get(6);
+        }
+
+        // Check if a shared dungeon graph node exists for this map
+        final Realm currentRealm = mgr.findPlayerRealm(target.getId());
+        Realm destinationRealm = null;
+        String targetNodeId = null;
+        for (DungeonGraphNode node : GameDataManager.DUNGEON_GRAPH.values()) {
+            if (node.getMapId() == targetMap.getMapId() && node.isShared()) {
+                targetNodeId = node.getNodeId();
+                Optional<Realm> existing = mgr.findRealmForNode(node.getNodeId());
+                if (existing.isPresent()) {
+                    destinationRealm = existing.get();
+                }
+                break;
+            }
+        }
+        if (destinationRealm == null) {
+            destinationRealm = new Realm(true, targetMap.getMapId(), targetNodeId);
+            destinationRealm.spawnRandomEnemies(targetMap.getMapId());
+            mgr.addRealm(destinationRealm);
+        }
+
+        // Create and link portal at player position
+        final com.openrealm.game.entity.Portal portal = new com.openrealm.game.entity.Portal(
+                Realm.RANDOM.nextLong(), (short) portalModel.getPortalId(), target.getPos().clone());
+        portal.linkPortal(currentRealm, destinationRealm);
+        portal.setNeverExpires();
+        if (targetNodeId != null) portal.setTargetNodeId(targetNodeId);
+        currentRealm.addPortal(portal);
+
+        final String msg = "Portal to " + targetMap.getMapName() + " spawned!";
+        mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), msg));
+        log.info("Player {} spawned portal to {} (mapId={})", target.getName(), targetMap.getMapName(), targetMap.getMapId());
+    }
+
+    @CommandHandler(value="godmode", description="Toggle invincibility")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
+    public static void invokeGodMode(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (target.hasEffect(StatusEffectType.INVINCIBLE)) {
+            target.resetEffects();
+            mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), "God mode OFF"));
+        } else {
+            target.addEffect(StatusEffectType.INVINCIBLE, 1000 * 60 * 60 * 24);
+            mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(), "God mode ON"));
+        }
+        log.info("Player {} toggled god mode", target.getName());
+    }
+
+    @CommandHandler(value="spawnbots", description="Spawn N bot players with real accounts. Usage: /spawnbots {COUNT} [spam]")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_SYS_ADMIN})
+    public static void invokeSpawnBots(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (message.getArgs() == null || message.getArgs().size() < 1)
+            throw new IllegalArgumentException("Usage: /spawnbots {COUNT} [spam]");
+
+        final int count = Integer.parseInt(message.getArgs().get(0));
+        if (count < 1 || count > 50)
+            throw new IllegalArgumentException("Count must be between 1 and 50");
+
+        final boolean spamMode = message.getArgs().size() >= 2
+                && "spam".equalsIgnoreCase(message.getArgs().get(1));
+        final String modeLabel = spamMode ? " (spam mode - wizards)" : " (walk mode)";
+
+        mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(),
+                "Spawning " + count + " bot players" + modeLabel + "..."));
+
+        final String serverHost = "127.0.0.1";
+        final int serverPort = 2222;
+        final float spawnX = target.getPos().x;
+        final float spawnY = target.getPos().y;
+
+        WorkerThread.doAsync(() -> {
+            // Phase 1: Pre-create ALL accounts and characters in parallel batches of 10
+            final List<String[]> botCredentials = java.util.Collections.synchronizedList(new ArrayList<>());
+            log.info("[BOTS] Phase 1: Creating {} accounts (10 at a time)...", count);
+            for (int batch = 0; batch < count; batch += 10) {
+                final int batchEnd = Math.min(batch + 10, count);
+                final List<Thread> batchThreads = new ArrayList<>();
+                for (int i = batch; i < batchEnd; i++) {
+                    final int idx = i;
+                    Thread t = new Thread(() -> {
+                        try {
+                            final String botId = "bot-" + UUID.randomUUID().toString();
+                            final String email = botId + "@jrealm-bot.local";
+                            final String password = "botpass-" + UUID.randomUUID().toString();
+                            final String botName = "Bot_" + botId.substring(4, 12);
+
+                            final AccountDto registerReq = AccountDto.builder()
+                                    .email(email).password(password).accountName(botName)
+                                    .accountProvisions(Arrays.asList(AccountProvision.OPENREALM_PLAYER))
+                                    .accountSubscriptions(Arrays.asList(AccountSubscription.TRIAL))
+                                    .build();
+                            final JsonNode registered = ServerGameLogic.DATA_SERVICE.executePost(
+                                    "/admin/account/register", registerReq, JsonNode.class);
+                            final String accountGuid = registered.get("accountGuid").asText();
+
+                            final int classId = spamMode ? CharacterClass.WIZARD.classId : CharacterClass.ASSASSIN.classId;
+                            final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executePost(
+                                    "/data/account/" + accountGuid + "/character?classId=" + classId,
+                                    null, PlayerAccountDto.class);
+
+                            String characterUuid = null;
+                            if (account.getCharacters() != null && !account.getCharacters().isEmpty()) {
+                                characterUuid = account.getCharacters().get(0).getCharacterUuid();
+                            }
+                            if (characterUuid == null) {
+                                log.error("[BOTS] Failed to get character UUID for {}", botName);
+                                return;
+                            }
+                            log.info("[BOTS] Pre-created {} (class={}, uuid={})", botName, classId, characterUuid);
+                            botCredentials.add(new String[]{email, password, characterUuid, accountGuid});
+
+                            synchronized (BOT_ACCOUNT_GUIDS) {
+                                BOT_ACCOUNT_GUIDS.add(accountGuid);
+                            }
+                        } catch (Exception e) {
+                            log.error("[BOTS] Failed to create bot account {}: {}", idx, e.getMessage());
+                        }
+                    }, "bot-create-" + idx);
+                    t.setDaemon(true);
+                    t.start();
+                    batchThreads.add(t);
+                }
+                // Wait for this batch to finish before starting the next
+                for (Thread t : batchThreads) {
+                    try { t.join(10000); } catch (InterruptedException e) { break; }
+                }
+                log.info("[BOTS] Batch complete: {}/{} accounts created", botCredentials.size(), count);
+            }
+
+            // Phase 2: Connect bots one at a time with stagger (fast, just TCP + login)
+            log.info("[BOTS] Phase 2: Connecting {} bots...", botCredentials.size());
+            int success = 0;
+            for (int i = 0; i < botCredentials.size(); i++) {
+                try {
+                    final String[] creds = botCredentials.get(i);
+                    final StressTestClient bot = new StressTestClient(i, serverHost, serverPort,
+                            creds[0], creds[1], creds[2], spamMode);
+                    bot.setSpawnNear(spawnX, spawnY);
+                    synchronized (ACTIVE_BOTS) {
+                        ACTIVE_BOTS.add(bot);
+                    }
+                    Thread botThread = new Thread(bot, "bot-runner-" + i);
+                    botThread.setDaemon(true);
+                    botThread.start();
+
+                    // Wait for this bot to log in (2s timeout — should take <500ms)
+                    long waitStart = System.currentTimeMillis();
+                    while (!bot.isLoggedIn() && !bot.isShutdown()
+                            && (System.currentTimeMillis() - waitStart) < 2000) {
+                        Thread.sleep(50);
+                    }
+                    if (bot.isLoggedIn()) {
+                        success++;
+                        // Give bot godmode (INVINCIBLE 24h) so it doesn't die during stress test
+                        try {
+                            final Player botPlayer = mgr.getPlayers().stream()
+                                    .filter(p -> p.getId() == bot.getAssignedPlayerId())
+                                    .findFirst().orElse(null);
+                            if (botPlayer != null) {
+                                botPlayer.addEffect(StatusEffectType.INVINCIBLE, 1000L * 60 * 60 * 24);
+                            }
+                        } catch (Exception ex) {
+                            log.warn("[BOTS] Failed to set bot {} godmode: {}", i, ex.getMessage());
+                        }
+                        log.info("[BOTS] Bot {} logged in successfully (godmode ON), connecting next...", i);
+                    } else {
+                        log.warn("[BOTS] Bot {} failed to log in within 5s, continuing...", i);
+                    }
+                } catch (Exception e) {
+                    log.error("[BOTS] Failed to connect bot {}: {}", i, e.getMessage());
+                }
+            }
+            log.info("[BOTS] Spawned {}/{} bot players", success, count);
+            try {
+                mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(),
+                        "Spawned " + success + "/" + count + " bot players"));
+            } catch (Exception e) {
+                // ignore
+            }
+        });
+    }
+
+    @CommandHandler(value="killbots", description="Disconnect all bot players and delete their accounts")
+	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_SYS_ADMIN})
+    public static void invokeKillBots(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        WorkerThread.doAsync(() -> {
+            int disconnected = 0;
+            int deleted = 0;
+
+            // Shutdown all bot clients
+            synchronized (ACTIVE_BOTS) {
+                for (StressTestClient bot : ACTIVE_BOTS) {
+                    try {
+                        bot.shutdown();
+                        disconnected++;
+                    } catch (Exception e) {
+                        log.error("[BOTS] Failed to shutdown bot: {}", e.getMessage());
+                    }
+                }
+                ACTIVE_BOTS.clear();
+            }
+
+            // Delete bot accounts from database
+            synchronized (BOT_ACCOUNT_GUIDS) {
+                for (String accountGuid : BOT_ACCOUNT_GUIDS) {
+                    try {
+                        // Get account to find characters
+                        PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executeGet(
+                                "/data/account/" + accountGuid, null, PlayerAccountDto.class);
+                        if (account != null && account.getCharacters() != null) {
+                            for (CharacterDto c : account.getCharacters()) {
+                                ServerGameLogic.DATA_SERVICE.executeDelete(
+                                        "/data/account/character/" + c.getCharacterUuid(), Object.class);
+                            }
+                        }
+                        deleted++;
+                    } catch (Exception e) {
+                        log.error("[BOTS] Failed to delete bot account {}: {}", accountGuid, e.getMessage());
+                    }
+                }
+                BOT_ACCOUNT_GUIDS.clear();
+            }
+
+            log.info("[BOTS] Killed {} bots, deleted {} accounts", disconnected, deleted);
+            try {
+                mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(),
+                        "Killed " + disconnected + " bots, deleted " + deleted + " accounts"));
+            } catch (Exception e) {
+                // ignore
+            }
+        });
+    }
+
+    @CommandHandler(value="realm", description="Move the player to the top realm (/realm up) or boss realm (/realm down, admin only)")
+    public static void invokeRealmMove(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        if (message.getArgs() == null || message.getArgs().size() < 1)
+            throw new IllegalArgumentException("Usage: /realm {up | down}");
+
+        final String direction = message.getArgs().get(0).toLowerCase();
+        final Realm currentRealm = mgr.findPlayerRealm(target.getId());
+
+        if (direction.equals("up")) {
+            // Anyone can go up to the overworld
+            currentRealm.getPlayers().remove(target.getId());
+            currentRealm.removePlayer(target);
+            final Realm topRealm = mgr.getTopRealm();
+            target.setPos(topRealm.getTileManager().getSafePosition());
+            topRealm.addPlayer(target);
+            mgr.clearPlayerState(target.getId());
+            ServerGameLogic.sendImmediateLoadMap(mgr, topRealm, target);
+            ServerGameLogic.onPlayerJoin(mgr, topRealm, target);
+
+            // Clean up empty dungeon when last player leaves
+            if (currentRealm.getPlayers().size() == 0 && currentRealm.getNodeId() != null) {
+                final com.openrealm.game.model.DungeonGraphNode node =
+                        GameDataManager.DUNGEON_GRAPH.get(currentRealm.getNodeId());
+                if (node != null && !node.isEntryPoint()) {
+                    currentRealm.setShutdown(true);
+                    mgr.getRealms().remove(currentRealm.getRealmId());
+                }
+            }
+        } else if (direction.equals("down")) {
+            // Admin only — check inline
+            boolean isAdmin = false;
+            try {
+                final AccountDto account = ServerGameLogic.DATA_SERVICE.executeGet(
+                        "/admin/account/" + target.getAccountUuid(), null, AccountDto.class);
+                isAdmin = account != null && account.isAdmin();
+            } catch (Exception e) {
+                // Failed to check — deny
+            }
+            if (!isAdmin) {
+                throw new IllegalStateException("Only administrators can use /realm down");
+            }
+            currentRealm.getPlayers().remove(target.getId());
+            final PortalModel bossPortal = GameDataManager.PORTALS.get(5);
+            final Realm generatedRealm = new Realm(true, bossPortal.getMapId());
+            final Vector2f spawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 12,
+                    GlobalConstants.BASE_TILE_SIZE * 13);
+            target.setPos(spawnPos);
+            generatedRealm.addPlayer(target);
+            mgr.addRealm(generatedRealm);
+            mgr.clearPlayerState(target.getId());
+            ServerGameLogic.sendImmediateLoadMap(mgr, generatedRealm, target);
+            ServerGameLogic.onPlayerJoin(mgr, generatedRealm, target);
+        } else {
+            throw new IllegalArgumentException("Usage: /realm {up | down}");
+        }
+    }
+}
