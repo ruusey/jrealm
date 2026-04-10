@@ -1669,6 +1669,25 @@ public class RealmManagerServer implements Runnable {
 				.add(packet);
 	}
 
+	/**
+	 * Circle-vs-circle hit test for a bullet against an entity. Centers come from
+	 * (pos.x + size/2, pos.y + size/2). Radii are size * HIT_RADIUS_FACTOR. The
+	 * client mirrors this exactly in game.js — if you change the formula here,
+	 * change it there too.
+	 */
+	private static boolean circleHit(final Bullet b, final com.jrealm.game.entity.GameObject e) {
+		final float br = b.getSize() * GlobalConstants.HIT_RADIUS_FACTOR;
+		final float er = e.getSize() * GlobalConstants.HIT_RADIUS_FACTOR;
+		final float bcx = b.getPos().x + b.getSize() * 0.5f;
+		final float bcy = b.getPos().y + b.getSize() * 0.5f;
+		final float ecx = e.getPos().x + e.getSize() * 0.5f;
+		final float ecy = e.getPos().y + e.getSize() * 0.5f;
+		final float dx = bcx - ecx;
+		final float dy = bcy - ecy;
+		final float rsum = br + er;
+		return (dx * dx + dy * dy) < (rsum * rsum);
+	}
+
 	private void proccessTerrainHit(final long realmId, final Player p) {
 		final Realm targetRealm = this.realms.get(realmId);
 
@@ -1707,7 +1726,7 @@ public class RealmManagerServer implements Runnable {
 		final Player player = targetRealm.getPlayer(p.getId());
 		if (player == null)
 			return;
-		if (b.getBounds().collides(0, 0, player.getBounds()) && b.isEnemy() && !b.isPlayerHit()) {
+		if (circleHit(b, player) && b.isEnemy() && !b.isPlayerHit()) {
 			final Stats stats = player.getComputedStats();
 			b.setPlayerHit(true);
 			final short minDmg = (short) (b.getDamage() * 0.15);
@@ -1750,7 +1769,7 @@ public class RealmManagerServer implements Runnable {
 		// Enemies in STASIS or INVINCIBLE are invulnerable — all damage is nullified
 		if (e.hasEffect(StatusEffectType.STASIS) || e.hasEffect(StatusEffectType.INVINCIBLE))
 			return;
-		if (b.getBounds().collides(0, 0, e.getBounds()) && !b.isEnemy()) {
+		if (circleHit(b, e) && !b.isEnemy()) {
 			final short minDmg = (short) (b.getDamage() * 0.15);
 			short dmgToInflict = (short) (b.getDamage() - model.getStats().getDef());
 			if (dmgToInflict < minDmg) {

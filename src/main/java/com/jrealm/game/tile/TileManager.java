@@ -363,7 +363,9 @@ public class TileManager {
                 return model.getRandomSpawnPoint();
             }
         }
-        // If zones are defined, spawn in the outermost zone (beach/shore)
+        // If zones are defined, spawn in the outermost zone (beach/shore),
+        // biased toward the OUTER edge so new players land near the water and
+        // not next to the next-tier zone (grasslands) where harder enemies wander.
         if (this.terrainParams != null && this.terrainParams.getZones() != null
                 && !this.terrainParams.getZones().isEmpty()) {
             // Find the zone with the highest maxRadius (outermost)
@@ -371,7 +373,7 @@ public class TileManager {
                     .max((a, b) -> Float.compare(a.getMaxRadius(), b.getMaxRadius()))
                     .orElse(null);
             if (outerZone != null) {
-                return this.getSafePositionInZone(outerZone);
+                return this.getSafePositionInZone(outerZone, true);
             }
         }
         Vector2f pos = this.randomPos();
@@ -385,16 +387,35 @@ public class TileManager {
     }
 
     public Vector2f getSafePositionInZone(OverworldZone zone) {
+        return this.getSafePositionInZone(zone, false);
+    }
+
+    /**
+     * Pick a safe random position inside a zone's radial band.
+     * If {@code outerEdgeBias} is true, only the outer 25% of the zone's radial
+     * band is considered — i.e. positions closest to the next-outer zone (or
+     * the map edge / water for the outermost zone). Used for new-player spawns
+     * so they land far from the next-tier zone.
+     */
+    public Vector2f getSafePositionInZone(OverworldZone zone, boolean outerEdgeBias) {
         final int width = this.getBaseLayer().getWidth();
         final int height = this.getBaseLayer().getHeight();
         final int ts = this.getBaseLayer().getTileSize();
         final float centerX = width * ts / 2f;
         final float centerY = height * ts / 2f;
         final float maxDist = (float) Math.sqrt(centerX * centerX + centerY * centerY);
-        final float minDist = zone.getMinRadius() * maxDist;
-        final float maxDistZone = zone.getMaxRadius() * maxDist;
+        final float zoneMin = zone.getMinRadius() * maxDist;
+        final float zoneMax = zone.getMaxRadius() * maxDist;
+        // When biasing toward the outer edge, only accept positions in the outer
+        // 25% of the zone band. For the beach (0.55..1.01 of map radius) this
+        // restricts spawns to the outer ~12% of the map radius — right at the
+        // water's edge, far from any inner-zone enemies.
+        final float minDist = outerEdgeBias
+                ? (zoneMin + (zoneMax - zoneMin) * 0.75f)
+                : zoneMin;
+        final float maxDistZone = zoneMax;
 
-        for (int attempts = 0; attempts < 500; attempts++) {
+        for (int attempts = 0; attempts < 1000; attempts++) {
             Vector2f pos = this.randomPos();
             if (this.collidesAtPosition(pos, ts) || this.isVoidTile(pos, 0, 0)) continue;
             float dx = pos.x - centerX;
@@ -404,7 +425,11 @@ public class TileManager {
                 return pos;
             }
         }
-        // Fallback if zone is too small or all positions blocked
+        // Fallback 1: relax the outer-edge bias if we couldn't find a spot
+        if (outerEdgeBias) {
+            return this.getSafePositionInZone(zone, false);
+        }
+        // Fallback 2: any safe random position
         Vector2f pos = this.randomPos();
         int fallbackAttempts = 0;
         while ((this.collidesAtPosition(pos, this.getBaseLayer().getTileSize()) || this.isVoidTile(pos, 0, 0))
@@ -504,8 +529,10 @@ public class TileManager {
 
     public boolean collisionTile(Entity e, float ax, float ay) {
         final Vector2f futurePos = e.getPos().clone(ax, ay);
-        // Use a tighter hitbox (85% of sprite size) for collision
-        final int hitSize = (int) (e.getSize() * 0.85f);
+        // Tighter hitbox (65% of sprite size, was 85%) so the player can squeeze
+        // through gaps and doesn't catch on rounded sprite corners. Top-left
+        // anchored to match the client's _checkCollision in game.js exactly.
+        final int hitSize = (int) (e.getSize() * 0.65f);
         for (Tile t : this.getCollisionTiles(e.getPos())) {
             if ((t == null) || t.isVoid()) {
                 continue;
@@ -524,7 +551,8 @@ public class TileManager {
      * Use this to validate a destination before placing/teleporting an entity.
      */
     public boolean collidesAtPosition(Vector2f pos, int entitySize) {
-        final int hitSize = (int) (entitySize * 0.85f);
+        // 65% hitbox to match collisionTile and the client check.
+        final int hitSize = (int) (entitySize * 0.65f);
         for (Tile t : this.getCollisionTiles(pos)) {
             if (t == null || t.isVoid()) continue;
             Rectangle tileBounds = new Rectangle(t.getPos(), t.getWidth(), t.getHeight());
