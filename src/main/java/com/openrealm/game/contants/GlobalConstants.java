@@ -34,6 +34,20 @@ public class GlobalConstants {
      * Client mirror: BULLET_HIT_RADIUS_FACTOR in game.js — keep in sync.
      */
     public static final float HIT_RADIUS_FACTOR = 0.4f;
-    
+
+    // --- Difficulty-based enemy damage scaling ---
+    // Applied inside processPlayerHit before player defense is subtracted.
+    // Curve: flat 1.0 until the threshold, then +PER_LEVEL per difficulty level
+    // until the knee, then +PER_LEVEL_AFTER_KNEE per level past the knee, hard
+    // capped at CAP. Dungeon instances use a 1.0-lower threshold than overworld
+    // zones so a difficulty-2.0 dungeon hits harder than the difficulty-2.0
+    // grasslands overworld zone (dungeons feel harder than their zone number).
+    public static final float DAMAGE_SCALE_MIN_DIFFICULTY = 2.0f;          // overworld: no scaling at/below this
+    public static final float DAMAGE_SCALE_DUNGEON_MIN_DIFFICULTY = 1.0f;  // dungeon: no scaling at/below this
+    public static final float DAMAGE_SCALE_PER_LEVEL = 0.10f;              // +10% per diff level above threshold
+    public static final float DAMAGE_SCALE_KNEE_DIFFICULTY = 6.0f;         // slope halves past this difficulty
+    public static final float DAMAGE_SCALE_PER_LEVEL_AFTER_KNEE = 0.05f;   // +5% per diff level past knee
+    public static final float DAMAGE_SCALE_CAP = 2.0f;                     // hard cap on the multiplier
+
     public static final long SOCKET_READ_TIMEOUT = 15000;
 }

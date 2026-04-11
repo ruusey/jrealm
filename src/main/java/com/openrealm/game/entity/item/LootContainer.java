@@ -108,10 +108,12 @@ public class LootContainer {
      * CYAN(2): any item tier 8+
      * PURPLE(1): tiered items 0-7
      * BROWN(0): fallback / empty
-     * CHEST and GRAVE are never reclassified.
+     * CHEST, GRAVE, and BOOSTED are never reclassified — callers set those
+     * explicitly and the auto-classifier would clobber them based on contents.
      */
     public LootTier determineTier() {
-        if (this.tier.equals(LootTier.CHEST) || this.tier.equals(LootTier.GRAVE))
+        if (this.tier.equals(LootTier.CHEST) || this.tier.equals(LootTier.GRAVE)
+                || this.tier.equals(LootTier.BOOSTED))
             return this.tier;
 
         boolean hasUntiered = false;

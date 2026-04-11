@@ -285,6 +285,16 @@ public class Realm {
     }
 
     /**
+     * Returns true if this realm was created as a dungeon instance via a portal
+     * transition (handleUsePortalServer sets sourceRealmId to the parent realm).
+     * Used by the difficulty-based damage scaler: dungeon enemies start scaling
+     * one difficulty level earlier than overworld-zone enemies of the same number.
+     */
+    public boolean isDungeonInstance() {
+        return this.sourceRealmId != 0L;
+    }
+
+    /**
      * Returns true if this realm is the overworld entry point (the top-level shared realm
      * where enemies respawn). Replaces the old depth == 0 checks.
      */

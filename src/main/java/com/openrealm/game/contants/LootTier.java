@@ -7,7 +7,7 @@ import com.openrealm.game.data.GameDataManager;
 import com.openrealm.game.graphics.Sprite;
 
 public enum LootTier {
-    CHEST(-1), BROWN(0), PURPLE(1), CYAN(2), BLUE(3), WHITE(4), GRAVE(5);
+    CHEST(-1), BROWN(0), PURPLE(1), CYAN(2), BLUE(3), WHITE(4), GRAVE(5), BOOSTED(6);
 
     public static Map<Byte, LootTier> map = new HashMap<>();
     static {

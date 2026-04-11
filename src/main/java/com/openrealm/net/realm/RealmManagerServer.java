@@ -1726,6 +1726,32 @@ public class RealmManagerServer implements Runnable {
 		});
 	}
 
+	/**
+	 * Difficulty-based damage scaler applied at hit time. Curve:
+	 *   - difficulty <= threshold: 1.0 (no scaling)
+	 *   - threshold < difficulty <= knee: 1.0 + PER_LEVEL * (difficulty - threshold)
+	 *   - difficulty > knee: pre-knee value + PER_LEVEL_AFTER_KNEE * (difficulty - knee)
+	 *   - hard-capped at CAP
+	 * Dungeon instances use a 1.0-lower threshold than overworld zones so a
+	 * difficulty-2.0 dungeon hits harder than the grasslands (diff 2.0) overworld.
+	 */
+	private static float difficultyDamageMult(final float difficulty, final boolean isDungeon) {
+		final float threshold = isDungeon
+				? GlobalConstants.DAMAGE_SCALE_DUNGEON_MIN_DIFFICULTY
+				: GlobalConstants.DAMAGE_SCALE_MIN_DIFFICULTY;
+		if (difficulty <= threshold) return 1.0f;
+		final float knee = GlobalConstants.DAMAGE_SCALE_KNEE_DIFFICULTY;
+		final float slope = GlobalConstants.DAMAGE_SCALE_PER_LEVEL;
+		final float slopeAfter = GlobalConstants.DAMAGE_SCALE_PER_LEVEL_AFTER_KNEE;
+		float mult;
+		if (difficulty <= knee) {
+			mult = 1.0f + slope * (difficulty - threshold);
+		} else {
+			mult = 1.0f + slope * (knee - threshold) + slopeAfter * (difficulty - knee);
+		}
+		return Math.min(mult, GlobalConstants.DAMAGE_SCALE_CAP);
+	}
+
 	private void processPlayerHit(final long realmId, final Bullet b, final Player p) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Player player = targetRealm.getPlayer(p.getId());
@@ -1734,8 +1760,20 @@ public class RealmManagerServer implements Runnable {
 		if (circleHit(b, player) && b.isEnemy() && !b.isPlayerHit()) {
 			final Stats stats = player.getComputedStats();
 			b.setPlayerHit(true);
-			final short minDmg = (short) (b.getDamage() * 0.15);
-			short dmgToInflict = (short) (b.getDamage() - stats.getDef());
+			// Apply difficulty damage scaling based on the source enemy's
+			// stored difficulty. Dungeon instances get a one-level-earlier
+			// threshold so a diff-2.0 dungeon hits harder than the diff-2.0
+			// grasslands overworld (you asked for this).
+			float rawDmg = b.getDamage();
+			if (b.getSrcEntityId() != 0L) {
+				final Enemy srcEnemy = targetRealm.getEnemies().get(b.getSrcEntityId());
+				if (srcEnemy != null) {
+					rawDmg *= difficultyDamageMult(srcEnemy.getDifficulty(),
+							targetRealm.isDungeonInstance());
+				}
+			}
+			final short minDmg = (short) (rawDmg * 0.15f);
+			short dmgToInflict = (short) (rawDmg - stats.getDef());
 			if (dmgToInflict < minDmg) {
 				dmgToInflict = minDmg;
 			}
@@ -1944,26 +1982,51 @@ public class RealmManagerServer implements Runnable {
 			// Get a random loot bag drop based on this enemies loot table
 			final List<GameItem> lootToDrop = lootTable.getLootDrop();
 
-			// Difficulty-based loot tier upgrade: higher difficulty zones have a chance
-			// to bump each dropped item up one tier
+			// Difficulty-based loot tier upgrade: higher difficulty zones have a
+			// chance to bump each dropped item up one tier. Items that get upgraded
+			// go into a separate BOOSTED loot bag that drops ALONGSIDE the normal
+			// bag, so players can visually tell they got something extra.
 			final float diff = enemy.getDifficulty();
-			if (diff > GlobalConstants.LOOT_TIER_UPGRADE_MIN_DIFFICULTY && !lootToDrop.isEmpty()) {
-				final float upgradeChance = (GlobalConstants.LOOT_TIER_UPGRADE_BASE_PERCENT
-						+ GlobalConstants.LOOT_TIER_UPGRADE_PER_DIFFICULTY * diff) / 100.0f;
-				for (int i = 0; i < lootToDrop.size(); i++) {
-					if (Realm.RANDOM.nextFloat() < upgradeChance) {
-						final GameItem upgraded = findUpgradedItem(lootToDrop.get(i));
-						if (upgraded != null) {
-							lootToDrop.set(i, upgraded);
-						}
+			final List<GameItem> normalDrops = new ArrayList<>();
+			final List<GameItem> boostedDrops = new ArrayList<>();
+			final boolean upgradeEligible = diff > GlobalConstants.LOOT_TIER_UPGRADE_MIN_DIFFICULTY;
+			final float upgradeChance = upgradeEligible
+					? (GlobalConstants.LOOT_TIER_UPGRADE_BASE_PERCENT
+							+ GlobalConstants.LOOT_TIER_UPGRADE_PER_DIFFICULTY * diff) / 100.0f
+					: 0.0f;
+			for (final GameItem original : lootToDrop) {
+				GameItem toDrop = original;
+				boolean wasUpgraded = false;
+				if (upgradeEligible && Realm.RANDOM.nextFloat() < upgradeChance) {
+					final GameItem upgraded = findUpgradedItem(original);
+					if (upgraded != null) {
+						toDrop = upgraded;
+						wasUpgraded = true;
 					}
+				}
+				if (wasUpgraded) {
+					boostedDrops.add(toDrop);
+				} else {
+					normalDrops.add(toDrop);
 				}
 			}
 
-			if (lootToDrop.size() > 0) {
-				final LootContainer dropsBag = new LootContainer(LootTier.BLUE, enemy.getPos().withNoise(64, 64),
-						lootToDrop.toArray(new GameItem[0]));
+			if (!normalDrops.isEmpty()) {
+				final LootContainer dropsBag = new LootContainer(LootTier.BLUE,
+						enemy.getPos().withNoise(64, 64),
+						normalDrops.toArray(new GameItem[0]));
 				targetRealm.addLootContainer(dropsBag);
+			}
+			if (!boostedDrops.isEmpty()) {
+				// Spawn the boosted bag at a slightly different random offset so it
+				// doesn't perfectly overlap the normal bag. determineTier() is
+				// bypassed for BOOSTED so the explicit tier survives to the client.
+				final LootContainer boostedBag = new LootContainer(LootTier.BOOSTED,
+						enemy.getPos().withNoise(64, 64),
+						boostedDrops.toArray(new GameItem[0]));
+				targetRealm.addLootContainer(boostedBag);
+				log.info("[SERVER] BOOSTED loot drop: {} upgraded item(s) from enemy {} (difficulty={})",
+						boostedDrops.size(), enemy.getEnemyId(), diff);
 			}
 
 			// Portal drops: use dungeon graph if this realm has a nodeId
