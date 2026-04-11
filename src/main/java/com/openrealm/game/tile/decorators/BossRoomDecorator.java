@@ -2,7 +2,6 @@ package com.openrealm.game.tile.decorators;
 
 import com.openrealm.game.contants.GlobalConstants;
 import com.openrealm.game.entity.Enemy;
-import com.openrealm.game.entity.Portal;
 import com.openrealm.game.math.Vector2f;
 import com.openrealm.net.realm.Realm;
 import com.openrealm.net.realm.RealmManagerServer;
@@ -26,9 +25,13 @@ public class BossRoomDecorator extends RealmDecoratorBase {
                     GlobalConstants.BASE_TILE_SIZE * 16);
         }
 
-        final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, spawnPos.clone(250, 0));
-        exitPortal.linkPortal(input, mgr.getTopRealm());
-        exitPortal.setNeverExpires();
+        // NOTE: no exit portal placed here anymore. It used to be placed at
+        // `spawnPos.clone(250, 0)` which could land in the void. The exit portal
+        // is now dropped by the boss on death via RealmManagerServer.enemyDeath
+        // (matches mapModel.getDungeonParams().getBossEnemyId()), and a Portal
+        // of Cowardice is placed at the entry room by ServerGameLogic when the
+        // realm is created. For the drop to trigger, mapId 5 declares its boss
+        // via dungeonParams.bossEnemyId in maps.json.
 
         final Enemy boss = GameObjectUtils.getEnemyFromId(BOSS_ENEMY_ID, spawnPos);
         boss.setHealth(boss.getHealth() * 4);
@@ -49,8 +52,6 @@ public class BossRoomDecorator extends RealmDecoratorBase {
             minion.getStats().setHp((short) (minion.getStats().getHp() * 2));
             input.addEnemy(minion);
         }
-
-        input.addPortal(exitPortal);
     }
 
     @Override

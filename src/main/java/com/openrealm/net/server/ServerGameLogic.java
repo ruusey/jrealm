@@ -270,30 +270,41 @@ public class ServerGameLogic {
 				final String resolvedNodeId = (resolvedNode != null) ? resolvedNode.getNodeId() : targetNodeId;
 				final int mapId = (resolvedNode != null) ? resolvedNode.getMapId() : (targetNode != null ? targetNode.getMapId() : portalUsed.getMapId());
 				final Realm generatedRealm = new Realm(true, mapId, resolvedNodeId);
+				// Remember which realm the player came from so the cowardice portal
+				// and the boss-drop exit portal can both link back to it.
+				generatedRealm.setSourceRealmId(currentRealm.getRealmId());
 
 				targetRealm = generatedRealm;
 
 				final boolean isBossNode = (targetNode != null && targetNode.isBossNode());
 
+				// Track the entry position so we can place the Portal of Cowardice next to it
+				Vector2f entrySpawnPos = null;
+
 				// Boss node or Boss_0 map: skip random enemies, spawn player at ring center
 				if (isBossNode || generatedRealm.getMapId() == 5) {
-					user.setPos(new Vector2f(GlobalConstants.BASE_TILE_SIZE * 16,
-							GlobalConstants.BASE_TILE_SIZE * 12));
+					entrySpawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 16,
+							GlobalConstants.BASE_TILE_SIZE * 12);
+					user.setPos(entrySpawnPos.clone());
 				} else {
 					generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
 					// Spawn player at the first room (far from boss room)
 					final Vector2f spawnPos = generatedRealm.getTileManager().getPlayerSpawnPos();
 					if (spawnPos != null) {
-						user.setPos(spawnPos);
+						entrySpawnPos = spawnPos;
 					} else {
-						user.setPos(generatedRealm.getTileManager().getSafePosition());
+						entrySpawnPos = generatedRealm.getTileManager().getSafePosition();
 					}
+					user.setPos(entrySpawnPos.clone());
 				}
 
-				// Place exit portal and boss enemy if applicable
+				// Spawn the dungeon boss at the boss room center (no exit portal here —
+				// the exit portal is dropped by the boss on death, see
+				// RealmManagerServer.enemyDeath). This avoids the old bug where the
+				// exit portal was placed at bossSpawnPos+250 and could land in the void.
 				final Vector2f bossSpawnPos = generatedRealm.getTileManager().getBossSpawnPos();
 				final MapModel mapModel = GameDataManager.MAPS.get(mapId);
-				if (bossSpawnPos != null && mapModel.getDungeonParams() != null) {
+				if (bossSpawnPos != null && mapModel != null && mapModel.getDungeonParams() != null) {
 					final DungeonGenerationParams dungeonParams = mapModel.getDungeonParams();
 					final int bossEnemyId = dungeonParams.getBossEnemyId();
 					if (bossEnemyId > 0) {
@@ -303,18 +314,21 @@ public class ServerGameLogic {
 						boss.getStats().setHp((short) (boss.getStats().getHp() * bossMult));
 						generatedRealm.addEnemy(boss);
 					}
+				}
 
-					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3,
-							bossSpawnPos.clone(250, 0));
-					exitPortal.linkPortal(generatedRealm, currentRealm);
-					exitPortal.setNeverExpires();
-					generatedRealm.addPortal(exitPortal);
-				} else {
-					final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(), (short) 3,
-							generatedRealm.getTileManager().getSafePosition());
-					exitPortal.linkPortal(generatedRealm, currentRealm);
-					exitPortal.setNeverExpires();
-					generatedRealm.addPortal(exitPortal);
+				// Portal of Cowardice — placed in the entry room next to the player's
+				// spawn point so players who walked into the wrong dungeon can leave
+				// without dying. Offset by one tile so it isn't directly under the player.
+				if (entrySpawnPos != null) {
+					final Vector2f cowardicePos = entrySpawnPos.clone(
+							GlobalConstants.BASE_TILE_SIZE, 0);
+					final Portal cowardicePortal = new Portal(Realm.RANDOM.nextLong(),
+							(short) 3, cowardicePos);
+					cowardicePortal.linkPortal(generatedRealm, currentRealm);
+					cowardicePortal.setNeverExpires();
+					generatedRealm.addPortal(cowardicePortal);
+					ServerGameLogic.log.info("[SERVER] Placed Portal of Cowardice in realm {} at ({}, {}) -> source realm {}",
+							generatedRealm.getRealmId(), cowardicePos.x, cowardicePos.y, currentRealm.getRealmId());
 				}
 
 				if (targetNode != null) {

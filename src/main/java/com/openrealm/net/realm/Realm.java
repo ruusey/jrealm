@@ -62,6 +62,10 @@ public class Realm {
     private long realmId;
     private int mapId;
     private String nodeId;
+    // For non-shared dungeon instances, the realmId of the parent (overworld / nexus)
+    // realm the player came from. Used by the cowardice portal and the boss-drop exit
+    // portal so both know where to return the player. 0 = no source (shared realm).
+    private long sourceRealmId;
     private Map<Long, Player> players;
     private Map<Long, Bullet> bullets;
     private Map<Long, List<Long>> bulletHits;

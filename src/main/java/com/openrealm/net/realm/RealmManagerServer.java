@@ -2030,6 +2030,36 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 			}
+
+			// Boss-drop exit portal: if this realm is a non-shared dungeon instance
+			// (has a sourceRealmId) and the dying enemy is the dungeon's designated
+			// boss (per mapModel.dungeonParams.bossEnemyId), spawn a never-expiring
+			// exit portal at the boss's death position linked back to the source
+			// realm. This replaces the old dungeon-creation-time exit portal that
+			// could land outside the walkable map. The boss death position is
+			// guaranteed reachable (the player just walked there and killed it).
+			if (targetRealm.getSourceRealmId() != 0) {
+				final MapModel bossMap = GameDataManager.MAPS.get(targetRealm.getMapId());
+				if (bossMap != null && bossMap.getDungeonParams() != null) {
+					final int bossEnemyId = bossMap.getDungeonParams().getBossEnemyId();
+					if (bossEnemyId > 0 && enemy.getEnemyId() == bossEnemyId) {
+						final Realm sourceRealm = this.realms.get(targetRealm.getSourceRealmId());
+						if (sourceRealm != null) {
+							final Portal exitPortal = new Portal(Realm.RANDOM.nextLong(),
+									(short) 3, enemy.getPos().clone());
+							exitPortal.linkPortal(targetRealm, sourceRealm);
+							exitPortal.setNeverExpires();
+							targetRealm.addPortal(exitPortal);
+							log.info("[SERVER] enemyDeath: BOSS EXIT portal spawned in realm {} at ({}, {}) -> source realm {}",
+									targetRealm.getRealmId(), exitPortal.getPos().x, exitPortal.getPos().y,
+									sourceRealm.getRealmId());
+						} else {
+							log.warn("[SERVER] enemyDeath: boss {} died but source realm {} no longer exists",
+									bossEnemyId, targetRealm.getSourceRealmId());
+						}
+					}
+				}
+			}
 		} catch (Exception e) {
 			RealmManagerServer.log.error("[SERVER] Failed to handle dead Enemy {}. Reason: {}", enemy.getId(), e);
 		}
