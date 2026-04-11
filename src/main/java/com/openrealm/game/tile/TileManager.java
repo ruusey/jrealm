@@ -529,14 +529,20 @@ public class TileManager {
 
     public boolean collisionTile(Entity e, float ax, float ay) {
         final Vector2f futurePos = e.getPos().clone(ax, ay);
-        // Tighter hitbox (65% of sprite size, was 85%) so the player can squeeze
-        // through gaps and doesn't catch on rounded sprite corners. Top-left
-        // anchored to match the client's _checkCollision in game.js exactly.
-        final int hitSize = (int) (e.getSize() * 0.65f);
+        // 85% hitbox for tile collision. Top-left anchored to match the client's
+        // _checkCollision in game.js exactly.
+        final int hitSize = (int) (e.getSize() * 0.85f);
         for (Tile t : this.getCollisionTiles(e.getPos())) {
             if ((t == null) || t.isVoid()) {
                 continue;
             }
+            // CRITICAL: respect the tile's hasCollision flag — many decoration
+            // tiles (candles, decoration_4/5/6 in the nexus) live in the
+            // collision layer but are visual-only with hasCollision=0. The
+            // client filters these out; the server must too or the player
+            // gets stuck on invisible blockers and the client snaps back.
+            final TileData td = t.getData();
+            if (td == null || !td.hasCollision()) continue;
             Rectangle tileBounds = new Rectangle(t.getPos(), t.getWidth(), t.getHeight());
             Rectangle futurePosBounds = new Rectangle(futurePos, hitSize, hitSize);
             if (tileBounds.intersect(futurePosBounds))
@@ -551,10 +557,12 @@ public class TileManager {
      * Use this to validate a destination before placing/teleporting an entity.
      */
     public boolean collidesAtPosition(Vector2f pos, int entitySize) {
-        // 65% hitbox to match collisionTile and the client check.
-        final int hitSize = (int) (entitySize * 0.65f);
+        // 85% hitbox to match collisionTile and the client check.
+        final int hitSize = (int) (entitySize * 0.85f);
         for (Tile t : this.getCollisionTiles(pos)) {
             if (t == null || t.isVoid()) continue;
+            final TileData td = t.getData();
+            if (td == null || !td.hasCollision()) continue;
             Rectangle tileBounds = new Rectangle(t.getPos(), t.getWidth(), t.getHeight());
             Rectangle entityBounds = new Rectangle(pos, hitSize, hitSize);
             if (tileBounds.intersect(entityBounds)) return true;
