@@ -134,12 +134,16 @@ public class ServerGameLogic {
 		if (!validateCallingPlayer(mgr, packet, usePortalPacket.getPlayerId())) {
 			return;
 		}
+		// CRITICAL: wrap entire body in try/finally so the realm lock is always
+		// released. Previously any HTTP exception (executePost to /data/...),
+		// realm generation failure, or NPE would leak the lock and deadlock the
+		// next tick's acquireRealmLock() call — server freeze, requires restart.
 		mgr.acquireRealmLock();
-		
+		try {
+
 		if (usePortalPacket.isToVault()) {
 			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
 			if (currentRealm == null || currentRealm.getMapId() == 1) {
-				mgr.releaseRealmLock();
 				return;
 			}
 
@@ -161,20 +165,18 @@ public class ServerGameLogic {
 			mgr.clearPlayerState(user.getId());
 			sendImmediateLoadMap(mgr, generatedRealm, user);
 			onPlayerJoin(mgr, generatedRealm, user);
-			mgr.releaseRealmLock();
 			return;
 		}
 
 		if (usePortalPacket.isToNexus()) {
 			final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
-			if (currentRealm == null) { mgr.releaseRealmLock(); return; }
+			if (currentRealm == null) { return; }
 			final Realm nexus = mgr.getTopRealm();
 			if (nexus == null || nexus.getRealmId() == currentRealm.getRealmId()) {
-				mgr.releaseRealmLock();
 				return;
 			}
 			final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
-			if (user == null) { mgr.releaseRealmLock(); return; }
+			if (user == null) { return; }
 			currentRealm.removePlayer(user);
 
 			// Save vault chests if leaving vault
@@ -207,16 +209,15 @@ public class ServerGameLogic {
 			mgr.clearPlayerState(user.getId());
 			sendImmediateLoadMap(mgr, nexus, user);
 			onPlayerJoin(mgr, nexus, user);
-			mgr.releaseRealmLock();
 			return;
 		}
 
 		final Realm currentRealm = mgr.getRealms().get(usePortalPacket.getFromRealmId());
-		if (currentRealm == null) { mgr.releaseRealmLock(); return; }
+		if (currentRealm == null) { return; }
 		final Player user = currentRealm.getPlayers().remove(usePortalPacket.getPlayerId());
-		if (user == null) { mgr.releaseRealmLock(); return; }
+		if (user == null) { return; }
 		final Portal used = currentRealm.getPortals().get(usePortalPacket.getPortalId());
-		if (used == null) { mgr.releaseRealmLock(); return; }
+		if (used == null) { return; }
 		Realm targetRealm = mgr.getRealms().get(used.getToRealmId());
 		final PortalModel portalUsed = GameDataManager.PORTALS.get((int) used.getPortalId());
 		currentRealm.removePlayer(user);
@@ -353,7 +354,11 @@ public class ServerGameLogic {
 		mgr.clearPlayerState(user.getId());
 		sendImmediateLoadMap(mgr, targetRealm, user);
 		onPlayerJoin(mgr, targetRealm, user);
-		mgr.releaseRealmLock();
+		} catch (Exception e) {
+			log.error("[SERVER] Portal transition failed. Reason: {}", e.getMessage(), e);
+		} finally {
+			mgr.releaseRealmLock();
+		}
 	}
 
 	public static void handleHeartbeatServer(RealmManagerServer mgr, Packet packet) {

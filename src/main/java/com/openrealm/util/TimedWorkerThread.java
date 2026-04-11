@@ -42,8 +42,15 @@ public class TimedWorkerThread implements Runnable {
             try {
                 final long now = System.nanoTime();
                 if (now >= nextTickTime) {
-                    // Run the tick directly on this thread — no pool dispatch overhead
-                    this.runnable.run();
+                    // Run the tick directly on this thread — no pool dispatch overhead.
+                    // Any exception from the tick is caught BELOW and logged; we keep
+                    // running so a single bad tick doesn't kill the whole loop.
+                    try {
+                        this.runnable.run();
+                    } catch (Exception tickEx) {
+                        log.error("TimedThread tick threw — continuing. Runnable={}. Reason: {}",
+                                this.runnable, tickEx.getMessage(), tickEx);
+                    }
                     nextTickTime += nsPerTick;
                     // If we fell behind, catch up but don't spiral
                     if (now - nextTickTime > nsPerTick * 3) {
@@ -56,8 +63,18 @@ public class TimedWorkerThread implements Runnable {
                         Thread.sleep(sleepMs);
                     }
                 }
-            } catch (Exception e) {
+            } catch (InterruptedException ie) {
+                // Thread interrupted — propagate and exit cleanly
+                Thread.currentThread().interrupt();
                 this.shutdown = true;
+                log.info("TimedThread interrupted, shutting down. Runnable={}", this.runnable);
+            } catch (Throwable t) {
+                // Error (OOM, StackOverflow, etc.) — log loudly before dying so we
+                // aren't mystified by a "silently frozen server". Don't swallow
+                // Errors: they indicate the JVM is in a bad state.
+                log.error("TimedThread FATAL — thread dying. Runnable={}. Reason: {}",
+                        this.runnable, t.getMessage(), t);
+                throw t;
             }
         }
         log.info("Timed worker thread SHUTDOWN. Runnable = {}", this.runnable);

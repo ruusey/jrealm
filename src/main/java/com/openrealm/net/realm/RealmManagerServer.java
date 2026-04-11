@@ -500,11 +500,14 @@ public class RealmManagerServer implements Runnable {
 	// Enqueues outbound game packets every tick using:
 	// - Spatial hash grid for O(1) neighbor lookups
 	// - Tiered update rates (movement=64Hz, load=32Hz, update=16Hz, map=4Hz)
-	// - Per-cell packet sharing (players in same cell share entity queries)
 	public void enqueueGameData() {
+		long startNanos = System.nanoTime();
+		// CRITICAL: acquire must be outside the try and release MUST be in a
+		// finally — previously the acquire/release were both inside the try
+		// block, so any exception in the tick work leaked the lock and
+		// deadlocked every subsequent acquire (including the next tick).
+		this.acquireRealmLock();
 		try {
-			long startNanos = System.nanoTime();
-			this.acquireRealmLock();
 			this.tickCounter++;
 
 			final boolean doMovement = (this.tickCounter % MOVE_TICK_DIVISOR) == 0;
@@ -535,8 +538,8 @@ public class RealmManagerServer implements Runnable {
 					}
 					try {
 						realm = this.findPlayerRealm(player.getKey());
+						if (realm == null) continue; // player disappeared between snapshot and processing
 						final Vector2f playerCenter = player.getValue().getPos();
-						final long cellKey = realm.getSpatialCellKey(playerCenter.x, playerCenter.y);
 
 						// --- LoadMapPacket (4 Hz) ---
 						if (doLoadMap) {
@@ -767,9 +770,11 @@ public class RealmManagerServer implements Runnable {
 			long nanosDiff = System.nanoTime() - startNanos;
 			log.debug("[SERVER] Game data enqueued in {} nanos ({}ms)", nanosDiff,
 					((double) nanosDiff / (double) 1000000l));
-			this.releaseRealmLock();
 		} catch (Exception e) {
-			log.error("[SERVER] Failed to enqueue game data. Reason: {}", e);
+			log.error("[SERVER] Failed to enqueue game data. Reason: {}", e.getMessage(), e);
+		} finally {
+			// ALWAYS release the lock, even on exception, to prevent deadlock
+			this.releaseRealmLock();
 		}
 	}
 
