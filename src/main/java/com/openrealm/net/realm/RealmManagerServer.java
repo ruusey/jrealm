@@ -1325,6 +1325,16 @@ public class RealmManagerServer implements Runnable {
 
 		// Periodic cleanup: remove empty dungeon/vault realms (every 128 ticks ~2s)
 		if (this.tickCounter % 128 == 0) {
+			// Collect realm IDs that are referenced as a sourceRealmId by any
+			// active dungeon. These must stay alive so the boss-drop exit portal
+			// can link back to them when the dungeon boss is killed.
+			final java.util.Set<Long> referencedAsSource = new java.util.HashSet<>();
+			for (final Realm r : this.realms.values()) {
+				if (r.getSourceRealmId() != 0) {
+					referencedAsSource.add(r.getSourceRealmId());
+				}
+			}
+
 			final List<Long> realmIdsToRemove = new ArrayList<>();
 			for (final Map.Entry<Long, Realm> entry : this.realms.entrySet()) {
 				final Realm r = entry.getValue();
@@ -1334,8 +1344,11 @@ public class RealmManagerServer implements Runnable {
 				if (r.getMapId() == 1) {
 					realmIdsToRemove.add(entry.getKey());
 				}
-				// Non-shared realms (dungeon instances): remove when empty
-				else if (!r.isShared()) {
+				// Non-shared realms (dungeon instances): remove when empty,
+				// BUT keep alive if any child dungeon still references this
+				// realm as its source (the player needs to return here via
+				// the boss exit portal).
+				else if (!r.isShared() && !referencedAsSource.contains(entry.getKey())) {
 					realmIdsToRemove.add(entry.getKey());
 				}
 			}
