@@ -284,7 +284,11 @@ public class Player extends Entity {
 	public void updateEffectState() {
 		if (this.getSpriteSheet() == null)
 			return;
-		if (this.hasEffect(StatusEffectType.INVISIBLE)) {
+		if (this.hasEffect(StatusEffectType.INVINCIBLE)) {
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.INVINCIBLE)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.INVINCIBLE);
+			}
+		} else if (this.hasEffect(StatusEffectType.INVISIBLE)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.SEPIA)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.SEPIA);
 			}

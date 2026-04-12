@@ -16,7 +16,9 @@ import com.openrealm.account.dto.SessionTokenDto;
 import com.openrealm.account.service.OpenRealmServerDataService;
 import com.openrealm.game.OpenRealmGame;
 import com.openrealm.game.contants.CharacterClass;
+import com.openrealm.game.contants.EntityType;
 import com.openrealm.game.contants.StatusEffectType;
+import com.openrealm.game.contants.TextEffect;
 import com.openrealm.game.contants.GlobalConstants;
 import com.openrealm.game.data.GameDataManager;
 import com.openrealm.game.entity.Bullet;
@@ -161,6 +163,7 @@ public class ServerGameLogic {
 			generatedRealm.addPortal(exitPortal);
 			mgr.addRealm(generatedRealm);
 			user.addEffect(StatusEffectType.INVINCIBLE, 4000);
+			mgr.broadcastTextEffect(EntityType.PLAYER, user, TextEffect.PLAYER_INFO, "Invincible");
 			generatedRealm.addPlayer(user);
 			mgr.clearPlayerState(user.getId());
 			sendImmediateLoadMap(mgr, generatedRealm, user);
@@ -205,6 +208,7 @@ public class ServerGameLogic {
 			final MapModel nexusMap = GameDataManager.MAPS.get(nexus.getMapId());
 			user.setPos(nexusMap != null ? nexusMap.getRandomSpawnPoint() : nexus.getTileManager().getSafePosition());
 			user.addEffect(StatusEffectType.INVINCIBLE, 4000);
+			mgr.broadcastTextEffect(EntityType.PLAYER, user, TextEffect.PLAYER_INFO, "Invincible");
 			nexus.addPlayer(user);
 			mgr.clearPlayerState(user.getId());
 			sendImmediateLoadMap(mgr, nexus, user);
@@ -369,6 +373,7 @@ public class ServerGameLogic {
 			}
 		}
 		user.addEffect(StatusEffectType.INVINCIBLE, 4000);
+		mgr.broadcastTextEffect(EntityType.PLAYER, user, TextEffect.PLAYER_INFO, "Invincible");
 		targetRealm.addPlayer(user);
 		mgr.clearPlayerState(user.getId());
 		sendImmediateLoadMap(mgr, targetRealm, user);
@@ -733,6 +738,7 @@ public class ServerGameLogic {
 					player.setBot(true);
 				}
 				player.addEffect(StatusEffectType.INVINCIBLE, 4000);
+				mgr.broadcastTextEffect(EntityType.PLAYER, player, TextEffect.PLAYER_INFO, "Invincible");
 				player.setPos(targetRealm.getTileManager().getSafePosition());
 				log.info("[SERVER] Adding player {} to realm. bot={}, headless={}, accountUuid={}",
 						player.getName(), player.isBot(), player.isHeadless(), player.getAccountUuid());

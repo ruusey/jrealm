@@ -55,6 +55,10 @@ public class Enemy extends Entity {
     private long chargePauseUntil = 0;
     private Vector2f spawnPos = null;
     private long[] attackCooldowns = null;
+    // Phase transition: brief invulnerability + pause when switching phases
+    private String lastPhaseName = null;
+    private long phaseTransitionUntil = 0;
+    private static final long PHASE_TRANSITION_DURATION_MS = 1200;
 
     public Enemy() {
         super(0, null, 0);
@@ -688,8 +692,23 @@ public class Enemy extends Entity {
         // Resolve active phase
         EnemyPhase phase = this.getActivePhase();
 
+        // Phase transition: when the active phase changes, briefly pause the enemy
+        // with invulnerability so the player has a visual cue that the fight is
+        // intensifying. The INVINCIBLE effect makes the sprite glow white-gold.
+        if (phase != null && this.lastPhaseName != null && !phase.getName().equals(this.lastPhaseName)) {
+            this.phaseTransitionUntil = System.currentTimeMillis() + PHASE_TRANSITION_DURATION_MS;
+            this.addEffect(StatusEffectType.INVINCIBLE, PHASE_TRANSITION_DURATION_MS);
+            this.attackCooldowns = null; // reset attack timers for new phase
+        }
+        if (phase != null) {
+            this.lastPhaseName = phase.getName();
+        }
+
+        // During phase transition: freeze in place, skip attacks
+        final boolean inPhaseTransition = System.currentTimeMillis() < this.phaseTransitionUntil;
+
         // Movement — STASIS freezes movement AND attacks (like PARALYZED + STUNNED combined)
-        final boolean frozen = this.hasEffect(StatusEffectType.PARALYZED) || this.hasEffect(StatusEffectType.STASIS);
+        final boolean frozen = inPhaseTransition || this.hasEffect(StatusEffectType.PARALYZED) || this.hasEffect(StatusEffectType.STASIS);
         if (frozen) {
             this.up = false;
             this.down = false;
@@ -703,9 +722,9 @@ public class Enemy extends Entity {
             this.chase(player);
         }
 
-        // Attacks — STASIS also prevents attacking
+        // Attacks — STASIS and phase transitions also prevent attacking
         final boolean notInvisible = !player.hasEffect(StatusEffectType.INVISIBLE);
-        if (notInvisible && !this.hasEffect(StatusEffectType.STUNNED) && !this.hasEffect(StatusEffectType.STASIS)) {
+        if (notInvisible && !inPhaseTransition && !this.hasEffect(StatusEffectType.STUNNED) && !this.hasEffect(StatusEffectType.STASIS)) {
             this.processAttacks(player, phase, mgr, targetRealm);
         } else {
             this.attack = false;
@@ -751,7 +770,11 @@ public class Enemy extends Entity {
     @Override
     public void updateEffectState() {
         if (this.getSpriteSheet() == null) return;
-        if (this.hasEffect(StatusEffectType.STASIS)) {
+        if (this.hasEffect(StatusEffectType.INVINCIBLE)) {
+            if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.INVINCIBLE)) {
+                this.getSpriteSheet().setEffect(Sprite.EffectEnum.INVINCIBLE);
+            }
+        } else if (this.hasEffect(StatusEffectType.STASIS)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.STASIS)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.STASIS);
             }

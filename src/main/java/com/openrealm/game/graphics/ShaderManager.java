@@ -85,6 +85,14 @@ public class ShaderManager {
         0.1f, 0.0f, 0.05f, 0
     };
 
+    // Invincible: bright white-gold shimmer (immune to all damage)
+    private static final float[] INVINCIBLE = {
+        0.9f, 0.7f, 0.3f, 0,
+        0.7f, 0.9f, 0.5f, 0,
+        0.3f, 0.5f, 0.9f, 0,
+        0.2f, 0.2f, 0.15f, 0
+    };
+
     // Zero out RGB coefficients, use 4th column (constant) for dark grey
     private static final float[] SILHOUETTE = {
         0, 0, 0, 0,
@@ -139,6 +147,7 @@ public class ShaderManager {
     private static com.badlogic.gdx.math.Matrix4 MAT_CURSED;
     private static com.badlogic.gdx.math.Matrix4 MAT_POISONED;
     private static com.badlogic.gdx.math.Matrix4 MAT_ARMORED;
+    private static com.badlogic.gdx.math.Matrix4 MAT_INVINCIBLE;
 
     private static final String VERT_SHADER =
         "attribute vec4 a_position;\n" +
@@ -227,6 +236,7 @@ public class ShaderManager {
         MAT_CURSED = new com.badlogic.gdx.math.Matrix4(CURSED);
         MAT_POISONED = new com.badlogic.gdx.math.Matrix4(POISONED);
         MAT_ARMORED = new com.badlogic.gdx.math.Matrix4(ARMORED);
+        MAT_INVINCIBLE = new com.badlogic.gdx.math.Matrix4(INVINCIBLE);
     }
 
     private static Sprite.EffectEnum lastAppliedEffect = null;
@@ -262,6 +272,7 @@ public class ShaderManager {
             case CURSED: matrix = MAT_CURSED; break;
             case POISONED: matrix = MAT_POISONED; break;
             case ARMORED: matrix = MAT_ARMORED; break;
+            case INVINCIBLE: matrix = MAT_INVINCIBLE; break;
             default: matrix = MAT_IDENTITY; break;
         }
         effectShader.setUniformMatrix("u_colorMatrix", matrix);
