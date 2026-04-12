@@ -27,4 +27,11 @@ public class EnemyModel extends SpriteModel {
     private float chaseRange;
     private float attackRange;
     private List<EnemyPhase> phases;
+    /**
+     * Status effect IDs (see {@link com.openrealm.game.contants.StatusEffectType})
+     * that are applied permanently to this enemy on spawn. Effects added this way
+     * never expire. Used e.g. for static, unkillable NPCs like the Vault Healer and
+     * Nexus bosses which need {@code INVINCIBLE (6)} for their entire lifetime.
+     */
+    private List<Short> permanentEffects;
 }

@@ -1,5 +1,6 @@
 package com.openrealm.util;
 
+import com.openrealm.game.contants.StatusEffectType;
 import com.openrealm.game.data.GameDataManager;
 import com.openrealm.game.entity.Enemy;
 import com.openrealm.game.entity.Monster;
@@ -12,6 +13,15 @@ public class GameObjectUtils {
         EnemyModel toSpawn = GameDataManager.ENEMIES.get(enemyId);
         Enemy enemy = new Monster(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(), new Vector2f(), toSpawn.getSize(),
                 toSpawn.getAttackId());
+        if (toSpawn.getPermanentEffects() != null) {
+            for (final Short effectId : toSpawn.getPermanentEffects()) {
+                if (effectId == null) continue;
+                final StatusEffectType effect = StatusEffectType.valueOf(effectId);
+                if (effect != null) {
+                    enemy.addEffect(effect, Long.MAX_VALUE);
+                }
+            }
+        }
         return enemy;
     }
 

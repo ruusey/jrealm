@@ -95,7 +95,12 @@ public abstract class Entity extends GameObject {
     }
 
     public void addEffect(StatusEffectType effect, long duration) {
-        final long expireTime = Instant.now().toEpochMilli() + duration;
+        // Sentinel: Long.MAX_VALUE duration = permanent effect (never expires).
+        // Computing now + Long.MAX_VALUE would overflow into a negative value
+        // and get removed on the next tick, so store it directly.
+        final long expireTime = (duration == Long.MAX_VALUE)
+                ? Long.MAX_VALUE
+                : Instant.now().toEpochMilli() + duration;
 
         // POISONED stacks — always add a new slot (multiple poisons tick independently)
         if (effect == StatusEffectType.POISONED) {

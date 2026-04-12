@@ -37,6 +37,7 @@ public class BossRoomDecorator extends RealmDecoratorBase {
         boss.setHealth(boss.getHealth() * 4);
         boss.getStats().setHp((short) (boss.getStats().getHp() * 4));
         input.addEnemy(boss);
+        input.setDungeonBossEnemyId(BOSS_ENEMY_ID);
 
         // Spawn 4 minions at cardinal positions around the boss
         float[][] offsets = {

@@ -66,6 +66,10 @@ public class Realm {
     // realm the player came from. Used by the cowardice portal and the boss-drop exit
     // portal so both know where to return the player. 0 = no source (shared realm).
     private long sourceRealmId;
+    // The enemyId of this dungeon's designated boss. Set at realm creation time when
+    // the boss is spawned. When this enemy dies, an exit portal is dropped regardless
+    // of whether the boss has a loot table. 0 = no designated boss.
+    private int dungeonBossEnemyId;
     private Map<Long, Player> players;
     private Map<Long, Bullet> bullets;
     private Map<Long, List<Long>> bulletHits;

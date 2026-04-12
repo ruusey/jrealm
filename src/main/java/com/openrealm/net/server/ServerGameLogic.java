@@ -313,7 +313,12 @@ public class ServerGameLogic {
 						boss.setHealth(boss.getHealth() * bossMult);
 						boss.getStats().setHp((short) (boss.getStats().getHp() * bossMult));
 						generatedRealm.addEnemy(boss);
+						generatedRealm.setDungeonBossEnemyId(bossEnemyId);
+					} else {
+						ServerGameLogic.log.warn("[SERVER] Dungeon mapId={} has a boss room but no bossEnemyId configured in dungeonParams — no boss will spawn and no exit portal will drop", mapId);
 					}
+				} else if (bossSpawnPos != null) {
+					ServerGameLogic.log.warn("[SERVER] Dungeon mapId={} has a boss room but no dungeonParams configured — no boss will spawn", mapId);
 				}
 
 				// Portal of Cowardice — placed in the entry room next to the player's
