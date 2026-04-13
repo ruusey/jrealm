@@ -1785,14 +1785,23 @@ public class RealmManagerServer implements Runnable {
 							targetRealm.isDungeonInstance());
 				}
 			}
+			final boolean armorPiercing = b.hasFlag(ProjectileFlag.ARMOR_PIERCING);
+			final boolean armorBroken = player.hasEffect(StatusEffectType.ARMOR_BROKEN);
 			final short minDmg = (short) (rawDmg * 0.15f);
-			short dmgToInflict = (short) (rawDmg - stats.getDef());
-			if (dmgToInflict < minDmg) {
-				dmgToInflict = minDmg;
+			short dmgToInflict;
+			if (armorPiercing || armorBroken) {
+				// Armor piercing/broken: full damage, ignore defense entirely
+				dmgToInflict = (short) rawDmg;
+			} else {
+				dmgToInflict = (short) (rawDmg - stats.getDef());
+				if (dmgToInflict < minDmg) {
+					dmgToInflict = minDmg;
+				}
 			}
-			
 
-			this.sendTextEffectToPlayer(player, TextEffect.DAMAGE, "-" + dmgToInflict);
+			// Cyan damage text when armor is pierced or broken
+			final TextEffect dmgTextEffect = (armorPiercing || armorBroken) ? TextEffect.ARMOR_BREAK : TextEffect.DAMAGE;
+			this.sendTextEffectToPlayer(player, dmgTextEffect, "-" + dmgToInflict);
 
 			player.setHealth(player.getHealth() - dmgToInflict);
 			targetRealm.getExpiredBullets().add(b.getId());
@@ -1826,10 +1835,18 @@ public class RealmManagerServer implements Runnable {
 		if (e.hasEffect(StatusEffectType.STASIS) || e.hasEffect(StatusEffectType.INVINCIBLE))
 			return;
 		if (circleHit(b, e) && !b.isEnemy()) {
+			final boolean armorPiercing = b.hasFlag(ProjectileFlag.ARMOR_PIERCING);
+			final boolean armorBroken = e.hasEffect(StatusEffectType.ARMOR_BROKEN);
 			final short minDmg = (short) (b.getDamage() * 0.15);
-			short dmgToInflict = (short) (b.getDamage() - model.getStats().getDef());
-			if (dmgToInflict < minDmg) {
-				dmgToInflict = minDmg;
+			short dmgToInflict;
+			if (armorPiercing || armorBroken) {
+				// Armor piercing/broken: full damage, ignore defense entirely
+				dmgToInflict = (short) b.getDamage();
+			} else {
+				dmgToInflict = (short) (b.getDamage() - model.getStats().getDef());
+				if (dmgToInflict < minDmg) {
+					dmgToInflict = minDmg;
+				}
 			}
 
 			// Track damage for loot credit
@@ -1861,7 +1878,6 @@ public class RealmManagerServer implements Runnable {
 				targetRealm.getExpiredBullets().add(b.getId());
 				targetRealm.removeBullet(b);
 			}
-			// Apply on-hit status effects from projectile's effects list (data-driven durations)
 			// Apply on-hit status effects from projectile's effects list (data-driven with durations)
 			if (b.getEffects() != null) {
 				for (final ProjectileEffect pe : b.getEffects()) {
@@ -1872,8 +1888,10 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 			}
-			
-			this.broadcastTextEffect(targetRealm, EntityType.ENEMY, e, TextEffect.DAMAGE, "-" + dmgToInflict);
+
+			// Cyan damage text when armor is pierced or broken
+			final TextEffect dmgTextEffect = (armorPiercing || armorBroken) ? TextEffect.ARMOR_BREAK : TextEffect.DAMAGE;
+			this.broadcastTextEffect(targetRealm, EntityType.ENEMY, e, dmgTextEffect, "-" + dmgToInflict);
 			if (e.getDeath()) {
 				targetRealm.getExpiredBullets().add(b.getId());
 				this.enemyDeath(targetRealm, e);

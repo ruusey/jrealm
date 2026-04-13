@@ -85,6 +85,14 @@ public class ShaderManager {
         0.1f, 0.0f, 0.05f, 0
     };
 
+    // Armor Broken: cracked cyan-purple tint (defense reduced to zero)
+    private static final float[] ARMOR_BROKEN = {
+        0.3f, 0.2f, 0.5f, 0,
+        0.15f, 0.4f, 0.5f, 0,
+        0.4f, 0.5f, 0.7f, 0,
+        0.1f, 0.12f, 0.18f, 0
+    };
+
     // Invincible: bright white-gold shimmer (immune to all damage)
     private static final float[] INVINCIBLE = {
         0.9f, 0.7f, 0.3f, 0,
@@ -148,6 +156,7 @@ public class ShaderManager {
     private static com.badlogic.gdx.math.Matrix4 MAT_POISONED;
     private static com.badlogic.gdx.math.Matrix4 MAT_ARMORED;
     private static com.badlogic.gdx.math.Matrix4 MAT_INVINCIBLE;
+    private static com.badlogic.gdx.math.Matrix4 MAT_ARMOR_BROKEN;
 
     private static final String VERT_SHADER =
         "attribute vec4 a_position;\n" +
@@ -237,6 +246,7 @@ public class ShaderManager {
         MAT_POISONED = new com.badlogic.gdx.math.Matrix4(POISONED);
         MAT_ARMORED = new com.badlogic.gdx.math.Matrix4(ARMORED);
         MAT_INVINCIBLE = new com.badlogic.gdx.math.Matrix4(INVINCIBLE);
+        MAT_ARMOR_BROKEN = new com.badlogic.gdx.math.Matrix4(ARMOR_BROKEN);
     }
 
     private static Sprite.EffectEnum lastAppliedEffect = null;
@@ -273,6 +283,7 @@ public class ShaderManager {
             case POISONED: matrix = MAT_POISONED; break;
             case ARMORED: matrix = MAT_ARMORED; break;
             case INVINCIBLE: matrix = MAT_INVINCIBLE; break;
+            case ARMOR_BROKEN: matrix = MAT_ARMOR_BROKEN; break;
             default: matrix = MAT_IDENTITY; break;
         }
         effectShader.setUniformMatrix("u_colorMatrix", matrix);

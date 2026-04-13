@@ -786,6 +786,10 @@ public class Enemy extends Entity {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.DECAY)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.DECAY);
             }
+        } else if (this.hasEffect(StatusEffectType.ARMOR_BROKEN)) {
+            if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.ARMOR_BROKEN)) {
+                this.getSpriteSheet().setEffect(Sprite.EffectEnum.ARMOR_BROKEN);
+            }
         } else if (this.hasEffect(StatusEffectType.CURSED)) {
             if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.CURSED)) {
                 this.getSpriteSheet().setEffect(Sprite.EffectEnum.CURSED);

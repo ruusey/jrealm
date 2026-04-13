@@ -250,8 +250,12 @@ public class Player extends Entity {
 				stats = stats.concat(item.getStats());
 			}
 		}
-		// ARMORED doubles defense
-		if (this.hasEffect(StatusEffectType.ARMORED)) {
+		// ARMOR_BROKEN zeroes defense
+		if (this.hasEffect(StatusEffectType.ARMOR_BROKEN)) {
+			stats.setDef((short) 0);
+		}
+		// ARMORED doubles defense (cannot apply while armor broken)
+		else if (this.hasEffect(StatusEffectType.ARMORED)) {
 			stats.setDef((short) (stats.getDef() * 2));
 		}
 		return stats;
@@ -295,6 +299,10 @@ public class Player extends Entity {
 		} else if (this.hasEffect(StatusEffectType.HEALING)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.REDISH)) {
 				this.getSpriteSheet().setEffect(Sprite.EffectEnum.REDISH);
+			}
+		} else if (this.hasEffect(StatusEffectType.ARMOR_BROKEN)) {
+			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.ARMOR_BROKEN)) {
+				this.getSpriteSheet().setEffect(Sprite.EffectEnum.ARMOR_BROKEN);
 			}
 		} else if (this.hasEffect(StatusEffectType.ARMORED)) {
 			if (!this.getSpriteSheet().hasEffect(Sprite.EffectEnum.ARMORED)) {

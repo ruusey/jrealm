@@ -12,7 +12,8 @@ public enum ProjectileFlag {
     PLAYER_PROJECTILE((short) 10),
     PARAMETRIC((short) 12),
     INVERTED_PARAMETRIC((short) 13),
-    ORBITAL((short) 20);
+    ORBITAL((short) 20),
+    ARMOR_PIERCING((short) 23);
 
     public static final Map<Short, ProjectileFlag> map = new HashMap<>();
     static {
