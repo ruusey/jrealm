@@ -115,7 +115,7 @@ public class ServerGameLogic {
 		}
 
 		// Show online player list when joining the overworld (beach entry node)
-		if (realm.getNodeId() != null && realm.getNodeId().equals("beach")) {
+		if (realm.getNodeId() != null && realm.getNodeId().startsWith("beach")) {
 			final StringBuilder sb = new StringBuilder("Players online: ");
 			int count = 0;
 			for (Player p : mgr.getPlayers()) {
