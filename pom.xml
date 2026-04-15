@@ -111,6 +111,15 @@
 				<artifactId>maven-shade-plugin</artifactId>
 				<version>3.5.1</version>
 				<configuration>
+					<!-- Attach shaded jar as secondary artifact (classifier "shaded")
+					     so the primary artifact stays clean for downstream dependents
+					     like openrealm-data. Without this, the shaded jar replaces the
+					     primary artifact in the local repo and its baked-in deps
+					     (Jackson, SLF4J, etc.) conflict with Spring Boot's managed
+					     versions, causing classloader issues on shutdown. -->
+					<shadedArtifactAttached>true</shadedArtifactAttached>
+					<shadedClassifierName>shaded</shadedClassifierName>
+					<createDependencyReducedPom>false</createDependencyReducedPom>
 					<transformers>
 						<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 							<mainClass>com.openrealm.game.GameLauncher</mainClass>
