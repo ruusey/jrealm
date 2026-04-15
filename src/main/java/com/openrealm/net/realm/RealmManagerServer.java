@@ -140,8 +140,6 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, LoadPacket> playerLoadState = new ConcurrentHashMap<>();
 	private Map<Long, UpdatePacket> playerUpdateState = new ConcurrentHashMap<>();
 	private Map<Long, PlayerStatePacket> playerStateState = new ConcurrentHashMap<>();
-	/** Per-observer cache for other players' PlayerStatePackets (key = observerId << 32 | observedId). */
-	private Map<Long, PlayerStatePacket> otherPlayerStateCache = new ConcurrentHashMap<>();
 	private Map<Long, UpdatePacket> enemyUpdateState = new ConcurrentHashMap<>();
 	private Map<Long, UnloadPacket> playerUnloadState = new ConcurrentHashMap<>();
 	private Map<Long, LoadMapPacket> playerLoadMapState = new ConcurrentHashMap<>();
@@ -589,27 +587,6 @@ public class RealmManagerServer implements Runnable {
 									this.enqueueServerPacket(player.getValue(), otherUpdate.withoutInventory());
 								} catch (Exception ex) {
 									log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
-								}
-							}
-						}
-
-						// --- Other players' PlayerStatePacket (HP/MP/effects) ---
-						// Sends effect changes for nearby players so this client can
-						// render status effects (invincibility tint, etc.) on others.
-						// Uses a separate cache (otherPlayerStateCache) keyed by
-						// (observerId, observedId) to avoid colliding with the self cache.
-						{
-							final Player[] otherPlayers = realm.getPlayersInRadiusFast(playerCenter, viewportRadius);
-							final int maxOtherStates = Math.min(otherPlayers.length, 20);
-							for (int opi = 0; opi < maxOtherStates; opi++) {
-								final Player other = otherPlayers[opi];
-								if (other.getId() == player.getKey()) continue;
-								final PlayerStatePacket otherState = PlayerStatePacket.from(other);
-								final long cacheKey = (player.getKey() << 32) | (other.getId() & 0xFFFFFFFFL);
-								final PlayerStatePacket cached = this.otherPlayerStateCache.get(cacheKey);
-								if (cached == null || !cached.equalsState(otherState)) {
-									this.otherPlayerStateCache.put(cacheKey, otherState);
-									this.enqueueServerPacket(player.getValue(), otherState);
 								}
 							}
 						}
@@ -2244,9 +2221,6 @@ public class RealmManagerServer implements Runnable {
 		this.playerDeadReckonState.remove(playerId);
 		this.playerAbilityState.remove(playerId);
 		this.playerLoadMapState.remove(playerId);
-		// Clean up other-player state cache entries where this player is observer or observed
-		this.otherPlayerStateCache.keySet().removeIf(k ->
-			(k >>> 32) == playerId || (k & 0xFFFFFFFFL) == playerId);
 		this.playerLastHeartbeatTime.remove(playerId);
 		this.playerGroundDamageState.remove(playerId);
 		this.playerOutboundPacketQueue.remove(playerId);
