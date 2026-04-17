@@ -80,7 +80,7 @@ public class NecromancerSkullScript extends UseableItemScriptBase {
         }
 
         // Broadcast vampirism visual
-        this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
+        this.mgr.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
             CreateEffectPacket.EFFECT_VAMPIRISM, center.x, center.y, radius, (short) 1500));
 
         // Flat heal (matches RotMG wiki) — heals regardless of damage dealt

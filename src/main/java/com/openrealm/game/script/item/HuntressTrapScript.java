@@ -66,7 +66,7 @@ public class HuntressTrapScript extends UseableItemScriptBase {
 
         // Broadcast throw arc visual
         final Vector2f playerCenter = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
-        this.mgr.enqueueServerPacket(CreateEffectPacket.lineEffect(
+        this.mgr.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
                 CreateEffectPacket.EFFECT_TRAP_THROW,
                 playerCenter.x, playerCenter.y, center.x, center.y, (short) THROW_DURATION_MS));
 

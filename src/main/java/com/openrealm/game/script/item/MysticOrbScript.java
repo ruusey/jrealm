@@ -53,10 +53,10 @@ public class MysticOrbScript extends UseableItemScriptBase {
         final Vector2f center = (targetPos != null) ? targetPos : player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 
         // Broadcast stasis visual (frozen blue ring)
-        this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
+        this.mgr.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
             CreateEffectPacket.EFFECT_STASIS_FIELD, center.x, center.y, STASIS_RADIUS, (short) 1800));
         // Broadcast curse visual (dark swirl in outer ring)
-        this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
+        this.mgr.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
             CreateEffectPacket.EFFECT_CURSE_RADIUS, center.x, center.y, CURSE_RADIUS, (short) 1500));
         final long stasisDuration = abilityItem.getEffect().getDuration();
 

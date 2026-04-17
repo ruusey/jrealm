@@ -49,7 +49,7 @@ public class HolyProtectionTomeScript extends UseableItemScriptBase {
 
         // Broadcast heal radius visual
         final Vector2f center = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
-        this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
+        this.mgr.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
                 CreateEffectPacket.EFFECT_HEAL_RADIUS, center.x, center.y, 224.0f, (short) 1500));
 
         // Heal all players in range (lesser heal than normal tomes)

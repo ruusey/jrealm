@@ -32,7 +32,7 @@ public class Enemy67Script extends EnemyScriptBase {
         final Vector2f center = enemy.getPos().clone(enemy.getSize() / 2, enemy.getSize() / 2);
 
         // Broadcast heal radius visual
-        this.getMgr().enqueueServerPacket(CreateEffectPacket.aoeEffect(
+        this.getMgr().enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
                 CreateEffectPacket.EFFECT_HEAL_RADIUS, center.x, center.y, HEAL_RADIUS, (short) 1500));
 
         // Heal all players within range

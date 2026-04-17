@@ -1730,6 +1730,20 @@ public class RealmManagerServer implements Runnable {
 		this.outboundPacketQueue.add(packet);
 	}
 
+	/**
+	 * Send a packet to all non-headless players in a specific realm.
+	 * Use this instead of the global broadcast for effects, visuals, etc.
+	 * that should only be seen by players in the same realm.
+	 */
+	public void enqueueServerPacketToRealm(final Realm realm, final Packet packet) {
+		if (realm == null || packet == null) return;
+		for (final Player p : realm.getPlayers().values()) {
+			if (!p.isHeadless()) {
+				this.enqueueServerPacket(p, packet);
+			}
+		}
+	}
+
 	public void enqueueServerPacket(final Player player, final Packet packet) {
 		if (player == null || packet == null)
 			return;

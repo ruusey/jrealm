@@ -54,7 +54,7 @@ public class JuggernautHelmScript extends UseableItemScriptBase {
 
         // Broadcast buff visual
         final Vector2f center = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
-        this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
+        this.mgr.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
                 CreateEffectPacket.EFFECT_HEAL_RADIUS, center.x, center.y, 160.0f, (short) 1500));
     }
 }

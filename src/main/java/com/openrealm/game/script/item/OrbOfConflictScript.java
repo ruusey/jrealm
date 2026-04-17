@@ -54,7 +54,7 @@ public class OrbOfConflictScript extends UseableItemScriptBase {
         final long stasisDuration = abilityItem.getEffect().getDuration();
 
         // --- Enemy stasis at cursor position ---
-        this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
+        this.mgr.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
                 CreateEffectPacket.EFFECT_STASIS_FIELD, center.x, center.y, STASIS_RADIUS, (short) 1800));
 
         for (final Enemy enemy : targetRealm.getEnemies().values()) {
@@ -82,7 +82,7 @@ public class OrbOfConflictScript extends UseableItemScriptBase {
 
         // Broadcast self-buff visual (green heal ring on player)
         final Vector2f playerCenter = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
-        this.mgr.enqueueServerPacket(CreateEffectPacket.aoeEffect(
+        this.mgr.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
                 CreateEffectPacket.EFFECT_HEAL_RADIUS, playerCenter.x, playerCenter.y, 64.0f, (short) 1200));
     }
 }
