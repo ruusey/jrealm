@@ -269,87 +269,71 @@ public class ServerGameLogic {
 
 		if (targetRealm == null) {
 			// Non-shared: each portal creates its own dungeon instance (1:1 portal-to-dungeon).
-			// The portal's toRealmId is set after creation so subsequent uses of the
-			// SAME portal route to the SAME instance.
-			{
-				// Create new realm from graph node or legacy portal model
-				final String resolvedNodeId = (resolvedNode != null) ? resolvedNode.getNodeId() : targetNodeId;
-				final int mapId = (resolvedNode != null) ? resolvedNode.getMapId() : (targetNode != null ? targetNode.getMapId() : portalUsed.getMapId());
-				final Realm generatedRealm = new Realm(true, mapId, resolvedNodeId);
-				// Remember which realm the player came from so the cowardice portal
-				// and the boss-drop exit portal can both link back to it.
-				generatedRealm.setSourceRealmId(currentRealm.getRealmId());
+			// Realm generation is CPU-heavy (terrain, enemies, dungeon layout), so we run
+			// it on a worker thread to avoid blocking the tick loop for other players.
+			final String resolvedNodeId = (resolvedNode != null) ? resolvedNode.getNodeId() : targetNodeId;
+			final int mapId = (resolvedNode != null) ? resolvedNode.getMapId() : (targetNode != null ? targetNode.getMapId() : portalUsed.getMapId());
+			final DungeonGraphNode finalTargetNode = targetNode;
+			final Realm finalCurrentRealm = currentRealm;
+			final Portal finalUsedPortal = used;
 
-				targetRealm = generatedRealm;
+			log.info("[SERVER] Starting async realm generation for player {} (mapId={}, node={})",
+				user.getName(), mapId, resolvedNodeId);
 
-				final boolean isBossNode = (targetNode != null && targetNode.isBossNode());
+			WorkerThread.doAsync(() -> {
+				try {
+					final Realm generatedRealm = new Realm(true, mapId, resolvedNodeId);
+					generatedRealm.setSourceRealmId(finalCurrentRealm.getRealmId());
 
-				// Track the entry position so we can place the Portal of Cowardice next to it
-				Vector2f entrySpawnPos = null;
+					final boolean isBossNode = (finalTargetNode != null && finalTargetNode.isBossNode());
+					Vector2f entrySpawnPos = null;
 
-				// Boss node or Boss_0 map: skip random enemies, spawn player at ring center
-				if (isBossNode || generatedRealm.getMapId() == 5) {
-					entrySpawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 16,
-							GlobalConstants.BASE_TILE_SIZE * 12);
-					user.setPos(entrySpawnPos.clone());
-				} else {
-					generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
-					// Spawn player at the first room (far from boss room)
-					final Vector2f spawnPos = generatedRealm.getTileManager().getPlayerSpawnPos();
-					if (spawnPos != null) {
-						entrySpawnPos = spawnPos;
+					if (isBossNode || generatedRealm.getMapId() == 5) {
+						entrySpawnPos = new Vector2f(GlobalConstants.BASE_TILE_SIZE * 16,
+								GlobalConstants.BASE_TILE_SIZE * 12);
 					} else {
-						entrySpawnPos = generatedRealm.getTileManager().getSafePosition();
+						generatedRealm.spawnRandomEnemies(generatedRealm.getMapId());
+						final Vector2f spawnPos = generatedRealm.getTileManager().getPlayerSpawnPos();
+						entrySpawnPos = (spawnPos != null) ? spawnPos : generatedRealm.getTileManager().getSafePosition();
 					}
 					user.setPos(entrySpawnPos.clone());
-				}
 
-				// Spawn the dungeon boss at the boss room center (no exit portal here —
-				// the exit portal is dropped by the boss on death, see
-				// RealmManagerServer.enemyDeath). This avoids the old bug where the
-				// exit portal was placed at bossSpawnPos+250 and could land in the void.
-				final Vector2f bossSpawnPos = generatedRealm.getTileManager().getBossSpawnPos();
-				final MapModel mapModel = GameDataManager.MAPS.get(mapId);
-				if (bossSpawnPos != null && mapModel != null && mapModel.getDungeonParams() != null) {
-					final DungeonGenerationParams dungeonParams = mapModel.getDungeonParams();
-					final int bossEnemyId = dungeonParams.getBossEnemyId();
-					if (bossEnemyId > 0) {
-						final Enemy boss = GameObjectUtils.getEnemyFromId(bossEnemyId, bossSpawnPos.clone());
-						final int bossMult = (targetNode != null) ? (int) targetNode.getDifficulty() : 4;
-						boss.setHealth(boss.getHealth() * bossMult);
-						boss.getStats().setHp((short) (boss.getStats().getHp() * bossMult));
-						generatedRealm.addEnemy(boss);
-						generatedRealm.setDungeonBossEnemyId(bossEnemyId);
-					} else {
-						ServerGameLogic.log.warn("[SERVER] Dungeon mapId={} has a boss room but no bossEnemyId configured in dungeonParams — no boss will spawn and no exit portal will drop", mapId);
+					final Vector2f bossSpawnPos = generatedRealm.getTileManager().getBossSpawnPos();
+					final MapModel mapModel = GameDataManager.MAPS.get(mapId);
+					if (bossSpawnPos != null && mapModel != null && mapModel.getDungeonParams() != null) {
+						final DungeonGenerationParams dungeonParams = mapModel.getDungeonParams();
+						final int bossEnemyId = dungeonParams.getBossEnemyId();
+						if (bossEnemyId > 0) {
+							final Enemy boss = GameObjectUtils.getEnemyFromId(bossEnemyId, bossSpawnPos.clone());
+							final int bossMult = (finalTargetNode != null) ? (int) finalTargetNode.getDifficulty() : 4;
+							boss.setHealth(boss.getHealth() * bossMult);
+							boss.getStats().setHp((short) (boss.getStats().getHp() * bossMult));
+							generatedRealm.addEnemy(boss);
+							generatedRealm.setDungeonBossEnemyId(bossEnemyId);
+						}
 					}
-				} else if (bossSpawnPos != null) {
-					ServerGameLogic.log.warn("[SERVER] Dungeon mapId={} has a boss room but no dungeonParams configured — no boss will spawn", mapId);
-				}
 
-				// Portal of Cowardice — placed in the entry room next to the player's
-				// spawn point so players who walked into the wrong dungeon can leave
-				// without dying. Offset by one tile so it isn't directly under the player.
-				if (entrySpawnPos != null) {
-					final Vector2f cowardicePos = entrySpawnPos.clone(
-							GlobalConstants.BASE_TILE_SIZE, 0);
-					final Portal cowardicePortal = new Portal(Realm.RANDOM.nextLong(),
-							(short) 3, cowardicePos);
-					cowardicePortal.linkPortal(generatedRealm, currentRealm);
-					cowardicePortal.setNeverExpires();
-					generatedRealm.addPortal(cowardicePortal);
-					ServerGameLogic.log.info("[SERVER] Placed Portal of Cowardice in realm {} at ({}, {}) -> source realm {}",
-							generatedRealm.getRealmId(), cowardicePos.x, cowardicePos.y, currentRealm.getRealmId());
-				}
+					if (entrySpawnPos != null) {
+						final Vector2f cowardicePos = entrySpawnPos.clone(GlobalConstants.BASE_TILE_SIZE, 0);
+						final Portal cowardicePortal = new Portal(Realm.RANDOM.nextLong(), (short) 3, cowardicePos);
+						cowardicePortal.linkPortal(generatedRealm, finalCurrentRealm);
+						cowardicePortal.setNeverExpires();
+						generatedRealm.addPortal(cowardicePortal);
+					}
 
-				if (targetNode != null) {
-					ServerGameLogic.log.info("[SERVER] Created realm for graph node: {} ({})",
-							targetNode.getNodeId(), targetNode.getDisplayName());
+					log.info("[SERVER] Async realm generation complete for player {} (mapId={}, node={})",
+						user.getName(), mapId, resolvedNodeId);
+
+					mgr.enqueuePendingTransition(new RealmManagerServer.PendingRealmTransition(
+						generatedRealm, user, finalCurrentRealm, finalUsedPortal));
+				} catch (Exception e) {
+					log.error("[SERVER] Async realm generation failed for player {}. Reason: {}",
+						user.getName(), e.getMessage(), e);
 				}
-				mgr.addRealm(generatedRealm);
-				// Link this portal to the new dungeon so subsequent uses route here
-				used.setToRealmId(generatedRealm.getRealmId());
-			}
+			});
+			// Player is removed from current realm but not yet in the new one.
+			// They'll be added on the next tick when processPendingTransitions() runs.
+			return;
 		} else {
 			// Target realm already exists — spawn at the dungeon's fixed entry point
 			final Vector2f entryPos = targetRealm.getTileManager().getPlayerSpawnPos();

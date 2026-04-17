@@ -53,7 +53,7 @@ public class Player extends Entity {
 	// Chat role prefix cached at login for name coloring in chat.
 	// Values: "sysadmin", "admin", "mod", "editor", or null (regular player)
 	@Builder.Default
-	private String chatRole = null;
+	private String chatRole = "";
 	// Last input sequence number processed by the server (for client reconciliation)
 	@Builder.Default
 	private int lastInputSeq = 0;

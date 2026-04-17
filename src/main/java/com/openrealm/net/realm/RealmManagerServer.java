@@ -140,6 +140,9 @@ public class RealmManagerServer implements Runnable {
 	// here instead of mutating realm state directly, and the tick thread drains it
 	// at the start of each tick to avoid race conditions with enqueueGameData().
 	private final java.util.concurrent.ConcurrentLinkedQueue<PendingRealmJoin> pendingRealmJoins = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	// Thread-safe queue for async realm generation completions. Worker threads generate
+	// the realm (heavy CPU), then enqueue here for tick-thread integration.
+	private final java.util.concurrent.ConcurrentLinkedQueue<PendingRealmTransition> pendingRealmTransitions = new java.util.concurrent.ConcurrentLinkedQueue<>();
 	
 	private Map<Long, Long> playerAbilityState = new ConcurrentHashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new ConcurrentHashMap<>();
@@ -357,6 +360,7 @@ public class RealmManagerServer implements Runnable {
 	private void tick() {
 		try {
 			this.processPendingJoins();
+			this.processPendingTransitions();
 			this.processServerPackets();
 			// update() runs BEFORE enqueueGameData so that enemy bullets spawned
 			// during Enemy.update() are in the spatial grid when LoadPacket is built.
@@ -2260,6 +2264,57 @@ public class RealmManagerServer implements Runnable {
 		ServerCommandHandler.PLAYER_PROVISION_CACHE.remove(playerId);
 	}
 
+
+	/**
+	 * Data class for a deferred realm transition. The heavy realm generation
+	 * (terrain, enemies, dungeon layout) runs on a worker thread. Once complete,
+	 * the result is enqueued here and the tick thread integrates it: adds the
+	 * realm, transfers the player, sends map/load packets.
+	 */
+	public static class PendingRealmTransition {
+		public final Realm generatedRealm;
+		public final Player player;
+		public final Realm sourceRealm;
+		public final Portal usedPortal;
+		public PendingRealmTransition(Realm generatedRealm, Player player, Realm sourceRealm, Portal usedPortal) {
+			this.generatedRealm = generatedRealm;
+			this.player = player;
+			this.sourceRealm = sourceRealm;
+			this.usedPortal = usedPortal;
+		}
+	}
+
+	public void enqueuePendingTransition(PendingRealmTransition transition) {
+		this.pendingRealmTransitions.add(transition);
+	}
+
+	/**
+	 * Drain completed realm generations and integrate them on the tick thread.
+	 */
+	public void processPendingTransitions() {
+		PendingRealmTransition t;
+		while ((t = this.pendingRealmTransitions.poll()) != null) {
+			try {
+				this.addRealm(t.generatedRealm);
+				if (t.usedPortal != null) {
+					t.usedPortal.setToRealmId(t.generatedRealm.getRealmId());
+				}
+				t.player.addEffect(com.openrealm.game.contants.StatusEffectType.INVINCIBLE, 4000);
+				this.broadcastTextEffect(com.openrealm.game.contants.EntityType.PLAYER, t.player,
+					com.openrealm.game.contants.TextEffect.PLAYER_INFO, "Invincible");
+				t.generatedRealm.addPlayer(t.player);
+				this.clearPlayerState(t.player.getId());
+				this.invalidateRealmLoadState(t.generatedRealm);
+				ServerGameLogic.sendImmediateLoadMap(this, t.generatedRealm, t.player);
+				ServerGameLogic.onPlayerJoin(this, t.generatedRealm, t.player);
+				log.info("[SERVER] Completed async realm transition for player {} -> realm {} (mapId={})",
+					t.player.getName(), t.generatedRealm.getRealmId(), t.generatedRealm.getMapId());
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to complete realm transition for player {}. Reason: {}",
+					t.player.getName(), e.getMessage(), e);
+			}
+		}
+	}
 
 	/**
 	 * Invalidate the LoadPacket cache for all players in a realm, forcing a full
