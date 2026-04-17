@@ -143,6 +143,8 @@ public class RealmManagerServer implements Runnable {
 	// Thread-safe queue for async realm generation completions. Worker threads generate
 	// the realm (heavy CPU), then enqueue here for tick-thread integration.
 	private final java.util.concurrent.ConcurrentLinkedQueue<PendingRealmTransition> pendingRealmTransitions = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	// Delta cache for other-player UpdatePackets (keyed by viewerPlayerId -> targetPlayerId -> packet)
+	private Map<Long, Map<Long, UpdatePacket>> otherPlayerUpdateState = new ConcurrentHashMap<>();
 	
 	private Map<Long, Long> playerAbilityState = new ConcurrentHashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new ConcurrentHashMap<>();
@@ -596,10 +598,11 @@ public class RealmManagerServer implements Runnable {
 									if (otherUpdate == null) continue;
 									final UpdatePacket stripped = otherUpdate.withoutInventory();
 									// Delta check: only send if this player's view of the other player changed
-									final long otherStateKey = player.getKey() * 31 + other.getId();
-									final UpdatePacket oldOtherUpdate = this.enemyUpdateState.get(otherStateKey);
+									final Map<Long, UpdatePacket> viewerCache = this.otherPlayerUpdateState
+										.computeIfAbsent(player.getKey(), k -> new ConcurrentHashMap<>());
+									final UpdatePacket oldOtherUpdate = viewerCache.get(other.getId());
 									if (oldOtherUpdate == null || !oldOtherUpdate.equals(stripped, false)) {
-										this.enemyUpdateState.put(otherStateKey, stripped);
+										viewerCache.put(other.getId(), stripped);
 										this.enqueueServerPacket(player.getValue(), stripped);
 									}
 								} catch (Exception ex) {
@@ -722,10 +725,13 @@ public class RealmManagerServer implements Runnable {
 											&& !teleportedPlayers.contains(player.getKey())) {
 										continue;
 									}
-									// Dead reckoning: only send when the entity's actual state
-									// diverges from what the client predicts based on last-sent data.
+									// Dead reckoning: skip stationary entities whose state hasn't
+								// changed. Moving entities (non-zero velocity) are always sent
+								// because the client lerps to target positions rather than
+								// extrapolating from velocity.
+									final boolean isEntityMoving = m.getVelX() != 0 || m.getVelY() != 0;
 									final EntityMotionState lastSent = drState.get(m.getEntityId());
-									if (lastSent != null && !lastSent.needsUpdate(
+									if (!isEntityMoving && lastSent != null && !lastSent.needsUpdate(
 											m.getPosX(), m.getPosY(), m.getVelX(), m.getVelY(),
 											this.tickCounter, tickDuration)) {
 										continue;
@@ -2270,6 +2276,7 @@ public class RealmManagerServer implements Runnable {
 		this.playerGroundDamageState.remove(playerId);
 		this.playerOutboundPacketQueue.remove(playerId);
 		this.enemyUpdateState.remove(playerId);
+		this.otherPlayerUpdateState.remove(playerId);
 		// Clean up any poison state sourced by this player
 		for (final Realm realm : this.realms.values()) {
 			realm.removePlayerPoisonDots(playerId);
