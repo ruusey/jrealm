@@ -36,6 +36,6 @@ public class SerializableString extends SerializableFieldType<String> {
 		stream.write(toUse.getBytes("UTF-8"));
 		//stream.writeUTF(toUse);
 		// UTF net encoding
-		return NetConstants.INT16_LENGTH +  value.getBytes().length;
+		return NetConstants.INT16_LENGTH +  toUse.getBytes().length;
 	}
 }

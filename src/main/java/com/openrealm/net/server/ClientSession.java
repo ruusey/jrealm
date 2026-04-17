@@ -147,7 +147,8 @@ public class ClientSession {
                             .addAndGet(len);
                 }
             } catch (Exception e) {
-                // Skip malformed packets
+                log.error("[SESSION] Failed to serialize packet {} for client {}. Reason: {}",
+                    packet.getClass().getSimpleName(), this.clientKey, e.getMessage(), e);
             }
         }
     }
