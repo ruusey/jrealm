@@ -26,7 +26,7 @@ public class ServerItemHelper {
         final int fromIdx = moveItemPacket.getFromSlotIndex();
         final int targetIdx = moveItemPacket.getTargetSlotIndex();
         final boolean fromIsGroundLoot = MoveItemPacket.isGroundLoot(fromIdx);
-        final boolean fromIsInventory = MoveItemPacket.isInv1(fromIdx) || MoveItemPacket.isEquipment(fromIdx);
+        final boolean fromIsInventory = MoveItemPacket.isInventory(fromIdx) || MoveItemPacket.isEquipment(fromIdx);
 
         // Reject any fromSlot that isn't a known valid range
         if (!fromIsInventory && !fromIsGroundLoot) {
@@ -35,7 +35,7 @@ public class ServerItemHelper {
         }
 
         // Reject any targetSlot that isn't -1 (drop) or a valid inventory/equipment slot
-        if (targetIdx != -1 && !MoveItemPacket.isEquipment(targetIdx) && !MoveItemPacket.isInv1(targetIdx)) {
+        if (targetIdx != -1 && !MoveItemPacket.isEquipment(targetIdx) && !MoveItemPacket.isInventory(targetIdx)) {
             ServerItemHelper.log.warn("Player {} sent invalid target slot index {}", player.getId(), targetIdx);
             return;
         }
@@ -91,8 +91,8 @@ public class ServerItemHelper {
             }
             player.getInventory()[fromIdx] = null;
 
-        // Equip: inventory (4-11) → equipment (0-3)
-        } else if (MoveItemPacket.isInv1(fromIdx)
+        // Equip: inventory (4-19) → equipment (0-3)
+        } else if (MoveItemPacket.isInventory(fromIdx)
                 && MoveItemPacket.isEquipment(targetIdx) && (from != null)) {
             // Consumable items (potions, food) cannot be equipped
             if (from.isConsumable()) {
@@ -117,9 +117,9 @@ public class ServerItemHelper {
             }
             player.getInventory()[targetIdx] = from.clone();
 
-        // Swap within inventory (4-11)
-        } else if (MoveItemPacket.isInv1(fromIdx)
-                && MoveItemPacket.isInv1(targetIdx)) {
+        // Swap within inventory (4-19, including cross-bag)
+        } else if (MoveItemPacket.isInventory(fromIdx)
+                && MoveItemPacket.isInventory(targetIdx)) {
             GameItem to = player.getInventory()[targetIdx];
             if (to == null) {
                 player.getInventory()[targetIdx] = from.clone();
@@ -130,9 +130,9 @@ public class ServerItemHelper {
                 player.getInventory()[targetIdx] = fromClone;
             }
 
-        // Unequip: equipment (0-3) → inventory (4-11)
+        // Unequip: equipment (0-3) → inventory (4-19)
         } else if (MoveItemPacket.isEquipment(fromIdx)
-                && MoveItemPacket.isInv1(targetIdx) && (from != null)) {
+                && MoveItemPacket.isInventory(targetIdx) && (from != null)) {
             if (currentEquip != null) {
                 player.getInventory()[fromIdx] = currentEquip.clone();
             } else {

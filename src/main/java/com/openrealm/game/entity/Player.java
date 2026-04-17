@@ -148,8 +148,7 @@ public class Player extends Entity {
 	}
 
 	public int firstEmptyInvSlot() {
-		// Only search slots 4-11 (backpack 1). Slots 12-19 (backpack 2) are not yet accessible.
-		for (int i = 4; i < 12; i++) {
+		for (int i = 4; i < this.inventory.length; i++) {
 			if (this.inventory[i] == null)
 				return i;
 		}
