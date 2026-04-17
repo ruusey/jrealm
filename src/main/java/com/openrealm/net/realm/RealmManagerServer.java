@@ -135,6 +135,11 @@ public class RealmManagerServer implements Runnable {
 	private List<Vector2f> shotDestQueue = new ArrayList<>();
 	private Map<Long, Realm> realms = new ConcurrentHashMap<>();
 	private Map<String, Long> remoteAddresses = new ConcurrentHashMap<>();
+
+	// Thread-safe queue for pending realm joins. Worker threads (async login) push
+	// here instead of mutating realm state directly, and the tick thread drains it
+	// at the start of each tick to avoid race conditions with enqueueGameData().
+	private final java.util.concurrent.ConcurrentLinkedQueue<PendingRealmJoin> pendingRealmJoins = new java.util.concurrent.ConcurrentLinkedQueue<>();
 	
 	private Map<Long, Long> playerAbilityState = new ConcurrentHashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new ConcurrentHashMap<>();
@@ -351,6 +356,7 @@ public class RealmManagerServer implements Runnable {
 
 	private void tick() {
 		try {
+			this.processPendingJoins();
 			this.processServerPackets();
 			// update() runs BEFORE enqueueGameData so that enemy bullets spawned
 			// during Enemy.update() are in the spatial grid when LoadPacket is built.
@@ -2245,6 +2251,59 @@ public class RealmManagerServer implements Runnable {
 	public void invalidateRealmLoadState(Realm realm) {
 		for (final Long pid : realm.getPlayers().keySet()) {
 			this.playerLoadState.remove(pid);
+		}
+	}
+
+	/**
+	 * Data class for a deferred realm-join operation. Worker threads create these
+	 * after async authentication completes; the tick thread drains and executes
+	 * them before building LoadPackets, guaranteeing no race with the delta logic.
+	 */
+	public static class PendingRealmJoin {
+		public final Realm realm;
+		public final Player player;
+		public final String srcIp;
+		public final ClientSession session;
+		public final Packet loginResponse;
+		public PendingRealmJoin(Realm realm, Player player, String srcIp, ClientSession session, Packet loginResponse) {
+			this.realm = realm;
+			this.player = player;
+			this.srcIp = srcIp;
+			this.session = session;
+			this.loginResponse = loginResponse;
+		}
+	}
+
+	/**
+	 * Called by worker threads after async login auth completes.
+	 * Queues the realm join to be processed on the tick thread.
+	 */
+	public void enqueuePendingJoin(PendingRealmJoin join) {
+		this.pendingRealmJoins.add(join);
+	}
+
+	/**
+	 * Called at the start of tick(), BEFORE processServerPackets / enqueueGameData.
+	 * Drains all pending joins and adds players to their realms atomically on
+	 * the tick thread, then invalidates load state so existing clients see them.
+	 */
+	public void processPendingJoins() {
+		PendingRealmJoin join;
+		while ((join = this.pendingRealmJoins.poll()) != null) {
+			try {
+				join.realm.addPlayer(join.player);
+				this.invalidateRealmLoadState(join.realm);
+				join.session.setHandshakeComplete(true);
+				this.remoteAddresses.put(join.srcIp, join.player.getId());
+				this.enqueueServerPacket(join.player, join.loginResponse);
+				final Player toWelcome = join.player;
+				final Realm welcomeRealm = join.realm;
+				WorkerThread.runLater(() -> ServerGameLogic.onPlayerJoin(this, welcomeRealm, toWelcome), 2000);
+				log.info("[SERVER] Processed pending realm join for player {}", join.player.getName());
+			} catch (Exception e) {
+				log.error("[SERVER] Failed to process pending realm join for player {}. Reason: {}",
+					join.player.getName(), e.getMessage());
+			}
 		}
 	}
 

@@ -743,30 +743,27 @@ public class ServerGameLogic {
 				player.addEffect(StatusEffectType.INVINCIBLE, 4000);
 				mgr.broadcastTextEffect(EntityType.PLAYER, player, TextEffect.PLAYER_INFO, "Invincible");
 				player.setPos(targetRealm.getTileManager().getSafePosition());
-				log.info("[SERVER] Adding player {} to realm. bot={}, headless={}, accountUuid={}",
+				log.info("[SERVER] Queuing player {} for realm join. bot={}, headless={}, accountUuid={}",
 						player.getName(), player.isBot(), player.isHeadless(), player.getAccountUuid());
-				targetRealm.addPlayer(player);
-				mgr.invalidateRealmLoadState(targetRealm);
-				userSession.setHandshakeComplete(true);
 
 				final LoginResponseMessage message = LoginResponseMessage.builder()
 						.classId(resolvedClassId != null ? resolvedClassId : 0)
 						.spawnX(player.getPos().x).spawnY(player.getPos().y)
 						.playerId(player.getId()).success(true).account(account).token(loginToken.getToken())
 						.chatRole(player.getChatRole()).build();
-				mgr.getRemoteAddresses().put(command.getSrcIp(), player.getId());
 
 				commandResponse = CommandPacket.create(player, CommandType.LOGIN_RESPONSE, message);
-				final Player toWelcome = player;
-				final Realm welcomeRealm = targetRealm;
-				// Tiles are sent when the client's first heartbeat arrives (proves client is ready)
-				WorkerThread.runLater(() -> ServerGameLogic.onPlayerJoin(mgr, welcomeRealm, toWelcome), 2000);
-				log.info("[SERVER] Player {} logged in successfully", player);
+
+				// Defer realm join to the tick thread so addPlayer + invalidateRealmLoadState
+				// run atomically with the LoadPacket delta logic (no race condition).
+				mgr.enqueuePendingJoin(new RealmManagerServer.PendingRealmJoin(
+						targetRealm, player, command.getSrcIp(), userSession, commandResponse));
+				log.info("[SERVER] Player {} login queued for tick-thread processing", player);
 			} catch (Exception e) {
 				ServerGameLogic.log.error("Failed to perform Client Login. Reason: {}", e);
 				commandResponse = CommandPacket.createError(assignedId, 503,
 						"Failed to perform Client Login. Reason: " + e.getMessage());
-			} finally {
+				// Only send error responses directly — successful logins are sent by processPendingJoins
 				if (player != null && commandResponse != null) {
 					mgr.enqueueServerPacket(player, commandResponse);
 				}
