@@ -585,7 +585,7 @@ public class RealmManagerServer implements Runnable {
 								this.enqueueServerPacket(player.getValue(), updatePacket);
 							}
 
-							// Nearby other players — send their updates TO this player (capped to limit O(N²))
+							// Nearby other players — send their updates TO this player (only when changed)
 							final Player[] otherPlayers = realm.getPlayersInRadiusFast(playerCenter, viewportRadius);
 							final int maxOtherUpdates = Math.min(otherPlayers.length, 20);
 							for (int opi = 0; opi < maxOtherUpdates; opi++) {
@@ -594,7 +594,14 @@ public class RealmManagerServer implements Runnable {
 								try {
 									final UpdatePacket otherUpdate = realm.getPlayerAsPacket(other.getId());
 									if (otherUpdate == null) continue;
-									this.enqueueServerPacket(player.getValue(), otherUpdate.withoutInventory());
+									final UpdatePacket stripped = otherUpdate.withoutInventory();
+									// Delta check: only send if this player's view of the other player changed
+									final long otherStateKey = player.getKey() * 31 + other.getId();
+									final UpdatePacket oldOtherUpdate = this.enemyUpdateState.get(otherStateKey);
+									if (oldOtherUpdate == null || !oldOtherUpdate.equals(stripped, false)) {
+										this.enemyUpdateState.put(otherStateKey, stripped);
+										this.enqueueServerPacket(player.getValue(), stripped);
+									}
 								} catch (Exception ex) {
 									log.error("[SERVER] Failed to build other player UpdatePacket. Reason: {}", ex);
 								}
@@ -715,10 +722,20 @@ public class RealmManagerServer implements Runnable {
 											&& !teleportedPlayers.contains(player.getKey())) {
 										continue;
 									}
-									// Send all entities at the movement tick rate (no dead reckoning).
-									// Dead reckoning causes irregular update intervals that make
-									// entities jump on the client. Fixed-rate updates + client lerp
-									// is simpler and smoother.
+									// Dead reckoning: only send when the entity's actual state
+									// diverges from what the client predicts based on last-sent data.
+									final EntityMotionState lastSent = drState.get(m.getEntityId());
+									if (lastSent != null && !lastSent.needsUpdate(
+											m.getPosX(), m.getPosY(), m.getVelX(), m.getVelY(),
+											this.tickCounter, tickDuration)) {
+										continue;
+									}
+									if (lastSent != null) {
+										lastSent.markSent(m.getPosX(), m.getPosY(), m.getVelX(), m.getVelY(), this.tickCounter);
+									} else {
+										drState.put(m.getEntityId(), new EntityMotionState(
+											m.getPosX(), m.getPosY(), m.getVelX(), m.getVelY(), this.tickCounter));
+									}
 									corrections.add(m);
 								}
 
