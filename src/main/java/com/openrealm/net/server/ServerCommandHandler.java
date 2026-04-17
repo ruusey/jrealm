@@ -675,6 +675,7 @@ public class ServerCommandHandler {
             target.setPos(topRealm.getTileManager().getSafePosition());
             topRealm.addPlayer(target);
             mgr.clearPlayerState(target.getId());
+            mgr.invalidateRealmLoadState(topRealm);
             ServerGameLogic.sendImmediateLoadMap(mgr, topRealm, target);
             ServerGameLogic.onPlayerJoin(mgr, topRealm, target);
 
@@ -709,6 +710,7 @@ public class ServerCommandHandler {
             generatedRealm.addPlayer(target);
             mgr.addRealm(generatedRealm);
             mgr.clearPlayerState(target.getId());
+            mgr.invalidateRealmLoadState(generatedRealm);
             ServerGameLogic.sendImmediateLoadMap(mgr, generatedRealm, target);
             ServerGameLogic.onPlayerJoin(mgr, generatedRealm, target);
         } else {

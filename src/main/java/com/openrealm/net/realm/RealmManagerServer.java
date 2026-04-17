@@ -2237,6 +2237,17 @@ public class RealmManagerServer implements Runnable {
 	}
 
 
+	/**
+	 * Invalidate the LoadPacket cache for all players in a realm, forcing a full
+	 * re-send on the next tick. Called when a player enters or leaves a realm so
+	 * that existing clients immediately learn about the roster change.
+	 */
+	public void invalidateRealmLoadState(Realm realm) {
+		for (final Long pid : realm.getPlayers().keySet()) {
+			this.playerLoadState.remove(pid);
+		}
+	}
+
 	public Map<Long, String> getRemoteAddressMapReversed() {
 		final Map<Long, String> result = new HashMap<>();
 		for (final Entry<String, Long> entry : this.remoteAddresses.entrySet()) {

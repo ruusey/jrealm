@@ -166,6 +166,7 @@ public class ServerGameLogic {
 			mgr.broadcastTextEffect(EntityType.PLAYER, user, TextEffect.PLAYER_INFO, "Invincible");
 			generatedRealm.addPlayer(user);
 			mgr.clearPlayerState(user.getId());
+			mgr.invalidateRealmLoadState(generatedRealm);
 			sendImmediateLoadMap(mgr, generatedRealm, user);
 			onPlayerJoin(mgr, generatedRealm, user);
 			return;
@@ -211,6 +212,7 @@ public class ServerGameLogic {
 			mgr.broadcastTextEffect(EntityType.PLAYER, user, TextEffect.PLAYER_INFO, "Invincible");
 			nexus.addPlayer(user);
 			mgr.clearPlayerState(user.getId());
+			mgr.invalidateRealmLoadState(nexus);
 			sendImmediateLoadMap(mgr, nexus, user);
 			onPlayerJoin(mgr, nexus, user);
 			return;
@@ -376,6 +378,7 @@ public class ServerGameLogic {
 		mgr.broadcastTextEffect(EntityType.PLAYER, user, TextEffect.PLAYER_INFO, "Invincible");
 		targetRealm.addPlayer(user);
 		mgr.clearPlayerState(user.getId());
+		mgr.invalidateRealmLoadState(targetRealm);
 		sendImmediateLoadMap(mgr, targetRealm, user);
 		onPlayerJoin(mgr, targetRealm, user);
 		} catch (Exception e) {
@@ -743,6 +746,7 @@ public class ServerGameLogic {
 				log.info("[SERVER] Adding player {} to realm. bot={}, headless={}, accountUuid={}",
 						player.getName(), player.isBot(), player.isHeadless(), player.getAccountUuid());
 				targetRealm.addPlayer(player);
+				mgr.invalidateRealmLoadState(targetRealm);
 				userSession.setHandshakeComplete(true);
 
 				final LoginResponseMessage message = LoginResponseMessage.builder()
