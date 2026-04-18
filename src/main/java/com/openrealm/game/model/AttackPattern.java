@@ -37,4 +37,16 @@ public class AttackPattern {
     private boolean mirror = false;
     @Builder.Default
     private int sourceNoise = 0;
+
+    // Spiral: angle added to base angle each time this attack fires (accumulates over firings)
+    @Builder.Default
+    private float angleIncrementPerFiring = 0f;
+
+    // Speed stacking: fire multiple bullets at same angle with different speeds
+    @Builder.Default
+    private int speedCount = 1;
+    @Builder.Default
+    private float minSpeedMult = 1.0f;
+    @Builder.Default
+    private float maxSpeedMult = 1.0f;
 }

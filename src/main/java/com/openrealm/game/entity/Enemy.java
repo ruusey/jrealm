@@ -55,6 +55,8 @@ public class Enemy extends Entity {
     private long chargePauseUntil = 0;
     private Vector2f spawnPos = null;
     private long[] attackCooldowns = null;
+    // Spiral pattern: accumulated angle offset per attack (reset on phase change)
+    private float[] attackAngleAccumulators = null;
     // Phase transition: brief invulnerability + pause when switching phases
     private String lastPhaseName = null;
     private long phaseTransitionUntil = 0;
@@ -429,6 +431,7 @@ public class Enemy extends Entity {
         if (attacks != null && !attacks.isEmpty()) {
             if (this.attackCooldowns == null || this.attackCooldowns.length != attacks.size()) {
                 this.attackCooldowns = new long[attacks.size()];
+                this.attackAngleAccumulators = new float[attacks.size()];
             }
             long now = System.currentTimeMillis();
             boolean anyAttacked = false;
@@ -439,7 +442,9 @@ public class Enemy extends Entity {
 
                 this.attackCooldowns[i] = now;
                 anyAttacked = true;
-                fireAttackPattern(ap, player, mgr, targetRealm);
+                float spiralOffset = this.attackAngleAccumulators[i];
+                this.attackAngleAccumulators[i] += ap.getAngleIncrementPerFiring();
+                fireAttackPattern(ap, player, mgr, targetRealm, spiralOffset);
             }
             this.attack = anyAttacked;
         } else {
@@ -458,7 +463,7 @@ public class Enemy extends Entity {
         }
     }
 
-    private void fireAttackPattern(AttackPattern ap, Player player, RealmManagerServer mgr, Realm targetRealm) {
+    private void fireAttackPattern(AttackPattern ap, Player player, RealmManagerServer mgr, Realm targetRealm, float spiralOffset) {
         ProjectileGroup group = GameDataManager.PROJECTILE_GROUPS.get(ap.getProjectileGroupId());
         if (group == null) return;
 
@@ -485,20 +490,26 @@ public class Enemy extends Entity {
             baseAngle = Bullet.getAngle(source, dest);
         }
 
+        // Apply spiral offset (accumulated angleIncrementPerFiring)
+        baseAngle += spiralOffset;
+
         int shotCount = Math.max(1, ap.getShotCount());
         int burstCount = ap.getBurstCount();
+        final int sc = Math.max(1, ap.getSpeedCount());
+        final float sMin = ap.getMinSpeedMult();
+        final float sMax = ap.getMaxSpeedMult();
 
         if ("RING".equals(ap.getAimMode())) {
             // Evenly spaced around full circle
             if (burstCount <= 1) {
                 for (int s = 0; s < shotCount; s++) {
-                    float angle = (float) (s * 2 * Math.PI / shotCount);
-                    fireProjectileGroup(group, source.clone(), angle, player, mgr, targetRealm);
+                    float angle = baseAngle + (float) (s * 2 * Math.PI / shotCount);
+                    fireProjectileGroup(group, source.clone(), angle, player, mgr, targetRealm, sc, sMin, sMax);
                 }
             } else {
                 final float[] angles = new float[shotCount];
                 for (int s = 0; s < shotCount; s++) {
-                    angles[s] = (float) (s * 2 * Math.PI / shotCount);
+                    angles[s] = baseAngle + (float) (s * 2 * Math.PI / shotCount);
                 }
                 final Vector2f srcCopy = source.clone();
                 WorkerThread.doAsync(() -> {
@@ -506,7 +517,7 @@ public class Enemy extends Entity {
                         for (int b = 0; b < burstCount; b++) {
                             float offset = ap.getAngleOffsetPerBurst() * b;
                             for (float a : angles) {
-                                fireProjectileGroup(group, srcCopy.clone(), a + offset, player, mgr, targetRealm);
+                                fireProjectileGroup(group, srcCopy.clone(), a + offset, player, mgr, targetRealm, sc, sMin, sMax);
                             }
                             if (b < burstCount - 1 && ap.getBurstDelayMs() > 0) {
                                 Thread.sleep(ap.getBurstDelayMs());
@@ -522,9 +533,9 @@ public class Enemy extends Entity {
             if (shotCount <= 1) {
                 // Single shot (existing behavior)
                 if (burstCount <= 1) {
-                    fireProjectileGroup(group, source, baseAngle, player, mgr, targetRealm);
+                    fireProjectileGroup(group, source, baseAngle, player, mgr, targetRealm, sc, sMin, sMax);
                     if (ap.isMirror()) {
-                        fireProjectileGroup(group, source.clone(), -baseAngle, player, mgr, targetRealm);
+                        fireProjectileGroup(group, source.clone(), -baseAngle, player, mgr, targetRealm, sc, sMin, sMax);
                     }
                 } else {
                     final float angle = baseAngle;
@@ -533,9 +544,9 @@ public class Enemy extends Entity {
                         try {
                             for (int b = 0; b < burstCount; b++) {
                                 float burstAngle = angle + (ap.getAngleOffsetPerBurst() * b);
-                                fireProjectileGroup(group, srcCopy.clone(), burstAngle, player, mgr, targetRealm);
+                                fireProjectileGroup(group, srcCopy.clone(), burstAngle, player, mgr, targetRealm, sc, sMin, sMax);
                                 if (ap.isMirror()) {
-                                    fireProjectileGroup(group, srcCopy.clone(), -burstAngle, player, mgr, targetRealm);
+                                    fireProjectileGroup(group, srcCopy.clone(), -burstAngle, player, mgr, targetRealm, sc, sMin, sMax);
                                 }
                                 if (b < burstCount - 1 && ap.getBurstDelayMs() > 0) {
                                     Thread.sleep(ap.getBurstDelayMs());
@@ -553,11 +564,11 @@ public class Enemy extends Entity {
                     for (int s = 0; s < shotCount; s++) {
                         float t = shotCount > 1 ? (float) s / (shotCount - 1) : 0.5f;
                         float angle = baseAngle - halfSpread + t * ap.getSpreadAngle();
-                        fireProjectileGroup(group, source.clone(), angle, player, mgr, targetRealm);
+                        fireProjectileGroup(group, source.clone(), angle, player, mgr, targetRealm, sc, sMin, sMax);
                         if (ap.isMirror()) {
                             float mirrorAngle = baseAngle - (angle - baseAngle);
                             if (Math.abs(angle - mirrorAngle) > 0.01f) {
-                                fireProjectileGroup(group, source.clone(), mirrorAngle, player, mgr, targetRealm);
+                                fireProjectileGroup(group, source.clone(), mirrorAngle, player, mgr, targetRealm, sc, sMin, sMax);
                             }
                         }
                     }
@@ -571,7 +582,7 @@ public class Enemy extends Entity {
                                 for (int s = 0; s < shotCount; s++) {
                                     float t = shotCount > 1 ? (float) s / (shotCount - 1) : 0.5f;
                                     float fanAngle = angle - halfSpread + t * ap.getSpreadAngle() + offset;
-                                    fireProjectileGroup(group, srcCopy.clone(), fanAngle, player, mgr, targetRealm);
+                                    fireProjectileGroup(group, srcCopy.clone(), fanAngle, player, mgr, targetRealm, sc, sMin, sMax);
                                 }
                                 if (b < burstCount - 1 && ap.getBurstDelayMs() > 0) {
                                     Thread.sleep(ap.getBurstDelayMs());
@@ -588,6 +599,12 @@ public class Enemy extends Entity {
 
     private void fireProjectileGroup(ProjectileGroup group, Vector2f source, float baseAngle,
             Player player, RealmManagerServer mgr, Realm targetRealm) {
+        fireProjectileGroup(group, source, baseAngle, player, mgr, targetRealm, 1, 1.0f, 1.0f);
+    }
+
+    private void fireProjectileGroup(ProjectileGroup group, Vector2f source, float baseAngle,
+            Player player, RealmManagerServer mgr, Realm targetRealm,
+            int speedCount, float minSpeedMult, float maxSpeedMult) {
         final int projCount = group.getProjectiles().size();
         for (int i = 0; i < projCount; i++) {
             Projectile p = group.getProjectiles().get(i);
@@ -598,32 +615,69 @@ public class Enemy extends Entity {
                 angle = Float.parseFloat(p.getAngle());
             }
 
-            boolean isOrbital = p.hasFlag(ProjectileFlag.ORBITAL.flagId);
-            if (isOrbital) {
-                // For orbital projectiles: spawn evenly spaced around the enemy center.
-                // |amplitude| = orbit radius, sign of amplitude controls orbit direction.
-                // frequency = orbit speed (degrees/tick).
-                float orbitRadius = Math.abs(p.getAmplitude());
-                short effectiveFreq = (short) (p.getAmplitude() < 0 ? -p.getFrequency() : p.getFrequency());
-                float startPhase = (float) (i * 2 * Math.PI / projCount);
-                Vector2f center = this.getPos().clone(this.getSize() / 2, this.getSize() / 2);
-                Vector2f spawnPos = new Vector2f(
-                        center.x + orbitRadius * (float) Math.cos(startPhase),
-                        center.y + orbitRadius * (float) Math.sin(startPhase));
-                Bullet b = mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(),
-                        group.getProjectileGroupId(), p.getProjectileId(), spawnPos, startPhase,
-                        p.getSize(), 0f, p.getRange(), p.getDamage(), true, p.getFlags(),
-                        (short) orbitRadius, effectiveFreq, this.getId());
-                if (b != null) {
-                    b.setupOrbital(center.x, center.y, orbitRadius, startPhase);
-                    if (p.getEffects() != null) b.setEffects(p.getEffects());
+            // Apply spawn offset (rotated by firing angle)
+            Vector2f projSource = source.clone();
+            if (p.getSpawnOffsetX() != 0 || p.getSpawnOffsetY() != 0) {
+                float cos = (float) Math.cos(-baseAngle);
+                float sin = (float) Math.sin(-baseAngle);
+                float rotX = p.getSpawnOffsetX() * cos - p.getSpawnOffsetY() * sin;
+                float rotY = p.getSpawnOffsetX() * sin + p.getSpawnOffsetY() * cos;
+                projSource.x += rotX;
+                projSource.y += rotY;
+            }
+
+            // Wrap spawn logic for potential delay
+            final float finalAngle = angle;
+            final int projIndex = i;
+            final Vector2f finalSource = projSource;
+
+            Runnable spawnAction = () -> {
+                boolean isOrbital = p.hasFlag(ProjectileFlag.ORBITAL.flagId);
+                // Speed stacking: fire multiple bullets at same angle with different speeds
+                for (int s = 0; s < speedCount; s++) {
+                    float speedMult = speedCount > 1
+                            ? minSpeedMult + (maxSpeedMult - minSpeedMult) * ((float) s / (speedCount - 1))
+                            : 1.0f;
+
+                    if (isOrbital) {
+                        float orbitRadius = Math.abs(p.getAmplitude());
+                        short effectiveFreq = (short) (p.getAmplitude() < 0 ? -p.getFrequency() : p.getFrequency());
+                        float startPhase = (float) (projIndex * 2 * Math.PI / projCount);
+                        Vector2f center = Enemy.this.getPos().clone(Enemy.this.getSize() / 2, Enemy.this.getSize() / 2);
+                        Vector2f orbSpawnPos = new Vector2f(
+                                center.x + orbitRadius * (float) Math.cos(startPhase),
+                                center.y + orbitRadius * (float) Math.sin(startPhase));
+                        Bullet b = mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(),
+                                group.getProjectileGroupId(), p.getProjectileId(), orbSpawnPos, startPhase,
+                                p.getSize(), 0f, p.getRange(), p.getDamage(), true, p.getFlags(),
+                                (short) orbitRadius, effectiveFreq, Enemy.this.getId());
+                        if (b != null) {
+                            b.setupOrbital(center.x, center.y, orbitRadius, startPhase);
+                            if (p.getEffects() != null) b.setEffects(p.getEffects());
+                        }
+                    } else {
+                        float mag = p.getMagnitude() * speedMult;
+                        Bullet b = mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(),
+                                group.getProjectileGroupId(), p.getProjectileId(), finalSource.clone(), finalAngle,
+                                p.getSize(), mag, p.getRange(), p.getDamage(), true, p.getFlags(),
+                                p.getAmplitude(), p.getFrequency(), Enemy.this.getId());
+                        if (b != null && p.getEffects() != null) b.setEffects(p.getEffects());
+                    }
                 }
+            };
+
+            // Apply spawn delay if configured
+            if (p.getSpawnDelayMs() > 0) {
+                WorkerThread.doAsync(() -> {
+                    try {
+                        Thread.sleep(p.getSpawnDelayMs());
+                        spawnAction.run();
+                    } catch (Exception e) {
+                        Enemy.log.error("Failed delayed projectile spawn. Reason: {}", e);
+                    }
+                });
             } else {
-                Bullet b = mgr.addProjectile(targetRealm.getRealmId(), 0l, player.getId(),
-                        group.getProjectileGroupId(), p.getProjectileId(), source.clone(), angle,
-                        p.getSize(), p.getMagnitude(), p.getRange(), p.getDamage(), true, p.getFlags(),
-                        p.getAmplitude(), p.getFrequency(), this.getId());
-                if (b != null && p.getEffects() != null) b.setEffects(p.getEffects());
+                spawnAction.run();
             }
         }
     }
@@ -699,6 +753,7 @@ public class Enemy extends Entity {
             this.phaseTransitionUntil = System.currentTimeMillis() + PHASE_TRANSITION_DURATION_MS;
             this.addEffect(StatusEffectType.INVINCIBLE, PHASE_TRANSITION_DURATION_MS);
             this.attackCooldowns = null; // reset attack timers for new phase
+            this.attackAngleAccumulators = null; // reset spiral accumulators for new phase
         }
         if (phase != null) {
             this.lastPhaseName = phase.getName();

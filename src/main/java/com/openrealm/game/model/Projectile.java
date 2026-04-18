@@ -25,6 +25,13 @@ public class Projectile {
     private short amplitude;
     private short frequency;
 
+    // Spawn position offset relative to enemy center (rotated by firing angle)
+    private float spawnOffsetX;
+    private float spawnOffsetY;
+
+    // Delay in ms before this projectile spawns within its group (stagger effect)
+    private int spawnDelayMs;
+
     /**
      * Projectile behavior flags — control HOW the projectile moves/behaves.
      * Values are {@link ProjectileFlag} IDs: PLAYER_PROJECTILE(10), PARAMETRIC(12),
