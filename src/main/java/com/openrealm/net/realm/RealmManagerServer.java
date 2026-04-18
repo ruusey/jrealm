@@ -645,20 +645,7 @@ public class RealmManagerServer implements Runnable {
 							// causes the other player to unload entities still within their
 							// own viewport (causing flicker / disappearing entities).
 							final LoadPacket loadPacket = realm.getLoadPacketCircularFast(playerCenter, viewportRadius);
-							if (loadPacket != null) {
-								log.debug("[LOAD-DEBUG] player={} loadPacket: players={} enemies={} portals={} bullets={}",
-									player.getValue().getName(),
-									loadPacket.getPlayers() != null ? loadPacket.getPlayers().length : 0,
-									loadPacket.getEnemies() != null ? loadPacket.getEnemies().length : 0,
-									loadPacket.getPortals() != null ? loadPacket.getPortals().length : 0,
-									loadPacket.getBullets() != null ? loadPacket.getBullets().length : 0);
-							}
 							if (this.playerLoadState.get(player.getKey()) == null) {
-								log.info("[LOAD-SEND] FULL load to player={}: players={} enemies={} portals={}",
-									player.getValue().getName(),
-									loadPacket != null && loadPacket.getPlayers() != null ? loadPacket.getPlayers().length : 0,
-									loadPacket != null && loadPacket.getEnemies() != null ? loadPacket.getEnemies().length : 0,
-									loadPacket != null && loadPacket.getPortals() != null ? loadPacket.getPortals().length : 0);
 								this.playerLoadState.put(player.getKey(), loadPacket);
 								this.enqueueServerPacket(player.getValue(), loadPacket);
 							} else {
@@ -667,11 +654,6 @@ public class RealmManagerServer implements Runnable {
 									final LoadPacket toSend = oldLoad.combine(loadPacket);
 									this.playerLoadState.put(player.getKey(), loadPacket);
 									if (!toSend.isEmpty()) {
-										log.info("[LOAD-SEND] DELTA to player={}: players={} enemies={} portals={}",
-											player.getValue().getName(),
-											toSend.getPlayers() != null ? toSend.getPlayers().length : 0,
-											toSend.getEnemies() != null ? toSend.getEnemies().length : 0,
-											toSend.getPortals() != null ? toSend.getPortals().length : 0);
 										this.enqueueServerPacket(player.getValue(), toSend);
 									}
 									final UnloadPacket unloadDelta = oldLoad.difference(loadPacket);
