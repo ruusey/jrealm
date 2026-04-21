@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import com.openrealm.game.contants.EntityType;
 import com.openrealm.game.entity.Bullet;
 import com.openrealm.game.entity.Enemy;
+import com.openrealm.game.entity.Entity;
 import com.openrealm.game.entity.GameObject;
 import com.openrealm.game.entity.Player;
 import com.openrealm.net.Streamable;
@@ -36,6 +37,11 @@ public class NetObjectMovement extends SerializableFieldType<NetObjectMovement> 
     private float velX;
 	@SerializableField(order = 5, type = SerializableFloat.class)
     private float velY;
+	@SerializableField(order = 6, type = SerializableByte.class)
+    private byte flags;
+
+    /** Flag bit: entity is currently in an attack/shoot animation. */
+    private static final byte FLAG_ATTACKING = 0x01;
 
     public NetObjectMovement(float posX, float posY) {
         this.posX = posX;
@@ -58,6 +64,14 @@ public class NetObjectMovement extends SerializableFieldType<NetObjectMovement> 
 
         this.velX = Math.round(obj.getDx() * 8f) / 8f;  // 0.125px/tick velocity precision
         this.velY = Math.round(obj.getDy() * 8f) / 8f;
+
+        // Pack boolean flags into a single byte
+        this.flags = 0;
+        if (obj instanceof Entity && ((Entity) obj).isAttacking()) this.flags |= FLAG_ATTACKING;
+    }
+
+    public boolean isAttackingFlag() {
+        return (this.flags & FLAG_ATTACKING) != 0;
     }
 
     public EntityType getTargetEntityType() {
@@ -68,10 +82,10 @@ public class NetObjectMovement extends SerializableFieldType<NetObjectMovement> 
     public boolean equals(NetObjectMovement other) {
         return this.entityId == other.getEntityId() && this.entityType == other.getEntityType()
                 && this.posX == other.getPosX() && this.posY == other.getPosY() && this.velX == other.getVelX()
-                && this.getVelY() == other.getVelY();
+                && this.getVelY() == other.getVelY() && this.flags == other.getFlags();
     }
 
-    /** Hand-coded write: 25 bytes (8+1+4+4+4+4), bypasses reflection */
+    /** Hand-coded write: 26 bytes (8+1+4+4+4+4+1), bypasses reflection */
     @Override
     public int write(NetObjectMovement value, DataOutputStream stream) throws Exception {
         final NetObjectMovement v = (value == null) ? new NetObjectMovement() : value;
@@ -81,10 +95,11 @@ public class NetObjectMovement extends SerializableFieldType<NetObjectMovement> 
         stream.writeFloat(v.posY);
         stream.writeFloat(v.velX);
         stream.writeFloat(v.velY);
-        return 25;
+        stream.writeByte(v.flags);
+        return 26;
     }
 
-    /** Hand-coded read: 25 bytes, bypasses reflection */
+    /** Hand-coded read: 26 bytes, bypasses reflection */
     @Override
     public NetObjectMovement read(DataInputStream stream) throws Exception {
         final NetObjectMovement m = new NetObjectMovement();
@@ -94,6 +109,7 @@ public class NetObjectMovement extends SerializableFieldType<NetObjectMovement> 
         m.posY = stream.readFloat();
         m.velX = stream.readFloat();
         m.velY = stream.readFloat();
+        m.flags = stream.readByte();
         return m;
     }
 }

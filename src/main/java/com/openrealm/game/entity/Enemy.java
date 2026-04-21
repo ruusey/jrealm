@@ -36,6 +36,9 @@ import lombok.extern.slf4j.Slf4j;
 public class Enemy extends Entity {
     private static final int IDLE_FRAMES = 10;
     private static final float CHASE_SPEED = 1.4f;
+    /** Hard cap on any enemy movement speed (tiles/sec). Prevents charge/enrage
+     *  phases from exceeding player run speed at moderate SPD stats. */
+    private static final float MAX_ENEMY_SPEED = 5.0f;
     protected EnemyModel model;
     protected int chaseRange;
     protected int attackRange;
@@ -149,7 +152,7 @@ public class Enemy extends Entity {
             speed = (this.model.getMaxSpeed() > 0) ? this.model.getMaxSpeed() : CHASE_SPEED;
         }
         if (this.hasEffect(StatusEffectType.SLOWED)) speed *= 0.5f;
-        return speed;
+        return Math.min(speed, MAX_ENEMY_SPEED);
     }
 
     // ========== MOVEMENT PATTERNS ==========
@@ -281,7 +284,7 @@ public class Enemy extends Entity {
         }
 
         if (this.charging) {
-            setDirectionToward(player.pos, speed * 2f);
+            setDirectionToward(player.pos, Math.min(speed * 1.3f, MAX_ENEMY_SPEED));
             if (dist < chargeDistMin) {
                 this.charging = false;
                 this.chargePauseUntil = now + pauseMs;

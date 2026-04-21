@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Bandwidth-efficient movement packet using 2-byte short entity IDs and
- * quantized velocity (14 bytes/entity vs 25 bytes in ObjectMovePacket).
+ * quantized velocity (15 bytes/entity vs 26 bytes in ObjectMovePacket).
  * <p>
  * Clients resolve short IDs to long IDs using the mapping established
  * in LoadPacket (NetPlayer.shortId / NetEnemy.shortId).

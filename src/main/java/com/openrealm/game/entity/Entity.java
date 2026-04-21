@@ -32,6 +32,10 @@ public abstract class Entity extends GameObject {
     protected double attacktime;
     protected boolean canAttack = true;
     protected boolean attacking = false;
+    /** Epoch millis until which the entity is considered "attacking" for animation. */
+    protected long attackingUntil = 0;
+    /** Duration in ms that the attacking flag stays true after a shot. */
+    private static final long ATTACK_ANIM_DURATION_MS = 350;
     protected float aimX = 0;
     protected float aimY = 0;
 
@@ -142,6 +146,28 @@ public abstract class Entity extends GameObject {
         if ((this.isUp()) || (this.isLeft()))
             return 1;
         return -1;
+    }
+
+    /**
+     * Mark this entity as attacking for ATTACK_ANIM_DURATION_MS.
+     * Used by the server when a player shoots to broadcast the attack
+     * animation state to other clients via ObjectMovePacket.
+     */
+    public void triggerAttackAnimation() {
+        this.attackingUntil = System.currentTimeMillis() + ATTACK_ANIM_DURATION_MS;
+        this.attacking = true;
+    }
+
+    /**
+     * Override Lombok's isAttacking() — also checks the timer-based flag
+     * set by triggerAttackAnimation() for network-broadcast attack state.
+     */
+    public boolean isAttacking() {
+        if (this.attackingUntil > 0 && System.currentTimeMillis() > this.attackingUntil) {
+            this.attacking = false;
+            this.attackingUntil = 0;
+        }
+        return this.attacking;
     }
 
     public void update(double time) {

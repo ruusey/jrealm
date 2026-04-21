@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import com.openrealm.net.Streamable;
 import com.openrealm.net.core.SerializableField;
 import com.openrealm.net.core.SerializableFieldType;
+import com.openrealm.net.core.nettypes.SerializableByte;
 import com.openrealm.net.core.nettypes.SerializableFloat;
 import com.openrealm.net.core.nettypes.SerializableShort;
 
@@ -17,13 +18,12 @@ import lombok.NoArgsConstructor;
  * Compact movement entry using a 2-byte short entity ID instead of 8-byte long.
  * Used in ObjectMovePacket when short IDs have been assigned via ShortIdAllocator.
  * <p>
- * Wire format: 12 bytes per entity (was 25 with NetObjectMovement):
- *   shortEntityId (2) + posX (4) + posY (4) + velX (2, quantized) + velY (2, quantized)
- *                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ * Wire format: 15 bytes per entity (was 26 with NetObjectMovement):
+ *   shortEntityId (2) + posX (4) + posY (4) + velX (2, quantized) + velY (2, quantized) + flags (1)
  * Velocity is encoded as fixed-point: value * 128, giving ~0.008 precision per unit.
  * This is more than sufficient for entity speeds in the range 0–3.5.
  * <p>
- * Compared to NetObjectMovement (25 bytes): 52% size reduction per entity.
+ * Compared to NetObjectMovement (26 bytes): 42% size reduction per entity.
  */
 @Data
 @AllArgsConstructor
@@ -41,6 +41,8 @@ public class NetCompactMovement extends SerializableFieldType<NetCompactMovement
     private short velXFixed;
     @SerializableField(order = 4, type = SerializableShort.class)
     private short velYFixed;
+    @SerializableField(order = 5, type = SerializableByte.class)
+    private byte flags;
 
     private static final float VEL_SCALE = 128f;
 
@@ -53,6 +55,7 @@ public class NetCompactMovement extends SerializableFieldType<NetCompactMovement
         this.posY = full.getPosY();
         this.velXFixed = (short) Math.round(full.getVelX() * VEL_SCALE);
         this.velYFixed = (short) Math.round(full.getVelY() * VEL_SCALE);
+        this.flags = full.getFlags();
     }
 
     public float getVelX() {
@@ -63,7 +66,7 @@ public class NetCompactMovement extends SerializableFieldType<NetCompactMovement
         return velYFixed / VEL_SCALE;
     }
 
-    /** Hand-coded write: 14 bytes (2+4+4+2+2) */
+    /** Hand-coded write: 15 bytes (2+4+4+2+2+1) */
     @Override
     public int write(NetCompactMovement value, DataOutputStream stream) throws Exception {
         final NetCompactMovement v = (value == null) ? new NetCompactMovement() : value;
@@ -72,10 +75,11 @@ public class NetCompactMovement extends SerializableFieldType<NetCompactMovement
         stream.writeFloat(v.posY);
         stream.writeShort(v.velXFixed);
         stream.writeShort(v.velYFixed);
-        return 14;
+        stream.writeByte(v.flags);
+        return 15;
     }
 
-    /** Hand-coded read: 14 bytes */
+    /** Hand-coded read: 15 bytes */
     @Override
     public NetCompactMovement read(DataInputStream stream) throws Exception {
         final NetCompactMovement m = new NetCompactMovement();
@@ -84,6 +88,7 @@ public class NetCompactMovement extends SerializableFieldType<NetCompactMovement
         m.posY = stream.readFloat();
         m.velXFixed = stream.readShort();
         m.velYFixed = stream.readShort();
+        m.flags = stream.readByte();
         return m;
     }
 }

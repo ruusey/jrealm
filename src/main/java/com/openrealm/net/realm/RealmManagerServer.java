@@ -2130,18 +2130,23 @@ public class RealmManagerServer implements Runnable {
 						boostedDrops.size(), enemy.getEnemyId(), diff);
 			}
 
-			// Portal drops: use dungeon graph if this realm has a nodeId
+			// Portal drops: use dungeon graph if this realm has a nodeId.
+			// Overworld/shared realms bypass graph filtering so that each
+			// enemy's loot table directly controls which dungeon portals drop.
 			final String currentNodeId = targetRealm.getNodeId();
 			final DungeonGraphNode currentNode = (currentNodeId != null && GameDataManager.DUNGEON_GRAPH != null)
 					? GameDataManager.DUNGEON_GRAPH.get(currentNodeId) : null;
+			final boolean useGraphDrops = currentNode != null
+					&& currentNode.getPortalDropNodeMap() != null
+					&& !currentNode.getPortalDropNodeMap().isEmpty()
+					&& !targetRealm.isOverworld();
 
-			log.info("[SERVER] enemyDeath: enemy={} nodeId={} currentNode={} portalDrops={}",
+			log.info("[SERVER] enemyDeath: enemy={} nodeId={} currentNode={} portalDrops={} useGraphDrops={}",
 					enemy.getEnemyId(), currentNodeId, currentNode != null ? currentNode.getDisplayName() : "null",
-					lootTable.getPortalDrops());
+					lootTable.getPortalDrops(), useGraphDrops);
 
-			if (currentNode != null && currentNode.getPortalDropNodeMap() != null
-					&& !currentNode.getPortalDropNodeMap().isEmpty()) {
-				// Graph-based portal drops: drop portals to child nodes
+			if (useGraphDrops) {
+				// Graph-based portal drops: drop portals to child nodes (dungeons only)
 				if (lootTable.getPortalDrops() != null) {
 					final List<Integer> rolledPortals = lootTable.getPortalDrop();
 					log.info("[SERVER] enemyDeath: rolled portals={} from drops={}", rolledPortals, lootTable.getPortalDrops());
@@ -2181,7 +2186,8 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 			} else {
-				// Fallback portal drops for realms without graph nodes
+				// Direct portal drops for overworld and non-graph realms.
+				// Each enemy's loot table controls exactly what portals can drop.
 				if (lootTable.getPortalDrops() != null) {
 					for (int portalId : lootTable.getPortalDrop()) {
 						PortalModel portalModel = GameDataManager.PORTALS.get(portalId);
@@ -2191,6 +2197,8 @@ public class RealmManagerServer implements Runnable {
 								(short) portalModel.getPortalId(), enemy.getPos().withNoise(64, 64));
 						portal.linkPortal(targetRealm, null);
 						targetRealm.addPortal(portal);
+						log.info("[SERVER] enemyDeath: DIRECT portal {} spawned at ({}, {})",
+								portalId, portal.getPos().x, portal.getPos().y);
 					}
 				}
 			}

@@ -476,6 +476,10 @@ public class ServerGameLogic {
 			canShoot = true;
 		}
 		if (canShoot) {
+			// Trigger attack animation so other clients see the firing pose
+			player.triggerAttackAnimation();
+			player.setAimX(shootPacket.getDestX());
+			player.setAimY(shootPacket.getDestY());
 			final Vector2f dest = new Vector2f(shootPacket.getDestX(), shootPacket.getDestY());
 			final Vector2f source = player.getCenteredPosition();
 			final int weaponPgId = player.getWeaponId();
