@@ -239,11 +239,21 @@ public class DungeonGenerator {
 			previousRoom = room;
 		}
 
+		// Add short dead-end side branches off corridors for exploration variety.
+		// Scale count with room count: roughly 1 branch per 4 rooms.
+		int branchCount = Math.max(2, numRooms / 4);
+		this.addSideBranches(baseLayer, branchCount);
+
 		// Post-processing: line all walkable areas with wall tiles.
 		// Run twice — the second pass catches diagonal gaps at corridor intersections
 		// where the first pass left a void tile surrounded by walls on two sides
 		// but not directly adjacent to a floor tile.
 		this.lineWithWalls(baseLayer, collisionLayer);
+		this.lineWithWalls(baseLayer, collisionLayer);
+
+		// Roughen straight wall edges for a more natural, organic look.
+		this.roughenWalls(baseLayer, collisionLayer);
+		// Re-line walls after roughening to fill any new gaps
 		this.lineWithWalls(baseLayer, collisionLayer);
 
 		// Carve boss room entrance AFTER wall lining so the opening isn't blocked
@@ -379,6 +389,12 @@ public class DungeonGenerator {
 				break;
 			case "WINDING":
 				this.connectWinding(targetLayer, srcX, srcY, destX, destY);
+				break;
+			case "CURVED":
+				this.connectCurved(targetLayer, srcX, srcY, destX, destY);
+				break;
+			case "S_BEND":
+				this.connectSBend(targetLayer, srcX, srcY, destX, destY);
 				break;
 			case "L_SHAPED":
 			default:
@@ -563,6 +579,12 @@ public class DungeonGenerator {
 			case L_SHAPE:
 				this.generateLShapeRoom(baseLayer, roomWidth, roomHeight);
 				break;
+			case TRIANGLE:
+				this.generateTriangleRoom(baseLayer, roomWidth, roomHeight);
+				break;
+			case IRREGULAR:
+				this.generateIrregularRoom(baseLayer, roomWidth, roomHeight);
+				break;
 			default:
 				this.generateRectangleRoom(baseLayer, roomWidth, roomHeight);
 				break;
@@ -645,6 +667,307 @@ public class DungeonGenerator {
 					baseLayer.setTileAt(i, j, (short) model.getTileId(), model.getData());
 				}
 			}
+		}
+	}
+
+	/**
+	 * Triangle room pointing in a random cardinal direction.
+	 * The triangle fills roughly the bounding box by linearly narrowing from
+	 * base to apex.
+	 */
+	private void generateTriangleRoom(TileMap baseLayer, int roomWidth, int roomHeight) {
+		// 0=up, 1=down, 2=left, 3=right
+		int dir = Realm.RANDOM.nextInt(4);
+		for (int i = 0; i < roomHeight; i++) {
+			for (int j = 0; j < roomWidth; j++) {
+				boolean inShape;
+				switch (dir) {
+					case 0: { // points up — wide at bottom, narrow at top
+						float progress = (float) i / roomHeight;
+						float halfW = (roomWidth / 2f) * progress;
+						inShape = Math.abs(j - roomWidth / 2f) <= halfW;
+						break;
+					}
+					case 1: { // points down — wide at top, narrow at bottom
+						float progress = 1f - (float) i / roomHeight;
+						float halfW = (roomWidth / 2f) * progress;
+						inShape = Math.abs(j - roomWidth / 2f) <= halfW;
+						break;
+					}
+					case 2: { // points left — wide at right, narrow at left
+						float progress = (float) j / roomWidth;
+						float halfH = (roomHeight / 2f) * progress;
+						inShape = Math.abs(i - roomHeight / 2f) <= halfH;
+						break;
+					}
+					default: { // points right — wide at left, narrow at right
+						float progress = 1f - (float) j / roomWidth;
+						float halfH = (roomHeight / 2f) * progress;
+						inShape = Math.abs(i - roomHeight / 2f) <= halfH;
+						break;
+					}
+				}
+				if (inShape) {
+					TileModel model = this.getRandomFloorTile();
+					baseLayer.setTileAt(i, j, (short) model.getTileId(), model.getData());
+				}
+			}
+		}
+	}
+
+	/**
+	 * Organic cave-like room generated via cellular automata.
+	 * Seeds ~45% of tiles as floor, then runs 4 iterations of the
+	 * B5678/S45678 rule (a tile becomes floor if 5+ of its 8 neighbors
+	 * are floor). Produces natural, blobby cavern shapes.
+	 */
+	private void generateIrregularRoom(TileMap baseLayer, int roomWidth, int roomHeight) {
+		// Seed grid: ~45% floor
+		boolean[][] alive = new boolean[roomHeight][roomWidth];
+		for (int i = 0; i < roomHeight; i++) {
+			for (int j = 0; j < roomWidth; j++) {
+				// Edges always wall to keep the room bounded
+				if (i == 0 || i == roomHeight - 1 || j == 0 || j == roomWidth - 1) {
+					alive[i][j] = false;
+				} else {
+					alive[i][j] = Realm.RANDOM.nextFloat() < 0.45f;
+				}
+			}
+		}
+
+		// 4 iterations of cellular automata
+		for (int iter = 0; iter < 4; iter++) {
+			boolean[][] next = new boolean[roomHeight][roomWidth];
+			for (int i = 1; i < roomHeight - 1; i++) {
+				for (int j = 1; j < roomWidth - 1; j++) {
+					int neighbors = 0;
+					for (int di = -1; di <= 1; di++) {
+						for (int dj = -1; dj <= 1; dj++) {
+							if (di == 0 && dj == 0) continue;
+							if (alive[i + di][j + dj]) neighbors++;
+						}
+					}
+					// Birth if 5+ neighbors, survive if 4+ neighbors
+					next[i][j] = neighbors >= 5 || (alive[i][j] && neighbors >= 4);
+				}
+			}
+			alive = next;
+		}
+
+		// Ensure center area is always open (so the room is usable)
+		int cx = roomWidth / 2, cy = roomHeight / 2;
+		int clearRadius = Math.min(roomWidth, roomHeight) / 4;
+		for (int i = 0; i < roomHeight; i++) {
+			for (int j = 0; j < roomWidth; j++) {
+				int dx = j - cx, dy = i - cy;
+				if (dx * dx + dy * dy <= clearRadius * clearRadius) {
+					alive[i][j] = true;
+				}
+			}
+		}
+
+		// Stamp to tile map
+		for (int i = 0; i < roomHeight; i++) {
+			for (int j = 0; j < roomWidth; j++) {
+				if (alive[i][j]) {
+					TileModel model = this.getRandomFloorTile();
+					baseLayer.setTileAt(i, j, (short) model.getTileId(), model.getData());
+				}
+			}
+		}
+	}
+
+	// ========== NEW HALLWAY STYLES ==========
+
+	/**
+	 * Curved corridor using a quadratic Bézier-like path.
+	 * A random control point is offset perpendicular to the straight line
+	 * between src and dest, producing a smooth arc.
+	 */
+	private void connectCurved(TileMap targetLayer, int srcX, int srcY, int destX, int destY) {
+		// Control point: midpoint offset perpendicular to src→dest line
+		int midX = (srcX + destX) / 2;
+		int midY = (srcY + destY) / 2;
+		int dx = destX - srcX;
+		int dy = destY - srcY;
+		float dist = (float) Math.sqrt(dx * dx + dy * dy);
+		// Perpendicular offset: 20-40% of the distance
+		float offset = dist * (0.2f + Realm.RANDOM.nextFloat() * 0.2f);
+		if (Realm.RANDOM.nextBoolean()) offset = -offset;
+		// Perpendicular direction: rotate (dx,dy) by 90 degrees and normalize
+		float perpX = -dy / dist;
+		float perpY = dx / dist;
+		int ctrlX = midX + Math.round(perpX * offset);
+		int ctrlY = midY + Math.round(perpY * offset);
+
+		// Walk the Bézier curve in small steps
+		int steps = (int) (dist * 1.5f);
+		steps = Math.max(steps, 20);
+		int hw = 1;
+		for (int s = 0; s <= steps; s++) {
+			float t = (float) s / steps;
+			float u = 1f - t;
+			// Quadratic Bézier: B(t) = (1-t)²·P0 + 2(1-t)t·P1 + t²·P2
+			float bx = u * u * srcX + 2 * u * t * ctrlX + t * t * destX;
+			float by = u * u * srcY + 2 * u * t * ctrlY + t * t * destY;
+			int px = Math.round(bx);
+			int py = Math.round(by);
+			for (int dr = -hw; dr <= hw; dr++) {
+				for (int dc = -hw; dc <= hw; dc++) {
+					this.safeSetFloorTile(targetLayer, py + dr, px + dc);
+				}
+			}
+		}
+	}
+
+	/**
+	 * S-bend corridor: two opposing curves creating an S-shaped path.
+	 * Splits the journey into two halves, each curving in opposite directions.
+	 */
+	private void connectSBend(TileMap targetLayer, int srcX, int srcY, int destX, int destY) {
+		int midX = (srcX + destX) / 2;
+		int midY = (srcY + destY) / 2;
+		// Add slight random offset to the midpoint
+		midX += Realm.RANDOM.nextInt(5) - 2;
+		midY += Realm.RANDOM.nextInt(5) - 2;
+		midX = Math.max(2, Math.min(midX, this.width - 3));
+		midY = Math.max(2, Math.min(midY, this.height - 3));
+
+		// First half curves one way, second half curves the other
+		this.connectCurved(targetLayer, srcX, srcY, midX, midY);
+		this.connectCurved(targetLayer, midX, midY, destX, destY);
+	}
+
+	// ========== POST-PROCESSING ==========
+
+	/**
+	 * Roughen straight wall edges to give them a more natural, eroded look.
+	 * For each wall tile that has floor on one side and wall on the opposite
+	 * side (straight wall segment), there's a chance to either remove it
+	 * (carve into the wall) or add an extra wall tile on the floor side.
+	 */
+	void roughenWalls(TileMap baseLayer, TileMap collisionLayer) {
+		Tile[][] base = baseLayer.getBlocks();
+		Tile[][] coll = collisionLayer.getBlocks();
+		float carveChance = 0.12f;
+
+		// Collect candidate positions first to avoid modifying while iterating
+		java.util.List<int[]> carves = new java.util.ArrayList<>();
+		for (int r = 2; r < this.height - 2; r++) {
+			for (int c = 2; c < this.width - 2; c++) {
+				if (coll[r][c] == null || coll[r][c].isVoid()) continue;
+				// Count adjacent floor tiles
+				int floorNeighbors = 0;
+				for (int dr = -1; dr <= 1; dr++) {
+					for (int dc = -1; dc <= 1; dc++) {
+						if (dr == 0 && dc == 0) continue;
+						if (base[r + dr][c + dc] != null && !base[r + dr][c + dc].isVoid()
+								&& (coll[r + dr][c + dc] == null || coll[r + dr][c + dc].isVoid())) {
+							floorNeighbors++;
+						}
+					}
+				}
+				// Only roughen wall tiles with exactly 1-2 floor neighbors (edge walls)
+				if (floorNeighbors >= 1 && floorNeighbors <= 2 && Realm.RANDOM.nextFloat() < carveChance) {
+					carves.add(new int[]{ r, c });
+				}
+			}
+		}
+
+		// Apply carves: convert wall to floor
+		TileModel wallTile = this.getWallTile();
+		for (int[] pos : carves) {
+			int r = pos[0], c = pos[1];
+			coll[r][c] = null; // Remove wall
+			baseLayer.setTileAt(r, c, this.getRandomFloorTile()); // Add floor
+			// Re-add walls around the new floor tile
+			for (int dr = -1; dr <= 1; dr++) {
+				for (int dc = -1; dc <= 1; dc++) {
+					int nr = r + dr, nc = c + dc;
+					if (nr < 0 || nr >= this.height || nc < 0 || nc >= this.width) continue;
+					if ((base[nr][nc] == null || base[nr][nc].isVoid())
+							&& (coll[nr][nc] == null || coll[nr][nc].isVoid())) {
+						if (wallTile != null) collisionLayer.setTileAt(nr, nc, wallTile);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Add short dead-end side branches off the main corridor path to give
+	 * the dungeon a more exploratory feel. Picks random floor tiles along
+	 * corridor-like areas (narrow passages) and extends a short tunnel.
+	 */
+	void addSideBranches(TileMap baseLayer, int count) {
+		Tile[][] base = baseLayer.getBlocks();
+		int added = 0;
+		int attempts = 0;
+		while (added < count && attempts < count * 10) {
+			attempts++;
+			int r = 3 + Realm.RANDOM.nextInt(Math.max(1, this.height - 6));
+			int c = 3 + Realm.RANDOM.nextInt(Math.max(1, this.width - 6));
+			if (base[r][c] == null || base[r][c].isVoid()) continue;
+
+			// Check this is a corridor-like tile (not inside a room)
+			// A corridor tile has floor neighbors mostly in 2 opposite directions
+			int floorCount = 0;
+			for (int dr = -1; dr <= 1; dr++) {
+				for (int dc = -1; dc <= 1; dc++) {
+					if (dr == 0 && dc == 0) continue;
+					if (r + dr >= 0 && r + dr < this.height && c + dc >= 0 && c + dc < this.width
+							&& base[r + dr][c + dc] != null && !base[r + dr][c + dc].isVoid()) {
+						floorCount++;
+					}
+				}
+			}
+			// Corridors have ~3-5 floor neighbors; rooms have 7-8
+			if (floorCount < 3 || floorCount > 5) continue;
+
+			// Pick a direction that's currently void (dig into wall)
+			int[][] dirs = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+			int[] dir = dirs[Realm.RANDOM.nextInt(4)];
+			int checkR = r + dir[0] * 2;
+			int checkC = c + dir[1] * 2;
+			if (checkR < 2 || checkR >= this.height - 2 || checkC < 2 || checkC >= this.width - 2) continue;
+			if (base[checkR][checkC] != null && !base[checkR][checkC].isVoid()) continue;
+
+			// Dig a short branch (3-6 tiles)
+			int branchLen = 3 + Realm.RANDOM.nextInt(4);
+			boolean valid = true;
+			for (int step = 1; step <= branchLen; step++) {
+				int br = r + dir[0] * step;
+				int bc = c + dir[1] * step;
+				if (br < 2 || br >= this.height - 2 || bc < 2 || bc >= this.width - 2) {
+					valid = false;
+					break;
+				}
+			}
+			if (!valid) continue;
+
+			// Carve the branch
+			int hw = Realm.RANDOM.nextBoolean() ? 1 : 0; // Vary width
+			for (int step = 1; step <= branchLen; step++) {
+				int br = r + dir[0] * step;
+				int bc = c + dir[1] * step;
+				for (int d = -hw; d <= hw; d++) {
+					if (dir[0] == 0) {
+						this.safeSetFloorTile(baseLayer, br + d, bc);
+					} else {
+						this.safeSetFloorTile(baseLayer, br, bc + d);
+					}
+				}
+			}
+			// Small room at end of branch (2x2 to 3x3)
+			int endR = r + dir[0] * branchLen;
+			int endC = c + dir[1] * branchLen;
+			int endSize = 1 + Realm.RANDOM.nextInt(2);
+			for (int dr = -endSize; dr <= endSize; dr++) {
+				for (int dc = -endSize; dc <= endSize; dc++) {
+					this.safeSetFloorTile(baseLayer, endR + dr, endC + dc);
+				}
+			}
+			added++;
 		}
 	}
 }
