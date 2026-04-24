@@ -13,7 +13,9 @@ public enum ProjectileFlag {
     PARAMETRIC((short) 12),
     INVERTED_PARAMETRIC((short) 13),
     ORBITAL((short) 20),
-    ARMOR_PIERCING((short) 23);
+    ARMOR_PIERCING((short) 23),
+    /** Projectile passes through walls and collision tiles without being destroyed. */
+    PASS_THROUGH_TERRAIN((short) 24);
 
     public static final Map<Short, ProjectileFlag> map = new HashMap<>();
     static {

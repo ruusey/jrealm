@@ -1767,6 +1767,7 @@ public class RealmManagerServer implements Runnable {
 				toRemove.add(b);
 				continue;
 			}
+			if (b.hasFlag(ProjectileFlag.PASS_THROUGH_TERRAIN)) continue;
 			for (final Tile tile : viewportTiles) {
 				if ((tile == null) || tile.isVoid()) {
 					continue;
