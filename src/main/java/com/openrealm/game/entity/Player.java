@@ -65,6 +65,15 @@ public class Player extends Entity {
 	@Builder.Default
 	private transient java.util.Queue<int[]> inputQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
+	// Consumable potion storage (separate from inventory)
+	public static final int MAX_CONSUMABLE_POTIONS = 6;
+	public static final int HP_POTION_ITEM_ID = 296;
+	public static final int MP_POTION_ITEM_ID = 297;
+	@Builder.Default
+	private int hpPotions = 0;
+	@Builder.Default
+	private int mpPotions = 0;
+
 	public Player() {
 		super(0, null, 0);
 	}
@@ -72,7 +81,7 @@ public class Player extends Entity {
 	public Player(GameItem[] inventory, long lastStatsTime, LootContainer currentLootContainer, int classId,
 			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless, boolean bot,
 			String chatRole, int lastInputSeq, int lastProcessedInputSeq, byte currentDirFlags,
-			java.util.Queue<int[]> inputQueue) {
+			java.util.Queue<int[]> inputQueue, int hpPotions, int mpPotions) {
 		super(0, null, 0);
 		this.inventory = inventory;
 		this.lastStatsTime = lastStatsTime;
@@ -89,6 +98,8 @@ public class Player extends Entity {
 		this.lastProcessedInputSeq = lastProcessedInputSeq;
 		this.currentDirFlags = currentDirFlags;
 		this.inputQueue = inputQueue != null ? inputQueue : new java.util.concurrent.ConcurrentLinkedQueue<>();
+		this.hpPotions = hpPotions;
+		this.mpPotions = mpPotions;
 	}
 
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
@@ -122,6 +133,8 @@ public class Player extends Entity {
 		this.stats.setDex(stats.getDex().shortValue());
 		this.stats.setVit(stats.getVit().shortValue());
 		this.stats.setWis(stats.getWis().shortValue());
+		if (stats.getHpPotions() != null) this.hpPotions = stats.getHpPotions();
+		if (stats.getMpPotions() != null) this.mpPotions = stats.getMpPotions();
 	}
 
 	public Set<GameItemRefDto> serializeItems() {
@@ -140,7 +153,7 @@ public class Player extends Entity {
 				.mp(Integer.valueOf((int) this.stats.getMp())).def(Integer.valueOf((int) this.stats.getDef()))
 				.att(Integer.valueOf((int) this.stats.getAtt())).spd(Integer.valueOf((int) this.stats.getSpd()))
 				.dex(Integer.valueOf((int) this.stats.getDex())).vit(Integer.valueOf((int) this.stats.getVit()))
-				.wis(Integer.valueOf((int) this.stats.getWis())).build();
+				.wis(Integer.valueOf((int) this.stats.getWis())).hpPotions(this.hpPotions).mpPotions(this.mpPotions).build();
 	}
 
 	private void resetInventory() {
@@ -267,6 +280,32 @@ public class Player extends Entity {
 
 	public void drinkMp() {
 		this.stats.setMp((short) (this.stats.getMp() + 5));
+	}
+
+	public boolean addHpPotion() {
+		if (this.hpPotions >= MAX_CONSUMABLE_POTIONS) return false;
+		this.hpPotions++;
+		return true;
+	}
+
+	public boolean addMpPotion() {
+		if (this.mpPotions >= MAX_CONSUMABLE_POTIONS) return false;
+		this.mpPotions++;
+		return true;
+	}
+
+	public boolean consumeHpPotion() {
+		if (this.hpPotions <= 0) return false;
+		this.hpPotions--;
+		this.health = Math.min(this.health + 100, this.stats.getHp());
+		return true;
+	}
+
+	public boolean consumeMpPotion() {
+		if (this.mpPotions <= 0) return false;
+		this.mpPotions--;
+		this.mana = Math.min(this.mana + 100, this.stats.getMp());
+		return true;
 	}
 
 	@Override

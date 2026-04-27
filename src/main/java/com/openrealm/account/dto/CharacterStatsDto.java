@@ -33,6 +33,8 @@ public class CharacterStatsDto extends TemporalDto {
     private Integer dex;
     private Integer vit;
     private Integer wis;
+    private Integer hpPotions;
+    private Integer mpPotions;
 
     public static CharacterStatsDto characterDefaults(final Integer characterClass) {
         final CharacterClassModel model = GameDataManager.CHARACTER_CLASSES.get(characterClass);

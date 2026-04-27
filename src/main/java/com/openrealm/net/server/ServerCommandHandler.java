@@ -717,4 +717,5 @@ public class ServerCommandHandler {
             throw new IllegalArgumentException("Usage: /realm {up | down}");
         }
     }
+
 }

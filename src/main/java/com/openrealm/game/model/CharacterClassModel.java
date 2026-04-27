@@ -47,13 +47,15 @@ public class CharacterClassModel {
         int vitRange = (difference.getVit() / expModel.maxLevel()) + 1;
         if (vitRange < 0)
             vitRange = 1;
-        int randomHp = Realm.RANDOM.nextInt(hpRange);
-        int randomMp = Realm.RANDOM.nextInt(mpRange);
-        int randomSpd = Realm.RANDOM.nextInt(spdRange);
-        int randomDex = Realm.RANDOM.nextInt(dexRange);
-        int randomAtt = Realm.RANDOM.nextInt(attRange);
-        int randomWis = Realm.RANDOM.nextInt(wisRange);
-        int randomVit = Realm.RANDOM.nextInt(vitRange);
+        // Guarantee at least 1/3 of each range as a minimum gain per level,
+        // so players never get a "dead" level-up with +0 to important stats.
+        int randomHp = hpRange / 3 + Realm.RANDOM.nextInt(hpRange - hpRange / 3 + 1);
+        int randomMp = mpRange / 3 + Realm.RANDOM.nextInt(mpRange - mpRange / 3 + 1);
+        int randomSpd = Math.max(1, spdRange / 3) + Realm.RANDOM.nextInt(Math.max(1, spdRange - spdRange / 3));
+        int randomDex = Math.max(1, dexRange / 3) + Realm.RANDOM.nextInt(Math.max(1, dexRange - dexRange / 3));
+        int randomAtt = Math.max(1, attRange / 3) + Realm.RANDOM.nextInt(Math.max(1, attRange - attRange / 3));
+        int randomWis = Math.max(1, wisRange / 3) + Realm.RANDOM.nextInt(Math.max(1, wisRange - wisRange / 3));
+        int randomVit = Math.max(1, vitRange / 3) + Realm.RANDOM.nextInt(Math.max(1, vitRange - vitRange / 3));
 
         // Return a random stat increase with the defense always being 0
         return new Stats((short) randomHp, (short) randomMp, (short) 0, (short) randomAtt, (short) randomSpd,

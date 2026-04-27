@@ -7,6 +7,7 @@ import com.openrealm.net.Streamable;
 import com.openrealm.net.core.IOService;
 import com.openrealm.net.core.PacketId;
 import com.openrealm.net.core.SerializableField;
+import com.openrealm.net.core.nettypes.SerializableByte;
 import com.openrealm.net.core.nettypes.SerializableInt;
 import com.openrealm.net.core.nettypes.SerializableLong;
 import com.openrealm.net.core.nettypes.SerializableString;
@@ -44,6 +45,10 @@ public class UpdatePacket extends Packet {
 	private long experience;
 	@SerializableField(order = 6, type = NetGameItem.class, isCollection = true)
 	private NetGameItem[] inventory;
+	@SerializableField(order = 7, type = SerializableByte.class)
+	private byte hpPotions;
+	@SerializableField(order = 8, type = SerializableByte.class)
+	private byte mpPotions;
 
 	public static final NetGameItem[] EMPTY_INVENTORY = new NetGameItem[0];
 
@@ -76,6 +81,8 @@ public class UpdatePacket extends Packet {
 		light.setMana(this.mana);
 		light.setExperience(this.experience);
 		light.setInventory(EMPTY_INVENTORY);
+		light.setHpPotions(this.hpPotions);
+		light.setMpPotions(this.mpPotions);
 		return light;
 	}
 
@@ -106,6 +113,8 @@ public class UpdatePacket extends Packet {
 		updatePacket.setStats(IOService.mapModel(player.getStats(), NetStats.class));
 		updatePacket.setInventory(IOService.mapModel(player.getInventory(), NetGameItem[].class));
 		updatePacket.setExperience(player.getExperience());
+		updatePacket.setHpPotions((byte) player.getHpPotions());
+		updatePacket.setMpPotions((byte) player.getMpPotions());
 		return updatePacket;
 	}
 

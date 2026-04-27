@@ -58,6 +58,7 @@ import com.openrealm.game.math.Rectangle;
 import com.openrealm.game.math.Vector2f;
 import com.openrealm.game.model.EnemyModel;
 import com.openrealm.game.model.TerrainGenerationParameters;
+import com.openrealm.game.model.LootGroupModel;
 import com.openrealm.game.model.LootTableModel;
 import com.openrealm.game.model.PortalModel;
 import com.openrealm.game.model.Projectile;
@@ -2083,6 +2084,26 @@ public class RealmManagerServer implements Runnable {
 
 			// Get a random loot bag drop based on this enemies loot table
 			final List<GameItem> lootToDrop = lootTable.getLootDrop();
+
+			// Guaranteed stat potion drops for dungeon bosses: every dungeon boss
+			// drops exactly 2 stat potions (from the base stat potion pool: DEF,
+			// ATT, DEX, SPD, VIT, WIS — item IDs 0-5). The two potions are rolled
+			// independently so they can be the same type or different types.
+			if (targetRealm.getDungeonBossEnemyId() > 0
+					&& enemy.getEnemyId() == targetRealm.getDungeonBossEnemyId()) {
+				final LootGroupModel statPotionGroup = GameDataManager.LOOT_GROUPS.get(0); // group 0 = base stat potions
+				if (statPotionGroup != null && !statPotionGroup.getPotentialDrops().isEmpty()) {
+					for (int i = 0; i < 2; i++) {
+						final int potionItemId = statPotionGroup.getPotentialDrops()
+								.get(Realm.RANDOM.nextInt(statPotionGroup.getPotentialDrops().size()));
+						final GameItem potion = GameDataManager.GAME_ITEMS.get(potionItemId);
+						if (potion != null) {
+							lootToDrop.add(potion);
+						}
+					}
+					log.info("[SERVER] Dungeon boss {} guaranteed 2 stat potions added to loot", enemy.getEnemyId());
+				}
+			}
 
 			// Difficulty-based loot tier upgrade: higher difficulty zones have a
 			// chance to bump each dropped item up one tier. Items that get upgraded

@@ -25,6 +25,19 @@ public class ServerItemHelper {
 
         final int fromIdx = moveItemPacket.getFromSlotIndex();
         final int targetIdx = moveItemPacket.getTargetSlotIndex();
+
+        // Consume HP/MP potion from potion storage (virtual slots 28/29)
+        if (moveItemPacket.isConsume()) {
+            if (fromIdx == MoveItemPacket.HP_POTION_SLOT) {
+                player.consumeHpPotion();
+                return;
+            }
+            if (fromIdx == MoveItemPacket.MP_POTION_SLOT) {
+                player.consumeMpPotion();
+                return;
+            }
+        }
+
         final boolean fromIsGroundLoot = MoveItemPacket.isGroundLoot(fromIdx);
         final boolean fromIsInventory = MoveItemPacket.isInventory(fromIdx) || MoveItemPacket.isEquipment(fromIdx);
 
@@ -151,6 +164,28 @@ public class ServerItemHelper {
 
             final GameItem lootItem = nearLoot.getItems()[lootIdx];
             if (lootItem == null) return;
+
+            // Intercept consumable HP/MP potions — route to potion storage, not inventory
+            if (lootItem.getItemId() == Player.HP_POTION_ITEM_ID) {
+                if (!player.addHpPotion()) {
+                    ServerItemHelper.log.info("Player {} HP potion storage full (max {})", player.getId(), Player.MAX_CONSUMABLE_POTIONS);
+                    return;
+                }
+                nearLoot.setItem(lootIdx, null);
+                nearLoot.repackItems();
+                nearLoot.setContentsChanged(true);
+                return;
+            }
+            if (lootItem.getItemId() == Player.MP_POTION_ITEM_ID) {
+                if (!player.addMpPotion()) {
+                    ServerItemHelper.log.info("Player {} MP potion storage full (max {})", player.getId(), Player.MAX_CONSUMABLE_POTIONS);
+                    return;
+                }
+                nearLoot.setItem(lootIdx, null);
+                nearLoot.repackItems();
+                nearLoot.setContentsChanged(true);
+                return;
+            }
 
             int emptySlot = player.firstEmptyInvSlot();
             if (emptySlot < 0) {
