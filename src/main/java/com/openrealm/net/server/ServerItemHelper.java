@@ -1,6 +1,7 @@
 package com.openrealm.net.server;
 
 import com.openrealm.game.contants.CharacterClass;
+import com.openrealm.game.data.GameDataManager;
 import com.openrealm.game.contants.LootTier;
 import com.openrealm.game.entity.Player;
 import com.openrealm.game.entity.item.GameItem;
@@ -26,16 +27,31 @@ public class ServerItemHelper {
         final int fromIdx = moveItemPacket.getFromSlotIndex();
         final int targetIdx = moveItemPacket.getTargetSlotIndex();
 
-        // Consume HP/MP potion from potion storage (virtual slots 28/29)
-        if (moveItemPacket.isConsume()) {
-            if (fromIdx == MoveItemPacket.HP_POTION_SLOT) {
-                player.consumeHpPotion();
-                return;
+        // Consume or drop HP/MP potion from potion storage (virtual slots 28/29)
+        if (fromIdx == MoveItemPacket.HP_POTION_SLOT || fromIdx == MoveItemPacket.MP_POTION_SLOT) {
+            final boolean isHp = fromIdx == MoveItemPacket.HP_POTION_SLOT;
+            final int count = isHp ? player.getHpPotions() : player.getMpPotions();
+            if (count <= 0) return;
+
+            if (moveItemPacket.isConsume()) {
+                if (isHp) player.consumeHpPotion();
+                else player.consumeMpPotion();
+            } else {
+                // Drop one potion to ground as a loot item
+                final int itemId = isHp ? Player.HP_POTION_ITEM_ID : Player.MP_POTION_ITEM_ID;
+                final GameItem potionItem = GameDataManager.GAME_ITEMS.get(itemId);
+                if (potionItem == null) return;
+                if (isHp) player.setHpPotions(count - 1);
+                else player.setMpPotions(count - 1);
+                final LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(), 32);
+                if (nearLoot != null && nearLoot.getFirstNullIdx() > -1) {
+                    nearLoot.setItem(nearLoot.getFirstNullIdx(), potionItem.clone());
+                    nearLoot.setContentsChanged(true);
+                } else {
+                    realm.addLootContainer(new LootContainer(LootTier.BROWN, player.getPos().clone(), potionItem.clone()));
+                }
             }
-            if (fromIdx == MoveItemPacket.MP_POTION_SLOT) {
-                player.consumeMpPotion();
-                return;
-            }
+            return;
         }
 
         final boolean fromIsGroundLoot = MoveItemPacket.isGroundLoot(fromIdx);

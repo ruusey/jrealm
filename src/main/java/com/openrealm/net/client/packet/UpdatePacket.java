@@ -150,7 +150,9 @@ public class UpdatePacket extends Packet {
 			inv = true;
 
 		boolean expEqual = this.experience == other.getExperience();
-		boolean result = basic && stats && inv && expEqual;
+		boolean potionsEqual = this.hpPotions == other.getHpPotions()
+				&& this.mpPotions == other.getMpPotions();
+		boolean result = basic && stats && inv && expEqual && potionsEqual;
 
 		return result;
 	}

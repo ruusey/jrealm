@@ -297,14 +297,14 @@ public class Player extends Entity {
 	public boolean consumeHpPotion() {
 		if (this.hpPotions <= 0) return false;
 		this.hpPotions--;
-		this.health = Math.min(this.health + 100, this.stats.getHp());
+		this.health = Math.min(this.health + 100, this.getComputedStats().getHp());
 		return true;
 	}
 
 	public boolean consumeMpPotion() {
 		if (this.mpPotions <= 0) return false;
 		this.mpPotions--;
-		this.mana = Math.min(this.mana + 100, this.stats.getMp());
+		this.mana = Math.min(this.mana + 100, this.getComputedStats().getMp());
 		return true;
 	}
 

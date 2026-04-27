@@ -126,10 +126,10 @@ public class LootContainer {
             if (item == null) continue;
             hasAnyItem = true;
             byte t = item.getTier();
-            if (t == (byte) -1) {
-                hasUntiered = true;
-            } else if (item.isConsumable()) {
+            if (item.isConsumable()) {
                 hasPotion = true;
+            } else if (t == (byte) -1) {
+                hasUntiered = true;
             } else if (t >= 8) {
                 hasHighTier = true;
             } else {
