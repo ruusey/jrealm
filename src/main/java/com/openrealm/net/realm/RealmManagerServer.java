@@ -96,6 +96,10 @@ import com.openrealm.net.server.ServerGameLogic;
 import com.openrealm.net.server.ServerTradeManager;
 import com.openrealm.net.server.packet.CommandPacket;
 import com.openrealm.net.server.packet.HeartbeatPacket;
+import com.openrealm.net.server.packet.ConsumeShardStackPacket;
+import com.openrealm.net.server.packet.ForgeDisenchantPacket;
+import com.openrealm.net.server.packet.ForgeEnchantPacket;
+import com.openrealm.net.server.packet.InteractTilePacket;
 import com.openrealm.net.server.packet.MoveItemPacket;
 import com.openrealm.net.server.packet.PlayerMovePacket;
 import com.openrealm.net.server.packet.PlayerShootPacket;
@@ -1263,6 +1267,10 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(UseAbilityPacket.class, ServerGameLogic::handleUseAbilityServer);
 		this.registerPacketCallback(MoveItemPacket.class, ServerGameLogic::handleMoveItemServer);
 		this.registerPacketCallback(UsePortalPacket.class, ServerGameLogic::handleUsePortalServer);
+		this.registerPacketCallback(ConsumeShardStackPacket.class, ServerGameLogic::handleConsumeShardStackServer);
+		this.registerPacketCallback(InteractTilePacket.class, ServerGameLogic::handleInteractTileServer);
+		this.registerPacketCallback(ForgeEnchantPacket.class, ServerGameLogic::handleForgeEnchantServer);
+		this.registerPacketCallback(ForgeDisenchantPacket.class, ServerGameLogic::handleForgeDisenchantServer);
 	}
 
 	private void registerPacketCallback(final Class<? extends Packet> packetId, final BiConsumer<RealmManagerServer, Packet> callback) {
@@ -2606,7 +2614,7 @@ public class RealmManagerServer implements Runnable {
 		this.releaseRealmLock();
 	}
 
-	private void persistPlayerAsync(final Player player) {
+	public void persistPlayerAsync(final Player player) {
 		final Runnable persist = () -> {
 			this.persistPlayer(player);
 		};

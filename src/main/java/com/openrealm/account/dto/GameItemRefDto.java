@@ -1,5 +1,7 @@
 package com.openrealm.account.dto;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -24,10 +26,12 @@ public class GameItemRefDto extends TemporalDto {
     private Integer itemId;
     private Integer slotIdx;
     private String itemUuid;
-    
-    
+    private Integer stackCount;
+    private List<EnchantmentDto> enchantments;
+
+
     public NetGameItemRef asNetGameItemRef() {
     	return new NetGameItemRef(itemId, slotIdx, itemUuid);
     }
-   
+
 }

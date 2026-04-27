@@ -24,23 +24,83 @@ public class LootTableModel {
     private Map<String, Float> drops;
     private Map<String, Float> portalDrops;
 
+    // Shard itemIds 800..807 (vit, wis, hp, mp, att, def, spd, dex)
+    private static final int SHARD_ITEM_BASE = 800;
+    // Essence itemIds 816..819 (weapon, ability, armor, ring)
+    private static final int ESSENCE_ITEM_BASE = 816;
+
     public List<GameItem> getLootDrop() {
         final List<GameItem> itemsToDrop = new ArrayList<>();
 
         for (final Map.Entry<String, Float> entry : this.drops.entrySet()) {
             if (Realm.RANDOM.nextFloat() >= entry.getValue()) continue;
-            if (this.isLootGroup(entry.getKey())) {
-                final LootGroupModel lootGroup = GameDataManager.LOOT_GROUPS.get(this.getLootGroupId(entry.getKey()));
+            final String key = entry.getKey();
+            final String[] parts = key.split(":");
+            final String prefix = parts.length > 0 ? parts[0].toLowerCase() : "";
+
+            if ("group".equals(prefix)) {
+                final LootGroupModel lootGroup = GameDataManager.LOOT_GROUPS.get(this.getLootGroupId(key));
                 if (lootGroup == null) continue;
                 final int itemFromGroup = lootGroup.getPotentialDrops()
                         .get(Realm.RANDOM.nextInt(lootGroup.getPotentialDrops().size()));
                 itemsToDrop.add(GameDataManager.GAME_ITEMS.get(itemFromGroup));
+            } else if ("shard".equals(prefix) || "shardany".equals(prefix)) {
+                final int statId = "shardany".equals(prefix)
+                        ? Realm.RANDOM.nextInt(8)
+                        : safeParseInt(parts, 1, 0);
+                final String range = "shardany".equals(prefix)
+                        ? (parts.length > 1 ? parts[1] : "1-1")
+                        : (parts.length > 2 ? parts[2] : "1-1");
+                final GameItem shard = newStackedDrop(SHARD_ITEM_BASE + Math.max(0, Math.min(7, statId)), rollRange(range));
+                if (shard != null) itemsToDrop.add(shard);
+            } else if ("essence".equals(prefix) || "essenceany".equals(prefix)) {
+                final int slotId = "essenceany".equals(prefix)
+                        ? Realm.RANDOM.nextInt(4)
+                        : safeParseInt(parts, 1, 0);
+                final String range = "essenceany".equals(prefix)
+                        ? (parts.length > 1 ? parts[1] : "1-1")
+                        : (parts.length > 2 ? parts[2] : "1-1");
+                final GameItem essence = newStackedDrop(ESSENCE_ITEM_BASE + Math.max(0, Math.min(3, slotId)), rollRange(range));
+                if (essence != null) itemsToDrop.add(essence);
             } else {
-                final GameItem item = GameDataManager.GAME_ITEMS.get(this.getLootGroupId(entry.getKey()));
+                // Treat any other prefix as a direct itemId reference (existing "item:N" style)
+                final GameItem item = GameDataManager.GAME_ITEMS.get(this.getLootGroupId(key));
                 if (item != null) itemsToDrop.add(item);
             }
         }
         return itemsToDrop;
+    }
+
+    private static int safeParseInt(String[] parts, int idx, int fallback) {
+        if (parts == null || idx >= parts.length) return fallback;
+        try { return Integer.parseInt(parts[idx]); } catch (Exception e) { return fallback; }
+    }
+
+    /** Roll an inclusive range "min-max" (or a single integer "5"). */
+    private static int rollRange(String range) {
+        if (range == null || range.isEmpty()) return 1;
+        final int dash = range.indexOf('-');
+        if (dash < 0) {
+            try { return Math.max(1, Integer.parseInt(range)); } catch (Exception e) { return 1; }
+        }
+        try {
+            final int min = Math.max(1, Integer.parseInt(range.substring(0, dash)));
+            final int max = Math.max(min, Integer.parseInt(range.substring(dash + 1)));
+            return min + Realm.RANDOM.nextInt(max - min + 1);
+        } catch (Exception e) {
+            return 1;
+        }
+    }
+
+    /** Build a fresh stackable drop instance with rolled quantity, capped to maxStack. */
+    private static GameItem newStackedDrop(int itemId, int qty) {
+        final GameItem template = GameDataManager.GAME_ITEMS.get(itemId);
+        if (template == null) return null;
+        final GameItem stack = template.clone();
+        stack.setUid(java.util.UUID.randomUUID().toString());
+        final int max = stack.getMaxStack() > 0 ? stack.getMaxStack() : 1;
+        stack.setStackCount(Math.max(1, Math.min(max, qty)));
+        return stack;
     }
 
     public List<Integer> getPortalDrop() {

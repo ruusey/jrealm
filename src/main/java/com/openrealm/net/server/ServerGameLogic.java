@@ -601,6 +601,38 @@ public class ServerGameLogic {
 		}
 	}
 	
+	public static void handleConsumeShardStackServer(RealmManagerServer mgr, Packet packet) {
+		try {
+			com.openrealm.net.server.ServerForgeHelper.handleConsumeShardStack(mgr, packet);
+		} catch (Exception e) {
+			ServerGameLogic.log.error("Failed to handle ConsumeShardStack packet. Reason: {}", e);
+		}
+	}
+
+	public static void handleInteractTileServer(RealmManagerServer mgr, Packet packet) {
+		try {
+			com.openrealm.net.server.ServerForgeHelper.handleInteractTile(mgr, packet);
+		} catch (Exception e) {
+			ServerGameLogic.log.error("Failed to handle InteractTile packet. Reason: {}", e);
+		}
+	}
+
+	public static void handleForgeEnchantServer(RealmManagerServer mgr, Packet packet) {
+		try {
+			com.openrealm.net.server.ServerForgeHelper.handleForgeEnchant(mgr, packet);
+		} catch (Exception e) {
+			ServerGameLogic.log.error("Failed to handle ForgeEnchant packet. Reason: {}", e);
+		}
+	}
+
+	public static void handleForgeDisenchantServer(RealmManagerServer mgr, Packet packet) {
+		try {
+			com.openrealm.net.server.ServerForgeHelper.handleForgeDisenchant(mgr, packet);
+		} catch (Exception e) {
+			ServerGameLogic.log.error("Failed to handle ForgeDisenchant packet. Reason: {}", e);
+		}
+	}
+
 	@PacketHandlerServer(DeathAckPacket.class)
 	public static void handleDeathAckServer(RealmManagerServer mgr, Packet packet) {
 		final DeathAckPacket deathPacket = (DeathAckPacket) packet;

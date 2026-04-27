@@ -4,8 +4,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.nio.charset.StandardCharsets;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.openrealm.game.entity.item.Damage;
 import com.openrealm.game.entity.item.Effect;
+import com.openrealm.game.entity.item.Enchantment;
 import com.openrealm.game.entity.item.GameItem;
 import com.openrealm.game.entity.item.Stats;
 import com.openrealm.net.Streamable;
@@ -48,10 +52,24 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 	private byte targetClass;
 	@SerializableField(order = 11, type = SerializableByte.class)
 	private byte fameBonus;
+	@SerializableField(order = 12, type = SerializableBoolean.class)
+	private boolean stackable;
+	@SerializableField(order = 13, type = SerializableInt.class)
+	private int maxStack;
+	@SerializableField(order = 14, type = SerializableInt.class)
+	private int stackCount;
+	@SerializableField(order = 15, type = SerializableString.class)
+	private String category;
+	@SerializableField(order = 16, type = SerializableByte.class)
+	private byte forgeStatId;
+	@SerializableField(order = 17, type = SerializableByte.class)
+	private byte forgeSlotId;
+	private List<NetEnchantment> enchantments;
 
 	private static final NetStats STATS_SERIALIZER = new NetStats();
 	private static final NetDamage DAMAGE_SERIALIZER = new NetDamage();
 	private static final NetEffect EFFECT_SERIALIZER = new NetEffect();
+	private static final NetEnchantment ENCHANTMENT_SERIALIZER = new NetEnchantment();
 
 	private static int writeString(String s, DataOutputStream stream) throws Exception {
 		if (s == null) s = "";
@@ -86,6 +104,18 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 		stream.writeByte(v.targetSlot); written += 1;
 		stream.writeByte(v.targetClass); written += 1;
 		stream.writeByte(v.fameBonus); written += 1;
+		stream.writeBoolean(v.stackable); written += 1;
+		stream.writeInt(v.maxStack); written += 4;
+		stream.writeInt(v.stackCount); written += 4;
+		written += writeString(v.category, stream);
+		stream.writeByte(v.forgeStatId); written += 1;
+		stream.writeByte(v.forgeSlotId); written += 1;
+		// Enchantment list: int count + N × NetEnchantment
+		final List<NetEnchantment> ench = v.enchantments == null ? new ArrayList<>() : v.enchantments;
+		stream.writeInt(ench.size()); written += 4;
+		for (NetEnchantment e : ench) {
+			written += ENCHANTMENT_SERIALIZER.write(e, stream);
+		}
 		return written;
 	}
 
@@ -105,6 +135,17 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 		item.targetSlot = stream.readByte();
 		item.targetClass = stream.readByte();
 		item.fameBonus = stream.readByte();
+		item.stackable = stream.readBoolean();
+		item.maxStack = stream.readInt();
+		item.stackCount = stream.readInt();
+		item.category = readString(stream);
+		item.forgeStatId = stream.readByte();
+		item.forgeSlotId = stream.readByte();
+		final int enchCount = stream.readInt();
+		item.enchantments = new ArrayList<>(Math.max(0, enchCount));
+		for (int i = 0; i < enchCount; i++) {
+			item.enchantments.add(ENCHANTMENT_SERIALIZER.read(stream));
+		}
 		return item;
 	}
 
@@ -122,6 +163,21 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 		item.setTargetSlot(this.targetSlot);
 		item.setTargetClass(this.targetClass);
 		item.setFameBonus(this.fameBonus);
+		item.setStackable(this.stackable);
+		item.setMaxStack(this.maxStack);
+		item.setStackCount(this.stackCount);
+		item.setCategory(this.category);
+		item.setForgeStatId(this.forgeStatId);
+		item.setForgeSlotId(this.forgeSlotId);
+		if (this.enchantments != null && !this.enchantments.isEmpty()) {
+			final List<Enchantment> out = new ArrayList<>(this.enchantments.size());
+			for (NetEnchantment ne : this.enchantments) {
+				out.add(new Enchantment(ne.getStatId(), ne.getDeltaValue(), ne.getPixelX(), ne.getPixelY(), ne.getPixelColor()));
+			}
+			item.setEnchantments(out);
+		} else {
+			item.setEnchantments(new ArrayList<>());
+		}
 		return item;
 	}
 
@@ -150,5 +206,12 @@ public class NetGameItem extends SerializableFieldType<NetGameItem> {
 		this.targetSlot = -1;
 		this.targetClass = -1;
 		this.fameBonus = -1;
+		this.stackable = false;
+		this.maxStack = 1;
+		this.stackCount = 1;
+		this.category = "generic";
+		this.forgeStatId = -1;
+		this.forgeSlotId = -1;
+		this.enchantments = new ArrayList<>();
 	}
 }

@@ -142,7 +142,7 @@ public class Player extends Entity {
 		for (int i = 0; i < this.inventory.length; i++) {
 			GameItem item = this.inventory[i];
 			if (item != null) {
-				res.add(GameItemRefDto.builder().itemId(item.getItemId()).itemUuid(item.getUid()).slotIdx(i).build());
+				res.add(item.toGameItemRefDto(i));
 			}
 		}
 		return res;
@@ -261,6 +261,23 @@ public class Player extends Entity {
 		for (GameItem item : equipment) {
 			if (item != null) {
 				stats = stats.concat(item.getStats());
+				// Pixel-forge enchantments: each entry adds +deltaValue to the
+				// matching stat. statId order: 0=VIT 1=WIS 2=HP 3=MP 4=ATT 5=DEF 6=SPD 7=DEX
+				if (item.getEnchantments() != null && !item.getEnchantments().isEmpty()) {
+					for (com.openrealm.game.entity.item.Enchantment e : item.getEnchantments()) {
+						final short delta = e.getDeltaValue();
+						switch (e.getStatId()) {
+						case 0: stats.setVit((short) (stats.getVit() + delta)); break;
+						case 1: stats.setWis((short) (stats.getWis() + delta)); break;
+						case 2: stats.setHp(stats.getHp() + delta); break;
+						case 3: stats.setMp((short) (stats.getMp() + delta)); break;
+						case 4: stats.setAtt((short) (stats.getAtt() + delta)); break;
+						case 5: stats.setDef((short) (stats.getDef() + delta)); break;
+						case 6: stats.setSpd((short) (stats.getSpd() + delta)); break;
+						case 7: stats.setDex((short) (stats.getDex() + delta)); break;
+						}
+					}
+				}
 			}
 		}
 		// ARMOR_BROKEN zeroes defense

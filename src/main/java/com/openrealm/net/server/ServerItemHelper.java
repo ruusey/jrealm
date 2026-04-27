@@ -17,6 +17,41 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ServerItemHelper {
+
+    /**
+     * Try to deposit `incoming` into the player's inventory. If `incoming` is a
+     * stackable item, top-up any existing stacks of the same itemId before
+     * spilling into a free slot. Returns true if any portion was deposited.
+     * The `incoming` item's stackCount is mutated to reflect the leftover.
+     */
+    public static boolean tryDepositStackable(Player player, GameItem incoming) {
+        if (incoming == null) return false;
+        final GameItem[] inv = player.getInventory();
+        if (incoming.isStackable()) {
+            // Top up existing stacks of the same itemId
+            for (int i = 4; i < inv.length; i++) {
+                final GameItem existing = inv[i];
+                if (existing == null) continue;
+                if (existing.getItemId() != incoming.getItemId()) continue;
+                if (!existing.isStackable()) continue;
+                final int room = existing.getMaxStack() - existing.getStackCount();
+                if (room <= 0) continue;
+                final int move = Math.min(room, incoming.getStackCount());
+                existing.setStackCount(existing.getStackCount() + move);
+                incoming.setStackCount(incoming.getStackCount() - move);
+                if (incoming.getStackCount() <= 0) return true;
+            }
+        }
+        // Spill remainder into first empty slot
+        if (incoming.getStackCount() > 0) {
+            final int empty = player.firstEmptyInvSlot();
+            if (empty < 0) return false;
+            inv[empty] = incoming;
+            return true;
+        }
+        return true;
+    }
+
     public static void handleMoveItemPacket(RealmManagerServer mgr, Packet packet) throws Exception {
         final MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
         ServerItemHelper.log.info("[ItemMoveHelper] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
@@ -128,6 +163,11 @@ public class ServerItemHelper {
                 ServerItemHelper.log.warn("Player {} attempted to equip a consumable item {}", player.getId(), from.getName());
                 return;
             }
+            // Stackable items (shards, essence, crystals) cannot be equipped
+            if (from.isStackable()) {
+                ServerItemHelper.log.warn("Player {} attempted to equip a stackable item {}", player.getId(), from.getName());
+                return;
+            }
             // Item must be designed for this equipment slot (or auto-assign with targetSlot=-1)
             if (from.getTargetSlot() >= 0 && from.getTargetSlot() != targetIdx) {
                 ServerItemHelper.log.warn("Player {} attempted to equip item {} (targetSlot={}) in slot {}",
@@ -153,6 +193,19 @@ public class ServerItemHelper {
             if (to == null) {
                 player.getInventory()[targetIdx] = from.clone();
                 player.getInventory()[fromIdx] = null;
+            } else if (from.isStackable() && to.isStackable()
+                    && from.getItemId() == to.getItemId()
+                    && to.getStackCount() < to.getMaxStack()) {
+                // Merge same-itemId stacks. Move as much as fits, leave remainder in source.
+                final int room = to.getMaxStack() - to.getStackCount();
+                final int move = Math.min(room, from.getStackCount());
+                to.setStackCount(to.getStackCount() + move);
+                final int remaining = from.getStackCount() - move;
+                if (remaining <= 0) {
+                    player.getInventory()[fromIdx] = null;
+                } else {
+                    from.setStackCount(remaining);
+                }
             } else {
                 GameItem fromClone = from.clone();
                 player.getInventory()[fromIdx] = to.clone();
@@ -200,6 +253,26 @@ public class ServerItemHelper {
                 nearLoot.setItem(lootIdx, null);
                 nearLoot.repackItems();
                 nearLoot.setContentsChanged(true);
+                return;
+            }
+
+            // Stackable pickup: top up existing stacks first, leave remainder on the ground.
+            if (lootItem.isStackable()) {
+                final GameItem incoming = lootItem.clone();
+                final boolean deposited = tryDepositStackable(player, incoming);
+                if (!deposited && incoming.getStackCount() > 0) {
+                    ServerItemHelper.log.warn("Player {} inventory full, cannot pick up item", player.getId());
+                    return;
+                }
+                if (incoming.getStackCount() > 0) {
+                    // Partial pickup: leave remainder in the loot container
+                    lootItem.setStackCount(incoming.getStackCount());
+                    nearLoot.setContentsChanged(true);
+                } else {
+                    nearLoot.setItem(lootIdx, null);
+                    nearLoot.repackItems();
+                    nearLoot.setContentsChanged(true);
+                }
                 return;
             }
 
