@@ -1407,7 +1407,8 @@ public class RealmManagerServer implements Runnable {
 	private void movePlayer(final long realmId, final Player p) {
 		// If the player is paralyzed, stop them and return.
         if (p.hasEffect(StatusEffectType.PARALYZED)) {
-            p.setCurrentDirFlags((byte) 0);
+            p.setCurrentVx(0f);
+            p.setCurrentVy(0f);
             p.setDx(0); p.setDy(0);
             p.setUp(false);
             p.setDown(false);
@@ -1416,8 +1417,8 @@ public class RealmManagerServer implements Runnable {
             // Still increment lastProcessedInputSeq so acks stay in sync
             if (p.getInputQueue() == null) p.setInputQueue(new java.util.concurrent.ConcurrentLinkedQueue<>());
             while (!p.getInputQueue().isEmpty()) {
-                int[] queued = p.getInputQueue().poll();
-                p.setLastProcessedInputSeq(queued[0]);
+                float[] queued = p.getInputQueue().poll();
+                p.setLastProcessedInputSeq((int) queued[0]);
             }
             return;
         }
@@ -1426,20 +1427,21 @@ public class RealmManagerServer implements Runnable {
 		// bursts — processing all of them prevents server position from drifting
 		// behind the client. Capped at 8 per tick (125ms catch-up) to prevent abuse.
 		if (p.getInputQueue() == null) p.setInputQueue(new java.util.concurrent.ConcurrentLinkedQueue<>());
-		while (!p.getInputQueue().isEmpty() && p.getInputQueue().peek()[0] <= p.getLastProcessedInputSeq()) {
+		while (!p.getInputQueue().isEmpty() && (int) p.getInputQueue().peek()[0] <= p.getLastProcessedInputSeq()) {
 		    p.getInputQueue().poll();
 		}
 
 		final Realm targetRealm = this.realms.get(realmId);
 		int processed = 0;
 		while (!p.getInputQueue().isEmpty() && processed < 8) {
-		    int[] nextInput = p.getInputQueue().poll();
-		    p.setCurrentDirFlags((byte) nextInput[1]);
-		    p.setLastProcessedInputSeq(nextInput[0]);
+		    float[] nextInput = p.getInputQueue().poll();
+		    p.setCurrentVx(nextInput[1]);
+		    p.setCurrentVy(nextInput[2]);
+		    p.setLastProcessedInputSeq((int) nextInput[0]);
 		    this.applyMovementTick(targetRealm, p);
 		    processed++;
 		}
-		// If no queued inputs, run one tick with the last dirFlags (coast)
+		// If no queued inputs, run one tick with the last (vx, vy) (coast)
 		if (processed == 0) {
 		    this.applyMovementTick(targetRealm, p);
 		}
@@ -1456,31 +1458,41 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 
-	/** Applies one movement tick for a player using their current dirFlags. */
+	/** Applies one movement tick for a player using their current (vx, vy). */
 	private void applyMovementTick(final Realm targetRealm, final Player p) {
-		byte flags = p.getCurrentDirFlags();
-		boolean up    = (flags & 0x01) != 0;
-		boolean down  = (flags & 0x02) != 0;
-		boolean left  = (flags & 0x04) != 0;
-		boolean right = (flags & 0x08) != 0;
+		float vx = p.getCurrentVx();
+		float vy = p.getCurrentVy();
+
+		// Defensively normalise: client SHOULD send a unit vector, but if it
+		// sends a longer one we clamp magnitude to 1 so movement speed can't
+		// exceed the configured per-tick step.
+		final float mag = (float) Math.sqrt(vx * vx + vy * vy);
+		if (mag > 1.0f) {
+		    vx /= mag;
+		    vy /= mag;
+		}
 
 		float tilesPerSec = 4.0f + 5.6f * (p.getComputedStats().getSpd() / 75.0f);
 		if (p.hasEffect(StatusEffectType.SPEEDY)) tilesPerSec *= 1.5f;
 		if (p.hasEffect(StatusEffectType.SLOWED)) tilesPerSec *= 0.5f;
-		float spd = tilesPerSec * 32.0f / 64.0f;
+		final float spd = tilesPerSec * 32.0f / 64.0f;
 
-		boolean movingX = left || right;
-		boolean movingY = up || down;
-		if (movingX && movingY) {
-		    spd = (float) (spd * Math.sqrt(2) / 2.0);
-		}
+		// Unit-vector-driven movement gives full diagonal speed when intended:
+		// a unit vector at 45° has |vx|=|vy|=√2/2, so applying spd to each
+		// component produces the same total step length as a cardinal move.
+		// The dirFlags-era explicit √2/2 diagonal scaling is no longer needed.
+		final boolean moving = mag > 0.001f;
+		p.setDx(moving ? vx * spd : 0f);
+		p.setDy(moving ? vy * spd : 0f);
 
-		p.setDx(right ? spd : left ? -spd : 0.0f);
-		p.setDy(down ? spd : up ? -spd : 0.0f);
-		if (!movingX && !movingY) {
-		    p.setDx(0); p.setDy(0);
-		}
-		p.setUp(up); p.setDown(down); p.setLeft(left); p.setRight(right);
+		// Animation/facing flags derived from vx/vy. Threshold at 0.1 keeps tiny
+		// off-axis components (e.g. vx=0.07 from a 4° camera tilt) from flipping
+		// the facing every frame.
+		p.setLeft (moving && vx < -0.1f);
+		p.setRight(moving && vx >  0.1f);
+		p.setUp   (moving && vy < -0.1f);
+		p.setDown (moving && vy >  0.1f);
+
 		p.setLastInputSeq(p.getLastInputSeq() + 1);
 
 		final float slow = targetRealm.getTileManager().collidesSlowTile(p) ? 3.0f : 1.0f;

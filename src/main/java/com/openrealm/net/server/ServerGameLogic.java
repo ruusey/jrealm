@@ -417,7 +417,7 @@ public class ServerGameLogic {
 		}
 		final Player toMove = realm.getPlayer(playerMovePacket.getEntityId());
 		// Queue the input for processing in movePlayer() on the next tick
-		toMove.queueInput(playerMovePacket.getSeq(), playerMovePacket.getDirFlags());
+		toMove.queueInput(playerMovePacket.getSeq(), playerMovePacket.getVx(), playerMovePacket.getVy());
 	}
 
 	public static void handleUseAbilityServer(RealmManagerServer mgr, Packet packet) {

@@ -415,14 +415,15 @@ public class PlayState extends GameState {
 
                 if (!this.lastDirectionMap.equals(lastDirectionTempMap)) {
                     try {
-                        // Build dirFlags bitmask: bit0=up, bit1=down, bit2=left, bit3=right
-                        byte dirFlags = 0;
-                        if (player.getIsUp())    dirFlags |= 0x01;
-                        if (player.getIsDown())  dirFlags |= 0x02;
-                        if (player.getIsLeft())  dirFlags |= 0x04;
-                        if (player.getIsRight()) dirFlags |= 0x08;
+                        // Convert cardinal key state to a unit vector for the new
+                        // (vx, vy) wire format. Desktop client has no camera
+                        // rotation, so screen-space == world-space here.
+                        float vx = (player.getIsRight() ? 1f : 0f) - (player.getIsLeft() ? 1f : 0f);
+                        float vy = (player.getIsDown()  ? 1f : 0f) - (player.getIsUp()   ? 1f : 0f);
+                        final float mag = (float) Math.sqrt(vx * vx + vy * vy);
+                        if (mag > 0f) { vx /= mag; vy /= mag; }
                         player.setLastInputSeq(player.getLastInputSeq() + 1);
-                        PlayerMovePacket packet = PlayerMovePacket.from(player, player.getLastInputSeq(), dirFlags);
+                        PlayerMovePacket packet = PlayerMovePacket.from(player, player.getLastInputSeq(), vx, vy);
                         this.realmManager.getClient().sendRemote(packet);
                     } catch (Exception e) {
                         PlayState.log.error("Failed to create player move packet. Reason: {}", e);

@@ -230,12 +230,13 @@ public class StressTestClient implements Runnable {
             if (this.moveTick % 40 == 0) {
                 this.movePhase = (this.movePhase + 1) % 4;
             }
-            // Offset by clientIndex so each bot goes a different direction
-            // dirFlags bitmask: bit0=up, bit1=down, bit2=left, bit3=right
+            // Offset by clientIndex so each bot goes a different direction.
+            // Order: up, right, down, left (unit vectors for the new vx/vy format)
             int dirIdx = (this.movePhase + this.clientIndex) % 4;
-            byte[] dirFlagsMap = { 0x01, 0x08, 0x02, 0x04 }; // up, right, down, left
-            byte dirFlags = dirFlagsMap[dirIdx];
-            PlayerMovePacket movePacket = new PlayerMovePacket(this.assignedPlayerId, this.moveTick, dirFlags);
+            float[][] dirs = { {0f, -1f}, {1f, 0f}, {0f, 1f}, {-1f, 0f} };
+            float vx = dirs[dirIdx][0];
+            float vy = dirs[dirIdx][1];
+            PlayerMovePacket movePacket = new PlayerMovePacket(this.assignedPlayerId, this.moveTick, vx, vy);
             this.outboundPacketQueue.add(movePacket);
 
             if (this.spamMode) {

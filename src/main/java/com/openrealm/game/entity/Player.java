@@ -60,10 +60,14 @@ public class Player extends Entity {
 	// Sequence-numbered input queue fields for new movement netcode
 	@Builder.Default
 	private int lastProcessedInputSeq = 0;
+	// Last move direction observed from client (unit vector). (0,0) = stopped.
 	@Builder.Default
-	private byte currentDirFlags = 0;
+	private float currentVx = 0f;
 	@Builder.Default
-	private transient java.util.Queue<int[]> inputQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	private float currentVy = 0f;
+	// Queue elements: float[]{seq (cast from int), vx, vy}
+	@Builder.Default
+	private transient java.util.Queue<float[]> inputQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
 	// Consumable potion storage (separate from inventory)
 	public static final int MAX_CONSUMABLE_POTIONS = 6;
@@ -80,8 +84,8 @@ public class Player extends Entity {
 
 	public Player(GameItem[] inventory, long lastStatsTime, LootContainer currentLootContainer, int classId,
 			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless, boolean bot,
-			String chatRole, int lastInputSeq, int lastProcessedInputSeq, byte currentDirFlags,
-			java.util.Queue<int[]> inputQueue, int hpPotions, int mpPotions) {
+			String chatRole, int lastInputSeq, int lastProcessedInputSeq, float currentVx, float currentVy,
+			java.util.Queue<float[]> inputQueue, int hpPotions, int mpPotions) {
 		super(0, null, 0);
 		this.inventory = inventory;
 		this.lastStatsTime = lastStatsTime;
@@ -96,7 +100,8 @@ public class Player extends Entity {
 		this.chatRole = chatRole;
 		this.lastInputSeq = lastInputSeq;
 		this.lastProcessedInputSeq = lastProcessedInputSeq;
-		this.currentDirFlags = currentDirFlags;
+		this.currentVx = currentVx;
+		this.currentVy = currentVy;
 		this.inputQueue = inputQueue != null ? inputQueue : new java.util.concurrent.ConcurrentLinkedQueue<>();
 		this.hpPotions = hpPotions;
 		this.mpPotions = mpPotions;
@@ -450,10 +455,10 @@ public class Player extends Entity {
 		}
 	}
 
-	public void queueInput(int seq, byte dirFlags) {
+	public void queueInput(int seq, float vx, float vy) {
 		if (this.inputQueue == null) this.inputQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
 		if (seq > this.lastProcessedInputSeq) {
-			this.inputQueue.add(new int[]{seq, dirFlags});
+			this.inputQueue.add(new float[]{(float) seq, vx, vy});
 		}
 	}
 
@@ -661,6 +666,31 @@ public class Player extends Entity {
 		for (GameItem item : items) {
 			if (item == null)
 				continue;
+			// Stackable items (shards, essence) merge into existing stacks of
+			// the same itemId before spilling into a free slot, mirroring the
+			// pickup logic in ServerItemHelper. This keeps trade-received
+			// stacks consistent with how loot pickups behave.
+			if (item.isStackable()) {
+				int remaining = item.getStackCount();
+				for (int i = 4; i < this.inventory.length && remaining > 0; i++) {
+					final GameItem existing = this.inventory[i];
+					if (existing == null) continue;
+					if (existing.getItemId() != item.getItemId()) continue;
+					if (!existing.isStackable()) continue;
+					final int room = existing.getMaxStack() - existing.getStackCount();
+					if (room <= 0) continue;
+					final int move = Math.min(room, remaining);
+					existing.setStackCount(existing.getStackCount() + move);
+					remaining -= move;
+				}
+				if (remaining > 0) {
+					final int slot = this.firstEmptyInvSlot();
+					if (slot == -1) break;
+					item.setStackCount(remaining);
+					this.inventory[slot] = item;
+				}
+				continue;
+			}
 			int slot = this.firstEmptyInvSlot();
 			if (slot == -1)
 				break;
