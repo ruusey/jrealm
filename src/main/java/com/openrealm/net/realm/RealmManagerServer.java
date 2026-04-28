@@ -1713,9 +1713,17 @@ public class RealmManagerServer implements Runnable {
 		// hit entities on the other side
 		this.proccessTerrainHit(realmId, p);
 
+		// nearbyBullets was snapshot before proccessTerrainHit ran, so any bullet
+		// whose center stepped into a collision tile this tick is still in the
+		// list but has been removed from the realm. Skip those — otherwise we
+		// apply damage from a bullet the client has already despawned (e.g. a
+		// player hugging a tree gets hit by an "invisible" projectile).
+		final Map<Long, Bullet> liveBullets = targetRealm.getBullets();
+
 		// Player-bullet collision (enemy bullets hitting player)
 		if (!player.hasEffect(StatusEffectType.INVINCIBLE)) {
 			for (final Bullet b : nearbyBullets) {
+				if (!liveBullets.containsKey(b.getId())) continue;
 				this.processPlayerHit(realmId, b, player);
 			}
 		}
@@ -1723,6 +1731,7 @@ public class RealmManagerServer implements Runnable {
 		// Bullet-enemy collision (player bullets hitting enemies)
 		for (final Enemy enemy : nearbyEnemies) {
 			for (final Bullet b : nearbyBullets) {
+				if (!liveBullets.containsKey(b.getId())) continue;
 				this.proccessEnemyHit(realmId, b, enemy);
 			}
 		}
@@ -1779,27 +1788,31 @@ public class RealmManagerServer implements Runnable {
 
 		final List<Bullet> toRemove = new ArrayList<>();
 		final TileMap currentMap = targetRealm.getTileManager().getCollisionLayer();
-		Tile[] viewportTiles = null;
 		if (currentMap == null)
 			return;
-		viewportTiles = targetRealm.getTileManager().getCollisionTiles(p.getPos());
+		// Look up the tile under each bullet's center directly. The previous
+		// approach iterated an 11x11 grid around the player, which missed
+		// bullets 6+ tiles away — the render viewport is 20 tiles wide, so
+		// distant bullets passed through walls untouched on the server while
+		// the client correctly de-rendered them. Mirrors game.js:1156-1169.
+		final Tile[][] blocks = currentMap.getBlocks();
+		final int ts = currentMap.getTileSize();
+		final int mapW = currentMap.getWidth();
+		final int mapH = currentMap.getHeight();
 		for (final Bullet b : this.getBullets(realmId, p)) {
 			if (b.remove()) {
 				toRemove.add(b);
 				continue;
 			}
 			if (b.hasFlag(ProjectileFlag.PASS_THROUGH_TERRAIN)) continue;
-			for (final Tile tile : viewportTiles) {
-				if ((tile == null) || tile.isVoid()) {
-					continue;
-				}
-				Rectangle tileBounds = new Rectangle(tile.getPos(), GlobalConstants.BASE_TILE_SIZE,
-						GlobalConstants.BASE_TILE_SIZE);
-				Vector2f bulletPosCenter = b.getCenteredPosition();
-				if (tileBounds.inside((int) bulletPosCenter.x, (int) bulletPosCenter.y)) {
-					b.setRange(0);
-					toRemove.add(b);
-				}
+			final Vector2f bulletPosCenter = b.getCenteredPosition();
+			final int btx = (int) (bulletPosCenter.x / ts);
+			final int bty = (int) (bulletPosCenter.y / ts);
+			if (btx < 0 || btx >= mapW || bty < 0 || bty >= mapH) continue;
+			final Tile tile = blocks[bty][btx];
+			if (tile != null && !tile.isVoid()) {
+				b.setRange(0);
+				toRemove.add(b);
 			}
 		}
 		toRemove.forEach(bullet -> {
