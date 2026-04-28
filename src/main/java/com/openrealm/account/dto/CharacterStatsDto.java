@@ -35,6 +35,10 @@ public class CharacterStatsDto extends TemporalDto {
     private Integer wis;
     private Integer hpPotions;
     private Integer mpPotions;
+    // Opaque cosmetic dye id — resolved client-side via dye-assets.json. The
+    // client decides whether it's a solid color, a gradient, or a patterned
+    // cloth, so adding new cosmetics is a data-only change. 0/null = no dye.
+    private Integer dyeId;
 
     public static CharacterStatsDto characterDefaults(final Integer characterClass) {
         final CharacterClassModel model = GameDataManager.CHARACTER_CLASSES.get(characterClass);

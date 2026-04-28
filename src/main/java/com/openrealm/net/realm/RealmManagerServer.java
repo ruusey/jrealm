@@ -100,6 +100,7 @@ import com.openrealm.net.server.packet.ConsumeShardStackPacket;
 import com.openrealm.net.server.packet.ForgeDisenchantPacket;
 import com.openrealm.net.server.packet.ForgeEnchantPacket;
 import com.openrealm.net.server.packet.InteractTilePacket;
+import com.openrealm.net.server.packet.BuyFameItemPacket;
 import com.openrealm.net.server.packet.MoveItemPacket;
 import com.openrealm.net.server.packet.PlayerMovePacket;
 import com.openrealm.net.server.packet.PlayerShootPacket;
@@ -1271,6 +1272,7 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(InteractTilePacket.class, ServerGameLogic::handleInteractTileServer);
 		this.registerPacketCallback(ForgeEnchantPacket.class, ServerGameLogic::handleForgeEnchantServer);
 		this.registerPacketCallback(ForgeDisenchantPacket.class, ServerGameLogic::handleForgeDisenchantServer);
+		this.registerPacketCallback(BuyFameItemPacket.class, ServerGameLogic::handleBuyFameItemServer);
 	}
 
 	private void registerPacketCallback(final Class<? extends Packet> packetId, final BiConsumer<RealmManagerServer, Packet> callback) {
@@ -1951,11 +1953,14 @@ public class RealmManagerServer implements Runnable {
 			e.setHealth(e.getHealth() - dmgToInflict);
 			int maxHealth = (int) (model.getHealth() * e.getDifficulty());
 			e.setHealthpercent((float) e.getHealth() / (float) maxHealth);
-			if (b.hasFlag(ProjectileFlag.PLAYER_PROJECTILE) && !b.isEnemyHit()) {
+			// Pierce: bows, quivers and stun shields pass through any number of
+			// enemies, hitting each one once (hasHitEnemy de-dups). Without the
+			// flag, the existing rule still applies — first enemy hit keeps the
+			// bullet alive (one extra pierce), subsequent hits remove it.
+			if (b.hasFlag(ProjectileFlag.PASS_THROUGH_ENEMIES)) {
+				if (!b.isEnemyHit()) b.setEnemyHit(true);
+			} else if (b.hasFlag(ProjectileFlag.PLAYER_PROJECTILE) && !b.isEnemyHit()) {
 				b.setEnemyHit(true);
-			} else if (b.remove()) {
-				targetRealm.getExpiredBullets().add(b.getId());
-				targetRealm.removeBullet(b);
 			} else {
 				targetRealm.getExpiredBullets().add(b.getId());
 				targetRealm.removeBullet(b);
@@ -2310,12 +2315,17 @@ public class RealmManagerServer implements Runnable {
 				player.setHealth(player.getStats().getHp());
 				this.persistPlayerAsync(player);
 			} else {
-				// Permadeath: drop grave, delete character permanently
+				// Permadeath: drop grave, delete character permanently, and bank
+				// the character's earned fame onto the owning account. The data
+				// service computes fame from the character's stored xp when it
+				// sees bankFame=true on the delete call. User-initiated deletes
+				// from the character-select screen do NOT pass this flag, so
+				// self-deletes don't earn fame (deliberate — only deaths bank).
 				final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
 						player.getPos().clone(), player.getSlots(4, 12));
 				targetRealm.addLootContainer(graveLoot);
 				ServerGameLogic.DATA_SERVICE.executeDelete(
-						"/data/account/character/" + player.getCharacterUuid(), Object.class);
+						"/data/account/character/" + player.getCharacterUuid() + "?bankFame=true", Object.class);
 			}
 		} catch (Exception e) {
 			RealmManagerServer.log.error("[SERVER] Failed to handle player death {}. Reason: {}", player.getId(), e);

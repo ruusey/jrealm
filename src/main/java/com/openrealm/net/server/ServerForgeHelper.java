@@ -147,6 +147,8 @@ public class ServerForgeHelper {
         if ("forge".equals(interactionType)) {
             final OpenForgePacket reply = new OpenForgePacket(player.getId());
             mgr.enqueueServerPacket(player, reply);
+        } else if ("fame_store".equals(interactionType)) {
+            ServerFameStoreHelper.handleOpenStore(mgr, player);
         }
     }
 

@@ -633,6 +633,14 @@ public class ServerGameLogic {
 		}
 	}
 
+	public static void handleBuyFameItemServer(RealmManagerServer mgr, Packet packet) {
+		try {
+			com.openrealm.net.server.ServerFameStoreHelper.handleBuy(mgr, packet);
+		} catch (Exception e) {
+			ServerGameLogic.log.error("Failed to handle BuyFameItem packet. Reason: {}", e);
+		}
+	}
+
 	@PacketHandlerServer(DeathAckPacket.class)
 	public static void handleDeathAckServer(RealmManagerServer mgr, Packet packet) {
 		final DeathAckPacket deathPacket = (DeathAckPacket) packet;

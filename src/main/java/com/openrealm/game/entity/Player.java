@@ -78,6 +78,21 @@ public class Player extends Entity {
 	@Builder.Default
 	private int mpPotions = 0;
 
+	// Cosmetic dye id keyed in the client's dye-assets.json registry. 0 = no
+	// dye. Renderer resolves the id to a recolor strategy (solid color today;
+	// patterned cloths in the future). Persisted on the character so it
+	// survives logout but is implicitly cleared on permadeath (character is
+	// deleted, fresh char starts at dyeId=0).
+	@Builder.Default
+	private int dyeId = 0;
+
+	// Last known account fame for this player, refreshed at login and after
+	// each fame-shop purchase. NOT serialized to other clients; only used by
+	// the server to validate purchases without re-fetching the account on
+	// every request. Source of truth is the data service.
+	@Builder.Default
+	private transient long cachedAccountFame = 0L;
+
 	public Player() {
 		super(0, null, 0);
 	}
@@ -85,7 +100,7 @@ public class Player extends Entity {
 	public Player(GameItem[] inventory, long lastStatsTime, LootContainer currentLootContainer, int classId,
 			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless, boolean bot,
 			String chatRole, int lastInputSeq, int lastProcessedInputSeq, float currentVx, float currentVy,
-			java.util.Queue<float[]> inputQueue, int hpPotions, int mpPotions) {
+			java.util.Queue<float[]> inputQueue, int hpPotions, int mpPotions, int dyeId, long cachedAccountFame) {
 		super(0, null, 0);
 		this.inventory = inventory;
 		this.lastStatsTime = lastStatsTime;
@@ -105,6 +120,8 @@ public class Player extends Entity {
 		this.inputQueue = inputQueue != null ? inputQueue : new java.util.concurrent.ConcurrentLinkedQueue<>();
 		this.hpPotions = hpPotions;
 		this.mpPotions = mpPotions;
+		this.dyeId = dyeId;
+		this.cachedAccountFame = cachedAccountFame;
 	}
 
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
@@ -140,6 +157,7 @@ public class Player extends Entity {
 		this.stats.setWis(stats.getWis().shortValue());
 		if (stats.getHpPotions() != null) this.hpPotions = stats.getHpPotions();
 		if (stats.getMpPotions() != null) this.mpPotions = stats.getMpPotions();
+		if (stats.getDyeId() != null) this.dyeId = stats.getDyeId();
 	}
 
 	public Set<GameItemRefDto> serializeItems() {
@@ -158,7 +176,8 @@ public class Player extends Entity {
 				.mp(Integer.valueOf((int) this.stats.getMp())).def(Integer.valueOf((int) this.stats.getDef()))
 				.att(Integer.valueOf((int) this.stats.getAtt())).spd(Integer.valueOf((int) this.stats.getSpd()))
 				.dex(Integer.valueOf((int) this.stats.getDex())).vit(Integer.valueOf((int) this.stats.getVit()))
-				.wis(Integer.valueOf((int) this.stats.getWis())).hpPotions(this.hpPotions).mpPotions(this.mpPotions).build();
+				.wis(Integer.valueOf((int) this.stats.getWis())).hpPotions(this.hpPotions).mpPotions(this.mpPotions)
+				.dyeId(Integer.valueOf(this.dyeId)).build();
 	}
 
 	private void resetInventory() {

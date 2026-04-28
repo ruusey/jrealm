@@ -15,7 +15,14 @@ public enum ProjectileFlag {
     ORBITAL((short) 20),
     ARMOR_PIERCING((short) 23),
     /** Projectile passes through walls and collision tiles without being destroyed. */
-    PASS_THROUGH_TERRAIN((short) 24);
+    PASS_THROUGH_TERRAIN((short) 24),
+    /**
+     * Projectile pierces enemies — applies damage to each enemy it overlaps and
+     * keeps flying. Per-enemy de-dup is still enforced via Realm.hasHitEnemy()
+     * so a single bullet can't damage the same enemy twice. Used for bows,
+     * archer quivers, and knight stun shields.
+     */
+    PASS_THROUGH_ENEMIES((short) 25);
 
     public static final Map<Short, ProjectileFlag> map = new HashMap<>();
     static {

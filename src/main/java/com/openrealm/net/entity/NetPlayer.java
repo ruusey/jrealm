@@ -39,6 +39,10 @@ public class NetPlayer extends SerializableFieldType<NetPlayer>{
 	private short shortId;
 	@SerializableField(order = 10, type = SerializableString.class)
 	private String chatRole;
+	// Cosmetic dye id (0 = no dye). Resolved client-side via dye-assets.json
+	// to a recolor strategy (solid color, patterned cloth, etc.).
+	@SerializableField(order = 11, type = SerializableInt.class)
+	private int dyeId;
 
 	public Player toPlayer() {
 		Player p = new Player();
@@ -52,6 +56,7 @@ public class NetPlayer extends SerializableFieldType<NetPlayer>{
 		p.setDx(this.dX);
 		p.setDy(this.dY);
 		p.setChatRole(this.chatRole);
+		p.setDyeId(this.dyeId);
 		return p;
 	}
 }
