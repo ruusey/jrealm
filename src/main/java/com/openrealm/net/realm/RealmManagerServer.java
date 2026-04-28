@@ -2315,25 +2315,31 @@ public class RealmManagerServer implements Runnable {
 				player.setHealth(player.getStats().getHp());
 				this.persistPlayerAsync(player);
 			} else {
-				// Permadeath: drop grave, persist the latest xp synchronously,
-				// then delete the character and bank its fame onto the owning
-				// account. The data service computes fame from the character's
-				// stored xp when it sees bankFame=true on the delete call —
-				// without a pre-delete persist the periodic 12s sync window
-				// could leave the DB stale and undercount the banked fame.
-				// User-initiated deletes from the character-select screen do
-				// NOT pass this flag, so self-deletes don't earn fame.
+				// Permadeath: drop grave (sync — must happen before the
+				// player is gone from the realm), then bank-and-delete the
+				// character on a worker thread so the tick doesn't stall on
+				// remote HTTP. Compute the earned fame here from the live in-
+				// memory xp so the bank uses fresh data regardless of when
+				// the periodic 12s persist last ran. User-initiated deletes
+				// from the character-select screen don't pass bankFame so
+				// self-deletes still earn nothing.
 				final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
 						player.getPos().clone(), player.getSlots(4, 12));
 				targetRealm.addLootContainer(graveLoot);
-				try {
-					this.persistPlayer(player);
-				} catch (Exception persistEx) {
-					RealmManagerServer.log.warn("[SERVER] Pre-death persist failed for {}, fame may be undercounted: {}",
-							player.getId(), persistEx.getMessage());
-				}
-				ServerGameLogic.DATA_SERVICE.executeDelete(
-						"/data/account/character/" + player.getCharacterUuid() + "?bankFame=true", Object.class);
+				final long earnedFame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(player.getExperience());
+				final String charUuid = player.getCharacterUuid();
+				WorkerThread.doAsync(() -> {
+					try {
+						ServerGameLogic.DATA_SERVICE.executeDelete(
+								"/data/account/character/" + charUuid
+										+ "?bankFame=true&fameAmount=" + earnedFame,
+								Object.class);
+					} catch (Exception ex) {
+						RealmManagerServer.log.error(
+								"[SERVER] Async bank-and-delete failed for character {}: {}",
+								charUuid, ex.getMessage());
+					}
+				});
 			}
 		} catch (Exception e) {
 			RealmManagerServer.log.error("[SERVER] Failed to handle player death {}. Reason: {}", player.getId(), e);
