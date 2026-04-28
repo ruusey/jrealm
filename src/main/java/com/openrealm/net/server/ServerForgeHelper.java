@@ -34,6 +34,9 @@ public class ServerForgeHelper {
     public static final int SHARD_ITEM_BASE = 800;
     public static final int CRYSTAL_ITEM_BASE = 808;
     public static final int ESSENCE_ITEM_BASE = 816;
+    // Universal essence: a single non-stackable item that substitutes for any
+    // 50 typed-essence in the forge. Consumed entirely on use.
+    public static final int UNIVERSAL_ESSENCE_ITEM_ID = 820;
 
     // Pixel colors used to paint the forged pixel onto the item sprite, by statId 0..7.
     // ARGB format: 0xAARRGGBB. statId order matches Stats: VIT, WIS, HP, MP, ATT, DEF, SPD, DEX.
@@ -51,6 +54,12 @@ public class ServerForgeHelper {
     public static final int MAX_ENCHANTMENTS_PER_ITEM = 5;
     public static final int ENCHANT_ESSENCE_COST = 50;
     public static final int SHARDS_PER_CRYSTAL = 10;
+    // HP and MP scale into the hundreds, so a +1 enchantment is essentially
+    // invisible — non-pool stats (VIT/WIS/ATT/DEF/SPD/DEX) cap at 75-ish and
+    // every point matters. Boost HP/MP enchant magnitude to keep parity.
+    // statId order: 0=VIT 1=WIS 2=HP 3=MP 4=ATT 5=DEF 6=SPD 7=DEX
+    public static final int HP_MP_ENCHANT_DELTA = 5;
+    public static final int DEFAULT_ENCHANT_DELTA = 1;
 
     public static void handleConsumeShardStack(RealmManagerServer mgr, Packet packet) throws Exception {
         final ConsumeShardStackPacket p = (ConsumeShardStackPacket) packet;
@@ -175,13 +184,21 @@ public class ServerForgeHelper {
                     p.getCrystalItemId(), crystal.getItemId());
             return;
         }
-        // Essence must be the right slot type for the target item
-        if (!"essence".equals(essence.getCategory()) || essence.getForgeSlotId() != target.getTargetSlot()) {
+        // Essence must be category "essence". Universal essence (item 820) is
+        // accepted for any target slot; typed essence must match the target slot.
+        final boolean isUniversalEssence = essence.getItemId() == UNIVERSAL_ESSENCE_ITEM_ID;
+        if (!"essence".equals(essence.getCategory())) {
+            log.warn("[Forge] Item {} is not essence", essence.getName());
+            return;
+        }
+        if (!isUniversalEssence && essence.getForgeSlotId() != target.getTargetSlot()) {
             log.warn("[Forge] Essence type {} does not match target slot {}",
                     essence.getForgeSlotId(), target.getTargetSlot());
             return;
         }
-        if (essence.getStackCount() < ENCHANT_ESSENCE_COST) {
+        // Cost check: typed essence requires a stack of 50; universal essence
+        // is a single non-stackable item that substitutes for the whole 50.
+        if (!isUniversalEssence && essence.getStackCount() < ENCHANT_ESSENCE_COST) {
             log.warn("[Forge] Player {} has insufficient essence: {} (need {})",
                     player.getId(), essence.getStackCount(), ENCHANT_ESSENCE_COST);
             return;
@@ -206,17 +223,22 @@ public class ServerForgeHelper {
             return;
         }
 
-        // Deduct cost: remove crystal entirely, decrement essence stack by 50
+        // Deduct cost: remove crystal entirely; universal essence is removed
+        // entirely too, typed essence is decremented by 50 (or removed if exact).
         player.getInventory()[crystalSlot] = null;
-        if (essence.getStackCount() == ENCHANT_ESSENCE_COST) {
+        if (isUniversalEssence || essence.getStackCount() == ENCHANT_ESSENCE_COST) {
             player.getInventory()[essenceSlot] = null;
         } else {
             essence.setStackCount(essence.getStackCount() - ENCHANT_ESSENCE_COST);
         }
 
-        // Append enchantment with the matching stat color
+        // Append enchantment with the matching stat color. HP/MP get a +5
+        // delta because their stat scale is much larger than the other six.
         final int color = STAT_COLORS[statId];
-        existing.add(new Enchantment(statId, (byte) 1, p.getPixelX(), p.getPixelY(), color));
+        final byte delta = (statId == 2 || statId == 3)
+                ? (byte) HP_MP_ENCHANT_DELTA
+                : (byte) DEFAULT_ENCHANT_DELTA;
+        existing.add(new Enchantment(statId, delta, p.getPixelX(), p.getPixelY(), color));
         target.setEnchantments(existing);
 
         log.info("[Forge] Player {} enchanted {} with +1 stat {} at pixel ({},{}) (now {} enchantments)",
