@@ -137,24 +137,26 @@ public class LoadPacket extends Packet {
     	if(other==null) {
     		return this;
     	}
-        final List<Long> playerIdsThis = Stream.of(this.players).map(NetPlayer::getId).collect(Collectors.toList());
+        // Players, enemies, and portals: always send the full set.
+        // These are low-count entities and the delta was causing state desync
+        // where the server believed the client had entities it never received
+        // (the moment any LoadPacket failed to reach the client, those entities
+        // were permanently invisible — they never reappeared in subsequent
+        // diffs because the server's cached state already "had" them). Sending
+        // the full snapshot every tick lets the client self-heal from any
+        // dropped/corrupted packet within one tick.
+        //
+        // Bullets and loot containers DO use deltas: bullets are high-volume
+        // and self-heal via natural expiration; loot containers re-sync via
+        // the contentsChanged override.
+        final List<Long> bulletIdsThis = Stream.of(this.bullets).map(NetBullet::getId).collect(Collectors.toList());
         final List<Long> lootIdsThis = Stream.of(this.containers).map(NetLootContainer::getLootContainerId)
                 .collect(Collectors.toList());
-        final List<Long> enemyIdsThis = Stream.of(this.enemies).map(NetEnemy::getId).collect(Collectors.toList());
-        final List<Long> bulletIdsThis = Stream.of(this.bullets).map(NetBullet::getId).collect(Collectors.toList());
-        final List<Long> portalIdsThis = Stream.of(this.portals).map(NetPortal::getId).collect(Collectors.toList());
 
         final List<NetBullet> bulletsDiff = new ArrayList<>();
         for (final NetBullet b : other.getBullets()) {
             if (!bulletIdsThis.contains(b.getId())) {
                 bulletsDiff.add(b);
-            }
-        }
-
-        final List<NetPlayer> playersDiff = new ArrayList<>();
-        for (final NetPlayer p : other.getPlayers()) {
-            if (!playerIdsThis.contains(p.getId())) {
-                playersDiff.add(p);
             }
         }
 
@@ -165,21 +167,9 @@ public class LoadPacket extends Packet {
             }
         }
 
-        final List<NetEnemy> enemyDiff = new ArrayList<>();
-        for (final NetEnemy e : other.getEnemies()) {
-            if (!enemyIdsThis.contains(e.getId())) {
-                enemyDiff.add(e);
-            }
-        }
-
-        final List<NetPortal> portalDiff = new ArrayList<>();
-        for (final NetPortal p : other.getPortals()) {
-            if (!portalIdsThis.contains(p.getId())) {
-                portalDiff.add(p);
-            }
-        }
-        return new LoadPacket(playersDiff.toArray(new NetPlayer[0]), enemyDiff.toArray(new NetEnemy[0]),
-                bulletsDiff.toArray(new NetBullet[0]), lootDiff.toArray(new NetLootContainer[0]), portalDiff.toArray(new NetPortal[0]), other.getDifficulty());
+        return new LoadPacket(other.getPlayers(), other.getEnemies(),
+                bulletsDiff.toArray(new NetBullet[0]), lootDiff.toArray(new NetLootContainer[0]),
+                other.getPortals(), other.getDifficulty());
     }
 
     public UnloadPacket difference(LoadPacket other) throws Exception {
