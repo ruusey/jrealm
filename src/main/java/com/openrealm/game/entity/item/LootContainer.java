@@ -106,10 +106,19 @@ public class LootContainer {
      * WHITE(4): any untiered item (tier -1)
      * BLUE(3): only potions (consumable items)
      * CYAN(2): any item tier 8+
-     * PURPLE(1): tiered items 0-7
+     * PURPLE(1): tiered items 0-7, plus all forge materials (crystals + essences)
      * BROWN(0): fallback / empty
      * CHEST, GRAVE, and BOOSTED are never reclassified — callers set those
      * explicitly and the auto-classifier would clobber them based on contents.
+     *
+     * Forge materials (crystals, essences) are forced into PURPLE regardless
+     * of their authored tier — crystals are tier 8 (would land in CYAN) and
+     * essences are tier -1 (would land in WHITE), but neither feels right
+     * for what is essentially "common forge currency". Treating them as
+     * PURPLE keeps players from confusing forge mats with rare drops.
+     *
+     * All consumables (potions) go to BLUE. Previously they fell through to
+     * BROWN, which made stat-potion drops indistinguishable from empty bags.
      */
     public LootTier determineTier() {
         if (this.tier.equals(LootTier.CHEST) || this.tier.equals(LootTier.GRAVE)
@@ -118,7 +127,7 @@ public class LootContainer {
 
         boolean hasUntiered = false;
         boolean hasHighTier = false; // tier 8+
-        boolean hasLowTier = false;  // tier 0-7, non-consumable
+        boolean hasLowTier = false;  // tier 0-7, non-consumable, OR a forge material
         boolean hasPotion = false;
         boolean hasAnyItem = false;
 
@@ -126,8 +135,13 @@ public class LootContainer {
             if (item == null) continue;
             hasAnyItem = true;
             byte t = item.getTier();
+            final String cat = item.getCategory();
+            final boolean isForgeMaterial = "crystal".equals(cat) || "essence".equals(cat);
             if (item.isConsumable()) {
                 hasPotion = true;
+            } else if (isForgeMaterial) {
+                // Crystals + essences classify as PURPLE regardless of authored tier.
+                hasLowTier = true;
             } else if (t == (byte) -1) {
                 hasUntiered = true;
             } else if (t >= 8) {
@@ -141,7 +155,7 @@ public class LootContainer {
         if (hasUntiered) return LootTier.WHITE;
         if (hasHighTier) return LootTier.CYAN;
         if (hasLowTier) return LootTier.PURPLE;
-        if (hasPotion) return LootTier.BROWN;
+        if (hasPotion) return LootTier.BLUE;
         return LootTier.BROWN;
     }
 
