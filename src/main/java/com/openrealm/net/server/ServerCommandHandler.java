@@ -352,15 +352,35 @@ public class ServerCommandHandler {
         log.info("Player {} spawn item {}", target.getName(), message);
         final Realm targetRealm = mgr.findPlayerRealm(target.getId());
         final int gameItemId = Integer.parseInt(message.getArgs().get(0));
-        final GameItem itemToSpawn = GameDataManager.GAME_ITEMS.get(gameItemId);
-        if (itemToSpawn == null) {
+        final GameItem itemTemplate = GameDataManager.GAME_ITEMS.get(gameItemId);
+        if (itemTemplate == null) {
             throw new IllegalArgumentException("Item with ID " + gameItemId + " does not exist.");
         }
+
+        // Stackables (shards, essence, potions): COUNT is the requested stack
+        // size, capped at the item's maxStack. Spawns one item with that
+        // stackCount rather than COUNT separate copies.
+        if (itemTemplate.isStackable()) {
+            int requested = 1;
+            if (message.getArgs().size() >= 2) {
+                requested = Math.max(1, Integer.parseInt(message.getArgs().get(1)));
+            }
+            final int stackSize = Math.min(itemTemplate.getMaxStack(), requested);
+            final GameItem stack = itemTemplate.clone();
+            stack.setStackCount(stackSize);
+            final LootContainer lootDrop = new LootContainer(LootTier.BROWN,
+                    target.getPos().clone(Realm.RANDOM.nextInt(48) - 24, Realm.RANDOM.nextInt(48) - 24),
+                    new GameItem[] { stack });
+            targetRealm.addLootContainer(lootDrop);
+            return;
+        }
+
+        // Non-stackables: COUNT is the number of separate copies (capped at 32),
+        // packed into loot bags of 8.
         int count = 1;
         if (message.getArgs().size() >= 2) {
             count = Math.min(32, Math.max(1, Integer.parseInt(message.getArgs().get(1))));
         }
-        // Pack items into loot bags of 8
         int spawned = 0;
         while (spawned < count) {
             int bagSize = Math.min(8, count - spawned);
