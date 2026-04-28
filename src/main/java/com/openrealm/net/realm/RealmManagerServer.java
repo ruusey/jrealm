@@ -2315,15 +2315,23 @@ public class RealmManagerServer implements Runnable {
 				player.setHealth(player.getStats().getHp());
 				this.persistPlayerAsync(player);
 			} else {
-				// Permadeath: drop grave, delete character permanently, and bank
-				// the character's earned fame onto the owning account. The data
-				// service computes fame from the character's stored xp when it
-				// sees bankFame=true on the delete call. User-initiated deletes
-				// from the character-select screen do NOT pass this flag, so
-				// self-deletes don't earn fame (deliberate — only deaths bank).
+				// Permadeath: drop grave, persist the latest xp synchronously,
+				// then delete the character and bank its fame onto the owning
+				// account. The data service computes fame from the character's
+				// stored xp when it sees bankFame=true on the delete call —
+				// without a pre-delete persist the periodic 12s sync window
+				// could leave the DB stale and undercount the banked fame.
+				// User-initiated deletes from the character-select screen do
+				// NOT pass this flag, so self-deletes don't earn fame.
 				final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
 						player.getPos().clone(), player.getSlots(4, 12));
 				targetRealm.addLootContainer(graveLoot);
+				try {
+					this.persistPlayer(player);
+				} catch (Exception persistEx) {
+					RealmManagerServer.log.warn("[SERVER] Pre-death persist failed for {}, fame may be undercounted: {}",
+							player.getId(), persistEx.getMessage());
+				}
 				ServerGameLogic.DATA_SERVICE.executeDelete(
 						"/data/account/character/" + player.getCharacterUuid() + "?bankFame=true", Object.class);
 			}
