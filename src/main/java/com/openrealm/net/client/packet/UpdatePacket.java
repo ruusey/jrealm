@@ -55,6 +55,11 @@ public class UpdatePacket extends Packet {
 	private byte hpPotions;
 	@SerializableField(order = 8, type = SerializableByte.class)
 	private byte mpPotions;
+	// Cosmetic dye id (0 = none). Carried on UpdatePacket so a dye consumption
+	// reflects on the dyer's renderer instantly. Other players pick up the
+	// change via NetPlayer in LoadPacket on next re-load.
+	@SerializableField(order = 9, type = SerializableInt.class)
+	private int dyeId;
 
 	public static final NetGameItem[] EMPTY_INVENTORY = new NetGameItem[0];
 
@@ -89,6 +94,7 @@ public class UpdatePacket extends Packet {
 		light.setInventory(EMPTY_INVENTORY);
 		light.setHpPotions(this.hpPotions);
 		light.setMpPotions(this.mpPotions);
+		light.setDyeId(this.dyeId);
 		return light;
 	}
 
@@ -123,6 +129,7 @@ public class UpdatePacket extends Packet {
 		updatePacket.setExperience(player.getExperience());
 		updatePacket.setHpPotions((byte) player.getHpPotions());
 		updatePacket.setMpPotions((byte) player.getMpPotions());
+		updatePacket.setDyeId(player.getDyeId());
 		return updatePacket;
 	}
 
@@ -191,7 +198,10 @@ public class UpdatePacket extends Packet {
 		boolean expEqual = this.experience == other.getExperience();
 		boolean potionsEqual = this.hpPotions == other.getHpPotions()
 				&& this.mpPotions == other.getMpPotions();
-		boolean result = basic && stats && inv && expEqual && potionsEqual;
+		// Include dyeId so a dye consumption is detected as a change and the
+		// updated cosmetic is broadcast to nearby viewers.
+		boolean dyeEqual = this.dyeId == other.getDyeId();
+		boolean result = basic && stats && inv && expEqual && potionsEqual && dyeEqual;
 
 		return result;
 	}
