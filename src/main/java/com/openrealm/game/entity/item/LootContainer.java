@@ -136,11 +136,19 @@ public class LootContainer {
             hasAnyItem = true;
             byte t = item.getTier();
             final String cat = item.getCategory();
-            final boolean isForgeMaterial = "crystal".equals(cat) || "essence".equals(cat);
+            // "shard" is the partial-crystal forge material (8 stat shards
+            // combine into a full crystal). Treat it the same as full
+            // crystals + essences so it lands in a PURPLE bag instead of a
+            // WHITE one — matches player expectation that all forge mats
+            // drop in purple.
+            final boolean isForgeMaterial = "crystal".equals(cat)
+                    || "essence".equals(cat)
+                    || "shard".equals(cat);
             if (item.isConsumable()) {
                 hasPotion = true;
             } else if (isForgeMaterial) {
-                // Crystals + essences classify as PURPLE regardless of authored tier.
+                // Crystals + essences + shards classify as PURPLE regardless
+                // of authored tier.
                 hasLowTier = true;
             } else if (t == (byte) -1) {
                 hasUntiered = true;

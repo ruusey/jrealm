@@ -80,8 +80,9 @@ public class SorcererScepterScript extends UseableItemScriptBase {
                 continue;
             }
 
-            // Apply chain damage
-            short dmg = (short) Math.max(currentDamage - currentTarget.getStats().getDef(), currentDamage * 0.15);
+            // Apply chain damage as TRUE DAMAGE — ignores enemy defense, just
+            // like assassin poison. Buffs (DAMAGING / CURSED) still scale it.
+            short dmg = (short) currentDamage;
             if (player.hasEffect(StatusEffectType.DAMAGING)) {
                 dmg = (short) (dmg * 1.5);
             }
