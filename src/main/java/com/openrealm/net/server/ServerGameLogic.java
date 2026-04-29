@@ -751,6 +751,10 @@ public class ServerGameLogic {
 				player.setAccountUuid(accountUuid);
 				player.setCharacterUuid(targetCharacter.getCharacterUuid());
 				player.equipSlots(loadedEquipment);
+				// Relocate any equipped items that don't actually match their
+				// slot type or class. This cleans up legacy-bad state on
+				// every login so a single-time bug doesn't persist forever.
+				com.openrealm.net.server.ServerItemHelper.reconcileEquipment(player);
 				player.applyStats(targetCharacter.getStats());
 				player.setName(accountName);
 				player.setHeadless(false);

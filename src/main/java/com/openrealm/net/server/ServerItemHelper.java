@@ -19,6 +19,60 @@ import lombok.extern.slf4j.Slf4j;
 public class ServerItemHelper {
 
     /**
+     * Returns true if {@code item} is allowed to occupy equipment slot
+     * {@code slotIdx} (0-3) for {@code player}'s class. Mirrors the gating
+     * logic used in {@link #handleMoveItemPacket}: targetSlot match,
+     * class compatibility, and rejects consumables/stackables.
+     *
+     * Used as a single source of truth so we can validate equips on the
+     * move path AND on character load (otherwise items saved to wrong slots
+     * by an older bug stay there forever).
+     */
+    public static boolean canEquipInSlot(Player player, GameItem item, int slotIdx) {
+        if (item == null) return false;
+        if (slotIdx < 0 || slotIdx > 3) return false;
+        if (item.isConsumable() || item.isStackable()) return false;
+        if (item.getTargetSlot() >= 0 && item.getTargetSlot() != slotIdx) return false;
+        return com.openrealm.game.contants.CharacterClass.isValidUser(player, item.getTargetClass());
+    }
+
+    /**
+     * Sanity-pass after equipping items from saved character data: scan
+     * equipment slots 0-3 and relocate any mismatched item into the first
+     * empty inventory slot. Without this, a character that historically got
+     * a wrong item into an equipment slot (via any past bug) keeps it forever
+     * because equipSlots() doesn't validate.
+     *
+     * Returns the number of relocations performed.
+     */
+    public static int reconcileEquipment(Player player) {
+        if (player == null) return 0;
+        final GameItem[] inv = player.getInventory();
+        if (inv == null) return 0;
+        int relocated = 0;
+        for (int slot = 0; slot < 4; slot++) {
+            final GameItem cur = inv[slot];
+            if (cur == null) continue;
+            if (canEquipInSlot(player, cur, slot)) continue;
+            // Mismatch: move to first empty inv slot (4-19). If none, drop.
+            final int empty = player.firstEmptyInvSlot();
+            if (empty >= 0) {
+                inv[empty] = cur;
+                inv[slot] = null;
+                relocated++;
+                log.warn("[Equipment] Relocated invalid item {} (targetSlot={}, targetClass={}) from equipment slot {} to inventory slot {} for player {}",
+                        cur.getName(), cur.getTargetSlot(), cur.getTargetClass(), slot, empty, player.getId());
+            } else {
+                inv[slot] = null;
+                relocated++;
+                log.warn("[Equipment] Dropped invalid item {} from equipment slot {} (inventory full) for player {}",
+                        cur.getName(), slot, player.getId());
+            }
+        }
+        return relocated;
+    }
+
+    /**
      * Try to deposit `incoming` into the player's inventory. If `incoming` is a
      * stackable item, top-up any existing stacks of the same itemId before
      * spilling into a free slot. Returns true if any portion was deposited.
@@ -158,27 +212,39 @@ public class ServerItemHelper {
         // Equip: inventory (4-19) → equipment (0-3)
         } else if (MoveItemPacket.isInventory(fromIdx)
                 && MoveItemPacket.isEquipment(targetIdx) && (from != null)) {
-            // Consumable items (potions, food) cannot be equipped
-            if (from.isConsumable()) {
-                ServerItemHelper.log.warn("Player {} attempted to equip a consumable item {}", player.getId(), from.getName());
+            if (!canEquipInSlot(player, from, targetIdx)) {
+                ServerItemHelper.log.warn(
+                        "Player {} rejected equip of {} (targetSlot={}, targetClass={}) into slot {}",
+                        player.getId(), from.getName(), from.getTargetSlot(), from.getTargetClass(), targetIdx);
                 return;
             }
-            // Stackable items (shards, essence, crystals) cannot be equipped
-            if (from.isStackable()) {
-                ServerItemHelper.log.warn("Player {} attempted to equip a stackable item {}", player.getId(), from.getName());
+            // If we're swapping with the equipped item, the displaced item
+            // also has to fit somewhere — it's going to fromIdx (a regular
+            // inv slot), which is unrestricted, so always safe.
+            if (currentEquip != null) {
+                player.getInventory()[fromIdx] = currentEquip.clone();
+            } else {
+                player.getInventory()[fromIdx] = null;
+            }
+            player.getInventory()[targetIdx] = from.clone();
+
+        // Equip → equip swap (e.g. dragging from slot 0 to slot 3 directly).
+        // Both endpoints must validate against the destination slot.
+        } else if (MoveItemPacket.isEquipment(fromIdx)
+                && MoveItemPacket.isEquipment(targetIdx) && (from != null)) {
+            if (!canEquipInSlot(player, from, targetIdx)) {
+                ServerItemHelper.log.warn(
+                        "Player {} rejected equip-swap of {} into slot {} (mismatch)",
+                        player.getId(), from.getName(), targetIdx);
                 return;
             }
-            // Item must be designed for this equipment slot (or auto-assign with targetSlot=-1)
-            if (from.getTargetSlot() >= 0 && from.getTargetSlot() != targetIdx) {
-                ServerItemHelper.log.warn("Player {} attempted to equip item {} (targetSlot={}) in slot {}",
-                        player.getId(), from.getName(), from.getTargetSlot(), targetIdx);
+            if (currentEquip != null && !canEquipInSlot(player, currentEquip, fromIdx)) {
+                ServerItemHelper.log.warn(
+                        "Player {} rejected equip-swap: displaced item {} doesn't fit slot {}",
+                        player.getId(), currentEquip.getName(), fromIdx);
                 return;
             }
-            if (!CharacterClass.isValidUser(player, from.getTargetClass())) {
-                ServerItemHelper.log.warn("Player {} attempted to equip an item not useable by their class",
-                        player.getId());
-                return;
-            }
+            // Pure swap.
             if (currentEquip != null) {
                 player.getInventory()[fromIdx] = currentEquip.clone();
             } else {
