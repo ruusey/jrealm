@@ -278,9 +278,20 @@ public class ServerItemHelper {
                 player.getInventory()[targetIdx] = fromClone;
             }
 
-        // Unequip: equipment (0-3) → inventory (4-19)
+        // Unequip: equipment (0-3) → inventory (4-19). When the destination
+        // slot already holds an item, this becomes a swap: that item moves
+        // INTO the equip slot. It must therefore pass the same equip-slot
+        // validation as a normal equip — otherwise a client could put any
+        // item (e.g. a bow on a wizard) into an equip slot just by dragging
+        // the equipped item onto an incompatible inventory item.
         } else if (MoveItemPacket.isEquipment(fromIdx)
                 && MoveItemPacket.isInventory(targetIdx) && (from != null)) {
+            if (currentEquip != null && !canEquipInSlot(player, currentEquip, fromIdx)) {
+                ServerItemHelper.log.warn(
+                        "Player {} rejected unequip-swap: incoming item {} doesn't fit equip slot {}",
+                        player.getId(), currentEquip.getName(), fromIdx);
+                return;
+            }
             if (currentEquip != null) {
                 player.getInventory()[fromIdx] = currentEquip.clone();
             } else {
