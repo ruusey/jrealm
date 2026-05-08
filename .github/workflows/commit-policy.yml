@@ -1,0 +1,54 @@
+name: commit-policy
+on: [push, pull_request]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reject forbidden attribution
+        shell: bash
+        run: |
+          set -uo pipefail
+          # Forbidden term, base64-encoded so this workflow file doesn't
+          # trip its own check on the push that introduces it.
+          needle=$(printf '%s' Y2xhdWRl | base64 -d)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+          else
+            base="${{ github.event.before }}"
+            head="${{ github.sha }}"
+          fi
+          # New branch / unknown base / force-push-from-orphan -> only scan
+          # the tip commit. Otherwise scan everything pushed in this event.
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] \
+              || ! git rev-parse --verify -q "$base" >/dev/null; then
+            log_args=(-1 "$head")
+            if git rev-parse --verify -q "$head^" >/dev/null 2>&1; then
+              diff_args=("$head^..$head")
+            else
+              EMPTY=$(git hash-object -t tree /dev/null)
+              diff_args=("$EMPTY..$head")
+            fi
+          else
+            log_args=("$base..$head")
+            diff_args=("$base..$head")
+          fi
+          echo "Scanning ${log_args[*]} (diff: ${diff_args[*]})"
+          fail=0
+          if git log --format='%H%n%B' "${log_args[@]}" | grep -i -- "$needle"; then
+            echo "::error::commit message contains forbidden attribution term"
+            fail=1
+          fi
+          if git diff "${diff_args[@]}" | grep -iE "^\+.*$needle"; then
+            echo "::error::added/changed line contains forbidden attribution term"
+            fail=1
+          fi
+          if git diff --name-only "${diff_args[@]}" | grep -i -- "$needle"; then
+            echo "::error::changed file path contains forbidden attribution term"
+            fail=1
+          fi
+          exit $fail
