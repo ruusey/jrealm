@@ -991,10 +991,18 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						// Heartbeat timeout check (every tick)
+						// Heartbeat timeout check (every tick). Bumped from 10s to
+						// 60s so the webclient's heartbeat (1 Hz setInterval)
+						// surviving browser inactive-tab throttling doesn't
+						// false-positive the timeout when the player alt-tabs
+						// briefly. Browsers throttle setInterval to >=1 Hz in
+						// inactive tabs but Chrome's "intensive throttling"
+						// after ~5 min reduces that to ~1/min — the 60s
+						// budget covers the common alt-tab case while still
+						// reaping genuinely dead clients within a minute.
 						final Long playerLastHeartbeatTime = this.playerLastHeartbeatTime.get(player.getKey());
 						if (playerLastHeartbeatTime != null
-								&& ((Instant.now().toEpochMilli() - playerLastHeartbeatTime) > 10000)) {
+								&& ((Instant.now().toEpochMilli() - playerLastHeartbeatTime) > 60000)) {
 							long elapsed = Instant.now().toEpochMilli() - playerLastHeartbeatTime;
 							toRemoveReasons.put(player.getValue(), "heartbeat timeout (" + elapsed + "ms since last heartbeat)");
 						}
