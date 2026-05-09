@@ -136,13 +136,24 @@ public class ServerItemHelper {
 
     public static void handleMoveItemPacket(RealmManagerServer mgr, Packet packet) throws Exception {
         final MoveItemPacket moveItemPacket = (MoveItemPacket) packet;
-        ServerItemHelper.log.info("[ItemMoveHelper] Recieved MoveItem Packet from player {}", moveItemPacket.getPlayerId());
 
         final Realm realm = mgr.findPlayerRealm(moveItemPacket.getPlayerId());
         final Player player = realm.getPlayer(moveItemPacket.getPlayerId());
 
         final int fromIdx = moveItemPacket.getFromSlotIndex();
         final int targetIdx = moveItemPacket.getTargetSlotIndex();
+        // One-line log of the entire intent so the native-client loot
+        // pickup race is diagnosable from server-side too: shows from
+        // -> target, drop / consume flags, and the player's current
+        // pos at the time of the packet (we use this to debug the
+        // 'pickup radius' rejection — if the position is far from
+        // a loot container the in-realm getClosestLootContainer
+        // will return null and pickup silently no-ops).
+        ServerItemHelper.log.info("[ItemMove] player={} from={} target={} drop={} consume={} pos=({}, {})",
+                moveItemPacket.getPlayerId(), fromIdx, targetIdx,
+                moveItemPacket.isDrop(), moveItemPacket.isConsume(),
+                player != null ? player.getPos().x : -1f,
+                player != null ? player.getPos().y : -1f);
 
         // Consume or drop HP/MP potion from potion storage (virtual slots 28/29)
         if (fromIdx == MoveItemPacket.HP_POTION_SLOT || fromIdx == MoveItemPacket.MP_POTION_SLOT) {
