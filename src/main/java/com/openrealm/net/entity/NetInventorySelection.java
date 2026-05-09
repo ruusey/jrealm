@@ -30,6 +30,13 @@ public class NetInventorySelection extends SerializableFieldType<NetInventorySel
 	private Boolean[] selection;
 	@SerializableField(order = 2, type = NetGameItemRef.class, isCollection = true)
 	private NetGameItemRef[] itemRefs;
+	/** Whether this player has hit Confirm on the trade. Broadcast back to
+	 *  both clients via UpdateTradePacket so the partner can see "X has
+	 *  confirmed" in their trade overlay header. Reset to false whenever
+	 *  the selection changes (mirrors the existing playerTradeConfirmation
+	 *  reset in ServerTradeManager.handleUpdateTrade). */
+	@SerializableField(order = 3, type = SerializableBoolean.class)
+	private boolean confirmed;
 
 	public static NetInventorySelection fromPlayer(Player player, Boolean[] selectedSlots) {
 		return NetInventorySelection.builder().playerId(player.getId()).selection(selectedSlots).build();

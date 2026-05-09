@@ -329,9 +329,23 @@ public class ServerItemHelper {
 
         // Ground loot pickup (fromSlot 20-27)
         } else if (MoveItemPacket.isGroundLoot(fromIdx)) {
+            // Pickup radius — was player.getSize()*0.75 (~24px) which was
+            // too tight: vault chests sit near spawn so the player is
+            // always within range, but world-drop loot bags fall a few
+            // pixels outside that radius depending on where they spawned
+            // and reject pickup silently. Match the 'show this bag's
+            // items in the UI' radius the client uses to display the
+            // bag (player.getSize() + 24, ≈48-56px) so pickup is
+            // available for any bag whose items the player can see.
+            final int pickupRadius = player.getSize() + 24;
             final LootContainer nearLoot = mgr.getClosestLootContainer(realm.getRealmId(), player.getPos(),
-                    (int)(player.getSize() * 0.75), player.getId());
-            if (nearLoot == null) return;
+                    pickupRadius, player.getId());
+            if (nearLoot == null) {
+                ServerItemHelper.log.info(
+                        "[ItemMoveHelper] Player {} ground-loot pickup: no loot container within {}px of pos ({}, {})",
+                        player.getId(), pickupRadius, player.getPos().x, player.getPos().y);
+                return;
+            }
 
             int lootIdx = fromIdx - 20;
             if (lootIdx < 0 || lootIdx >= nearLoot.getItems().length) return;

@@ -134,9 +134,9 @@ public class ServerTradeManager {
 			ServerTradeManager.playerActiveTrades.put(target.getId(), toRespond.getId());
 
 			playerTradeSelections.put(target.getId(),
-					new NetInventorySelection(target.getId(), new Boolean[8], target.getInventoryAsNetGameItemRefs()));
+					new NetInventorySelection(target.getId(), new Boolean[8], target.getInventoryAsNetGameItemRefs(), false));
 			playerTradeSelections.put(toRespond.getId(), new NetInventorySelection(toRespond.getId(), new Boolean[8],
-					toRespond.getInventoryAsNetGameItemRefs()));
+					toRespond.getInventoryAsNetGameItemRefs(), false));
 
 			// Reset confirmations for the active trade
 			ServerTradeManager.playerTradeConfirmation.put(target.getId(), (short) 0);
@@ -196,6 +196,11 @@ public class ServerTradeManager {
 			ServerTradeManager.playerTradeConfirmation.put(target.getId(), (short) 1);
 			mgr.enqueueServerPacket(toRespond, TextPacket.create("SYSTEM", toRespond.getName(),
 					target.getName() + " has confirmed the trade"));
+			// Broadcast the updated confirmation state so the partner's
+			// trade-overlay header flips to 'Confirmed' immediately
+			// (without this both sides only learn confirmation through a
+			// chat line and the overlay shows stale 'Picking…').
+			broadcastTradeState(mgr, target, toRespond);
 
 			if (!isTradeConfirmed(target, toRespond)) {
 				mgr.enqueueServerPacket(target, TextPacket.create("SYSTEM", target.getName(),
@@ -271,19 +276,41 @@ public class ServerTradeManager {
 		NetInventorySelection storedSelection = ServerTradeManager.playerTradeSelections.get(selection.getPlayerId());
 		if (storedSelection != null) {
 			storedSelection.setSelection(selection.getSelection());
+			storedSelection.setConfirmed(false); // selection change un-confirms
 		} else {
+			selection.setConfirmed(false);
 			ServerTradeManager.playerTradeSelections.put(selection.getPlayerId(), selection);
 		}
 
-		// Reset confirmations when selection changes
+		// Reset confirmations when selection changes — both sides need to
+		// re-confirm after any change. Mirror the flag onto the stored
+		// selection objects so the broadcast picks it up.
 		ServerTradeManager.playerTradeConfirmation.put(selection.getPlayerId(), (short) 0);
 		ServerTradeManager.playerTradeConfirmation.put(toRespond.getId(), (short) 0);
-
 		final NetInventorySelection otherSelection = ServerTradeManager.playerTradeSelections.get(toRespond.getId());
-		final NetTradeSelection playersSelections = new NetTradeSelection(selection, otherSelection);
-		final UpdateTradePacket toSendToTraders = new UpdateTradePacket(playersSelections);
-		mgr.enqueueServerPacket(toRespond, toSendToTraders);
-		mgr.enqueueServerPacket(updateSource, toSendToTraders);
+		if (otherSelection != null) otherSelection.setConfirmed(false);
+		broadcastTradeState(mgr, updateSource, toRespond);
+	}
+
+	/** Push the current pair of NetInventorySelections (with their confirmed
+	 *  flags freshly synced from {@link #playerTradeConfirmation}) to both
+	 *  traders. Called whenever either selection or confirmation state
+	 *  changes — keeps the trade overlay status fields ('Picking…' /
+	 *  'Confirmed') accurate on both sides. */
+	private static void broadcastTradeState(RealmManagerServer mgr,
+			Player a, Player b) {
+		final NetInventorySelection selA = ServerTradeManager.playerTradeSelections.get(a.getId());
+		final NetInventorySelection selB = ServerTradeManager.playerTradeSelections.get(b.getId());
+		if (selA != null) selA.setConfirmed(
+				ServerTradeManager.playerTradeConfirmation.getOrDefault(a.getId(), (short) 0) == 1);
+		if (selB != null) selB.setConfirmed(
+				ServerTradeManager.playerTradeConfirmation.getOrDefault(b.getId(), (short) 0) == 1);
+		final NetTradeSelection bundle = new NetTradeSelection(
+				selA != null ? selA : NetInventorySelection.fromPlayer(a, new Boolean[8]),
+				selB != null ? selB : NetInventorySelection.fromPlayer(b, new Boolean[8]));
+		final UpdateTradePacket pkt = new UpdateTradePacket(bundle);
+		mgr.enqueueServerPacket(a, pkt);
+		mgr.enqueueServerPacket(b, pkt);
 	}
 
 	public static void initTrade(Player requestor, RequestTradePacket request) throws IllegalArgumentException {
