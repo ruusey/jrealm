@@ -84,10 +84,19 @@ public class NecromancerSkullScript extends UseableItemScriptBase {
         this.mgr.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
             CreateEffectPacket.EFFECT_VAMPIRISM, center.x, center.y, radius, (short) 1500, (byte) tier));
 
-        // Flat heal (matches RotMG wiki) — heals regardless of damage dealt
-        int maxHp = player.getComputedStats().getHp();
-        int newHealth = Math.min(player.getHealth() + healAmount, maxHp);
-        player.setHealth(newHealth);
-        this.mgr.broadcastTextEffect(EntityType.PLAYER, player, TextEffect.HEAL, "+" + healAmount);
+        // Flat heal (matches RotMG wiki). Broadcast the ACTUAL amount
+        // healed (capped at missing HP), not the full healAmount —
+        // otherwise a player at full HP saw "+110" floating text every
+        // cast even though their bar didn't move. Skip the text effect
+        // entirely when the player is already topped off so the heal
+        // doesn't visually lie. Mirrors the pattern used by
+        // Enemy67Script / HolyProtectionTomeScript / Item157Script.
+        final int maxHp = player.getComputedStats().getHp();
+        final int missingHp = maxHp - player.getHealth();
+        if (missingHp > 0) {
+            final int actualHealed = Math.min(healAmount, missingHp);
+            player.setHealth(player.getHealth() + actualHealed);
+            this.mgr.broadcastTextEffect(EntityType.PLAYER, player, TextEffect.HEAL, "+" + actualHealed);
+        }
     }
 }
