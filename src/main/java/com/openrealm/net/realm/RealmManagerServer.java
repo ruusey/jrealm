@@ -167,7 +167,24 @@ public class RealmManagerServer implements Runnable {
 	// need a tight interval — 10s balances recovery time against the
 	// per-cycle cost of repeatedly shipping the full N-player snapshot.
 	private Map<Long, Long> playerLastFullSnapshotMs = new ConcurrentHashMap<>();
-	private static final long FULL_SNAPSHOT_INTERVAL_MS = 10000L;
+	/** Last time we force-cleared this viewer's per-other-player UpdatePacket
+	 *  delta cache. Every {@link #VIEWER_UPDATE_REFRESH_MS} we wipe the map so
+	 *  the next broadcast tick unconditionally re-sends the stripped
+	 *  UpdatePacket for every nearby player. Self-heals the race where a
+	 *  freshly-loaded viewer's first UpdatePacket landed before its
+	 *  matching LoadPacket added the player (so getPlayer(id) returned null
+	 *  and the update was silently dropped). Mirrors the periodic full
+	 *  LoadPacket snapshot at {@link #FULL_SNAPSHOT_INTERVAL_MS}. */
+	private Map<Long, Long> lastViewerUpdateRefreshMs = new ConcurrentHashMap<>();
+	private static final long VIEWER_UPDATE_REFRESH_MS = 2000L;
+	// Was 10s — bumped down to 2s so a freshly-joined client whose first
+	// LoadPacket missed an entity (race against the per-viewer entitySetSame
+	// delta gate) recovers within one cycle instead of staring at a blank
+	// world for 10 full seconds. The webclient never noticed because it
+	// receives entities via tile-stream chunks during LoadMap; the native
+	// client's tile path is finished before LoadPacket starts streaming so
+	// any delta gap is visible.
+	private static final long FULL_SNAPSHOT_INTERVAL_MS = 2000L;
 	private Map<Long, UpdatePacket> playerUpdateState = new ConcurrentHashMap<>();
 	private Map<Long, PlayerStatePacket> playerStateState = new ConcurrentHashMap<>();
 	private Map<Long, UpdatePacket> enemyUpdateState = new ConcurrentHashMap<>();
@@ -730,6 +747,23 @@ public class RealmManagerServer implements Runnable {
 							// in nexus all reuse a single allocation per other-player. Without
 							// the cache this loop ran ~6400 reflection-heavy inventory builds
 							// per second at 40 players, dwarfing the rest of the tick budget.
+							//
+							// Self-heal: every VIEWER_UPDATE_REFRESH_MS we WIPE this viewer's
+							// per-other-player delta cache so the next iteration unconditionally
+							// re-sends every nearby UpdatePacket. Without this, a freshly-loaded
+							// viewer who races a peer's first UpdatePacket (UPDATE arrived before
+							// LOAD added the peer to the realm map → handleUpdate dropped it)
+							// stayed permanently blank for that peer. The cache wipe forces a
+							// fresh send within ~2s and the client's pending-update buffer
+							// applies it correctly.
+							final long nowMsForRefresh = System.currentTimeMillis();
+							final Long lastRefresh = this.lastViewerUpdateRefreshMs.get(player.getKey());
+							if (lastRefresh == null || (nowMsForRefresh - lastRefresh) >= VIEWER_UPDATE_REFRESH_MS) {
+								final Map<Long, UpdatePacket> existingCache = this.otherPlayerUpdateState.get(player.getKey());
+								if (existingCache != null) existingCache.clear();
+								this.lastViewerUpdateRefreshMs.put(player.getKey(), nowMsForRefresh);
+							}
+
 							final Player[] otherPlayers = realm.getPlayersInRadiusFast(playerCenter, viewportRadius);
 							final int maxOtherUpdates = Math.min(otherPlayers.length, 20);
 							for (int opi = 0; opi < maxOtherUpdates; opi++) {
