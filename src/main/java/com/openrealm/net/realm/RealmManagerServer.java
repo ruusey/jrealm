@@ -231,7 +231,7 @@ public class RealmManagerServer implements Runnable {
 	private static final int MOVE_FULL_TICK_DIVISOR = 4;  // Full viewport dead reckoning check at 16Hz
 	private static final int LOAD_TICK_DIVISOR = 2;       // Entity spawn/despawn at 32Hz — bullets need low latency to avoid burst effect
 	private static final int UPDATE_TICK_DIVISOR = 8;     // Stats/inventory at 8Hz (was 16Hz — stats change slowly)
-	private static final int LOADMAP_TICK_DIVISOR = 16;
+	private static final int LOADMAP_TICK_DIVISOR = 12; // 64Hz / 12 ≈ 5.3Hz — was 16 (4Hz). Faster tile reveal as the player walks.
 	private static final int ENEMY_UPDATE_TICK_DIVISOR = 8; // Enemy health bars at 8Hz (was 16Hz)
 	// Enemy AI tick divisor — staggered so 1/N of enemies get updated each
 	// tick. MUST be a power of 2 (used as a bitmask). Value 2 gives each
