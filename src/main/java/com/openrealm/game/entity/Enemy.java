@@ -408,7 +408,10 @@ public class Enemy extends Entity {
                     });
                 }
             }
-            return;
+            // Additive scripts (e.g. Enemy26 grenade) want to layer on top of
+            // the JSON-defined phase attacks rather than replace them, so we
+            // fall through to the data-driven path below.
+            if (!script.isAdditive()) return;
         }
 
         List<AttackPattern> attacks = (phase != null && phase.getAttacks() != null) ? phase.getAttacks() : null;
