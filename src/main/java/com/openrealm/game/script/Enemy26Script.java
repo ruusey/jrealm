@@ -36,12 +36,26 @@ public class Enemy26Script extends EnemyScriptBase {
 
     /** Cadence between grenade throws while in the gated phase. */
     private static final long BOMB_INTERVAL_MS = 2000L;
-    /** Lob travel time — same feel as the assassin poison vial. */
-    private static final long THROW_DURATION_MS = 800L;
-    /** 4x4 grid; cell-center offsets along each axis from boss center. */
-    private static final float[] CELL_OFFSETS = { -300f, -100f, 100f, 300f };
+    /** Lob travel time. Doubled from the assassin's 800ms so the player has
+     *  a full second-and-a-half to read the red landing marker and clear out. */
+    private static final long THROW_DURATION_MS = 1600L;
+    /** 4x4 grid; cell-center offsets along each axis from boss center.
+     *  Span is 384 px = a 12x12 tile square at 32 px/tile, kept tight around
+     *  the boss so grenades stay in the engagement zone. */
+    private static final float[] CELL_OFFSETS = { -192f, -64f, 64f, 192f };
     /** Number of shrapnel projectiles fired in a ring on impact. */
     private static final int SHRAPNEL_COUNT = 16;
+    /** Visual radius of the red landing-warning marker during the throw. */
+    private static final float WARNING_RADIUS = 110f;
+    /** Visual radius of the impact splash on detonation. Larger than the
+     *  warning so the boom reads clearly as "it just went off". */
+    private static final float IMPACT_RADIUS = 180f;
+    /** How long the impact splash sticks around. */
+    private static final short IMPACT_DURATION_MS = 700;
+    /** Tier sentinel passed in CreateEffectPacket so the native client paints
+     *  the lob arc red instead of the default assassin-vial green. Anything
+     *  >= 10 triggers the red palette in renderPoisonThrow. */
+    private static final byte RED_GRENADE_TIER = 10;
     /** Phase name (in enemies.json) the grenade grid is gated to. */
     private static final String GATED_PHASE = "spiral_ring";
 
@@ -89,12 +103,22 @@ public class Enemy26Script extends EnemyScriptBase {
         final float landX = bossCenter.x + CELL_OFFSETS[cellCol];
         final float landY = bossCenter.y + CELL_OFFSETS[cellRow];
 
-        // Throw arc visual — same line-effect as the assassin poison vial.
-        // The native client already renders this as a parabolic lob.
+        // Throw arc visual — re-uses the assassin's poison-vial line effect
+        // for the parabolic lob on the client, but with tier=10 so the
+        // native client's renderPoisonThrow paints the trail / blob red
+        // instead of the default green.
         this.getMgr().enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
                 CreateEffectPacket.EFFECT_POISON_SPLASH,
                 bossCenter.x, bossCenter.y, landX, landY,
-                (short) THROW_DURATION_MS));
+                (short) THROW_DURATION_MS, RED_GRENADE_TIER));
+
+        // Red landing-zone warning — a CURSE_RADIUS AoE that pulses on the
+        // ground for the full throw duration so the player knows exactly
+        // where to clear out. CURSE_RADIUS already renders red on the
+        // native client (no client rebuild needed for the AoE).
+        this.getMgr().enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+                CreateEffectPacket.EFFECT_CURSE_RADIUS,
+                landX, landY, WARNING_RADIUS, (short) THROW_DURATION_MS));
 
         final long realmId = targetRealm.getRealmId();
 
@@ -107,12 +131,14 @@ public class Enemy26Script extends EnemyScriptBase {
                 final Realm r = Enemy26Script.this.getMgr().getRealms().get(realmId);
                 if (r == null) return;
 
-                // Impact splash — short-lived AoE pulse to read the landing.
-                final float splashRadius = 100f;
+                // Impact splash — bigger and longer-lived than the warning
+                // so the detonation reads clearly. Same red CURSE_RADIUS
+                // renderer (filled disc + thick outline + pulsing inner
+                // ring), just at a noticeable size.
                 Enemy26Script.this.getMgr().enqueueServerPacketToRealm(r,
                         CreateEffectPacket.aoeEffect(
-                                CreateEffectPacket.EFFECT_POISON_SPLASH,
-                                landX, landY, splashRadius, (short) 350));
+                                CreateEffectPacket.EFFECT_CURSE_RADIUS,
+                                landX, landY, IMPACT_RADIUS, IMPACT_DURATION_MS));
 
                 // 16 shrapnel projectiles in an even ring from the impact point.
                 final Vector2f impactPos = new Vector2f(landX, landY);

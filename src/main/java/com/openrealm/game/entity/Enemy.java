@@ -420,6 +420,19 @@ public class Enemy extends Entity {
             if (this.attackCooldowns == null || this.attackCooldowns.length != attacks.size()) {
                 this.attackCooldowns = new long[attacks.size()];
                 this.attackAngleAccumulators = new float[attacks.size()];
+                // Stagger initial fire times so multiple patterns don't
+                // synchronize on the first post-init / post-phase-transition
+                // tick. Without this, every pattern hits its (now - 0) >=
+                // cooldownMs gate on the same instant — players experience
+                // a "release the kraken" burst right after phase invul
+                // ends. Each subsequent pattern is delayed by 250ms so the
+                // first volleys spread out over a beat.
+                final long bootNow = System.currentTimeMillis();
+                for (int i = 0; i < attacks.size(); i++) {
+                    final int cooldownMs = attacks.get(i).getCooldownMs();
+                    final long stagger = Math.min((long) i * 250L, cooldownMs);
+                    this.attackCooldowns[i] = bootNow - (cooldownMs - stagger);
+                }
             }
             long now = System.currentTimeMillis();
             boolean anyAttacked = false;
@@ -463,8 +476,16 @@ public class Enemy extends Entity {
 
         Vector2f dest = player.getBounds().getPos().clone(player.getSize() / 2, player.getSize() / 2);
 
+        // FIXED_RING uses fixedAngle (world-locked) as the base AND distributes
+        // shotCount evenly around 360° like RING. This is the clean way to get
+        // a "consistent slow spiral" — without it, RING's base tracks the
+        // boss→player vector each volley, so a player circling the boss
+        // cancels the spiral's accumulated rotation.
+        final boolean fixedRing = "FIXED_RING".equals(ap.getAimMode());
+        final boolean ringDistribution = "RING".equals(ap.getAimMode()) || fixedRing;
+
         float baseAngle;
-        if ("FIXED".equals(ap.getAimMode())) {
+        if ("FIXED".equals(ap.getAimMode()) || fixedRing) {
             baseAngle = ap.getFixedAngle();
         } else {
             if (ap.isPredictive() && (player.getDx() != 0 || player.getDy() != 0)) {
@@ -483,7 +504,7 @@ public class Enemy extends Entity {
         final float sMin = ap.getMinSpeedMult();
         final float sMax = ap.getMaxSpeedMult();
 
-        if ("RING".equals(ap.getAimMode())) {
+        if (ringDistribution) {
             if (burstCount <= 1) {
                 for (int s = 0; s < shotCount; s++) {
                     float angle = baseAngle + (float) (s * 2 * Math.PI / shotCount);
