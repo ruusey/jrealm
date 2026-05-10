@@ -9,9 +9,13 @@ import com.openrealm.game.entity.item.LootContainer;
 import com.openrealm.game.entity.item.Stats;
 import com.openrealm.game.script.item.UseableItemScriptBase;
 import com.openrealm.net.Packet;
+import com.openrealm.net.client.packet.UpdatePacket;
 import com.openrealm.net.realm.Realm;
 import com.openrealm.net.realm.RealmManagerServer;
 import com.openrealm.net.server.packet.MoveItemPacket;
+import com.openrealm.net.server.packet.SplitStackPacket;
+
+import java.util.UUID;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -86,6 +90,65 @@ public class ServerItemHelper {
             }
         }
         return relocated;
+    }
+
+    /**
+     * Shift+right-click stack split: source slot keeps ceil(N/2), the
+     * floor(N/2) remainder is placed into the first empty backpack slot.
+     * Server rejects when:
+     *   - source isn't in slots 4..19 (backpack only — equipment is non-stackable)
+     *   - source isn't stackable, or stackCount < 2
+     *   - no empty backpack slot is available (so we never silently lose the split)
+     *
+     * On success the player's inventory is mutated and a fresh UpdatePacket
+     * is queued so the client renders the two stacks immediately.
+     */
+    public static void handleSplitStackPacket(RealmManagerServer mgr, Packet packet) {
+        try {
+            final SplitStackPacket p = (SplitStackPacket) packet;
+            final Realm realm = mgr.findPlayerRealm(p.getPlayerId());
+            if (realm == null) return;
+            final Player player = realm.getPlayer(p.getPlayerId());
+            if (player == null) return;
+            final int fromSlot = p.getFromSlot();
+            if (fromSlot < 4 || fromSlot >= player.getInventory().length) {
+                log.warn("[SplitStack] Player {} sent out-of-range slot {}", player.getId(), fromSlot);
+                return;
+            }
+            final GameItem src = player.getInventory()[fromSlot];
+            if (src == null || !src.isStackable() || src.getStackCount() < 2) {
+                log.info("[SplitStack] Player {} slot {} is not a splittable stack", player.getId(), fromSlot);
+                return;
+            }
+            // First empty backpack slot.
+            int empty = -1;
+            for (int i = 4; i < player.getInventory().length; i++) {
+                if (player.getInventory()[i] == null) { empty = i; break; }
+            }
+            if (empty < 0) {
+                log.info("[SplitStack] Player {} inventory full — refusing split of {}",
+                        player.getId(), src.getName());
+                return;
+            }
+            // ceil(N/2) stays at source, floor(N/2) goes to empty.
+            // For odd counts the source keeps the larger half (e.g. 7 -> 4 + 3).
+            final int total = src.getStackCount();
+            final int splitCount = total / 2;             // floor
+            final int sourceCount = total - splitCount;   // ceil
+            src.setStackCount(sourceCount);
+            final GameItem split = src.clone();
+            split.setUid(UUID.randomUUID().toString());
+            split.setStackCount(splitCount);
+            player.getInventory()[empty] = split;
+
+            final UpdatePacket update = realm.getPlayerAsPacket(player.getId());
+            if (update != null) mgr.enqueueServerPacket(player, update);
+
+            log.info("[SplitStack] Player {} split {} ({} -> {} + {}) from slot {} into slot {}",
+                    player.getId(), src.getName(), total, sourceCount, splitCount, fromSlot, empty);
+        } catch (Exception e) {
+            log.error("[SplitStack] handler failed: {}", e.getMessage(), e);
+        }
     }
 
     /**

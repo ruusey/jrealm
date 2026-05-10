@@ -721,6 +721,10 @@ public class ServerGameLogic {
 		ServerPotionStorageHelper.handleMove(mgr, packet);
 	}
 
+	public static void handleSplitStackServer(RealmManagerServer mgr, Packet packet) {
+		ServerItemHelper.handleSplitStackPacket(mgr, packet);
+	}
+
 	public static void handleForgeEnchantServer(RealmManagerServer mgr, Packet packet) {
 		try {
 			ServerForgeHelper.handleForgeEnchant(mgr, packet);

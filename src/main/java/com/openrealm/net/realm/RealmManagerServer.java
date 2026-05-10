@@ -108,6 +108,7 @@ import com.openrealm.net.server.packet.BuyFameItemPacket;
 import com.openrealm.net.server.packet.MoveItemPacket;
 import com.openrealm.net.server.packet.PlayerMovePacket;
 import com.openrealm.net.server.packet.PotionStorageMovePacket;
+import com.openrealm.net.server.packet.SplitStackPacket;
 import com.openrealm.net.server.packet.PlayerShootPacket;
 import com.openrealm.net.server.packet.TextPacket;
 import com.openrealm.net.server.packet.UseAbilityPacket;
@@ -1621,6 +1622,7 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(ForgeDisenchantPacket.class, ServerGameLogic::handleForgeDisenchantServer);
 		this.registerPacketCallback(BuyFameItemPacket.class, ServerGameLogic::handleBuyFameItemServer);
 		this.registerPacketCallback(PotionStorageMovePacket.class, ServerGameLogic::handlePotionStorageMoveServer);
+		this.registerPacketCallback(SplitStackPacket.class, ServerGameLogic::handleSplitStackServer);
 	}
 
 	private void registerPacketCallback(final Class<? extends Packet> packetId, final BiConsumer<RealmManagerServer, Packet> callback) {
