@@ -45,11 +45,15 @@ public class Enemy26Script extends EnemyScriptBase {
     private static final float[] CELL_OFFSETS = { -192f, -64f, 64f, 192f };
     /** Number of shrapnel projectiles fired in a ring on impact. */
     private static final int SHRAPNEL_COUNT = 16;
-    /** Visual radius of the red landing-warning marker during the throw. */
-    private static final float WARNING_RADIUS = 110f;
-    /** Visual radius of the impact splash on detonation. Larger than the
-     *  warning so the boom reads clearly as "it just went off". */
-    private static final float IMPACT_RADIUS = 180f;
+    /** Visual radius of the red landing-warning marker during the throw.
+     *  Sized to ~1.5 tile diameter (24 px radius at 32 px/tile) so it lines
+     *  up exactly with the shrapnel range and reads as a tight, lethal
+     *  blast zone. */
+    private static final float WARNING_RADIUS = 24f;
+    /** Visual radius of the impact splash on detonation — same as warning
+     *  so the danger zone the player saw before the boom is exactly where
+     *  the boom hits. */
+    private static final float IMPACT_RADIUS = 24f;
     /** How long the impact splash sticks around. */
     private static final short IMPACT_DURATION_MS = 700;
     /** Tier sentinel passed in CreateEffectPacket so the native client paints
@@ -112,13 +116,14 @@ public class Enemy26Script extends EnemyScriptBase {
                 bossCenter.x, bossCenter.y, landX, landY,
                 (short) THROW_DURATION_MS, RED_GRENADE_TIER));
 
-        // Red landing-zone warning — a CURSE_RADIUS AoE that pulses on the
-        // ground for the full throw duration so the player knows exactly
-        // where to clear out. CURSE_RADIUS already renders red on the
-        // native client (no client rebuild needed for the AoE).
+        // Red landing-zone warning — CURSE_RADIUS AoE that pulses on the
+        // ground for the full throw duration. tier=10 sentinel triggers
+        // the boss-grenade-specific renderer on the native client (much
+        // higher fill opacity + pulsing outline) so the danger zone is
+        // unmissable through the spiral / ground tile clutter.
         this.getMgr().enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
                 CreateEffectPacket.EFFECT_CURSE_RADIUS,
-                landX, landY, WARNING_RADIUS, (short) THROW_DURATION_MS));
+                landX, landY, WARNING_RADIUS, (short) THROW_DURATION_MS, RED_GRENADE_TIER));
 
         final long realmId = targetRealm.getRealmId();
 
@@ -131,14 +136,13 @@ public class Enemy26Script extends EnemyScriptBase {
                 final Realm r = Enemy26Script.this.getMgr().getRealms().get(realmId);
                 if (r == null) return;
 
-                // Impact splash — bigger and longer-lived than the warning
-                // so the detonation reads clearly. Same red CURSE_RADIUS
-                // renderer (filled disc + thick outline + pulsing inner
-                // ring), just at a noticeable size.
+                // Impact splash — same radius as the warning ring (so the
+                // detonation lands exactly inside the zone the player was
+                // told to clear) and same tier=10 high-opacity red renderer.
                 Enemy26Script.this.getMgr().enqueueServerPacketToRealm(r,
                         CreateEffectPacket.aoeEffect(
                                 CreateEffectPacket.EFFECT_CURSE_RADIUS,
-                                landX, landY, IMPACT_RADIUS, IMPACT_DURATION_MS));
+                                landX, landY, IMPACT_RADIUS, IMPACT_DURATION_MS, RED_GRENADE_TIER));
 
                 // 16 shrapnel projectiles in an even ring from the impact point.
                 final Vector2f impactPos = new Vector2f(landX, landY);
