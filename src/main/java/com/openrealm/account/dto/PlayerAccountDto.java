@@ -36,5 +36,8 @@ public class PlayerAccountDto extends TemporalDto {
     private Long accountFame;
 
     private List<ChestDto> playerVault;
+    // Potion-storage containers (32 slots each, stackables + gems only).
+    // v1 only uses index 0; list shape is forward-compatible with expansion.
+    private List<ChestDto> playerPotionStorage;
     private List<CharacterDto> characters;
 }

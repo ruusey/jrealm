@@ -156,6 +156,8 @@ public class ServerForgeHelper {
             mgr.enqueueServerPacket(player, reply);
         } else if ("fame_store".equals(interactionType)) {
             ServerFameStoreHelper.handleOpenStore(mgr, player);
+        } else if ("potion_storage".equals(interactionType)) {
+            ServerPotionStorageHelper.handleOpen(mgr, player);
         }
     }
 

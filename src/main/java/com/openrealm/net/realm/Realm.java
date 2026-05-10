@@ -32,6 +32,7 @@ import com.openrealm.game.entity.Portal;
 import com.openrealm.game.entity.item.Chest;
 import com.openrealm.game.entity.item.GameItem;
 import com.openrealm.game.entity.item.LootContainer;
+import com.openrealm.game.entity.item.PotionStorage;
 import com.openrealm.game.math.Rectangle;
 import com.openrealm.game.math.Vector2f;
 import com.openrealm.game.model.DungeonGraphNode;
@@ -93,6 +94,12 @@ public class Realm {
     // Compact short ID allocator for bandwidth-efficient movement packets
     private ShortIdAllocator shortIdAllocator = new ShortIdAllocator();
     private final ReentrantLock playerLock = new ReentrantLock();
+
+    // Per-player potion-storage containers loaded alongside vault chests in
+    // setupChests(). Only populated on vault realms (mapId == 1). v1 only
+    // uses index 0 of each list; the list shape leaves room for expansion
+    // without a packet/persistence schema change.
+    private final Map<Long, List<PotionStorage>> playerPotionStorage = new ConcurrentHashMap<>();
 
     // Spatial hash grid for O(1) neighbor lookups (cell size = viewport radius)
     private transient SpatialHashGrid spatialGrid;
@@ -373,6 +380,10 @@ public class Realm {
         try {
             final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE
                     .executeGet("/data/account/" + player.getAccountUuid(), null, PlayerAccountDto.class);
+            // Load potion-storage alongside vault chests. Empty/missing list
+            // is normal for new accounts; we lazily create container[0] on
+            // first interaction in ServerPotionStorageHelper.
+            this.loadPotionStorage(player, account);
             final List<ChestDto> vaultChests = account.getPlayerVault();
             final int count = vaultChests.size();
             if (count == 0) {
@@ -461,6 +472,78 @@ public class Realm {
             return null;
         }
         return this.serializeChests();
+    }
+
+    /**
+     * Hydrate this realm's per-player potion-storage map from the player's
+     * account DTO. Items are reconstructed by slotIdx so sparse persistence
+     * (with gaps in the slot list) round-trips correctly into the 32-slot
+     * GameItem array.
+     */
+    private void loadPotionStorage(final Player player, final PlayerAccountDto account) {
+        final List<ChestDto> persisted = account.getPlayerPotionStorage();
+        final List<PotionStorage> hydrated = new ArrayList<>();
+        if (persisted != null) {
+            for (final ChestDto cd : persisted) {
+                if (cd == null) continue;
+                final PotionStorage ps = new PotionStorage(cd.getChestUuid(),
+                        cd.getOrdinal() == null ? hydrated.size() : cd.getOrdinal(),
+                        new GameItem[PotionStorage.SIZE]);
+                if (cd.getItems() != null) {
+                    for (final GameItemRefDto ref : cd.getItems()) {
+                        if (ref == null || ref.getSlotIdx() == null) continue;
+                        final int slot = ref.getSlotIdx();
+                        if (slot < 0 || slot >= PotionStorage.SIZE) continue;
+                        ps.getItems()[slot] = GameItem.fromGameItemRef(ref);
+                    }
+                }
+                hydrated.add(ps);
+            }
+        }
+        this.playerPotionStorage.put(player.getId(), hydrated);
+    }
+
+    /**
+     * Serialize the calling player's potion storage for persistence. Returns
+     * an empty list when the player has nothing or has not loaded yet —
+     * empty is a valid persisted state. Distinguish from the gated forSave
+     * variant which returns null to skip the save entirely.
+     */
+    public List<ChestDto> serializePotionStorage(final long playerId) {
+        final List<PotionStorage> list = this.playerPotionStorage.get(playerId);
+        final List<ChestDto> result = new ArrayList<>();
+        if (list == null) return result;
+        for (final PotionStorage ps : list) {
+            if (ps == null) continue;
+            final ChestDto chest = ChestDto.builder()
+                    .chestId(ps.getChestUid())
+                    .chestUuid(ps.getChestUid())
+                    .ordinal(ps.getOrdinal())
+                    .build();
+            final List<GameItemRefDto> refs = new ArrayList<>();
+            for (int i = 0; i < ps.getItems().length; i++) {
+                final GameItem item = ps.getItems()[i];
+                if (item == null) continue;
+                refs.add(item.toGameItemRefDto(i));
+            }
+            chest.setItems(refs);
+            result.add(chest);
+        }
+        return result;
+    }
+
+    /**
+     * Gated variant for the same wipe-protection reason as
+     * {@link #serializeChestsForSave()}: a save during early setup races
+     * could otherwise replace persisted storage with [].
+     */
+    public List<ChestDto> serializePotionStorageForSave(final long playerId) {
+        if (!this.chestsLoaded) {
+            Realm.log.warn("[REALM] Refusing to serialize potion storage before setupChests has completed (realmId={}, mapId={}). Skipping save to avoid wipe.",
+                    this.realmId, this.mapId);
+            return null;
+        }
+        return this.serializePotionStorage(playerId);
     }
 
     public void loadMap(int mapId) {

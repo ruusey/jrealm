@@ -859,6 +859,15 @@ public class ServerCommandHandler {
                     log.error("Failed to save vault chests for {} on transfer: {}",
                             who.getName(), e.getMessage());
                 }
+                try {
+                    final List<ChestDto> storage = from.serializePotionStorage(who.getId());
+                    ServerGameLogic.DATA_SERVICE.executePost(
+                            "/data/account/" + who.getAccountUuid() + "/potion-storage",
+                            storage, PlayerAccountDto.class);
+                } catch (Exception e) {
+                    log.error("Failed to save potion storage for {} on transfer: {}",
+                            who.getName(), e.getMessage());
+                }
                 from.setShutdown(true);
                 mgr.getRealms().remove(from.getRealmId());
             }

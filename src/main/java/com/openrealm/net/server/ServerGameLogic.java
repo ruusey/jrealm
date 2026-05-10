@@ -204,6 +204,18 @@ public class ServerGameLogic {
 								return null;
 							});
 				}
+				final List<ChestDto> storageToSave = currentRealm.serializePotionStorageForSave(user.getId());
+				if (storageToSave != null) {
+					final String acctUuid = user.getAccountUuid();
+					ServerGameLogic.DATA_SERVICE
+							.executePostAsync("/data/account/" + acctUuid + "/potion-storage",
+									storageToSave, PlayerAccountDto.class)
+							.exceptionally(ex -> {
+								log.error("[SERVER] Failed to save potion storage for {}: {}",
+										acctUuid, ex.getMessage());
+								return null;
+							});
+				}
 				currentRealm.setShutdown(true);
 				mgr.getRealms().remove(currentRealm.getRealmId());
 			}
@@ -256,6 +268,20 @@ public class ServerGameLogic {
 						.thenAccept(resp -> log.info("[SERVER] Saved vault chests for {} on portal exit", userName))
 						.exceptionally(ex -> {
 							log.error("[SERVER] Failed to save vault chests on portal exit for {}: {}",
+									userName, ex.getMessage());
+							return null;
+						});
+			}
+			final List<ChestDto> storageToSave = currentRealm.serializePotionStorageForSave(user.getId());
+			if (storageToSave != null) {
+				final String acctUuid = user.getAccountUuid();
+				final String userName = user.getName();
+				ServerGameLogic.DATA_SERVICE
+						.executePostAsync("/data/account/" + acctUuid + "/potion-storage",
+								storageToSave, PlayerAccountDto.class)
+						.thenAccept(resp -> log.info("[SERVER] Saved potion storage for {} on portal exit", userName))
+						.exceptionally(ex -> {
+							log.error("[SERVER] Failed to save potion storage on portal exit for {}: {}",
 									userName, ex.getMessage());
 							return null;
 						});
@@ -689,6 +715,10 @@ public class ServerGameLogic {
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to handle InteractTile packet. Reason: {}", e);
 		}
+	}
+
+	public static void handlePotionStorageMoveServer(RealmManagerServer mgr, Packet packet) {
+		ServerPotionStorageHelper.handleMove(mgr, packet);
 	}
 
 	public static void handleForgeEnchantServer(RealmManagerServer mgr, Packet packet) {

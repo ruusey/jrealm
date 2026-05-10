@@ -107,6 +107,7 @@ import com.openrealm.net.server.packet.InteractTilePacket;
 import com.openrealm.net.server.packet.BuyFameItemPacket;
 import com.openrealm.net.server.packet.MoveItemPacket;
 import com.openrealm.net.server.packet.PlayerMovePacket;
+import com.openrealm.net.server.packet.PotionStorageMovePacket;
 import com.openrealm.net.server.packet.PlayerShootPacket;
 import com.openrealm.net.server.packet.TextPacket;
 import com.openrealm.net.server.packet.UseAbilityPacket;
@@ -556,6 +557,20 @@ public class RealmManagerServer implements Runnable {
 												.thenAccept(resp -> log.info("[SERVER] Saved vault chests for DC'd player {}", dcName))
 												.exceptionally(ex -> {
 													log.error("[SERVER] Failed to save vault on DC for {}. Reason: {}",
+															dcName, ex.getMessage());
+													return null;
+												});
+									}
+									final List<ChestDto> storageToSave = playerRealm.serializePotionStorageForSave(dcPlayer.getId());
+									if (storageToSave != null) {
+										final String acctUuid = dcPlayer.getAccountUuid();
+										final String dcName = dcPlayer.getName();
+										ServerGameLogic.DATA_SERVICE
+												.executePostAsync("/data/account/" + acctUuid + "/potion-storage",
+														storageToSave, PlayerAccountDto.class)
+												.thenAccept(resp -> log.info("[SERVER] Saved potion storage for DC'd player {}", dcName))
+												.exceptionally(ex -> {
+													log.error("[SERVER] Failed to save potion storage on DC for {}. Reason: {}",
 															dcName, ex.getMessage());
 													return null;
 												});
@@ -1224,6 +1239,20 @@ public class RealmManagerServer implements Runnable {
 										return null;
 									});
 						}
+						final List<ChestDto> storageToSave = playerRealm.serializePotionStorageForSave(player.getId());
+						if (storageToSave != null) {
+							final String acctUuid = player.getAccountUuid();
+							final String userName = player.getName();
+							ServerGameLogic.DATA_SERVICE
+									.executePostAsync("/data/account/" + acctUuid + "/potion-storage",
+											storageToSave, PlayerAccountDto.class)
+									.thenAccept(resp -> log.info("[SERVER] Saved potion storage for disconnecting player {}", userName))
+									.exceptionally(ex -> {
+										log.error("[SERVER] Failed to save potion storage on disconnect for {}. Reason: {}",
+												userName, ex.getMessage());
+										return null;
+									});
+						}
 					} catch (Exception e) {
 						log.error("[SERVER] Failed to save vault chests on disconnect for {}. Reason: {}",
 								player.getName(), e.getMessage());
@@ -1591,6 +1620,7 @@ public class RealmManagerServer implements Runnable {
 		this.registerPacketCallback(ForgeEnchantPacket.class, ServerGameLogic::handleForgeEnchantServer);
 		this.registerPacketCallback(ForgeDisenchantPacket.class, ServerGameLogic::handleForgeDisenchantServer);
 		this.registerPacketCallback(BuyFameItemPacket.class, ServerGameLogic::handleBuyFameItemServer);
+		this.registerPacketCallback(PotionStorageMovePacket.class, ServerGameLogic::handlePotionStorageMoveServer);
 	}
 
 	private void registerPacketCallback(final Class<? extends Packet> packetId, final BiConsumer<RealmManagerServer, Packet> callback) {
@@ -3213,6 +3243,16 @@ public class RealmManagerServer implements Runnable {
 					.filter(character -> character.getCharacterUuid().equals(player.getCharacterUuid())).findAny();
 			if (currentCharacter.isPresent()) {
 				final CharacterDto character = currentCharacter.get();
+				// Don't persist a character that the data service has already
+				// soft-deleted (delete/death raced ahead of this 12s sync) —
+				// the data service refuses the write anyway, this just saves
+				// a round trip and a noisy warn log.
+				if (character.isDeleted()) {
+					RealmManagerServer.log.info(
+							"[SERVER] Skipping persist for character {} on account {} — already soft-deleted on data service.",
+							character.getCharacterUuid(), account.getAccountEmail());
+					return false;
+				}
 				final CharacterStatsDto newStats = player.serializeStats();
 				final Set<GameItemRefDto> newItems = player.serializeItems();
 				character.setItems(newItems);
