@@ -64,7 +64,29 @@ public class ServerPotionStorageHelper {
             final byte fromSide = p.getFromSide();
             final byte toSide = p.getToSide();
             final int fromIdx = p.getFromIdx();
-            final int toIdx = p.getToIdx();
+            int toIdx = p.getToIdx();
+            // toIdx == -1 with toSide == STORAGE is the "quick-store" /
+            // auto-place sentinel: server picks the best destination
+            // (first mergeable stack of the same itemId, else first empty
+            // slot). Used by right-click in inventory while the modal is
+            // open. We don't auto-route to inventory side because the
+            // user's inventory has 16 slots and the choice is contextual.
+            if (toSide == PotionStorageMovePacket.SIDE_STORAGE && toIdx == -1) {
+                final GameItem srcPeek = readSlot(player, container, fromSide, fromIdx);
+                if (srcPeek == null) return;
+                if (!PotionStorage.canStore(srcPeek)) {
+                    log.info("[PotionStorage] Quick-store rejected non-stackable/non-gem item {} from p{}",
+                            srcPeek.getName(), player.getId());
+                    return;
+                }
+                final int placed = findQuickStoreSlot(container, srcPeek);
+                if (placed < 0) {
+                    log.info("[PotionStorage] Quick-store: no available slot for {} (p{})",
+                            srcPeek.getName(), player.getId());
+                    return;
+                }
+                toIdx = placed;
+            }
             if (!isValidIdx(fromSide, fromIdx, player) || !isValidIdx(toSide, toIdx, player)) {
                 log.warn("[PotionStorage] Invalid move indices from p{}", player.getId());
                 return;
@@ -135,6 +157,28 @@ public class ServerPotionStorageHelper {
         if (a.getItemId() != b.getItemId()) return false;
         if (!a.isStackable() || !b.isStackable()) return false;
         return b.getStackCount() < b.getMaxStack();
+    }
+
+    /**
+     * Auto-place destination for quick-store: first mergeable existing
+     * stack of the same itemId (so we top up partial stacks before
+     * burning a fresh slot), else the first empty slot. Returns -1 if
+     * the container is full and the item can't merge anywhere.
+     */
+    private static int findQuickStoreSlot(PotionStorage container, GameItem incoming) {
+        // Pass 1: prefer merging into an existing partial stack of the
+        // same itemId. Multiple partial stacks of the same item are
+        // possible after partial merges; topping up the FIRST one
+        // (lowest slot index) keeps storage compact.
+        for (int i = 0; i < container.getItems().length; i++) {
+            final GameItem at = container.getItems()[i];
+            if (at != null && canMerge(incoming, at)) return i;
+        }
+        // Pass 2: first empty slot.
+        for (int i = 0; i < container.getItems().length; i++) {
+            if (container.getItems()[i] == null) return i;
+        }
+        return -1;
     }
 
     private static boolean isValidIdx(byte side, int idx, Player player) {

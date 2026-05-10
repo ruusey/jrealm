@@ -19,7 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 public class Enemy67Script extends EnemyScriptBase {
 
     private static final int HEAL_AMOUNT = 69;
-    private static final float HEAL_RADIUS = 50.0f;
+    /** 2 tiles (BASE_TILE_SIZE * 2 = 64px) per the user's "should only heal
+     *  when im standing within 2 tiles of them" spec. Prior 50px = 1.56 tiles
+     *  was already inside that envelope but produced overlapping AoEs from
+     *  the two nexus healers placed at (640,736) and (928,736). 64px keeps
+     *  the per-healer footprint to exactly 2 tiles from center. */
+    private static final float HEAL_RADIUS = 64.0f;
     /** Pool radius around the statue — sized to sit on a water-tile pool a
      *  mapper would place under it, NOT the heal AoE. */
     private static final float FOUNTAIN_RADIUS = 72.0f;
