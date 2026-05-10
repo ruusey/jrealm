@@ -3,6 +3,8 @@ package com.openrealm.net.server;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.openrealm.account.dto.ChestDto;
+import com.openrealm.account.dto.PlayerAccountDto;
 import com.openrealm.game.entity.Player;
 import com.openrealm.game.entity.item.AttributeModifier;
 import com.openrealm.game.entity.item.Enchantment;
@@ -96,14 +98,33 @@ public class ServerPotionStorageHelper {
                         src.setStackCount(src.getStackCount() - moved);
                     }
                     pushUpdates(mgr, realm, player, container);
+                    persistAsync(realm, player);
                     return;
                 }
             }
 
-            // Otherwise: plain swap.
+            // Inventory drags are PLACE-ONLY: dropping an inventory item
+            // onto an occupied, non-mergeable storage slot must not displace
+            // the existing item back into inventory (per user policy "you
+            // can only PLACE it in the potion storage - not also move items
+            // in the storage"). Storage-side drags can still swap freely.
+            if (fromSide == PotionStorageMovePacket.SIDE_INV
+                    && toSide == PotionStorageMovePacket.SIDE_STORAGE
+                    && dst != null) {
+                log.info("[PotionStorage] Refusing inv->storage swap onto occupied slot {} for p{}",
+                        toIdx, player.getId());
+                // Re-broadcast current state so the client snaps back any
+                // optimistic visual it may have applied.
+                pushUpdates(mgr, realm, player, container);
+                return;
+            }
+
+            // Otherwise: plain swap. Only reachable from storage->inv,
+            // storage->storage, or inv->empty-storage paths now.
             writeSlot(player, container, toSide, toIdx, src);
             writeSlot(player, container, fromSide, fromIdx, dst);
             pushUpdates(mgr, realm, player, container);
+            persistAsync(realm, player);
         } catch (Exception e) {
             log.error("[PotionStorage] handleMove failed: {}", e.getMessage(), e);
         }
@@ -155,6 +176,35 @@ public class ServerPotionStorageHelper {
         mgr.enqueueServerPacket(player, new PotionStorageUpdatePacket(player.getId(), toNetItems(container.getItems())));
         final UpdatePacket inv = realm.getPlayerAsPacket(player.getId());
         if (inv != null) mgr.enqueueServerPacket(player, inv);
+    }
+
+    /**
+     * Persist the player's potion storage to the data service after every
+     * move. Originally we only saved on portal exit / disconnect / transfer,
+     * but those paths can race with server shutdown or be bypassed entirely
+     * (e.g., the user force-closes the game inside the vault). Saving after
+     * each move costs one ~80ms async POST and guarantees no in-memory state
+     * is lost no matter how the player leaves.
+     *
+     * Same `chestsLoaded` gate as the existing chest save flow — we refuse
+     * to write while setupChests is mid-flight, otherwise a load race could
+     * bulk-replace the persisted state with [].
+     */
+    private static void persistAsync(Realm realm, Player player) {
+        try {
+            final List<ChestDto> snapshot = realm.serializePotionStorageForSave(player.getId());
+            if (snapshot == null) return; // gate not lifted yet
+            ServerGameLogic.DATA_SERVICE
+                    .executePostAsync("/data/account/" + player.getAccountUuid() + "/potion-storage",
+                            snapshot, PlayerAccountDto.class)
+                    .exceptionally(ex -> {
+                        log.warn("[PotionStorage] Async persist failed for player {}: {}",
+                                player.getId(), ex.getMessage());
+                        return null;
+                    });
+        } catch (Exception e) {
+            log.warn("[PotionStorage] persistAsync threw for player {}: {}", player.getId(), e.getMessage());
+        }
     }
 
     private static NetGameItem[] toNetItems(GameItem[] items) {
