@@ -1486,7 +1486,10 @@ public class Realm {
             }
         }
 
-        this.spawnStaticEnemies(mapId);
+        // Note: spawnStaticEnemies is invoked exclusively from
+        // RealmManagerServer.addRealm now. Calling it here too caused every
+        // map's static spawns to be doubled (e.g. two Inferno Demons in the
+        // admin arena) since both code paths fire for a fresh realm.
         this.initialEnemyCount = this.enemies.size();
     }
 

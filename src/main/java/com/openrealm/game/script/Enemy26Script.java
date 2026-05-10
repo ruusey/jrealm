@@ -36,32 +36,40 @@ public class Enemy26Script extends EnemyScriptBase {
 
     /** Cadence between grenade throws while in the gated phase. */
     private static final long BOMB_INTERVAL_MS = 2000L;
-    /** Lob travel time. Doubled from the assassin's 800ms so the player has
-     *  a full second-and-a-half to read the red landing marker and clear out. */
-    private static final long THROW_DURATION_MS = 1600L;
+    /** Lob travel time. 3.2s gives the player generous reaction window to
+     *  read the red landing marker and clear out before the bomb lands. */
+    private static final long THROW_DURATION_MS = 2100L;
+    /** Once the bomb has landed it sits on the ground for this long before
+     *  detonating. Lets a second-look dodge clear out. */
+    private static final long LAND_DELAY_MS = 1000L;
+    /** Total pre-explode duration (warning ring stays up the whole time). */
+    private static final short WARNING_DURATION_MS = (short) (THROW_DURATION_MS + LAND_DELAY_MS);
     /** 4x4 grid; cell-center offsets along each axis from boss center.
      *  Span is 384 px = a 12x12 tile square at 32 px/tile, kept tight around
      *  the boss so grenades stay in the engagement zone. */
     private static final float[] CELL_OFFSETS = { -192f, -64f, 64f, 192f };
     /** Number of shrapnel projectiles fired in a ring on impact. */
-    private static final int SHRAPNEL_COUNT = 16;
-    /** Visual radius of the red landing-warning marker during the throw.
-     *  Sized to ~1.5 tile diameter (24 px radius at 32 px/tile) so it lines
-     *  up exactly with the shrapnel range and reads as a tight, lethal
-     *  blast zone. */
+    private static final int SHRAPNEL_COUNT = 8;
+    /** Visual radius of the red landing marker during the throw.
+     *  Small (~0.75 tile diameter) so it's a "the bomb lands HERE" point
+     *  marker rather than covering the explosion area — the explosion
+     *  area is read by watching the shrapnel actually fly out. */
     private static final float WARNING_RADIUS = 24f;
-    /** Visual radius of the impact splash on detonation — same as warning
-     *  so the danger zone the player saw before the boom is exactly where
-     *  the boom hits. */
+    /** Impact splash on detonation — same small size as the landing marker
+     *  so the bullets that fan out are clearly visible above it. */
     private static final float IMPACT_RADIUS = 24f;
+    /** "The bomb has landed" indicator during the LAND_DELAY_MS window
+     *  before it explodes. Slightly more solid than the warning. */
+    private static final float BOMB_ON_GROUND_RADIUS = 14f;
     /** How long the impact splash sticks around. */
     private static final short IMPACT_DURATION_MS = 700;
     /** Tier sentinel passed in CreateEffectPacket so the native client paints
      *  the lob arc red instead of the default assassin-vial green. Anything
-     *  >= 10 triggers the red palette in renderPoisonThrow. */
+     *  >= 10 triggers the red palette in renderPoisonThrow / renderAoeEffect. */
     private static final byte RED_GRENADE_TIER = 10;
-    /** Phase name (in enemies.json) the grenade grid is gated to. */
-    private static final String GATED_PHASE = "spiral_ring";
+    /** Phase name (in enemies.json) the grenade grid is gated to.
+     *  null = no gate (grenades thrown in every phase). */
+    private static final String GATED_PHASE = null;
 
     /** Per-enemy last-bomb timestamp. Concurrent because attack() is invoked
      *  on a worker thread and multiple instances may share this script. */
@@ -84,9 +92,13 @@ public class Enemy26Script extends EnemyScriptBase {
 
     @Override
     public void attack(final Realm targetRealm, final Enemy enemy, final Player targetPlayer) throws Exception {
-        // Only fire grenades in the gated phase. Other phases run pure JSON.
-        final String phase = enemy.getLastPhaseName();
-        if (phase == null || !GATED_PHASE.equals(phase)) return;
+        // Optional phase gate. When GATED_PHASE is null, grenades throw
+        // in every phase (current intent); set it to a phase name to
+        // restrict to a single phase later if needed.
+        if (GATED_PHASE != null) {
+            final String phase = enemy.getLastPhaseName();
+            if (phase == null || !GATED_PHASE.equals(phase)) return;
+        }
 
         final long now = System.currentTimeMillis();
         final Long lastBomb = lastBombByEnemyId.get(enemy.getId());
@@ -117,13 +129,13 @@ public class Enemy26Script extends EnemyScriptBase {
                 (short) THROW_DURATION_MS, RED_GRENADE_TIER));
 
         // Red landing-zone warning — CURSE_RADIUS AoE that pulses on the
-        // ground for the full throw duration. tier=10 sentinel triggers
-        // the boss-grenade-specific renderer on the native client (much
-        // higher fill opacity + pulsing outline) so the danger zone is
-        // unmissable through the spiral / ground tile clutter.
+        // ground for the entire pre-explode window (throw + 1s land delay).
+        // tier=10 sentinel triggers the boss-grenade renderer on the native
+        // client (~85% fill opacity + pulsing outline) so the danger zone
+        // is unmissable through spiral arms / ground clutter.
         this.getMgr().enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
                 CreateEffectPacket.EFFECT_CURSE_RADIUS,
-                landX, landY, WARNING_RADIUS, (short) THROW_DURATION_MS, RED_GRENADE_TIER));
+                landX, landY, WARNING_RADIUS, WARNING_DURATION_MS, RED_GRENADE_TIER));
 
         final long realmId = targetRealm.getRealmId();
 
@@ -132,13 +144,27 @@ public class Enemy26Script extends EnemyScriptBase {
         // (we'd just no-op).
         WorkerThread.doAsync(() -> {
             try {
+                // Phase 1: wait for the lob to land.
                 Thread.sleep(THROW_DURATION_MS);
                 final Realm r = Enemy26Script.this.getMgr().getRealms().get(realmId);
                 if (r == null) return;
 
-                // Impact splash — same radius as the warning ring (so the
-                // detonation lands exactly inside the zone the player was
-                // told to clear) and same tier=10 high-opacity red renderer.
+                // Phase 2: bomb sits on the ground. Render a small solid
+                // red dot at the landing point — the "bomb has landed,
+                // it's about to go off" tell. The big warning ring is
+                // still up around it for the same duration.
+                Enemy26Script.this.getMgr().enqueueServerPacketToRealm(r,
+                        CreateEffectPacket.aoeEffect(
+                                CreateEffectPacket.EFFECT_CURSE_RADIUS,
+                                landX, landY, BOMB_ON_GROUND_RADIUS, (short) LAND_DELAY_MS, RED_GRENADE_TIER));
+
+                // Phase 3: detonation delay — 1 sec for last-second dodge.
+                Thread.sleep(LAND_DELAY_MS);
+
+                // Phase 4: explosion.
+                // Impact splash matches the warning ring radius so the
+                // boom lands exactly in the zone the player was told to
+                // clear.
                 Enemy26Script.this.getMgr().enqueueServerPacketToRealm(r,
                         CreateEffectPacket.aoeEffect(
                                 CreateEffectPacket.EFFECT_CURSE_RADIUS,
