@@ -76,6 +76,18 @@ public class CreateEffectPacket extends Packet {
 	// splashing inside `radius`. Same lob math as the assassin's poison
 	// throw — just looped over the duration so it reads as a fountain.
 	public static final short EFFECT_WATER_FOUNTAIN = 15;
+	/** Knight Phalanx — translucent shield dome with thick ring boundary. */
+	public static final short EFFECT_SHIELD_DOME = 16;
+	/** Knight Taunt — concentric red rings + exclamation mark. */
+	public static final short EFFECT_TAUNT_ROAR  = 17;
+	/** Knight Brace — translucent shield-arc in front of caster + ground tick marks. */
+	public static final short EFFECT_BRACE_STANCE = 18;
+	/** Wizard Frost Nova — crystalline ice spikes radiating outward. */
+	public static final short EFFECT_FROST_NOVA   = 19;
+	/** Wizard Blink — violet runic glyph at origin + destination. */
+	public static final short EFFECT_BLINK_GLYPH  = 20;
+	/** Archer Hunter's Mark — red 4-corner crosshair sweeping in. */
+	public static final short EFFECT_HUNTERS_RETICLE = 21;
 
 	public static CreateEffectPacket aoeEffect(short type, float x, float y, float radius, short duration) {
 		return aoeEffect(type, x, y, radius, duration, (byte) 0);

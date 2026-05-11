@@ -1787,7 +1787,7 @@ public class RealmManagerServer implements Runnable {
 		// bullet that enters. Cheap because the dome's lifetime is short (~3.5s)
 		// and active casters are usually rare. Also re-emits the persistent
 		// visual every 12 ticks (~190ms) so it reads as a steady bubble.
-		final float PHALANX_RADIUS = 96f;
+		final float PHALANX_RADIUS = 128f;
 		final float PHALANX_RADIUS_SQ = PHALANX_RADIUS * PHALANX_RADIUS;
 		final boolean refreshDomeVisual = (this.tickCounter % 12 == 0);
 		for (final Realm realm : this.realms.values()) {
@@ -1813,10 +1813,10 @@ public class RealmManagerServer implements Runnable {
 					}
 				}
 				if (refreshDomeVisual) {
+					// Persistent BLUE shield dome (tier 1 = light blue tint).
+					// Duration matches refresh cadence so the dome holds steady.
 					this.enqueueServerPacketToRealm(realm, CreateEffectPacket.aoeEffect(
-							CreateEffectPacket.EFFECT_HEAL_RADIUS, pc.x, pc.y, PHALANX_RADIUS, (short) 220));
-					this.enqueueServerPacketToRealm(realm, CreateEffectPacket.aoeEffect(
-							CreateEffectPacket.EFFECT_PALADIN_SEAL, pc.x, pc.y, PHALANX_RADIUS - 16, (short) 220, (byte) 6));
+							CreateEffectPacket.EFFECT_SHIELD_DOME, pc.x, pc.y, PHALANX_RADIUS, (short) 240, (byte) 1));
 				}
 			}
 		}
@@ -2177,15 +2177,18 @@ public class RealmManagerServer implements Runnable {
 			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
 					CreateEffectPacket.EFFECT_WIZARD_BURST, pos.x, pos.y, 48f, (short) 500, (byte) 6));
 		} else if (fromSky && holyVisual) {
-			// Holy Beam — a column of paladin seals descending, with a heal-radius
-			// halo at the strike point. No smoke, no fire.
-			for (int dy = -240; dy <= 0; dy += 60) {
-				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-						CreateEffectPacket.EFFECT_PALADIN_SEAL,
-						pos.x, pos.y + dy, 80f, (short) 1000, (byte) 6));
-			}
+			// Holy Beam — one big paladin-seal beam descending at the cursor
+			// (case 14 already draws a pillar rising from the broadcast point —
+			// emit ONCE at the cursor so the pillar reads as "beam crashing
+			// down on this spot") + a shockwave impact at ground for the smite
+			// punctuation. Tier 3 = gold tint so the seal/shockwave glow holy
+			// instead of silver.
 			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-					CreateEffectPacket.EFFECT_HEAL_RADIUS, pos.x, pos.y, 120f, (short) 1200));
+					CreateEffectPacket.EFFECT_PALADIN_SEAL,
+					pos.x, pos.y, 130f, (short) 1400, (byte) 3));
+			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+					CreateEffectPacket.EFFECT_KNIGHT_SHOCKWAVE,
+					pos.x, pos.y, 110f, (short) 700, (byte) 3));
 		}
 
 		// Phase 3: "visual_at_self:N" tag emits a CreateEffectPacket of type N
@@ -2203,41 +2206,42 @@ public class RealmManagerServer implements Runnable {
 				break;
 			}
 
-			// "taunt_visual" — orange burst + purple curse swirl + shockwave pulse
-			// stacked for an aggro/roar feel. Used by Knight Taunt.
+			// "knight_slam" — short forward streak originating IN FRONT of the
+			// player, so the projectiles and the visual both read as
+			// "pushed forward from the front of the caster" (NOT from behind).
+			if (ab.getTags().contains("knight_slam")) {
+				final Vector2f from = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+				float dxK = pos.x - from.x, dyK = pos.y - from.y;
+				final float lenK = (float) Math.sqrt(dxK * dxK + dyK * dyK);
+				if (lenK > 0.001f) {
+					final float FRONT_OFFSET = 60f;
+					final float STREAK_LEN   = 80f;
+					final float fx0 = from.x + dxK / lenK * FRONT_OFFSET;
+					final float fy0 = from.y + dyK / lenK * FRONT_OFFSET;
+					final float fx1 = fx0 + dxK / lenK * STREAK_LEN;
+					final float fy1 = fy0 + dyK / lenK * STREAK_LEN;
+					this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
+							CreateEffectPacket.EFFECT_CHAIN_LIGHTNING,
+							fx0, fy0, fx1, fy1, (short) 280));
+				}
+			}
+
+			// "taunt_visual" — small red circle blink at player + "TAUNTING" text.
 			if (ab.getTags().contains("taunt_visual")) {
 				final Vector2f pc = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-						CreateEffectPacket.EFFECT_WIZARD_BURST, pc.x, pc.y, 64f, (short) 900, (byte) 12));
-				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-						CreateEffectPacket.EFFECT_CURSE_RADIUS, pc.x, pc.y, 96f, (short) 1400));
-				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-						CreateEffectPacket.EFFECT_KNIGHT_SHOCKWAVE, pc.x, pc.y, 32f, (short) 500));
+						CreateEffectPacket.EFFECT_TAUNT_ROAR, pc.x, pc.y, 44f, (short) 700, (byte) 5));
+				this.sendTextEffectToPlayer(player, TextEffect.PLAYER_INFO, "TAUNTING");
 			}
 
-			// "brace_visual" — defensive stance combo: outward shockwave + paladin
-			// seal at feet + protective heal-ring. Used by Knight Brace.
+			// "brace_visual" — dedicated renderer case (BRACE_STANCE): a small
+			// translucent shield-arc in front of the player + 4 ground tick marks.
+			// Reads as "raise shield / brace for impact", not a circle.
 			if (ab.getTags().contains("brace_visual")) {
 				final Vector2f pc = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-						CreateEffectPacket.EFFECT_KNIGHT_SHOCKWAVE, pc.x, pc.y, 48f, (short) 700));
-				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-						CreateEffectPacket.EFFECT_PALADIN_SEAL, pc.x, pc.y, 56f, (short) 1300, (byte) 5));
-				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-						CreateEffectPacket.EFFECT_HEAL_RADIUS, pc.x, pc.y, 60f, (short) 1300));
-			}
-
-			// "force_push" tag — chain-lightning streak from caster toward the
-			// cursor (~3 tiles) + KNIGHT_SHOCKWAVE impact at the cursor. Sells a
-			// forward shove without an actual projectile. Damage + STUN are
-			// applied via the regular aoe_targeted block at the cursor.
-			if (ab.getTags().contains("force_push")) {
-				final Vector2f from = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
-				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
-						CreateEffectPacket.EFFECT_CHAIN_LIGHTNING,
-						from.x, from.y, pos.x, pos.y, (short) 350));
-				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-						CreateEffectPacket.EFFECT_KNIGHT_SHOCKWAVE, pos.x, pos.y, 48f, (short) 600));
+						CreateEffectPacket.EFFECT_BRACE_STANCE, pc.x, pc.y, 56f, (short) 700, (byte) 1));
+				this.sendTextEffectToPlayer(player, TextEffect.PLAYER_INFO, "BRACED");
 			}
 
 			// "dash_trail" tag — chain-lightning streak from the caster toward
@@ -2286,21 +2290,23 @@ public class RealmManagerServer implements Runnable {
 			// the meteor explosion.
 			if (!fromSky) {
 				short visualEffect = CreateEffectPacket.EFFECT_STASIS_FIELD;
-				if (ab.getTags().contains("fire"))    visualEffect = CreateEffectPacket.EFFECT_WIZARD_BURST;
-				if (ab.getTags().contains("curse"))   visualEffect = CreateEffectPacket.EFFECT_CURSE_RADIUS;
-				if (ab.getTags().contains("heal"))    visualEffect = CreateEffectPacket.EFFECT_HEAL_RADIUS;
-				if (ab.getTags().contains("cleanse")) visualEffect = CreateEffectPacket.EFFECT_WATER_FOUNTAIN;
-				if (ab.getTags().contains("bless"))   visualEffect = CreateEffectPacket.EFFECT_PALADIN_SEAL;
-				if (ab.getTags().contains("holy"))    visualEffect = CreateEffectPacket.EFFECT_PALADIN_SEAL;
+				byte  vTier        = 1; // T1 light-blue default for stasis
+				if (ab.getTags().contains("fire"))     { visualEffect = CreateEffectPacket.EFFECT_WIZARD_BURST;   vTier = 4; } // orange
+				if (ab.getTags().contains("curse"))    { visualEffect = CreateEffectPacket.EFFECT_CURSE_RADIUS;   vTier = 6; } // purple
+				if (ab.getTags().contains("heal"))     { visualEffect = CreateEffectPacket.EFFECT_HEAL_RADIUS;    vTier = 2; } // green
+				if (ab.getTags().contains("cleanse"))  { visualEffect = CreateEffectPacket.EFFECT_WATER_FOUNTAIN; vTier = 1; } // sapphire
+				if (ab.getTags().contains("bless"))    { visualEffect = CreateEffectPacket.EFFECT_PALADIN_SEAL;   vTier = 3; } // gold
+				if (ab.getTags().contains("holy"))     { visualEffect = CreateEffectPacket.EFFECT_PALADIN_SEAL;   vTier = 3; } // gold
+				if (ab.getTags().contains("frost"))    { visualEffect = CreateEffectPacket.EFFECT_FROST_NOVA;     vTier = 1; } // ice
+				if (ab.getTags().contains("mark"))     { visualEffect = CreateEffectPacket.EFFECT_HUNTERS_RETICLE;vTier = 5; } // red reticle
 				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-						visualEffect, effCenter.x, effCenter.y, aoeRadius, (short) 1500));
-				// "outline_ring" tag — stack a STASIS_FIELD ring at the radius
-				// for abilities whose primary visual doesn't read as a clear
-				// circle on its own (Hunter's Mark curse swirl is too subtle).
-				if (ab.getTags().contains("outline_ring")) {
+						visualEffect, effCenter.x, effCenter.y, aoeRadius, (short) 1500, vTier));
+				// "outline_ring" tag — extra outline at radius. For Hunter's Mark
+				// the reticle IS the outline so skip the redundant stasis ring.
+				if (ab.getTags().contains("outline_ring") && !ab.getTags().contains("mark")) {
 					this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
 							CreateEffectPacket.EFFECT_STASIS_FIELD,
-							effCenter.x, effCenter.y, aoeRadius, (short) 1500));
+							effCenter.x, effCenter.y, aoeRadius, (short) 1500, (byte) 6));
 				}
 			}
 			// "rain_arrows" tag — spawn visual-only arrow projectiles that fall
@@ -2439,6 +2445,7 @@ public class RealmManagerServer implements Runnable {
 			final Vector2f dest = new Vector2f(pos.x, pos.y);
 
 			Vector2f source = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+			final Vector2f playerCenter = new Vector2f(source.x, source.y);
 			final float angle = Bullet.getAngle(source, dest);
 
 			for (final Projectile p : group.getProjectiles()) {
@@ -2464,6 +2471,22 @@ public class RealmManagerServer implements Runnable {
 				rolledDamage = applyCombatDamageMods(rolledDamage, abilityCm);
 				if (p.getPositionMode() != ProjectilePositionMode.TARGET_PLAYER) {
 					source = dest;
+				} else {
+					// TARGET_PLAYER mode — bullets spawn at the caster. Push the
+					// spawn point ~36px FORWARD along the aim line so the bullet
+					// reads as "force-pushed from the front of the player"
+					// instead of materialising on top of the player sprite. The
+					// playerCenter capture happens once outside the loop so
+					// fan-spread iterations don't accumulate offsets.
+					float dxN = dest.x - playerCenter.x;
+					float dyN = dest.y - playerCenter.y;
+					final float lenN = (float) Math.sqrt(dxN * dxN + dyN * dyN);
+					if (lenN > 0.001f) {
+						final float SPAWN_FWD = 60f;
+						source = new Vector2f(
+								playerCenter.x + dxN / lenN * SPAWN_FWD,
+								playerCenter.y + dyN / lenN * SPAWN_FWD);
+					}
 				}
 				// Symmetric fan around the aim line — see ServerGameLogic
 				// shoot logic for the same fix. Aim hits the center of the
@@ -2520,6 +2543,13 @@ public class RealmManagerServer implements Runnable {
 			if (effSelfStatus.equals(StatusEffectType.TELEPORT)
 					&& !targetRealm.getTileManager().collidesAtPosition(pos, player.getSize())
 					&& !targetRealm.getTileManager().isVoidTile(pos, 0, 0)) {
+				// Emit a violet runic glyph at BOTH origin and destination so
+				// the teleport reads as "vanish here / appear there".
+				final Vector2f origin = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_BLINK_GLYPH, origin.x, origin.y, 56f, (short) 700, (byte) 6));
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_BLINK_GLYPH, pos.x, pos.y, 56f, (short) 900, (byte) 6));
 				player.setPos(pos);
 			} else if (!effSelfStatus.equals(StatusEffectType.TELEPORT) && effHasSelfStatus) {
 				player.addEffect(effSelfStatus, effSelfDurationMs);
