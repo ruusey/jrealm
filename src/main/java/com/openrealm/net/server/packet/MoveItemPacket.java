@@ -25,12 +25,16 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @PacketId(packetId = (byte)12)
 public class MoveItemPacket extends Packet {
-	private static final List<Integer> EQUIPMENT_IDX = Arrays.asList(0, 1, 2, 3);
-	private static final List<Integer> INV_IDX1 = Arrays.asList(4, 5, 6, 7, 8, 9, 10, 11);
-	private static final List<Integer> INV_IDX2 = Arrays.asList(12, 13, 14, 15, 16, 17, 18, 19);
-	private static final List<Integer> GROUND_LOOT_IDX = Arrays.asList(20, 21, 22, 23, 24, 25, 26, 27);
-	public static final int HP_POTION_SLOT = 28;
-	public static final int MP_POTION_SLOT = 29;
+	// Phase 1B (combat rework) shifted equipment from 4 to 5 slots. All
+	// downstream index regions follow: backpack 5..20, ground loot 21..28,
+	// potion-storage slots at 29/30. Native + web clients must mirror these
+	// exactly — they're serialized as raw bytes over the wire.
+	private static final List<Integer> EQUIPMENT_IDX = Arrays.asList(0, 1, 2, 3, 4);
+	private static final List<Integer> INV_IDX1 = Arrays.asList(5, 6, 7, 8, 9, 10, 11, 12);
+	private static final List<Integer> INV_IDX2 = Arrays.asList(13, 14, 15, 16, 17, 18, 19, 20);
+	private static final List<Integer> GROUND_LOOT_IDX = Arrays.asList(21, 22, 23, 24, 25, 26, 27, 28);
+	public static final int HP_POTION_SLOT = 29;
+	public static final int MP_POTION_SLOT = 30;
 
 	@SerializableField(order = 0, type = SerializableLong.class)
 	private long playerId;
@@ -67,5 +71,10 @@ public class MoveItemPacket extends Packet {
 
 	public static boolean isGroundLoot(int index) {
 		return GROUND_LOOT_IDX.contains(index);
+	}
+
+	/** First ground-loot slot index. Subtract from a fromSlot to get loot-array index. */
+	public static int groundLootBase() {
+		return GROUND_LOOT_IDX.get(0);
 	}
 }

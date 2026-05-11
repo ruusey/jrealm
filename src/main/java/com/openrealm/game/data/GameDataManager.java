@@ -18,6 +18,8 @@ import com.openrealm.game.entity.item.GameItem;
 import com.openrealm.game.model.AnimationModel;
 import com.openrealm.game.model.CharacterClassModel;
 import com.openrealm.game.model.DungeonGraphNode;
+import com.openrealm.game.model.ability.Ability;
+import com.openrealm.game.model.ability.PassiveAbility;
 import com.openrealm.game.model.EnemyModel;
 import com.openrealm.game.model.ExperienceModel;
 import com.openrealm.game.model.LootGroupModel;
@@ -55,6 +57,12 @@ public class GameDataManager {
 	public static Map<Integer, AnimationModel>                ANIMATIONS = null;
 	public static Map<Integer, SetPieceModel>                 SETPIECES = null;
 	public static Map<Integer, RealmEventModel>               REALM_EVENTS = null;
+	// Phase 2A — combat-rework data tables. Loaded from abilities.json /
+	// passives.json (registered in GameDataFileService.ALLOWED + the
+	// editor's mtimes endpoint). Both can be empty maps during the
+	// Phase 2A transition; resolution code must tolerate that.
+	public static Map<Integer, Ability>                       ABILITIES = null;
+	public static Map<Integer, PassiveAbility>                PASSIVES = null;
 
 	/**
 	 * Locate a game-data file. Order of precedence:
@@ -328,6 +336,56 @@ public class GameDataManager {
 		GameDataManager.log.info("Loading Realm Events... DONE ({} entries)", GameDataManager.REALM_EVENTS.size());
 	}
 
+	private static void loadAbilities(final boolean remote) throws Exception {
+		GameDataManager.log.info("Loading Abilities...");
+		GameDataManager.ABILITIES = new HashMap<>();
+		String text = null;
+		if (remote) {
+			text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/abilities.json", null);
+		} else {
+			InputStream inputStream = openLocalData("abilities.json");
+			if (inputStream == null) {
+				GameDataManager.log.info("Loading Abilities... DONE (no local file, empty table)");
+				return;
+			}
+			text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		}
+		if (text == null || text.isBlank() || text.trim().equals("[]")) {
+			GameDataManager.log.info("Loading Abilities... DONE (empty)");
+			return;
+		}
+		final Ability[] abilities = GameDataManager.JSON_MAPPER.readValue(text, Ability[].class);
+		for (final Ability a : abilities) {
+			GameDataManager.ABILITIES.put(a.getId(), a);
+		}
+		GameDataManager.log.info("Loading Abilities... DONE ({} entries)", GameDataManager.ABILITIES.size());
+	}
+
+	private static void loadPassives(final boolean remote) throws Exception {
+		GameDataManager.log.info("Loading Passives...");
+		GameDataManager.PASSIVES = new HashMap<>();
+		String text = null;
+		if (remote) {
+			text = ServerGameLogic.DATA_SERVICE.executeGet("game-data/passives.json", null);
+		} else {
+			InputStream inputStream = openLocalData("passives.json");
+			if (inputStream == null) {
+				GameDataManager.log.info("Loading Passives... DONE (no local file, empty table)");
+				return;
+			}
+			text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		}
+		if (text == null || text.isBlank() || text.trim().equals("[]")) {
+			GameDataManager.log.info("Loading Passives... DONE (empty)");
+			return;
+		}
+		final PassiveAbility[] passives = GameDataManager.JSON_MAPPER.readValue(text, PassiveAbility[].class);
+		for (final PassiveAbility p : passives) {
+			GameDataManager.PASSIVES.put(p.getId(), p);
+		}
+		GameDataManager.log.info("Loading Passives... DONE ({} entries)", GameDataManager.PASSIVES.size());
+	}
+
 	private static void loadGameItems(final boolean remote) throws Exception {
 		GameDataManager.log.info("Loading Game Items...");
 
@@ -420,6 +478,8 @@ public class GameDataManager {
 			() -> { try { GameDataManager.loadAnimations(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load animations: {}", e.getMessage()); } },
 			() -> { try { GameDataManager.loadSetPieces(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load set pieces: {}", e.getMessage()); } },
 			() -> { try { GameDataManager.loadRealmEvents(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load realm events: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadAbilities(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load abilities: {}", e.getMessage()); } },
+			() -> { try { GameDataManager.loadPassives(loadRemote); } catch (Exception e) { GameDataManager.log.error("Failed to load passives: {}", e.getMessage()); } },
 		};
 		for (Runnable loader : loaders) {
 			loader.run();

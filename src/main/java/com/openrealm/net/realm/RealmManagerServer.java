@@ -20,6 +20,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import com.openrealm.game.model.ability.AbilityEffect;
+import com.openrealm.game.model.ability.AbilityScaling;
+import com.openrealm.game.model.ability.PassiveAbility;
+import com.openrealm.game.model.ability.PassiveTrigger;
+import com.openrealm.net.client.packet.CreateEffectPacket;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
@@ -1952,42 +1957,332 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	// Invokes an ability usage server side for the given player at the
-	// desired location if applicable
+	// desired location if applicable. abilityIndex selects which hotbar slot
+	// (0..3) was pressed; default 0 maps to the legacy/Q ability so existing
+	// right-click clients keep working.
 	public void useAbility(final long realmId, final long playerId, final Vector2f pos) {
+		this.useAbility(realmId, playerId, pos, (byte) 0);
+	}
+
+	public void useAbility(final long realmId, final long playerId, final Vector2f pos, final byte abilityIndex) {
 		final Realm targetRealm = this.realms.get(realmId);
 
 		final Player player = targetRealm.getPlayer(playerId);
-		if (player == null || player.getAbility() == null)
-			return;
-		final GameItem abilityItem = GameDataManager.GAME_ITEMS.get(player.getAbility().getItemId());
-		if ((abilityItem == null))
-			return;
-		final Effect effect = abilityItem.getEffect();
-		final Long lastAbilityUsage = this.playerAbilityState.get(playerId);
-		if (lastAbilityUsage == null
-				|| (Instant.now().toEpochMilli() - lastAbilityUsage >= effect.getCooldownDuration())) {
-			this.playerAbilityState.put(playerId, Instant.now().toEpochMilli());
+		if (player == null) return;
+
+		// Phase 2B: read MP cost + cooldown from the new Ability data if the
+		// requested slot is bound; otherwise fall back to the legacy ability
+		// item path (slot 0 / classAbilityId) so abilities still fire for
+		// classes that haven't been ported.
+		final int slot = abilityIndex >= 0 && abilityIndex < 4 ? abilityIndex : 0;
+		final com.openrealm.game.model.ability.Ability ab = player.getActiveAbility(slot);
+		final int abMpCost;
+		final long abCooldownMs;
+		if (ab != null) {
+			abMpCost     = ab.getMpCost();
+			abCooldownMs = ab.getBaseCooldownMs();
 		} else {
-			log.debug("Ability {} is on cooldown", abilityItem);
-			return;
+			abMpCost     = -1;  // sentinel meaning "use legacy"
+			abCooldownMs = -1;
 		}
+
+		// Per-slot cooldown via Player.abilityCooldowns. For the legacy path
+		// (ab == null) we still use the playerAbilityState map keyed by
+		// playerId — preserves existing behavior bit-for-bit.
+		final long now = Instant.now().toEpochMilli();
+		if (ab != null) {
+			final long[] cds = player.getAbilityCooldowns();
+			if (cds != null && slot < cds.length) {
+				if (cds[slot] > now) {
+					log.debug("Ability {} slot {} on cooldown for player {}", ab.getName(), slot, playerId);
+					return;
+				}
+				cds[slot] = now + abCooldownMs;
+			}
+		}
+
+		// Legacy GameItem still drives projectile spawn for now — Phase 2B
+		// only swaps cost/CD off Ability data. Phase 2C will read projectile
+		// group + scalings from Ability.effects directly.
+		if (player.getAbility() == null) return;
+		final GameItem abilityItem = GameDataManager.GAME_ITEMS.get(player.getAbility().getItemId());
+		if (abilityItem == null) return;
+		final Effect effect = abilityItem.getEffect();
+
+		if (ab == null) {
+			// Legacy global-cooldown gate (unchanged from pre-Phase-2 behavior).
+			final Long lastAbilityUsage = this.playerAbilityState.get(playerId);
+			if (lastAbilityUsage == null
+					|| (now - lastAbilityUsage >= effect.getCooldownDuration())) {
+				this.playerAbilityState.put(playerId, now);
+			} else {
+				log.debug("Ability {} is on cooldown (legacy)", abilityItem);
+				return;
+			}
+		}
+
 		// Godmode (INVINCIBLE) = infinite mana
 		if (!player.hasEffect(StatusEffectType.INVINCIBLE)) {
-			if (player.getMana() < effect.getMpCost())
-				return;
-			player.setMana(player.getMana() - effect.getMpCost());
+			final int mpCost = abMpCost >= 0 ? abMpCost : effect.getMpCost();
+			if (player.getMana() < mpCost) return;
+			player.setMana(player.getMana() - mpCost);
 		}
-		// If the ability is damaging (knight stun, archer arrow, wizard spell)
-		// Resolve the projectile group if the item has a damage definition with a valid projectileGroupId.
-		// Script-only abilities (e.g., scepter chain lightning, necromancer skull) may have no damage
-		// or a damage with projectileGroupId -1, meaning no projectiles should be created.
-		final ProjectileGroup group = (abilityItem.getDamage() != null)
-				? GameDataManager.PROJECTILE_GROUPS.get(abilityItem.getDamage().getProjectileGroupId())
+		// Phase 2B refactor: when an Ability is bound, it is FULLY authoritative
+		// for projectile + self-effect. Without this rule, an Ability that
+		// only defines STATUS_APPLY SELF (e.g. Blink) would fall through to
+		// the legacy item's projectile group (Fire Spray) and the
+		// player.setPos teleport branch would never be reached because the
+		// projectile-spawn branch already consumed the cast.
+		int effPgId;
+		StatusEffectType effSelfStatus;
+		int effSelfDurationMs;
+		boolean effHasSelfStatus;
+		if (ab != null) {
+			effPgId           = -1;
+			effSelfStatus     = null;
+			effSelfDurationMs = 0;
+			effHasSelfStatus  = false;
+			for (AbilityEffect e : ab.effectList()) {
+				final String t = e.getType();
+				if (t == null) continue;
+				if (t.equalsIgnoreCase("PROJECTILE_GROUP")) {
+					effPgId = e.getProjectileGroupId();
+				} else if (t.equalsIgnoreCase("STATUS_APPLY") && "SELF".equalsIgnoreCase(e.getTarget())) {
+					try {
+						final short sid = Short.parseShort(String.valueOf(e.getStatusId()).trim());
+						// Status enum keyed by raw effectId (NOT ordinal). TELEPORT=9 is at
+						// ordinal 8 — values()[9] would be DAZED. Use the static map.
+						final StatusEffectType st = StatusEffectType.map.get(sid);
+						if (st != null) {
+							effSelfStatus    = st;
+							effSelfDurationMs = (int) e.getBaseDurationMs();
+							effHasSelfStatus = true;
+						}
+					} catch (NumberFormatException ignore) { /* non-numeric statusId — Phase 2D resolves via enum name */ }
+				}
+			}
+		} else {
+			// Legacy path: no Ability bound, fall back to the GameItem template.
+			effPgId           = (abilityItem.getDamage() != null) ? abilityItem.getDamage().getProjectileGroupId() : -1;
+			effSelfStatus     = (effect != null) ? effect.getEffectId() : null;
+			effSelfDurationMs = (effect != null) ? (int) effect.getDuration() : 0;
+			effHasSelfStatus  = effect != null && effect.isSelf();
+		}
+		final ProjectileGroup group = (effPgId >= 0)
+				? GameDataManager.PROJECTILE_GROUPS.get(effPgId)
 				: null;
 
-		final CombatModifiers abilityCm =
-				CombatModifiers.fromItem(player.getInventory()[1]);
+		// Phase 1B: ability is class-bound, not equipped. CombatModifiers
+		// for the ability are now derived from the GameItem template (no
+		// per-instance enchantments since the ability isn't a held item).
+		final CombatModifiers abilityCm = CombatModifiers.fromItem(abilityItem);
 
+		// Phase 2B: ability tag "from_sky" emits a two-part visual at the
+		// cursor — a vertical chain-lightning streak descending from 320 px
+		// above the target, plus a wizard-burst flare at impact. The
+		// projectile itself still spawns at the cursor (via the normal
+		// positionMode-2 ABSOLUTE path) so the bullet dies on contact and
+		// the visuals tell the player "this came from the sky".
+		final boolean fromSky = ab != null && ab.getTags() != null && ab.getTags().contains("from_sky");
+		final boolean holyVisual = ab != null && ab.getTags() != null && ab.getTags().contains("holy");
+		final float SKY_FALL_HEIGHT = 320f;
+		if (fromSky && !holyVisual) {
+			// Meteor — thicker fiery bolt, smoke-poof + double wizard-burst.
+			for (int offX = -6; offX <= 6; offX += 3) {
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
+						CreateEffectPacket.EFFECT_CHAIN_LIGHTNING,
+						pos.x + offX, pos.y - SKY_FALL_HEIGHT,
+						pos.x + offX, pos.y, (short) 800));
+			}
+			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+					CreateEffectPacket.EFFECT_SMOKE_POOF, pos.x, pos.y, 112f, (short) 1100));
+			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+					CreateEffectPacket.EFFECT_WIZARD_BURST, pos.x, pos.y, 80f, (short) 700, (byte) 6));
+			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+					CreateEffectPacket.EFFECT_WIZARD_BURST, pos.x, pos.y, 48f, (short) 500, (byte) 6));
+		} else if (fromSky && holyVisual) {
+			// Holy Beam — a column of paladin seals descending, with a heal-radius
+			// halo at the strike point. No smoke, no fire.
+			for (int dy = -240; dy <= 0; dy += 60) {
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_PALADIN_SEAL,
+						pos.x, pos.y + dy, 80f, (short) 1000, (byte) 6));
+			}
+			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+					CreateEffectPacket.EFFECT_HEAL_RADIUS, pos.x, pos.y, 120f, (short) 1200));
+		}
+
+		// Phase 3: "visual_at_self:N" tag emits a CreateEffectPacket of type N
+		// at the caster's position. Lets self-buff abilities (Knight Taunt,
+		// Phalanx, Last Stand) supply a distinct visual without bespoke code.
+		if (ab != null && ab.getTags() != null) {
+			for (String tag : ab.getTags()) {
+				if (tag == null || !tag.toLowerCase().startsWith("visual_at_self:")) continue;
+				try {
+					final short eff = Short.parseShort(tag.substring("visual_at_self:".length()).trim());
+					final Vector2f pcenter = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+					this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+							eff, pcenter.x, pcenter.y, 48f, (short) 600));
+				} catch (NumberFormatException ignore) { /* skip malformed */ }
+				break;
+			}
+
+			// "dash_trail" tag — chain-lightning streak from the caster toward
+			// the cursor, ~5 tiles long. Pure visual; the SPEEDY status (applied
+			// elsewhere) does the actual mobility.
+			if (ab.getTags().contains("dash_trail")) {
+				final Vector2f from = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+				float dx = pos.x - from.x, dy = pos.y - from.y;
+				final float len = (float) Math.sqrt(dx * dx + dy * dy);
+				if (len > 0.001f) { dx = dx / len * 160f; dy = dy / len * 160f; }
+				else              { dx = 160f; dy = 0f; }
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
+						CreateEffectPacket.EFFECT_CHAIN_LIGHTNING,
+						from.x, from.y, from.x + dx, from.y + dy, (short) 500));
+			}
+		}
+
+		// Phase 2B: ability tag "aoe_targeted" handles ground-targeted AoE
+		// abilities (Frost Nova et al) — no projectile, just an AoE effect
+		// at the cursor that applies STATUS_APPLY ENEMIES_HIT to anything
+		// in radius and broadcasts a visual via CreateEffectPacket.
+		final boolean aoeTargeted = ab != null && ab.getTags() != null && ab.getTags().contains("aoe_targeted");
+		final boolean aoeAlly    = ab != null && ab.getTags() != null && ab.getTags().contains("aoe_ally");
+		if (aoeTargeted || aoeAlly) {
+			// Radius: default 96px + sum of RADIUS scaling contributions (curve-aware).
+			float aoeRadius = 96f;
+			if (ab != null) {
+				for (AbilityScaling sc : ab.scalingList()) {
+					if (!"RADIUS".equalsIgnoreCase(sc.getTarget())) continue;
+					final int statVal = statByIndex(player.getComputedStats(), sc.statIndex());
+					aoeRadius += sc.curveEnum().apply(statVal, sc.getCoeff(), sc.getCap());
+				}
+			}
+			// Ally-targeted AoEs (priest heal/cleanse/sanctuary). Center on caster
+			// for self-heal pulses; allies are detected in radius around 'pos'
+			// which for ally abilities we anchor at the caster.
+			final Vector2f effCenter;
+			if (aoeAlly) {
+				effCenter = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+			} else {
+				effCenter = pos;
+			}
+			// Visual effect type — derived from tags so designers can pick.
+			// from_sky owns its own staged visual chain above; skip the generic
+			// AoE ring there so we don't double-stack a stasis field on top of
+			// the meteor explosion.
+			if (!fromSky) {
+				short visualEffect = CreateEffectPacket.EFFECT_STASIS_FIELD;
+				if (ab.getTags().contains("fire"))   visualEffect = CreateEffectPacket.EFFECT_WIZARD_BURST;
+				if (ab.getTags().contains("curse"))  visualEffect = CreateEffectPacket.EFFECT_CURSE_RADIUS;
+				if (ab.getTags().contains("heal"))   visualEffect = CreateEffectPacket.EFFECT_HEAL_RADIUS;
+				if (ab.getTags().contains("holy"))   visualEffect = CreateEffectPacket.EFFECT_PALADIN_SEAL;
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						visualEffect, effCenter.x, effCenter.y, aoeRadius, (short) 1500));
+			}
+			// Optional direct damage (no projectile). Used by Meteor / Rain of
+			// Arrows / etc. Reads baseDamage + DAMAGE scalings from Ability.
+			int abDamage = 0;
+			if (ab.getBaseDamage() > 0) {
+				abDamage = ab.getBaseDamage();
+				for (AbilityScaling sc : ab.scalingList()) {
+					if (!"DAMAGE".equalsIgnoreCase(sc.getTarget())) continue;
+					final int statVal = statByIndex(player.getComputedStats(), sc.statIndex());
+					abDamage += (int) sc.curveEnum().apply(statVal, sc.getCoeff(), sc.getCap());
+				}
+			}
+			final short finalDmg = (short) Math.min(Short.MAX_VALUE, Math.max(0, abDamage));
+			final boolean armorPierce = ab.getTags().contains("armor_pierce");
+			// Per-enemy ARMOR_BROKEN is resolved inside the loop below — this
+			// only covers the ability-side "armor_pierce" tag (applies to all
+			// targets uniformly).
+			final TextEffect dmgTextEffectBase = armorPierce ? TextEffect.ARMOR_BREAK : TextEffect.DAMAGE;
+			// Enemy branch — only when this isn't an ally-targeted AoE.
+			if (aoeTargeted && !aoeAlly) {
+				final java.util.List<com.openrealm.game.entity.Enemy> dead = new java.util.ArrayList<>();
+				for (final com.openrealm.game.entity.Enemy enemy : targetRealm.getEnemies().values()) {
+					if (enemy.getDeath()) continue;
+					final float dx = enemy.getPos().x - pos.x;
+					final float dy = enemy.getPos().y - pos.y;
+					if (dx * dx + dy * dy > aoeRadius * aoeRadius) continue;
+					for (AbilityEffect aoeEff : ab.effectList()) {
+						if (!"STATUS_APPLY".equalsIgnoreCase(aoeEff.getType())) continue;
+						if (!"ENEMIES_HIT".equalsIgnoreCase(aoeEff.getTarget())) continue;
+						try {
+							final StatusEffectType st = StatusEffectType.map.get(
+									Short.parseShort(String.valueOf(aoeEff.getStatusId()).trim()));
+							if (st != null) enemy.addEffect(st, aoeEff.getBaseDurationMs());
+						} catch (NumberFormatException ignore) { }
+					}
+					if (finalDmg > 0) {
+						enemy.setHealth(enemy.getHealth() - finalDmg);
+						final TextEffect dmgFx = enemy.hasEffect(StatusEffectType.ARMOR_BROKEN)
+								? TextEffect.ARMOR_BREAK : dmgTextEffectBase;
+						this.broadcastTextEffect(EntityType.ENEMY, enemy, dmgFx, "-" + finalDmg);
+						if (enemy.getHealth() <= 0) dead.add(enemy);
+					}
+				}
+				for (final com.openrealm.game.entity.Enemy e : dead) {
+					this.enemyDeath(targetRealm, e);
+				}
+			}
+			// Ally branch — HEAL / CLEANSE / STATUS_APPLY ALLIES_HIT for priest kit.
+			if (aoeAlly) {
+				int healAmount = 0;
+				boolean hasCleanse = false;
+				int cleanseCap = Integer.MAX_VALUE;
+				for (AbilityEffect aoeEff : ab.effectList()) {
+					if ("HEAL".equalsIgnoreCase(aoeEff.getType())
+							&& "ALLIES_HIT".equalsIgnoreCase(aoeEff.getTarget())) {
+						healAmount += aoeEff.getBaseMagnitude();
+					} else if ("CLEANSE".equalsIgnoreCase(aoeEff.getType())
+							&& "ALLIES_HIT".equalsIgnoreCase(aoeEff.getTarget())) {
+						hasCleanse = true;
+						if (aoeEff.getBaseMagnitude() > 0) cleanseCap = aoeEff.getBaseMagnitude();
+					}
+				}
+				for (AbilityScaling sc : ab.scalingList()) {
+					if (!"HEAL".equalsIgnoreCase(sc.getTarget())) continue;
+					final int statVal = statByIndex(player.getComputedStats(), sc.statIndex());
+					healAmount += (int) sc.curveEnum().apply(statVal, sc.getCoeff(), sc.getCap());
+				}
+				int cleansedSoFar = 0;
+				for (final Player ally : targetRealm.getPlayers().values()) {
+					if (ally == null) continue;
+					final Vector2f ac = ally.getPos().clone(ally.getSize() / 2, ally.getSize() / 2);
+					final float dx = ac.x - effCenter.x;
+					final float dy = ac.y - effCenter.y;
+					if (dx * dx + dy * dy > aoeRadius * aoeRadius) continue;
+					if (healAmount > 0) {
+						final int cap = ally.getComputedStats().getHp();
+						final int newHp = Math.min(cap, ally.getHealth() + healAmount);
+						final int actual = newHp - ally.getHealth();
+						ally.setHealth(newHp);
+						if (actual > 0) {
+							this.broadcastTextEffect(EntityType.PLAYER, ally, TextEffect.HEAL, "+" + actual);
+						}
+					}
+					if (hasCleanse && cleansedSoFar < cleanseCap) {
+						ally.resetEffects();
+						cleansedSoFar++;
+					}
+					for (AbilityEffect aoeEff : ab.effectList()) {
+						if (!"STATUS_APPLY".equalsIgnoreCase(aoeEff.getType())) continue;
+						if (!"ALLIES_HIT".equalsIgnoreCase(aoeEff.getTarget())) continue;
+						try {
+							final StatusEffectType st = StatusEffectType.map.get(
+									Short.parseShort(String.valueOf(aoeEff.getStatusId()).trim()));
+							if (st != null) ally.addEffect(st, aoeEff.getBaseDurationMs());
+						} catch (NumberFormatException ignore) { }
+					}
+				}
+			}
+			// Self-effect from STATUS_APPLY SELF (already derived above).
+			if (effHasSelfStatus && effSelfStatus != null) {
+				player.addEffect(effSelfStatus, effSelfDurationMs);
+			}
+			return; // Skip the projectile spawn paths — this was a pure AoE.
+		}
 		if (((abilityItem.getDamage() != null) && (abilityItem.getEffect() != null) && (group != null))) {
 
 			final Vector2f dest = new Vector2f(pos.x, pos.y);
@@ -1997,16 +2292,36 @@ public class RealmManagerServer implements Runnable {
 
 			for (final Projectile p : group.getProjectiles()) {
 				final short offset = (short) (p.getSize() / (short) 2);
-				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
-				rolledDamage += player.getComputedStats().getAtt();
+				short rolledDamage;
+				if (ab != null && ab.getBaseDamage() > 0) {
+					// Ability-data damage path: baseDamage + sum of scalings
+					// targeting DAMAGE. Player ATT is NOT auto-added; the
+					// Ability controls the full damage budget so designers
+					// can build large nukes (e.g. Meteor's 2000 base) without
+					// fighting the legacy weapon's small range.
+					int dmg = ab.getBaseDamage();
+					for (AbilityScaling sc : ab.scalingList()) {
+						if (!"DAMAGE".equalsIgnoreCase(sc.getTarget())) continue;
+						final int statVal = statByIndex(player.getComputedStats(), sc.statIndex());
+						dmg += (int) sc.curveEnum().apply(statVal, sc.getCoeff(), sc.getCap());
+					}
+					rolledDamage = (short) Math.min(Short.MAX_VALUE, Math.max(0, dmg));
+				} else {
+					rolledDamage = abilityItem.getDamage().getInRange();
+					rolledDamage += player.getComputedStats().getAtt();
+				}
 				rolledDamage = applyCombatDamageMods(rolledDamage, abilityCm);
 				if (p.getPositionMode() != ProjectilePositionMode.TARGET_PLAYER) {
 					source = dest;
 				}
 				// Symmetric fan around the aim line — see ServerGameLogic
-				// shoot logic for the same fix. Aim hits the center of
-				// the spread regardless of how many extra projectiles
-				// the player has gemmed in.
+				// shoot logic for the same fix. Aim hits the center of the
+				// spread regardless of how many extra projectiles the player
+				// has gemmed in. from_sky abilities (Meteor) spawn the bullet
+				// AT the cursor and rely on the CreateEffectPacket visuals
+				// (chain-lightning streak + impact burst, emitted above) to
+				// sell the "fell from above" effect — keeps the bullet path
+				// identical to a normal targeted ability.
 				{
 					final int totalBullets = 1 + abilityCm.getExtraProjectiles();
 					final float SPREAD = 0.10f;
@@ -2014,14 +2329,14 @@ public class RealmManagerServer implements Runnable {
 					for (int i = 0; i < totalBullets; i++) {
 						final float deltaA = (i - (totalBullets - 1) / 2f) * SPREAD;
 						final short rolled = applyCombatDamageMods(rolledDamage, abilityCm);
-						spawnAbilityBullet(realmId, player, abilityItem.getDamage().getProjectileGroupId(), p,
+						spawnAbilityBullet(realmId, player, effPgId, p,
 								source.clone(-offset, -offset), baseA + deltaA, rolled, abilityCm);
 					}
 				}
 			}
 			// Apply self-effect if present (e.g., warrior helmet SPEEDY buff)
-			if (effect.isSelf()) {
-				player.addEffect(effect.getEffectId(), effect.getDuration());
+			if (effHasSelfStatus && effSelfStatus != null) {
+				player.addEffect(effSelfStatus, effSelfDurationMs);
 			}
 
 		} else if ((abilityItem.getDamage() != null) && (group != null)) {
@@ -2029,7 +2344,7 @@ public class RealmManagerServer implements Runnable {
 			for (final Projectile p : group.getProjectiles()) {
 
 				final short offset = (short) (p.getSize() / (short) 2);
-				short rolledDamage = player.getInventory()[1].getDamage().getInRange();
+				short rolledDamage = abilityItem.getDamage().getInRange();
 				rolledDamage += player.getComputedStats().getAtt();
 				rolledDamage = applyCombatDamageMods(rolledDamage, abilityCm);
 				{
@@ -2039,25 +2354,21 @@ public class RealmManagerServer implements Runnable {
 					for (int i = 0; i < totalBullets; i++) {
 						final float deltaA = (i - (totalBullets - 1) / 2f) * SPREAD;
 						final short rolled = applyCombatDamageMods(rolledDamage, abilityCm);
-						spawnAbilityBullet(realmId, player, abilityItem.getDamage().getProjectileGroupId(), p,
+						spawnAbilityBullet(realmId, player, effPgId, p,
 								dest.clone(-offset, -offset), baseA + deltaA, rolled, abilityCm);
 					}
 				}
 			}
 
-			// If the ability is non damaging or script-only (rogue cloak, priest tome, sorcerer scepter)
-		} else if (abilityItem.getEffect() != null) {
-			// Special case for teleporting — validate destination with full hitbox check
-			if (abilityItem.getEffect().getEffectId().equals(StatusEffectType.TELEPORT)
+			// If the ability is non damaging or script-only (rogue cloak, priest tome, sorcerer scepter,
+			// wizard blink) — drive off the derived effect so each hotbar slot can have its own.
+		} else if (effSelfStatus != null) {
+			if (effSelfStatus.equals(StatusEffectType.TELEPORT)
 					&& !targetRealm.getTileManager().collidesAtPosition(pos, player.getSize())
 					&& !targetRealm.getTileManager().isVoidTile(pos, 0, 0)) {
 				player.setPos(pos);
-			} else if (!abilityItem.getEffect().getEffectId().equals(StatusEffectType.TELEPORT)) {
-				// Only apply effect to self if the effect is marked as self-targeting.
-				// Non-self effects (e.g., Huntress trap) are handled by item scripts.
-				if (abilityItem.getEffect().isSelf()) {
-					player.addEffect(abilityItem.getEffect().getEffectId(), abilityItem.getEffect().getDuration());
-				}
+			} else if (!effSelfStatus.equals(StatusEffectType.TELEPORT) && effHasSelfStatus) {
+				player.addEffect(effSelfStatus, effSelfDurationMs);
 			}
 		}
 		// Invoke any item specific scripts
@@ -2410,12 +2721,101 @@ public class RealmManagerServer implements Runnable {
 		return Math.min(mult, GlobalConstants.DAMAGE_SCALE_CAP);
 	}
 
+	/**
+	 * Phase 3 — Knight Deflect: returns true if the incoming bullet was
+	 * reflected back at its source enemy (damage skipped, bullet kept alive
+	 * as a player projectile aimed at the attacker). Generic over any
+	 * passive whose trigger is {@code ON_PROJECTILE_HIT_SELF} and whose
+	 * condition is a {@code PROC_CHANCE} scaling — DEF for Knight, but any
+	 * stat works.
+	 */
+	private boolean tryDeflect(final Realm targetRealm, final Bullet b, final Player player) {
+		final PassiveAbility passive = player.getClassPassive();
+		if (passive == null) return false;
+		for (PassiveTrigger trig : passive.triggerList()) {
+			if (!"ON_PROJECTILE_HIT_SELF".equalsIgnoreCase(trig.getEvent())) continue;
+			double procChance = 0;
+			if (trig.getConditions() != null) {
+				for (AbilityScaling sc : trig.getConditions()) {
+					if (!"PROC_CHANCE".equalsIgnoreCase(sc.getTarget())) continue;
+					final int statIdx = sc.statIndex();
+					if (statIdx < 0) continue;
+					final int statVal = statByIndex(player.getComputedStats(), statIdx);
+					double raw = statVal * sc.getCoeff();
+					procChance = sc.getCap() > 0 ? Math.min(raw, sc.getCap()) : raw;
+					break;
+				}
+			}
+			if (procChance <= 0) return false;
+			if (Math.random() >= procChance) return false;
+			// Procced — redirect the bullet.
+			final Vector2f pcenter = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+			final Enemy src = targetRealm.getEnemies().get(b.getSrcEntityId());
+			final Vector2f target;
+			if (src != null && !src.getDeath()) {
+				target = src.getPos().clone(src.getSize() / 2, src.getSize() / 2);
+			} else {
+				// Source enemy unknown / dead — flip the bullet 180° from its
+				// current heading, sending it back the way it came.
+				final double a = b.getAngle() + Math.PI;
+				target = new Vector2f(pcenter.x + (float) Math.cos(a) * 100f,
+						pcenter.y + (float) Math.sin(a) * 100f);
+			}
+			b.setPos(pcenter);
+			// Bullet stores angle NEGATED relative to Bullet.getAngle (see
+			// constructors: this.angle = -Bullet.getAngle(origin, dest)).
+			// Without the negation here the deflected bullet flew at the
+			// wrong angle — close to a fixed direction regardless of which
+			// enemy actually shot.
+			b.setAngle(-Bullet.getAngle(pcenter, target));
+			// Reset range — by the time the bullet hits the player, almost
+			// all of its travel budget is spent. Give it a fresh ~250 px so
+			// it can actually reach the attacker.
+			b.setRange(250f);
+			b.setCreatedTick(this.tickCounter);
+			b.setEnemy(false);
+			b.setSrcEntityId(player.getId());
+			// Reflected damage bonus: 1 + DEF * 0.005, per design doc §6.1.
+			final double mul = 1.0 + (player.getComputedStats().getDef() * 0.005);
+			b.setDamage((short) Math.min(Short.MAX_VALUE, (int) (b.getDamage() * mul)));
+			// Visuals + popup so the player sees the proc.
+			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+					CreateEffectPacket.EFFECT_KNIGHT_SHOCKWAVE, pcenter.x, pcenter.y, 32f, (short) 400));
+			this.sendTextEffectToPlayer(player, TextEffect.PLAYER_INFO, "DEFLECT");
+			return true;
+		}
+		return false;
+	}
+
+	/** Helper — Stats lookup by the same index used in AbilityScaling.statIndex(). */
+	private static int statByIndex(Stats s, int idx) {
+		if (s == null) return 0;
+		switch (idx) {
+			case 0: return s.getVit();
+			case 1: return s.getWis();
+			case 2: return s.getHp();
+			case 3: return s.getMp();
+			case 4: return s.getAtt();
+			case 5: return s.getDef();
+			case 6: return s.getSpd();
+			case 7: return s.getDex();
+			default: return 0;
+		}
+	}
+
 	private void processPlayerHit(final long realmId, final Bullet b, final Player p) {
 		final Realm targetRealm = this.realms.get(realmId);
 		final Player player = targetRealm.getPlayer(p.getId());
 		if (player == null)
 			return;
 		if (circleHit(b, player) && b.isEnemy() && !b.isPlayerHit()) {
+			// Phase 3 — Knight's Deflect passive. DEF-scaled chance to reflect
+			// the bullet back at its source enemy instead of taking damage.
+			// Triggered before playerHit is set so the bullet stays alive and
+			// keeps flying as a player-owned projectile.
+			if (this.tryDeflect(targetRealm, b, player)) {
+				return;
+			}
 			final Stats stats = player.getComputedStats();
 			b.setPlayerHit(true);
 			// Apply difficulty damage scaling based on the source enemy's
@@ -2522,8 +2922,8 @@ public class RealmManagerServer implements Runnable {
 			int maxHealth = (int) (model.getHealth() * e.getDifficulty());
 			e.setHealthpercent((float) e.getHealth() / (float) maxHealth);
 			// Lifesteal: heal the source player by % of dealt damage from any
-			// gem-equipped item (weapon or ability slot). Capped at the player's
-			// max HP via getComputedStats().
+			// gem-equipped item. Currently only the weapon (slot 0) can carry
+			// gems; the legacy ability slot was removed in Phase 1B.
 			if (b.getSrcEntityId() != 0L) {
 				final Player healSrc = this.getPlayerById(b.getSrcEntityId());
 				if (healSrc != null && dmgToInflict > 0) {
@@ -2531,10 +2931,6 @@ public class RealmManagerServer implements Runnable {
 					if (healSrc.getInventory()[0] != null) {
 						totalLifestealPct += CombatModifiers
 								.fromItem(healSrc.getInventory()[0]).getLifestealPct();
-					}
-					if (healSrc.getInventory()[1] != null) {
-						totalLifestealPct += CombatModifiers
-								.fromItem(healSrc.getInventory()[1]).getLifestealPct();
 					}
 					if (totalLifestealPct > 0) {
 						final int heal = (dmgToInflict * totalLifestealPct) / 100;
@@ -2824,18 +3220,21 @@ public class RealmManagerServer implements Runnable {
 	private void playerDeath(final Realm targetRealm, final Player player) {
 		try {
 			final String remoteAddrDeath = this.getRemoteAddressMapReversed().get(player.getId());
-			final boolean hasAmulet = player.getInventory()[3] != null
-					&& player.getInventory()[3].getItemId() == 48;
+			// Ring slot moved from inv[3] to inv[4] in Phase 1B.
+			final int ringSlot = 4;
+			final boolean hasAmulet = player.getInventory()[ringSlot] != null
+					&& player.getInventory()[ringSlot].getItemId() == 48;
 
 			if (player.isHeadless() || player.isBot()) {
 				// Bots/headless: drop grave and remove immediately
 				if (hasAmulet) {
-					player.getInventory()[3] = null;
+					player.getInventory()[ringSlot] = null;
 					player.setHealth(1);
 				} else {
 					targetRealm.getExpiredPlayers().add(player.getId());
 					final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
-							player.getPos().clone(), player.getSlots(4, 12));
+							player.getPos().clone(),
+							player.getSlots(Player.EQUIPMENT_SLOT_COUNT, Player.EQUIPMENT_SLOT_COUNT + 8));
 					targetRealm.addLootContainer(graveLoot);
 					targetRealm.removePlayer(player);
 					this.clearPlayerState(player.getId());
@@ -2862,7 +3261,7 @@ public class RealmManagerServer implements Runnable {
 				TextPacket toBroadcast = TextPacket.create("SYSTEM", "",
 						player.getName() + "'s Amulet of Resurrection shatters!");
 				this.enqueueServerPacket(toBroadcast);
-				player.getInventory()[3] = null;
+				player.getInventory()[ringSlot] = null;
 				player.setHealth(player.getStats().getHp());
 				this.persistPlayerAsync(player);
 			} else {
@@ -2875,7 +3274,8 @@ public class RealmManagerServer implements Runnable {
 				// from the character-select screen don't pass bankFame so
 				// self-deletes still earn nothing.
 				final LootContainer graveLoot = new LootContainer(LootTier.GRAVE,
-						player.getPos().clone(), player.getSlots(4, 12));
+						player.getPos().clone(),
+						player.getSlots(Player.EQUIPMENT_SLOT_COUNT, Player.EQUIPMENT_SLOT_COUNT + 8));
 				targetRealm.addLootContainer(graveLoot);
 				final long earnedFame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(player.getExperience());
 				final String charUuid = player.getCharacterUuid();

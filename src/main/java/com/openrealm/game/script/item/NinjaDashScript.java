@@ -148,7 +148,9 @@ public class NinjaDashScript extends UseableItemScriptBase {
             final int floorDmg = (int) Math.max(rawDamage - enemy.getStats().getDef(), rawDamage * 0.15);
             final short dmg = (short) Math.max(1, floorDmg);
             enemy.setHealth(enemy.getHealth() - dmg);
-            this.mgr.broadcastTextEffect(EntityType.ENEMY, enemy, TextEffect.DAMAGE, "-" + dmg);
+            final TextEffect dmgFx = enemy.hasEffect(StatusEffectType.ARMOR_BROKEN)
+                    ? TextEffect.ARMOR_BREAK : TextEffect.DAMAGE;
+            this.mgr.broadcastTextEffect(EntityType.ENEMY, enemy, dmgFx, "-" + dmg);
             if (enemy.getDeath()) {
                 this.mgr.enemyDeath(targetRealm, enemy);
             }

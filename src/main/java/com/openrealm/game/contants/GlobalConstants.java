@@ -15,12 +15,16 @@ public class GlobalConstants {
 
     // Bag tier thresholds for CYAN vs PURPLE:
     // Items at or above these tiers drop in CYAN bags, lower tiers in PURPLE.
-    // Weapons: top 4 tiers (tiers 9-12) -> CYAN, else PURPLE
-    // Abilities: top 2 tiers (tiers 11-12) -> CYAN, else PURPLE  
-    // Armors: top 4 tiers (tiers 9-12) -> CYAN, else PURPLE
+    // Slot order post-combat-rework: 0=weapon, 1=armor, 2=gauntlets, 3=boots, 4=ring.
+    // ABILITY tier kept as a no-op constant for now (no items target the
+    // removed ability slot anymore); will be deleted alongside Phase 2.
     public static final byte CYAN_BAG_MIN_WEAPON_TIER = 9;
-    public static final byte CYAN_BAG_MIN_ABILITY_TIER = 11;
     public static final byte CYAN_BAG_MIN_ARMOR_TIER = 9;
+    public static final byte CYAN_BAG_MIN_GAUNTLET_TIER = 5;
+    public static final byte CYAN_BAG_MIN_BOOTS_TIER = 5;
+    /** @deprecated ability item slot was removed in Phase 1B. */
+    @Deprecated
+    public static final byte CYAN_BAG_MIN_ABILITY_TIER = 11;
 
     public static final int BASE_SIZE = 32;
     

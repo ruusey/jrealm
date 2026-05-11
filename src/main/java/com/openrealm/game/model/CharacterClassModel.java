@@ -6,6 +6,7 @@ import java.util.Map;
 import com.openrealm.game.data.GameDataManager;
 import com.openrealm.game.entity.item.GameItem;
 import com.openrealm.game.entity.item.Stats;
+import com.openrealm.game.model.ability.AbilityTree;
 import com.openrealm.net.realm.Realm;
 
 import lombok.AllArgsConstructor;
@@ -22,6 +23,19 @@ public class CharacterClassModel {
     private Stats baseStats;
     private Stats maxStats;
     private Map<Integer, Integer> startingEquipment;
+    /**
+     * Phase 1B bridge: itemId of the class's bound ability. Still used during
+     * Phase 2A while {@link AbilityTree} content is being populated. Phase 2B
+     * drives ability resolution off the tree and deletes this field.
+     */
+    private int classAbilityId;
+
+    /**
+     * Phase 2: the class's 4-active + 1-passive ability kit. Reference-only —
+     * each int is an id into abilities.json / passives.json. May be null until
+     * a class has been ported in Phase 2B; resolution code must tolerate that.
+     */
+    private AbilityTree abilityTree;
 
     public Stats getRandomLevelUpStats() {
         final ExperienceModel expModel = GameDataManager.EXPERIENCE_LVLS;

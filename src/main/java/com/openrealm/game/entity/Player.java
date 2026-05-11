@@ -20,6 +20,9 @@ import com.openrealm.game.entity.item.Enchantment;
 import com.openrealm.game.entity.item.GameItem;
 import com.openrealm.game.entity.item.LootContainer;
 import com.openrealm.game.entity.item.Stats;
+import com.openrealm.game.model.ability.Ability;
+import com.openrealm.game.model.ability.AbilityTree;
+import com.openrealm.game.model.ability.PassiveAbility;
 import com.openrealm.game.math.Vector2f;
 import com.openrealm.game.model.CharacterClassModel;
 import com.openrealm.net.client.packet.PlayerStatePacket;
@@ -75,6 +78,20 @@ public class Player extends Entity {
 	public static final int MAX_CONSUMABLE_POTIONS = 6;
 	public static final int HP_POTION_ITEM_ID = 296;
 	public static final int MP_POTION_ITEM_ID = 297;
+
+	// Equipment slot layout (Phase 1B combat rework):
+	//   0 = weapon
+	//   1 = armor
+	//   2 = gauntlets
+	//   3 = boots
+	//   4 = ring
+	// Backpack occupies indices [EQUIPMENT_SLOT_COUNT .. inventory.length-1].
+	// The legacy ability-item slot is gone; abilities now come from the
+	// player's CharacterClass (see getAbility()). MoveItemPacket slot
+	// constants must stay in sync with this layout.
+	public static final int EQUIPMENT_SLOT_COUNT = 5;
+	public static final int BACKPACK_SIZE = 16;
+	public static final int INVENTORY_SIZE = EQUIPMENT_SLOT_COUNT + BACKPACK_SIZE; // 21
 	@Builder.Default
 	private int hpPotions = 0;
 	@Builder.Default
@@ -86,6 +103,27 @@ public class Player extends Entity {
 	@Builder.Default
 	private transient long cachedAccountFame = 0L;
 
+	// Phase 2A runtime state.
+	//   abilityCooldowns: per-hotbar-slot end-of-cd timestamps (epoch millis).
+	//   currentCast:      non-null only while a cast is in progress.
+	//   hotbarBindings:   the 4 ability ids currently bound to keys 1..4.
+	//                     Initialized from CharacterClassModel.abilityTree
+	//                     .defaultHotbar at character spawn; mutated by
+	//                     HotbarSwapPacket (Shift+N) at runtime. Currently
+	//                     transient — reverts to class default on every
+	//                     login. Persistence lands in Phase 2B alongside
+	//                     CharacterStatsDto.hotbarBindings.
+	@Builder.Default
+	private transient long[] abilityCooldowns = new long[4];
+	@Builder.Default
+	private transient CastState currentCast = null;
+	@Builder.Default
+	private transient int[] hotbarBindings = new int[]{0, 0, 0, 0};
+	// Phase 2D: counter for on-basic-attack passives (e.g. Wizard's Arcane
+	// Surge — every Nth basic is empowered).
+	@Builder.Default
+	private transient int basicAttackCounter = 0;
+
 	public Player() {
 		super(0, null, 0);
 	}
@@ -94,7 +132,8 @@ public class Player extends Entity {
 			String accountUuid, String characterUuid, long experience, Stats stats, boolean headless, boolean bot,
 			String chatRole, boolean adminModeEnabled, String storedChatRole, boolean hiddenFromOthers,
 			int lastInputSeq, int lastProcessedInputSeq, float currentVx, float currentVy,
-			Queue<float[]> inputQueue, int hpPotions, int mpPotions, int dyeId, long cachedAccountFame) {
+			Queue<float[]> inputQueue, int hpPotions, int mpPotions, int dyeId, long cachedAccountFame,
+			long[] abilityCooldowns, CastState currentCast, int[] hotbarBindings, int basicAttackCounter) {
 		super(0, null, 0);
 		this.inventory = inventory;
 		this.lastStatsTime = lastStatsTime;
@@ -119,6 +158,12 @@ public class Player extends Entity {
 		this.mpPotions = mpPotions;
 		this.dyeId = dyeId;
 		this.cachedAccountFame = cachedAccountFame;
+		// Phase 2A — nullsafe so existing Builder callers that don't set these
+		// still get a usable Player (matches the field initializers).
+		this.abilityCooldowns = abilityCooldowns != null ? abilityCooldowns : new long[4];
+		this.currentCast = currentCast;
+		this.hotbarBindings = hotbarBindings != null ? hotbarBindings : new int[]{0, 0, 0, 0};
+		this.basicAttackCounter = basicAttackCounter;
 	}
 
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
@@ -138,6 +183,17 @@ public class Player extends Entity {
 		this.mana = classModel.getBaseStats().getMp();
 
 		this.stats = classModel.getBaseStats().clone();
+		// Phase 2A: seed hotbar from class default. Lombok's @Builder.Default
+		// strips the inline initializer from this ctor path (same trick that
+		// bit renderX/Y), so guard with an explicit allocation here.
+		if (this.hotbarBindings == null) this.hotbarBindings = new int[]{0, 0, 0, 0};
+		if (this.abilityCooldowns == null) this.abilityCooldowns = new long[4];
+		if (classModel.getAbilityTree() != null && classModel.getAbilityTree().getDefaultHotbar() != null) {
+			final int[] src = classModel.getAbilityTree().getDefaultHotbar();
+			for (int i = 0; i < this.hotbarBindings.length && i < src.length; i++) {
+				this.hotbarBindings[i] = src[i];
+			}
+		}
 	}
 
 	public void applyStats(CharacterStatsDto stats) {
@@ -178,11 +234,11 @@ public class Player extends Entity {
 	}
 
 	private void resetInventory() {
-		this.inventory = new GameItem[20];
+		this.inventory = new GameItem[INVENTORY_SIZE];
 	}
 
 	public int firstEmptyInvSlot() {
-		for (int i = 4; i < this.inventory.length; i++) {
+		for (int i = EQUIPMENT_SLOT_COUNT; i < this.inventory.length; i++) {
 			if (this.inventory[i] == null)
 				return i;
 		}
@@ -231,9 +287,61 @@ public class Player extends Entity {
 		return weapon == null ? -1 : weapon.getDamage().getProjectileGroupId();
 	}
 
+	/**
+	 * Phase 1B bridge — returns the legacy GameItem template that the
+	 * RealmManagerServer.useAbility() path still consumes. Phase 2B replaces
+	 * the call sites with {@link #getActiveAbility(int)} and deletes this.
+	 */
 	public GameItem getAbility() {
-		GameItem weapon = this.getSlot(1);
-		return weapon;
+		final CharacterClassModel cls = GameDataManager.CHARACTER_CLASSES.get(this.classId);
+		if (cls == null) return null;
+		final int abilityId = cls.getClassAbilityId();
+		if (abilityId <= 0) return null;
+		return GameDataManager.GAME_ITEMS.get(abilityId);
+	}
+
+	/**
+	 * Phase 2A: look up the {@link Ability} bound to a hotbar slot (0..3).
+	 * Returns null if the slot is empty, holds a passive (use
+	 * {@link #getSlottedPassive(int)}), or the referenced ability isn't loaded.
+	 */
+	public Ability getActiveAbility(int slot) {
+		final int id = this.getHotbarId(slot);
+		if (id <= 0 || GameDataManager.ABILITIES == null) return null;
+		return GameDataManager.ABILITIES.get(id);
+	}
+
+	/**
+	 * Returns the passive bound to a hotbar slot if any (since slots can hold
+	 * passives — they're "always-on while bound"). Distinct from the class's
+	 * always-on passive (see {@link #getClassPassive()}).
+	 */
+	public PassiveAbility getSlottedPassive(int slot) {
+		final int id = this.getHotbarId(slot);
+		if (id <= 0 || GameDataManager.PASSIVES == null) return null;
+		return GameDataManager.PASSIVES.get(id);
+	}
+
+	/**
+	 * The class's always-on passive (not bindable, separate from the hotbar).
+	 * Returns null until the class has been ported in Phase 2B.
+	 */
+	public PassiveAbility getClassPassive() {
+		final CharacterClassModel cls = GameDataManager.CHARACTER_CLASSES.get(this.classId);
+		if (cls == null || cls.getAbilityTree() == null) return null;
+		final int id = cls.getAbilityTree().getPassive();
+		if (id <= 0 || GameDataManager.PASSIVES == null) return null;
+		return GameDataManager.PASSIVES.get(id);
+	}
+
+	public int getHotbarId(int slot) {
+		if (this.hotbarBindings == null || slot < 0 || slot >= this.hotbarBindings.length) return 0;
+		return this.hotbarBindings[slot];
+	}
+
+	/** True if the player is mid-cast on a non-instant ability. */
+	public boolean isCasting() {
+		return this.currentCast != null;
 	}
 
 	@Override
@@ -278,7 +386,7 @@ public class Player extends Entity {
 		if (this.stats == null)
 			return new Stats();
 		Stats stats = this.stats.clone();
-		GameItem[] equipment = this.getSlots(0, 4);
+		GameItem[] equipment = this.getSlots(0, EQUIPMENT_SLOT_COUNT);
 		// Two-pass to keep STAT_SCALE multipliers honest: first sum all
 		// additive contributions (item stats, attribute modifiers, STAT_DELTA
 		// enchantments), then apply scale percentages on the post-additive
@@ -540,7 +648,8 @@ public class Player extends Entity {
 	}
 
 	public GameItem[] selectGameItems(Boolean[] selectedIdx) {
-		GameItem[] inv = this.getSlots(4, 12);
+		// "Primary bag" view = first 8 backpack slots.
+		GameItem[] inv = this.getSlots(EQUIPMENT_SLOT_COUNT, EQUIPMENT_SLOT_COUNT + 8);
 		if (selectedIdx.length != inv.length) {
 			System.err.println("SELECT GAME ITEM IDX SIZES NOT EQUAL");
 			return null;
@@ -558,12 +667,12 @@ public class Player extends Entity {
 	}
 
 	public NetGameItemRef[] getInventoryAsNetGameItemRefs() {
-		final GameItem[] inv = this.getSlots(4, 12);
+		final GameItem[] inv = this.getSlots(EQUIPMENT_SLOT_COUNT, EQUIPMENT_SLOT_COUNT + 8);
 		final List<NetGameItemRef> results = new ArrayList<>();
 		for (int i = 0; i < inv.length; i++) {
 			if (inv[i] == null)
 				continue;
-			results.add(inv[i].asNetGameItemRef(i + 4));
+			results.add(inv[i].asNetGameItemRef(i + EQUIPMENT_SLOT_COUNT));
 		}
 		return results.toArray(new NetGameItemRef[0]);
 
@@ -575,7 +684,7 @@ public class Player extends Entity {
 				continue;
 			if (item.isStackable()) {
 				int remaining = item.getStackCount();
-				for (int i = 4; i < this.inventory.length && remaining > 0; i++) {
+				for (int i = EQUIPMENT_SLOT_COUNT; i < this.inventory.length && remaining > 0; i++) {
 					final GameItem existing = this.inventory[i];
 					if (existing == null) continue;
 					if (existing.getItemId() != item.getItemId()) continue;
@@ -602,7 +711,7 @@ public class Player extends Entity {
 	}
 
 	public void removeItems(GameItem[] items) {
-		final GameItem[] inv = this.getSlots(4, 12);
+		final GameItem[] inv = this.getSlots(EQUIPMENT_SLOT_COUNT, EQUIPMENT_SLOT_COUNT + 8);
 
 		for (int i = 0; i < inv.length; i++) {
 			GameItem invItem = inv[i];
@@ -610,7 +719,7 @@ public class Player extends Entity {
 				continue;
 			for (GameItem toRemove : items) {
 				if (invItem.getUid() != null && invItem.getUid().equals(toRemove.getUid())) {
-					this.inventory[i + 4] = null;
+					this.inventory[i + EQUIPMENT_SLOT_COUNT] = null;
 					break;
 				}
 			}

@@ -103,7 +103,7 @@ public class LootContainer {
 
     /**
      * Determines bag tier based on item contents.
-     * CYAN bag: top 4 weapon tiers, top 2 ability tiers, top 4 armor tiers
+     * CYAN bag: top weapon/armor/gauntlet/boot tiers (see {@link #isCyanTierItem})
      * PURPLE bag: all other tiered equipment
      * WHITE bag: untiered items (tier == -1)
      * BROWN bag: consumables only (always public, never soulbound)
@@ -151,21 +151,20 @@ public class LootContainer {
 
     /**
      * Checks if an item qualifies for CYAN bag based on slot and tier.
-     * Weapons (slot 0): top 4 tiers (>= CYAN_BAG_MIN_WEAPON_TIER)
-     * Abilities (slot 1): top 2 tiers (>= CYAN_BAG_MIN_ABILITY_TIER)
-     * Armors (slot 2): top 4 tiers (>= CYAN_BAG_MIN_ARMOR_TIER)
-     * Rings (slot 3) and others: follow the old logic (tier >= 8)
+     * Slot map: 0=weapon, 1=armor, 2=gauntlets, 3=boots, 4=ring.
      */
     private boolean isCyanTierItem(byte slot, byte tier) {
         if (tier < 0) return false; // untiered items don't count here
         switch (slot) {
             case 0: // Weapon
                 return tier >= GlobalConstants.CYAN_BAG_MIN_WEAPON_TIER;
-            case 1: // Ability
-                return tier >= GlobalConstants.CYAN_BAG_MIN_ABILITY_TIER;
-            case 2: // Armor
+            case 1: // Armor
                 return tier >= GlobalConstants.CYAN_BAG_MIN_ARMOR_TIER;
-            default: // Rings (slot 3) and other items: tier >= 8
+            case 2: // Gauntlets
+                return tier >= GlobalConstants.CYAN_BAG_MIN_GAUNTLET_TIER;
+            case 3: // Boots
+                return tier >= GlobalConstants.CYAN_BAG_MIN_BOOTS_TIER;
+            default: // Ring (slot 4) and any others: tier >= 8
                 return tier >= 8;
         }
     }

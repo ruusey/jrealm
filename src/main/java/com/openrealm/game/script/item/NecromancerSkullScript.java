@@ -72,7 +72,9 @@ public class NecromancerSkullScript extends UseableItemScriptBase {
                 short dmg = (short) Math.max(baseDamage - enemy.getStats().getDef(), baseDamage * 0.15);
                 enemy.setHealth(enemy.getHealth() - dmg);
                 totalDamageDealt += dmg;
-                this.mgr.broadcastTextEffect(EntityType.ENEMY, enemy, TextEffect.DAMAGE, "-" + dmg);
+                final TextEffect dmgFx = enemy.hasEffect(StatusEffectType.ARMOR_BROKEN)
+                        ? TextEffect.ARMOR_BREAK : TextEffect.DAMAGE;
+                this.mgr.broadcastTextEffect(EntityType.ENEMY, enemy, dmgFx, "-" + dmg);
                 if (enemy.getDeath()) {
                     this.mgr.enemyDeath(targetRealm, enemy);
                 }

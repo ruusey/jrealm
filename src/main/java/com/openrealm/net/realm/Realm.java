@@ -1712,8 +1712,10 @@ public class Realm {
 
             dot.damageApplied += tickDamage;
             enemy.setHealth(enemy.getHealth() - tickDamage);
+            final TextEffect dotFx = enemy.hasEffect(StatusEffectType.ARMOR_BROKEN)
+                    ? TextEffect.ARMOR_BREAK : TextEffect.DAMAGE;
             mgr.broadcastTextEffect(EntityType.ENEMY, enemy,
-                    TextEffect.DAMAGE, "-" + tickDamage);
+                    dotFx, "-" + tickDamage);
 
             if (enemy.getDeath()) {
                 mgr.enemyDeath(this, enemy);
@@ -1825,8 +1827,10 @@ public class Realm {
                         }
                         if (trap.damage > 0) {
                             enemy.setHealth(enemy.getHealth() - trap.damage);
+                            final TextEffect trapFx = enemy.hasEffect(StatusEffectType.ARMOR_BROKEN)
+                                    ? TextEffect.ARMOR_BREAK : TextEffect.DAMAGE;
                             mgr.broadcastTextEffect(this, EntityType.ENEMY, enemy,
-                                    TextEffect.DAMAGE, "-" + trap.damage);
+                                    trapFx, "-" + trap.damage);
                             if (enemy.getDeath()) {
                                 mgr.enemyDeath(this, enemy);
                             }

@@ -91,7 +91,9 @@ public class SorcererScepterScript extends UseableItemScriptBase {
             }
 
             currentTarget.setHealth(currentTarget.getHealth() - dmg);
-            this.mgr.broadcastTextEffect(EntityType.ENEMY, currentTarget, TextEffect.DAMAGE, "-" + dmg);
+            final TextEffect dmgFx = currentTarget.hasEffect(StatusEffectType.ARMOR_BROKEN)
+                    ? TextEffect.ARMOR_BREAK : TextEffect.DAMAGE;
+            this.mgr.broadcastTextEffect(EntityType.ENEMY, currentTarget, dmgFx, "-" + dmg);
 
             if (currentTarget.getDeath()) {
                 this.mgr.enemyDeath(targetRealm, currentTarget);

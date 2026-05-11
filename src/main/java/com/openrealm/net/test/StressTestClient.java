@@ -258,7 +258,7 @@ public class StressTestClient implements Runnable {
                     float range = 80 + RANDOM.nextFloat() * 120;
                     float abilityX = this.spawnX + (float) (Math.cos(Math.toRadians(angle)) * range);
                     float abilityY = this.spawnY + (float) (Math.sin(Math.toRadians(angle)) * range);
-                    this.outboundPacketQueue.add(new UseAbilityPacket(this.assignedPlayerId, abilityX, abilityY));
+                    this.outboundPacketQueue.add(new UseAbilityPacket(this.assignedPlayerId, abilityX, abilityY, (byte) 0));
                 }
             }
 

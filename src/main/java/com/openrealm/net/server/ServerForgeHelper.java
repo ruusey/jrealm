@@ -76,7 +76,7 @@ public class ServerForgeHelper {
         if (player == null) return;
 
         final int slot = p.getFromSlotIndex();
-        if (slot < 4 || slot >= player.getInventory().length) {
+        if (slot < Player.EQUIPMENT_SLOT_COUNT || slot >= player.getInventory().length) {
             log.warn("[Forge] Player {} tried to consume shard from invalid slot {}", player.getId(), slot);
             return;
         }
@@ -184,8 +184,9 @@ public class ServerForgeHelper {
             log.warn("[Forge] Player {} sent forge with empty slot", player.getId());
             return;
         }
-        // Target must be equipment (non-stackable, has a targetSlot 0..3)
-        if (target.isStackable() || target.getTargetSlot() < 0 || target.getTargetSlot() > 3) {
+        // Target must be equipment (non-stackable, has a targetSlot in equipment range)
+        if (target.isStackable() || target.getTargetSlot() < 0
+                || target.getTargetSlot() >= Player.EQUIPMENT_SLOT_COUNT) {
             log.warn("[Forge] Cannot enchant non-equipment item {}", target.getName());
             return;
         }

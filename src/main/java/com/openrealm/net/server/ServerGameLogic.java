@@ -475,7 +475,8 @@ public class ServerGameLogic {
 		}
 		final Realm realm = mgr.findPlayerRealm(useAbilityPacket.getPlayerId());
 		mgr.useAbility(realm.getRealmId(), useAbilityPacket.getPlayerId(),
-				new Vector2f(useAbilityPacket.getPosX(), useAbilityPacket.getPosY()));
+				new Vector2f(useAbilityPacket.getPosX(), useAbilityPacket.getPosY()),
+				useAbilityPacket.getAbilityIndex());
 		ServerGameLogic.log.debug("[SERVER] Recieved UseAbility Packet For Player {}", useAbilityPacket.getPlayerId());
 	}
 
@@ -540,6 +541,42 @@ public class ServerGameLogic {
 			}
 			final CombatModifiers cm =
 					CombatModifiers.fromItem(player.getInventory()[0]);
+
+			// Phase 2D — ON_BASIC_ATTACK passive trigger. Currently scoped to
+			// the Wizard's Arcane Surge ("every Nth basic is empowered"):
+			// N derives from WIS via the EMPOWER_FREQUENCY scaling. On an
+			// empowered shot we broadcast a wizard-burst flare at the player
+			// and apply a 1.5× damage multiplier to that volley.
+			boolean empoweredShot = false;
+			final com.openrealm.game.model.ability.PassiveAbility classPassive = player.getClassPassive();
+			if (classPassive != null) {
+				for (com.openrealm.game.model.ability.PassiveTrigger trig : classPassive.triggerList()) {
+					if (!"ON_BASIC_ATTACK".equalsIgnoreCase(trig.getEvent())) continue;
+					int contribution = 0;
+					if (trig.getScalings() != null) {
+						for (com.openrealm.game.model.ability.AbilityScaling sc : trig.getScalings()) {
+							if ("EMPOWER_FREQUENCY".equalsIgnoreCase(sc.getTarget())
+									&& "WIS".equalsIgnoreCase(sc.getStat())) {
+								contribution = (int) (player.getComputedStats().getWis() * sc.getCoeff());
+							}
+						}
+					}
+					final int N = Math.max(2, 5 - contribution);
+					player.setBasicAttackCounter(player.getBasicAttackCounter() + 1);
+					if (player.getBasicAttackCounter() >= N) {
+						empoweredShot = true;
+						player.setBasicAttackCounter(0);
+						final Vector2f pcenter = player.getPos()
+								.clone(player.getSize() / 2, player.getSize() / 2);
+						mgr.enqueueServerPacketToRealm(realm,
+								com.openrealm.net.client.packet.CreateEffectPacket.aoeEffect(
+										com.openrealm.net.client.packet.CreateEffectPacket.EFFECT_WIZARD_BURST,
+										pcenter.x, pcenter.y, 32f, (short) 450, (byte) 6));
+					}
+					break;
+				}
+			}
+
 			float angle = Bullet.getAngle(source, dest);
 			for (Projectile proj : group.getProjectiles()) {
 				short offset = (short) (player.getSize() / (short) 2);
@@ -547,6 +584,9 @@ public class ServerGameLogic {
 				float shootAngle = angle + Float.parseFloat(proj.getAngle());
 				rolledDamage += player.getComputedStats().getAtt();
 				rolledDamage = applyCombatDamageMods(rolledDamage, cm);
+				if (empoweredShot) {
+					rolledDamage = (short) Math.min(Short.MAX_VALUE, (int) (rolledDamage * 1.5f));
+				}
 				// MultiShot / extra-projectile gems: fire (1 + extra) bullets fanned
 				// SYMMETRICALLY around the cursor — half the spread on each side.
 				// The previous formula biased the fan one-sided (primary at base
@@ -835,10 +875,14 @@ public class ServerGameLogic {
 					}
 				}
 
-				final Map<Integer, GameItem> loadedEquipment = new HashMap<>();
+				Map<Integer, GameItem> loadedEquipment = new HashMap<>();
 				for (final GameItemRefDto item : targetCharacter.getItems()) {
 					loadedEquipment.put(item.getSlotIdx(), GameItem.fromGameItemRef(item));
 				}
+				// Phase 1B: one-shot migration for pre-rework saves (20-slot
+				// inventory, slot 1 = ability item). After this runs once the
+				// player's persisted slotIdx values get rewritten on next save.
+				loadedEquipment = ServerItemHelper.migrateLegacySlotLayout(loadedEquipment);
 
 				assignedId = Realm.RANDOM.nextLong();
 				Integer resolvedClassId = targetCharacter.getCharacterClass();
