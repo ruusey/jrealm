@@ -431,6 +431,13 @@ public class Player extends Entity {
 		else if (this.hasEffect(StatusEffectType.ARMORED)) {
 			stats.setDef((short) (stats.getDef() * 2));
 		}
+		else if (this.hasEffect(StatusEffectType.BRACED)) {
+			stats.setDef((short) Math.min(Short.MAX_VALUE, (int)(stats.getDef() * 1.5f)));
+		}
+		// Priest Protective Aura — +5 VIT to every ally inside the aura.
+		if (this.hasEffect(StatusEffectType.PROTECTED)) {
+			stats.setVit((short) Math.min(Short.MAX_VALUE, stats.getVit() + 5));
+		}
 		return stats;
 	}
 

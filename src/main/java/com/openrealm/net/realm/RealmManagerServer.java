@@ -1353,24 +1353,30 @@ public class RealmManagerServer implements Runnable {
 		final float limitSq = limit * limit;
 		float bestSq = limitSq;
 		Player bestPlayer = null;
-		// Iterate the players map directly. The previous version queried the
-		// unified spatial grid with the chaseRange limit and filtered for
-		// players, but the grid holds players + enemies + bullets together —
-		// at 5K enemies in a small cluster, queryRadius returned thousands
-		// of candidates per call (2500 AI calls/tick × ~5K candidates each
-		// = ~12M iterations/tick), dwarfing any savings versus the linear
-		// scan. Player counts are bounded (~40 max), so a flat iteration is
-		// strictly cheaper here.
+		// Two-pass: prefer the closest TAUNT_TARGET player in range. Only fall
+		// back to the closest untaunted player when no taunted target exists.
+		// (Knight Taunt — pulls enemy aggro for the buff duration.)
+		float bestTauntedSq = limitSq;
+		Player bestTaunted = null;
 		for (final Player player : targetRealm.getPlayers().values()) {
-			// /hide: enemies don't target hidden admins.
 			if (!includeHidden && player.isHiddenFromOthers()) continue;
 			final float dx = player.getPos().x - pos.x;
 			final float dy = player.getPos().y - pos.y;
 			final float distSq = dx * dx + dy * dy;
+			if (player.hasEffect(StatusEffectType.TAUNT_TARGET)) {
+				if (distSq < bestTauntedSq) {
+					bestTauntedSq = distSq;
+					bestTaunted = player;
+				}
+			}
 			if (distSq < bestSq) {
 				bestSq = distSq;
 				bestPlayer = player;
 			}
+		}
+		if (bestTaunted != null) {
+			bestPlayer = bestTaunted;
+			bestSq = bestTauntedSq;
 		}
 		// Decoys still use linear distance (existing API takes float). Pass
 		// sqrt of best squared distance so decoys can compete on equal terms.
@@ -1752,6 +1758,69 @@ public class RealmManagerServer implements Runnable {
 			realm.processDecoys(this);
 		}
 
+		// Priest Protective Aura — every 8 ticks (~125ms), find every priest
+		// with the Protective Aura passive and refresh PROTECTED on every player
+		// within 5 tiles (320 px). Duration 800 ms so the buff naturally decays
+		// when an ally walks out of range. Applied to the priest itself too.
+		if (this.tickCounter % 8 == 0) {
+			final float AURA_RADIUS = 320f;
+			final float AURA_RADIUS_SQ = AURA_RADIUS * AURA_RADIUS;
+			final long AURA_REFRESH_MS = 800L;
+			for (final Realm realm : this.realms.values()) {
+				if (realm.getPlayers().isEmpty()) continue;
+				for (final Player priest : realm.getPlayers().values()) {
+					final com.openrealm.game.model.ability.PassiveAbility pa = priest.getClassPassive();
+					if (pa == null || pa.getId() != 11003) continue;
+					final Vector2f pc = priest.getPos().clone(priest.getSize() / 2, priest.getSize() / 2);
+					for (final Player ally : realm.getPlayers().values()) {
+						final Vector2f ac = ally.getPos().clone(ally.getSize() / 2, ally.getSize() / 2);
+						final float dx = ac.x - pc.x, dy = ac.y - pc.y;
+						if (dx * dx + dy * dy > AURA_RADIUS_SQ) continue;
+						ally.addEffect(StatusEffectType.PROTECTED, AURA_REFRESH_MS);
+					}
+				}
+			}
+		}
+
+		// Knight Phalanx Dome — every tick, any player with PHALANX_DOME has a
+		// 96-px radius sphere around them that destroys any incoming enemy
+		// bullet that enters. Cheap because the dome's lifetime is short (~3.5s)
+		// and active casters are usually rare. Also re-emits the persistent
+		// visual every 12 ticks (~190ms) so it reads as a steady bubble.
+		final float PHALANX_RADIUS = 96f;
+		final float PHALANX_RADIUS_SQ = PHALANX_RADIUS * PHALANX_RADIUS;
+		final boolean refreshDomeVisual = (this.tickCounter % 12 == 0);
+		for (final Realm realm : this.realms.values()) {
+			if (realm.getPlayers().isEmpty()) continue;
+			for (final Player p : realm.getPlayers().values()) {
+				if (!p.hasEffect(StatusEffectType.PHALANX_DOME)) continue;
+				final Vector2f pc = p.getPos().clone(p.getSize() / 2, p.getSize() / 2);
+				// Destroy enemy bullets inside the dome.
+				final java.util.List<Long> killedIds = new java.util.ArrayList<>();
+				for (final Bullet b : realm.getBullets().values()) {
+					if (!b.isEnemy()) continue;
+					final float dx = b.getPos().x - pc.x;
+					final float dy = b.getPos().y - pc.y;
+					if (dx * dx + dy * dy <= PHALANX_RADIUS_SQ) {
+						killedIds.add(b.getId());
+					}
+				}
+				for (final long bid : killedIds) {
+					final Bullet b = realm.getBullets().get(bid);
+					if (b != null) {
+						realm.getExpiredBullets().add(bid);
+						realm.removeBullet(b);
+					}
+				}
+				if (refreshDomeVisual) {
+					this.enqueueServerPacketToRealm(realm, CreateEffectPacket.aoeEffect(
+							CreateEffectPacket.EFFECT_HEAL_RADIUS, pc.x, pc.y, PHALANX_RADIUS, (short) 220));
+					this.enqueueServerPacketToRealm(realm, CreateEffectPacket.aoeEffect(
+							CreateEffectPacket.EFFECT_PALADIN_SEAL, pc.x, pc.y, PHALANX_RADIUS - 16, (short) 220, (byte) 6));
+				}
+			}
+		}
+
 		// Broadcast global player positions for minimap (1 Hz) — only if any position changed
 		if (this.tickCounter % 64 == 0) {
 			for (final Map.Entry<Long, Realm> realmEntry : this.realms.entrySet()) {
@@ -2037,6 +2106,11 @@ public class RealmManagerServer implements Runnable {
 		StatusEffectType effSelfStatus;
 		int effSelfDurationMs;
 		boolean effHasSelfStatus;
+		// Phase 3 — abilities may apply multiple SELF statuses (e.g. Knight Brace
+		// applies BRACED + SLOWED). The primary (first) status keeps the legacy
+		// TELEPORT branch behavior; extras are appended to this list and applied
+		// alongside the primary at each apply site.
+		final java.util.List<Object[]> extraSelfStatuses = new java.util.ArrayList<>();
 		if (ab != null) {
 			effPgId           = -1;
 			effSelfStatus     = null;
@@ -2050,13 +2124,15 @@ public class RealmManagerServer implements Runnable {
 				} else if (t.equalsIgnoreCase("STATUS_APPLY") && "SELF".equalsIgnoreCase(e.getTarget())) {
 					try {
 						final short sid = Short.parseShort(String.valueOf(e.getStatusId()).trim());
-						// Status enum keyed by raw effectId (NOT ordinal). TELEPORT=9 is at
-						// ordinal 8 — values()[9] would be DAZED. Use the static map.
 						final StatusEffectType st = StatusEffectType.map.get(sid);
 						if (st != null) {
-							effSelfStatus    = st;
-							effSelfDurationMs = (int) e.getBaseDurationMs();
-							effHasSelfStatus = true;
+							if (!effHasSelfStatus) {
+								effSelfStatus    = st;
+								effSelfDurationMs = (int) e.getBaseDurationMs();
+								effHasSelfStatus = true;
+							} else {
+								extraSelfStatuses.add(new Object[] { st, (int) e.getBaseDurationMs() });
+							}
 						}
 					} catch (NumberFormatException ignore) { /* non-numeric statusId — Phase 2D resolves via enum name */ }
 				}
@@ -2127,6 +2203,43 @@ public class RealmManagerServer implements Runnable {
 				break;
 			}
 
+			// "taunt_visual" — orange burst + purple curse swirl + shockwave pulse
+			// stacked for an aggro/roar feel. Used by Knight Taunt.
+			if (ab.getTags().contains("taunt_visual")) {
+				final Vector2f pc = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_WIZARD_BURST, pc.x, pc.y, 64f, (short) 900, (byte) 12));
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_CURSE_RADIUS, pc.x, pc.y, 96f, (short) 1400));
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_KNIGHT_SHOCKWAVE, pc.x, pc.y, 32f, (short) 500));
+			}
+
+			// "brace_visual" — defensive stance combo: outward shockwave + paladin
+			// seal at feet + protective heal-ring. Used by Knight Brace.
+			if (ab.getTags().contains("brace_visual")) {
+				final Vector2f pc = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_KNIGHT_SHOCKWAVE, pc.x, pc.y, 48f, (short) 700));
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_PALADIN_SEAL, pc.x, pc.y, 56f, (short) 1300, (byte) 5));
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_HEAL_RADIUS, pc.x, pc.y, 60f, (short) 1300));
+			}
+
+			// "force_push" tag — chain-lightning streak from caster toward the
+			// cursor (~3 tiles) + KNIGHT_SHOCKWAVE impact at the cursor. Sells a
+			// forward shove without an actual projectile. Damage + STUN are
+			// applied via the regular aoe_targeted block at the cursor.
+			if (ab.getTags().contains("force_push")) {
+				final Vector2f from = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
+						CreateEffectPacket.EFFECT_CHAIN_LIGHTNING,
+						from.x, from.y, pos.x, pos.y, (short) 350));
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_KNIGHT_SHOCKWAVE, pos.x, pos.y, 48f, (short) 600));
+			}
+
 			// "dash_trail" tag — chain-lightning streak from the caster toward
 			// the cursor, ~5 tiles long. Pure visual; the SPEEDY status (applied
 			// elsewhere) does the actual mobility.
@@ -2173,12 +2286,47 @@ public class RealmManagerServer implements Runnable {
 			// the meteor explosion.
 			if (!fromSky) {
 				short visualEffect = CreateEffectPacket.EFFECT_STASIS_FIELD;
-				if (ab.getTags().contains("fire"))   visualEffect = CreateEffectPacket.EFFECT_WIZARD_BURST;
-				if (ab.getTags().contains("curse"))  visualEffect = CreateEffectPacket.EFFECT_CURSE_RADIUS;
-				if (ab.getTags().contains("heal"))   visualEffect = CreateEffectPacket.EFFECT_HEAL_RADIUS;
-				if (ab.getTags().contains("holy"))   visualEffect = CreateEffectPacket.EFFECT_PALADIN_SEAL;
+				if (ab.getTags().contains("fire"))    visualEffect = CreateEffectPacket.EFFECT_WIZARD_BURST;
+				if (ab.getTags().contains("curse"))   visualEffect = CreateEffectPacket.EFFECT_CURSE_RADIUS;
+				if (ab.getTags().contains("heal"))    visualEffect = CreateEffectPacket.EFFECT_HEAL_RADIUS;
+				if (ab.getTags().contains("cleanse")) visualEffect = CreateEffectPacket.EFFECT_WATER_FOUNTAIN;
+				if (ab.getTags().contains("bless"))   visualEffect = CreateEffectPacket.EFFECT_PALADIN_SEAL;
+				if (ab.getTags().contains("holy"))    visualEffect = CreateEffectPacket.EFFECT_PALADIN_SEAL;
 				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
 						visualEffect, effCenter.x, effCenter.y, aoeRadius, (short) 1500));
+				// "outline_ring" tag — stack a STASIS_FIELD ring at the radius
+				// for abilities whose primary visual doesn't read as a clear
+				// circle on its own (Hunter's Mark curse swirl is too subtle).
+				if (ab.getTags().contains("outline_ring")) {
+					this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+							CreateEffectPacket.EFFECT_STASIS_FIELD,
+							effCenter.x, effCenter.y, aoeRadius, (short) 1500));
+				}
+			}
+			// "rain_arrows" tag — spawn visual-only arrow projectiles that fall
+			// from above the AoE into the circle. Damage=0 so they don't double-
+			// dip on the AoE's own damage, but they render as the archer arrow
+			// sprite (projectileId 88, the tier 8-10 bow round) for that cool
+			// "barrage from the sky" feel.
+			if (ab.getTags().contains("rain_arrows")) {
+				final int ARROW_COUNT = 14;
+				final int ARROW_PID = 88;
+				final java.util.Random rng = java.util.concurrent.ThreadLocalRandom.current();
+				for (int i = 0; i < ARROW_COUNT; i++) {
+					final double r  = aoeRadius * Math.sqrt(rng.nextDouble());
+					final double th = rng.nextDouble() * 2.0 * Math.PI;
+					final float offX = (float)(r * Math.cos(th));
+					final float offY = (float)(r * Math.sin(th));
+					// Spawn 280px above the landing point; fall straight down.
+					// addProjectile passes angle to Bullet ctor which stores
+					// -angle, so passing 0 yields (sin,cos)=(0,1) → +Y motion.
+					final Vector2f src = new Vector2f(
+							effCenter.x + offX, effCenter.y + offY - 280f);
+					this.addProjectile(targetRealm.getRealmId(), 0L, player.getId(),
+							ARROW_PID, -1, src, 0f, (short) 16, 9f, 320f,
+							(short) 0, false, new java.util.ArrayList<>(),
+							(short) 0, (short) 0, player.getId());
+				}
 			}
 			// Optional direct damage (no projectile). Used by Meteor / Rain of
 			// Arrows / etc. Reads baseDamage + DAMAGE scalings from Ability.
@@ -2280,6 +2428,9 @@ public class RealmManagerServer implements Runnable {
 			// Self-effect from STATUS_APPLY SELF (already derived above).
 			if (effHasSelfStatus && effSelfStatus != null) {
 				player.addEffect(effSelfStatus, effSelfDurationMs);
+				for (Object[] xs : extraSelfStatuses) {
+					player.addEffect((StatusEffectType) xs[0], (Integer) xs[1]);
+				}
 			}
 			return; // Skip the projectile spawn paths — this was a pure AoE.
 		}
@@ -2337,6 +2488,9 @@ public class RealmManagerServer implements Runnable {
 			// Apply self-effect if present (e.g., warrior helmet SPEEDY buff)
 			if (effHasSelfStatus && effSelfStatus != null) {
 				player.addEffect(effSelfStatus, effSelfDurationMs);
+				for (Object[] xs : extraSelfStatuses) {
+					player.addEffect((StatusEffectType) xs[0], (Integer) xs[1]);
+				}
 			}
 
 		} else if ((abilityItem.getDamage() != null) && (group != null)) {
@@ -2369,6 +2523,9 @@ public class RealmManagerServer implements Runnable {
 				player.setPos(pos);
 			} else if (!effSelfStatus.equals(StatusEffectType.TELEPORT) && effHasSelfStatus) {
 				player.addEffect(effSelfStatus, effSelfDurationMs);
+				for (Object[] xs : extraSelfStatuses) {
+					player.addEffect((StatusEffectType) xs[0], (Integer) xs[1]);
+				}
 			}
 		}
 		// Invoke any item specific scripts
@@ -2748,39 +2905,62 @@ public class RealmManagerServer implements Runnable {
 			}
 			if (procChance <= 0) return false;
 			if (Math.random() >= procChance) return false;
-			// Procced — redirect the bullet.
+			// Procced — redirect the bullet. Clients only learn about bullets
+			// on spawn (LoadPacket diffs), so mutating in-place doesn't update
+			// the client's render — the original bullet keeps flying along its
+			// incoming trajectory. We instead expire the original and spawn a
+			// fresh player-owned bullet so the next diff shows the new shot.
 			final Vector2f pcenter = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
-			final Enemy src = targetRealm.getEnemies().get(b.getSrcEntityId());
+			final com.openrealm.game.entity.Enemy src = targetRealm.getEnemies().get(b.getSrcEntityId());
 			final Vector2f target;
 			if (src != null && !src.getDeath()) {
 				target = src.getPos().clone(src.getSize() / 2, src.getSize() / 2);
 			} else {
 				// Source enemy unknown / dead — flip the bullet 180° from its
-				// current heading, sending it back the way it came.
-				final double a = b.getAngle() + Math.PI;
-				target = new Vector2f(pcenter.x + (float) Math.cos(a) * 100f,
-						pcenter.y + (float) Math.sin(a) * 100f);
+				// current heading. Bullet.angle convention: (sin, cos) is the
+				// forward unit vector, so flipping means (-sin, -cos) i.e. add π
+				// to the stored angle.
+				final double flipped = b.getAngle() + Math.PI;
+				final float fx = (float) Math.sin(flipped) * 100f;
+				final float fy = (float) Math.cos(flipped) * 100f;
+				target = new Vector2f(pcenter.x + fx, pcenter.y + fy);
 			}
-			b.setPos(pcenter);
-			// Bullet stores angle NEGATED relative to Bullet.getAngle (see
-			// constructors: this.angle = -Bullet.getAngle(origin, dest)).
-			// Without the negation here the deflected bullet flew at the
-			// wrong angle — close to a fixed direction regardless of which
-			// enemy actually shot.
-			b.setAngle(-Bullet.getAngle(pcenter, target));
-			// Reset range — by the time the bullet hits the player, almost
-			// all of its travel budget is spent. Give it a fresh ~250 px so
-			// it can actually reach the attacker.
-			b.setRange(250f);
-			b.setCreatedTick(this.tickCounter);
-			b.setEnemy(false);
-			b.setSrcEntityId(player.getId());
 			// Reflected damage bonus: 1 + DEF * 0.005, per design doc §6.1.
 			final double mul = 1.0 + (player.getComputedStats().getDef() * 0.005);
-			b.setDamage((short) Math.min(Short.MAX_VALUE, (int) (b.getDamage() * mul)));
-			// Visuals + popup so the player sees the proc.
+			final short deflectDamage = (short) Math.min(Short.MAX_VALUE, (int) (b.getDamage() * mul));
+			// Expire the incoming bullet (client will drop it via diff).
+			targetRealm.getExpiredBullets().add(b.getId());
+			targetRealm.removeBullet(b);
+			// Spawn a fresh player-owned bullet aimed at the attacker. addProjectile
+			// negates the angle internally — matches the convention used by the
+			// player shoot path (final float angle = Bullet.getAngle(source, dest)).
+			final float newAngle = Bullet.getAngle(pcenter, target);
+			// Triple-up the bullet in a tight fan so the deflect reads as a
+			// fanned counter-volley rather than a single round trip.
+			final float SPREAD = 0.10f;
+			for (int i = -1; i <= 1; i++) {
+				this.addProjectile(targetRealm.getRealmId(), 0L, player.getId(), b.getProjectileId(),
+						-1, pcenter, newAngle + i * SPREAD,
+						(short) b.getSize(), b.getMagnitude(), 300f,
+						deflectDamage, false, b.getFlags(),
+						(short) 0, (short) 0, player.getId());
+			}
+			// Deflect visuals — directional, drawn TOWARD the enemy:
+			//   1) Chain-lightning arc from player center to the attacker (the
+			//      "deflect path"). Long-lived (~500ms) so the eye tracks it.
+			//   2) Bright wizard-burst flare at the player center for the moment
+			//      of deflection (gold-ish, distinct from the knight shockwave).
+			//   3) Small wizard-burst at the attacker so the arrival of the
+			//      counter-volley reads even before the bullet itself lands.
+			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
+					CreateEffectPacket.EFFECT_CHAIN_LIGHTNING,
+					pcenter.x, pcenter.y, target.x, target.y, (short) 500));
 			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-					CreateEffectPacket.EFFECT_KNIGHT_SHOCKWAVE, pcenter.x, pcenter.y, 32f, (short) 400));
+					CreateEffectPacket.EFFECT_WIZARD_BURST,
+					pcenter.x, pcenter.y, 36f, (short) 500, (byte) 5));
+			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+					CreateEffectPacket.EFFECT_WIZARD_BURST,
+					target.x, target.y, 28f, (short) 400, (byte) 5));
 			this.sendTextEffectToPlayer(player, TextEffect.PLAYER_INFO, "DEFLECT");
 			return true;
 		}

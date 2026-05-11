@@ -41,6 +41,22 @@ public enum StatusEffectType {
     BERSERK((short) 19),
     SLOWED((short) 21),
     ARMOR_BROKEN((short) 22),
+    /** Marks the entity as a priority target. Enemies that fire targeted
+     *  projectiles will pick taunted players over untaunted ones in the same
+     *  acquisition radius. Applied by the Knight's Taunt ability. */
+    TAUNT_TARGET((short) 23),
+    /** 1.5× DEF buff (vs ARMORED's 2×). Applied by the Knight's Brace ability,
+     *  usually together with SLOWED to lock the player into a defensive stance. */
+    BRACED((short) 24),
+    /** +5 VIT aura buff. Applied by the Priest's Protective Aura passive to all
+     *  players within 5 tiles of the priest (including the priest itself). The
+     *  passive refreshes the status every server tick so it stays active as
+     *  long as the ally is in range, and decays once they leave. */
+    PROTECTED((short) 25),
+    /** Phalanx Dome — spherical bullet-blocking field around the caster.
+     *  Server tick destroys every enemy bullet that enters the radius so any
+     *  player standing inside is shielded without being flagged INVINCIBLE. */
+    PHALANX_DOME((short) 26),
 
     // === Projectile Behavior Flags (prefer ProjectileFlag enum) ===
     PLAYER_PROJECTILE((short) 10),
