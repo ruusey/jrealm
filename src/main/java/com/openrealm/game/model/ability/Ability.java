@@ -53,6 +53,21 @@ public class Ability {
      */
     private int baseDamage;
 
+    /**
+     * Phase 2D — maximum invested skill points for this ability. Defaults to 5
+     * for non-ultimates; ultimate abilities (slot 3) typically declare 3 in
+     * data. Server enforces the cap on {@code InvestSkillPointPacket}.
+     */
+    private int maxSkillPoints = 5;
+
+    /**
+     * Phase 2D — flat ms shaved off {@link #baseCooldownMs} per invested skill
+     * point. e.g. 1000 means each point cuts 1s. Server caps effective CD at
+     * 500ms so abilities can't drop to 0. 0 = this ability doesn't scale CD
+     * with skill points.
+     */
+    private int cdReductionPerPointMs = 0;
+
     /** Convenience: nullsafe effects. */
     public List<AbilityEffect> effectList() {
         return this.effects == null ? new ArrayList<>() : this.effects;

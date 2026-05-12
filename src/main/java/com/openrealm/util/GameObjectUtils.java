@@ -10,6 +10,11 @@ import com.openrealm.net.realm.Realm;
 public class GameObjectUtils {
     public static Enemy getEnemyFromId(final int enemyId) {
         EnemyModel toSpawn = GameDataManager.ENEMIES.get(enemyId);
+        if (toSpawn == null) {
+            // Returning null lets callers (e.g. /spawn) report "unknown enemy
+            // id" instead of dying with a confusing NPE on toSpawn.getEnemyId().
+            return null;
+        }
         Enemy enemy = new Enemy(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(), new Vector2f(), toSpawn.getSize(),
                 toSpawn.getAttackId());
         if (toSpawn.getPermanentEffects() != null) {
@@ -26,6 +31,7 @@ public class GameObjectUtils {
 
     public static Enemy getEnemyFromId(final int enemyId, final Vector2f pos) {
         final Enemy enemy = GameObjectUtils.getEnemyFromId(enemyId);
+        if (enemy == null) return null;
         enemy.setPos(pos);
         return enemy;
     }

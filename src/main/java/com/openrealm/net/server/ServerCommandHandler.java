@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,6 +51,7 @@ import com.openrealm.net.messaging.CommandType;
 import com.openrealm.net.messaging.ServerCommandMessage;
 import com.openrealm.net.client.packet.UnloadPacket;
 import com.openrealm.net.client.packet.UpdatePacket;
+import com.openrealm.net.party.PartyManager;
 import com.openrealm.net.realm.Realm;
 import com.openrealm.net.realm.RealmManagerServer;
 import com.openrealm.net.realm.RealmOverseer;
@@ -306,6 +308,98 @@ public class ServerCommandHandler {
         log.info("Player {} healed themselves", target.getName());
     }
 
+    @CommandHandler(value="party",
+        description="Party: /party invite {name} | /party accept | /party decline | /party leave | /party list")
+    public static void invokeParty(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        final List<String> args = message.getArgs() == null ? Collections.emptyList() : message.getArgs();
+        if (args.isEmpty()) {
+            replySystem(mgr, target, "Usage: /party invite {name} | accept | decline | leave | list");
+            return;
+        }
+        final String sub = args.get(0).trim().toLowerCase();
+        final PartyManager pm = mgr.getPartyManager();
+        switch (sub) {
+            case "invite": {
+                if (args.size() < 2) { replySystem(mgr, target, "Usage: /party invite {name}"); return; }
+                final Player other = mgr.getPlayerByName(args.get(1));
+                if (other == null) { replySystem(mgr, target, "Player not found: " + args.get(1)); return; }
+                final String err = pm.invite(target.getId(), other.getId());
+                if (err != null) { replySystem(mgr, target, "Invite failed: " + err); return; }
+                replySystem(mgr, target, "Invite sent to " + other.getName() + ".");
+                replySystem(mgr, other, target.getName() + " invited you to a party. Type /party accept or /party decline.");
+                mgr.broadcastPartyUpdate(pm.getPartyId(target.getId()));
+                return;
+            }
+            case "accept": {
+                final long pid = pm.accept(target.getId());
+                if (pid == 0L) { replySystem(mgr, target, "No pending party invite (or it expired)."); return; }
+                replySystem(mgr, target, "Joined party.");
+                mgr.broadcastPartyUpdate(pid);
+                return;
+            }
+            case "decline": {
+                final long inviter = pm.decline(target.getId());
+                if (inviter == 0L) { replySystem(mgr, target, "No pending party invite."); return; }
+                replySystem(mgr, target, "Invite declined.");
+                final Player inviterP = mgr.getPlayerById(inviter);
+                if (inviterP != null) replySystem(mgr, inviterP, target.getName() + " declined your party invite.");
+                return;
+            }
+            case "leave": {
+                final long pid = pm.getPartyId(target.getId());
+                if (pid == 0L) { replySystem(mgr, target, "You are not in a party."); return; }
+                pm.leave(target.getId());
+                replySystem(mgr, target, "You left the party.");
+                mgr.sendEmptyPartyUpdate(target);
+                mgr.broadcastPartyUpdate(pid);  // remaining members
+                return;
+            }
+            case "list": {
+                final List<Long> roster = pm.getPartyMembers(target.getId());
+                if (roster.isEmpty()) { replySystem(mgr, target, "You are not in a party."); return; }
+                final StringBuilder sb = new StringBuilder("Party (" + roster.size() + "/" + PartyManager.MAX_PARTY_SIZE + "): ");
+                boolean first = true;
+                for (final Long id : roster) {
+                    final Player p = mgr.getPlayerById(id);
+                    if (p == null) continue;
+                    if (!first) sb.append(", ");
+                    sb.append(p.getName());
+                    first = false;
+                }
+                replySystem(mgr, target, sb.toString());
+                return;
+            }
+            default:
+                replySystem(mgr, target, "Unknown /party subcommand: " + sub);
+        }
+    }
+
+    private static void replySystem(RealmManagerServer mgr, Player to, String msg) throws Exception {
+        mgr.enqueueServerPacket(to, TextPacket.from("SYSTEM", to.getName(), msg));
+    }
+
+    @CommandHandler(value="sp", description="Admin: grant N skill points. Usage: /sp {N} (omit N for +10)")
+    @AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
+    public static void invokeGrantSkillPoints(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        int amount = 10;
+        if (message.getArgs() != null && !message.getArgs().isEmpty()) {
+            try {
+                amount = Integer.parseInt(message.getArgs().get(0).trim());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Usage: /sp {N}  (N must be an integer; omit for +10)");
+            }
+        }
+        if (amount == 0) return;
+        target.setAvailableSkillPoints(Math.max(0, target.getAvailableSkillPoints() + amount));
+        log.info("[SKILL-POINTS] /sp granted {} to {} (pool now {})",
+                amount, target.getName(), target.getAvailableSkillPoints());
+        // Push a fresh UpdatePacket so the client UI reflects the new pool
+        // immediately instead of waiting for the next periodic sync.
+        mgr.enqueueServerPacket(target, UpdatePacket.from(target));
+    }
+
     @CommandHandler(value="size", description="Temporarily resize your character. Usage: /size {PIXELS} (or /size reset)")
     @AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokePlayerSize(RealmManagerServer mgr, Player target, ServerCommandMessage message)
@@ -411,6 +505,9 @@ public class ServerCommandHandler {
             }
             final Vector2f spawnPos = new Vector2f(baseX + dx, baseY + dy);
             final Enemy spawned = GameObjectUtils.getEnemyFromId(enemyId, spawnPos);
+            if (spawned == null) {
+                throw new IllegalArgumentException("Unknown enemy id: " + enemyId);
+            }
             spawned.setAdminSpawned(true);
             from.addEnemy(spawned);
         }

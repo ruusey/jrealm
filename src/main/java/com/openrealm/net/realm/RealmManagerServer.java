@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import com.openrealm.game.model.ability.Ability;
 import com.openrealm.game.model.ability.AbilityEffect;
 import com.openrealm.game.model.ability.AbilityScaling;
 import com.openrealm.game.model.ability.PassiveAbility;
@@ -31,6 +32,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -55,6 +57,7 @@ import com.openrealm.game.contants.TextEffect;
 import com.openrealm.game.data.GameDataManager;
 import com.openrealm.game.entity.Bullet;
 import com.openrealm.game.entity.Enemy;
+import com.openrealm.game.entity.Entity;
 import com.openrealm.game.entity.GameObject;
 import com.openrealm.game.entity.Player;
 import com.openrealm.game.entity.Portal;
@@ -93,7 +96,10 @@ import com.openrealm.net.client.packet.ObjectMovePacket;
 import com.openrealm.net.client.packet.PlayerDeathPacket;
 import com.openrealm.net.client.packet.TextEffectPacket;
 import com.openrealm.net.client.packet.UnloadPacket;
+import com.openrealm.net.client.packet.PartyUpdatePacket;
 import com.openrealm.net.client.packet.UpdatePacket;
+import com.openrealm.net.entity.NetPartyMember;
+import com.openrealm.net.party.PartyManager;
 
 import com.openrealm.net.entity.NetTile;
 import com.openrealm.net.entity.NetObjectMovement;
@@ -164,6 +170,9 @@ public class RealmManagerServer implements Runnable {
 	
 	private Map<Long, Long> playerAbilityState = new ConcurrentHashMap<>();
 	private Map<Long, LoadPacket> playerLoadState = new ConcurrentHashMap<>();
+	// Phase 4 — party state (membership + pending invites). Exposed via
+	// getPartyManager() so chat-command handlers and packet handlers can mutate.
+	private final PartyManager partyManager = new PartyManager();
 	// Per-realm last-tick wall-clock used to compute bulletScale ONCE per
 	// realm per tick instead of per-bullet — eliminates ~12K nanoTime
 	// syscalls/sec when 200 bullets are in flight.
@@ -1769,7 +1778,7 @@ public class RealmManagerServer implements Runnable {
 			for (final Realm realm : this.realms.values()) {
 				if (realm.getPlayers().isEmpty()) continue;
 				for (final Player priest : realm.getPlayers().values()) {
-					final com.openrealm.game.model.ability.PassiveAbility pa = priest.getClassPassive();
+					final PassiveAbility pa = priest.getClassPassive();
 					if (pa == null || pa.getId() != 11003) continue;
 					final Vector2f pc = priest.getPos().clone(priest.getSize() / 2, priest.getSize() / 2);
 					for (final Player ally : realm.getPlayers().values()) {
@@ -1779,6 +1788,19 @@ public class RealmManagerServer implements Runnable {
 						ally.addEffect(StatusEffectType.PROTECTED, AURA_REFRESH_MS);
 					}
 				}
+			}
+		}
+
+		// Phase 4 — Party MVP. Refresh every 32 ticks (~0.5s) so teammate
+		// HP/MP bars track combat in near-real-time. Also drop expired
+		// invites on the same cadence so the pending list doesn't leak.
+		if (this.tickCounter % 32 == 0) {
+			this.partyManager.evictExpiredInvites();
+			final Set<Long> sent = new HashSet<>();
+			for (final Player p : this.getPlayers()) {
+				final long pid = this.partyManager.getPartyId(p.getId());
+				if (pid == 0L) continue;
+				if (sent.add(pid)) this.broadcastPartyUpdate(pid);
 			}
 		}
 
@@ -2044,7 +2066,7 @@ public class RealmManagerServer implements Runnable {
 		// item path (slot 0 / classAbilityId) so abilities still fire for
 		// classes that haven't been ported.
 		final int slot = abilityIndex >= 0 && abilityIndex < 4 ? abilityIndex : 0;
-		final com.openrealm.game.model.ability.Ability ab = player.getActiveAbility(slot);
+		final Ability ab = player.getActiveAbility(slot);
 		// [DIAG] log every cast so we can trace the slot → ability → tags path.
 		log.info("[USEABILITY] playerId={} classId={} slot={} hotbarId={} ab={} tags={}",
 				player.getId(), player.getClassId(), slot,
@@ -2054,8 +2076,13 @@ public class RealmManagerServer implements Runnable {
 		final int abMpCost;
 		final long abCooldownMs;
 		if (ab != null) {
-			abMpCost     = ab.getMpCost();
-			abCooldownMs = ab.getBaseCooldownMs();
+			abMpCost = ab.getMpCost();
+			// Phase 2D — effective cooldown = baseCooldown − level × cdReduction,
+			// floored at 500ms. cdReductionPerPointMs defaults to 0 so abilities
+			// that don't declare a per-point CD lever behave unchanged.
+			final int invested = player.getSkillLevel(ab.getId());
+			final long reduction = (long) invested * (long) ab.getCdReductionPerPointMs();
+			abCooldownMs = Math.max(500L, ab.getBaseCooldownMs() - reduction);
 		} else {
 			abMpCost     = -1;  // sentinel meaning "use legacy"
 			abCooldownMs = -1;
@@ -2183,18 +2210,17 @@ public class RealmManagerServer implements Runnable {
 			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
 					CreateEffectPacket.EFFECT_WIZARD_BURST, pos.x, pos.y, 48f, (short) 500, (byte) 6));
 		} else if (fromSky && holyVisual) {
-			// Holy Beam — one big paladin-seal beam descending at the cursor
-			// (case 14 already draws a pillar rising from the broadcast point —
-			// emit ONCE at the cursor so the pillar reads as "beam crashing
-			// down on this spot") + a shockwave impact at ground for the smite
-			// punctuation. Tier 3 = gold tint so the seal/shockwave glow holy
-			// instead of silver.
+			// Holy Beam / Divine Verdict — single big paladin-seal beam
+			// descending at the cursor. Avoid KNIGHT_SHOCKWAVE as the impact
+			// (case 11 is directional and renders as a forward thrust arrow
+			// even when emitted via aoeEffect, producing a stray gold arrow).
+			// WIZARD_BURST is radial so it reads as a ground-impact flash.
 			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
 					CreateEffectPacket.EFFECT_PALADIN_SEAL,
 					pos.x, pos.y, 130f, (short) 1400, (byte) 3));
 			this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-					CreateEffectPacket.EFFECT_KNIGHT_SHOCKWAVE,
-					pos.x, pos.y, 110f, (short) 700, (byte) 3));
+					CreateEffectPacket.EFFECT_WIZARD_BURST,
+					pos.x, pos.y, 90f, (short) 700, (byte) 3));
 		}
 
 		// Phase 3: "visual_at_self:N" tag emits a CreateEffectPacket of type N
@@ -2283,7 +2309,7 @@ public class RealmManagerServer implements Runnable {
 			if (ab != null) {
 				for (AbilityScaling sc : ab.scalingList()) {
 					if (!"RADIUS".equalsIgnoreCase(sc.getTarget())) continue;
-					final int statVal = statByIndex(player.getComputedStats(), sc.statIndex());
+					final int statVal = resolveScalingInput(player, ab, sc);
 					aoeRadius += sc.curveEnum().apply(statVal, sc.getCoeff(), sc.getCap());
 				}
 			}
@@ -2368,7 +2394,7 @@ public class RealmManagerServer implements Runnable {
 				abDamage = ab.getBaseDamage();
 				for (AbilityScaling sc : ab.scalingList()) {
 					if (!"DAMAGE".equalsIgnoreCase(sc.getTarget())) continue;
-					final int statVal = statByIndex(player.getComputedStats(), sc.statIndex());
+					final int statVal = resolveScalingInput(player, ab, sc);
 					abDamage += (int) sc.curveEnum().apply(statVal, sc.getCoeff(), sc.getCap());
 				}
 			}
@@ -2380,8 +2406,8 @@ public class RealmManagerServer implements Runnable {
 			final TextEffect dmgTextEffectBase = armorPierce ? TextEffect.ARMOR_BREAK : TextEffect.DAMAGE;
 			// Enemy branch — only when this isn't an ally-targeted AoE.
 			if (aoeTargeted && !aoeAlly) {
-				final java.util.List<com.openrealm.game.entity.Enemy> dead = new java.util.ArrayList<>();
-				for (final com.openrealm.game.entity.Enemy enemy : targetRealm.getEnemies().values()) {
+				final List<Enemy> dead = new ArrayList<>();
+				for (final Enemy enemy : targetRealm.getEnemies().values()) {
 					if (enemy.getDeath()) continue;
 					final float dx = enemy.getPos().x - pos.x;
 					final float dy = enemy.getPos().y - pos.y;
@@ -2392,7 +2418,10 @@ public class RealmManagerServer implements Runnable {
 						try {
 							final StatusEffectType st = StatusEffectType.map.get(
 									Short.parseShort(String.valueOf(aoeEff.getStatusId()).trim()));
-							if (st != null) enemy.addEffect(st, aoeEff.getBaseDurationMs());
+							if (st != null) {
+								applyStatusWithFeedback(targetRealm, enemy, EntityType.ENEMY,
+										st, aoeEff.getBaseDurationMs());
+							}
 						} catch (NumberFormatException ignore) { }
 					}
 					if (finalDmg > 0) {
@@ -2403,7 +2432,7 @@ public class RealmManagerServer implements Runnable {
 						if (enemy.getHealth() <= 0) dead.add(enemy);
 					}
 				}
-				for (final com.openrealm.game.entity.Enemy e : dead) {
+				for (final Enemy e : dead) {
 					this.enemyDeath(targetRealm, e);
 				}
 			}
@@ -2424,7 +2453,7 @@ public class RealmManagerServer implements Runnable {
 				}
 				for (AbilityScaling sc : ab.scalingList()) {
 					if (!"HEAL".equalsIgnoreCase(sc.getTarget())) continue;
-					final int statVal = statByIndex(player.getComputedStats(), sc.statIndex());
+					final int statVal = resolveScalingInput(player, ab, sc);
 					healAmount += (int) sc.curveEnum().apply(statVal, sc.getCoeff(), sc.getCap());
 				}
 				int cleansedSoFar = 0;
@@ -2453,16 +2482,20 @@ public class RealmManagerServer implements Runnable {
 						try {
 							final StatusEffectType st = StatusEffectType.map.get(
 									Short.parseShort(String.valueOf(aoeEff.getStatusId()).trim()));
-							if (st != null) ally.addEffect(st, aoeEff.getBaseDurationMs());
+							if (st != null) {
+								applyStatusWithFeedback(targetRealm, ally, EntityType.PLAYER,
+										st, aoeEff.getBaseDurationMs());
+							}
 						} catch (NumberFormatException ignore) { }
 					}
 				}
 			}
 			// Self-effect from STATUS_APPLY SELF (already derived above).
 			if (effHasSelfStatus && effSelfStatus != null) {
-				player.addEffect(effSelfStatus, effSelfDurationMs);
+				applyStatusWithFeedback(targetRealm, player, EntityType.PLAYER, effSelfStatus, effSelfDurationMs);
 				for (Object[] xs : extraSelfStatuses) {
-					player.addEffect((StatusEffectType) xs[0], (Integer) xs[1]);
+					applyStatusWithFeedback(targetRealm, player, EntityType.PLAYER,
+							(StatusEffectType) xs[0], (Integer) xs[1]);
 				}
 			}
 			return; // Skip the projectile spawn paths — this was a pure AoE.
@@ -2487,7 +2520,7 @@ public class RealmManagerServer implements Runnable {
 					int dmg = ab.getBaseDamage();
 					for (AbilityScaling sc : ab.scalingList()) {
 						if (!"DAMAGE".equalsIgnoreCase(sc.getTarget())) continue;
-						final int statVal = statByIndex(player.getComputedStats(), sc.statIndex());
+						final int statVal = resolveScalingInput(player, ab, sc);
 						dmg += (int) sc.curveEnum().apply(statVal, sc.getCoeff(), sc.getCap());
 					}
 					rolledDamage = (short) Math.min(Short.MAX_VALUE, Math.max(0, dmg));
@@ -2537,9 +2570,10 @@ public class RealmManagerServer implements Runnable {
 			}
 			// Apply self-effect if present (e.g., warrior helmet SPEEDY buff)
 			if (effHasSelfStatus && effSelfStatus != null) {
-				player.addEffect(effSelfStatus, effSelfDurationMs);
+				applyStatusWithFeedback(targetRealm, player, EntityType.PLAYER, effSelfStatus, effSelfDurationMs);
 				for (Object[] xs : extraSelfStatuses) {
-					player.addEffect((StatusEffectType) xs[0], (Integer) xs[1]);
+					applyStatusWithFeedback(targetRealm, player, EntityType.PLAYER,
+							(StatusEffectType) xs[0], (Integer) xs[1]);
 				}
 			}
 
@@ -2579,9 +2613,10 @@ public class RealmManagerServer implements Runnable {
 						CreateEffectPacket.EFFECT_BLINK_GLYPH, pos.x, pos.y, 56f, (short) 900, (byte) 6));
 				player.setPos(pos);
 			} else if (!effSelfStatus.equals(StatusEffectType.TELEPORT) && effHasSelfStatus) {
-				player.addEffect(effSelfStatus, effSelfDurationMs);
+				applyStatusWithFeedback(targetRealm, player, EntityType.PLAYER, effSelfStatus, effSelfDurationMs);
 				for (Object[] xs : extraSelfStatuses) {
-					player.addEffect((StatusEffectType) xs[0], (Integer) xs[1]);
+					applyStatusWithFeedback(targetRealm, player, EntityType.PLAYER,
+							(StatusEffectType) xs[0], (Integer) xs[1]);
 				}
 			}
 		}
@@ -2596,8 +2631,13 @@ public class RealmManagerServer implements Runnable {
 		if (ab == null) {
 			final UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
 			if (script != null) {
+				log.info("[USEABILITY] legacy-script firing for itemId={} (ab was null)",
+						abilityItem.getItemId());
 				script.invokeItemAbility(targetRealm, player, abilityItem, pos);
 			}
+		} else {
+			log.info("[USEABILITY] skipping legacy-script for itemId={} — ab={} owns the visuals",
+					abilityItem.getItemId(), ab.getName());
 		}
 	}
 
@@ -2977,7 +3017,7 @@ public class RealmManagerServer implements Runnable {
 			// incoming trajectory. We instead expire the original and spawn a
 			// fresh player-owned bullet so the next diff shows the new shot.
 			final Vector2f pcenter = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
-			final com.openrealm.game.entity.Enemy src = targetRealm.getEnemies().get(b.getSrcEntityId());
+			final Enemy src = targetRealm.getEnemies().get(b.getSrcEntityId());
 			final Vector2f target;
 			if (src != null && !src.getDeath()) {
 				target = src.getPos().clone(src.getSize() / 2, src.getSize() / 2);
@@ -3047,6 +3087,19 @@ public class RealmManagerServer implements Runnable {
 			case 7: return s.getDex();
 			default: return 0;
 		}
+	}
+
+	/**
+	 * Phase 2D — resolve a scaling's input value, honoring SKILL_POINTS (index 8)
+	 * which reads from the player's invested level for the parent Ability. Falls
+	 * back to {@link #statByIndex(Stats, int)} for all real stats.
+	 */
+	private static int resolveScalingInput(Player player, Ability ab, AbilityScaling sc) {
+		final int idx = sc.statIndex();
+		if (idx == 8) {
+			return (player == null || ab == null) ? 0 : player.getSkillLevel(ab.getId());
+		}
+		return statByIndex(player == null ? null : player.getComputedStats(), idx);
 	}
 
 	private void processPlayerHit(final long realmId, final Bullet b, final Player p) {
@@ -3860,6 +3913,85 @@ public class RealmManagerServer implements Runnable {
 		return this.getPlayers().stream().filter(p -> p.getId() == playerId).findAny().orElse(null);
 	}
 
+	/** Resolve a player by case-insensitive name (whitespace trimmed).
+	 *  Returns null on miss. Used by /party invite name lookup. */
+	public Player getPlayerByName(String name) {
+		if (name == null) return null;
+		final String needle = name.trim();
+		if (needle.isEmpty()) return null;
+		for (final Player p : this.getPlayers()) {
+			if (p.getName() != null && p.getName().equalsIgnoreCase(needle)) return p;
+		}
+		return null;
+	}
+
+	/**
+	 * Phase 4 — build + broadcast a {@link PartyUpdatePacket} to every member
+	 * of {@code partyId}. Pulls each member's live HP/MP/level via a global
+	 * playerId lookup so cross-realm parties (one member in nexus, others in
+	 * the overworld) still see each other's bars.
+	 *
+	 * Callers: roster-change events (invite accept, leave, disband) and the
+	 * periodic refresh in the tick loop.
+	 */
+	public void broadcastPartyUpdate(long partyId) {
+		if (partyId == 0L) return;
+		final List<Long> roster = this.partyManager.getPartyMembers(
+				/*any member*/ pickAnyRosterMember(partyId));
+		if (roster.isEmpty()) return;
+		final List<NetPartyMember> members = new ArrayList<>(roster.size());
+		for (final Long memberId : roster) {
+			final Player p = this.getPlayerById(memberId);
+			if (p == null) continue;
+			final Stats st = p.getComputedStats();
+			final NetPartyMember m = new NetPartyMember();
+			m.setPlayerId(p.getId());
+			m.setName(p.getName());
+			m.setClassId(p.getClassId());
+			m.setHealth(p.getHealth());
+			m.setMaxHealth(st != null ? st.getHp() : p.getHealth());
+			m.setMana(p.getMana());
+			m.setMaxMana(st != null ? st.getMp() : p.getMana());
+			m.setLevel(GameDataManager.EXPERIENCE_LVLS == null
+					? 0 : GameDataManager.EXPERIENCE_LVLS.getLevel(p.getExperience()));
+			final Realm r = this.findPlayerRealm(p.getId());
+			m.setRealmId(r == null ? 0L : r.getRealmId());
+			m.setEffectIds(p.getEffectIds() == null ? new Short[0] : p.getEffectIds().clone());
+			members.add(m);
+		}
+		final PartyUpdatePacket pkt =
+				new PartyUpdatePacket();
+		pkt.setPartyId(partyId);
+		pkt.setMembers(members.toArray(new NetPartyMember[0]));
+		for (final Long memberId : roster) {
+			final Player target = this.getPlayerById(memberId);
+			if (target != null) this.enqueueServerPacket(target, pkt);
+		}
+	}
+
+	/** Helper so broadcastPartyUpdate can resolve a roster from any partyId
+	 *  without exposing a PartyManager.getRosters() accessor. */
+	private long pickAnyRosterMember(long partyId) {
+		for (final Player p : this.getPlayers()) {
+			if (this.partyManager.getPartyId(p.getId()) == partyId) return p.getId();
+		}
+		return 0L;
+	}
+
+	/**
+	 * Tell a single player their party has been torn down (or they're no
+	 * longer in one). The client uses {@code partyId == 0} as the signal to
+	 * hide the party UI rows.
+	 */
+	public void sendEmptyPartyUpdate(final Player to) {
+		if (to == null) return;
+		final PartyUpdatePacket pkt =
+				new PartyUpdatePacket();
+		pkt.setPartyId(0L);
+		pkt.setMembers(new NetPartyMember[0]);
+		this.enqueueServerPacket(to, pkt);
+	}
+
 	public void safeRemoveRealm(final Realm realm) {
 		this.safeRemoveRealm(realm.getRealmId());
 	}
@@ -3923,6 +4055,19 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.error("[SERVER] Failed to send TextEffect Packet to Player {}. Reason: {}",
 					player.getId(), e);
 		}
+	}
+
+	/**
+	 * Phase 3 — apply a status to an entity AND broadcast a floating-text label
+	 * (e.g. "BRACED") over their head so the player sees feedback. Use this in
+	 * place of bare {@code entity.addEffect(...)} wherever an ability gives
+	 * combat feedback. Status enum's {@code name()} is the label.
+	 */
+	public void applyStatusWithFeedback(final Realm realm, final Entity entity,
+			final EntityType entityType, final StatusEffectType status, final long durationMs) {
+		if (entity == null || status == null) return;
+		entity.addEffect(status, durationMs);
+		this.broadcastTextEffect(realm, entityType, entity, TextEffect.PLAYER_INFO, status.name());
 	}
 
 	/**

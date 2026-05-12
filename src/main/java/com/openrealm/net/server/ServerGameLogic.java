@@ -50,6 +50,7 @@ import com.openrealm.net.server.packet.MoveItemPacket;
 import com.openrealm.net.server.packet.PlayerMovePacket;
 import com.openrealm.net.server.packet.PlayerShootPacket;
 import com.openrealm.net.server.packet.TextPacket;
+import com.openrealm.net.server.packet.InvestSkillPointPacket;
 import com.openrealm.net.server.packet.UseAbilityPacket;
 import com.openrealm.net.server.packet.UsePortalPacket;
 import com.openrealm.net.client.packet.LoadMapPacket;
@@ -478,6 +479,44 @@ public class ServerGameLogic {
 				new Vector2f(useAbilityPacket.getPosX(), useAbilityPacket.getPosY()),
 				useAbilityPacket.getAbilityIndex());
 		ServerGameLogic.log.info("[SERVER] Recieved UseAbility Packet For Player {}", useAbilityPacket.getPlayerId());
+	}
+
+	/**
+	 * Phase 2D — invest one skill point into the ability bound to the
+	 * requested hotbar slot. Server validates the spend, applies it to the
+	 * player, persists the new stats DTO, and pushes a fresh UpdatePacket so
+	 * the client tooltip / orange-box UI reflects the new level.
+	 */
+	@PacketHandlerServer(InvestSkillPointPacket.class)
+	public static void handleInvestSkillPointServer(RealmManagerServer mgr, Packet packet) {
+		final InvestSkillPointPacket pkt = (InvestSkillPointPacket) packet;
+		if (!validateCallingPlayer(mgr, packet, pkt.getPlayerId())) {
+			return;
+		}
+		final Realm realm = mgr.findPlayerRealm(pkt.getPlayerId());
+		if (realm == null) return;
+		final Player player = realm.getPlayer(pkt.getPlayerId());
+		if (player == null) return;
+		final int slot = pkt.getSlot() & 0xff;
+		if (slot < 0 || slot >= 4) return;
+		final int abilityId = player.getHotbarId(slot);
+		if (abilityId <= 0) return;
+		final boolean ok = player.investSkillPoint(abilityId);
+		if (!ok) {
+			ServerGameLogic.log.info("[SKILL-POINTS] player {} invest REJECTED slot={} abilityId={} (pool={} current={})",
+					player.getId(), slot, abilityId, player.getAvailableSkillPoints(),
+					player.getSkillLevel(abilityId));
+			return;
+		}
+		ServerGameLogic.log.info("[SKILL-POINTS] player {} invest slot={} abilityId={} -> level={} (pool={})",
+				player.getId(), slot, abilityId, player.getSkillLevel(abilityId),
+				player.getAvailableSkillPoints());
+		// Echo a fresh UpdatePacket so the client UI reflects the new state.
+		try {
+			mgr.enqueueServerPacket(player, UpdatePacket.from(player));
+		} catch (Exception e) {
+			ServerGameLogic.log.warn("[SKILL-POINTS] failed to send UpdatePacket: {}", e.getMessage());
+		}
 	}
 
 	@PacketHandlerServer(TextPacket.class)

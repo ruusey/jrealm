@@ -50,6 +50,11 @@ public class AbilityScaling {
     /**
      * Numeric stat-index lookup matching the Stats POJO order
      * (0=VIT 1=WIS 2=HP 3=MP 4=ATT 5=DEF 6=SPD 7=DEX). Returns -1 for unknown.
+     *
+     * Phase 2D — index 8 is a synthetic "SKILL_POINTS" input that the apply
+     * site resolves to the player's invested level for the parent Ability.
+     * Use {@code "stat": "SKILL_POINTS"} in scalings to make a contribution
+     * scale per invested point instead of a real stat.
      */
     public int statIndex() {
         if (this.stat == null) return -1;
@@ -62,7 +67,15 @@ public class AbilityScaling {
             case "DEF": return 5;
             case "SPD": return 6;
             case "DEX": return 7;
+            case "SKILL_POINTS":
+            case "SKILLPOINTS":
+            case "SP":  return 8;
             default:    return -1;
         }
+    }
+
+    /** True if this scaling reads from invested skill points instead of a stat. */
+    public boolean isSkillPointScaling() {
+        return statIndex() == 8;
     }
 }

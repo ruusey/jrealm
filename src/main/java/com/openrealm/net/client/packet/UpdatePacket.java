@@ -62,6 +62,20 @@ public class UpdatePacket extends Packet {
 	// change via NetPlayer in LoadPacket on next re-load.
 	@SerializableField(order = 9, type = SerializableInt.class)
 	private int dyeId;
+	// Phase 2D — skill point pool + per-slot invested counts. We send 4 bytes
+	// (one per hotbar slot 0..3) and an int for the unspent pool. The client
+	// uses these to render the orange "level pips" next to each ability cell
+	// and to surface Skill Level X/Y inside the ability tooltip.
+	@SerializableField(order = 10, type = SerializableInt.class)
+	private int availableSkillPoints;
+	@SerializableField(order = 11, type = SerializableByte.class)
+	private byte investedSlot0;
+	@SerializableField(order = 12, type = SerializableByte.class)
+	private byte investedSlot1;
+	@SerializableField(order = 13, type = SerializableByte.class)
+	private byte investedSlot2;
+	@SerializableField(order = 14, type = SerializableByte.class)
+	private byte investedSlot3;
 
 	public static final NetGameItem[] EMPTY_INVENTORY = new NetGameItem[0];
 
@@ -179,6 +193,12 @@ public class UpdatePacket extends Packet {
 		updatePacket.setHpPotions((byte) player.getHpPotions());
 		updatePacket.setMpPotions((byte) player.getMpPotions());
 		updatePacket.setDyeId(player.getDyeId());
+		// Phase 2D — skill point pool + per-slot invested counts.
+		updatePacket.setAvailableSkillPoints(player.getAvailableSkillPoints());
+		updatePacket.setInvestedSlot0((byte) player.getSkillLevel(player.getHotbarId(0)));
+		updatePacket.setInvestedSlot1((byte) player.getSkillLevel(player.getHotbarId(1)));
+		updatePacket.setInvestedSlot2((byte) player.getSkillLevel(player.getHotbarId(2)));
+		updatePacket.setInvestedSlot3((byte) player.getSkillLevel(player.getHotbarId(3)));
 		return updatePacket;
 	}
 

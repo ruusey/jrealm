@@ -3,6 +3,8 @@ package com.openrealm.game.entity;
 import java.io.DataOutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -126,6 +128,15 @@ public class Player extends Entity {
 	@Builder.Default
 	private transient int basicAttackCounter = 0;
 
+	// Phase 2D — skill-point pool + per-ability investment. Earned 1 per 2
+	// levels from L2 to L20 (10 total). Caps per ability come from
+	// Ability.maxSkillPoints (5 for non-ults, 3 for ults). Persisted via
+	// CharacterStatsDto.
+	@Builder.Default
+	private int availableSkillPoints = 0;
+	@Builder.Default
+	private Map<Integer, Integer> abilitySkillPoints = new HashMap<>();
+
 	public Player() {
 		super(0, null, 0);
 	}
@@ -135,7 +146,8 @@ public class Player extends Entity {
 			String chatRole, boolean adminModeEnabled, String storedChatRole, boolean hiddenFromOthers,
 			int lastInputSeq, int lastProcessedInputSeq, float currentVx, float currentVy,
 			Queue<float[]> inputQueue, int hpPotions, int mpPotions, int dyeId, long cachedAccountFame,
-			long[] abilityCooldowns, CastState currentCast, int[] hotbarBindings, int basicAttackCounter) {
+			long[] abilityCooldowns, CastState currentCast, int[] hotbarBindings, int basicAttackCounter,
+			int availableSkillPoints, Map<Integer, Integer> abilitySkillPoints) {
 		super(0, null, 0);
 		this.inventory = inventory;
 		this.lastStatsTime = lastStatsTime;
@@ -166,6 +178,8 @@ public class Player extends Entity {
 		this.currentCast = currentCast;
 		this.hotbarBindings = hotbarBindings != null ? hotbarBindings : new int[]{0, 0, 0, 0};
 		this.basicAttackCounter = basicAttackCounter;
+		this.availableSkillPoints = availableSkillPoints;
+		this.abilitySkillPoints = abilitySkillPoints != null ? abilitySkillPoints : new HashMap<>();
 		// Re-seed hotbar bindings from the class's defaultHotbar whenever the
 		// loaded array is empty (all zeros). hotbarBindings is `transient` so
 		// it never makes it back from the DB — every login this ctor runs with
@@ -214,7 +228,7 @@ public class Player extends Entity {
 			}
 		}
 		log.info("[PLAYER-SPAWN] id={} classId={} hotbarBindings={} classPassive={}",
-				this.id, this.classId, java.util.Arrays.toString(this.hotbarBindings),
+				this.id, this.classId, Arrays.toString(this.hotbarBindings),
 				classModel.getAbilityTree() != null ? classModel.getAbilityTree().getPassive() : "(null tree)");
 	}
 
@@ -233,6 +247,28 @@ public class Player extends Entity {
 		if (stats.getHpPotions() != null) this.hpPotions = stats.getHpPotions();
 		if (stats.getMpPotions() != null) this.mpPotions = stats.getMpPotions();
 		if (stats.getDyeId() != null) this.dyeId = stats.getDyeId();
+		// Phase 2D — restore skill-point pool + investment map.
+		this.availableSkillPoints = stats.getAvailableSkillPoints() != null
+				? stats.getAvailableSkillPoints() : 0;
+		this.abilitySkillPoints = stats.getAbilitySkillPoints() != null
+				? new HashMap<>(stats.getAbilitySkillPoints()) : new HashMap<>();
+		// Phase 2D — one-shot backfill for characters that levelled past 2 before
+		// the SP system existed. earned = 1 per even level capped at 20 (so 10
+		// total at L20+). If pool + invested < earned, top up the pool so the
+		// player has the points they should have earned. Never decreases the
+		// pool — only repairs missing grants.
+		final int currentLevel = GameDataManager.EXPERIENCE_LVLS == null
+				? 0 : GameDataManager.EXPERIENCE_LVLS.getLevel(this.experience);
+		int earnedSoFar = 0;
+		for (int lvl = 2; lvl <= Math.min(currentLevel, 20); lvl += 2) earnedSoFar++;
+		int totalInvested = 0;
+		for (Integer v : this.abilitySkillPoints.values()) totalInvested += (v == null ? 0 : v);
+		final int missing = earnedSoFar - (this.availableSkillPoints + totalInvested);
+		if (missing > 0) {
+			this.availableSkillPoints += missing;
+			log.info("[SKILL-POINTS] backfill for player {} level={} earned={} invested={} +{} SP (pool now {})",
+					this.id, currentLevel, earnedSoFar, totalInvested, missing, this.availableSkillPoints);
+		}
 	}
 
 	public Set<GameItemRefDto> serializeItems() {
@@ -252,7 +288,55 @@ public class Player extends Entity {
 				.att(Integer.valueOf((int) this.stats.getAtt())).spd(Integer.valueOf((int) this.stats.getSpd()))
 				.dex(Integer.valueOf((int) this.stats.getDex())).vit(Integer.valueOf((int) this.stats.getVit()))
 				.wis(Integer.valueOf((int) this.stats.getWis())).hpPotions(this.hpPotions).mpPotions(this.mpPotions)
-				.dyeId(Integer.valueOf(this.dyeId)).build();
+				.dyeId(Integer.valueOf(this.dyeId))
+				.availableSkillPoints(Integer.valueOf(this.availableSkillPoints))
+				.abilitySkillPoints(this.abilitySkillPoints != null
+						? new HashMap<>(this.abilitySkillPoints) : new HashMap<>())
+				.build();
+	}
+
+	// ===== Phase 2D — skill point helpers =====================================
+
+	/** Invested level for the given abilityId (0 if none invested). */
+	public int getSkillLevel(int abilityId) {
+		if (this.abilitySkillPoints == null) return 0;
+		final Integer v = this.abilitySkillPoints.get(abilityId);
+		return v == null ? 0 : v;
+	}
+
+	/**
+	 * Try to invest one skill point into {@code abilityId}. Returns true on
+	 * success. Fails if no points available, the ability id is unknown, or
+	 * the per-ability cap is already met.
+	 */
+	public boolean investSkillPoint(int abilityId) {
+		if (this.availableSkillPoints <= 0) return false;
+		final Ability ab = GameDataManager.ABILITIES == null ? null
+				: GameDataManager.ABILITIES.get(abilityId);
+		if (ab == null) return false;
+		final int cap = ab.getMaxSkillPoints() <= 0 ? 5 : ab.getMaxSkillPoints();
+		if (this.abilitySkillPoints == null) this.abilitySkillPoints = new HashMap<>();
+		final int current = this.abilitySkillPoints.getOrDefault(abilityId, 0);
+		if (current >= cap) return false;
+		this.abilitySkillPoints.put(abilityId, current + 1);
+		this.availableSkillPoints--;
+		return true;
+	}
+
+	/**
+	 * Award skill points earned by reaching levels in (prevLevel, newLevel].
+	 * Rule: 1 point per even level from L2 through L20. Caps total earnable
+	 * at 10. Returns the number of points actually granted.
+	 */
+	public int awardSkillPointsForLevels(int prevLevel, int newLevel) {
+		int granted = 0;
+		for (int lvl = Math.max(prevLevel + 1, 2); lvl <= newLevel && lvl <= 20; lvl++) {
+			if ((lvl & 1) == 0) {  // even level
+				this.availableSkillPoints++;
+				granted++;
+			}
+		}
+		return granted;
 	}
 
 	private void resetInventory() {
@@ -676,6 +760,12 @@ public class Player extends Entity {
 			}
 			this.setHealth(this.stats.getHp());
 			this.setMana(this.stats.getMp());
+			// Phase 2D — award skill points for any even levels crossed.
+			final int granted = this.awardSkillPointsForLevels(currentLevel, newLevel);
+			if (granted > 0) {
+				log.info("[SKILL-POINTS] player {} crossed L{}->{} earned {} SP (pool={})",
+						this.getId(), currentLevel, newLevel, granted, this.availableSkillPoints);
+			}
 		}
 		this.setExperience(newExperience);
 		return levelsGained;
