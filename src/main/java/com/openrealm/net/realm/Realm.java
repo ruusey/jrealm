@@ -141,6 +141,12 @@ public class Realm {
     // Active decoys — lightweight tick-driven entities for Trickster prism ability.
     private final List<DecoyState> activeDecoys = new ArrayList<>();
 
+    // Active Ninja "Kage Bunshin" clones — headless Player entities spawned by
+    // the Ninja class passive (11013). Tracked separately from decoys because
+    // they ARE real Player instances (same sprite/class as the source ninja)
+    // and therefore live in this.players, not this.enemies.
+    private final List<CloneState> activeClones = new ArrayList<>();
+
     // Active realm events — globally announced boss encounters with terrain + minion waves.
     private final List<ActiveRealmEvent> activeRealmEvents = new ArrayList<>();
 
@@ -270,6 +276,28 @@ public class Realm {
 
         boolean isExpired() {
             return Instant.now().toEpochMilli() - startTime >= duration;
+        }
+    }
+
+    static class CloneState {
+        final long clonePlayerId;
+        final long sourcePlayerId;
+        final long spawnTime;
+        final long durationMs;
+        final float dx;
+        final float dy;
+
+        CloneState(long clonePlayerId, long sourcePlayerId, float dx, float dy, long durationMs) {
+            this.clonePlayerId = clonePlayerId;
+            this.sourcePlayerId = sourcePlayerId;
+            this.spawnTime = Instant.now().toEpochMilli();
+            this.durationMs = durationMs;
+            this.dx = dx;
+            this.dy = dy;
+        }
+
+        boolean isExpired() {
+            return Instant.now().toEpochMilli() - spawnTime >= durationMs;
         }
     }
 
@@ -1966,6 +1994,62 @@ public class Realm {
                     decoy.getPos().y += d.dy;
                 }
             }
+        }
+    }
+
+    /**
+     * Register a Ninja shadow clone. The clone walks in the given (dx, dy)
+     * direction (px/tick, toward the attacker) until durationMs elapses,
+     * then despawns with a smoke FX broadcast by {@link #processClones}.
+     */
+    public void registerClone(long clonePlayerId, long sourcePlayerId,
+                              float dx, float dy, long durationMs) {
+        this.activeClones.add(new CloneState(clonePlayerId, sourcePlayerId, dx, dy, durationMs));
+    }
+
+    /**
+     * Per-tick: advance each Ninja clone along its travel vector and despawn
+     * + smoke-poof any that have expired. Mirrors {@link #processDecoys} but
+     * operates on the realm's Player map (clones are headless Player entities
+     * so other enemies can target them via the normal closest-player path).
+     */
+    public void processClones(RealmManagerServer mgr) {
+        if (this.activeClones.isEmpty()) return;
+        final Iterator<CloneState> it = this.activeClones.iterator();
+        while (it.hasNext()) {
+            final CloneState c = it.next();
+            final Player clone = this.players.get(c.clonePlayerId);
+            if (clone == null) {
+                it.remove();
+                continue;
+            }
+            if (c.isExpired()) {
+                // Smoke poof at clone's last position so the despawn reads.
+                final float cx = clone.getPos().x + clone.getSize() / 2f;
+                final float cy = clone.getPos().y + clone.getSize() / 2f;
+                mgr.enqueueServerPacketToRealm(this,
+                        com.openrealm.net.client.packet.CreateEffectPacket.aoeEffect(
+                                com.openrealm.net.client.packet.CreateEffectPacket.EFFECT_SMOKE_POOF,
+                                cx, cy, 40f, (short) 600));
+                this.removePlayer(clone);
+                it.remove();
+                continue;
+            }
+            // Advance position. dx/dy already pre-scaled to px/tick.
+            clone.getPos().x += c.dx;
+            clone.getPos().y += c.dy;
+        }
+    }
+
+    /** Remove all active clones owned by a disconnecting/teleporting player. */
+    public void removePlayerClones(long sourcePlayerId) {
+        final Iterator<CloneState> it = this.activeClones.iterator();
+        while (it.hasNext()) {
+            final CloneState c = it.next();
+            if (c.sourcePlayerId != sourcePlayerId) continue;
+            final Player clone = this.players.get(c.clonePlayerId);
+            if (clone != null) this.removePlayer(clone);
+            it.remove();
         }
     }
 

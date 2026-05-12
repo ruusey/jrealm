@@ -47,4 +47,14 @@ public class NetPartyMember extends SerializableFieldType<NetPartyMember> {
      *  icons without needing a separate state packet. */
     @SerializableField(order = 9, type = SerializableShort.class, isCollection = true)
     private Short[] effectIds;
+
+    /** Ability ids bound to this member's hotbar slots 0..3. Lets the party
+     *  panel paint the same icon the owner sees on their own ability bar. */
+    @SerializableField(order = 10, type = SerializableInt.class, isCollection = true)
+    private Integer[] hotbarBindings;
+
+    /** End-of-cooldown epoch-millis per hotbar slot. UI computes remaining
+     *  cooldown as (cdEnd - now) and renders a dark fill from the top. */
+    @SerializableField(order = 11, type = SerializableLong.class, isCollection = true)
+    private Long[] abilityCooldownEnds;
 }

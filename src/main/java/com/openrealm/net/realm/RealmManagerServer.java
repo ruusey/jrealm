@@ -194,6 +194,46 @@ public class RealmManagerServer implements Runnable {
 		}
 	}
 	private final List<SoulHarvestField> soulHarvestFields = new ArrayList<>();
+
+	// Ninja Blade Storm — visual-only orbiting shurikens around a player for
+	// the buff duration. The DAMAGING status is what actually buffs damage;
+	// this struct just keeps the renderer refreshed with the player's current
+	// position so the blades follow them around as they move.
+	private static final class BladeOrbitState {
+		final long realmId;
+		final long casterId;
+		final long expiresAtMs;
+		final byte tier;
+		BladeOrbitState(long realmId, long casterId, long expiresAtMs, byte tier) {
+			this.realmId = realmId; this.casterId = casterId;
+			this.expiresAtMs = expiresAtMs; this.tier = tier;
+		}
+	}
+	private final List<BladeOrbitState> bladeOrbitStates = new ArrayList<>();
+
+	// Ninja Death Blossom — 5-second armor-piercing spiral at a cursor point.
+	// Damage is split across 5 one-second ticks rather than instant. Visual
+	// refreshes each tick so the spiral keeps spinning over the full duration.
+	private static final class BladeBlenderField {
+		final long realmId;
+		final long casterId;
+		final float x, y;
+		final float radius;
+		final long expiresAtMs;
+		final int  damagePerTick;
+		final byte tier;
+		long lastTickMs;
+		BladeBlenderField(long realmId, long casterId, float x, float y, float radius,
+				long expiresAtMs, int damagePerTick, byte tier) {
+			this.realmId = realmId; this.casterId = casterId;
+			this.x = x; this.y = y; this.radius = radius;
+			this.expiresAtMs = expiresAtMs;
+			this.damagePerTick = damagePerTick;
+			this.tier = tier;
+			this.lastTickMs = 0L;
+		}
+	}
+	private final List<BladeBlenderField> bladeBlenderFields = new ArrayList<>();
 	// Per-realm last-tick wall-clock used to compute bulletScale ONCE per
 	// realm per tick instead of per-bullet — eliminates ~12K nanoTime
 	// syscalls/sec when 200 bullets are in flight.
@@ -1767,6 +1807,19 @@ public class RealmManagerServer implements Runnable {
 					enemy.tickMove(realm);
 				}
 				enemy.removeExpiredEffects();
+				// Friendly-aura hook (Enemy67 healer) — runs every tick for
+				// every awake scripted enemy, sidestepping the AI stagger and
+				// the attack()/processAttacks gates (DEX cooldown, attackRange,
+				// closest-player INVISIBLE bail). Combat scripts leave this
+				// as the default no-op.
+				final EnemyScriptBase tickScript = this.getEnemyScript(enemy.getEnemyId());
+				if (tickScript != null) {
+					try {
+						tickScript.tick(realm, enemy);
+					} catch (Exception ex) {
+						log.error("Enemy script tick() failed for enemyId={}: {}", enemy.getEnemyId(), ex);
+					}
+				}
 			}
 			this.updEnemiesNanos += System.nanoTime() - eStart;
 			final long bStart = System.nanoTime();
@@ -1785,6 +1838,7 @@ public class RealmManagerServer implements Runnable {
 			realm.processTraps(this);
 			realm.processPoisonDots(this);
 			realm.processDecoys(this);
+			realm.processClones(this);
 		}
 
 		// Passive tick — runs every 8 ticks (~125ms). Refreshes:
@@ -1902,6 +1956,65 @@ public class RealmManagerServer implements Runnable {
 						}
 					}
 				}
+			}
+		}
+
+		// Ninja Blade Storm — visual-only orbiting shurikens. Every 6 ticks
+		// (~94ms) we re-broadcast the EFFECT_BLADE_ORBIT for each active state
+		// centered on the caster's current position. The packet itself has a
+		// short duration (240ms) so the client always has at least one in
+		// flight and the orbit looks continuous as the player moves.
+		if (!this.bladeOrbitStates.isEmpty() && this.tickCounter % 6 == 0) {
+			final long now = Instant.now().toEpochMilli();
+			final java.util.Iterator<BladeOrbitState> it = this.bladeOrbitStates.iterator();
+			while (it.hasNext()) {
+				final BladeOrbitState s = it.next();
+				if (now >= s.expiresAtMs) { it.remove(); continue; }
+				final Realm realm = this.realms.get(s.realmId);
+				if (realm == null) { it.remove(); continue; }
+				final Player caster = realm.getPlayer(s.casterId);
+				if (caster == null) { it.remove(); continue; }
+				final Vector2f pc = caster.getPos().clone(caster.getSize() / 2, caster.getSize() / 2);
+				this.enqueueServerPacketToRealm(realm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_BLADE_ORBIT, pc.x, pc.y, 56f, (short) 240, s.tier));
+			}
+		}
+
+		// Ninja Death Blossom — spiraling blade-blender DoT. Re-emit the
+		// visual every 6 ticks and drain HP from enemies inside every 1s.
+		// Damage is armor-piercing (the ult tag is armor_pierce). Total
+		// damage is spread across 5 one-second ticks.
+		if (!this.bladeBlenderFields.isEmpty()) {
+			final long now = Instant.now().toEpochMilli();
+			final long DRAIN_PERIOD_MS = 1000L;
+			final java.util.Iterator<BladeBlenderField> it = this.bladeBlenderFields.iterator();
+			while (it.hasNext()) {
+				final BladeBlenderField f = it.next();
+				if (now >= f.expiresAtMs) { it.remove(); continue; }
+				final Realm realm = this.realms.get(f.realmId);
+				if (realm == null) { it.remove(); continue; }
+				if (this.tickCounter % 6 == 0) {
+					this.enqueueServerPacketToRealm(realm, CreateEffectPacket.aoeEffect(
+							CreateEffectPacket.EFFECT_BLADE_BLENDER, f.x, f.y, f.radius, (short) 240, f.tier));
+				}
+				if (now - f.lastTickMs < DRAIN_PERIOD_MS) continue;
+				f.lastTickMs = now;
+				final float rSq = f.radius * f.radius;
+				final List<Enemy> dead = new ArrayList<>();
+				for (final Enemy enemy : realm.getEnemies().values()) {
+					if (enemy.getDeath()) continue;
+					if (enemy.hasEffect(StatusEffectType.STASIS)
+							|| enemy.hasEffect(StatusEffectType.INVINCIBLE)) continue;
+					final float dx = enemy.getPos().x - f.x;
+					final float dy = enemy.getPos().y - f.y;
+					if (dx * dx + dy * dy > rSq) continue;
+					final short dmg = (short) Math.min(Short.MAX_VALUE, f.damagePerTick);
+					enemy.setHealth(enemy.getHealth() - dmg);
+					this.broadcastTextEffect(realm, EntityType.ENEMY, enemy,
+							TextEffect.ARMOR_BREAK, "-" + dmg);
+					if (enemy.getHealth() <= 0) dead.add(enemy);
+				}
+				for (final Enemy e : dead) this.enemyDeath(realm, e);
 			}
 		}
 
@@ -2426,6 +2539,140 @@ public class RealmManagerServer implements Runnable {
 				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
 						CreateEffectPacket.EFFECT_CHAIN_LIGHTNING,
 						from.x, from.y, from.x + dx, from.y + dy, (short) 500));
+			}
+
+			// "shadow_dash" tag — actually teleport the player along a chain
+			// lightning streak toward the cursor. The streak draws from the
+			// pre-dash origin to wherever they end up; if a tile blocks the
+			// path partway, the dash stops at the last clear position. The
+			// SPEEDY status applied via STATUS_APPLY SELF gives the follow-up
+			// burst once they land.
+			if (ab.getTags().contains("shadow_dash")) {
+				final Vector2f origin = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+				float dx = pos.x - origin.x, dy = pos.y - origin.y;
+				final float len = (float) Math.sqrt(dx * dx + dy * dy);
+				final float MAX_DASH = 192f; // ~6 tiles
+				if (len > 0.001f) { dx = dx / len; dy = dy / len; }
+				else              { dx = 1f; dy = 0f; }
+				final float dashDist = Math.min(MAX_DASH, len < 0.001f ? MAX_DASH : len);
+				// Walk in 16px increments until we hit a wall — last clear
+				// step is where the ninja lands. Uses the existing tile
+				// collider so cliffs / walls block correctly.
+				float walked = 0f;
+				Vector2f landing = player.getPos().clone();
+				final float STEP = 16f;
+				while (walked + STEP <= dashDist) {
+					final Vector2f test = new Vector2f(
+							landing.x + dx * STEP,
+							landing.y + dy * STEP);
+					if (targetRealm.getTileManager().collidesAtPosition(test, player.getSize())
+							|| targetRealm.getTileManager().isVoidTile(test, 0, 0)) {
+						break;
+					}
+					landing = test;
+					walked += STEP;
+				}
+				player.setPos(landing);
+				final Vector2f endCenter = landing.clone(player.getSize() / 2, player.getSize() / 2);
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
+						CreateEffectPacket.EFFECT_CHAIN_LIGHTNING,
+						origin.x, origin.y, endCenter.x, endCenter.y, (short) 500));
+				// Faint smoke at the origin so the "vanish here / appear there"
+				// read is sharper than just the streak.
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_SMOKE_POOF, origin.x, origin.y, 40f, (short) 400, (byte) 0));
+			}
+
+			// "shuriken_volley" tag — Ninja #1 Star Throw. Fires 3 shurikens
+			// in a STRAIGHT LINE one behind the other, all heading at the
+			// same angle toward the cursor. Sprite tier maps directly off
+			// skill points (SP 0 = Iron 1000 / col 10, SP 5 = Demonbane
+			// 1005 / col 15). Slow magnitude (6) so the "trio in line"
+			// stays readable as it crosses the screen.
+			if (ab.getTags().contains("shuriken_volley")) {
+				final int sp = player.getSkillLevel(ab.getId());
+				final int tier = Math.min(5, Math.max(0, sp));
+				final int groupId = 1000 + tier;
+				final Vector2f origin = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+				final float baseA = Bullet.getAngle(origin, pos);
+				// Convert angle back into a unit vector so we can stagger the
+				// spawn positions BEHIND the player along the aim line. The
+				// Bullet ctor stores -angle so we mirror addProjectile's sign
+				// convention here (sin / cos of the raw angle is the forward
+				// vector the projectile actually travels along).
+				final float fx = (float) Math.sin(baseA);
+				final float fy = (float) Math.cos(baseA);
+				final int   STARS = 3;
+				final float STEP = 36f; // pixels between adjacent shurikens
+				int dmg = ab.getBaseDamage();
+				for (AbilityScaling sc : ab.scalingList()) {
+					if (!"DAMAGE".equalsIgnoreCase(sc.getTarget())) continue;
+					final int sv = resolveScalingInput(player, ab, sc);
+					dmg += (int) sc.curveEnum().apply(sv, sc.getCoeff(), sc.getCap());
+				}
+				final short damage = (short) Math.min(Short.MAX_VALUE, Math.max(0, dmg));
+				final List<Short> flags = new ArrayList<>();
+				for (int i = 0; i < STARS; i++) {
+					// Offset each shuriken backwards along the forward vector
+					// so they spawn nose-to-tail in a single file rather than
+					// stacking on top of each other at the player.
+					final Vector2f src = new Vector2f(
+							origin.x - fx * STEP * i,
+							origin.y - fy * STEP * i);
+					this.addProjectile(realmId, 0L, player.getId(), groupId,
+							0, src, baseA, (short) 32, 6f, 2048f,
+							damage, false, flags, (short) 0, (short) 0, player.getId());
+				}
+			}
+
+			// "blade_orbit" tag — Ninja #3 Blade Storm. Visual-only orbiting
+			// shurikens around the player for the DAMAGING buff duration. The
+			// tick loop in update() re-emits the effect every 6 ticks centered
+			// on the caster's live position so the orbit follows movement.
+			if (ab.getTags().contains("blade_orbit")) {
+				final int sp = player.getSkillLevel(ab.getId());
+				// Tier byte = SP, 0..5. The client looks up col = 10 + tier
+				// in openrealm-items.png to draw the matching shuriken sprite
+				// (Iron → Demonbane). Max SP is 5 so this is safe.
+				final byte tier = (byte) Math.min(5, Math.max(0, sp));
+				bladeOrbitStates.removeIf(s -> s.casterId == player.getId());
+				bladeOrbitStates.add(new BladeOrbitState(
+						targetRealm.getRealmId(), player.getId(), now + 5000L, tier));
+				// Immediate visual — the tick loop will refresh.
+				final Vector2f pc = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_BLADE_ORBIT, pc.x, pc.y, 56f, (short) 600, tier));
+			}
+
+			// "blade_blender" tag — Ninja #4 Death Blossom. Spawns a 5s spiral
+			// at the cursor that shreds enemies inside every 1s. Total damage
+			// budget = ab base + DEX/SP scaling, split across 5 ticks. Tier
+			// (Crimson/Obsidian/Demonbane = items 301/302/303) escalates with
+			// SP — max SP is 3 so the tier band is 2..4 of the shuriken set.
+			if (ab.getTags().contains("blade_blender")) {
+				final int sp = player.getSkillLevel(ab.getId());
+				// Death Blossom max SP is 3. Start at Crimson (col 13 = tier 3
+				// in the col-10-based palette) and climb to Demonbane at SP 2-3.
+				// SP 0 -> tier 3 (Crimson), SP 1 -> tier 4 (Obsidian),
+				// SP 2-3 -> tier 5 (Demonbane). Tier byte feeds renderer's
+				// col-offset lookup against openrealm-items.png row 16.
+				final byte tier = (byte) Math.min(5, 3 + Math.max(0, sp));
+				int total = ab.getBaseDamage();
+				for (AbilityScaling sc : ab.scalingList()) {
+					if (!"DAMAGE".equalsIgnoreCase(sc.getTarget())) continue;
+					final int sv = resolveScalingInput(player, ab, sc);
+					total += (int) sc.curveEnum().apply(sv, sc.getCoeff(), sc.getCap());
+				}
+				final int perTick = Math.max(1, total / 5);
+				final long ttlMs = 5000L;
+				final float radius = 144f;
+				bladeBlenderFields.removeIf(f -> f.casterId == player.getId());
+				bladeBlenderFields.add(new BladeBlenderField(
+						targetRealm.getRealmId(), player.getId(),
+						pos.x, pos.y, radius, now + ttlMs, perTick, tier));
+				// Immediate visual — the tick loop will refresh it.
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_BLADE_BLENDER, pos.x, pos.y, radius, (short) 600, tier));
 			}
 		}
 
@@ -3206,6 +3453,115 @@ public class RealmManagerServer implements Runnable {
 		return false;
 	}
 
+	/**
+	 * Ninja Kage Bunshin passive (11013) — when the class passive is bound and
+	 * its {@code ON_PROJECTILE_HIT_SELF} PROC_CHANCE rolls successfully, spawn a
+	 * headless Player "shadow clone" identical to the source ninja that walks
+	 * toward the attacker, draws aggro via TAUNT_TARGET, and vanishes with a
+	 * smoke poof after CLONE_DURATION_MS. Unlike {@link #tryDeflect}, the source
+	 * player still takes the original hit — the clone is purely an escape tool.
+	 *
+	 * Returns true iff a clone was actually spawned (purely for caller-side
+	 * logging / branching — does NOT alter damage application).
+	 */
+	private static final long CLONE_DURATION_MS = 3000L;
+	private static final long TAUNT_DURATION_MS = 3000L;
+	private static final long INVINCIBLE_DURATION_MS = 3000L;
+
+	private boolean trySpawnNinjaClone(final Realm targetRealm, final Bullet b, final Player player) {
+		final PassiveAbility passive = player.getClassPassive();
+		if (passive == null) return false;
+		boolean isCloneTrigger = false;
+		double procChance = 0;
+		for (PassiveTrigger trig : passive.triggerList()) {
+			if (!"ON_PROJECTILE_HIT_SELF".equalsIgnoreCase(trig.getEvent())) continue;
+			// Distinguish from Knight's Deflect (same trigger, different
+			// behavior). Match on passive id so a future ninja-themed
+			// passive that ALSO uses this trigger doesn't accidentally
+			// route through both branches.
+			if (passive.getId() != 11013) continue;
+			isCloneTrigger = true;
+			if (trig.getConditions() == null) break;
+			for (AbilityScaling sc : trig.getConditions()) {
+				if (!"PROC_CHANCE".equalsIgnoreCase(sc.getTarget())) continue;
+				final int statIdx = sc.statIndex();
+				if (statIdx < 0) continue;
+				final int statVal = statByIndex(player.getComputedStats(), statIdx);
+				final double raw = statVal * sc.getCoeff();
+				procChance = sc.getCap() > 0 ? Math.min(raw, sc.getCap()) : raw;
+				break;
+			}
+			break;
+		}
+		if (!isCloneTrigger || procChance <= 0) return false;
+		if (Math.random() >= procChance) return false;
+
+		// Compute walk vector toward the attacker. If the source enemy is
+		// gone or unknown, fall back to walking away from the incoming
+		// bullet's heading (a sensible escape direction).
+		final Vector2f spawnCenter = player.getPos().clone(player.getSize() / 2f, player.getSize() / 2f);
+		float vx;
+		float vy;
+		final Enemy src = (b.getSrcEntityId() != 0L) ? targetRealm.getEnemies().get(b.getSrcEntityId()) : null;
+		if (src != null && !src.getDeath()) {
+			final Vector2f srcCenter = src.getPos().clone(src.getSize() / 2f, src.getSize() / 2f);
+			float dirX = srcCenter.x - spawnCenter.x;
+			float dirY = srcCenter.y - spawnCenter.y;
+			final float mag = (float) Math.sqrt(dirX * dirX + dirY * dirY);
+			if (mag > 0.001f) { dirX /= mag; dirY /= mag; } else { dirX = 1f; dirY = 0f; }
+			vx = dirX;
+			vy = dirY;
+		} else {
+			// Walk along the bullet's forward heading. Bullet.angle convention:
+			// (sin, cos) = forward unit vector.
+			vx = (float) Math.sin(b.getAngle());
+			vy = (float) Math.cos(b.getAngle());
+		}
+		// Convert unit vector to per-tick step matching the source player's
+		// movement speed — same formula as movePlayer's applyMovementTick so
+		// the clone visibly moves like a real player.
+		final float tilesPerSec = 4.0f + 5.6f * (player.getComputedStats().getSpd() / 75.0f);
+		final float pxPerTick = tilesPerSec * 32.0f / 64.0f;
+		final float dx = vx * pxPerTick;
+		final float dy = vy * pxPerTick;
+
+		// Build the clone as a headless+bot Player of the same class. Same
+		// class id means the renderer pulls the same sprite — i.e. an
+		// identical visual copy of the source ninja, per spec.
+		final CharacterClass cls = CharacterClass.valueOf(player.getClassId());
+		if (cls == null) return false;
+		final long cloneId = Realm.RANDOM.nextLong();
+		final Player clone = new Player(cloneId, spawnCenter.clone(), player.getSize(), cls);
+		clone.setName(player.getName());
+		clone.setHeadless(true);
+		clone.setBot(true);
+		clone.setAccountUuid(java.util.UUID.randomUUID().toString());
+		clone.setCharacterUuid(java.util.UUID.randomUUID().toString());
+		// INVINCIBLE so stray hits don't kill the clone before its 3s
+		// timer is up; TAUNT_TARGET so enemy targeting (getClosestPlayer's
+		// taunt pass) prefers shooting the clone over the real ninja —
+		// turning the clone into a real aggro magnet, not just decoration.
+		clone.addEffect(StatusEffectType.INVINCIBLE, INVINCIBLE_DURATION_MS);
+		clone.addEffect(StatusEffectType.TAUNT_TARGET, TAUNT_DURATION_MS);
+		// Walk-anim flags so the client animates the clone moving instead
+		// of standing in place. dx/dy alone wouldn't drive the walk cycle.
+		clone.setRight(dx > 0.01f);
+		clone.setLeft(dx < -0.01f);
+		clone.setDown(dy > 0.01f);
+		clone.setUp(dy < -0.01f);
+
+		targetRealm.addPlayer(clone);
+		targetRealm.registerClone(cloneId, player.getId(), dx, dy, CLONE_DURATION_MS);
+
+		// Spawn smoke FX so the clone appears to materialize out of a puff
+		// rather than just popping in. Matched on despawn by processClones.
+		this.enqueueServerPacketToRealm(targetRealm,
+				CreateEffectPacket.aoeEffect(CreateEffectPacket.EFFECT_SMOKE_POOF,
+						spawnCenter.x, spawnCenter.y, 40f, (short) 600));
+		this.sendTextEffectToPlayer(player, TextEffect.PLAYER_INFO, "BUNSHIN");
+		return true;
+	}
+
 	/** Helper — Stats lookup by the same index used in AbilityScaling.statIndex(). */
 	private static int statByIndex(Stats s, int idx) {
 		if (s == null) return 0;
@@ -3285,6 +3641,10 @@ public class RealmManagerServer implements Runnable {
 			this.sendTextEffectToPlayer(player, dmgTextEffect, "-" + dmgToInflict);
 
 			player.setHealth(player.getHealth() - dmgToInflict);
+			// Ninja Kage Bunshin — roll AFTER damage (player still eats the
+			// hit, the clone is an escape tool, not a damage shield). Reads
+			// the player's class passive and proc-chance scaling internally.
+			this.trySpawnNinjaClone(targetRealm, b, player);
 			targetRealm.getExpiredBullets().add(b.getId());
 			targetRealm.removeBullet(b);
 			// Apply on-hit status effects from projectile's effects list (data-driven with durations)
@@ -3790,6 +4150,7 @@ public class RealmManagerServer implements Runnable {
 			realm.removePlayerPoisonThrows(playerId);
 			realm.removePlayerTraps(playerId);
 			realm.removePlayerDecoys(playerId);
+			realm.removePlayerClones(playerId);
 		}
 		// Clear cached provisions on disconnect
 		ServerCommandHandler.PLAYER_PROVISION_CACHE.remove(playerId);
@@ -4130,6 +4491,17 @@ public class RealmManagerServer implements Runnable {
 			final Realm r = this.findPlayerRealm(p.getId());
 			m.setRealmId(r == null ? 0L : r.getRealmId());
 			m.setEffectIds(p.getEffectIds() == null ? new Short[0] : p.getEffectIds().clone());
+			// Hotbar bindings (4 ability ids) — copied as a boxed array so the
+			// streamable collection codec doesn't choke on null. Same for the
+			// cooldown end-times. Both arrays are exactly 4 long; UI iterates.
+			final int[] hb = p.getHotbarBindings();
+			final Integer[] hbBoxed = new Integer[4];
+			for (int i = 0; i < 4; i++) hbBoxed[i] = (hb != null && i < hb.length) ? hb[i] : 0;
+			m.setHotbarBindings(hbBoxed);
+			final long[] cds = p.getAbilityCooldowns();
+			final Long[] cdBoxed = new Long[4];
+			for (int i = 0; i < 4; i++) cdBoxed[i] = (cds != null && i < cds.length) ? cds[i] : 0L;
+			m.setAbilityCooldownEnds(cdBoxed);
 			members.add(m);
 		}
 		final PartyUpdatePacket pkt =

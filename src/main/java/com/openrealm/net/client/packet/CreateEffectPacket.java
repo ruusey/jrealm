@@ -114,6 +114,14 @@ public class CreateEffectPacket extends Packet {
 	/** Necromancer Soul Harvest — persistent crimson/violet vortex that drains
 	 *  HP from enemies inside and heals allies near the cast point. */
 	public static final short EFFECT_SOUL_VORTEX     = 45;
+	/** Ninja Blade Storm — three shurikens orbiting the player. The tier byte
+	 *  selects which shuriken sprite (0..4 -> item 299..303). posX/posY is
+	 *  the player's center; radius is the orbit distance. */
+	public static final short EFFECT_BLADE_ORBIT     = 46;
+	/** Ninja Death Blossom — persistent spiraling blade-blender at a fixed
+	 *  cursor point. Tier byte selects shuriken sprite. radius is the
+	 *  spiral's outer edge. */
+	public static final short EFFECT_BLADE_BLENDER   = 47;
 
 	public static CreateEffectPacket aoeEffect(short type, float x, float y, float radius, short duration) {
 		return aoeEffect(type, x, y, radius, duration, (byte) 0);
