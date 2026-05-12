@@ -477,7 +477,7 @@ public class ServerGameLogic {
 		mgr.useAbility(realm.getRealmId(), useAbilityPacket.getPlayerId(),
 				new Vector2f(useAbilityPacket.getPosX(), useAbilityPacket.getPosY()),
 				useAbilityPacket.getAbilityIndex());
-		ServerGameLogic.log.debug("[SERVER] Recieved UseAbility Packet For Player {}", useAbilityPacket.getPlayerId());
+		ServerGameLogic.log.info("[SERVER] Recieved UseAbility Packet For Player {}", useAbilityPacket.getPlayerId());
 	}
 
 	@PacketHandlerServer(TextPacket.class)
