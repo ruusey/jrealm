@@ -111,6 +111,9 @@ public class CreateEffectPacket extends Packet {
 	public static final short EFFECT_STORM_AURA      = 42;
 	public static final short EFFECT_DEATH_PACT_AURA = 43;
 	public static final short EFFECT_BLADE_STORM     = 44;
+	/** Necromancer Soul Harvest — persistent crimson/violet vortex that drains
+	 *  HP from enemies inside and heals allies near the cast point. */
+	public static final short EFFECT_SOUL_VORTEX     = 45;
 
 	public static CreateEffectPacket aoeEffect(short type, float x, float y, float radius, short duration) {
 		return aoeEffect(type, x, y, radius, duration, (byte) 0);

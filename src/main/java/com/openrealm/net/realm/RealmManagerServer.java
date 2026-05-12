@@ -173,6 +173,27 @@ public class RealmManagerServer implements Runnable {
 	// Phase 4 — party state (membership + pending invites). Exposed via
 	// getPartyManager() so chat-command handlers and packet handlers can mutate.
 	private final PartyManager partyManager = new PartyManager();
+
+	// Phase 4 — Necromancer Soul Harvest (#4 ult). Each cast spawns a vortex
+	// field that lives for {@code expiresAt - now} ms; the tick loop drains
+	// HP from enemies inside the field every {@code DRAIN_PERIOD_MS} and
+	// heals allies in the same radius for the total HP sapped that tick.
+	// One field per realm per caster — recasting replaces the previous.
+	private static final class SoulHarvestField {
+		final long realmId;
+		final long casterId;
+		final float x, y;
+		final float radius;
+		final long expiresAtMs;
+		long lastTickMs;
+		SoulHarvestField(long realmId, long casterId, float x, float y, float radius, long expiresAtMs) {
+			this.realmId = realmId; this.casterId = casterId;
+			this.x = x; this.y = y; this.radius = radius;
+			this.expiresAtMs = expiresAtMs;
+			this.lastTickMs = 0L;
+		}
+	}
+	private final List<SoulHarvestField> soulHarvestFields = new ArrayList<>();
 	// Per-realm last-tick wall-clock used to compute bulletScale ONCE per
 	// realm per tick instead of per-bullet — eliminates ~12K nanoTime
 	// syscalls/sec when 200 bullets are in flight.
@@ -1167,29 +1188,28 @@ public class RealmManagerServer implements Runnable {
 	private void processPacket(final Packet packet) {
 		try {
 			packet.setSrcIp(packet.getSrcIp());
-			final List<MethodHandle> packetHandles = this.userPacketCallbacksServer.get(packet.getId());
-			if (packetHandles != null) {
-				for (MethodHandle handler : packetHandles) {
+			// Single dispatch path: reflection-registered @PacketHandlerServer
+			// handlers take priority. If none exist for this packet class, fall
+			// back to the hardcoded fast-path registry. The previous shape ran
+			// reflection handlers TWICE for any packet that lacked a hardcoded
+			// entry — every InvestSkillPoint cast was applied twice (orange
+			// pip jumped 2 per right-click), and any other reflection-only
+			// packet had the same bug.
+			final List<MethodHandle> reflectionHandlers = this.userPacketCallbacksServer.get(packet.getId());
+			if (reflectionHandlers != null && !reflectionHandlers.isEmpty()) {
+				for (MethodHandle handler : reflectionHandlers) {
 					try {
 						handler.invokeExact(this, packet);
 					} catch (Throwable e) {
 						log.error("[SERVER] Failed to invoke packet callback. Reason: {}", e);
 					}
 				}
+				return;
 			}
-			if (this.packetCallbacksServer.get(packet.getClass()) == null) {
-				final List<MethodHandle> callBackHandles = this.userPacketCallbacksServer.get(packet.getId());
-				if (callBackHandles != null) {
-					for (MethodHandle callBack : callBackHandles) {
-						try {
-							callBack.invokeExact(this, packet);
-						} catch (Throwable e) {
-							log.error("[SERVER] Failed to invoke user packet callback. Reason: {}", e.getMessage());
-						}
-					}
-				}
-			} else {
-				this.packetCallbacksServer.get(packet.getClass()).accept(this, packet);
+			final BiConsumer<RealmManagerServer, Packet> hardcoded =
+					this.packetCallbacksServer.get(packet.getClass());
+			if (hardcoded != null) {
+				hardcoded.accept(this, packet);
 			}
 		} catch (Exception e) {
 			log.error("[SERVER] Failed to process packet {}. Reason: {}", packet.getClass().getSimpleName(), e);
@@ -1767,25 +1787,119 @@ public class RealmManagerServer implements Runnable {
 			realm.processDecoys(this);
 		}
 
-		// Priest Protective Aura — every 8 ticks (~125ms), find every priest
-		// with the Protective Aura passive and refresh PROTECTED on every player
-		// within 5 tiles (320 px). Duration 800 ms so the buff naturally decays
-		// when an ally walks out of range. Applied to the priest itself too.
+		// Passive tick — runs every 8 ticks (~125ms). Refreshes:
+		//   • Priest Protective Aura (11003): PROTECTED on every player in 5
+		//     tiles of the priest, including the priest themselves.
+		//   • Paladin Holy Resolve (11006): BRACED on the paladin while their
+		//     HP is below 50% of max. The buff naturally drops when they heal
+		//     back above the threshold because we stop refreshing it.
+		// Both refresh with a short duration (~800ms) so the buff decays
+		// cleanly when the condition stops holding.
 		if (this.tickCounter % 8 == 0) {
 			final float AURA_RADIUS = 320f;
 			final float AURA_RADIUS_SQ = AURA_RADIUS * AURA_RADIUS;
-			final long AURA_REFRESH_MS = 800L;
+			final long  REFRESH_MS = 800L;
 			for (final Realm realm : this.realms.values()) {
 				if (realm.getPlayers().isEmpty()) continue;
-				for (final Player priest : realm.getPlayers().values()) {
-					final PassiveAbility pa = priest.getClassPassive();
-					if (pa == null || pa.getId() != 11003) continue;
-					final Vector2f pc = priest.getPos().clone(priest.getSize() / 2, priest.getSize() / 2);
+				for (final Player p : realm.getPlayers().values()) {
+					final PassiveAbility pa = p.getClassPassive();
+					if (pa == null) continue;
+					if (pa.getId() == 11003) {
+						// Priest Protective Aura
+						final Vector2f pc = p.getPos().clone(p.getSize() / 2, p.getSize() / 2);
+						for (final Player ally : realm.getPlayers().values()) {
+							final Vector2f ac = ally.getPos().clone(ally.getSize() / 2, ally.getSize() / 2);
+							final float dx = ac.x - pc.x, dy = ac.y - pc.y;
+							if (dx * dx + dy * dy > AURA_RADIUS_SQ) continue;
+							ally.addEffect(StatusEffectType.PROTECTED, REFRESH_MS);
+						}
+					} else if (pa.getId() == 11006) {
+						// Paladin Holy Resolve — refresh BRACED while HP < 50%
+						// of computed max. ARMORED/BRACED in Player.getComputedStats
+						// is mutually exclusive (ARMORED > BRACED), so this won't
+						// downgrade a Brace cast.
+						final int maxHp = p.getComputedStats() != null ? p.getComputedStats().getHp() : p.getHealth();
+						if (maxHp > 0 && p.getHealth() * 2 < maxHp) {
+							p.addEffect(StatusEffectType.BRACED, REFRESH_MS);
+						}
+					} else if (pa.getId() == 11008) {
+						// Necromancer Necrotic Aura — continuously refreshes CURSED
+						// (1.25× damage taken) on every enemy in range. We use the
+						// same 5-tile / 320px radius as the priest aura and short
+						// REFRESH_MS so the debuff lifts the moment the enemy
+						// leaves the bubble.
+						final Vector2f pc = p.getPos().clone(p.getSize() / 2, p.getSize() / 2);
+						for (final Enemy enemy : realm.getEnemies().values()) {
+							if (enemy == null || enemy.getDeath()) continue;
+							if (enemy.hasEffect(StatusEffectType.INVINCIBLE)) continue;
+							final float dx = enemy.getPos().x - pc.x;
+							final float dy = enemy.getPos().y - pc.y;
+							if (dx * dx + dy * dy > AURA_RADIUS_SQ) continue;
+							enemy.addEffect(StatusEffectType.CURSED, REFRESH_MS);
+						}
+					}
+				}
+			}
+		}
+
+		// Necromancer Soul Harvest — vortex field tick. Every tick we evict
+		// expired fields and refresh the visual; every ~1s we drain HP from
+		// enemies inside and heal allies in radius for the total sapped.
+		if (!this.soulHarvestFields.isEmpty()) {
+			final long now = Instant.now().toEpochMilli();
+			final long DRAIN_PERIOD_MS = 1000L;
+			final int  DRAIN_PER_TICK  = 50;
+			final java.util.Iterator<SoulHarvestField> it = this.soulHarvestFields.iterator();
+			while (it.hasNext()) {
+				final SoulHarvestField f = it.next();
+				if (now >= f.expiresAtMs) { it.remove(); continue; }
+				final Realm realm = this.realms.get(f.realmId);
+				if (realm == null) { it.remove(); continue; }
+				// Refresh persistent visual every 12 ticks (~190ms). Tier 6 =
+				// purple/violet tint for the necro soul-drain look.
+				if (this.tickCounter % 12 == 0) {
+					this.enqueueServerPacketToRealm(realm, CreateEffectPacket.aoeEffect(
+							CreateEffectPacket.EFFECT_SOUL_VORTEX, f.x, f.y, f.radius, (short) 240, (byte) 6));
+				}
+				// 1Hz drain + heal pulse.
+				if (now - f.lastTickMs < DRAIN_PERIOD_MS) continue;
+				f.lastTickMs = now;
+				final float rSq = f.radius * f.radius;
+				int totalSapped = 0;
+				final List<Enemy> dead = new ArrayList<>();
+				for (final Enemy enemy : realm.getEnemies().values()) {
+					if (enemy.getDeath()) continue;
+					if (enemy.hasEffect(StatusEffectType.STASIS)
+							|| enemy.hasEffect(StatusEffectType.INVINCIBLE)) continue;
+					final float dx = enemy.getPos().x - f.x;
+					final float dy = enemy.getPos().y - f.y;
+					if (dx * dx + dy * dy > rSq) continue;
+					// Armor-piercing — sapped damage ignores defense.
+					final short dmg = (short) Math.min(Short.MAX_VALUE, DRAIN_PER_TICK);
+					enemy.setHealth(enemy.getHealth() - dmg);
+					this.broadcastTextEffect(realm, EntityType.ENEMY, enemy,
+							TextEffect.ARMOR_BREAK, "-" + dmg);
+					totalSapped += dmg;
+					if (enemy.getHealth() <= 0) dead.add(enemy);
+				}
+				for (final Enemy e : dead) this.enemyDeath(realm, e);
+				if (totalSapped > 0) {
+					// Heal every ally in the vortex's radius for the total sapped
+					// — encourages parking the vortex on a pack so the whole
+					// party gets the heal.
 					for (final Player ally : realm.getPlayers().values()) {
+						if (ally == null) continue;
 						final Vector2f ac = ally.getPos().clone(ally.getSize() / 2, ally.getSize() / 2);
-						final float dx = ac.x - pc.x, dy = ac.y - pc.y;
-						if (dx * dx + dy * dy > AURA_RADIUS_SQ) continue;
-						ally.addEffect(StatusEffectType.PROTECTED, AURA_REFRESH_MS);
+						final float adx = ac.x - f.x, ady = ac.y - f.y;
+						if (adx * adx + ady * ady > rSq) continue;
+						final int maxHp = ally.getComputedStats() != null ? ally.getComputedStats().getHp() : ally.getHealth();
+						final int newHp = Math.min(maxHp, ally.getHealth() + totalSapped);
+						final int actual = newHp - ally.getHealth();
+						if (actual > 0) {
+							ally.setHealth(newHp);
+							this.broadcastTextEffect(realm, EntityType.PLAYER, ally,
+									TextEffect.HEAL, "+" + actual);
+						}
 					}
 				}
 			}
@@ -2264,6 +2378,24 @@ public class RealmManagerServer implements Runnable {
 				}
 			}
 
+			// "soul_harvest" — Necromancer #4 ult. Spawns a 10s vortex field at
+			// the targeted spot that drains 50 HP/s from enemies inside and
+			// heals allies in radius for the total HP sapped each tick. The
+			// initial aoe_targeted armor-piercing burst still resolves above
+			// — this tag only stands up the persistent field + visual.
+			if (ab.getTags().contains("soul_harvest")) {
+				final long ttlMs = 10_000L;
+				final float vortexR = 128f;
+				// Replace any existing field this caster had (recast).
+				soulHarvestFields.removeIf(f -> f.casterId == player.getId());
+				soulHarvestFields.add(new SoulHarvestField(
+						targetRealm.getRealmId(), player.getId(),
+						pos.x, pos.y, vortexR, now + ttlMs));
+				// Immediate visual — the tick loop will refresh it.
+				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
+						CreateEffectPacket.EFFECT_SOUL_VORTEX, pos.x, pos.y, vortexR, (short) 1200, (byte) 6));
+			}
+
 			// "taunt_visual" — small red circle blink at player + "TAUNTING" text.
 			if (ab.getTags().contains("taunt_visual")) {
 				final Vector2f pc = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
@@ -2352,6 +2484,7 @@ public class RealmManagerServer implements Runnable {
 				if (ab.getTags().contains("explosion")){ visualEffect = CreateEffectPacket.EFFECT_COMBUSTION_TRAP;vTier = 4; } // orange blast
 				if (ab.getTags().contains("warcry"))   { visualEffect = CreateEffectPacket.EFFECT_WAR_CRY_WAVE;   vTier = 5; } // red roar
 				if (ab.getTags().contains("caltrops")) { visualEffect = CreateEffectPacket.EFFECT_CALTROPS;       vTier = 0; } // steel spikes
+				if (ab.getTags().contains("smoke"))    { visualEffect = CreateEffectPacket.EFFECT_SMOKE_POOF;     vTier = 0; } // grey smoke
 				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
 						visualEffect, effCenter.x, effCenter.y, aoeRadius, (short) 1500, vTier));
 				// "outline_ring" tag — extra outline at radius. For Hunter's Mark
@@ -3217,6 +3350,46 @@ public class RealmManagerServer implements Runnable {
 			}
 
 			targetRealm.hitEnemy(b.getId(), e.getId());
+			// Phase 3 passive — on-hit triggers. Class passives can register
+			// ON_BULLET_HIT_ENEMY with a PROC_CHANCE scaling against any stat
+			// to roll a status application. Assassin Lethal Wound uses this to
+			// proc POISONED with 15% base + 1%/DEX (cap 60%). Generic so other
+			// classes can hang procs off the same hook.
+			if (b.getSrcEntityId() != 0L) {
+				final Player srcPlayer = this.getPlayerById(b.getSrcEntityId());
+				if (srcPlayer != null) {
+					final PassiveAbility pa = srcPlayer.getClassPassive();
+					if (pa != null) {
+						for (PassiveTrigger trig : pa.triggerList()) {
+							if (!"ON_BULLET_HIT_ENEMY".equalsIgnoreCase(trig.getEvent())) continue;
+							double procChance = 0.15; // base 15%
+							if (trig.getConditions() != null) {
+								for (AbilityScaling sc : trig.getConditions()) {
+									if (!"PROC_CHANCE".equalsIgnoreCase(sc.getTarget())) continue;
+									final int statIdx = sc.statIndex();
+									if (statIdx < 0) continue;
+									final int statVal = statByIndex(srcPlayer.getComputedStats(), statIdx);
+									final double bonus = statVal * sc.getCoeff();
+									procChance += bonus;
+								}
+								// honor cap if any condition set it
+								for (AbilityScaling sc : trig.getConditions()) {
+									if ("PROC_CHANCE".equalsIgnoreCase(sc.getTarget()) && sc.getCap() > 0) {
+										procChance = Math.min(procChance, sc.getCap());
+									}
+								}
+							}
+							if (procChance > 0 && Math.random() < procChance) {
+								// Assassin Lethal Wound — POISONED 3s.
+								if (pa.getId() == 11007) {
+									applyStatusWithFeedback(targetRealm, e, EntityType.ENEMY,
+											StatusEffectType.POISONED, 3000);
+								}
+							}
+						}
+					}
+				}
+			}
 			e.setHealth(e.getHealth() - dmgToInflict);
 			int maxHealth = (int) (model.getHealth() * e.getDifficulty());
 			e.setHealthpercent((float) e.getHealth() / (float) maxHealth);
