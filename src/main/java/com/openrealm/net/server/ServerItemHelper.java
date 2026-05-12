@@ -362,7 +362,9 @@ public class ServerItemHelper {
                 player.getInventory()[fromIdx] = null;
             }
 
-        // Consume item (potions, food)
+        // Consume item (potions, food). Stackable consumables (HP/MP potions,
+        // food rations) only decrement by one — never wipe the whole stack.
+        // Non-stackable consumables clear the slot as before.
         } else if ((from != null) && from.isConsumable() && moveItemPacket.isConsume() && player.canConsume(from)
                 && !MoveItemPacket.isGroundLoot(fromIdx)) {
             final Stats newStats = player.getStats().concat(from.getStats());
@@ -372,7 +374,11 @@ public class ServerItemHelper {
             } else if (from.getStats().getMp() > 0) {
                 player.drinkMp();
             }
-            player.getInventory()[fromIdx] = null;
+            if (from.isStackable() && from.getStackCount() > 1) {
+                from.setStackCount(from.getStackCount() - 1);
+            } else {
+                player.getInventory()[fromIdx] = null;
+            }
 
         // Equip: backpack -> equipment slot
         } else if (MoveItemPacket.isInventory(fromIdx)
