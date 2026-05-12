@@ -2045,6 +2045,12 @@ public class RealmManagerServer implements Runnable {
 		// classes that haven't been ported.
 		final int slot = abilityIndex >= 0 && abilityIndex < 4 ? abilityIndex : 0;
 		final com.openrealm.game.model.ability.Ability ab = player.getActiveAbility(slot);
+		// [DIAG] log every cast so we can trace the slot → ability → tags path.
+		log.info("[USEABILITY] playerId={} classId={} slot={} hotbarId={} ab={} tags={}",
+				player.getId(), player.getClassId(), slot,
+				player.getHotbarId(slot),
+				ab == null ? "(null - falling to LEGACY path)" : ("#"+ab.getId()+" "+ab.getName()),
+				ab == null ? "n/a" : ab.getTags());
 		final int abMpCost;
 		final long abCooldownMs;
 		if (ab != null) {
@@ -2214,12 +2220,18 @@ public class RealmManagerServer implements Runnable {
 				float dxK = pos.x - from.x, dyK = pos.y - from.y;
 				final float lenK = (float) Math.sqrt(dxK * dxK + dyK * dyK);
 				if (lenK > 0.001f) {
-					final float FRONT_OFFSET = 60f;
-					final float STREAK_LEN   = 80f;
+					// Streak hugs the shield-projectile travel — spawns just in
+					// front of the caster, total reach capped to ~110px (the
+					// shield projectile range is 70px + 30px spawn-forward; a
+					// touch more so the streak visually escorts the projectiles
+					// to their stun point, not far past it).
+					final float FRONT_OFFSET = 30f;
+					final float MAX_REACH    = 110f;
+					final float endDist      = Math.min(lenK, MAX_REACH);
 					final float fx0 = from.x + dxK / lenK * FRONT_OFFSET;
 					final float fy0 = from.y + dyK / lenK * FRONT_OFFSET;
-					final float fx1 = fx0 + dxK / lenK * STREAK_LEN;
-					final float fy1 = fy0 + dyK / lenK * STREAK_LEN;
+					final float fx1 = from.x + dxK / lenK * endDist;
+					final float fy1 = from.y + dyK / lenK * endDist;
 					this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.lineEffect(
 							CreateEffectPacket.EFFECT_CHAIN_LIGHTNING,
 							fx0, fy0, fx1, fy1, (short) 280));
@@ -2299,6 +2311,21 @@ public class RealmManagerServer implements Runnable {
 				if (ab.getTags().contains("holy"))     { visualEffect = CreateEffectPacket.EFFECT_PALADIN_SEAL;   vTier = 3; } // gold
 				if (ab.getTags().contains("frost"))    { visualEffect = CreateEffectPacket.EFFECT_FROST_NOVA;     vTier = 1; } // ice
 				if (ab.getTags().contains("mark"))     { visualEffect = CreateEffectPacket.EFFECT_HUNTERS_RETICLE;vTier = 5; } // red reticle
+				if (ab.getTags().contains("poison"))   { visualEffect = CreateEffectPacket.EFFECT_POISON_CLOUD;   vTier = 2; } // toxic green
+				if (ab.getTags().contains("drain"))    { visualEffect = CreateEffectPacket.EFFECT_LIFE_DRAIN;     vTier = 5; } // blood red
+				if (ab.getTags().contains("bone"))     { visualEffect = CreateEffectPacket.EFFECT_BONE_SPIKES;    vTier = 0; } // bone white
+				if (ab.getTags().contains("lightning")){ visualEffect = CreateEffectPacket.EFFECT_LIGHTNING_STRIKE;vTier = 3; } // electric yellow
+				if (ab.getTags().contains("arcane"))   { visualEffect = CreateEffectPacket.EFFECT_MANA_BOLT;      vTier = 6; } // arcane purple
+				if (ab.getTags().contains("time"))     { visualEffect = CreateEffectPacket.EFFECT_TIME_STOP;      vTier = 1; } // silver-blue
+				if (ab.getTags().contains("smite"))    { visualEffect = CreateEffectPacket.EFFECT_SMITE_FLASH;    vTier = 3; } // gold flash
+				if (ab.getTags().contains("death_bloom")){visualEffect = CreateEffectPacket.EFFECT_DEATH_BLOSSOM; vTier = 6; } // dark blade
+				if (ab.getTags().contains("bloom"))    { visualEffect = CreateEffectPacket.EFFECT_INSPIRE_BLOOM;  vTier = 3; } // gold petals
+				if (ab.getTags().contains("slash"))    { visualEffect = CreateEffectPacket.EFFECT_RECKLESS_SLASH; vTier = 5; } // red arc
+				if (ab.getTags().contains("shuriken")) { visualEffect = CreateEffectPacket.EFFECT_STAR_SHURIKEN;  vTier = 0; } // steel
+				if (ab.getTags().contains("snare_trap")){visualEffect = CreateEffectPacket.EFFECT_SNARE_GEAR;     vTier = 4; } // iron
+				if (ab.getTags().contains("explosion")){ visualEffect = CreateEffectPacket.EFFECT_COMBUSTION_TRAP;vTier = 4; } // orange blast
+				if (ab.getTags().contains("warcry"))   { visualEffect = CreateEffectPacket.EFFECT_WAR_CRY_WAVE;   vTier = 5; } // red roar
+				if (ab.getTags().contains("caltrops")) { visualEffect = CreateEffectPacket.EFFECT_CALTROPS;       vTier = 0; } // steel spikes
 				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
 						visualEffect, effCenter.x, effCenter.y, aoeRadius, (short) 1500, vTier));
 				// "outline_ring" tag — extra outline at radius. For Hunter's Mark
@@ -2558,10 +2585,19 @@ public class RealmManagerServer implements Runnable {
 				}
 			}
 		}
-		// Invoke any item specific scripts
-		final UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
-		if (script != null) {
-			script.invokeItemAbility(targetRealm, player, abilityItem, pos);
+		// Invoke any item specific scripts — ONLY when no Ability data is
+		// bound for the slot (legacy fallback). When a new Ability is in
+		// play, the tag-based visuals (taunt_visual, brace_visual,
+		// knight_slam, etc.) own the cast effect; running the legacy item
+		// script on top emitted a second visual for every ability — for
+		// Knight that was the shield-bash forward-thrust arrow firing
+		// alongside Taunt/Brace/Phalanx and making all four casts look the
+		// same.
+		if (ab == null) {
+			final UseableItemScriptBase script = this.getItemScript(abilityItem.getItemId());
+			if (script != null) {
+				script.invokeItemAbility(targetRealm, player, abilityItem, pos);
+			}
 		}
 	}
 

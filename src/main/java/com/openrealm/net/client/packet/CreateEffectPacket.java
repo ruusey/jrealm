@@ -88,6 +88,29 @@ public class CreateEffectPacket extends Packet {
 	public static final short EFFECT_BLINK_GLYPH  = 20;
 	/** Archer Hunter's Mark — red 4-corner crosshair sweeping in. */
 	public static final short EFFECT_HUNTERS_RETICLE = 21;
+	public static final short EFFECT_POISON_CLOUD    = 22;
+	public static final short EFFECT_LIFE_DRAIN      = 23;
+	public static final short EFFECT_BONE_SPIKES     = 24;
+	public static final short EFFECT_LIGHTNING_STRIKE = 25;
+	public static final short EFFECT_MANA_BOLT       = 26;
+	public static final short EFFECT_TIME_STOP       = 27;
+	public static final short EFFECT_BEAST_CLAWS     = 28;
+	public static final short EFFECT_SMITE_FLASH     = 29;
+	public static final short EFFECT_DEATH_BLOSSOM   = 30;
+	public static final short EFFECT_INSPIRE_BLOOM   = 31;
+	public static final short EFFECT_RECKLESS_SLASH  = 32;
+	public static final short EFFECT_STAR_SHURIKEN   = 33;
+	public static final short EFFECT_SNARE_GEAR      = 34;
+	public static final short EFFECT_COMBUSTION_TRAP = 35;
+	public static final short EFFECT_WAR_CRY_WAVE    = 36;
+	public static final short EFFECT_CALTROPS        = 37;
+	public static final short EFFECT_ARCANE_AURA     = 38;
+	public static final short EFFECT_HASTE_WIND      = 39;
+	public static final short EFFECT_BANNER_RAISE    = 40;
+	public static final short EFFECT_RAMPAGE_AURA    = 41;
+	public static final short EFFECT_STORM_AURA      = 42;
+	public static final short EFFECT_DEATH_PACT_AURA = 43;
+	public static final short EFFECT_BLADE_STORM     = 44;
 
 	public static CreateEffectPacket aoeEffect(short type, float x, float y, float radius, short duration) {
 		return aoeEffect(type, x, y, radius, duration, (byte) 0);

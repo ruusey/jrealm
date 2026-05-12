@@ -33,7 +33,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = false)
@@ -164,6 +166,23 @@ public class Player extends Entity {
 		this.currentCast = currentCast;
 		this.hotbarBindings = hotbarBindings != null ? hotbarBindings : new int[]{0, 0, 0, 0};
 		this.basicAttackCounter = basicAttackCounter;
+		// Re-seed hotbar bindings from the class's defaultHotbar whenever the
+		// loaded array is empty (all zeros). hotbarBindings is `transient` so
+		// it never makes it back from the DB — every login this ctor runs with
+		// the default [0,0,0,0]. Without this, Player.getActiveAbility(slot)
+		// returns null for every slot and useAbility silently falls back to the
+		// legacy ability-item path (same Wooden Shield for every Knight key).
+		boolean hotbarEmpty = true;
+		for (int v : this.hotbarBindings) { if (v != 0) { hotbarEmpty = false; break; } }
+		if (hotbarEmpty) {
+			final CharacterClassModel cls = GameDataManager.CHARACTER_CLASSES.get(this.classId);
+			if (cls != null && cls.getAbilityTree() != null && cls.getAbilityTree().getDefaultHotbar() != null) {
+				final int[] src = cls.getAbilityTree().getDefaultHotbar();
+				for (int i = 0; i < this.hotbarBindings.length && i < src.length; i++) {
+					this.hotbarBindings[i] = src[i];
+				}
+			}
+		}
 	}
 
 	public Player(long id, Vector2f origin, int size, CharacterClass characterClass) {
@@ -194,6 +213,9 @@ public class Player extends Entity {
 				this.hotbarBindings[i] = src[i];
 			}
 		}
+		log.info("[PLAYER-SPAWN] id={} classId={} hotbarBindings={} classPassive={}",
+				this.id, this.classId, java.util.Arrays.toString(this.hotbarBindings),
+				classModel.getAbilityTree() != null ? classModel.getAbilityTree().getPassive() : "(null tree)");
 	}
 
 	public void applyStats(CharacterStatsDto stats) {
@@ -306,7 +328,25 @@ public class Player extends Entity {
 	 * {@link #getSlottedPassive(int)}), or the referenced ability isn't loaded.
 	 */
 	public Ability getActiveAbility(int slot) {
-		final int id = this.getHotbarId(slot);
+		int id = this.getHotbarId(slot);
+		if (id <= 0) {
+			// hotbarBindings can be stale or all-zero when the Player object was
+			// reconstructed via the no-arg ctor (e.g., NetPlayer.toPlayer() or
+			// some realm-transition reload path). Without this fallback,
+			// getActiveAbility() returns null for every slot and the server
+			// silently runs the LEGACY ability-item path — which for Knight
+			// fires Wooden Shield projectiles on every key, looking like the
+			// same animation 4 times. Resolve to the class's defaultHotbar
+			// directly so the cast always finds the right Ability.
+			if (slot >= 0 && slot < 4) {
+				final CharacterClassModel cls = GameDataManager.CHARACTER_CLASSES.get(this.classId);
+				if (cls != null && cls.getAbilityTree() != null
+						&& cls.getAbilityTree().getDefaultHotbar() != null) {
+					final int[] tree = cls.getAbilityTree().getDefaultHotbar();
+					if (slot < tree.length) id = tree[slot];
+				}
+			}
+		}
 		if (id <= 0 || GameDataManager.ABILITIES == null) return null;
 		return GameDataManager.ABILITIES.get(id);
 	}
