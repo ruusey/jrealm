@@ -94,10 +94,63 @@ public abstract class Entity extends GameObject {
         this.effectTimes = new Long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
     }
 
+    /** Set of status effect ids that are considered debuffs — used by the
+     *  WARDED / VULNERABLE gates in addEffect. Beneficial statuses (HEALING,
+     *  SPEEDY, INVINCIBLE, PROTECTED, BRACED, ARMORED, MANA_FOUNT, etc.) are
+     *  NOT in this set so they apply normally even on warded targets. */
+    private static final java.util.Set<Short> DEBUFF_IDS = java.util.Set.of(
+            StatusEffectType.PARALYZED.effectId,
+            StatusEffectType.STUNNED.effectId,
+            StatusEffectType.DAZED.effectId,
+            StatusEffectType.CURSED.effectId,
+            StatusEffectType.POISONED.effectId,
+            StatusEffectType.SLOWED.effectId,
+            StatusEffectType.ARMOR_BROKEN.effectId,
+            StatusEffectType.WEAKEN.effectId,
+            StatusEffectType.BLIND.effectId,
+            StatusEffectType.VULNERABLE.effectId,
+            StatusEffectType.GROUNDED.effectId
+    );
+
+    private boolean hasEffectId(short id) {
+        if (this.effectIds == null) return false;
+        for (int i = 0; i < this.effectIds.length; i++) {
+            if (this.effectIds[i] == id) {
+                final long end = this.effectTimes[i];
+                if (end == Long.MAX_VALUE || end > Instant.now().toEpochMilli()) return true;
+            }
+        }
+        return false;
+    }
+
     public void addEffect(StatusEffectType effect, long duration) {
-        final long expireTime = (duration == Long.MAX_VALUE)
+        // WARDED — silently drop any incoming debuff. Beneficial statuses
+        // (heals, speed buffs) still apply because they're not in DEBUFF_IDS.
+        if (DEBUFF_IDS.contains(effect.effectId)
+                && hasEffectId(StatusEffectType.WARDED.effectId)) {
+            return;
+        }
+        // GROUNDED auto-applies SLOWED for the same duration — the debuff's
+        // "movement lock + can't dash" semantics need both flags. Recurse
+        // BEFORE the WARDED/VULNERABLE checks so this entity's status table
+        // ends up with both rows. SLOWED itself is debuff-listed so it'll
+        // still respect WARDED if SLOWED gets applied independently later.
+        if (effect == StatusEffectType.GROUNDED) {
+            addEffect(StatusEffectType.SLOWED, duration);
+        }
+        // VULNERABLE — incoming debuffs get DOUBLE duration. Stacks before
+        // the WARDED check above is moot (VULNERABLE is itself a debuff so
+        // its application can be warded). Applied only to debuffs so it
+        // doesn't shortcut a heal into a 2× heal.
+        long effDuration = duration;
+        if (DEBUFF_IDS.contains(effect.effectId)
+                && hasEffectId(StatusEffectType.VULNERABLE.effectId)
+                && duration != Long.MAX_VALUE) {
+            effDuration = duration * 2L;
+        }
+        final long expireTime = (effDuration == Long.MAX_VALUE)
                 ? Long.MAX_VALUE
-                : Instant.now().toEpochMilli() + duration;
+                : Instant.now().toEpochMilli() + effDuration;
 
         if (effect == StatusEffectType.POISONED) {
             for (int i = 0; i < this.effectIds.length; i++) {

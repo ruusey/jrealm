@@ -495,7 +495,12 @@ public class Player extends Entity {
 				int targetHealth = this.getHealth() - stats.getHp();
 				this.setHealth(this.getHealth() - targetHealth);
 			}
-			final int wis = (int) ((0.12f * (stats.getWis() + 4.2f)));
+			// MANA_FOUNT mirrors HEALING for mana — same flat WIS regen but
+			// doubled for the duration of the buff. Stacks with WIS gear so a
+			// high-wis caster pumps MP back fast.
+			float mpMult = 1.0f;
+			if (this.hasEffect(StatusEffectType.MANA_FOUNT)) mpMult = 2.0f;
+			final int wis = (int) ((0.12f * (stats.getWis() + 4.2f)) * mpMult);
 			if (this.getMana() < stats.getMp()) {
 				int targetMana = this.getMana() + wis;
 				if (targetMana > stats.getMp()) {

@@ -57,6 +57,32 @@ public enum StatusEffectType {
      *  Server tick destroys every enemy bullet that enters the radius so any
      *  player standing inside is shielded without being flagged INVINCIBLE. */
     PHALANX_DOME((short) 26),
+    /** Weakens outgoing damage. While active, the affected entity deals
+     *  35% less damage with basic attacks and ability bullets. Stacks
+     *  multiplicatively with other damage modifiers. */
+    WEAKEN((short) 27),
+    /** Tunnel-vision debuff. Client-side: shrinks the affected player's
+     *  visible render distance to ~3 tiles so enemies and bullets outside
+     *  that radius vanish from view. Server-authoritative on positions
+     *  still — the player just can't see what's coming. */
+    BLIND((short) 28),
+    /** Anti-debuff bubble. While active, new debuff applications on this
+     *  entity are silently dropped (existing debuffs continue ticking).
+     *  Pairs with healer / support kits as a proactive "save". */
+    WARDED((short) 29),
+    /** Mana regen amplifier — wis-based MP regen runs at 2× speed for the
+     *  duration. Mirrors HEALING for HP. */
+    MANA_FOUNT((short) 30),
+    /** Debuff amplifier — any new debuff applied to this entity has its
+     *  duration doubled. Used to set up burst windows on bosses. */
+    VULNERABLE((short) 31),
+    /** Movement lock — SLOWED scale plus a hard veto on TELEPORT / dash
+     *  abilities. Keeps slippery classes pinned for setup plays. */
+    GROUNDED((short) 32),
+    /** Trickster passive marker — when an enemy carrying this dies, an
+     *  extra loot-tier roll bias is applied for whichever player tagged
+     *  it. Pure server-side bookkeeping; no visible aura. */
+    MARKED_FOR_LOOT((short) 33),
 
     // === Projectile Behavior Flags (prefer ProjectileFlag enum) ===
     PLAYER_PROJECTILE((short) 10),

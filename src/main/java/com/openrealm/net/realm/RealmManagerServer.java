@@ -564,7 +564,11 @@ public class RealmManagerServer implements Runnable {
 				this.currentTickCount++;
 			}
 		} catch (Exception e) {
-			RealmManagerServer.log.error("Failed to process server tick. Reason: {}", e);
+			// Throwable passed as the LAST arg with no {} placeholder so SLF4J
+			// prints the full stack trace. Previous form ("Reason: {}", e) just
+			// printed e.toString() → "ArrayIndexOutOfBoundsException: null"
+			// with no clue what line threw.
+			RealmManagerServer.log.error("Failed to process server tick", e);
 		}
 		final long tickTotal = System.nanoTime() - tickStart;
 		if (tickTotal > TICK_BUDGET_NANOS) {
@@ -1878,17 +1882,19 @@ public class RealmManagerServer implements Runnable {
 						}
 					} else if (pa.getId() == 11008) {
 						// Necromancer Necrotic Aura — continuously refreshes CURSED
-						// (1.25× damage taken) on every enemy in range. We use the
-						// same 5-tile / 320px radius as the priest aura and short
-						// REFRESH_MS so the debuff lifts the moment the enemy
-						// leaves the bubble.
+						// (1.25× damage taken) on every enemy in range. Range is
+						// ~1.6 tiles (≈1/3 of the priest aura), so the necro has
+						// to actively kite into melee to use it instead of just
+						// camping a pack from across the screen.
+						final float NECRO_AURA_R = AURA_RADIUS / 3f;
+						final float NECRO_AURA_SQ = NECRO_AURA_R * NECRO_AURA_R;
 						final Vector2f pc = p.getPos().clone(p.getSize() / 2, p.getSize() / 2);
 						for (final Enemy enemy : realm.getEnemies().values()) {
 							if (enemy == null || enemy.getDeath()) continue;
 							if (enemy.hasEffect(StatusEffectType.INVINCIBLE)) continue;
 							final float dx = enemy.getPos().x - pc.x;
 							final float dy = enemy.getPos().y - pc.y;
-							if (dx * dx + dy * dy > AURA_RADIUS_SQ) continue;
+							if (dx * dx + dy * dy > NECRO_AURA_SQ) continue;
 							enemy.addEffect(StatusEffectType.CURSED, REFRESH_MS);
 						}
 					}
@@ -1938,14 +1944,19 @@ public class RealmManagerServer implements Runnable {
 				}
 				for (final Enemy e : dead) this.enemyDeath(realm, e);
 				if (totalSapped > 0) {
-					// Heal every ally in the vortex's radius for the total sapped
-					// — encourages parking the vortex on a pack so the whole
-					// party gets the heal.
+					// Heal every ally in the AURA RING — outside the vortex
+					// itself, within ~2× the vortex radius. Standing inside
+					// the meat grinder is for the enemies; allies sit on the
+					// edge soaking the souls being thrown outward.
+					final float healOuterR  = f.radius * 2.5f;
+					final float healOuterSq = healOuterR * healOuterR;
 					for (final Player ally : realm.getPlayers().values()) {
 						if (ally == null) continue;
 						final Vector2f ac = ally.getPos().clone(ally.getSize() / 2, ally.getSize() / 2);
 						final float adx = ac.x - f.x, ady = ac.y - f.y;
-						if (adx * adx + ady * ady > rSq) continue;
+						final float distSq = adx * adx + ady * ady;
+						if (distSq < rSq) continue;                  // inside vortex — no heal
+						if (distSq > healOuterSq) continue;          // too far away
 						final int maxHp = ally.getComputedStats() != null ? ally.getComputedStats().getHp() : ally.getHealth();
 						final int newHp = Math.min(maxHp, ally.getHealth() + totalSapped);
 						final int actual = newHp - ally.getHealth();
@@ -1953,18 +1964,27 @@ public class RealmManagerServer implements Runnable {
 							ally.setHealth(newHp);
 							this.broadcastTextEffect(realm, EntityType.PLAYER, ally,
 									TextEffect.HEAL, "+" + actual);
+							// Soul streamer — chain-lightning-style trail from
+							// the vortex center to the ally being healed. Read
+							// as "soul essence absorbed". EFFECT_LIFE_DRAIN is
+							// already a red/violet drain visual (renderer case
+							// 23), which fits the soul-harvest palette.
+							this.enqueueServerPacketToRealm(realm, CreateEffectPacket.lineEffect(
+									CreateEffectPacket.EFFECT_LIFE_DRAIN,
+									f.x, f.y, ac.x, ac.y, (short) 500, (byte) 6));
 						}
 					}
 				}
 			}
 		}
 
-		// Ninja Blade Storm — visual-only orbiting shurikens. Every 6 ticks
-		// (~94ms) we re-broadcast the EFFECT_BLADE_ORBIT for each active state
-		// centered on the caster's current position. The packet itself has a
-		// short duration (240ms) so the client always has at least one in
-		// flight and the orbit looks continuous as the player moves.
-		if (!this.bladeOrbitStates.isEmpty() && this.tickCounter % 6 == 0) {
+		// Ninja Blade Storm — visual-only orbiting shurikens. Re-broadcast
+		// every 16 ticks (~250ms) at the caster's CURRENT position with a
+		// per-packet duration of 600ms so consecutive packets generously
+		// overlap and the orbit reads as continuous as the player moves.
+		// The renderer dedupes by effect type (only the newest BLADE_ORBIT
+		// actually paints), so stacking packets doesn't cause flicker.
+		if (!this.bladeOrbitStates.isEmpty() && this.tickCounter % 16 == 0) {
 			final long now = Instant.now().toEpochMilli();
 			final java.util.Iterator<BladeOrbitState> it = this.bladeOrbitStates.iterator();
 			while (it.hasNext()) {
@@ -1976,7 +1996,7 @@ public class RealmManagerServer implements Runnable {
 				if (caster == null) { it.remove(); continue; }
 				final Vector2f pc = caster.getPos().clone(caster.getSize() / 2, caster.getSize() / 2);
 				this.enqueueServerPacketToRealm(realm, CreateEffectPacket.aoeEffect(
-						CreateEffectPacket.EFFECT_BLADE_ORBIT, pc.x, pc.y, 56f, (short) 240, s.tier));
+						CreateEffectPacket.EFFECT_BLADE_ORBIT, pc.x, pc.y, 56f, (short) 600, s.tier));
 			}
 		}
 
@@ -1993,9 +2013,13 @@ public class RealmManagerServer implements Runnable {
 				if (now >= f.expiresAtMs) { it.remove(); continue; }
 				final Realm realm = this.realms.get(f.realmId);
 				if (realm == null) { it.remove(); continue; }
-				if (this.tickCounter % 6 == 0) {
+				// Re-emit the spiral visual every 16 ticks (~250ms) with a
+				// generous 600ms per-packet duration. Same dedupe-by-type
+				// approach as blade_orbit keeps the spiral readable instead
+				// of stacking blade groups out of phase with each other.
+				if (this.tickCounter % 16 == 0) {
 					this.enqueueServerPacketToRealm(realm, CreateEffectPacket.aoeEffect(
-							CreateEffectPacket.EFFECT_BLADE_BLENDER, f.x, f.y, f.radius, (short) 240, f.tier));
+							CreateEffectPacket.EFFECT_BLADE_BLENDER, f.x, f.y, f.radius, (short) 600, f.tier));
 				}
 				if (now - f.lastTickMs < DRAIN_PERIOD_MS) continue;
 				f.lastTickMs = now;
@@ -2548,6 +2572,11 @@ public class RealmManagerServer implements Runnable {
 			// SPEEDY status applied via STATUS_APPLY SELF gives the follow-up
 			// burst once they land.
 			if (ab.getTags().contains("shadow_dash")) {
+				// GROUNDED vetoes movement abilities (dashes, blinks, teleports).
+				if (player.hasEffect(StatusEffectType.GROUNDED)) {
+					this.sendTextEffectToPlayer(player, TextEffect.PLAYER_INFO, "GROUNDED");
+					return;
+				}
 				final Vector2f origin = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 				float dx = pos.x - origin.x, dy = pos.y - origin.y;
 				final float len = (float) Math.sqrt(dx * dx + dy * dy);
@@ -2595,13 +2624,13 @@ public class RealmManagerServer implements Runnable {
 				final int groupId = 1000 + tier;
 				final Vector2f origin = player.getPos().clone(player.getSize() / 2, player.getSize() / 2);
 				final float baseA = Bullet.getAngle(origin, pos);
-				// Convert angle back into a unit vector so we can stagger the
-				// spawn positions BEHIND the player along the aim line. The
-				// Bullet ctor stores -angle so we mirror addProjectile's sign
-				// convention here (sin / cos of the raw angle is the forward
-				// vector the projectile actually travels along).
-				final float fx = (float) Math.sin(baseA);
-				final float fy = (float) Math.cos(baseA);
+				// Bullet.update() moves the projectile by (sin(stored), cos(stored)).
+				// The Bullet ctor stores `-angle`, so the actual flight unit
+				// vector is (-sin(baseA), cos(baseA)). To stagger spawns BEHIND
+				// the player along that flight line, the backward unit vector
+				// is (sin(baseA), -cos(baseA)).
+				final float bx = (float) Math.sin(baseA);
+				final float by = (float) -Math.cos(baseA);
 				final int   STARS = 3;
 				final float STEP = 36f; // pixels between adjacent shurikens
 				int dmg = ab.getBaseDamage();
@@ -2613,14 +2642,14 @@ public class RealmManagerServer implements Runnable {
 				final short damage = (short) Math.min(Short.MAX_VALUE, Math.max(0, dmg));
 				final List<Short> flags = new ArrayList<>();
 				for (int i = 0; i < STARS; i++) {
-					// Offset each shuriken backwards along the forward vector
-					// so they spawn nose-to-tail in a single file rather than
-					// stacking on top of each other at the player.
+					// Offset each shuriken backwards along the true flight
+					// direction so they spawn nose-to-tail in a single file
+					// regardless of cursor direction (diagonals included).
 					final Vector2f src = new Vector2f(
-							origin.x - fx * STEP * i,
-							origin.y - fy * STEP * i);
+							origin.x + bx * STEP * i,
+							origin.y + by * STEP * i);
 					this.addProjectile(realmId, 0L, player.getId(), groupId,
-							0, src, baseA, (short) 32, 6f, 2048f,
+							0, src, baseA, (short) 22, 6f, 2048f,
 							damage, false, flags, (short) 0, (short) 0, player.getId());
 				}
 			}
@@ -2981,6 +3010,13 @@ public class RealmManagerServer implements Runnable {
 			// If the ability is non damaging or script-only (rogue cloak, priest tome, sorcerer scepter,
 			// wizard blink) — drive off the derived effect so each hotbar slot can have its own.
 		} else if (effSelfStatus != null) {
+			if (effSelfStatus.equals(StatusEffectType.TELEPORT)
+					&& player.hasEffect(StatusEffectType.GROUNDED)) {
+				// GROUNDED also blocks wizard-blink / sorcerer-flicker style
+				// teleports — same veto as shadow_dash.
+				this.sendTextEffectToPlayer(player, TextEffect.PLAYER_INFO, "GROUNDED");
+				return;
+			}
 			if (effSelfStatus.equals(StatusEffectType.TELEPORT)
 					&& !targetRealm.getTileManager().collidesAtPosition(pos, player.getSize())
 					&& !targetRealm.getTileManager().isVoidTile(pos, 0, 0)) {
@@ -3620,6 +3656,16 @@ public class RealmManagerServer implements Runnable {
 			}
 			final boolean armorPiercing = b.hasFlag(ProjectileFlag.ARMOR_PIERCING);
 			final boolean armorBroken = player.hasEffect(StatusEffectType.ARMOR_BROKEN);
+			// WEAKEN on the firing enemy — outgoing damage reduced by 35%.
+			// Look up the source by id; only enemy-source projectiles apply
+			// the WEAKEN scale here (the player-source path scales WEAKEN on
+			// outgoing damage instead).
+			if (b.getSrcEntityId() != 0L) {
+				final Enemy src = targetRealm.getEnemies().get(b.getSrcEntityId());
+				if (src != null && src.hasEffect(StatusEffectType.WEAKEN)) {
+					rawDmg = (short)(rawDmg * 0.65);
+				}
+			}
 			// Defense can only mitigate 85% of incoming damage. Use Math.ceil
 			// + a hard floor of 1 so low-damage projectiles (e.g. Pirate's 5
 			// dmg) always chip for at least 1 — without ceil the short cast
@@ -3703,6 +3749,10 @@ public class RealmManagerServer implements Runnable {
 				if(fromPlayer!=null &&  fromPlayer.hasEffect(StatusEffectType.DAMAGING)) {
 					dmgToInflict = (short)(dmgToInflict * 1.5);
 				}
+				// WEAKEN on the source — outgoing damage reduced by 35%.
+				if (fromPlayer != null && fromPlayer.hasEffect(StatusEffectType.WEAKEN)) {
+					dmgToInflict = (short)(dmgToInflict * 0.65);
+				}
 			}
 			// CURSED enemies take 25% more damage from all sources
 			if (e.hasEffect(StatusEffectType.CURSED)) {
@@ -3722,7 +3772,19 @@ public class RealmManagerServer implements Runnable {
 					if (pa != null) {
 						for (PassiveTrigger trig : pa.triggerList()) {
 							if (!"ON_BULLET_HIT_ENEMY".equalsIgnoreCase(trig.getEvent())) continue;
-							double procChance = 0.15; // base 15%
+							// Per-passive base proc rate. Each new on-hit
+							// passive registers its own floor here so the
+							// scaling conditions in passives.json only
+							// describe the WIS/DEX/etc. growth, not the
+							// constant. Falls back to 15% for any unlisted
+							// passive (matches the original Lethal Wound
+							// behavior pre-Trickster).
+							double procChance;
+							switch (pa.getId()) {
+								case 11007: procChance = 0.15; break; // Lethal Wound
+								case 11012: procChance = 0.12; break; // Sleight of Hand
+								default:    procChance = 0.15; break;
+							}
 							if (trig.getConditions() != null) {
 								for (AbilityScaling sc : trig.getConditions()) {
 									if (!"PROC_CHANCE".equalsIgnoreCase(sc.getTarget())) continue;
@@ -3744,6 +3806,17 @@ public class RealmManagerServer implements Runnable {
 								if (pa.getId() == 11007) {
 									applyStatusWithFeedback(targetRealm, e, EntityType.ENEMY,
 											StatusEffectType.POISONED, 3000);
+								}
+								// Trickster Sleight of Hand — MARK enemy for
+								// 8s. If the marked enemy dies inside that
+								// window, enemyDeath's loot path bumps every
+								// qualifying player's upgrade chance by +25%.
+								// Base 12% + 0.4%/DEX (cap 40%) via the trigger
+								// conditions; the base is the procChance
+								// starting value in this hook (0.12 below).
+								if (pa.getId() == 11012) {
+									applyStatusWithFeedback(targetRealm, e, EntityType.ENEMY,
+											StatusEffectType.MARKED_FOR_LOOT, 8000);
 								}
 							}
 						}
@@ -3960,10 +4033,18 @@ public class RealmManagerServer implements Runnable {
 			// All other bag tiers (purple, cyan, white, boosted) are soulbound.
 			final float diff = enemy.getDifficulty();
 			final boolean upgradeEligible = diff > GlobalConstants.LOOT_TIER_UPGRADE_MIN_DIFFICULTY;
-			final float upgradeChance = upgradeEligible
+			float upgradeChance = upgradeEligible
 					? (GlobalConstants.LOOT_TIER_UPGRADE_BASE_PERCENT
 							+ GlobalConstants.LOOT_TIER_UPGRADE_PER_DIFFICULTY * diff) / 100.0f
 					: 0.0f;
+			// MARKED_FOR_LOOT — Trickster's passive proc. When this enemy dies
+			// while carrying the mark, every qualifying player's upgrade roll
+			// gets +25% (additive). Effect applies whether the trickster
+			// landed the killing blow or not, so the WHOLE party benefits as
+			// long as the mark was active when the kill resolved.
+			if (enemy.hasEffect(StatusEffectType.MARKED_FOR_LOOT)) {
+				upgradeChance = Math.min(1.0f, upgradeChance + 0.25f);
+			}
 
 			// If no qualifying players (e.g. solo kill or damage tracking disabled), 
 			// use a single public drop (backwards compatible)

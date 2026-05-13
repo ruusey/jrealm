@@ -44,11 +44,21 @@ public class ServerItemHelper {
     public static Map<Integer, GameItem> migrateLegacySlotLayout(Map<Integer, GameItem> loaded) {
         if (loaded == null || loaded.isEmpty()) return loaded;
         final GameItem atSlot1 = loaded.get(1);
+        final GameItem atSlot4 = loaded.get(4);
         final boolean slot1LooksNew = (atSlot1 == null) || (atSlot1.getTargetSlot() == 1);
-        final boolean anyOldBackpack = loaded.keySet().stream().anyMatch(k -> k != null && k >= 4 && k <= 19);
+        // Phase 1B: if slot 4 holds a properly-placed ring (targetSlot==4),
+        // this character is already on the new layout and slot 4 is the ring
+        // equipment slot — NOT a legacy backpack slot. The old heuristic
+        // counted slot 4 as `anyOldBackpack` and forced migration on every
+        // new-layout login, scrambling armor/gauntlets/boots/ring into the
+        // backpack each time the player relogged with an empty bag.
+        final boolean slot4LooksNew = (atSlot4 == null) || (atSlot4.getTargetSlot() == 4);
+        if (slot1LooksNew && slot4LooksNew) {
+            return loaded;
+        }
+        final boolean anyOldBackpack = loaded.keySet().stream().anyMatch(k -> k != null && k >= 5 && k <= 19);
         final boolean anyNewBackpack = loaded.keySet().stream().anyMatch(k -> k != null && k >= 5 && k <= 20);
-        // Heuristic: if slot 1 is already armor (or empty) AND we don't see a
-        // legacy backpack range that conflicts with new layout, treat as new.
+        // Secondary fallback for the empty-equipment edge case.
         if (slot1LooksNew && (!anyOldBackpack || anyNewBackpack)) {
             return loaded;
         }

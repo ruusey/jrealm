@@ -513,7 +513,19 @@ public class TileManager {
         final int startX = (int) (centerPos.x / (float) this.getBaseLayer().getTileSize());
         final int startY = (int) (centerPos.y / (float) this.getBaseLayer().getTileSize());
 
-        final Tile currentTile = this.getBaseLayer().getBlocks()[startY][startX];
+        // Bounds check parallels slowsOnTile above. /spawnbots scatters bots
+        // on random dx/dy with no map clamping; their center can land outside
+        // the tile grid (e.g. index 608 in a 50-wide map) and AIOOBE the
+        // per-tick movePlayer ground-damage check, killing the tick loop.
+        // Off-map entities can't be on a damaging tile by definition.
+        final Tile[][] blocks = this.getBaseLayer().getBlocks();
+        if (startY < 0 || startY >= blocks.length
+                || startX < 0 || startX >= blocks[0].length) {
+            return false;
+        }
+
+        final Tile currentTile = blocks[startY][startX];
+        if (currentTile == null || currentTile.getData() == null) return false;
 
         final Rectangle tileBounds = new Rectangle(currentTile.getPos(), currentTile.getWidth(),
                 currentTile.getHeight());
