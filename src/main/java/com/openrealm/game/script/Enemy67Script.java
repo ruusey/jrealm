@@ -1,5 +1,8 @@
 package com.openrealm.game.script;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+
 import com.openrealm.game.contants.EntityType;
 import com.openrealm.game.contants.TextEffect;
 import com.openrealm.game.entity.Enemy;
@@ -40,8 +43,13 @@ public class Enemy67Script extends EnemyScriptBase {
      *  particle density stays sane on the client. */
     private static final long VFX_INTERVAL_MS = 400L;
 
-    private long lastHealMs = 0L;
-    private long lastVfxBroadcastMs = 0L;
+    // Per-healer-entity throttles. The script is a singleton registered
+    // with the manager, so two vault healers share one Enemy67Script
+    // instance — without keying these on enemy.getId() the first healer
+    // to tick each frame "consumes" the global throttle and silently
+    // blocks every other healer for HEAL_INTERVAL_MS / VFX_INTERVAL_MS.
+    private final Map<Long, Long> lastHealMsByEnemy = new ConcurrentHashMap<>();
+    private final Map<Long, Long> lastVfxMsByEnemy = new ConcurrentHashMap<>();
 
     public Enemy67Script(RealmManagerServer mgr) {
         super(mgr);
@@ -67,8 +75,9 @@ public class Enemy67Script extends EnemyScriptBase {
         // and PlayerStatePacket churn. This is NOT a DEX-based cooldown —
         // it has nothing to do with attackRange or closest-player gating.
         final long now = System.currentTimeMillis();
-        if (now - this.lastHealMs < HEAL_INTERVAL_MS) return;
-        this.lastHealMs = now;
+        final long lastHealMs = this.lastHealMsByEnemy.getOrDefault(enemy.getId(), 0L);
+        if (now - lastHealMs < HEAL_INTERVAL_MS) return;
+        this.lastHealMsByEnemy.put(enemy.getId(), now);
 
         final Vector2f center = enemy.getPos().clone(enemy.getSize() / 2, enemy.getSize() / 2);
 
@@ -109,8 +118,9 @@ public class Enemy67Script extends EnemyScriptBase {
         // visible benefit. Throttle to VFX_INTERVAL_MS so the particles
         // don't stack into a solid wall on the client.
         if (anyHealed) {
-            if (now - this.lastVfxBroadcastMs >= VFX_INTERVAL_MS) {
-                this.lastVfxBroadcastMs = now;
+            final long lastVfx = this.lastVfxMsByEnemy.getOrDefault(enemy.getId(), 0L);
+            if (now - lastVfx >= VFX_INTERVAL_MS) {
+                this.lastVfxMsByEnemy.put(enemy.getId(), now);
                 this.getMgr().enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
                         CreateEffectPacket.EFFECT_HEAL_RADIUS, center.x, center.y, HEAL_RADIUS, (short) 1500));
                 this.getMgr().enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
