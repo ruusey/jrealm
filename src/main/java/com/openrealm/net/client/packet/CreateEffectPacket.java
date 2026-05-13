@@ -122,6 +122,21 @@ public class CreateEffectPacket extends Packet {
 	 *  cursor point. Tier byte selects shuriken sprite. radius is the
 	 *  spiral's outer edge. */
 	public static final short EFFECT_BLADE_BLENDER   = 47;
+	/** Sorcerer Reality Tear — jagged black void rift with violet edges +
+	 *  orbiting void fragments + radial cracks fanning out. */
+	public static final short EFFECT_REALITY_TEAR    = 48;
+	/** Rogue Assassinate / Phantom Strike — shadow afterimage + radial bone
+	 *  hands clutching outward from impact point. */
+	public static final short EFFECT_PHANTOM_STRIKE  = 49;
+	/** Mystic / Sorcerer Stasis Lock — frozen-time clock face with ticking
+	 *  arms, blue-white halo, crystallizing ice spikes around the perimeter. */
+	public static final short EFFECT_STASIS_LOCK     = 50;
+	/** Priest / Paladin Sanctuary — translucent golden dome with vertical
+	 *  light pillars rising from the rim, central holy cross flare. */
+	public static final short EFFECT_SANCTUARY_DOME  = 51;
+	/** Necromancer Vampirism — red life-drain tendrils snapping from each
+	 *  enemy in range back to the caster, pulsing as HP transfers. */
+	public static final short EFFECT_VAMPIRIC_LATCH  = 52;
 
 	public static CreateEffectPacket aoeEffect(short type, float x, float y, float radius, short duration) {
 		return aoeEffect(type, x, y, radius, duration, (byte) 0);

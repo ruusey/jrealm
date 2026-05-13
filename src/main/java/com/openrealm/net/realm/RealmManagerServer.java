@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -2761,8 +2762,26 @@ public class RealmManagerServer implements Runnable {
 				if (ab.getTags().contains("warcry"))   { visualEffect = CreateEffectPacket.EFFECT_WAR_CRY_WAVE;   vTier = 5; } // red roar
 				if (ab.getTags().contains("caltrops")) { visualEffect = CreateEffectPacket.EFFECT_CALTROPS;       vTier = 0; } // steel spikes
 				if (ab.getTags().contains("smoke"))    { visualEffect = CreateEffectPacket.EFFECT_SMOKE_POOF;     vTier = 0; } // grey smoke
+				// Bespoke phase-3 visuals — these supersede the generic ring
+				// renderer with hand-tuned procedural effects in renderer.js +
+				// PlayState.java. Tier byte is mostly cosmetic for them.
+				if (ab.getTags().contains("reality_tear"))   { visualEffect = CreateEffectPacket.EFFECT_REALITY_TEAR;    vTier = 6; } // void rift
+				if (ab.getTags().contains("phantom_strike")) { visualEffect = CreateEffectPacket.EFFECT_PHANTOM_STRIKE;  vTier = 6; } // shadow afterimage
+				if (ab.getTags().contains("stasis_lock"))    { visualEffect = CreateEffectPacket.EFFECT_STASIS_LOCK;     vTier = 2; } // frozen clock
+				if (ab.getTags().contains("sanctuary"))      { visualEffect = CreateEffectPacket.EFFECT_SANCTUARY_DOME;  vTier = 3; } // golden dome
+				if (ab.getTags().contains("vampiric"))       { visualEffect = CreateEffectPacket.EFFECT_VAMPIRIC_LATCH;  vTier = 5; } // red drain
+				// A few effects benefit from a longer-than-default on-screen
+				// life (Sanctuary's INVINCIBLE buff lasts 5s; Stasis Lock's
+				// GROUNDED window is 4s). Bumping the per-packet duration
+				// keeps the visual matched to the gameplay window.
+				short visualDurationMs = 1500;
+				if (visualEffect == CreateEffectPacket.EFFECT_SANCTUARY_DOME) visualDurationMs = 5000;
+				else if (visualEffect == CreateEffectPacket.EFFECT_STASIS_LOCK) visualDurationMs = 4000;
+				else if (visualEffect == CreateEffectPacket.EFFECT_REALITY_TEAR) visualDurationMs = 2500;
+				else if (visualEffect == CreateEffectPacket.EFFECT_PHANTOM_STRIKE) visualDurationMs = 1800;
+				else if (visualEffect == CreateEffectPacket.EFFECT_VAMPIRIC_LATCH) visualDurationMs = 2000;
 				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
-						visualEffect, effCenter.x, effCenter.y, aoeRadius, (short) 1500, vTier));
+						visualEffect, effCenter.x, effCenter.y, aoeRadius, visualDurationMs, vTier));
 				// "outline_ring" tag — extra outline at radius. For Hunter's Mark
 				// the reticle IS the outline so skip the redundant stasis ring.
 				if (ab.getTags().contains("outline_ring") && !ab.getTags().contains("mark")) {
@@ -3758,6 +3777,13 @@ public class RealmManagerServer implements Runnable {
 			if (e.hasEffect(StatusEffectType.CURSED)) {
 				dmgToInflict = (short)(dmgToInflict * 1.25);
 			}
+			// VULNERABLE is a stronger "burst window" debuff: +40% damage
+			// taken AND new debuff durations are doubled (handled in
+			// Entity.addEffect). Stacks multiplicatively with CURSED for the
+			// classic Trickster→Sorcerer combo.
+			if (e.hasEffect(StatusEffectType.VULNERABLE)) {
+				dmgToInflict = (short)(dmgToInflict * 1.40);
+			}
 
 			targetRealm.hitEnemy(b.getId(), e.getId());
 			// Phase 3 passive — on-hit triggers. Class passives can register
@@ -3955,9 +3981,20 @@ public class RealmManagerServer implements Runnable {
 	public void enemyDeath(final Realm targetRealm, final Enemy enemy) {
 		final EnemyModel model = GameDataManager.ENEMIES.get(enemy.getEnemyId());
 		try {
+			// Party-shared XP: track every party id that has a member in the
+			// viewport. Any other party members in the SAME realm — even if
+			// off-screen — get a small share of the kill XP so playing as a
+			// team is rewarded mechanically. Set-of-party-ids prevents
+			// double-paying when multiple party members are in viewport.
+			final Set<Long> partyIdsCredited = new HashSet<>();
+			final Set<Long> viewportPlayerIds = new HashSet<>();
+
 			// Get players in the viewport of this enemy and increment their experience
 			for (final Player player : targetRealm
 					.getPlayersInBounds(targetRealm.getTileManager().getRenderViewPort(enemy))) {
+				viewportPlayerIds.add(player.getId());
+				final long pid = this.partyManager.getPartyId(player.getId());
+				if (pid != 0L) partyIdsCredited.add(pid);
 				final int xpToGive = (int) (model.getXp() * enemy.getDifficulty());
 				final long prevXp = player.getExperience();
 				final boolean wasMaxLevel = GameDataManager.EXPERIENCE_LVLS.isMaxLvl(prevXp);
@@ -3985,11 +4022,63 @@ public class RealmManagerServer implements Runnable {
 				}
 			}
 
+			// Party-shared XP for OFF-VIEWPORT party members. For each party
+			// that had at least one member in viewport, also award 50% of the
+			// kill XP to every other in-realm party member who was NOT in
+			// viewport themselves. Encourages multi-flank tactics — the
+			// scout can be 20 tiles away rallying mobs while their teammate
+			// burns down the boss and still get a credit.
+			if (!partyIdsCredited.isEmpty()) {
+				final int sharedXp = (int) (model.getXp() * enemy.getDifficulty() * 0.5);
+				for (final Long pid : partyIdsCredited) {
+					final List<Long> roster = this.partyManager.getPartyMembers(pickAnyRosterMember(pid));
+					for (final Long memberId : roster) {
+						if (viewportPlayerIds.contains(memberId)) continue;
+						final Player member = this.getPlayerById(memberId);
+						if (member == null) continue;
+						final Realm mr = this.findPlayerRealm(memberId);
+						if (mr == null || mr.getRealmId() != targetRealm.getRealmId()) continue;
+						final long prevXp = member.getExperience();
+						final int prevLevel = GameDataManager.EXPERIENCE_LVLS == null ? 0
+								: GameDataManager.EXPERIENCE_LVLS.getLevel(prevXp);
+						final int gained = member.incrementExperience(sharedXp);
+						this.enqueueServerPacket(member, TextEffectPacket.from(EntityType.PLAYER, member.getId(),
+								TextEffect.PLAYER_INFO, "+" + sharedXp + "xp (party)"));
+						if (gained > 0) {
+							final int newLevel = prevLevel + gained;
+							this.enqueueServerPacket(member, TextEffectPacket.from(EntityType.PLAYER, member.getId(),
+									TextEffect.HEAL, "Level Up! " + prevLevel + " → " + newLevel));
+						}
+					}
+				}
+			}
+
 			// Notify the overseer of the kill (handles taunts, event spawning)
 			// NOTE: We get qualifying players BEFORE clearing damage tracking for soulbound loot
-			final List<Long> qualifyingPlayerIds = (targetRealm.getOverseer() != null)
+			List<Long> qualifyingPlayerIds = (targetRealm.getOverseer() != null)
 					? targetRealm.getOverseer().getQualifyingPlayers(enemy.getId())
 					: new ArrayList<>();
+			// Party-shared loot eligibility: expand the qualifying-players
+			// list to include every party member of any qualifying player
+			// (deduped). The "earned a soulbound roll" club grows to include
+			// teammates who helped tank/cc/heal without dealing top damage.
+			if (!qualifyingPlayerIds.isEmpty()) {
+				final LinkedHashSet<Long> expanded = new LinkedHashSet<>(qualifyingPlayerIds);
+				for (final Long qid : qualifyingPlayerIds) {
+					final long pid = this.partyManager.getPartyId(qid);
+					if (pid == 0L) continue;
+					for (final Long memberId : this.partyManager.getPartyMembers(qid)) {
+						if (memberId == null || memberId.equals(qid)) continue;
+						// Only credit teammates currently in the same realm
+						// (no claim-from-character-select abuse).
+						final Realm mr = this.findPlayerRealm(memberId);
+						if (mr != null && mr.getRealmId() == targetRealm.getRealmId()) {
+							expanded.add(memberId);
+						}
+					}
+				}
+				qualifyingPlayerIds = new ArrayList<>(expanded);
+			}
 			if (targetRealm.getOverseer() != null) {
 				long killerId = targetRealm.getOverseer().getTopDamageDealer(enemy.getId());
 				targetRealm.getOverseer().onEnemyKilled(enemy, killerId);
@@ -4583,6 +4672,16 @@ public class RealmManagerServer implements Runnable {
 			final Long[] cdBoxed = new Long[4];
 			for (int i = 0; i < 4; i++) cdBoxed[i] = (cds != null && i < cds.length) ? cds[i] : 0L;
 			m.setAbilityCooldownEnds(cdBoxed);
+			// Phase 4 — teammate ability tooltip parity. Carry the invested
+			// level for each hotbar slot so the party panel can render
+			// damage / per-level scaling / cooldown REDUCTION using THEIR
+			// skill points instead of always defaulting to 0.
+			final Integer[] invBoxed = new Integer[4];
+			for (int i = 0; i < 4; i++) {
+				final int aid = (hb != null && i < hb.length) ? hb[i] : 0;
+				invBoxed[i] = aid > 0 ? p.getSkillLevel(aid) : 0;
+			}
+			m.setHotbarInvested(invBoxed);
 			members.add(m);
 		}
 		final PartyUpdatePacket pkt =

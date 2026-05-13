@@ -101,6 +101,22 @@ public class Realm {
     // without a packet/persistence schema change.
     private final Map<Long, List<PotionStorage>> playerPotionStorage = new ConcurrentHashMap<>();
 
+    // Phase 4 — party-claimed dungeon instances. Each entry is a partyId
+    // currently occupying this realm; the dungeon entrance handler reads
+    // .size() against MapModel.maxPartyCount to decide whether to accept
+    // new parties. Overworld realms (maxPartyCount <= 0) ignore this set
+    // entirely. Concurrent set so the dungeon-entry packet handler can
+    // safely test+claim from any worker thread without further locking.
+    private final Set<Long> dungeonPartyIds = ConcurrentHashMap.newKeySet();
+    // Party-difficulty bonus baked at FIRST-party entry — captured once
+    // from the entering party's size so subsequent member arrivals don't
+    // shift mob HP/damage mid-run. +0.5 difficulty per member, capped
+    // at +2.0 (i.e. a full 4-player party caps the bonus). 0 = no bonus.
+    private float partyDifficultyBonus = 0f;
+    public Set<Long> getDungeonPartyIds() { return this.dungeonPartyIds; }
+    public float getPartyDifficultyBonus() { return this.partyDifficultyBonus; }
+    public void   setPartyDifficultyBonus(float v) { this.partyDifficultyBonus = v; }
+
     // Spatial hash grid for O(1) neighbor lookups (cell size = viewport radius)
     private transient SpatialHashGrid spatialGrid;
     // Per-tick cache of NetObjectMovement instances keyed by entity id. Lets
@@ -1587,11 +1603,15 @@ public class Realm {
                     spawnCounts.merge(toSpawn.getEnemyId(), 1, Integer::sum);
                 }
 
+                // Phase 4 — apply the dungeon's party-size difficulty
+                // bonus to every spawn. Bonus is 0 for overworld realms
+                // and was captured at first-party-entry for dungeons.
+                final float effDiff = diff + this.partyDifficultyBonus;
                 final Enemy enemy = new Enemy(Realm.RANDOM.nextLong(), toSpawn.getEnemyId(),
                         spawnPos.clone(), toSpawn.getSize(), toSpawn.getAttackId());
-                enemy.setDifficulty(diff);
-                enemy.setHealth((int) (enemy.getHealth() * diff));
-                enemy.getStats().setHp((short) (enemy.getStats().getHp() * diff));
+                enemy.setDifficulty(effDiff);
+                enemy.setHealth((int) (enemy.getHealth() * effDiff));
+                enemy.getStats().setHp((short) (enemy.getStats().getHp() * effDiff));
                 enemy.setPos(spawnPos);
                 this.addEnemy(enemy);
             }

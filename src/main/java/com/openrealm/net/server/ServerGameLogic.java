@@ -31,6 +31,7 @@ import com.openrealm.game.math.Vector2f;
 import com.openrealm.game.model.DungeonGenerationParams;
 import com.openrealm.game.model.DungeonGraphNode;
 import com.openrealm.game.model.MapModel;
+import java.util.Set;
 import com.openrealm.game.model.PortalModel;
 import com.openrealm.util.GameObjectUtils;
 import com.openrealm.game.model.Projectile;
@@ -334,6 +335,21 @@ public class ServerGameLogic {
 					final Realm generatedRealm = new Realm(true, mapId, resolvedNodeId);
 					generatedRealm.setSourceRealmId(finalCurrentRealm.getRealmId());
 
+					// Phase 4 — dungeon party claim + difficulty bonus. The
+					// entering player's CURRENT party size locks the bonus
+					// at +0.5/member (cap +2.0 = 4-player party). Subsequent
+					// teammate teleport-ins do NOT shift HP/damage mid-run.
+					// The party itself is recorded so the entrance handler
+					// below can reject other parties when this dungeon is
+					// single-party (MapModel.maxPartyCount == 1).
+					final long enteringPid = mgr.getPartyManager().getPartyId(user.getId());
+					final int  partySize   = (enteringPid != 0L)
+							? mgr.getPartyManager().getPartyMembers(user.getId()).size() : 1;
+					final float partyBonus = Math.min(2.0f, 0.5f * Math.max(0, partySize - 1));
+					generatedRealm.setPartyDifficultyBonus(partyBonus);
+					generatedRealm.getDungeonPartyIds().add(
+							enteringPid != 0L ? enteringPid : -user.getId());
+
 					final boolean isBossNode = (finalTargetNode != null && finalTargetNode.isBossNode());
 					Vector2f entrySpawnPos = null;
 
@@ -384,6 +400,30 @@ public class ServerGameLogic {
 			// They'll be added on the next tick when processPendingTransitions() runs.
 			return;
 		} else {
+			// Phase 4 — single-party dungeon gate. If this map has
+			// maxPartyCount > 0 (i.e. it's a dungeon, not overworld), only
+			// allow entries from the parties already listed in the realm's
+			// claim set OR (when there's room) the entering player's party.
+			// Solo players use -playerId as a synthetic party-of-one key.
+			final MapModel targetMap = GameDataManager.MAPS.get(targetRealm.getMapId());
+			if (targetMap != null && targetMap.getMaxPartyCount() > 0) {
+				final long enteringPid = mgr.getPartyManager().getPartyId(user.getId());
+				final long claimKey = enteringPid != 0L ? enteringPid : -user.getId();
+				final Set<Long> claims = targetRealm.getDungeonPartyIds();
+				if (!claims.contains(claimKey)) {
+					if (claims.size() >= targetMap.getMaxPartyCount()) {
+						// Bounce the player back to the source realm and tell
+						// them why. Their position is already removed from
+						// currentRealm above; re-add then notify.
+						currentRealm.addPlayer(user);
+						mgr.enqueueServerPacket(user, TextPacket.from(
+								"SYSTEM", user.getName(),
+								"Dungeon is full — wait for the current party to clear it or finish."));
+						return;
+					}
+					claims.add(claimKey);
+				}
+			}
 			// Target realm already exists — spawn at the dungeon's fixed entry point
 			final Vector2f entryPos = targetRealm.getTileManager().getPlayerSpawnPos();
 			if (entryPos != null) {

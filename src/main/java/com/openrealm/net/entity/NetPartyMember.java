@@ -57,4 +57,10 @@ public class NetPartyMember extends SerializableFieldType<NetPartyMember> {
      *  cooldown as (cdEnd - now) and renders a dark fill from the top. */
     @SerializableField(order = 11, type = SerializableLong.class, isCollection = true)
     private Long[] abilityCooldownEnds;
+
+    /** Skill points invested into each of the 4 hotbar abilities. Lets the
+     *  party tooltip render the teammate's damage / scaling / per-level
+     *  effect line with their REAL invested level (instead of always 0). */
+    @SerializableField(order = 12, type = SerializableInt.class, isCollection = true)
+    private Integer[] hotbarInvested;
 }

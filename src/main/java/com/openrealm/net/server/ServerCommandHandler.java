@@ -308,6 +308,29 @@ public class ServerCommandHandler {
         log.info("Player {} healed themselves", target.getName());
     }
 
+    @CommandHandler(value="cdreset", description="Admin: instantly reset all ability cooldowns on yourself.")
+    @AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
+    public static void invokeCooldownReset(RealmManagerServer mgr, Player target, ServerCommandMessage message)
+            throws Exception {
+        // Per-hotbar-slot cooldowns (Phase 2A onward). Zero each entry so
+        // the next cast in any slot bypasses the cd > now gate in useAbility.
+        final long[] cds = target.getAbilityCooldowns();
+        if (cds != null) {
+            for (int i = 0; i < cds.length; i++) cds[i] = 0L;
+        }
+        // Legacy single-ability gate keyed by player id — older items that
+        // still flow through playerAbilityState would otherwise stay locked
+        // for their cooldownDuration even after the slot table is cleared.
+        mgr.getPlayerAbilityState().remove(target.getId());
+        // Force-clear any in-progress cast bar so the client doesn't sit
+        // on a stale "casting..." progress that the next packet would
+        // immediately overwrite anyway.
+        target.setCurrentCast(null);
+        log.info("Player {} reset all ability cooldowns", target.getName());
+        mgr.enqueueServerPacket(target,
+                TextPacket.from("SYSTEM", target.getName(), "Cooldowns reset"));
+    }
+
     @CommandHandler(value="party",
         description="Party: /party invite {name} | /party accept | /party decline | /party leave | /party list")
     public static void invokeParty(RealmManagerServer mgr, Player target, ServerCommandMessage message)

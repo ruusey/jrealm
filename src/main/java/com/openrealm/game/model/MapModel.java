@@ -32,6 +32,17 @@ public class MapModel {
     private List<float[]> spawnPoints; // [[x,y], [x,y], ...] — player spawn positions, picked randomly
     private List<PortalModel> staticPortals; // Permanent portals placed on the map
     private float difficulty; // Map-level difficulty for static maps (fallback when no terrain)
+    /**
+     * Phase 4 — dungeon/party scoping. How many parties may simultaneously
+     * occupy this map instance.
+     *   <=0  : unlimited / overworld behavior (any number of parties OK)
+     *    1   : single-party dungeon (closes the entrance once one party owns it)
+     *    >1  : reserved for shared-dungeon variants
+     * Realm.dungeonPartyIds tracks which parties currently hold an instance;
+     * the dungeon portal handler reads this cap to decide whether to accept
+     * new entries or wave them off until the current occupants leave.
+     */
+    private int maxPartyCount;
 
     public Vector2f getCenter() {
         return new Vector2f((this.width / 2) * this.tileSize, ((this.height / 2) * (this.tileSize)));
