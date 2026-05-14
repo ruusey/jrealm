@@ -300,6 +300,11 @@ public class ServerItemHelper {
             if (moveItemPacket.isConsume()) {
                 if (isHp) player.consumeHpPotion();
                 else player.consumeMpPotion();
+                // Lifetime metric — only records on consume (drop branch
+                // would double-count and isn't actually drinking).
+                if (player.getMetrics() != null) {
+                    player.getMetrics().recordPotion(isHp);
+                }
             } else {
                 // Drop one potion to ground as a loot item
                 final int itemId = isHp ? Player.HP_POTION_ITEM_ID : Player.MP_POTION_ITEM_ID;

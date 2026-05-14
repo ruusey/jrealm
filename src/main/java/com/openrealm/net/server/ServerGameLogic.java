@@ -542,6 +542,9 @@ public class ServerGameLogic {
 		final int abilityId = player.getHotbarId(slot);
 		if (abilityId <= 0) return;
 		final boolean ok = player.investSkillPoint(abilityId);
+		if (ok && player.getMetrics() != null) {
+			player.getMetrics().recordSkillPointSpent();
+		}
 		if (!ok) {
 			ServerGameLogic.log.info("[SKILL-POINTS] player {} invest REJECTED slot={} abilityId={} (pool={} current={})",
 					player.getId(), slot, abilityId, player.getAvailableSkillPoints(),
@@ -620,6 +623,15 @@ public class ServerGameLogic {
 			}
 			final CombatModifiers cm =
 					CombatModifiers.fromItem(player.getInventory()[0]);
+			// Lifetime metric — count every bullet leaving the muzzle,
+			// including extra-projectile gear-bonus shots. Hit/miss are
+			// derived later from the bullet's death event (Phase 2).
+			if (player.getMetrics() != null) {
+				final int bullets = 1 + (cm == null ? 0 : cm.getExtraProjectiles());
+				for (int b = 0; b < bullets; b++) {
+					player.getMetrics().recordProjectileFired();
+				}
+			}
 
 			// Phase 2D — ON_BASIC_ATTACK passive trigger. Currently scoped to
 			// the Wizard's Arcane Surge ("every Nth basic is empowered"):
@@ -739,6 +751,9 @@ public class ServerGameLogic {
 			String chatTo = fromPlayer.getChatRole() != null ? fromPlayer.getChatRole() : "";
 			TextPacket toBroadcast = TextPacket.create(fromPlayer.getName(), chatTo, textPacket.getMessage());
 			mgr.enqueueServerPacket(toBroadcast);
+			if (fromPlayer.getMetrics() != null) {
+				fromPlayer.getMetrics().recordChatMessage();
+			}
 			ServerGameLogic.log.info("[SERVER] Broadcasted player chat message from {}", fromPlayer.getName());
 		} catch (Exception e) {
 			ServerGameLogic.log.error("Failed to send welcome message. Reason: {}", e);

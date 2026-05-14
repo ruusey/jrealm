@@ -121,6 +121,13 @@ public class Player extends Entity {
 	private transient long[] abilityCooldowns = new long[4];
 	@Builder.Default
 	private transient CastState currentCast = null;
+	/** Lifetime-metrics in-memory counter. See PlayerMetrics + the design
+	 *  doc at docs/player-metrics-design.md. Transient because deltas are
+	 *  flushed to the data service every persistence tick; the absolute
+	 *  totals live in Mongo, not on the player object. */
+	@Builder.Default
+	private transient com.openrealm.game.metrics.PlayerMetrics metrics =
+			new com.openrealm.game.metrics.PlayerMetrics();
 	@Builder.Default
 	private transient int[] hotbarBindings = new int[]{0, 0, 0, 0};
 	// Phase 2D: counter for on-basic-attack passives (e.g. Wizard's Arcane
@@ -146,7 +153,9 @@ public class Player extends Entity {
 			String chatRole, boolean adminModeEnabled, String storedChatRole, boolean hiddenFromOthers,
 			int lastInputSeq, int lastProcessedInputSeq, float currentVx, float currentVy,
 			Queue<float[]> inputQueue, int hpPotions, int mpPotions, int dyeId, long cachedAccountFame,
-			long[] abilityCooldowns, CastState currentCast, int[] hotbarBindings, int basicAttackCounter,
+			long[] abilityCooldowns, CastState currentCast,
+			com.openrealm.game.metrics.PlayerMetrics metrics,
+			int[] hotbarBindings, int basicAttackCounter,
 			int availableSkillPoints, Map<Integer, Integer> abilitySkillPoints) {
 		super(0, null, 0);
 		this.inventory = inventory;
@@ -176,6 +185,7 @@ public class Player extends Entity {
 		// still get a usable Player (matches the field initializers).
 		this.abilityCooldowns = abilityCooldowns != null ? abilityCooldowns : new long[4];
 		this.currentCast = currentCast;
+		this.metrics = metrics != null ? metrics : new com.openrealm.game.metrics.PlayerMetrics();
 		this.hotbarBindings = hotbarBindings != null ? hotbarBindings : new int[]{0, 0, 0, 0};
 		this.basicAttackCounter = basicAttackCounter;
 		this.availableSkillPoints = availableSkillPoints;

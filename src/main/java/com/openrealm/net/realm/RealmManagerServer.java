@@ -1734,6 +1734,18 @@ public class RealmManagerServer implements Runnable {
 				p.update(time);
 				p.removeExpiredEffects();
 				this.movePlayer(realm.getRealmId(), p);
+				// Resolve any in-progress cast whose timer has elapsed. We
+				// clear currentCast BEFORE re-entering useAbility so the
+				// resolution path sees isCasting()==false (otherwise the
+				// "reject input-driven re-casts while casting" gate at the
+				// top of useAbility would refuse our own resolution).
+				final com.openrealm.game.entity.CastState cs = p.getCurrentCast();
+				if (cs != null && cs.getEndTickMs() <= Instant.now().toEpochMilli()) {
+					p.setCurrentCast(null);
+					this.useAbility(realm.getRealmId(), p.getId(),
+							new Vector2f(cs.getWorldTargetX(), cs.getWorldTargetY()),
+							(byte) cs.getSlot(), true);
+				}
 			}
 			this.updPlayersNanos += System.nanoTime() - pStart;
 			// Once per tick: update enemies, then bullets. Iterating the maps
@@ -2308,10 +2320,26 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void useAbility(final long realmId, final long playerId, final Vector2f pos, final byte abilityIndex) {
+		this.useAbility(realmId, playerId, pos, abilityIndex, false);
+	}
+
+	/**
+	 * Internal entry point.
+	 *
+	 * @param isCastResolution true when this invocation is finishing a previously
+	 *     started cast (server tick has fired the cast timer). When true we
+	 *     bypass the MP-cost / cooldown / cast-gate checks since those were
+	 *     already paid at cast-start; the call only runs the effect dispatch.
+	 */
+	private void useAbility(final long realmId, final long playerId, final Vector2f pos,
+			final byte abilityIndex, final boolean isCastResolution) {
 		final Realm targetRealm = this.realms.get(realmId);
 
 		final Player player = targetRealm.getPlayer(playerId);
 		if (player == null) return;
+		// Reject input-driven re-casts while the player is mid-cast on a
+		// previous ability. Cast-resolution calls bypass this gate.
+		if (!isCastResolution && player.isCasting()) return;
 
 		// Phase 2B: read MP cost + cooldown from the new Ability data if the
 		// requested slot is bound; otherwise fall back to the legacy ability
@@ -2343,8 +2371,12 @@ public class RealmManagerServer implements Runnable {
 		// Per-slot cooldown via Player.abilityCooldowns. For the legacy path
 		// (ab == null) we still use the playerAbilityState map keyed by
 		// playerId — preserves existing behavior bit-for-bit.
+		//
+		// Cast-resolution calls skip the CD gate entirely: the cooldown was
+		// set at cast-start to (now + castMs + cooldownMs), so by the time
+		// resolution fires it's still in effect and would block us.
 		final long now = Instant.now().toEpochMilli();
-		if (ab != null) {
+		if (ab != null && !isCastResolution) {
 			final long[] cds = player.getAbilityCooldowns();
 			if (cds != null && slot < cds.length) {
 				if (cds[slot] > now) {
@@ -2375,11 +2407,56 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 
-		// Godmode (INVINCIBLE) = infinite mana
-		if (!player.hasEffect(StatusEffectType.INVINCIBLE)) {
+		// Godmode (INVINCIBLE) = infinite mana. MP is charged at cast-start
+		// (not at resolution), so cast-resolution calls skip this block —
+		// the player has already paid the cost up front.
+		if (!isCastResolution && !player.hasEffect(StatusEffectType.INVINCIBLE)) {
 			final int mpCost = abMpCost >= 0 ? abMpCost : effect.getMpCost();
 			if (player.getMana() < mpCost) return;
 			player.setMana(player.getMana() - mpCost);
+		}
+
+		// ── Cast-time gate ──────────────────────────────────────────
+		// If the ability has baseCastMs > 0 and we are NOT already in the
+		// resolution call, schedule the resolution and return early:
+		//   1. SLOW the player for the cast duration (prepares the spell)
+		//   2. Stash CastState so the per-tick loop can resolve it later
+		//   3. Set the slot cooldown to (now + castMs + cooldownMs) so the
+		//      same slot can't be re-cast during the cast and the regular
+		//      cooldown still applies after the spell fires
+		//   4. Broadcast AbilityCastStartPacket so every client in the realm
+		//      (caster + party + bystanders) can render a cast bar overlay
+		// Per-skill-point cast-speed reduction follows the same lever as
+		// per-skill-point cooldown reduction: castMs = max(150, baseCastMs −
+		// invested × cdReductionPerPointMs / 2). That keeps the formulas
+		// simple and tightly correlated — pumping points into an ability
+		// makes it both come up faster AND fire faster.
+		if (!isCastResolution && ab != null && ab.getBaseCastMs() > 0L) {
+			final int invested = player.getSkillLevel(ab.getId());
+			final long castReduction = (long) invested * (long) ab.getCdReductionPerPointMs() / 2L;
+			final long castMs = Math.max(150L, ab.getBaseCastMs() - castReduction);
+			if (player.getMetrics() != null) {
+				player.getMetrics().recordCastStarted(ab.getId());
+			}
+			player.addEffect(StatusEffectType.SLOWED, castMs);
+			player.setCurrentCast(new com.openrealm.game.entity.CastState(
+					ab.getId(), slot, now, now + castMs, pos.x, pos.y, false));
+			// Push the slot cooldown forward so the cast time is included.
+			final long[] cds2 = player.getAbilityCooldowns();
+			if (cds2 != null && slot < cds2.length) {
+				cds2[slot] = now + castMs + abCooldownMs;
+			}
+			this.enqueueServerPacketToRealm(targetRealm,
+					new com.openrealm.net.client.packet.AbilityCastStartPacket(
+							playerId, ab.getId(), (byte) slot, (int) castMs, pos.x, pos.y));
+			return;
+		}
+		// Cast-completion metric — fires on every ability invocation that
+		// reaches the effect dispatch below. Instant casts (no cast gate)
+		// only hit this point; cast-time abilities hit it on resolution,
+		// after their cast-start record already fired in the gate above.
+		if (ab != null && player.getMetrics() != null) {
+			player.getMetrics().recordCastCompleted(ab.getId());
 		}
 		// Phase 2B refactor: when an Ability is bound, it is FULLY authoritative
 		// for projectile + self-effect. Without this rule, an Ability that
@@ -2924,6 +3001,42 @@ public class RealmManagerServer implements Runnable {
 				for (Object[] xs : extraSelfStatuses) {
 					applyStatusWithFeedback(targetRealm, player, EntityType.PLAYER,
 							(StatusEffectType) xs[0], (Integer) xs[1]);
+				}
+			}
+			// SPAWN_POTIONS — priest "Holy Bounty" pattern: drop N HP + N MP
+			// potions on the ground around the cast point as separate loot
+			// bags so the whole party can pick them up. baseMagnitude is the
+			// count of EACH potion type; SKILL_POINTS scaling on COUNT adds
+			// to that flat. Cap at 6 of each to prevent flooding the realm
+			// with loot bags at max investment.
+			if (ab != null) {
+				for (AbilityEffect aoeEff : ab.effectList()) {
+					if (!"SPAWN_POTIONS".equalsIgnoreCase(aoeEff.getType())) continue;
+					int hpCount = Math.max(0, aoeEff.getBaseMagnitude());
+					int mpCount = hpCount;
+					for (AbilityScaling sc : ab.scalingList()) {
+						if (!"COUNT".equalsIgnoreCase(sc.getTarget())) continue;
+						final int statVal = resolveScalingInput(player, ab, sc);
+						final int bonus = (int) sc.curveEnum().apply(statVal, sc.getCoeff(), sc.getCap());
+						hpCount += bonus; mpCount += bonus;
+					}
+					hpCount = Math.min(6, Math.max(0, hpCount));
+					mpCount = Math.min(6, Math.max(0, mpCount));
+					final GameItem hp = GameDataManager.GAME_ITEMS.get(Player.HP_POTION_ITEM_ID);
+					final GameItem mp = GameDataManager.GAME_ITEMS.get(Player.MP_POTION_ITEM_ID);
+					if (hp == null || mp == null) break;
+					final int total = hpCount + mpCount;
+					for (int i = 0; i < total; i++) {
+						final boolean isHp = i < hpCount;
+						final GameItem potion = isHp ? hp.clone() : mp.clone();
+						// Spread potions in a tight ring around the cast pos.
+						final double a = (2 * Math.PI) * i / Math.max(1, total);
+						final float r = 28f;
+						final Vector2f drop = new Vector2f(
+								pos.x + (float) Math.cos(a) * r,
+								pos.y + (float) Math.sin(a) * r);
+						targetRealm.addLootContainer(new LootContainer(LootTier.BROWN, drop, potion));
+					}
 				}
 			}
 			return; // Skip the projectile spawn paths — this was a pure AoE.
@@ -4000,6 +4113,18 @@ public class RealmManagerServer implements Runnable {
 				final boolean wasMaxLevel = GameDataManager.EXPERIENCE_LVLS.isMaxLvl(prevXp);
 				final int prevLevel = GameDataManager.EXPERIENCE_LVLS.getLevel(prevXp);
 				final int levelsGained = player.incrementExperience(xpToGive);
+				// Lifetime metrics — every player who was in viewport when the
+				// enemy died gets a kill credit + xp-from-kill credit. Boss
+				// flag is a stub (no canonical boss bit on EnemyModel today);
+				// the per-enemyId breakdown lets us pivot on specific bosses
+				// downstream without that flag being accurate.
+				if (player.getMetrics() != null) {
+					// Enemy id is int on the model but fits in short in
+					// practice (enemy table size is well under 32k); cast
+					// is safe and matches the metrics map key shape.
+					player.getMetrics().recordKill((short) enemy.getEnemyId(), false);
+					player.getMetrics().recordXp(xpToGive, true);
+				}
 				try {
 					if (wasMaxLevel) {
 						final long prevFame = GameDataManager.EXPERIENCE_LVLS.getBaseFame(prevXp);
@@ -4220,6 +4345,11 @@ public class RealmManagerServer implements Runnable {
 
 	// Invoked upon player death (permadeath)
 	private void playerDeath(final Realm targetRealm, final Player player) {
+		// Lifetime metric — record at the very top so it counts even when
+		// the amulet-revive branch returns before bottom-of-method cleanup.
+		if (player.getMetrics() != null) {
+			player.getMetrics().recordDeath();
+		}
 		try {
 			final String remoteAddrDeath = this.getRemoteAddressMapReversed().get(player.getId());
 			// Ring slot moved from inv[3] to inv[4] in Phase 1B.
@@ -4766,6 +4896,35 @@ public class RealmManagerServer implements Runnable {
 						"/data/account/character/" + character.getCharacterUuid(), character, CharacterDto.class);
 				RealmManagerServer.log.info("[SERVER] Succesfully persisted user account {}",
 						account.getAccountEmail());
+				// Lifetime metrics flush — drain the in-memory deltas and POST
+				// them as a $inc payload. On failure (HTTP / serialization),
+				// merge the delta back into the counters so the next window's
+				// events stack on top instead of losing the work. See
+				// docs/player-metrics-design.md.
+				try {
+					final com.openrealm.game.metrics.PlayerMetrics m = player.getMetrics();
+					if (m != null) {
+						final com.openrealm.game.metrics.MetricsDelta delta = m.drainAndReset();
+						if (delta != null) {
+							final com.openrealm.game.metrics.MetricsDeltaDto dto =
+									com.openrealm.game.metrics.MetricsDeltaDto.from(delta);
+							try {
+								ServerGameLogic.DATA_SERVICE.executePost(
+										"/data/account/character/" + character.getCharacterUuid() + "/metrics/delta",
+										dto, Object.class);
+							} catch (Exception postEx) {
+								RealmManagerServer.log.warn(
+										"[METRICS] Flush failed for {} — re-queueing delta. Reason: {}",
+										character.getCharacterUuid(), postEx.getMessage());
+								m.mergeBack(delta);
+							}
+						}
+					}
+				} catch (Exception metricsEx) {
+					RealmManagerServer.log.error(
+							"[METRICS] Unexpected error during flush for {}: {}",
+							character.getCharacterUuid(), metricsEx.getMessage());
+				}
 			}
 		} catch (Exception e) {
 			RealmManagerServer.log.error("[SERVER] Failed to get player account. Reason: {}", e);
