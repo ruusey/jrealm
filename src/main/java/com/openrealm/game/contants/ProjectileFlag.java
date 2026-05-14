@@ -5,7 +5,7 @@ import java.util.Map;
 
 /**
  * Flags that control projectile movement behavior. Stored in the projectile's
- * {@code flags} list. These are NOT on-hit effects — see {@link StatusEffect}
+ * {@code flags} list. These are NOT on-hit effects — see {@link StatusEffectType}
  * for status effects applied when a projectile hits a target.
  */
 public enum ProjectileFlag {

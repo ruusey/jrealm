@@ -12,6 +12,9 @@ public enum CharacterClass {
     ROGUE(0), ARCHER(1), WIZARD(2), PRIEST(3), WARRIOR(4), KNIGHT(5), PALLADIN(6),
     ASSASSIN(7), NECROMANCER(8), MYSTIC(9), TRICKSTER(10), SORCERER(11), HUNTRESS(12),
     NINJA(13),
+    // Placeholder heavy-armor "role" classes — Phase 3 role-test scaffolding.
+    // Identical base stats to Knight/Warrior, with kits enforcing a role.
+    HEAVY_DEBUFFER(14), HEAVY_BUFFER(15), HEAVY_DPS(16), HEAVY_ODDBALL(17),
 
     ROBE(-1), LEATHER(-2), HEAVY(-3), ALL(-4),
     STAFF_USER(-5), WAND_USER(-6), DAGGER_USER(-7), BOW_USER(-8);
@@ -46,7 +49,9 @@ public enum CharacterClass {
     }
 
     public static boolean isHeavyClass(CharacterClass c) {
-        return c.equals(CharacterClass.WARRIOR) || c.equals(CharacterClass.PALLADIN) || c.equals(CharacterClass.KNIGHT);
+        return c.equals(CharacterClass.WARRIOR) || c.equals(CharacterClass.PALLADIN) || c.equals(CharacterClass.KNIGHT)
+            || c.equals(CharacterClass.HEAVY_DEBUFFER) || c.equals(CharacterClass.HEAVY_BUFFER)
+            || c.equals(CharacterClass.HEAVY_DPS) || c.equals(CharacterClass.HEAVY_ODDBALL);
     }
 
     public static boolean isPlayerHeavyClass(Player p) {
