@@ -1478,16 +1478,33 @@ public class ServerCommandHandler {
                     }
                     if (bot.isLoggedIn()) {
                         success++;
-                        // Give bot godmode (INVINCIBLE 24h) so it doesn't die during stress test
+                        // Give bot godmode (INVINCIBLE 24h) AND transfer them
+                        // into the caster's realm. Without the realm transfer,
+                        // bots stay in whatever realm login dropped them in
+                        // (the nexus / entry realm) — fine when the caster is
+                        // in the nexus, but in any other realm the StressTest
+                        // client's /tp X Y just moves the bot to those coords
+                        // INSIDE the nexus and they never appear next to you.
                         try {
                             final Player botPlayer = mgr.getPlayers().stream()
                                     .filter(p -> p.getId() == bot.getAssignedPlayerId())
                                     .findFirst().orElse(null);
                             if (botPlayer != null) {
                                 botPlayer.addEffect(StatusEffectType.INVINCIBLE, 1000L * 60 * 60 * 24);
+                                final Realm casterRealm = mgr.findPlayerRealm(target.getId());
+                                final Realm botRealm = mgr.findPlayerRealm(botPlayer.getId());
+                                if (casterRealm != null && botRealm != null
+                                        && casterRealm.getRealmId() != botRealm.getRealmId()) {
+                                    final float ox = target.getPos().x + (Realm.RANDOM.nextFloat() * 60 - 30);
+                                    final float oy = target.getPos().y + (Realm.RANDOM.nextFloat() * 60 - 30);
+                                    transferAdminToRealm(mgr, botPlayer, botRealm, casterRealm,
+                                            new Vector2f(ox, oy));
+                                    log.info("[BOTS] Bot {} transferred to caster realm {} (from {})",
+                                            i, casterRealm.getRealmId(), botRealm.getRealmId());
+                                }
                             }
                         } catch (Exception ex) {
-                            log.warn("[BOTS] Failed to set bot {} godmode: {}", i, ex.getMessage());
+                            log.warn("[BOTS] Failed to set bot {} godmode/realm: {}", i, ex.getMessage());
                         }
                         log.info("[BOTS] Bot {} logged in successfully (godmode ON), connecting next...", i);
                     } else {
