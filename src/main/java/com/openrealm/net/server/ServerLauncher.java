@@ -43,16 +43,22 @@ public class ServerLauncher {
         ServerLauncher.pingServer();
         GameDataManager.loadGameData(true);
 
-        // Admin HTTP listener — receives Publish-button reload calls from
-        // the data service. Token-protected via OPENREALM_RELOAD_TOKEN env.
+        // RealmManagerServer is constructed BEFORE AdminHttpServer so the
+        // admin listener can hold a reference for the /admin/playerCount
+        // endpoint. doRunServer() is the blocking game loop and must come
+        // last.
+        final RealmManagerServer server = new RealmManagerServer();
+
+        // Admin HTTP listener — Publish-button reload calls + /admin/playerCount
+        // queries from the data service. Token-protected via
+        // OPENREALM_RELOAD_TOKEN env for the reload path; playerCount is open.
         try {
             int adminPort = parseIntEnv("OPENREALM_ADMIN_PORT", 8088);
-            new AdminHttpServer(adminPort).start();
+            new AdminHttpServer(adminPort, server).start();
         } catch (Exception e) {
             ServerLauncher.log.error("Failed to start admin listener: {}", e.getMessage());
         }
 
-        final RealmManagerServer server = new RealmManagerServer();
         server.doRunServer();
     }
 

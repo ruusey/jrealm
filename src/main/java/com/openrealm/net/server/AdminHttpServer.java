@@ -6,6 +6,8 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
 import com.openrealm.game.data.GameDataManager;
+import com.openrealm.game.entity.Player;
+import com.openrealm.net.realm.RealmManagerServer;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -17,6 +19,11 @@ import lombok.extern.slf4j.Slf4j;
  *
  * Endpoints:
  *   GET  /admin/ping              — health check, no auth required
+ *   GET  /admin/playerCount       — current online player count
+ *                                   (non-headless players in any realm),
+ *                                   returned as {"count":N}. No auth — the
+ *                                   data service aggregates this for the
+ *                                   public /player-count endpoint.
  *   POST /admin/reloadGameData    — token-protected, calls
  *                                   {@link GameDataManager#loadGameData(boolean)}
  *
@@ -35,11 +42,14 @@ public class AdminHttpServer {
 
 	private final HttpServer http;
 	private final String expectedToken;
+	private final RealmManagerServer realmManager;
 
-	public AdminHttpServer(int port) throws IOException {
+	public AdminHttpServer(int port, RealmManagerServer realmManager) throws IOException {
 		this.expectedToken = resolveToken();
+		this.realmManager = realmManager;
 		this.http = HttpServer.create(new InetSocketAddress(port), 0);
 		this.http.createContext("/admin/ping", this::handlePing);
+		this.http.createContext("/admin/playerCount", this::handlePlayerCount);
 		this.http.createContext("/admin/reloadGameData", this::handleReload);
 		this.http.setExecutor(null); // default executor — single-threaded is fine
 	}
@@ -56,6 +66,25 @@ public class AdminHttpServer {
 	private void handlePing(HttpExchange ex) throws IOException {
 		String body = "{\"ok\":true,\"version\":\"" + ServerGameLogic.GAME_VERSION + "\"}";
 		send(ex, 200, body);
+	}
+
+	/** Current online player count — REAL players across all realms.
+	 *  Excludes headless (server-internal NPCs) and bots
+	 *  (StressTestClient connections from /spawnbots) so the public
+	 *  stat reflects actual humans. Returned as {@code {"count":N}}. */
+	private void handlePlayerCount(HttpExchange ex) throws IOException {
+		int count = 0;
+		try {
+			if (this.realmManager != null) {
+				for (final Player p : this.realmManager.getPlayers()) {
+					if (p == null || p.isHeadless() || p.isBot()) continue;
+					count++;
+				}
+			}
+		} catch (Exception e) {
+			log.warn("playerCount lookup failed: {}", e.getMessage());
+		}
+		send(ex, 200, "{\"count\":" + count + "}");
 	}
 
 	private void handleReload(HttpExchange ex) throws IOException {
