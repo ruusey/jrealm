@@ -100,6 +100,7 @@ import com.openrealm.net.client.packet.UnloadPacket;
 import com.openrealm.net.client.packet.PartyUpdatePacket;
 import com.openrealm.net.client.packet.UpdatePacket;
 import com.openrealm.net.entity.NetPartyMember;
+import com.openrealm.net.entity.NetStats;
 import com.openrealm.net.party.PartyManager;
 
 import com.openrealm.net.entity.NetTile;
@@ -170,7 +171,13 @@ public class RealmManagerServer implements Runnable {
 	private Map<Long, Map<Long, UpdatePacket>> otherPlayerUpdateState = new ConcurrentHashMap<>();
 	
 	private Map<Long, Long> playerAbilityState = new ConcurrentHashMap<>();
-	private Map<Long, LoadPacket> playerLoadState = new ConcurrentHashMap<>();
+	// Per-player authoritative ledger of which entity IDs the client has
+	// loaded right now (replaces the old "last LoadPacket sent" snapshot).
+	// Drives load/unload deltas: load = desired ∖ ledger, unload = ledger ∖
+	// desired. Updated every tick by exactly what was enqueued, so a
+	// cap-trimmed entity is simply "not yet loaded" — no spurious unloads,
+	// no ghost entities. See PlayerLoadLedger for the full motivation.
+	private Map<Long, PlayerLoadLedger> playerLoadLedger = new ConcurrentHashMap<>();
 	// Phase 4 — party state (membership + pending invites). Exposed via
 	// getPartyManager() so chat-command handlers and packet handlers can mutate.
 	private final PartyManager partyManager = new PartyManager();
@@ -921,74 +928,126 @@ public class RealmManagerServer implements Runnable {
 							}
 						}
 
-						// --- LoadPacket (32 Hz) - per-player spatial grid query ---
-						// Fast path: when only bullets/loot changed, ship a tiny delta
-						// (empty players/enemies/portals arrays). Slow path: full
-						// snapshot when the entity set actually changed OR every
-						// FULL_SNAPSHOT_INTERVAL_MS (~3s) for self-heal against drops.
-						// Cuts ~90% of LoadPacket bandwidth in spam-shoot scenarios.
+						// --- LoadPacket (32 Hz) — per-player ledger-based delta sync ---
+						// The ledger is the authoritative set of IDs the server believes
+						// the client currently has. Each tick:
+						//   desired   = uncapped visible IDs at this player's position
+						//   toLoad    = desired ∖ ledger     (new entities)
+						//   toUnload  = ledger  ∖ desired    (entities that left)
+						// Caps apply ONLY to toLoad. Cap-trimmed IDs simply stay out of
+						// the ledger and the wire — they get picked up on a future tick.
+						// Reconcile (every FULL_SNAPSHOT_INTERVAL_MS) re-asserts the
+						// full desired set so a dropped packet self-heals within one
+						// cycle. No realm-existence filter — anything that left the
+						// realm naturally falls out of `desired` and the diff emits a
+						// correct unload.
 						if (doLoad) {
-							// Pass player ID for soulbound loot filtering
-							final LoadPacket loadPacket = realm.getLoadPacketCircularFast(playerCenter, viewportRadius, player.getKey());
 							final long nowMs = System.currentTimeMillis();
-							if (this.playerLoadState.get(player.getKey()) == null) {
-								this.playerLoadState.put(player.getKey(), loadPacket);
+							PlayerLoadLedger ledger = this.playerLoadLedger.get(player.getKey());
+							if (ledger == null) {
+								ledger = new PlayerLoadLedger();
+								this.playerLoadLedger.put(player.getKey(), ledger);
 								this.playerLastFullSnapshotMs.put(player.getKey(), nowMs);
-								this.enqueueServerPacket(player.getValue(), loadPacket);
-							} else {
-								final LoadPacket oldLoad = this.playerLoadState.get(player.getKey());
-								final Long lastFull = this.playerLastFullSnapshotMs.get(player.getKey());
-								final boolean periodicFullDue = lastFull == null
+							}
+							final Realm.VisibleIds desired = realm.getVisibleIdsCircularFast(
+									playerCenter, viewportRadius, player.getKey());
+
+							final Long lastFull = this.playerLastFullSnapshotMs.get(player.getKey());
+							final boolean reconcileDue = lastFull == null
 									|| (nowMs - lastFull) >= FULL_SNAPSHOT_INTERVAL_MS;
-								final boolean entitySetSame = oldLoad.entitySetEquals(loadPacket);
-								if (entitySetSame && !periodicFullDue) {
-									// FAST PATH — bullets/loot only.
-									final LoadPacket bulletDelta = oldLoad.bulletAndLootDelta(loadPacket);
-									if (!bulletDelta.isEmpty()) {
-										this.enqueueServerPacket(player.getValue(), bulletDelta);
-									}
-									final UnloadPacket bulletUnload = oldLoad.bulletUnloadDifference(loadPacket);
-									if (bulletUnload.isNotEmpty()) {
-										this.enqueueServerPacket(player.getValue(), bulletUnload);
-									}
-									this.playerLoadState.put(player.getKey(), loadPacket);
-								} else if (periodicFullDue) {
-									// PERIODIC SELF-HEAL — full snapshot every 3s so a dropped
-									// delta packet self-recovers within one cycle.
-									final LoadPacket toSend = oldLoad.combine(loadPacket);
-									this.playerLoadState.put(player.getKey(), loadPacket);
-									this.playerLastFullSnapshotMs.put(player.getKey(), nowMs);
-									if (!toSend.isEmpty()) {
-										this.enqueueServerPacket(player.getValue(), toSend);
-									}
-									final UnloadPacket unloadDelta = filterUnloadAgainstRealm(
-											oldLoad.difference(loadPacket), realm);
-									if (unloadDelta.isNotEmpty()) {
-										this.enqueueServerPacket(player.getValue(), unloadDelta);
-										for (long unloadedEnemy : unloadDelta.getEnemies()) {
-											this.enemyUpdateState.remove(unloadedEnemy);
-										}
-									}
-								} else if (!oldLoad.equals(loadPacket)) {
-									// ENTITY-SET CHANGE PATH — emit ONLY new entities (true delta)
-									// instead of the full 11-player snapshot. Saves ~90% on slow-
-									// path bandwidth when bots cross each other's visibility
-									// boundaries; self-heal is preserved by the periodic refresh above.
-									final LoadPacket toSend = oldLoad.combineDelta(loadPacket);
-									this.playerLoadState.put(player.getKey(), loadPacket);
-									if (!toSend.isEmpty()) {
-										this.enqueueServerPacket(player.getValue(), toSend);
-									}
-									final UnloadPacket unloadDelta = filterUnloadAgainstRealm(
-											oldLoad.difference(loadPacket), realm);
-									if (unloadDelta.isNotEmpty()) {
-										this.enqueueServerPacket(player.getValue(), unloadDelta);
-										for (long unloadedEnemy : unloadDelta.getEnemies()) {
-											this.enemyUpdateState.remove(unloadedEnemy);
-										}
+
+							// Delta sets — start with strict set diff.
+							final Set<Long> playersToLoad    = setDiff(desired.players,    ledger.players);
+							final Set<Long> enemiesToLoad    = setDiff(desired.enemies,    ledger.enemies);
+							final Set<Long> bulletsToLoad    = setDiff(desired.bullets,    ledger.bullets);
+							final Set<Long> containersToLoad = setDiff(desired.containers, ledger.containers);
+							final Set<Long> portalsToLoad    = setDiff(desired.portals,    ledger.portals);
+
+							final Set<Long> playersToUnload    = setDiff(ledger.players,    desired.players);
+							final Set<Long> enemiesToUnload    = setDiff(ledger.enemies,    desired.enemies);
+							final Set<Long> bulletsToUnload    = setDiff(ledger.bullets,    desired.bullets);
+							final Set<Long> containersToUnload = setDiff(ledger.containers, desired.containers);
+							final Set<Long> portalsToUnload    = setDiff(ledger.portals,    desired.portals);
+
+							// Re-send loot containers whose contents mutated this tick
+							// (pickups/inserts). Client merges the new payload into the
+							// existing entry — no unload+reload round-trip needed.
+							for (final Long id : desired.containers) {
+								if (containersToLoad.contains(id)) continue;
+								final LootContainer lc = realm.getLoot().get(id);
+								if (lc != null && lc.getContentsChanged()) containersToLoad.add(id);
+							}
+
+							if (reconcileDue) {
+								// Periodic reconcile: treat the client as empty for loads
+								// and emit a full snapshot of the desired set, plus
+								// unloads for everything in the ledger no longer desired.
+								// Survives any dropped delta within FULL_SNAPSHOT_INTERVAL_MS.
+								playersToLoad.clear();    playersToLoad.addAll(desired.players);
+								enemiesToLoad.clear();    enemiesToLoad.addAll(desired.enemies);
+								bulletsToLoad.clear();    bulletsToLoad.addAll(desired.bullets);
+								containersToLoad.clear(); containersToLoad.addAll(desired.containers);
+								portalsToLoad.clear();    portalsToLoad.addAll(desired.portals);
+								this.playerLastFullSnapshotMs.put(player.getKey(), nowMs);
+							}
+
+							// Apply caps to LOAD side only. Closest-first deterministic
+							// trim. Cap-trimmed IDs stay out of the ledger and arrive on
+							// a future tick — never produce a spurious unload.
+							final Set<Long> cappedEnemyLoad = capByDistance(
+									enemiesToLoad, playerCenter, realm.getEnemies(),
+									MAX_NEW_ENEMIES_PER_LOAD);
+							final Set<Long> cappedBulletLoad = capBulletsWithPlayerPriority(
+									bulletsToLoad, playerCenter, realm.getBullets(),
+									MAX_NEW_BULLETS_PER_LOAD);
+
+							final LoadPacket loadPkt = realm.buildLoadPacketForIds(
+									playersToLoad, cappedEnemyLoad, cappedBulletLoad,
+									containersToLoad, portalsToLoad, playerCenter);
+							final UnloadPacket unloadPkt = UnloadPacket.from(
+									playersToUnload.toArray(new Long[0]),
+									bulletsToUnload.toArray(new Long[0]),
+									enemiesToUnload.toArray(new Long[0]),
+									containersToUnload.toArray(new Long[0]),
+									portalsToUnload.toArray(new Long[0]));
+
+							if (loadPkt != null && !loadPkt.isEmpty()) {
+								this.enqueueServerPacket(player.getValue(), loadPkt);
+							}
+							if (unloadPkt.isNotEmpty()) {
+								this.enqueueServerPacket(player.getValue(), unloadPkt);
+								for (final Long unloadedEnemy : unloadPkt.getEnemies()) {
+									this.enemyUpdateState.remove(unloadedEnemy);
+								}
+								// Drop cached other-player UpdatePackets for any peer
+								// that just left this viewer's load — so when they
+								// re-enter later, the first UpdatePacket isn't
+								// wrongly suppressed by a stale delta cache entry.
+								final Map<Long, UpdatePacket> otherCache =
+									this.otherPlayerUpdateState.get(player.getKey());
+								if (otherCache != null) {
+									for (final Long unloadedPlayer : unloadPkt.getPlayers()) {
+										otherCache.remove(unloadedPlayer);
 									}
 								}
 							}
+
+							// Update the ledger by EXACTLY what we just shipped.
+							// Loads recorded from the capped/intent sets — anything the
+							// hydrator dropped (entity removed between query and build)
+							// is effectively unloaded already, so a stale ledger entry
+							// here is harmless: next tick's desired diff will re-emit a
+							// no-op unload that the client ignores.
+							ledger.players.addAll(playersToLoad);
+							ledger.enemies.addAll(cappedEnemyLoad);
+							ledger.bullets.addAll(cappedBulletLoad);
+							ledger.containers.addAll(containersToLoad);
+							ledger.portals.addAll(portalsToLoad);
+							ledger.players.removeAll(playersToUnload);
+							ledger.enemies.removeAll(enemiesToUnload);
+							ledger.bullets.removeAll(bulletsToUnload);
+							ledger.containers.removeAll(containersToUnload);
+							ledger.portals.removeAll(portalsToUnload);
 						}
 
 						// --- ObjectMovePacket: dead reckoning with tiered check rates ---
@@ -1062,8 +1121,14 @@ public class RealmManagerServer implements Runnable {
 								}
 							}
 
-							// Enemy UpdatePackets (16 Hz) - extract enemy IDs from move packet
+							// Enemy UpdatePackets (16 Hz) - extract enemy IDs from move packet.
+							// Gated on the per-player load ledger so we never send an
+							// update/state packet for an enemy this client doesn't have
+							// loaded — the ledger is the only authority on what the
+							// client is currently rendering.
 							if (doEnemyUpdate && movePacket != null) {
+								final PlayerLoadLedger viewerLedger =
+									this.playerLoadLedger.get(player.getKey());
 								final Set<Long> nearEnemyIds = new HashSet<>();
 								for (NetObjectMovement m : movePacket.getMovements()) {
 									if (m.getEntityType() == EntityType.ENEMY.getEntityTypeId()) {
@@ -1071,6 +1136,7 @@ public class RealmManagerServer implements Runnable {
 									}
 								}
 								for (Long enemyId : nearEnemyIds) {
+									if (viewerLedger == null || !viewerLedger.enemies.contains(enemyId)) continue;
 									final UpdatePacket updatePacket0 = realm.getEnemyAsPacket(enemyId);
 									final UpdatePacket oldState = this.enemyUpdateState.get(enemyId);
 									boolean doSend = false;
@@ -3430,58 +3496,85 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	
+	// Per-tick caps on NEW entities added to a player's ledger. Caps apply
+	// ONLY to the load side — cap-trimmed IDs simply stay out of the ledger
+	// and the wire and get picked up on a future tick, so they never
+	// produce a spurious unload. At 32 Hz these limits comfortably exceed
+	// any realistic spawn / cross-viewport rate while bounding worst-case
+	// packet size during stress (e.g. a fresh viewer entering a 500-enemy
+	// boss room hydrates over ~3 ticks instead of one ~50 KB packet).
+	private static final int MAX_NEW_ENEMIES_PER_LOAD = 500;
+	private static final int MAX_NEW_BULLETS_PER_LOAD = 1000;
+
+	/** Strict set difference: {@code a ∖ b} as a fresh HashSet. */
+	private static Set<Long> setDiff(final Set<Long> a, final Set<Long> b) {
+		if (a.isEmpty()) return new HashSet<>();
+		if (b.isEmpty()) return new HashSet<>(a);
+		final Set<Long> out = new HashSet<>(a.size());
+		for (final Long id : a) if (!b.contains(id)) out.add(id);
+		return out;
+	}
+
 	/**
-	 * Strip from an UnloadPacket any entity ids that are STILL ALIVE in the
-	 * realm — those got dropped from the LoadPacket only because the per-
-	 * packet cap was hit, not because they actually left visibility. Without
-	 * this filter the client would explicitly delete cap-trimmed entities
-	 * every tick and re-add them on the next slow-path snapshot, producing
-	 * the visible "enemies and bullets flicker" artifact during dense
-	 * stress tests (500+ enemies in a small area).
-	 *
-	 * Returns the same UnloadPacket reference with its arrays replaced —
-	 * the upstream `enqueueServerPacket(...)` then ships only the entities
-	 * that are truly gone. UnloadPacket fields are mutable via Lombok @Data.
+	 * Trim {@code ids} to the {@code cap} closest entities to {@code center},
+	 * looked up via {@code source}. IDs whose entity is missing from
+	 * {@code source} are skipped. Used to keep the per-tick LoadPacket
+	 * bounded while staying deterministic (sort-then-truncate so the same
+	 * tick produces the same trimmed set).
 	 */
-	private static UnloadPacket filterUnloadAgainstRealm(UnloadPacket pkt, Realm realm) {
-		if (pkt == null) return null;
-		// Players: never trim — players that left a viewer's load really should be unloaded
-		// (they may have walked far away). The client repopulates them via LoadPacket if they
-		// come back. We don't have a "still in realm" backstop for players because moving out
-		// of viewport is the normal case.
-		final Long[] enemiesIn = pkt.getEnemies();
-		if (enemiesIn != null && enemiesIn.length > 0) {
-			final List<Long> kept = new ArrayList<>(enemiesIn.length);
-			for (final Long id : enemiesIn) {
-				if (realm.getEnemy(id) == null) kept.add(id);
-			}
-			if (kept.size() != enemiesIn.length) pkt.setEnemies(kept.toArray(new Long[0]));
+	private static Set<Long> capByDistance(final Set<Long> ids, final Vector2f center,
+			final Map<Long, ? extends GameObject> source, final int cap) {
+		if (ids.size() <= cap) return ids;
+		final List<long[]> ranked = new ArrayList<>(ids.size());
+		for (final Long id : ids) {
+			final GameObject g = source.get(id);
+			if (g == null) continue;
+			final float dx = g.getPos().x - center.x;
+			final float dy = g.getPos().y - center.y;
+			ranked.add(new long[] { id, Float.floatToRawIntBits(dx * dx + dy * dy) });
 		}
-		final Long[] bulletsIn = pkt.getBullets();
-		if (bulletsIn != null && bulletsIn.length > 0) {
-			final List<Long> kept = new ArrayList<>(bulletsIn.length);
-			for (final Long id : bulletsIn) {
-				if (realm.getBullets().get(id) == null) kept.add(id);
-			}
-			if (kept.size() != bulletsIn.length) pkt.setBullets(kept.toArray(new Long[0]));
+		ranked.sort((u, v) -> Float.compare(
+				Float.intBitsToFloat((int) u[1]),
+				Float.intBitsToFloat((int) v[1])));
+		final Set<Long> out = new HashSet<>(Math.min(cap, ranked.size()));
+		for (int i = 0, n = Math.min(cap, ranked.size()); i < n; i++) {
+			out.add(ranked.get(i)[0]);
 		}
-		final Long[] containersIn = pkt.getContainers();
-		if (containersIn != null && containersIn.length > 0) {
-			final List<Long> kept = new ArrayList<>(containersIn.length);
-			for (final Long id : containersIn) {
-				if (realm.getLoot().get(id) == null) kept.add(id);
-			}
-			if (kept.size() != containersIn.length) pkt.setContainers(kept.toArray(new Long[0]));
+		return out;
+	}
+
+	/**
+	 * Bullet cap with player-owned-bullet priority. A player's own
+	 * projectiles always fit first — otherwise heavy enemy-bullet density
+	 * could starve the player's own abilities of cap slots and the player
+	 * would see enemy shots but not their own.
+	 */
+	private static Set<Long> capBulletsWithPlayerPriority(final Set<Long> ids, final Vector2f center,
+			final Map<Long, Bullet> bullets, final int cap) {
+		if (ids.size() <= cap) return ids;
+		final List<long[]> playerOwned = new ArrayList<>();
+		final List<long[]> enemyOwned = new ArrayList<>();
+		for (final Long id : ids) {
+			final Bullet b = bullets.get(id);
+			if (b == null) continue;
+			final float dx = b.getPos().x - center.x;
+			final float dy = b.getPos().y - center.y;
+			final long encoded = Float.floatToRawIntBits(dx * dx + dy * dy);
+			(b.isEnemy() ? enemyOwned : playerOwned).add(new long[] { id, encoded });
 		}
-		final Long[] portalsIn = pkt.getPortals();
-		if (portalsIn != null && portalsIn.length > 0) {
-			final List<Long> kept = new ArrayList<>(portalsIn.length);
-			for (final Long id : portalsIn) {
-				if (realm.getPortals().get(id) == null) kept.add(id);
-			}
-			if (kept.size() != portalsIn.length) pkt.setPortals(kept.toArray(new Long[0]));
+		final java.util.Comparator<long[]> byDist = (u, v) -> Float.compare(
+				Float.intBitsToFloat((int) u[1]),
+				Float.intBitsToFloat((int) v[1]));
+		playerOwned.sort(byDist);
+		enemyOwned.sort(byDist);
+		final Set<Long> out = new HashSet<>(cap);
+		for (int i = 0; i < playerOwned.size() && out.size() < cap; i++) {
+			out.add(playerOwned.get(i)[0]);
 		}
-		return pkt;
+		for (int i = 0; i < enemyOwned.size() && out.size() < cap; i++) {
+			out.add(enemyOwned.get(i)[0]);
+		}
+		return out;
 	}
 
 	public void enqueueServerPacket(final Packet packet) {
@@ -4507,7 +4600,7 @@ public class RealmManagerServer implements Runnable {
 	}
 
 	public void clearPlayerState(long playerId) {
-		this.playerLoadState.remove(playerId);
+		this.playerLoadLedger.remove(playerId);
 		this.playerLastFullSnapshotMs.remove(playerId);
 		this.playerUpdateState.remove(playerId);
 		this.playerStateState.remove(playerId);
@@ -4592,7 +4685,7 @@ public class RealmManagerServer implements Runnable {
 	 */
 	public void invalidateRealmLoadState(Realm realm) {
 		for (final Long pid : realm.getPlayers().keySet()) {
-			this.playerLoadState.remove(pid);
+			this.playerLoadLedger.remove(pid);
 			this.playerLastFullSnapshotMs.remove(pid);
 		}
 	}
@@ -4889,6 +4982,11 @@ public class RealmManagerServer implements Runnable {
 				invBoxed[i] = aid > 0 ? p.getSkillLevel(aid) : 0;
 			}
 			m.setHotbarInvested(invBoxed);
+			// Carry computed stats so teammate ability tooltips can render
+			// stat-scaled damage (ATT/DEX/WIS contributions, SP×N lines)
+			// against the OWNER's real numbers. We already have `st` from
+			// the HP/MP-max plumbing above — reuse it instead of recomputing.
+			m.setStats(NetStats.fromStats(st));
 			members.add(m);
 		}
 		final PartyUpdatePacket pkt =

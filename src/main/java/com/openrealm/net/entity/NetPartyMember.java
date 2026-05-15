@@ -63,4 +63,13 @@ public class NetPartyMember extends SerializableFieldType<NetPartyMember> {
      *  effect line with their REAL invested level (instead of always 0). */
     @SerializableField(order = 12, type = SerializableInt.class, isCollection = true)
     private Integer[] hotbarInvested;
+
+    /** Server-computed stats (base + equipment + enchantments + buffs).
+     *  Carried so ability tooltips for a party member can render the same
+     *  stat-scaled damage breakdown the owner sees on their own hotbar
+     *  (otherwise scalings tied to ATT/DEX/WIS/etc would silently fall
+     *  back to zero and the tooltip damage would understate by the bonus
+     *  amount). 18 bytes on the wire — negligible at 4-member cap, ~2Hz. */
+    @SerializableField(order = 13, type = NetStats.class)
+    private NetStats stats;
 }
