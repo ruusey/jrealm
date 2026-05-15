@@ -116,7 +116,12 @@ public class ServerItemHelper {
                     item.getName(), slotIdx, item.isConsumable(), item.isStackable());
             return false;
         }
-        if (item.getTargetSlot() >= 0 && item.getTargetSlot() != slotIdx) {
+        // Strict slot match. Legacy ability items (now class-baked into the
+        // character) carry targetSlot=-1, which the old `>= 0` guard treated
+        // as "any slot" — that let players drop a Necrotic Skull into the
+        // weapon slot and machine-gun enemies with paralysis. Require an
+        // exact match so -1 (no valid slot) is rejected from every slot.
+        if (item.getTargetSlot() != slotIdx) {
             log.warn("[canEquipInSlot] reject {} into slot {} — targetSlot={} (expected {})",
                     item.getName(), slotIdx, item.getTargetSlot(), slotIdx);
             return false;
