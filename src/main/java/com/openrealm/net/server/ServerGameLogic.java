@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.openrealm.account.dto.AccountDto;
 import com.openrealm.account.dto.CharacterDto;
@@ -75,6 +76,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServerGameLogic {
 	public static final String GAME_VERSION = "0.6.0";
+
+	/** Per-player throttle for the "invalid weapon equipped" chat message —
+	 *  one notice per 5s so a player holding fire on a legacy ability item
+	 *  doesn't get flooded with system spam. Keyed by playerId. */
+	private static final Map<Long, Long> INVALID_WEAPON_WARN_AT = new ConcurrentHashMap<>();
+	private static final long INVALID_WEAPON_WARN_INTERVAL_MS = 5000L;
 	public static final int WINDOW_WIDTH = 1920;
 	public static final int WINDOW_HEIGHT = 1080;
 
@@ -605,6 +612,28 @@ public class ServerGameLogic {
 			canShoot = true;
 		}
 		if (canShoot) {
+			// Belt-and-suspenders against the legacy ability-item exploit
+			// (Necrotic Skull / Penetrating Blast Spell / etc. equipped into
+			// the weapon slot via the old targetSlot=-1 hole). Even though
+			// canEquipInSlot now rejects new equips and reconcileEquipment
+			// relocates old ones on login, refuse the SHOT for any weapon
+			// whose targetSlot doesn't match slot 0. One SYSTEM notice per
+			// 5s so the player understands why nothing's firing.
+			final GameItem weaponItem = player.getInventory()[0];
+			if (weaponItem != null && weaponItem.getTargetSlot() != 0) {
+				final long now = Instant.now().toEpochMilli();
+				final Long lastWarn = INVALID_WEAPON_WARN_AT.get(player.getId());
+				if (lastWarn == null || (now - lastWarn) > INVALID_WEAPON_WARN_INTERVAL_MS) {
+					INVALID_WEAPON_WARN_AT.put(player.getId(), now);
+					try {
+						mgr.enqueueServerPacket(player, TextPacket.from("SYSTEM", player.getName(),
+								"Your equipped weapon (" + weaponItem.getName() + ") is no longer "
+								+ "a valid weapon — class abilities replaced the legacy ability "
+								+ "slot. Move it to your inventory and equip a real weapon."));
+					} catch (Exception ignore) { /* swallow — best-effort notice */ }
+				}
+				return;
+			}
 			// Trigger attack animation so other clients see the firing pose
 			player.triggerAttackAnimation();
 			player.setAimX(shootPacket.getDestX());
