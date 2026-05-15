@@ -15,6 +15,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.openrealm.account.dto.AccountDto;
@@ -585,11 +589,11 @@ public class ServerCommandHandler {
             realm.removeEnemy(e);
         }
 
-        // Explicit UnloadPacket: the per-player LoadPacket diff only knows
-        // about the last 500 enemies it sent (MAX_ENEMIES_PER_LOAD cap), so
-        // entities trimmed out of earlier ticks pile up on the client and
-        // survive /kill. Broadcasting an unload with every killed id ensures
-        // the client drops them regardless of what's in playerLoadState.
+        // Explicit broadcast UnloadPacket so every client drops the killed
+        // enemies the same tick /kill ran, instead of waiting for the
+        // per-viewer ledger diff to emit an unload on its next sync tick.
+        // Harmless for clients whose ledger never contained the enemy
+        // (unload of an unknown ID is a no-op on the client).
         if (killedIds.length > 0) {
             final UnloadPacket unload = UnloadPacket.from(
                 new Long[0], new Long[0], killedIds, new Long[0], new Long[0]);
@@ -1380,8 +1384,8 @@ public class ServerCommandHandler {
             throw new IllegalArgumentException("Usage: /spawnbots {COUNT} [spam]");
 
         final int count = Integer.parseInt(message.getArgs().get(0));
-        if (count < 1 || count > 50)
-            throw new IllegalArgumentException("Count must be between 1 and 50");
+        if (count < 1 || count > 200)
+            throw new IllegalArgumentException("Count must be between 1 and 200");
 
         final boolean spamMode = message.getArgs().size() >= 2
                 && "spam".equalsIgnoreCase(message.getArgs().get(1));
@@ -1396,128 +1400,138 @@ public class ServerCommandHandler {
         final float spawnY = target.getPos().y;
 
         WorkerThread.doAsync(() -> {
-            // Phase 1: Pre-create ALL accounts and characters in parallel batches of 10
+            // Pools sized for "fast" rather than "polite" — the data service
+            // and game server are both local on the same host so per-request
+            // cost is small. 32 in parallel saturates the HTTP keepalive pool
+            // without thrashing the file descriptor limit.
+            final int CREATE_PARALLELISM  = 32;
+            final int CONNECT_PARALLELISM = 32;
+            final long PHASE_TIMEOUT_SEC  = 60;
+            final long startMs = System.currentTimeMillis();
+
+            // ---- Phase 1: account + character creation, fully parallel ----
             final List<String[]> botCredentials = Collections.synchronizedList(new ArrayList<>());
-            log.info("[BOTS] Phase 1: Creating {} accounts (10 at a time)...", count);
-            for (int batch = 0; batch < count; batch += 10) {
-                final int batchEnd = Math.min(batch + 10, count);
-                final List<Thread> batchThreads = new ArrayList<>();
-                for (int i = batch; i < batchEnd; i++) {
-                    final int idx = i;
-                    Thread t = new Thread(() -> {
-                        try {
-                            final String botId = "bot-" + UUID.randomUUID().toString();
-                            final String email = botId + "@jrealm-bot.local";
-                            final String password = "botpass-" + UUID.randomUUID().toString();
-                            final String botName = "Bot_" + botId.substring(4, 12);
+            log.info("[BOTS] Phase 1: Creating {} accounts ({}-way parallel)...", count, CREATE_PARALLELISM);
+            final ExecutorService createPool = Executors.newFixedThreadPool(CREATE_PARALLELISM, r -> {
+                Thread t = new Thread(r); t.setDaemon(true); t.setName("bot-create"); return t;
+            });
+            for (int i = 0; i < count; i++) {
+                final int idx = i;
+                createPool.submit(() -> {
+                    try {
+                        final String botId = "bot-" + UUID.randomUUID().toString();
+                        final String email = botId + "@jrealm-bot.local";
+                        final String password = "botpass-" + UUID.randomUUID().toString();
+                        final String botName = "Bot_" + botId.substring(4, 12);
 
-                            final AccountDto registerReq = AccountDto.builder()
-                                    .email(email).password(password).accountName(botName)
-                                    .accountProvisions(Arrays.asList(AccountProvision.OPENREALM_PLAYER))
-                                    .accountSubscriptions(Arrays.asList(AccountSubscription.TRIAL))
-                                    .build();
-                            final JsonNode registered = ServerGameLogic.DATA_SERVICE.executePost(
-                                    "/admin/account/register", registerReq, JsonNode.class);
-                            final String accountGuid = registered.get("accountGuid").asText();
+                        final AccountDto registerReq = AccountDto.builder()
+                                .email(email).password(password).accountName(botName)
+                                .accountProvisions(Arrays.asList(AccountProvision.OPENREALM_PLAYER))
+                                .accountSubscriptions(Arrays.asList(AccountSubscription.TRIAL))
+                                .build();
+                        final JsonNode registered = ServerGameLogic.DATA_SERVICE.executePost(
+                                "/admin/account/register", registerReq, JsonNode.class);
+                        final String accountGuid = registered.get("accountGuid").asText();
 
-                            final int classId = spamMode ? CharacterClass.WIZARD.classId : CharacterClass.ASSASSIN.classId;
-                            final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executePost(
-                                    "/data/account/" + accountGuid + "/character?classId=" + classId,
-                                    null, PlayerAccountDto.class);
+                        final int classId = spamMode ? CharacterClass.WIZARD.classId : CharacterClass.ASSASSIN.classId;
+                        final PlayerAccountDto account = ServerGameLogic.DATA_SERVICE.executePost(
+                                "/data/account/" + accountGuid + "/character?classId=" + classId,
+                                null, PlayerAccountDto.class);
 
-                            String characterUuid = null;
-                            if (account.getCharacters() != null && !account.getCharacters().isEmpty()) {
-                                characterUuid = account.getCharacters().get(0).getCharacterUuid();
-                            }
-                            if (characterUuid == null) {
-                                log.error("[BOTS] Failed to get character UUID for {}", botName);
-                                return;
-                            }
-                            log.info("[BOTS] Pre-created {} (class={}, uuid={})", botName, classId, characterUuid);
-                            botCredentials.add(new String[]{email, password, characterUuid, accountGuid});
-
-                            synchronized (BOT_ACCOUNT_GUIDS) {
-                                BOT_ACCOUNT_GUIDS.add(accountGuid);
-                            }
-                        } catch (Exception e) {
-                            log.error("[BOTS] Failed to create bot account {}: {}", idx, e.getMessage());
+                        String characterUuid = null;
+                        if (account.getCharacters() != null && !account.getCharacters().isEmpty()) {
+                            characterUuid = account.getCharacters().get(0).getCharacterUuid();
                         }
-                    }, "bot-create-" + idx);
-                    t.setDaemon(true);
-                    t.start();
-                    batchThreads.add(t);
-                }
-                // Wait for this batch to finish before starting the next
-                for (Thread t : batchThreads) {
-                    try { t.join(10000); } catch (InterruptedException e) { break; }
-                }
-                log.info("[BOTS] Batch complete: {}/{} accounts created", botCredentials.size(), count);
+                        if (characterUuid == null) {
+                            log.error("[BOTS] Failed to get character UUID for {}", botName);
+                            return;
+                        }
+                        botCredentials.add(new String[]{email, password, characterUuid, accountGuid});
+                        synchronized (BOT_ACCOUNT_GUIDS) { BOT_ACCOUNT_GUIDS.add(accountGuid); }
+                    } catch (Exception e) {
+                        log.error("[BOTS] Failed to create bot account {}: {}", idx, e.getMessage());
+                    }
+                });
             }
+            createPool.shutdown();
+            try { createPool.awaitTermination(PHASE_TIMEOUT_SEC, TimeUnit.SECONDS); }
+            catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+            log.info("[BOTS] Phase 1 done in {} ms — {} / {} accounts ready",
+                    System.currentTimeMillis() - startMs, botCredentials.size(), count);
 
-            // Phase 2: Connect bots one at a time with stagger (fast, just TCP + login)
-            log.info("[BOTS] Phase 2: Connecting {} bots...", botCredentials.size());
-            int success = 0;
+            // ---- Phase 2: connect + login + godmode + realm-transfer, parallel ----
+            // Each task drives one bot to "logged in", then takes the mgr lock
+            // briefly to apply godmode + realm transfer. Lock prevents race on
+            // realm collection mutation in transferAdminToRealm; total locked
+            // section is microseconds so this doesn't serialize the connect.
+            log.info("[BOTS] Phase 2: Connecting {} bots ({}-way parallel)...", botCredentials.size(), CONNECT_PARALLELISM);
+            final long phase2Start = System.currentTimeMillis();
+            final AtomicInteger success = new AtomicInteger(0);
+            final ExecutorService connectPool = Executors.newFixedThreadPool(CONNECT_PARALLELISM, r -> {
+                Thread t = new Thread(r); t.setDaemon(true); t.setName("bot-connect"); return t;
+            });
             for (int i = 0; i < botCredentials.size(); i++) {
-                try {
-                    final String[] creds = botCredentials.get(i);
-                    final StressTestClient bot = new StressTestClient(i, serverHost, serverPort,
-                            creds[0], creds[1], creds[2], spamMode);
-                    bot.setSpawnNear(spawnX, spawnY);
-                    synchronized (ACTIVE_BOTS) {
-                        ACTIVE_BOTS.add(bot);
-                    }
-                    Thread botThread = new Thread(bot, "bot-runner-" + i);
-                    botThread.setDaemon(true);
-                    botThread.start();
+                final int idx = i;
+                final String[] creds = botCredentials.get(i);
+                connectPool.submit(() -> {
+                    try {
+                        final StressTestClient bot = new StressTestClient(idx, serverHost, serverPort,
+                                creds[0], creds[1], creds[2], spamMode);
+                        bot.setSpawnNear(spawnX, spawnY);
+                        synchronized (ACTIVE_BOTS) { ACTIVE_BOTS.add(bot); }
+                        Thread botThread = new Thread(bot, "bot-runner-" + idx);
+                        botThread.setDaemon(true);
+                        botThread.start();
 
-                    // Wait for this bot to log in (2s timeout — should take <500ms)
-                    long waitStart = System.currentTimeMillis();
-                    while (!bot.isLoggedIn() && !bot.isShutdown()
-                            && (System.currentTimeMillis() - waitStart) < 2000) {
-                        Thread.sleep(50);
-                    }
-                    if (bot.isLoggedIn()) {
-                        success++;
-                        // Give bot godmode (INVINCIBLE 24h) AND transfer them
-                        // into the caster's realm. Without the realm transfer,
-                        // bots stay in whatever realm login dropped them in
-                        // (the nexus / entry realm) — fine when the caster is
-                        // in the nexus, but in any other realm the StressTest
-                        // client's /tp X Y just moves the bot to those coords
-                        // INSIDE the nexus and they never appear next to you.
-                        try {
-                            final Player botPlayer = mgr.getPlayers().stream()
-                                    .filter(p -> p.getId() == bot.getAssignedPlayerId())
-                                    .findFirst().orElse(null);
-                            if (botPlayer != null) {
-                                botPlayer.addEffect(StatusEffectType.INVINCIBLE, 1000L * 60 * 60 * 24);
-                                final Realm casterRealm = mgr.findPlayerRealm(target.getId());
-                                final Realm botRealm = mgr.findPlayerRealm(botPlayer.getId());
-                                if (casterRealm != null && botRealm != null
-                                        && casterRealm.getRealmId() != botRealm.getRealmId()) {
-                                    final float ox = target.getPos().x + (Realm.RANDOM.nextFloat() * 60 - 30);
-                                    final float oy = target.getPos().y + (Realm.RANDOM.nextFloat() * 60 - 30);
-                                    transferAdminToRealm(mgr, botPlayer, botRealm, casterRealm,
-                                            new Vector2f(ox, oy));
-                                    log.info("[BOTS] Bot {} transferred to caster realm {} (from {})",
-                                            i, casterRealm.getRealmId(), botRealm.getRealmId());
-                                }
-                            }
-                        } catch (Exception ex) {
-                            log.warn("[BOTS] Failed to set bot {} godmode/realm: {}", i, ex.getMessage());
+                        // Tight poll for login — typical <500ms, 3s ceiling.
+                        final long waitStart = System.currentTimeMillis();
+                        while (!bot.isLoggedIn() && !bot.isShutdown()
+                                && (System.currentTimeMillis() - waitStart) < 3000) {
+                            Thread.sleep(25);
                         }
-                        log.info("[BOTS] Bot {} logged in successfully (godmode ON), connecting next...", i);
-                    } else {
-                        log.warn("[BOTS] Bot {} failed to log in within 5s, continuing...", i);
+                        if (!bot.isLoggedIn()) {
+                            log.warn("[BOTS] Bot {} did not log in within 3s", idx);
+                            return;
+                        }
+                        success.incrementAndGet();
+                        // Godmode + realm transfer — synchronized on mgr so
+                        // realm collection mutation is race-free across the
+                        // CONNECT_PARALLELISM workers.
+                        synchronized (mgr) {
+                            try {
+                                final Player botPlayer = mgr.getPlayers().stream()
+                                        .filter(p -> p.getId() == bot.getAssignedPlayerId())
+                                        .findFirst().orElse(null);
+                                if (botPlayer != null) {
+                                    botPlayer.addEffect(StatusEffectType.INVINCIBLE, 1000L * 60 * 60 * 24);
+                                    final Realm casterRealm = mgr.findPlayerRealm(target.getId());
+                                    final Realm botRealm = mgr.findPlayerRealm(botPlayer.getId());
+                                    if (casterRealm != null && botRealm != null
+                                            && casterRealm.getRealmId() != botRealm.getRealmId()) {
+                                        final float ox = target.getPos().x + (Realm.RANDOM.nextFloat() * 60 - 30);
+                                        final float oy = target.getPos().y + (Realm.RANDOM.nextFloat() * 60 - 30);
+                                        transferAdminToRealm(mgr, botPlayer, botRealm, casterRealm,
+                                                new Vector2f(ox, oy));
+                                    }
+                                }
+                            } catch (Exception ex) {
+                                log.warn("[BOTS] Bot {} godmode/realm setup failed: {}", idx, ex.getMessage());
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("[BOTS] Failed to connect bot {}: {}", idx, e.getMessage());
                     }
-                } catch (Exception e) {
-                    log.error("[BOTS] Failed to connect bot {}: {}", i, e.getMessage());
-                }
+                });
             }
-            log.info("[BOTS] Spawned {}/{} bot players", success, count);
+            connectPool.shutdown();
+            try { connectPool.awaitTermination(PHASE_TIMEOUT_SEC, TimeUnit.SECONDS); }
+            catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+            final long totalMs = System.currentTimeMillis() - startMs;
+            log.info("[BOTS] Phase 2 done in {} ms (total {} ms) — {}/{} bots online",
+                    System.currentTimeMillis() - phase2Start, totalMs, success.get(), count);
             try {
                 mgr.enqueueServerPacket(target, TextPacket.from("SYSTEM", target.getName(),
-                        "Spawned " + success + "/" + count + " bot players"));
+                        "Spawned " + success.get() + "/" + count + " bot players in " + (totalMs / 1000) + "s"));
             } catch (Exception e) {
                 // ignore
             }

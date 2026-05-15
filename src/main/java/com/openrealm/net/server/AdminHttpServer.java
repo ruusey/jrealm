@@ -68,16 +68,17 @@ public class AdminHttpServer {
 		send(ex, 200, body);
 	}
 
-	/** Current online player count — REAL players across all realms.
-	 *  Excludes headless (server-internal NPCs) and bots
-	 *  (StressTestClient connections from /spawnbots) so the public
-	 *  stat reflects actual humans. Returned as {@code {"count":N}}. */
+	/** Current online player count — every player session across all
+	 *  realms, including /spawnbots StressTestClient connections (they
+	 *  hold real WebSocket sessions and load-test like real players).
+	 *  Only excludes headless (server-internal NPCs). Returned as
+	 *  {@code {"count":N}}. */
 	private void handlePlayerCount(HttpExchange ex) throws IOException {
 		int count = 0;
 		try {
 			if (this.realmManager != null) {
 				for (final Player p : this.realmManager.getPlayers()) {
-					if (p == null || p.isHeadless() || p.isBot()) continue;
+					if (p == null || p.isHeadless()) continue;
 					count++;
 				}
 			}
