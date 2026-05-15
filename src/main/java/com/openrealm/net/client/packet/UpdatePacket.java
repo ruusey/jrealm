@@ -127,7 +127,11 @@ public class UpdatePacket extends Packet {
 		final UpdatePacket light = new UpdatePacket();
 		light.setPlayerId(player.getId());
 		light.setPlayerName(player.getName());
-		light.setStats(NetStats.fromStats(player.getStats()));
+		// getComputedStats() so the wire reflects active aura/buff modifiers
+		// (PROTECTED +5 VIT, EMPOWERED +ATT/DEX, BRACED x1.5 DEF, etc.). Raw
+		// stats are server-side bookkeeping for level-up math; the client
+		// renders what the player effectively HAS right now.
+		light.setStats(NetStats.fromStats(player.getComputedStats()));
 		light.setHealth(player.getHealth());
 		light.setMana(player.getMana());
 		light.setExperience(player.getExperience());
@@ -185,7 +189,10 @@ public class UpdatePacket extends Packet {
 		updatePacket.setPlayerName(player.getName());
 		// Use hand-rolled fromStats() instead of IOService.mapModel — same
 		// reflection-avoidance reason as in LoadPacket.from().
-		updatePacket.setStats(NetStats.fromStats(player.getStats()));
+		// getComputedStats() so active buffs/auras (EMPOWERED, PROTECTED,
+		// BRACED, etc.) show up in the client's stat panel. Raw stats stay
+		// server-side for level-up + persistence math.
+		updatePacket.setStats(NetStats.fromStats(player.getComputedStats()));
 		// Build inventory explicitly to guarantee enchantments + stack counts +
 		// forge metadata are preserved (ModelMapper can drop nested generics).
 		updatePacket.setInventory(toNetInventory(player.getInventory()));

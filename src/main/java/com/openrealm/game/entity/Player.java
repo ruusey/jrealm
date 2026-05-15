@@ -505,14 +505,20 @@ public class Player extends Entity {
 				int targetHealth = this.getHealth() - stats.getHp();
 				this.setHealth(this.getHealth() - targetHealth);
 			}
-			// MANA_FOUNT mirrors HEALING for mana — same flat WIS regen but
-			// doubled for the duration of the buff. Stacks with WIS gear so a
-			// high-wis caster pumps MP back fast.
+			// MANA_FOUNT mirrors HEALING for mana — same flat regen but
+			// doubled for the duration of the buff.
 			float mpMult = 1.0f;
 			if (this.hasEffect(StatusEffectType.MANA_FOUNT)) mpMult = 2.0f;
-			final int wis = (int) ((0.12f * (stats.getWis() + 4.2f)) * mpMult);
+			// "Muscle for Brains" (Heavy DPS, passive 11016) swaps the regen
+			// driver from WIS to ATT. A heavy-armor warrior gets MP back from
+			// their physical stat rather than the magic stat they don't invest
+			// in. Any other class regens off WIS as before.
+			final PassiveAbility classPassive = this.getClassPassive();
+			final int regenStat = (classPassive != null && classPassive.getId() == 11016)
+					? stats.getAtt() : stats.getWis();
+			final int regen = (int) ((0.12f * (regenStat + 4.2f)) * mpMult);
 			if (this.getMana() < stats.getMp()) {
-				int targetMana = this.getMana() + wis;
+				int targetMana = this.getMana() + regen;
 				if (targetMana > stats.getMp()) {
 					targetMana = stats.getMp();
 				}
@@ -576,6 +582,20 @@ public class Player extends Entity {
 		// Priest Protective Aura — +5 VIT to every ally inside the aura.
 		if (this.hasEffect(StatusEffectType.PROTECTED)) {
 			stats.setVit((short) Math.min(Short.MAX_VALUE, stats.getVit() + 5));
+		}
+		// Heavy Buffer Guiding Light — split into two parallel statuses
+		// (EMPOWERED_ATT, EMPOWERED_DEX) so the UI can stack two distinct
+		// icons over the player's head. The aura tick always applies both
+		// with the same magnitude (caster.WIS / divisor), but reading
+		// them separately means future kits can grant only one half if
+		// the design ever wants it.
+		if (this.hasEffect(StatusEffectType.EMPOWERED_ATT)) {
+			final short bonus = this.getEffectMagnitude(StatusEffectType.EMPOWERED_ATT);
+			if (bonus > 0) stats.setAtt((short) Math.min(Short.MAX_VALUE, stats.getAtt() + bonus));
+		}
+		if (this.hasEffect(StatusEffectType.EMPOWERED_DEX)) {
+			final short bonus = this.getEffectMagnitude(StatusEffectType.EMPOWERED_DEX);
+			if (bonus > 0) stats.setDex((short) Math.min(Short.MAX_VALUE, stats.getDex() + bonus));
 		}
 		return stats;
 	}

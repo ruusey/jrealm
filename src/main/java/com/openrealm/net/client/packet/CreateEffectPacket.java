@@ -137,6 +137,25 @@ public class CreateEffectPacket extends Packet {
 	/** Necromancer Vampirism — red life-drain tendrils snapping from each
 	 *  enemy in range back to the caster, pulsing as HP transfers. */
 	public static final short EFFECT_VAMPIRIC_LATCH  = 52;
+	/** Heavy Debuffer Sidearm — quick silver rapier stab. Bright point that
+	 *  flashes outward in 4 cardinal directions with sparkle trail. */
+	public static final short EFFECT_RAPIER_STAB     = 53;
+	/** Heavy Debuffer Ankle Strike — low horizontal arc sweeping across the
+	 *  bottom half of the ring. Steel/red palette. */
+	public static final short EFFECT_LOW_SWING       = 54;
+	/** Heavy Debuffer Disarm — ultimate rapier flourish. Triple-ring expanding
+	 *  outward, sparkle stars at 8 cardinal/diagonal points, central impact
+	 *  burst. Gold + white. */
+	public static final short EFFECT_DISARM_FLOURISH = 55;
+	/** Heavy Buffer Divine Beam — vertical column of golden light + ground
+	 *  halo + rising heal sparkles. */
+	public static final short EFFECT_DIVINE_BEAM     = 56;
+	/** Heavy Buffer Fortify — ground sigil (hexagram) with rising green+blue
+	 *  sparkles. Pulsing regen aura. Longer duration to match the buff. */
+	public static final short EFFECT_FORTIFY_AURA    = 57;
+	/** Heavy DPS Ground Pound — expanding dust ring + radial ground-crack
+	 *  lines + lingering dust cloud. Brown/tan palette. */
+	public static final short EFFECT_GROUND_POUND    = 58;
 
 	public static CreateEffectPacket aoeEffect(short type, float x, float y, float radius, short duration) {
 		return aoeEffect(type, x, y, radius, duration, (byte) 0);

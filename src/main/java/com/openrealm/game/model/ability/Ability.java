@@ -58,6 +58,16 @@ public class Ability {
     private int baseDamage;
 
     /**
+     * Override for the AoE base radius (px) on {@code aoe_targeted} and
+     * {@code aoe_ally} abilities. When > 0, replaces the hardcoded 96px
+     * floor in RealmManagerServer's AoE resolver. RADIUS scalings still add
+     * on top. Use this to make a melee-feel ability (Ground Pound, etc.)
+     * actually short-range — without it, 96px is the smallest AoE the
+     * system can produce.
+     */
+    private int baseRadius;
+
+    /**
      * Phase 2D — maximum invested skill points for this ability. Defaults to 5
      * for non-ultimates; ultimate abilities (slot 3) typically declare 3 in
      * data. Server enforces the cap on {@code InvestSkillPointPacket}.

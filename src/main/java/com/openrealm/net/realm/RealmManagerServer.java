@@ -175,6 +175,19 @@ public class RealmManagerServer implements Runnable {
 	// getPartyManager() so chat-command handlers and packet handlers can mutate.
 	private final PartyManager partyManager = new PartyManager();
 
+	// ─── Class passive tuning constants ───────────────────────────────────
+	// Heavy Buffer "Guiding Light" — EMPOWERED bonus = floor(caster.WIS / N)
+	// added to each of ATT/SPD/DEX. Lower divisor = stronger aura. At 5 a
+	// maxed (75 WIS) buffer grants +15 to all three offensive stats; at 10
+	// it'd grant +7. Edit and rebuild to tune.
+	private static final int GUIDING_LIGHT_WIS_DIVISOR = 5;
+	// Heavy Debuffer "Precision Striker" — bullets from a player with this
+	// passive ignore floor(caster.DEX / N) of the target's DEF before the
+	// 15% damage floor is applied. ARMOR_PIERCING and ARMOR_BROKEN still
+	// fully ignore DEF as before; this is partial pen that stacks beneath.
+	// At 10 a maxed (75 DEX) striker pens 7 DEF.
+	private static final int PRECISION_STRIKER_DEX_DIVISOR = 10;
+
 	// Phase 4 — Necromancer Soul Harvest (#4 ult). Each cast spawns a vortex
 	// field that lives for {@code expiresAt - now} ms; the tick loop drains
 	// HP from enemies inside the field every {@code DRAIN_PERIOD_MS} and
@@ -1893,6 +1906,37 @@ public class RealmManagerServer implements Runnable {
 						if (maxHp > 0 && p.getHealth() * 2 < maxHp) {
 							p.addEffect(StatusEffectType.BRACED, REFRESH_MS);
 						}
+					} else if (pa.getId() == 11015) {
+						// Heavy Buffer "Guiding Light" — refresh EMPOWERED_ATT and
+						// EMPOWERED_DEX on every party member within range INCLUDING
+						// the buffer itself (realm.getPlayers() contains the caster).
+						// Magnitude = floor(caster.WIS / GUIDING_LIGHT_WIS_DIVISOR).
+						// Two parallel statuses so the UI stacks two icons above
+						// the player ("Atk+10" and "Dex+10") instead of one combined
+						// label — design call from the buffer playtest.
+						final Vector2f pc = p.getPos().clone(p.getSize() / 2, p.getSize() / 2);
+						final short bonus = (short) Math.max(0,
+								p.getComputedStats().getWis() / GUIDING_LIGHT_WIS_DIVISOR);
+						for (final Player ally : realm.getPlayers().values()) {
+							final Vector2f ac = ally.getPos().clone(ally.getSize() / 2, ally.getSize() / 2);
+							final float dx = ac.x - pc.x, dy = ac.y - pc.y;
+							if (dx * dx + dy * dy > AURA_RADIUS_SQ) continue;
+							// Floating "+N ATT" / "+N DEX" cast text — only on the
+							// first application (transition from no-EMPOWERED to
+							// has-EMPOWERED). Without this guard we'd flood the
+							// screen with text every 125ms tick while standing
+							// inside the aura. We check EMPOWERED_ATT as the proxy
+							// for "did this player just enter the aura" since both
+							// statuses always apply together.
+							if (bonus > 0 && !ally.hasEffect(StatusEffectType.EMPOWERED_ATT)) {
+								this.broadcastTextEffect(realm, EntityType.PLAYER, ally,
+										TextEffect.HEAL, "+" + bonus + " ATT");
+								this.broadcastTextEffect(realm, EntityType.PLAYER, ally,
+										TextEffect.HEAL, "+" + bonus + " DEX");
+							}
+							ally.addEffect(StatusEffectType.EMPOWERED_ATT, REFRESH_MS, bonus);
+							ally.addEffect(StatusEffectType.EMPOWERED_DEX, REFRESH_MS, bonus);
+						}
 					} else if (pa.getId() == 11008) {
 						// Necromancer Necrotic Aura — continuously refreshes CURSED
 						// (1.25× damage taken) on every enemy in range. Range is
@@ -2790,8 +2834,11 @@ public class RealmManagerServer implements Runnable {
 		final boolean aoeTargeted = ab != null && ab.getTags() != null && ab.getTags().contains("aoe_targeted");
 		final boolean aoeAlly    = ab != null && ab.getTags() != null && ab.getTags().contains("aoe_ally");
 		if (aoeTargeted || aoeAlly) {
-			// Radius: default 96px + sum of RADIUS scaling contributions (curve-aware).
-			float aoeRadius = 96f;
+			// Radius: ability.baseRadius if set (lets short-range melee
+			// AoEs like Ground Pound be tighter than the 96px floor),
+			// otherwise the 96px default, plus the sum of RADIUS scaling
+			// contributions (curve-aware).
+			float aoeRadius = (ab.getBaseRadius() > 0) ? ab.getBaseRadius() : 96f;
 			if (ab != null) {
 				for (AbilityScaling sc : ab.scalingList()) {
 					if (!"RADIUS".equalsIgnoreCase(sc.getTarget())) continue;
@@ -2847,6 +2894,13 @@ public class RealmManagerServer implements Runnable {
 				if (ab.getTags().contains("stasis_lock"))    { visualEffect = CreateEffectPacket.EFFECT_STASIS_LOCK;     vTier = 2; } // frozen clock
 				if (ab.getTags().contains("sanctuary"))      { visualEffect = CreateEffectPacket.EFFECT_SANCTUARY_DOME;  vTier = 3; } // golden dome
 				if (ab.getTags().contains("vampiric"))       { visualEffect = CreateEffectPacket.EFFECT_VAMPIRIC_LATCH;  vTier = 5; } // red drain
+				// Heavy class visuals (2026-05-14)
+				if (ab.getTags().contains("rapier_stab"))    { visualEffect = CreateEffectPacket.EFFECT_RAPIER_STAB;     vTier = 0; } // silver
+				if (ab.getTags().contains("low_swing"))      { visualEffect = CreateEffectPacket.EFFECT_LOW_SWING;       vTier = 5; } // red steel
+				if (ab.getTags().contains("disarm_flourish")){ visualEffect = CreateEffectPacket.EFFECT_DISARM_FLOURISH; vTier = 3; } // gold + white
+				if (ab.getTags().contains("divine_beam"))    { visualEffect = CreateEffectPacket.EFFECT_DIVINE_BEAM;     vTier = 3; } // gold pillar
+				if (ab.getTags().contains("fortify_aura"))   { visualEffect = CreateEffectPacket.EFFECT_FORTIFY_AURA;    vTier = 2; } // green regen
+				if (ab.getTags().contains("ground_pound"))   { visualEffect = CreateEffectPacket.EFFECT_GROUND_POUND;    vTier = 4; } // brown dust
 				// A few effects benefit from a longer-than-default on-screen
 				// life (Sanctuary's INVINCIBLE buff lasts 5s; Stasis Lock's
 				// GROUNDED window is 4s). Bumping the per-packet duration
@@ -2857,6 +2911,13 @@ public class RealmManagerServer implements Runnable {
 				else if (visualEffect == CreateEffectPacket.EFFECT_REALITY_TEAR) visualDurationMs = 2500;
 				else if (visualEffect == CreateEffectPacket.EFFECT_PHANTOM_STRIKE) visualDurationMs = 1800;
 				else if (visualEffect == CreateEffectPacket.EFFECT_VAMPIRIC_LATCH) visualDurationMs = 2000;
+				// Heavy class visuals — match life to the gameplay flavor
+				else if (visualEffect == CreateEffectPacket.EFFECT_RAPIER_STAB) visualDurationMs = 350;
+				else if (visualEffect == CreateEffectPacket.EFFECT_LOW_SWING)   visualDurationMs = 500;
+				else if (visualEffect == CreateEffectPacket.EFFECT_DISARM_FLOURISH) visualDurationMs = 900;
+				else if (visualEffect == CreateEffectPacket.EFFECT_DIVINE_BEAM) visualDurationMs = 900;
+				else if (visualEffect == CreateEffectPacket.EFFECT_FORTIFY_AURA) visualDurationMs = 5000;
+				else if (visualEffect == CreateEffectPacket.EFFECT_GROUND_POUND) visualDurationMs = 700;
 				this.enqueueServerPacketToRealm(targetRealm, CreateEffectPacket.aoeEffect(
 						visualEffect, effCenter.x, effCenter.y, aoeRadius, visualDurationMs, vTier));
 				// "outline_ring" tag — extra outline at radius. For Hunter's Mark
@@ -3865,7 +3926,23 @@ public class RealmManagerServer implements Runnable {
 				// Armor piercing/broken: full damage, ignore defense entirely
 				dmgToInflict = (short) b.getDamage();
 			} else {
-				dmgToInflict = (short) (b.getDamage() - model.getStats().getDef());
+				// Heavy Debuffer "Precision Striker" (passive 11014) — grant
+				// floor(caster.DEX / PRECISION_STRIKER_DEX_DIVISOR) of armor
+				// penetration so this shot bypasses that many points of DEF
+				// before the standard mitigation kicks in. Stacks under the
+				// full-ignore branch (which already takes priority above).
+				int effectiveDef = model.getStats().getDef();
+				if (b.getSrcEntityId() != 0L) {
+					final Player src = this.getPlayerById(b.getSrcEntityId());
+					if (src != null) {
+						final PassiveAbility pass = src.getClassPassive();
+						if (pass != null && pass.getId() == 11014) {
+							final int pen = src.getComputedStats().getDex() / PRECISION_STRIKER_DEX_DIVISOR;
+							effectiveDef = Math.max(0, effectiveDef - pen);
+						}
+					}
+				}
+				dmgToInflict = (short) (b.getDamage() - effectiveDef);
 				if (dmgToInflict < minDmg) {
 					dmgToInflict = minDmg;
 				}

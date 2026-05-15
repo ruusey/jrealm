@@ -44,6 +44,16 @@ public abstract class Entity extends GameObject {
 
     private Short[] effectIds;
     private Long[] effectTimes;
+    /**
+     * Per-effect magnitude for statuses that need it (currently EMPOWERED —
+     * Heavy Buffer's Guiding Light aura, where each refresh carries a bonus
+     * derived from the caster's WIS). Parallel to {@link #effectIds} —
+     * effectMagnitudes[i] is the magnitude of effectIds[i]. 0 means
+     * "no magnitude" / "use the status's hardcoded default". Server-side
+     * only; not serialized to the wire (the wire just carries the status id
+     * for icon display, server is authoritative for stat math).
+     */
+    private Short[] effectMagnitudes;
 
     public Entity(long id, Vector2f origin, int size) {
         super(id, origin, size);
@@ -56,6 +66,7 @@ public abstract class Entity extends GameObject {
             if (this.effectIds[i] == effectId) {
                 this.effectIds[i] = (short) -1;
                 this.effectTimes[i] = (long) -1;
+                if (this.effectMagnitudes != null) this.effectMagnitudes[i] = 0;
             }
         }
     }
@@ -66,9 +77,20 @@ public abstract class Entity extends GameObject {
                 if (Instant.now().toEpochMilli() > this.effectTimes[i]) {
                     this.effectIds[i] = (short) -1;
                     this.effectTimes[i] = (long) -1;
+                    if (this.effectMagnitudes != null) this.effectMagnitudes[i] = 0;
                 }
             }
         }
+    }
+
+    /** Read the magnitude associated with an active effect, or 0 if the
+     *  effect isn't active or wasn't applied with a magnitude. */
+    public short getEffectMagnitude(StatusEffectType effect) {
+        if (this.effectIds == null || this.effectMagnitudes == null) return 0;
+        for (int i = 0; i < this.effectIds.length; i++) {
+            if (this.effectIds[i] == effect.effectId) return this.effectMagnitudes[i];
+        }
+        return 0;
     }
 
     public boolean hasEffect(StatusEffectType effect) {
@@ -92,6 +114,7 @@ public abstract class Entity extends GameObject {
     public void resetEffects() {
         this.effectIds = new Short[] { -1, -1, -1, -1, -1, -1, -1, -1 };
         this.effectTimes = new Long[] { -1l, -1l, -1l, -1l, -1l, -1l, -1l, -1l };
+        this.effectMagnitudes = new Short[] { 0, 0, 0, 0, 0, 0, 0, 0 };
     }
 
     /** Set of status effect ids that are considered debuffs — used by the
@@ -124,6 +147,19 @@ public abstract class Entity extends GameObject {
     }
 
     public void addEffect(StatusEffectType effect, long duration) {
+        addEffect(effect, duration, (short) 0);
+    }
+
+    /**
+     * Apply a status with a per-instance magnitude. Used by EMPOWERED so the
+     * Heavy Buffer's Guiding Light aura can carry the caster's WIS-derived
+     * boost. For statuses that don't read magnitude (BRACED, SLOWED, etc.)
+     * the value is harmless extra bookkeeping.
+     *
+     * When refreshing an already-active effect, the LARGER magnitude wins
+     * so a stronger caster doesn't get downgraded by a weaker one mid-tick.
+     */
+    public void addEffect(StatusEffectType effect, long duration, short magnitude) {
         // WARDED — silently drop any incoming debuff. Beneficial statuses
         // (heals, speed buffs) still apply because they're not in DEBUFF_IDS.
         if (DEBUFF_IDS.contains(effect.effectId)
@@ -157,6 +193,7 @@ public abstract class Entity extends GameObject {
                 if (this.effectIds[i] == -1) {
                     this.effectIds[i] = effect.effectId;
                     this.effectTimes[i] = expireTime;
+                    if (this.effectMagnitudes != null) this.effectMagnitudes[i] = magnitude;
                     return;
                 }
             }
@@ -168,6 +205,12 @@ public abstract class Entity extends GameObject {
                 if (expireTime > this.effectTimes[i]) {
                     this.effectTimes[i] = expireTime;
                 }
+                // Refresh magnitude with the larger value so a stronger
+                // caster's aura tick doesn't get clobbered by a weaker one.
+                if (this.effectMagnitudes != null
+                        && magnitude > this.effectMagnitudes[i]) {
+                    this.effectMagnitudes[i] = magnitude;
+                }
                 return;
             }
         }
@@ -175,6 +218,7 @@ public abstract class Entity extends GameObject {
             if (this.effectIds[i] == -1) {
                 this.effectIds[i] = effect.effectId;
                 this.effectTimes[i] = expireTime;
+                if (this.effectMagnitudes != null) this.effectMagnitudes[i] = magnitude;
                 return;
             }
         }

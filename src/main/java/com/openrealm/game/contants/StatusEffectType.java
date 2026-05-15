@@ -20,6 +20,9 @@ public enum StatusEffectType {
     HEALING((short) 1),
     PARALYZED((short) 2),
     STUNNED((short) 3),
+    /** Movement-speed buff (+50% tiles/sec). Does NOT affect fire rate —
+     *  that's BERSERK's job after the 2026-05-14 split. Most class buffs
+     *  that want "go faster overall" should grant SPEEDY + BERSERK. */
     SPEEDY((short) 4),
     HEAL((short) 5),
     INVINCIBLE((short) 6),
@@ -31,6 +34,10 @@ public enum StatusEffectType {
     CURSED((short) 16),
     POISONED((short) 17),
     ARMORED((short) 18),
+    /** Fire-rate buff (+50% attack speed). NO movement effect, NO DEF
+     *  penalty — clean attack-speed buff post-2026-05-14 split from SPEEDY.
+     *  Pairs with SPEEDY for an "everything faster" combo (e.g. Warrior
+     *  Rampage, Heavy Debuffer Disarm). */
     BERSERK((short) 19),
     SLOWED((short) 21),
     ARMOR_BROKEN((short) 22),
@@ -75,7 +82,16 @@ public enum StatusEffectType {
     /** Trickster passive marker — when an enemy carrying this dies, an
      *  extra loot-tier roll bias is applied for whichever player tagged
      *  it. Pure server-side bookkeeping; no visible aura. */
-    MARKED_FOR_LOOT((short) 33);
+    MARKED_FOR_LOOT((short) 33),
+    /** Heavy Buffer "Guiding Light" aura — ATT half. Adds a flat bonus to
+     *  the holder's ATT equal to the per-instance magnitude (caster's
+     *  WIS/5). Paired with EMPOWERED_DEX so both icons show separately
+     *  above the player's head; the aura applies both at once. */
+    EMPOWERED_ATT((short) 34),
+    /** Heavy Buffer "Guiding Light" aura — DEX half. Mirrors
+     *  EMPOWERED_ATT but adds to DEX. Always applied alongside
+     *  EMPOWERED_ATT — two-icon UI is intentional. */
+    EMPOWERED_DEX((short) 35);
 
     public static Map<Short, StatusEffectType> map = new HashMap<>();
     static {
