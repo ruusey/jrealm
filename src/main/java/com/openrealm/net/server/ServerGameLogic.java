@@ -562,18 +562,14 @@ public class ServerGameLogic {
 		}
 	}
 
-	@PacketHandlerServer(TextPacket.class)
-	public static void handleText0(RealmManagerServer mgr, Packet packet) {
-		final TextPacket textPacket = (TextPacket) packet;
-		final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
-		if (!validateCallingPlayer(mgr, packet, fromPlayerId)) {
-			return;
-		}
-		final Player player = mgr.searchRealmsForPlayer(fromPlayerId);
-		final Realm realm = mgr.findPlayerRealm(fromPlayerId);
-
-		log.info("Player {} says {} from Realm {}", player.getName(), textPacket.getMessage(), realm.getRealmId());
-	}
+	// DO NOT add a @PacketHandlerServer(TextPacket.class) stub here.
+	// The dispatch path in RealmManagerServer.processPackets short-circuits
+	// on the FIRST reflection-registered handler list — if a stub is
+	// annotated for TextPacket the real broadcaster (handleTextServer,
+	// explicitly registered via registerPacketCallback) becomes dead code
+	// and chat silently stops reaching other players. The only TextPacket
+	// handler must be ServerGameLogic.handleTextServer, registered via
+	// RealmManagerServer.registerPacketCallbacks().
 
 	public static void handlePlayerShootServer(RealmManagerServer mgr, Packet packet) {
 		final PlayerShootPacket shootPacket = (PlayerShootPacket) packet;
@@ -590,7 +586,9 @@ public class ServerGameLogic {
 		boolean canShoot = false;
 		if (realm.getPlayerLastShotTime().get(player.getId()) != null) {
 			double dex = (int) ((6.5 * (player.getComputedStats().getDex() + 17.3)) / 75);
-			if (player.hasEffect(StatusEffectType.SPEEDY)) {
+			// BERSERK = +50% fire rate. SPEEDY no longer affects fire rate
+			// (movement-only). Use BERSERK for any "attack faster" buff.
+			if (player.hasEffect(StatusEffectType.BERSERK)) {
 				dex = dex * 1.5;
 			}else if(player.hasEffect(StatusEffectType.DAZED)) {
 				dex = 1.0;
@@ -738,25 +736,35 @@ public class ServerGameLogic {
 
 	public static void handleTextServer(RealmManagerServer mgr, Packet packet) {
 		final TextPacket textPacket = (TextPacket) packet;
-		final long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
-		if (!validateCallingPlayer(mgr, packet, fromPlayerId)) {
+		log.info("[SERVER] handleTextServer ENTRY srcIp={} from={} to={} msg={}",
+				textPacket.getSrcIp(), textPacket.getFrom(), textPacket.getTo(), textPacket.getMessage());
+		final Long fromPlayerId = mgr.getRemoteAddresses().get(textPacket.getSrcIp());
+		if (fromPlayerId == null) {
+			log.warn("[SERVER] handleTextServer: no remote-address mapping for srcIp={} — dropping",
+					textPacket.getSrcIp());
 			return;
 		}
+		// NOTE: validateCallingPlayer compares the same id to itself for
+		// TextPacket (both derived from srcIp) so it can only fail when
+		// the player isn't in any realm. Skip it for chat — silent drops
+		// here are the #1 cause of "my chat just vanished" reports.
 		final Player fromPlayer = mgr.searchRealmsForPlayer(fromPlayerId);
-		final Realm from = mgr.findPlayerRealm(fromPlayerId);
+		if (fromPlayer == null) {
+			log.warn("[SERVER] handleTextServer: no player in any realm for id={} (srcIp={}) — dropping",
+					fromPlayerId, textPacket.getSrcIp());
+			return;
+		}
 		try {
-//            ServerGameLogic.log.info("[SERVER] Recieved Text Packet \nTO: {}\nFROM: {}\nMESSAGE: {}\nSrcIp: {}",
-//                    textPacket.getTo(), textPacket.getFrom(), textPacket.getMessage(), textPacket.getSrcIp());
-
-			String chatTo = fromPlayer.getChatRole() != null ? fromPlayer.getChatRole() : "";
-			TextPacket toBroadcast = TextPacket.create(fromPlayer.getName(), chatTo, textPacket.getMessage());
+			final String chatTo = fromPlayer.getChatRole() != null ? fromPlayer.getChatRole() : "";
+			final TextPacket toBroadcast = TextPacket.create(fromPlayer.getName(), chatTo, textPacket.getMessage());
 			mgr.enqueueServerPacket(toBroadcast);
 			if (fromPlayer.getMetrics() != null) {
 				fromPlayer.getMetrics().recordChatMessage();
 			}
-			ServerGameLogic.log.info("[SERVER] Broadcasted player chat message from {}", fromPlayer.getName());
+			log.info("[SERVER] Broadcasted player chat message from {} (role={}): {}",
+					fromPlayer.getName(), chatTo, textPacket.getMessage());
 		} catch (Exception e) {
-			ServerGameLogic.log.error("Failed to send welcome message. Reason: {}", e);
+			log.error("[SERVER] handleTextServer broadcast failed: {}", e.getMessage(), e);
 		}
 	}
 	
