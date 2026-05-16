@@ -97,6 +97,23 @@ public class PartyManager {
     }
 
     /**
+     * Result of a leave/disconnect. {@code partyId} is the party the player
+     * was removed from (0 if they weren't in one). {@code evictedSurvivorId}
+     * is the lone remaining member that was auto-evicted because parties of
+     * size 1 are not allowed (0 when no auto-eviction happened — either the
+     * party still has >=2 members, or it was already empty).
+     */
+    public static final class LeaveResult {
+        public final long partyId;
+        public final long evictedSurvivorId;
+        public LeaveResult(long partyId, long evictedSurvivorId) {
+            this.partyId = partyId;
+            this.evictedSurvivorId = evictedSurvivorId;
+        }
+        public static final LeaveResult NOT_IN_PARTY = new LeaveResult(0L, 0L);
+    }
+
+    /**
      * Accept the most-recent invite. Returns the partyId on success, or 0 if
      * there's no pending invite or the inviter has since gone offline / left
      * their party.
@@ -131,30 +148,101 @@ public class PartyManager {
     }
 
     /**
-     * Remove {@code playerId} from their party. Auto-disbands single-member
-     * parties. Returns the partyId they left (0 if they weren't in one).
+     * Remove {@code playerId} from their party. Auto-disbands when the
+     * roster drops to 0 OR 1 member (parties of size 1 are not allowed per
+     * design — a lone member is "not in a party").
+     *
+     * Returns a {@link LeaveResult} with the partyId they left and, if the
+     * dissolve-on-1 path fired, the survivor's id so callers can push a
+     * {@code partyId=0} update to that client.
      */
-    public long leave(long playerId) {
+    public LeaveResult leave(long playerId) {
         final Long pid = playerParty.remove(playerId);
-        if (pid == null || pid == 0L) return 0L;
+        if (pid == null || pid == 0L) return LeaveResult.NOT_IN_PARTY;
         final Set<Long> roster = rosters.get(pid);
+        long evictedSurvivor = 0L;
         if (roster != null) {
             synchronized (roster) {
                 roster.remove(playerId);
+                if (roster.size() == 1) {
+                    evictedSurvivor = roster.iterator().next();
+                    roster.clear();
+                }
                 if (roster.isEmpty()) {
                     rosters.remove(pid);
-                    log.info("[PARTY] partyId={} disbanded (last member left)", pid);
+                    log.info("[PARTY] partyId={} disbanded (size dropped below 2)", pid);
                 }
             }
+            if (evictedSurvivor != 0L) {
+                playerParty.remove(evictedSurvivor);
+            }
         }
-        return pid;
+        // Drop any pending invite from or to this player so disconnect
+        // doesn't leave a phantom invite pointing at a dead playerId.
+        pendingInvites.remove(playerId);
+        pendingInvites.entrySet().removeIf(e -> e.getValue()[0] == playerId);
+        return new LeaveResult(pid, evictedSurvivor);
     }
 
-    /** Drop expired pending invites — called periodically by the tick loop. */
-    public void evictExpiredInvites() {
-        final long now = System.currentTimeMillis();
-        for (Map.Entry<Long, long[]> e : new HashMap<>(pendingInvites).entrySet()) {
-            if (now > e.getValue()[1]) pendingInvites.remove(e.getKey());
+    /**
+     * Tear down all party + invite state for a disconnecting player.
+     * Semantically identical to {@link #leave(long)} but spelled differently
+     * at the call site so disconnect bookkeeping is obvious.
+     */
+    public LeaveResult handleDisconnect(long playerId) {
+        return leave(playerId);
+    }
+
+    /**
+     * If {@code inviterId} sits in a 1-person party with no outstanding
+     * outgoing invites, auto-disband it. Returns the survivor's id (== the
+     * inviter) when a disband happened so the caller can push a
+     * {@code partyId=0} update; 0 otherwise.
+     */
+    public long disbandIfSoloWithNoPendingInvites(long inviterId) {
+        final long pid = getPartyId(inviterId);
+        if (pid == 0L) return 0L;
+        for (long[] inv : pendingInvites.values()) {
+            if (inv[0] == inviterId) return 0L;
         }
+        final Set<Long> roster = rosters.get(pid);
+        if (roster == null) return 0L;
+        boolean disbanded = false;
+        synchronized (roster) {
+            if (roster.size() == 1 && roster.contains(inviterId)) {
+                roster.clear();
+                disbanded = true;
+            }
+        }
+        if (!disbanded) return 0L;
+        rosters.remove(pid);
+        playerParty.remove(inviterId);
+        log.info("[PARTY] partyId={} disbanded (solo lobby, no pending invites)", pid);
+        return inviterId;
+    }
+
+    /** Drop expired pending invites — called periodically by the tick loop.
+     *  Returns the set of inviters whose solo lobbies were auto-disbanded as
+     *  a result, so the caller can send them a {@code partyId=0} update. */
+    public Set<Long> evictExpiredInvites() {
+        final long now = System.currentTimeMillis();
+        final Set<Long> stranded = new HashSet<>();
+        for (Map.Entry<Long, long[]> e : new HashMap<>(pendingInvites).entrySet()) {
+            if (now > e.getValue()[1]) {
+                final long inviterId = e.getValue()[0];
+                pendingInvites.remove(e.getKey());
+                // Defer the solo-disband check until after we've removed all
+                // expired invites so a multi-pending inviter doesn't get
+                // disbanded mid-loop.
+                stranded.add(inviterId);
+            }
+        }
+        final Set<Long> disbandedInviters = new HashSet<>();
+        for (Long inviterId : stranded) {
+            if (disbandIfSoloWithNoPendingInvites(inviterId) != 0L) {
+                disbandedInviters.add(inviterId);
+            }
+        }
+        return disbandedInviters;
     }
 }

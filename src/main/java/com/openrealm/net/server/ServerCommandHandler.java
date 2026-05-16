@@ -371,15 +371,31 @@ public class ServerCommandHandler {
                 replySystem(mgr, target, "Invite declined.");
                 final Player inviterP = mgr.getPlayerById(inviter);
                 if (inviterP != null) replySystem(mgr, inviterP, target.getName() + " declined your party invite.");
+                // If the inviter is stuck in a 1-person lobby with no other
+                // pending invites, tear it down so they don't sit in a
+                // phantom party.
+                final long disbanded = pm.disbandIfSoloWithNoPendingInvites(inviter);
+                if (disbanded != 0L && inviterP != null) {
+                    mgr.sendEmptyPartyUpdate(inviterP);
+                }
                 return;
             }
             case "leave": {
                 final long pid = pm.getPartyId(target.getId());
                 if (pid == 0L) { replySystem(mgr, target, "You are not in a party."); return; }
-                pm.leave(target.getId());
+                final PartyManager.LeaveResult res = pm.leave(target.getId());
                 replySystem(mgr, target, "You left the party.");
                 mgr.sendEmptyPartyUpdate(target);
-                mgr.broadcastPartyUpdate(pid);  // remaining members
+                if (res.evictedSurvivorId != 0L) {
+                    // 2→1 dissolve: tell the lone survivor the party is gone.
+                    final Player survivor = mgr.getPlayerById(res.evictedSurvivorId);
+                    if (survivor != null) {
+                        mgr.sendEmptyPartyUpdate(survivor);
+                        replySystem(mgr, survivor, target.getName() + " left — your party has disbanded.");
+                    }
+                } else {
+                    mgr.broadcastPartyUpdate(pid);  // remaining members (>=2)
+                }
                 return;
             }
             case "list": {
