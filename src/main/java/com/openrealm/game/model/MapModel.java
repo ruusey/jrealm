@@ -24,8 +24,13 @@ public class MapModel {
     private int tileSize;
     private int width;
     private int height;
-    private int terrainId;
-    private int dungeonId;
+    // Default to -1 ("no terrain / no dungeon") so any map JSON that omits
+    // these fields is treated as a static map by every consumer that checks
+    // {@code terrainId < 0}. Without an explicit initializer the primitive
+    // defaults to 0, which is Beach's real terrainId, causing static maps
+    // to silently inherit Beach's random-spawn enemy groups.
+    private int terrainId = -1;
+    private int dungeonId = -1;
     private Map<String, int[][]> data;
     private DungeonGenerationParams dungeonParams;
     private List<StaticSpawn> staticSpawns;
