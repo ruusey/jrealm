@@ -1412,8 +1412,6 @@ public class ServerCommandHandler {
 
         final String serverHost = "127.0.0.1";
         final int serverPort = 2222;
-        final float spawnX = target.getPos().x;
-        final float spawnY = target.getPos().y;
 
         WorkerThread.doAsync(() -> {
             // Pools sized for "fast" rather than "polite" — the data service
@@ -1493,42 +1491,69 @@ public class ServerCommandHandler {
                     try {
                         final StressTestClient bot = new StressTestClient(idx, serverHost, serverPort,
                                 creds[0], creds[1], creds[2], spamMode);
-                        bot.setSpawnNear(spawnX, spawnY);
+                        // Server-side authoritative placement (see below) handles
+                        // both realm and coords — no need for the bot to /tp itself.
                         synchronized (ACTIVE_BOTS) { ACTIVE_BOTS.add(bot); }
                         Thread botThread = new Thread(bot, "bot-runner-" + idx);
                         botThread.setDaemon(true);
                         botThread.start();
 
-                        // Tight poll for login — typical <500ms, 3s ceiling.
+                        // Poll for login. 10s ceiling — at CONNECT_PARALLELISM=32
+                        // the data svc + game svc on the same host can occasionally
+                        // queue past 3s during 200-bot bursts. Losing the wait here
+                        // means the bot never gets realm-transferred and stays in
+                        // nexus, which is the symptom users see.
                         final long waitStart = System.currentTimeMillis();
                         while (!bot.isLoggedIn() && !bot.isShutdown()
-                                && (System.currentTimeMillis() - waitStart) < 3000) {
+                                && (System.currentTimeMillis() - waitStart) < 10000) {
                             Thread.sleep(25);
                         }
                         if (!bot.isLoggedIn()) {
-                            log.warn("[BOTS] Bot {} did not log in within 3s", idx);
+                            log.warn("[BOTS] Bot {} did not log in within 10s", idx);
                             return;
                         }
                         success.incrementAndGet();
-                        // Godmode + realm transfer — synchronized on mgr so
-                        // realm collection mutation is race-free across the
+                        // Godmode + unconditional realm placement. Synchronized on
+                        // mgr so realm collection mutation is race-free across the
                         // CONNECT_PARALLELISM workers.
                         synchronized (mgr) {
                             try {
                                 final Player botPlayer = mgr.getPlayers().stream()
                                         .filter(p -> p.getId() == bot.getAssignedPlayerId())
                                         .findFirst().orElse(null);
-                                if (botPlayer != null) {
-                                    botPlayer.addEffect(StatusEffectType.INVINCIBLE, 1000L * 60 * 60 * 24);
-                                    final Realm casterRealm = mgr.findPlayerRealm(target.getId());
-                                    final Realm botRealm = mgr.findPlayerRealm(botPlayer.getId());
-                                    if (casterRealm != null && botRealm != null
-                                            && casterRealm.getRealmId() != botRealm.getRealmId()) {
-                                        final float ox = target.getPos().x + (Realm.RANDOM.nextFloat() * 60 - 30);
-                                        final float oy = target.getPos().y + (Realm.RANDOM.nextFloat() * 60 - 30);
-                                        transferAdminToRealm(mgr, botPlayer, botRealm, casterRealm,
-                                                new Vector2f(ox, oy));
-                                    }
+                                if (botPlayer == null) {
+                                    log.warn("[BOTS] Bot {} player object not found after login", idx);
+                                    return;
+                                }
+                                botPlayer.addEffect(StatusEffectType.INVINCIBLE, 1000L * 60 * 60 * 24);
+                                final Realm casterRealm = mgr.findPlayerRealm(target.getId());
+                                if (casterRealm == null) {
+                                    log.warn("[BOTS] Caster {} not in any realm — leaving bot {} in nexus",
+                                            target.getName(), idx);
+                                    return;
+                                }
+                                // Always move the bot into the caster's realm. The
+                                // previous "skip if realms already match" guard was
+                                // the bug: bots default-spawn into nexus, and when
+                                // the caster was ALSO in nexus the transfer was
+                                // skipped — but the bot was still wherever nexus
+                                // login dropped them (not near the caster). And
+                                // when realms differed, races between the bot's
+                                // self-/tp and the server-side transfer made
+                                // placement unreliable. Unconditional server-side
+                                // transfer handles both cases.
+                                final Realm botRealm = mgr.findPlayerRealm(botPlayer.getId());
+                                final float ox = target.getPos().x + (Realm.RANDOM.nextFloat() * 60 - 30);
+                                final float oy = target.getPos().y + (Realm.RANDOM.nextFloat() * 60 - 30);
+                                if (botRealm != null && botRealm.getRealmId() == casterRealm.getRealmId()) {
+                                    // Already in caster's realm — just position.
+                                    // (transferAdminToRealm would do unwanted
+                                    // bookkeeping like vault-save / dungeon-cleanup
+                                    // if we passed the same realm as both from/to.)
+                                    botPlayer.setPos(new Vector2f(ox, oy));
+                                } else {
+                                    transferAdminToRealm(mgr, botPlayer, botRealm, casterRealm,
+                                            new Vector2f(ox, oy));
                                 }
                             } catch (Exception ex) {
                                 log.warn("[BOTS] Bot {} godmode/realm setup failed: {}", idx, ex.getMessage());
