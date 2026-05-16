@@ -1076,6 +1076,148 @@ public class Realm {
     }
 
     /**
+     * Lightweight per-viewer visibility snapshot: returns just the entity
+     * IDs visible from {@code center} within {@code radius}, with the
+     * same soulbound filter, hidden-admin filter, and wider bullet radius
+     * as {@link #getLoadPacketCircularFast(Vector2f, float, long)} — but
+     * NO cap, NO payload hydration. Used by RealmManagerServer's
+     * ledger-based load/unload sync: the ledger diff against this set
+     * is the authoritative "what to load / what to unload" decision.
+     */
+    public VisibleIds getVisibleIdsCircularFast(Vector2f center, float radius, long requestingPlayerId) {
+        final VisibleIds out = new VisibleIds();
+        if (this.spatialGrid == null) return out;
+        final float radiusSq = radius * radius;
+        final float bulletRadius = radius * 2f;
+        final float bulletRadiusSq = bulletRadius * bulletRadius;
+        final List<Long> innerCandidates = this.spatialGrid.queryRadius(center.x, center.y, radius);
+        for (int i = 0; i < innerCandidates.size(); i++) {
+            final long id = innerCandidates.get(i);
+            final Player p = this.players.get(id);
+            if (p != null) {
+                if (p.isHiddenFromOthers() && p.getId() != requestingPlayerId) continue;
+                final float dx = p.getPos().x - center.x;
+                final float dy = p.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) out.players.add(id);
+                continue;
+            }
+            final Enemy e = this.enemies.get(id);
+            if (e != null) {
+                final float dx = e.getPos().x - center.x;
+                final float dy = e.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) out.enemies.add(id);
+                continue;
+            }
+            final Bullet b = this.bullets.get(id);
+            if (b != null) {
+                final float dx = b.getPos().x - center.x;
+                final float dy = b.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) out.bullets.add(id);
+                continue;
+            }
+            final Portal portal = this.portals.get(id);
+            if (portal != null) {
+                final float dx = portal.getPos().x - center.x;
+                final float dy = portal.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq) out.portals.add(id);
+                continue;
+            }
+            final LootContainer lc = this.loot.get(id);
+            if (lc != null) {
+                final float dx = lc.getPos().x - center.x;
+                final float dy = lc.getPos().y - center.y;
+                if (dx * dx + dy * dy <= radiusSq && lc.isVisibleToPlayer(requestingPlayerId)) {
+                    out.containers.add(id);
+                }
+            }
+        }
+        // Outer-ring bullets (radius..2×radius) — same wider envelope
+        // getLoadPacketCircularFast uses so long-range projectiles fired
+        // by enemies just beyond the viewport remain visible.
+        final List<Long> outerBulletCandidates = this.spatialGrid.queryRadius(center.x, center.y, bulletRadius);
+        for (int i = 0; i < outerBulletCandidates.size(); i++) {
+            final long id = outerBulletCandidates.get(i);
+            if (out.bullets.contains(id)) continue;
+            final Bullet b = this.bullets.get(id);
+            if (b == null) continue;
+            final float dx = b.getPos().x - center.x;
+            final float dy = b.getPos().y - center.y;
+            final float dsq = dx * dx + dy * dy;
+            if (dsq <= radiusSq) continue;
+            if (dsq <= bulletRadiusSq) out.bullets.add(id);
+        }
+        return out;
+    }
+
+    /**
+     * Hydrate the given ID sets into a LoadPacket. IDs that no longer
+     * resolve to a live entity are silently dropped (the caller's ledger
+     * will reflect only what actually shipped). Difficulty is computed
+     * from {@code originForDifficulty} when non-null.
+     */
+    public LoadPacket buildLoadPacketForIds(java.util.Collection<Long> playerIds,
+                                            java.util.Collection<Long> enemyIds,
+                                            java.util.Collection<Long> bulletIds,
+                                            java.util.Collection<Long> containerIds,
+                                            java.util.Collection<Long> portalIds,
+                                            Vector2f originForDifficulty) {
+        try {
+            final List<Player> ps = new ArrayList<>(playerIds.size());
+            for (final Long id : playerIds) {
+                final Player p = this.players.get(id);
+                if (p != null) ps.add(p);
+            }
+            final List<Enemy> es = new ArrayList<>(enemyIds.size());
+            for (final Long id : enemyIds) {
+                final Enemy e = this.enemies.get(id);
+                if (e != null) es.add(e);
+            }
+            final List<Bullet> bs = new ArrayList<>(bulletIds.size());
+            for (final Long id : bulletIds) {
+                final Bullet b = this.bullets.get(id);
+                if (b != null) bs.add(b);
+            }
+            final List<LootContainer> cs = new ArrayList<>(containerIds.size());
+            for (final Long id : containerIds) {
+                final LootContainer lc = this.loot.get(id);
+                if (lc != null) cs.add(lc);
+            }
+            final List<Portal> rs = new ArrayList<>(portalIds.size());
+            for (final Long id : portalIds) {
+                final Portal pt = this.portals.get(id);
+                if (pt != null) rs.add(pt);
+            }
+            final LoadPacket load = LoadPacket.from(
+                    ps.toArray(new Player[0]),
+                    cs.toArray(new LootContainer[0]),
+                    bs.toArray(new Bullet[0]),
+                    es.toArray(new Enemy[0]),
+                    rs.toArray(new Portal[0]),
+                    this.shortIdAllocator);
+            if (load != null && originForDifficulty != null) {
+                load.setDifficulty((byte) this.getZoneDifficulty(originForDifficulty.x, originForDifficulty.y));
+            }
+            return load;
+        } catch (Exception e) {
+            Realm.log.error("Failed to hydrate LoadPacket for ID set. Reason: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Lightweight per-viewer visibility snapshot. Sets are mutable so the
+     * caller can apply caps / mark contents-changed re-sends without
+     * allocating new collections.
+     */
+    public static final class VisibleIds {
+        public final Set<Long> players    = new HashSet<>();
+        public final Set<Long> enemies    = new HashSet<>();
+        public final Set<Long> bullets    = new HashSet<>();
+        public final Set<Long> containers = new HashSet<>();
+        public final Set<Long> portals    = new HashSet<>();
+    }
+
+    /**
      * Reset the per-tick NetObjectMovement cache. Called by RealmManagerServer
      * once per realm at the top of enqueueGameData() so subsequent
      * getGameObjectsAsPacketsCircularFast() calls (one per viewer) share

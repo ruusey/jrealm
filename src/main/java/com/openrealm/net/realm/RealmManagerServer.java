@@ -313,6 +313,10 @@ public class RealmManagerServer implements Runnable {
 	private final ReentrantLock realmLock = new ReentrantLock();
 	private int currentTickCount = 0;
 	private long tickSampleTime = 0;
+	// Running sum of tick durations (nanos) over the current 1-second sample
+	// window. Divided by currentTickCount at the per-second log to report the
+	// average tick time. Reset alongside currentTickCount.
+	private long tickTimeAccumNanos = 0L;
 
 	// Tiered update rate tick counter (increments every tick, wraps at 64)
 	private int tickCounter = 0;
@@ -576,14 +580,6 @@ public class RealmManagerServer implements Runnable {
 				}
 			}
 			tOverseer = System.nanoTime() - t0;
-
-			if (Instant.now().toEpochMilli() - this.tickSampleTime > 1000) {
-				this.tickSampleTime = Instant.now().toEpochMilli();
-				log.info("[SERVER] ticks this second: {}", this.currentTickCount);
-				this.currentTickCount = 0;
-			} else {
-				this.currentTickCount++;
-			}
 		} catch (Exception e) {
 			// Throwable passed as the LAST arg with no {} placeholder so SLF4J
 			// prints the full stack trace. Previous form ("Reason: {}", e) just
@@ -592,6 +588,18 @@ public class RealmManagerServer implements Runnable {
 			RealmManagerServer.log.error("Failed to process server tick", e);
 		}
 		final long tickTotal = System.nanoTime() - tickStart;
+		this.currentTickCount++;
+		this.tickTimeAccumNanos += tickTotal;
+		if (Instant.now().toEpochMilli() - this.tickSampleTime > 1000) {
+			this.tickSampleTime = Instant.now().toEpochMilli();
+			final double avgMs = this.currentTickCount > 0
+				? (this.tickTimeAccumNanos / (double) this.currentTickCount) / 1_000_000.0
+				: 0.0;
+			log.info("[SERVER] ticks this second: {} (avg tick time: {} ms)",
+				this.currentTickCount, String.format("%.2f", avgMs));
+			this.currentTickCount = 0;
+			this.tickTimeAccumNanos = 0L;
+		}
 		if (tickTotal > TICK_BUDGET_NANOS) {
 			final long nowMs = System.currentTimeMillis();
 			if (nowMs - lastSlowTickLogMs >= 1000) {
