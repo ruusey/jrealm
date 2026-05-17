@@ -2377,6 +2377,14 @@ public class RealmManagerServer implements Runnable {
 				this.sendTextEffectToPlayer(p, TextEffect.DAMAGE, "-" + damageToInflict);
 				p.setHealth(p.getHealth() - damageToInflict);
 				this.playerGroundDamageState.put(p.getId(), Instant.now().toEpochMilli());
+				// Death check — Entity.getDeath() returns true when health<=0,
+				// but nothing fires playerDeath() from ground-damage on its
+				// own. Without this the player could stand in lava and just
+				// keep ticking into negative HP forever (user reported -500
+				// HP while in a lava pool).
+				if (p.getDeath()) {
+					this.playerDeath(targetRealm, p);
+				}
 			}
 		}
 	}
