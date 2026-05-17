@@ -458,7 +458,12 @@ public class ServerGameLogic {
 		mgr.broadcastTextEffect(EntityType.PLAYER, user, TextEffect.PLAYER_INFO, "Invincible");
 		targetRealm.addPlayer(user);
 		mgr.clearPlayerState(user.getId());
-		mgr.invalidateRealmLoadState(targetRealm);
+		// Targeted invalidation — only the transitioning player needs a
+		// full Load snapshot. Existing players in the destination realm
+		// pick up the new arrival through normal viewport-delta diffing.
+		// Wiping every player's ledger here was forcing 150-300 ms tick
+		// stalls when somebody portalled into a busy realm.
+		mgr.invalidateLoadStateForPlayer(user.getId());
 		sendImmediateLoadMap(mgr, targetRealm, user);
 		onPlayerJoin(mgr, targetRealm, user);
 		} catch (Exception e) {

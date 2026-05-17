@@ -4715,12 +4715,31 @@ public class RealmManagerServer implements Runnable {
 	 * Invalidate the LoadPacket cache for all players in a realm, forcing a full
 	 * re-send on the next tick. Called when a player enters or leaves a realm so
 	 * that existing clients immediately learn about the roster change.
+	 *
+	 * Prefer {@link #invalidateLoadStateForPlayer(long)} when a SINGLE player
+	 * is joining — the normal delta logic in enqueueGameData picks up the new
+	 * roster entry automatically when the new player enters each existing
+	 * client's viewport (it's just another entity that wasn't in the
+	 * recipient's ledger). Wiping the whole realm's ledger here forces every
+	 * existing player to redo a full Load on the next tick, which under
+	 * 1500-enemy / 4500-bullet load was costing ~150-300 ms on the tick
+	 * thread per join.
 	 */
 	public void invalidateRealmLoadState(Realm realm) {
 		for (final Long pid : realm.getPlayers().keySet()) {
 			this.playerLoadLedger.remove(pid);
 			this.playerLastFullSnapshotMs.remove(pid);
 		}
+	}
+
+	/**
+	 * Targeted variant — only the named player's ledger is cleared. Use this
+	 * for player-join (the joining client needs a full snapshot of their new
+	 * realm; their neighbors get the join via the natural delta path).
+	 */
+	public void invalidateLoadStateForPlayer(long playerId) {
+		this.playerLoadLedger.remove(playerId);
+		this.playerLastFullSnapshotMs.remove(playerId);
 	}
 
 	/**
@@ -4761,7 +4780,14 @@ public class RealmManagerServer implements Runnable {
 		while ((join = this.pendingRealmJoins.poll()) != null) {
 			try {
 				join.realm.addPlayer(join.player);
-				this.invalidateRealmLoadState(join.realm);
+				// Only the joining player needs a full Load snapshot built
+				// next tick — neighbors will pick up the new entity through
+				// the natural ledger-vs-viewport delta in enqueueGameData
+				// without paying the cost of rebuilding their entire 1500-
+				// enemy / 4500-bullet visible set. The previous full-realm
+				// invalidation was the dominant cause of the 10-20 tick
+				// stalls observed when a player logged in mid-stress-test.
+				this.invalidateLoadStateForPlayer(join.player.getId());
 				join.session.setHandshakeComplete(true);
 				this.remoteAddresses.put(join.srcIp, join.player.getId());
 				this.enqueueServerPacket(join.player, join.loginResponse);
