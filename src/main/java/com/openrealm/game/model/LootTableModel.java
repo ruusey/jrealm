@@ -48,8 +48,15 @@ public class LootTableModel {
             if ("group".equals(prefix)) {
                 final LootGroupModel lootGroup = GameDataManager.LOOT_GROUPS.get(this.getLootGroupId(key));
                 if (lootGroup == null) continue;
-                final int itemFromGroup = lootGroup.getPotentialDrops()
-                        .get(Realm.RANDOM.nextInt(lootGroup.getPotentialDrops().size()));
+                final java.util.List<Integer> potentialDrops = lootGroup.getPotentialDrops();
+                // Empty loot group (no potentialDrops entries) — was throwing
+                // Random.nextInt(0) IllegalArgumentException at enemy death,
+                // which aborted enemyDeath() mid-flight and left the dead
+                // enemy in a weird state (no XP awarded, no portal cleanup
+                // for that loop iter). Just skip — same as if the group
+                // didn't exist.
+                if (potentialDrops == null || potentialDrops.isEmpty()) continue;
+                final int itemFromGroup = potentialDrops.get(Realm.RANDOM.nextInt(potentialDrops.size()));
                 itemsToDrop.add(decorateEquipment(GameDataManager.GAME_ITEMS.get(itemFromGroup), enemyTier, enemyWeights));
             } else if ("shard".equals(prefix) || "shardany".equals(prefix)) {
                 final int statId = "shardany".equals(prefix)
@@ -165,8 +172,14 @@ public class LootTableModel {
                 if (this.isLootGroup(drop.getKey())) {
                     final LootGroupModel lootGroup = GameDataManager.LOOT_GROUPS
                             .get(this.getLootGroupId(drop.getKey()));
-                    final int itemFromGroup = lootGroup.getPotentialDrops()
-                            .get(Realm.RANDOM.nextInt(lootGroup.getPotentialDrops().size()));
+                    // Defensive guards — same as the rolled-drop path above.
+                    // A missing LootGroupModel or an empty potentialDrops
+                    // list previously crashed enemyDeath with NPE /
+                    // Random.nextInt(0) IllegalArgumentException.
+                    if (lootGroup == null) continue;
+                    final List<Integer> potentialDrops = lootGroup.getPotentialDrops();
+                    if (potentialDrops == null || potentialDrops.isEmpty()) continue;
+                    final int itemFromGroup = potentialDrops.get(Realm.RANDOM.nextInt(potentialDrops.size()));
                     res.add(GameDataManager.GAME_ITEMS.get(itemFromGroup));
                 } else {
                     res.add(GameDataManager.GAME_ITEMS.get(this.getLootGroupId(drop.getKey())));
