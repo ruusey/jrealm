@@ -115,7 +115,25 @@ public enum CharacterClass {
         case WAND_USER:   result = CharacterClass.isWandUser(playerClass); break;
         case DAGGER_USER: result = CharacterClass.isDaggerUser(playerClass); break;
         case BOW_USER:    result = CharacterClass.isBowUser(playerClass); break;
-        default:          result = req.equals(playerClass); break;
+        default:
+            // Same-armor-category substitution. Items historically tagged with
+            // a SPECIFIC class (e.g. a sword's targetClass = WARRIOR=4) should
+            // be wearable by every class in the same armor category — that
+            // way the new Heavy_DEBUFFER / _BUFFER / _DPS / _ODDBALL classes
+            // can equip the existing pool of Knight/Warrior/Paladin swords
+            // and armor without the data team having to rewrite every item's
+            // targetClass. Original behavior (exact-class match) is preserved
+            // for cross-category mismatches.
+            if (CharacterClass.isHeavyClass(req) && CharacterClass.isHeavyClass(playerClass)) {
+                result = true;
+            } else if (CharacterClass.isLeatherClass(req) && CharacterClass.isLeatherClass(playerClass)) {
+                result = true;
+            } else if (CharacterClass.isRobeClass(req) && CharacterClass.isRobeClass(playerClass)) {
+                result = true;
+            } else {
+                result = req.equals(playerClass);
+            }
+            break;
         }
         return result;
     }
