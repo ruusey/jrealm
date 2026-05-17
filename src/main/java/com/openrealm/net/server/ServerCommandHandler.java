@@ -33,6 +33,7 @@ import com.openrealm.game.contants.GlobalConstants;
 import com.openrealm.game.contants.LootTier;
 import com.openrealm.game.contants.StatusEffectType;
 import com.openrealm.game.contants.TextEffect;
+import com.openrealm.game.data.GameDataLookup;
 import com.openrealm.game.data.GameDataManager;
 import com.openrealm.game.entity.Player;
 import com.openrealm.game.entity.Portal;
@@ -499,14 +500,17 @@ public class ServerCommandHandler {
         }
     }
 
-    @CommandHandler(value="spawn", description="Spawn enemies by id. Usage: /spawn {ENEMY_ID} [COUNT]")
+    @CommandHandler(value="spawn", description="Spawn enemies by id OR name. Usage: /spawn {ENEMY_ID_OR_NAME} [COUNT]")
 	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokeEnemySpawn(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().isEmpty() || message.getArgs().size() > 2)
-            throw new IllegalArgumentException("Usage: /spawn {ENEMY_ID} [COUNT]");
+            throw new IllegalArgumentException("Usage: /spawn {ENEMY_ID_OR_NAME} [COUNT]");
 
-        final int enemyId = Integer.parseInt(message.getArgs().get(0));
+        // Accept either the numeric ID or the logical enemy name. Ambiguous
+        // names throw with the colliding IDs so the user can rename in the
+        // editor — see GameDataLookup for the resolution contract.
+        final int enemyId = GameDataLookup.resolveEnemyId(message.getArgs().get(0));
         int count = 1;
         if (message.getArgs().size() == 2) {
             count = Integer.parseInt(message.getArgs().get(1));
@@ -1244,15 +1248,16 @@ public class ServerCommandHandler {
         }
     }
 
-    @CommandHandler(value="item", description="Spawn a given Item by its id. Usage: /item {ITEM_ID} [COUNT]")
+    @CommandHandler(value="item", description="Spawn a given Item by id OR name. Usage: /item {ITEM_ID_OR_NAME} [COUNT]")
 	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokeSpawnItem(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
-            throw new IllegalArgumentException("Usage: /item {ITEM_ID} [COUNT]");
+            throw new IllegalArgumentException("Usage: /item {ITEM_ID_OR_NAME} [COUNT]");
         log.info("Player {} spawn item {}", target.getName(), message);
         final Realm targetRealm = mgr.findPlayerRealm(target.getId());
-        final int gameItemId = Integer.parseInt(message.getArgs().get(0));
+        // Accept ID or exact name — GameDataLookup throws on ambiguity.
+        final int gameItemId = GameDataLookup.resolveItemId(message.getArgs().get(0));
         final GameItem itemTemplate = GameDataManager.GAME_ITEMS.get(gameItemId);
         if (itemTemplate == null) {
             throw new IllegalArgumentException("Item with ID " + gameItemId + " does not exist.");
@@ -1297,39 +1302,31 @@ public class ServerCommandHandler {
         }
     }
 
-    @CommandHandler(value="portal", description="Spawn a portal to a map by name. Usage: /portal {MAP_NAME}")
+    @CommandHandler(value="portal", description="Spawn a portal to a map by id OR name. Usage: /portal {MAP_ID_OR_NAME}")
 	@AdminRestrictedCommand(provisions={AccountProvision.OPENREALM_MODERATOR})
     public static void invokeSpawnPortal(RealmManagerServer mgr, Player target, ServerCommandMessage message)
             throws Exception {
         if (message.getArgs() == null || message.getArgs().size() < 1)
-            throw new IllegalArgumentException("Usage: /portal {MAP_NAME}");
+            throw new IllegalArgumentException("Usage: /portal {MAP_ID_OR_NAME}");
 
-        final String mapName = String.join(" ", message.getArgs());
-        log.info("Player {} spawning portal to map '{}'", target.getName(), mapName);
+        final String mapToken = String.join(" ", message.getArgs());
+        log.info("Player {} spawning portal to map '{}'", target.getName(), mapToken);
 
-        // Find map by name (case-insensitive, supports partial match)
-        MapModel targetMap = null;
-        for (MapModel m : GameDataManager.MAPS.values()) {
-            if (m.getMapName().equalsIgnoreCase(mapName)) {
-                targetMap = m;
-                break;
-            }
-        }
-        // Fallback: partial match
-        if (targetMap == null) {
-            for (MapModel m : GameDataManager.MAPS.values()) {
-                if (m.getMapName().toLowerCase().contains(mapName.toLowerCase())) {
-                    targetMap = m;
-                    break;
-                }
-            }
-        }
-        if (targetMap == null) {
-            // List available maps in error message
+        // Resolve via GameDataLookup — accepts either an integer mapId or an
+        // exact (case-insensitive) mapName. Ambiguous names throw with the
+        // colliding ids in the message, so the user knows to rename one of
+        // the offending maps in the editor. The old partial-match fallback
+        // was silently sending people to whatever map sorted first in the
+        // map.values() iteration order; remove it so portal targeting is
+        // always deterministic.
+        final MapModel targetMap;
+        try {
+            targetMap = GameDataLookup.resolveMap(mapToken);
+        } catch (final IllegalArgumentException notFound) {
             final String available = GameDataManager.MAPS.values().stream()
                     .map(m -> m.getMapName() + " (" + m.getMapId() + ")")
                     .collect(Collectors.joining(", "));
-            throw new IllegalArgumentException("Map '" + mapName + "' not found. Available: " + available);
+            throw new IllegalArgumentException(notFound.getMessage() + " Available: " + available);
         }
 
         // Find a portal model that targets this map, or fall back to a generic portal
