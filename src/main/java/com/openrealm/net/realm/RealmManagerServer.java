@@ -2530,13 +2530,29 @@ public class RealmManagerServer implements Runnable {
 			}
 		}
 
-		// Legacy GameItem still drives projectile spawn for now — Phase 2B
-		// only swaps cost/CD off Ability data. Phase 2C will read projectile
-		// group + scalings from Ability.effects directly.
-		if (player.getAbility() == null) return;
-		final GameItem abilityItem = GameDataManager.GAME_ITEMS.get(player.getAbility().getItemId());
-		if (abilityItem == null) return;
-		final Effect effect = abilityItem.getEffect();
+		// Legacy GameItem still drives projectile spawn for some abilities —
+		// Phase 2B only swaps cost/CD off Ability data, Phase 2C will read
+		// projectile group + scalings from Ability.effects directly.
+		//
+		// IMPORTANT: classes that fully migrated to the new Ability pipeline
+		// (Heavy_Debuffer/Buffer/DPS/Oddball — all have classAbilityId=0 in
+		// character-classes.json) have NO legacy ability item. Previously we
+		// bailed here when getAbility() returned null, which silently killed
+		// the cast AFTER the client had already paid mana + started cooldown
+		// (those are predicted client-side). Symptoms: mana drain + cooldown
+		// spinner + zero visual effect because the AoE/effect dispatch block
+		// at line ~2935 was never reached.
+		//
+		// Fix: only bail when BOTH the new Ability data (ab) AND the legacy
+		// item are missing. When ab is non-null the new path doesn't need
+		// abilityItem to compute the visual; null-guard the few places that
+		// still touch it.
+		final GameItem legacyAbility = player.getAbility();
+		final GameItem abilityItem = legacyAbility != null
+				? GameDataManager.GAME_ITEMS.get(legacyAbility.getItemId())
+				: null;
+		if (ab == null && abilityItem == null) return;
+		final Effect effect = abilityItem != null ? abilityItem.getEffect() : null;
 
 		if (ab == null) {
 			// Legacy global-cooldown gate (unchanged from pre-Phase-2 behavior).
@@ -2656,7 +2672,10 @@ public class RealmManagerServer implements Runnable {
 		// Phase 1B: ability is class-bound, not equipped. CombatModifiers
 		// for the ability are now derived from the GameItem template (no
 		// per-instance enchantments since the ability isn't a held item).
-		final CombatModifiers abilityCm = CombatModifiers.fromItem(abilityItem);
+		// Null-guard for classes that have no legacy ability item (Heavy_*).
+		final CombatModifiers abilityCm = abilityItem != null
+				? CombatModifiers.fromItem(abilityItem)
+				: new CombatModifiers();
 
 		// Phase 2B: ability tag "from_sky" emits a two-part visual at the
 		// cursor — a vertical chain-lightning streak descending from 320 px
@@ -3343,7 +3362,7 @@ public class RealmManagerServer implements Runnable {
 						abilityItem.getItemId());
 				script.invokeItemAbility(targetRealm, player, abilityItem, pos);
 			}
-		} else {
+		} else if (abilityItem != null) {
 			log.info("[USEABILITY] skipping legacy-script for itemId={} — ab={} owns the visuals",
 					abilityItem.getItemId(), ab.getName());
 		}
